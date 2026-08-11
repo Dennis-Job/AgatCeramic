@@ -1,0 +1,148 @@
+# Database
+
+Это предварительная модель. Не создавать все таблицы автоматически только потому, что они перечислены здесь. Каждая сущность должна появляться в рамках соответствующей задачи.
+
+## Core
+
+### users
+Администраторы.
+
+### roles
+Роли.
+
+### permissions
+Права.
+
+### role_permissions
+Связь ролей и прав.
+
+### user_roles
+Связь пользователей и ролей.
+
+## Catalog
+
+### categories
+- id
+- parent_id
+- name
+- slug
+- description
+- image_id
+- is_active
+- sort_order
+- timestamps
+
+### attribute_groups
+Группы характеристик.
+
+### attributes
+Характеристики.
+
+### attribute_options
+Значения select/multiselect.
+
+### category_attributes
+Какие характеристики используются категорией.
+
+### brands
+Бренды.
+
+### products
+Основная карточка товара.
+
+### product_variants
+SKU/варианты.
+
+### product_attribute_values
+Значения характеристик.
+
+### product_images
+Изображения.
+
+### product_relations
+Связанные/рекомендуемые товары.
+
+## Orders
+
+### carts
+Анонимная корзина.
+
+### cart_items
+
+### orders
+- order_number
+- customer_name
+- customer_phone
+- customer_email
+- delivery_address
+- customer_comment
+- status
+- payment_status
+- total_amount
+- created_at
+- paid_at
+- completed_at
+
+### order_items
+Должны хранить snapshot:
+- product/variant reference;
+- product name snapshot;
+- SKU snapshot;
+- price snapshot;
+- quantity;
+- line total.
+
+### order_status_history
+
+### order_comments
+
+## Contacts
+
+### contact_requests
+Обратные звонки и email requests.
+
+### contact_request_comments
+
+## Content
+
+### pages
+
+### banners
+
+### sliders
+
+### stores
+
+### store_working_hours
+
+### site_settings
+
+### media
+
+## SEO
+
+### seo_metadata
+
+### redirects
+
+## Analytics
+
+Не хранить избыточные PII ради аналитики.
+
+Для финансовой аналитики основными датами являются:
+- order.created_at;
+- order.paid_at;
+- order.completed_at.
+
+## Audit
+
+### audit_logs
+
+Содержит:
+- actor;
+- action;
+- entity;
+- entity_id;
+- timestamp;
+- sanitized metadata.
+
