@@ -1,5 +1,9 @@
 # DONE
 
+## TASK-003 — Initialize Vue Admin
+
+Completed 2026-08-11. Vue 3 + TypeScript + Vite SPA initialized with Vue Router, Pinia, Tailwind CSS and a TailAdmin-style application shell. Verified with `npm.cmd run build --prefix frontend/admin`.
+
 | ID | Название | Дата | Результат | Проверки |
 | --- | --- | --- | --- | --- |
 | TASK-001 | Initialize Git repository and project structure | 2026-08-11 | Создан Git-репозиторий с основной веткой `main`; зафиксирована базовая структура и добавлены общие правила игнорирования для секретов, зависимостей и артефактов сборки. | `git status --short --branch`; проверка структуры файлов |
