@@ -3,7 +3,7 @@
 ## Phase 0 — Project foundation
 
 - [x] TASK-001 Initialize Git repository and project structure
-- [ ] TASK-002 Initialize Laravel API-only backend
+- [x] TASK-002 Initialize Laravel API-only backend
 - [ ] TASK-003 Initialize Vue Admin
 - [ ] TASK-004 Initialize Nuxt Client
 - [ ] TASK-005 Configure Docker development environment

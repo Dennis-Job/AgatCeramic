@@ -1,24 +1,22 @@
 # AgatCeramic Backend
 
-Laravel API-only.
+Laravel 13 API-only application and the common business API for the public storefront and admin SPA.
 
-## Rules
+## Local commands
 
-- No Blade UI.
-- No server-rendered storefront.
-- REST API.
-- SOLID.
-- CRUD.
-- API Resources.
-- Validation.
-- Authorization.
-- Tests.
-- OpenAPI.
+```powershell
+composer install
+copy .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan serve
+```
 
-Backend is the single business API for Admin and Client.
+Run the checks:
 
-## Initialization
+```powershell
+composer test
+vendor/bin/pint --test
+```
 
-The actual Laravel application should be initialized here by TASK-002.
-
-Do not manually invent framework files before the Laravel version is selected and installed.
+The local SQLite configuration is scaffold-only. PostgreSQL is configured in TASK-010, and Redis, queues, authentication, and API versioning are introduced in their respective tasks.
