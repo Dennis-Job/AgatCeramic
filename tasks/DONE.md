@@ -4,6 +4,10 @@
 
 Completed 2026-08-11. Vue 3 + TypeScript + Vite SPA initialized with Vue Router, Pinia, Tailwind CSS and a TailAdmin-style application shell. Verified with `npm.cmd run build --prefix frontend/admin`.
 
+## TASK-004 — Initialize Nuxt Client
+
+Completed 2026-08-12. Nuxt 4.5.2 + TypeScript storefront initialized with SSR enabled, a minimal application shell, layout, and neutral page. Verified by `npm.cmd audit --omit=dev --audit-level=high` (no vulnerabilities), `npm.cmd exec nuxi typecheck`, and `npm.cmd run build --prefix frontend/client`.
+
 | ID | Название | Дата | Результат | Проверки |
 | --- | --- | --- | --- | --- |
 | TASK-001 | Initialize Git repository and project structure | 2026-08-11 | Создан Git-репозиторий с основной веткой `main`; зафиксирована базовая структура и добавлены общие правила игнорирования для секретов, зависимостей и артефактов сборки. | `git status --short --branch`; проверка структуры файлов |
