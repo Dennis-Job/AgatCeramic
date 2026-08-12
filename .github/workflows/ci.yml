@@ -1,0 +1,117 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Create test application key
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Validate Composer manifest
+        run: composer validate --strict
+
+      - name: Audit PHP dependencies
+        run: composer audit --locked
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Run tests
+        run: composer test
+
+  admin:
+    name: Admin checks
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend/admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: frontend/admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build Admin SPA
+        run: npm run build
+
+  client:
+    name: Client checks
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend/client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: frontend/client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Check TypeScript
+        run: npm exec nuxi typecheck
+
+      - name: Build Nuxt client
+        run: npm run build
+
+  compose:
+    name: Compose configuration
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose configuration
+        run: docker compose --env-file .env.example config --quiet
