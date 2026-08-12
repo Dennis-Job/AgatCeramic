@@ -19,7 +19,7 @@
 - [x] TASK-014 API Resources convention
 - [x] TASK-015 logging and PII masking
 - [x] TASK-016 queue and scheduler
-- [ ] TASK-017 OpenAPI documentation
+- [x] TASK-017 OpenAPI documentation
 
 ## Phase 2 — Admin authentication
 

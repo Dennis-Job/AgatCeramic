@@ -1,0 +1,124 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "AgatCeramic API",
+    "version": "v1",
+    "description": "Контракт публичного и административного API AgatCeramic. В спецификацию включаются только реализованные маршруты."
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API v1"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "getApiVersion",
+        "summary": "Получить версию API",
+        "responses": {
+          "200": {
+            "description": "Версия API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                },
+                "example": {
+                  "version": "v1"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "VersionResponse": {
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "string",
+            "const": "v1"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiError": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message",
+              "details"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Стабильный машинный код ошибки."
+              },
+              "message": {
+                "type": "string",
+                "description": "Безопасное для отображения сообщение."
+              },
+              "details": {
+                "type": "object",
+                "description": "Ошибки полей для validation_failed; пустой объект для остальных ошибок.",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Некорректный запрос.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "ValidationFailed": {
+        "description": "Переданные данные не прошли проверку.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Непредвиденная ошибка; внутренние детали не раскрываются.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      }
+    }
+  }
+}

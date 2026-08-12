@@ -1,20 +1,27 @@
-# API Contract
+# Контракт API
 
-## Base
+## OpenAPI
+
+Машиночитаемая спецификация OpenAPI 3.1: [`openapi.json`](openapi.json).
+В ней описываются только реализованные маршруты. При добавлении или изменении
+маршрута необходимо одновременно обновить соответствующую OpenAPI-операцию;
+запланированные маршруты в этом документе не являются доступными операциями API.
+
+## Базовый путь
 
 `/api/v1`
 
-## Routing
+## Маршрутизация
 
-All application endpoints must be declared below `/api/v1`. `GET /api/v1` is a
-lightweight version entry point and returns `{"version":"v1"}`. Public and
-administrative routes are kept in separate route groups; authentication and
-authorization middleware for the administrative group are added with the
-corresponding authentication and policy tasks.
+Все маршруты приложения должны быть объявлены ниже `/api/v1`. `GET /api/v1` —
+лёгкая точка входа для определения версии; она возвращает `{"version":"v1"}`.
+Публичные и административные маршруты находятся в разных группах. Промежуточное
+ПО аутентификации и авторизации для административной группы добавляется в рамках
+соответствующих задач аутентификации и политик доступа.
 
-## Public API
+## Публичный API
 
-### Catalog
+### Каталог
 
 `GET /categories`
 
@@ -28,7 +35,7 @@ corresponding authentication and policy tasks.
 
 `GET /brands/{slug}`
 
-### Cart
+### Корзина
 
 `GET /cart`
 
@@ -38,23 +45,23 @@ corresponding authentication and policy tasks.
 
 `DELETE /cart/items/{item}`
 
-### Orders
+### Заказы
 
 `POST /orders`
 
 `GET /orders/{order_number}/confirmation`
 
-### Content
+### Контент
 
 `GET /pages/{slug}`
 
 `GET /site-settings/public`
 
-## Admin API
+## Административный API
 
-Admin API должен быть защищен authentication + authorization.
+Административный API должен быть защищён аутентификацией и авторизацией.
 
-### Products
+### Товары
 
 - `GET /admin/products`
 - `POST /admin/products`
@@ -62,7 +69,7 @@ Admin API должен быть защищен authentication + authorization.
 - `PATCH /admin/products/{product}`
 - `DELETE /admin/products/{product}`
 
-### Categories
+### Категории
 
 - `GET /admin/categories`
 - `POST /admin/categories`
@@ -70,53 +77,54 @@ Admin API должен быть защищен authentication + authorization.
 - `PATCH /admin/categories/{category}`
 - `DELETE /admin/categories/{category}`
 
-### Brands
+### Бренды
 
-CRUD.
+Операции создания, просмотра, изменения и удаления.
 
-### Attributes
+### Характеристики
 
-CRUD.
+Операции создания, просмотра, изменения и удаления.
 
-### Orders
+### Заказы
 
-- list;
-- view;
-- update status;
-- update payment status;
-- add comment;
-- record payment.
+- список;
+- просмотр;
+- изменение статуса;
+- изменение статуса оплаты;
+- добавление комментария;
+- фиксация оплаты.
 
-### Contacts
+### Обращения
 
-CRUD/status workflow.
+Операции создания, просмотра, изменения и удаления, а также процесс обработки
+статусов.
 
-### Content
+### Контент
 
-CRUD.
+Операции создания, просмотра, изменения и удаления.
 
 ### SEO
 
-CRUD.
+Операции создания, просмотра, изменения и удаления.
 
-### Analytics
+### Аналитика
 
-Read-only reporting endpoints.
+Маршруты только для чтения отчётов.
 
-## API rules
+## Правила API
 
-- consistent HTTP status codes;
-- validation errors in stable format;
-- pagination;
-- filtering;
-- sorting;
-- no hidden side effects;
-- authorization on every protected operation;
-- API documentation updated with changes.
+- единообразные HTTP-коды состояния;
+- ошибки валидации в стабильном формате;
+- пагинация;
+- фильтрация;
+- сортировка;
+- отсутствие скрытых побочных эффектов;
+- авторизация для каждой защищённой операции;
+- обновление документации API при изменениях.
 
-## Error format
+## Формат ошибок
 
-Every error response from `/api/v1` uses one JSON envelope:
+Каждый ошибочный ответ `/api/v1` использует единый JSON-конверт:
 
 ```json
 {
@@ -130,12 +138,12 @@ Every error response from `/api/v1` uses one JSON envelope:
 }
 ```
 
-`code` is stable and intended for programmatic handling. `message` is safe for
-display; unexpected exceptions never expose their internal message. `details`
-is always an object and contains validation messages by field only for
-`validation_failed`; it is empty for other error types.
+`code` стабилен и предназначен для программной обработки. `message` безопасен
+для отображения; непредвиденные исключения никогда не раскрывают внутреннее
+сообщение. `details` всегда является объектом и содержит сообщения валидации по
+полям только при `validation_failed`; для остальных типов ошибок он пуст.
 
-| HTTP status | Error code |
+| HTTP-код | Код ошибки |
 | --- | --- |
 | 400 | `bad_request` |
 | 401 | `unauthenticated` |
@@ -147,16 +155,16 @@ is always an object and contains validation messages by field only for
 | 429 | `too_many_requests` |
 | 5xx | `internal_server_error` / `http_error` |
 
-## API Resources convention
+## Соглашение о ресурсах API
 
-Every domain response returned from the API must use a Laravel API Resource.
-Resources extend `App\\Http\\Resources\\ApiResource`, are named
-`{Entity}Resource`, and live in the relevant domain namespace under
-`app/Http/Resources` (for example,
-`App\\Http\\Resources\\Catalog\\ProductResource`). Controllers must not return
-Eloquent models directly.
+Каждый доменный ответ API должен использовать ресурс Laravel API. Ресурсы
+наследуются от `App\\Http\\Resources\\ApiResource`, именуются
+`{Entity}Resource` и располагаются в пространстве имён соответствующего домена внутри
+`app/Http/Resources` (например,
+`App\\Http\\Resources\\Catalog\\ProductResource`). Контроллеры не должны
+возвращать Eloquent-модели напрямую.
 
-A single resource response has the stable envelope:
+Ответ с одиночным ресурсом использует стабильный конверт:
 
 ```json
 {
@@ -167,8 +175,9 @@ A single resource response has the stable envelope:
 }
 ```
 
-Lists use `{Entity}Resource::collection($items)` and return `data` as an
-array. When the input is a paginator, Laravel's standard `links` and `meta`
-objects are retained. Resource fields are explicit allowlists: never expose
-model attributes by serializing a model directly or by returning
+Списки используют `{Entity}Resource::collection($items)` и возвращают `data`
+в виде массива. Если входные данные являются пагинатором, сохраняются стандартные
+объекты Laravel `links` и `meta`. Поля ресурса задаются явным списком разрешённых
+полей: нельзя
+раскрывать атрибуты модели прямой сериализацией модели или возвратом
 `$this->resource`.

@@ -72,6 +72,7 @@ Nuxt Client — публичный интернет-магазин.
 3. `docs/ARCHITECTURE.md`
 4. `docs/DATABASE.md`
 5. `docs/API.md`
-6. `docs/QUEUE.md`
-7. `docs/DECISIONS.md`
-8. `tasks/TODO.md`
+6. `docs/openapi.json`
+7. `docs/QUEUE.md`
+8. `docs/DECISIONS.md`
+9. `tasks/TODO.md`
