@@ -36,8 +36,8 @@ jobs:
           key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
           restore-keys: composer-${{ runner.os }}-
 
-      - name: Ensure Laravel cache directory exists
-        run: mkdir -p bootstrap/cache
+      - name: Ensure Laravel writable directories exist
+        run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
