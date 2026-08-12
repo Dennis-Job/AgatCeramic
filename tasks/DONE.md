@@ -14,6 +14,7 @@
 | TASK-012 | API v1 routing | 2026-08-12 | Маршрутизация Laravel организована под `/api/v1`, с отдельными файлами для публичных и административных endpoint'ов и версионной точкой входа `GET /api/v1`. | `php artisan route:list --path=api`; `php artisan test` — 6 passed; `vendor/bin/pint --test`; `composer validate --strict` |
 | TASK-013 | API error format | 2026-08-12 | Для `/api/v1` введён единый JSON-конверт ошибок с машинным кодом, безопасным сообщением и деталями валидации; внутренние сообщения исключений не раскрываются. | `php artisan test` — 12 passed; `vendor/bin/pint --test`; `composer validate --strict`; `php artisan route:list --path=api` |
 | TASK-014 | API Resources convention | 2026-08-12 | Добавлен базовый `ApiResource` со стабильным конвертом `data`; зафиксированы правила размещения, именования, явного выбора полей и сериализации списков с pagination meta/links. | `php artisan test` — 14 passed; `vendor/bin/pint --test`; `composer validate --strict` |
+| TASK-015 | Logging and PII masking | 2026-08-12 | Во все настроенные application log channels добавлен Monolog processor, который маскирует чувствительные поля и PII в свободном тексте до форматирования и записи. | `php artisan test` — 17 passed; `vendor/bin/pint --test`; `composer validate --strict`; проверка `php artisan config:show logging` |
 
 После завершения каждой задачи добавлять:
 - ID;
