@@ -1,0 +1,96 @@
+name: agatceramic
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend/Dockerfile
+    working_dir: /var/www/backend
+    command: >-
+      sh -c "test -f vendor/autoload.php || composer install --no-interaction;
+      php artisan serve --host=0.0.0.0 --port=8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:-agatceramic}
+      DB_USERNAME: ${POSTGRES_USER:-agatceramic}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-local-development-password}
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+    volumes:
+      - ./backend:/var/www/backend
+      - backend_vendor:/var/www/backend/vendor
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/node/Dockerfile
+    working_dir: /app
+    command: >-
+      sh -c "test -x node_modules/.bin/vite || npm ci;
+      npm run dev -- --host 0.0.0.0 --port=5173"
+    volumes:
+      - ./frontend/admin:/app
+      - admin_node_modules:/app/node_modules
+    ports:
+      - "${ADMIN_PORT:-5173}:5173"
+
+  client:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/node/Dockerfile
+    working_dir: /app
+    command: >-
+      sh -c "test -x node_modules/.bin/nuxt || npm ci;
+      npm run dev -- --host 0.0.0.0 --port=3000"
+    volumes:
+      - ./frontend/client:/app
+      - client_node_modules:/app/node_modules
+    ports:
+      - "${CLIENT_PORT:-3000}:3000"
+
+  postgres:
+    image: postgres:17.9-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agatceramic}
+      POSTGRES_USER: ${POSTGRES_USER:-agatceramic}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  backend_vendor:
+  admin_node_modules:
+  client_node_modules:
+  postgres_data:
+  redis_data:
