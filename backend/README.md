@@ -19,4 +19,8 @@ composer test
 vendor/bin/pint --test
 ```
 
-The local SQLite configuration is scaffold-only. PostgreSQL is configured in TASK-010, and Redis, queues, authentication, and API versioning are introduced in their respective tasks.
+PostgreSQL is the default application database. Set the `DB_*` values in `backend/.env`; when Laravel runs through Docker Compose, those values are supplied by the root `.env` and the database host is `postgres`.
+
+The automated test suite continues to use an in-memory SQLite database for fast, isolated tests. CI additionally runs all migrations against PostgreSQL 17 to catch database-specific incompatibilities.
+
+Redis, queues, authentication, and API versioning are introduced in their respective tasks.

@@ -31,4 +31,8 @@ Set-Location ..
 | `/frontend/admin/.env` | Публичный URL API для Admin SPA |
 | `/frontend/client/.env` | Публичный URL API для Nuxt storefront |
 
-Подключение Laravel к PostgreSQL и Redis реализуется в TASK-010 и TASK-011. Этот шаблон только определяет безопасный способ передачи конфигурации.
+Laravel использует PostgreSQL как базу данных по умолчанию. В Docker Compose параметры `DB_*` формируются из PostgreSQL credentials корневого `.env`, а `DB_HOST` равен `postgres`. При запуске Laravel вне Docker укажите доступ к PostgreSQL в `backend/.env`.
+
+Тесты Laravel изолированно работают с SQLite `:memory:`, а CI дополнительно прогоняет миграции на PostgreSQL 17.
+
+Подключение Redis реализуется в TASK-011.
