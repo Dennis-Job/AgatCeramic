@@ -23,4 +23,9 @@ PostgreSQL is the default application database. Set the `DB_*` values in `backen
 
 The automated test suite continues to use an in-memory SQLite database for fast, isolated tests. CI additionally runs all migrations against PostgreSQL 17 to catch database-specific incompatibilities.
 
-Redis, queues, authentication, and API versioning are introduced in their respective tasks.
+Redis is configured as the default cache store. The application API is versioned under
+`/api/v1`; public and administrative route declarations live in
+`routes/api/v1/public.php` and `routes/api/v1/admin.php` respectively. The version
+entry point is available at `GET /api/v1`.
+
+Queues and authentication are introduced in their respective tasks.

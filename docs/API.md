@@ -4,6 +4,14 @@
 
 `/api/v1`
 
+## Routing
+
+All application endpoints must be declared below `/api/v1`. `GET /api/v1` is a
+lightweight version entry point and returns `{"version":"v1"}`. Public and
+administrative routes are kept in separate route groups; authentication and
+authorization middleware for the administrative group are added with the
+corresponding authentication and policy tasks.
+
 ## Public API
 
 ### Catalog
