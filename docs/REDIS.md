@@ -1,25 +1,26 @@
 # Redis
 
-## Development configuration
+## Конфигурация для разработки
 
-Docker Compose runs Redis 7 as the `redis` service and persists its data in the
-named `redis_data` volume. The backend waits for the Redis healthcheck before it
-starts.
+Docker Compose запускает Redis 7 в сервисе `redis` и сохраняет его данные в
+именованном томе `redis_data`. Перед запуском backend ожидает успешного
+прохождения Redis-проверки работоспособности.
 
-Laravel uses the `phpredis` extension. In Docker, the backend receives
-`REDIS_HOST=redis`; outside Docker, configure `REDIS_HOST` and `REDIS_PORT` in
-`backend/.env` for an available Redis instance (defaults: `127.0.0.1:6379`).
+Laravel использует расширение `phpredis`. В Docker backend получает
+`REDIS_HOST=redis`; вне Docker настройте в `backend/.env` переменные `REDIS_HOST`
+и `REDIS_PORT` для доступного экземпляра Redis (по умолчанию:
+`127.0.0.1:6379`).
 
-## Usage
+## Использование
 
-Redis is the default cache store (`CACHE_STORE=redis`). Database `0` is the
-default Redis connection and database `1` is reserved for cache; override them
-using `REDIS_DB` and `REDIS_CACHE_DB` when needed.
+Redis — хранилище кеша по умолчанию (`CACHE_STORE=redis`). База `0` используется
+для подключения Redis по умолчанию, а база `1` зарезервирована для кеша. При
+необходимости измените их с помощью `REDIS_DB` и `REDIS_CACHE_DB`.
 
-Queue processing uses Redis (`QUEUE_CONNECTION=redis`). The queue connection is
-isolated in Redis database `2` (`REDIS_QUEUE_DB`), separate from the default
-connection and cache. See [`QUEUE.md`](QUEUE.md) for worker, retry, failure, and
-scheduler operation.
+Для обработки очередей используется Redis (`QUEUE_CONNECTION=redis`).
+Подключение очереди изолировано в базе Redis `2` (`REDIS_QUEUE_DB`) и отделено
+от подключения по умолчанию и кеша. О работе воркера, повторных попытках,
+ошибках и планировщике см. [`QUEUE.md`](QUEUE.md).
 
-Do not put production Redis credentials into `.env.example`, Compose files, or
-project documentation.
+Не добавляйте учётные данные production Redis в `.env.example`, файлы Compose
+или документацию проекта.
