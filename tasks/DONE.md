@@ -15,6 +15,7 @@
 | TASK-013 | API error format | 2026-08-12 | Для `/api/v1` введён единый JSON-конверт ошибок с машинным кодом, безопасным сообщением и деталями валидации; внутренние сообщения исключений не раскрываются. | `php artisan test` — 12 passed; `vendor/bin/pint --test`; `composer validate --strict`; `php artisan route:list --path=api` |
 | TASK-014 | API Resources convention | 2026-08-12 | Добавлен базовый `ApiResource` со стабильным конвертом `data`; зафиксированы правила размещения, именования, явного выбора полей и сериализации списков с pagination meta/links. | `php artisan test` — 14 passed; `vendor/bin/pint --test`; `composer validate --strict` |
 | TASK-015 | Logging and PII masking | 2026-08-12 | Во все настроенные application log channels добавлен Monolog processor, который маскирует чувствительные поля и PII в свободном тексте до форматирования и записи. | `php artisan test` — 17 passed; `vendor/bin/pint --test`; `composer validate --strict`; проверка `php artisan config:show logging` |
+| TASK-016 | Queue and scheduler | 2026-08-12 | Очереди Laravel переведены на Redis с отдельной БД `2`; добавлены независимые Docker-сервисы worker и scheduler. Задачи отправляются только после commit транзакции, окончательно неудачные задачи сохраняются в PostgreSQL. | `php artisan test` — 18 passed; `vendor/bin/pint --test`; `composer validate --strict`; `docker compose --env-file .env.example config --quiet`; проверка Redis-очереди и scheduler в Docker |
 
 После завершения каждой задачи добавлять:
 - ID;
