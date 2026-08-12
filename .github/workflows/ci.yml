@@ -21,7 +21,7 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -30,11 +30,14 @@ jobs:
           coverage: none
 
       - name: Cache Composer packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/composer/files
           key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
           restore-keys: composer-${{ runner.os }}-
+
+      - name: Ensure Laravel cache directory exists
+        run: mkdir -p bootstrap/cache
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -63,9 +66,9 @@ jobs:
       run:
         working-directory: frontend/admin
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24.19.0'
           cache: npm
@@ -87,9 +90,9 @@ jobs:
       run:
         working-directory: frontend/client
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24.19.0'
           cache: npm
@@ -111,7 +114,7 @@ jobs:
     name: Compose configuration
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Validate Docker Compose configuration
         run: docker compose --env-file .env.example config --quiet

@@ -8,7 +8,7 @@
 - [x] TASK-004 Initialize Nuxt Client
 - [x] TASK-005 Configure Docker development environment
 - [x] TASK-006 Configure environment variables and secrets
-- [x] TASK-007 Configure CI checks
+- [ ] TASK-007 Configure CI checks
 
 ## Phase 1 — Backend foundation
 

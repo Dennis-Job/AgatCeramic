@@ -9,7 +9,8 @@ backend/vendor/
 backend/storage/*.key
 backend/storage/framework/
 backend/storage/logs/
-backend/bootstrap/cache/
+backend/bootstrap/cache/*
+!backend/bootstrap/cache/.gitignore
 
 # Frontend dependencies and build output
 frontend/**/node_modules/

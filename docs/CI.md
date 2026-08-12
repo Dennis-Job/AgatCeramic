@@ -3,6 +3,7 @@
 GitHub Actions запускает workflow [`ci.yml`](../.github/workflows/ci.yml) для каждого pull request, push в `main` и ручного запуска.
 
 Workflow получает только право `contents: read` и не использует production secrets.
+Используемые GitHub Actions запускаются на Node 24.
 
 | Job | Проверки |
 | --- | --- |
