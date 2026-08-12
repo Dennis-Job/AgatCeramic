@@ -31,6 +31,15 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: backend
@@ -40,7 +49,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, pdo_pgsql, pdo_sqlite
+          extensions: mbstring, pdo_pgsql, pdo_sqlite, redis
           coverage: none
 
       - name: Cache Composer packages
@@ -80,6 +89,16 @@ jobs:
           DB_PASSWORD: ci-only-password
           DB_SSLMODE: prefer
         run: php artisan migrate:fresh --force
+
+      - name: Verify Redis cache connection
+        env:
+          CACHE_STORE: redis
+          REDIS_CLIENT: phpredis
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+        run: >-
+          php artisan tinker --execute="cache()->put('ci:redis:healthcheck', 'ok', 60);
+          throw_unless(cache()->get('ci:redis:healthcheck') === 'ok');"
 
       - name: Run tests
         run: composer test

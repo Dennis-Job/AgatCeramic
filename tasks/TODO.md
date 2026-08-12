@@ -13,7 +13,7 @@
 ## Phase 1 — Backend foundation
 
 - [x] TASK-010 PostgreSQL connection
-- [ ] TASK-011 Redis
+- [x] TASK-011 Redis
 - [ ] TASK-012 API v1 routing
 - [ ] TASK-013 API error format
 - [ ] TASK-014 API Resources convention
