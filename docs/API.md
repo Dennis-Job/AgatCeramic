@@ -113,3 +113,36 @@ Read-only reporting endpoints.
 - no hidden side effects;
 - authorization on every protected operation;
 - API documentation updated with changes.
+
+## Error format
+
+Every error response from `/api/v1` uses one JSON envelope:
+
+```json
+{
+  "error": {
+    "code": "validation_failed",
+    "message": "Переданные данные не прошли проверку.",
+    "details": {
+      "name": ["Поле «Название» обязательно для заполнения."]
+    }
+  }
+}
+```
+
+`code` is stable and intended for programmatic handling. `message` is safe for
+display; unexpected exceptions never expose their internal message. `details`
+is always an object and contains validation messages by field only for
+`validation_failed`; it is empty for other error types.
+
+| HTTP status | Error code |
+| --- | --- |
+| 400 | `bad_request` |
+| 401 | `unauthenticated` |
+| 403 | `forbidden` |
+| 404 | `not_found` |
+| 405 | `method_not_allowed` |
+| 409 | `conflict` |
+| 422 | `validation_failed` / `unprocessable_entity` |
+| 429 | `too_many_requests` |
+| 5xx | `internal_server_error` / `http_error` |

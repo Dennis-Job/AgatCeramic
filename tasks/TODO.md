@@ -15,7 +15,7 @@
 - [x] TASK-010 PostgreSQL connection
 - [x] TASK-011 Redis
 - [x] TASK-012 API v1 routing
-- [ ] TASK-013 API error format
+- [x] TASK-013 API error format
 - [ ] TASK-014 API Resources convention
 - [ ] TASK-015 logging and PII masking
 - [ ] TASK-016 queue and scheduler
