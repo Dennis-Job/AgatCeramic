@@ -7,6 +7,17 @@
 ### users
 Администраторы.
 
+TASK-020 adds these `users` fields:
+- `name`;
+- `email` (unique);
+- `password` (one-way hash);
+- `status`: `active` or `blocked`;
+- `last_login_at`;
+- timestamps.
+
+Roles and permissions are introduced in TASK-022 and TASK-023. Administrative HTTP
+endpoints are not exposed until the authentication and authorization tasks are complete.
+
 ### roles
 Роли.
 
@@ -145,4 +156,3 @@ SKU/варианты.
 - entity_id;
 - timestamp;
 - sanitized metadata.
-
