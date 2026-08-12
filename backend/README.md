@@ -28,4 +28,6 @@ Redis is configured as the default cache store. The application API is versioned
 `routes/api/v1/public.php` and `routes/api/v1/admin.php` respectively. The version
 entry point is available at `GET /api/v1`.
 
-Queues and authentication are introduced in their respective tasks.
+Queues and admin authentication are configured with Laravel Sanctum cookie sessions. The
+Admin SPA first requests `GET /sanctum/csrf-cookie` with credentials, then uses the
+`/api/v1/admin/auth/*` routes with the XSRF token and credentials included.

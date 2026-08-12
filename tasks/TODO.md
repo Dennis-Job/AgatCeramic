@@ -24,7 +24,7 @@
 ## Phase 2 — Admin authentication
 
 - [x] TASK-020 Admin users
-- [ ] TASK-021 Authentication
+- [x] TASK-021 Authentication
 - [ ] TASK-022 Roles
 - [ ] TASK-023 Permissions
 - [ ] TASK-024 Policies

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureActiveAdmin;
 use App\Http\Responses\ApiErrorResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -17,7 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->statefulApi();
+        $middleware->throttleApi('api');
+        $middleware->alias([
+            'active_admin' => EnsureActiveAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $isApiV1Request = static fn (Request $request): bool => $request->is('api/v1')

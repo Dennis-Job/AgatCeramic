@@ -12,6 +12,79 @@
     }
   ],
   "paths": {
+    "/admin/auth/login": {
+      "post": {
+        "operationId": "loginAdmin",
+        "summary": "Start an administrator session",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Authenticated; the session cookie is set."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/admin/auth/me": {
+      "get": {
+        "operationId": "getCurrentAdmin",
+        "summary": "Get the current administrator",
+        "security": [{ "sanctumSession": [] }],
+        "responses": {
+          "200": {
+            "description": "Current administrator",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/auth/logout": {
+      "post": {
+        "operationId": "logoutAdmin",
+        "summary": "Invalidate the current administrator session",
+        "security": [{ "sanctumSession": [] }],
+        "responses": {
+          "204": {
+            "description": "Session invalidated."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "operationId": "getApiVersion",
@@ -36,6 +109,41 @@
   },
   "components": {
     "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminUser": {
+        "type": "object",
+        "required": ["id", "name", "email", "status", "last_login_at"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "status": { "type": "string", "enum": ["active", "blocked"] },
+          "last_login_at": { "type": ["string", "null"], "format": "date-time" }
+        },
+        "additionalProperties": false
+      },
+      "AdminUserResponse": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": { "$ref": "#/components/schemas/AdminUser" }
+        },
+        "additionalProperties": false
+      },
       "VersionResponse": {
         "type": "object",
         "required": [
@@ -89,6 +197,30 @@
       }
     },
     "responses": {
+      "Unauthenticated": {
+        "description": "Authentication is required or the supplied credentials are invalid.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The authenticated administrator is blocked or does not have access.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Too many login attempts.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      },
       "BadRequest": {
         "description": "Некорректный запрос.",
         "content": {
@@ -118,6 +250,14 @@
             }
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "sanctumSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "agatceramic-session",
+        "description": "First obtain /sanctum/csrf-cookie with credentials, then send the X-XSRF-TOKEN header for state-changing requests."
       }
     }
   }

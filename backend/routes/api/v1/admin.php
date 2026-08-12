@@ -5,8 +5,8 @@
 | Admin API v1 Routes
 |--------------------------------------------------------------------------
 |
-| Protected administrative endpoints are added by their respective modules.
-| Authentication and authorization middleware are introduced in TASK-021
-| and TASK-024.
+| This file is loaded inside the auth:sanctum and active_admin route group.
+| Authorization policies for individual administrative operations are added
+| in TASK-024.
 |
 */

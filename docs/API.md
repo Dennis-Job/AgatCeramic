@@ -57,6 +57,22 @@
 
 `GET /site-settings/public`
 
+## Admin authentication
+
+The first-party Admin SPA uses Laravel Sanctum's cookie-based session authentication.
+Before any state-changing request, it must request `GET /sanctum/csrf-cookie` with
+credentials included, then send the URL-decoded `XSRF-TOKEN` value in the `X-XSRF-TOKEN`
+header. Browser requests must include credentials.
+
+- `POST /admin/auth/login` — accepts `email` and `password`; limited to five attempts per
+  minute for an email/IP combination. Invalid credentials and blocked accounts both return
+  the standard `401 unauthenticated` response.
+- `GET /admin/auth/me` — returns the authenticated active administrator.
+- `POST /admin/auth/logout` — invalidates the current session and CSRF token.
+
+All other administrative API routes require `auth:sanctum` and an active account. Fine-grained
+authorization is introduced in TASK-024.
+
 ## Административный API
 
 Административный API должен быть защищён аутентификацией и авторизацией.

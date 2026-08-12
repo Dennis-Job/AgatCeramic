@@ -16,7 +16,8 @@ TASK-020 adds these `users` fields:
 - timestamps.
 
 Roles and permissions are introduced in TASK-022 and TASK-023. Administrative HTTP
-endpoints are not exposed until the authentication and authorization tasks are complete.
+endpoints require a valid active administrator session; individual authorization policies
+are added in TASK-024.
 
 ### roles
 Роли.

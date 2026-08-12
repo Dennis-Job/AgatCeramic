@@ -33,6 +33,18 @@ Set-Location ..
 
 Laravel использует PostgreSQL как базу данных по умолчанию. В Docker Compose параметры `DB_*` формируются из PostgreSQL credentials корневого `.env`, а `DB_HOST` равен `postgres`. При запуске Laravel вне Docker укажите доступ к PostgreSQL в `backend/.env`.
 
+The Docker backend starts Laravel's development server with `--no-reload` so all Compose
+environment variables, including the PostgreSQL connection settings, are inherited by the
+server process. Restart the backend service after changing its environment values.
+
+## Admin SPA authentication
+
+`SANCTUM_STATEFUL_DOMAINS` is the explicit comma-separated allowlist of first-party SPA
+origins, including their ports. `CORS_ALLOWED_ORIGINS` is the matching comma-separated CORS
+allowlist. Both must be set to the deployed Admin SPA origin in each environment; wildcard
+origins are not compatible with credentialed cookie requests. For HTTPS deployments set
+`SESSION_SECURE_COOKIE=true`.
+
 Тесты Laravel изолированно работают с SQLite `:memory:`, а CI дополнительно прогоняет миграции на PostgreSQL 17.
 
 Подключение Redis реализуется в TASK-011.
