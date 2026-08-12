@@ -1,6 +1,7 @@
 # Development environment
 
-Docker Compose starts the local Laravel API, Vue Admin, Nuxt Client, PostgreSQL, and Redis.
+Docker Compose starts the local Laravel API, queue worker, scheduler, Vue Admin,
+Nuxt Client, PostgreSQL, and Redis.
 
 ## Requirements
 
@@ -23,6 +24,9 @@ Available services:
 | Nuxt Client | `http://localhost:3000` |
 | PostgreSQL | `localhost:5432` |
 | Redis | `localhost:6379` |
+
+The `queue` and `scheduler` services are background Laravel processes. Their
+operation is documented in [`docs/QUEUE.md`](../docs/QUEUE.md).
 
 Stop containers with `docker compose down`. Add `--volumes` only when local database and cache data may be discarded.
 

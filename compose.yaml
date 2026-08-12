@@ -20,7 +20,7 @@ services:
       DB_USERNAME: ${POSTGRES_USER:?Copy .env.example to .env and set POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
       CACHE_STORE: redis
-      QUEUE_CONNECTION: database
+      QUEUE_CONNECTION: redis
       REDIS_CLIENT: phpredis
       REDIS_HOST: redis
       REDIS_PORT: "6379"
@@ -29,6 +29,72 @@ services:
       - backend_vendor:/var/www/backend/vendor
     ports:
       - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  queue:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend/Dockerfile
+    working_dir: /var/www/backend
+    command: >-
+      sh -c "test -f vendor/autoload.php || composer install --no-interaction;
+      php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:?Copy .env.example to .env and set POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER:?Copy .env.example to .env and set POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ./backend:/var/www/backend
+      - backend_vendor:/var/www/backend/vendor
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend/Dockerfile
+    working_dir: /var/www/backend
+    command: >-
+      sh -c "test -f vendor/autoload.php || composer install --no-interaction;
+      php artisan schedule:work"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:?Copy .env.example to .env and set POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER:?Copy .env.example to .env and set POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ./backend:/var/www/backend
+      - backend_vendor:/var/www/backend/vendor
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy

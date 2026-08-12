@@ -13,4 +13,11 @@ class RedisConfigurationTest extends TestCase
         $this->assertSame('1', config('database.redis.cache.database'));
         $this->assertSame('cache', config('cache.stores.redis.connection'));
     }
+
+    public function test_redis_is_the_default_queue_with_a_dedicated_database(): void
+    {
+        $this->assertSame('queue', config('queue.connections.redis.connection'));
+        $this->assertSame('2', config('database.redis.queue.database'));
+        $this->assertTrue(config('queue.connections.redis.after_commit'));
+    }
 }

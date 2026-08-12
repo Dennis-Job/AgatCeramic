@@ -93,12 +93,15 @@ jobs:
       - name: Verify Redis cache connection
         env:
           CACHE_STORE: redis
+          QUEUE_CONNECTION: redis
           REDIS_CLIENT: phpredis
           REDIS_HOST: 127.0.0.1
           REDIS_PORT: 6379
         run: >-
           php artisan tinker --execute="cache()->put('ci:redis:healthcheck', 'ok', 60);
-          throw_unless(cache()->get('ci:redis:healthcheck') === 'ok');"
+          throw_unless(cache()->get('ci:redis:healthcheck') === 'ok');
+          throw_unless(config('queue.default') === 'redis');
+          throw_unless(app('queue')->connection()->size() >= 0);"
 
       - name: Run tests
         run: composer test

@@ -18,7 +18,7 @@
 - [x] TASK-013 API error format
 - [x] TASK-014 API Resources convention
 - [x] TASK-015 logging and PII masking
-- [ ] TASK-016 queue and scheduler
+- [x] TASK-016 queue and scheduler
 - [ ] TASK-017 OpenAPI documentation
 
 ## Phase 2 — Admin authentication

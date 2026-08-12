@@ -16,9 +16,10 @@ Redis is the default cache store (`CACHE_STORE=redis`). Database `0` is the
 default Redis connection and database `1` is reserved for cache; override them
 using `REDIS_DB` and `REDIS_CACHE_DB` when needed.
 
-Queue processing remains on the database driver (`QUEUE_CONNECTION=database`)
-until TASK-016. Redis queue settings are present only for the forthcoming queue
-configuration and are not active by default.
+Queue processing uses Redis (`QUEUE_CONNECTION=redis`). The queue connection is
+isolated in Redis database `2` (`REDIS_QUEUE_DB`), separate from the default
+connection and cache. See [`QUEUE.md`](QUEUE.md) for worker, retry, failure, and
+scheduler operation.
 
 Do not put production Redis credentials into `.env.example`, Compose files, or
 project documentation.
