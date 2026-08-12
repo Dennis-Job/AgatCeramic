@@ -16,7 +16,7 @@
 - [x] TASK-011 Redis
 - [x] TASK-012 API v1 routing
 - [x] TASK-013 API error format
-- [ ] TASK-014 API Resources convention
+- [x] TASK-014 API Resources convention
 - [ ] TASK-015 logging and PII masking
 - [ ] TASK-016 queue and scheduler
 - [ ] TASK-017 OpenAPI documentation

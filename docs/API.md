@@ -146,3 +146,29 @@ is always an object and contains validation messages by field only for
 | 422 | `validation_failed` / `unprocessable_entity` |
 | 429 | `too_many_requests` |
 | 5xx | `internal_server_error` / `http_error` |
+
+## API Resources convention
+
+Every domain response returned from the API must use a Laravel API Resource.
+Resources extend `App\\Http\\Resources\\ApiResource`, are named
+`{Entity}Resource`, and live in the relevant domain namespace under
+`app/Http/Resources` (for example,
+`App\\Http\\Resources\\Catalog\\ProductResource`). Controllers must not return
+Eloquent models directly.
+
+A single resource response has the stable envelope:
+
+```json
+{
+  "data": {
+    "id": 17,
+    "name": "Керамическая плитка"
+  }
+}
+```
+
+Lists use `{Entity}Resource::collection($items)` and return `data` as an
+array. When the input is a paginator, Laravel's standard `links` and `meta`
+objects are retained. Resource fields are explicit allowlists: never expose
+model attributes by serializing a model directly or by returning
+`$this->resource`.
