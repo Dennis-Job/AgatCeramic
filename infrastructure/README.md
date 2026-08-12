@@ -10,6 +10,7 @@ Docker Compose starts the local Laravel API, Vue Admin, Nuxt Client, PostgreSQL,
 ## Start
 
 ```powershell
+Copy-Item .env.example .env
 docker compose up --build
 ```
 
@@ -25,4 +26,4 @@ Available services:
 
 Stop containers with `docker compose down`. Add `--volumes` only when local database and cache data may be discarded.
 
-The Compose defaults are development-only and do not contain production credentials. Environment-variable templates and secret-management rules are handled in TASK-006. Laravel's use of PostgreSQL and Redis is configured in TASK-010 and TASK-011 respectively.
+The Compose configuration does not contain database credentials: copy the root `.env.example` to `.env` before starting. See [`docs/ENVIRONMENT.md`](../docs/ENVIRONMENT.md) for the complete local setup and secret-management rules. Laravel's use of PostgreSQL and Redis is configured in TASK-010 and TASK-011 respectively.

@@ -16,9 +16,9 @@ services:
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_DATABASE: ${POSTGRES_DB:-agatceramic}
-      DB_USERNAME: ${POSTGRES_USER:-agatceramic}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-local-development-password}
+      DB_DATABASE: ${POSTGRES_DB:?Copy .env.example to .env and set POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER:?Copy .env.example to .env and set POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
       CACHE_STORE: database
       QUEUE_CONNECTION: database
     volumes:
@@ -61,9 +61,9 @@ services:
   postgres:
     image: postgres:17.9-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-agatceramic}
-      POSTGRES_USER: ${POSTGRES_USER:-agatceramic}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-password}
+      POSTGRES_DB: ${POSTGRES_DB:?Copy .env.example to .env and set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?Copy .env.example to .env and set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
