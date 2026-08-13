@@ -58,7 +58,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto max-w-[1440px]">
+  <section class="mx-auto admin-page">
     <div class="mb-7">
       <p class="text-sm font-medium text-gray-500">Безопасность</p>
       <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Журнал аудита</h1>
@@ -68,7 +68,7 @@ onMounted(load)
     <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
 
     <div class="rounded-xl border border-gray-200 bg-white shadow-card">
-      <div class="grid gap-3 border-b border-gray-100 p-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_170px_170px_auto_auto]">
+      <div class="grid gap-3 border-b border-gray-100 p-4 md:grid-cols-2 admin-audit-log-filter-grid">
         <BaseInput v-model="filters.search" searchable placeholder="Действие или сотрудник" aria-label="Поиск в журнале" @keyup.enter="() => load()" />
         <BaseSelect v-model="filters.action" :options="actionOptions" accessible-name="Тип действия" @change="() => load()" />
         <BaseInput v-model="filters.date_from" type="date" aria-label="Дата с" />
@@ -78,7 +78,7 @@ onMounted(load)
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[850px] text-left text-sm">
+        <table class="w-full admin-table-audit-log text-left text-sm">
           <thead class="bg-gray-25 text-xs font-medium text-gray-500"><tr><th class="px-6 py-3">Действие</th><th class="px-6 py-3">Сотрудник</th><th class="px-6 py-3">Объект</th><th class="px-6 py-3">Время</th><th class="px-6 py-3">Детали</th></tr></thead>
           <tbody>
             <tr v-if="loading"><td colspan="5" class="px-6 py-8 text-gray-500">Загрузка…</td></tr>

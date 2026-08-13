@@ -31,7 +31,7 @@ const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-30 bg-gray-900/40 lg:hidden" @click="$emit('close')" />
   <aside
-    class="fixed inset-y-0 left-0 z-40 flex w-[290px] -translate-x-full flex-col border-r border-gray-200 bg-white px-4 py-6 transition-transform duration-200 lg:translate-x-0"
+    class="fixed inset-y-0 left-0 z-40 flex admin-sidebar -translate-x-full flex-col border-r border-gray-200 bg-white px-4 py-6 transition-transform duration-200 lg:translate-x-0"
     :class="{ 'translate-x-0': isOpen }"
   >
     <div class="mb-9 flex items-center justify-between px-2">
@@ -56,7 +56,7 @@ const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item
     </nav>
 
     <template v-if="visibleEmployeeNavigation.length">
-      <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">Управление сотрудниками</p>
+      <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400">Управление сотрудниками</p>
       <nav class="space-y-1">
         <RouterLink
           v-for="item in visibleEmployeeNavigation"
@@ -71,7 +71,7 @@ const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item
       </nav>
     </template>
 
-    <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">Управление сайтом</p>
+    <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400">Управление сайтом</p>
     <nav class="space-y-1">
       <RouterLink
         v-for="item in siteManagementNavigation"

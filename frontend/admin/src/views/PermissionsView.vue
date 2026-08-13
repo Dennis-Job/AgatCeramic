@@ -57,7 +57,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto max-w-[1440px]">
+  <section class="mx-auto admin-page">
     <div class="mb-7">
       <p class="text-sm font-medium text-gray-500">Управление доступом</p>
       <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Права</h1>
@@ -67,7 +67,7 @@ onMounted(load)
     <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
 
     <div class="rounded-xl border border-gray-200 bg-white shadow-card">
-      <div class="grid gap-3 border-b border-gray-100 p-4 sm:grid-cols-[minmax(0,1fr)_240px]">
+      <div class="grid gap-3 border-b border-gray-100 p-4 admin-permissions-filter-grid">
         <BaseInput v-model="search" class="min-w-0" searchable placeholder="Поиск по названию или коду" aria-label="Поиск прав" />
         <BaseSelect v-model="selectedModule" :options="moduleOptions" accessible-name="Модуль прав" />
       </div>

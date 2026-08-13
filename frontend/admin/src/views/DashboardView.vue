@@ -14,7 +14,7 @@ const orders = [
 </script>
 
 <template>
-  <section class="mx-auto max-w-[1440px]">
+  <section class="mx-auto admin-page">
     <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-sm font-medium text-gray-500">Добро пожаловать</p>
@@ -34,7 +34,7 @@ const orders = [
       </article>
     </div>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-[1.65fr_1fr]">
+    <div class="mt-6 grid gap-6 dashboard-sales-grid">
       <article class="rounded-xl border border-gray-200 bg-white p-5 shadow-card sm:p-6">
         <div class="flex items-start justify-between">
           <div><h2 class="text-base font-semibold text-gray-700">Динамика продаж</h2><p class="mt-1 text-sm text-gray-400">За последние 30 дней</p></div>
@@ -58,7 +58,7 @@ const orders = [
 
     <article class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
       <div class="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-6"><div><h2 class="text-base font-semibold text-gray-700">Последние заказы</h2><p class="mt-1 text-sm text-gray-400">Новые заказы из интернет-магазина</p></div><button class="text-sm font-semibold text-primary-600">Все заказы</button></div>
-      <div class="overflow-x-auto"><table class="w-full min-w-[620px] text-left text-sm"><thead class="bg-gray-25 text-xs font-medium text-gray-500"><tr><th class="px-6 py-3">Номер</th><th class="px-6 py-3">Клиент</th><th class="px-6 py-3">Сумма</th><th class="px-6 py-3">Статус</th></tr></thead><tbody><tr v-for="order in orders" :key="order.number" class="border-t border-gray-100 text-gray-600"><td class="px-6 py-4 font-medium">{{ order.number }}</td><td class="px-6 py-4">{{ order.customer }}</td><td class="px-6 py-4">{{ order.total }}</td><td class="px-6 py-4"><span class="rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-500">{{ order.status }}</span></td></tr></tbody></table></div>
+      <div class="overflow-x-auto"><table class="w-full admin-table-orders text-left text-sm"><thead class="bg-gray-25 text-xs font-medium text-gray-500"><tr><th class="px-6 py-3">Номер</th><th class="px-6 py-3">Клиент</th><th class="px-6 py-3">Сумма</th><th class="px-6 py-3">Статус</th></tr></thead><tbody><tr v-for="order in orders" :key="order.number" class="border-t border-gray-100 text-gray-600"><td class="px-6 py-4 font-medium">{{ order.number }}</td><td class="px-6 py-4">{{ order.customer }}</td><td class="px-6 py-4">{{ order.total }}</td><td class="px-6 py-4"><span class="rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-500">{{ order.status }}</span></td></tr></tbody></table></div>
     </article>
   </section>
 </template>

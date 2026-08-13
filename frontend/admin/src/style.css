@@ -136,6 +136,74 @@ select:disabled {
   cursor: not-allowed;
 }
 
+.admin-page {
+  max-width: 1440px;
+}
+
+.admin-sidebar {
+  width: 290px;
+}
+
+.admin-nav-heading {
+  letter-spacing: 0.08em;
+}
+
+.admin-header {
+  height: 76px;
+}
+
+.admin-dialog-content {
+  max-height: 90vh;
+}
+
+.dashboard-sales-grid {
+  grid-template-columns: 1fr;
+}
+
+.admin-table-orders {
+  min-width: 620px;
+}
+
+.admin-table-employees {
+  min-width: 780px;
+}
+
+.admin-table-audit-log {
+  min-width: 850px;
+}
+
+@media (min-width: 640px) {
+  .admin-permissions-filter-grid {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+
+  .admin-employees-filter-grid {
+    grid-template-columns: minmax(0, 1fr) 180px auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-header-search {
+    max-width: 360px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-layout-main {
+    padding-left: 290px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-sales-grid {
+    grid-template-columns: 1.65fr 1fr;
+  }
+
+  .admin-audit-log-filter-grid {
+    grid-template-columns: minmax(0, 1fr) 220px 170px 170px auto auto;
+  }
+}
+
 /* Shared treatment for compact status and role badges. */
 [class*='rounded-full'][class*='text-xs'] {
   display: inline-flex;
