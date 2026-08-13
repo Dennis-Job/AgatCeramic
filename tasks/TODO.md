@@ -34,6 +34,12 @@
 - [x] TASK-028 Permission catalogue API and page
 - [x] TASK-029 Audit log API and page
 
+## Phase 2.1 — Access control hardening
+
+- [ ] TASK-029A Admin password reset API and page
+- [ ] TASK-029B Audit entity snapshots and retention policy
+- [ ] TASK-029C Database-level audit log immutability
+
 ## Phase 3 — Catalog
 
 - [ ] TASK-030 Categories
