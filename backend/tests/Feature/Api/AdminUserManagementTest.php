@@ -73,6 +73,45 @@ class AdminUserManagementTest extends TestCase
         $this->actingAs($actor)->deleteJson("/api/v1/admin/users/{$actor->id}")->assertUnprocessable();
     }
 
+    public function test_changing_an_employee_password_revokes_their_sessions(): void
+    {
+        $actor = $this->superAdmin();
+        $employee = User::factory()->create();
+        $this->app['db']->table('sessions')->insert([
+            'id' => 'employee-session',
+            'user_id' => $employee->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'PHPUnit',
+            'payload' => 'payload',
+            'last_activity' => now()->timestamp,
+        ]);
+
+        $this->actingAs($actor)
+            ->withoutMiddleware(ValidateCsrfToken::class)
+            ->patchJson("/api/v1/admin/users/{$employee->id}", [
+                'password' => 'new-secure-password',
+                'password_confirmation' => 'new-secure-password',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('sessions', ['id' => 'employee-session']);
+    }
+
+    public function test_administrator_is_logged_out_after_changing_their_own_password(): void
+    {
+        $actor = $this->superAdmin();
+
+        $this->actingAs($actor)
+            ->withoutMiddleware(ValidateCsrfToken::class)
+            ->patchJson("/api/v1/admin/users/{$actor->id}", [
+                'password' => 'new-secure-password',
+                'password_confirmation' => 'new-secure-password',
+            ])
+            ->assertOk();
+
+        $this->assertGuest('web');
+    }
+
     private function superAdmin(): User
     {
         return $this->userWithRole('super-admin');

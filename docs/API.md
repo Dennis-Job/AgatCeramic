@@ -69,6 +69,21 @@ header. Browser requests must include credentials.
   the standard `401 unauthenticated` response.
 - `GET /admin/auth/me` — returns the authenticated active administrator.
 - `POST /admin/auth/logout` — invalidates the current session and CSRF token.
+- `POST /admin/auth/forgot-password` — accepts an administrator email and always returns `204` to
+  prevent account enumeration. Active accounts receive a single-use password-reset link by email.
+- `POST /admin/auth/reset-password` — accepts `email`, `token`, `password`, and
+  `password_confirmation`; the password must be at least 12 characters. A successful reset revokes
+  all current sessions and rotates the remember token.
+
+Password-reset endpoints are limited to five attempts per minute for an email/IP combination. Links
+expire after 60 minutes, are sent only to active accounts, and point to
+`{ADMIN_APP_URL}/reset-password`. Set `ADMIN_APP_URL` to the deployed Admin SPA origin.
+Only completed password changes are written to the audit trail; reset-link requests are not logged
+to avoid exposing account existence to audit-log readers.
+
+Changing an employee password through `PATCH /admin/users/{user}` also revokes that employee's
+sessions. If an administrator changes their own password, their current Admin SPA session is ended
+and the interface redirects them to the login page.
 
 All other administrative API routes require `auth:sanctum` and an active account. Fine-grained
 authorization is enforced through Laravel policies introduced in TASK-024.

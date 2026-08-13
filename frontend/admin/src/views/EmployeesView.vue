@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Pencil, Plus, Trash2, X } from '@lucide/vue'
+import { useRouter } from 'vue-router'
 import BaseSelect from '../components/BaseSelect.vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import { deleteEmployee, getEmployees, getRoles, roleDisplayName, saveEmployee, type Employee, type EmployeePayload, type Role } from '../services/employees'
+import { useAuthStore } from '../stores/auth'
 
+const router = useRouter()
+const auth = useAuthStore()
 const employees = ref<Employee[]>([])
 const roles = ref<Role[]>([])
 const search = ref('')
@@ -39,7 +43,17 @@ async function load(): Promise<void> {
 
 async function submit(): Promise<void> {
   error.value = ''
-  try { await saveEmployee(editing.value?.id ?? null, form.value); isFormOpen.value = false; await load() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить сотрудника.' }
+  const changedOwnPassword = Boolean(form.value.password) && editing.value?.id === auth.user?.id
+  try {
+    await saveEmployee(editing.value?.id ?? null, form.value)
+    if (changedOwnPassword) {
+      await auth.logout()
+      await router.replace({ name: 'login', query: { password_changed: '1' } })
+      return
+    }
+    isFormOpen.value = false
+    await load()
+  } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить сотрудника.' }
 }
 
 async function remove(employee: Employee): Promise<void> {

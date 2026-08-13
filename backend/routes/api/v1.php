@@ -18,6 +18,12 @@ Route::prefix('admin')
                 Route::post('login', [AuthController::class, 'login'])
                     ->middleware('throttle:login')
                     ->name('login');
+                Route::post('forgot-password', [AuthController::class, 'forgotPassword'])
+                    ->middleware('throttle:password-reset')
+                    ->name('forgot-password');
+                Route::post('reset-password', [AuthController::class, 'resetPassword'])
+                    ->middleware('throttle:password-reset')
+                    ->name('reset-password');
             });
 
         Route::middleware(['auth:sanctum', 'active_admin'])

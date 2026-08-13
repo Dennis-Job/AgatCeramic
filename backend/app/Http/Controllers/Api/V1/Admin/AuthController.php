@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\ForgotPasswordRequest;
 use App\Http\Requests\Api\V1\Admin\LoginRequest;
+use App\Http\Requests\Api\V1\Admin\ResetPasswordRequest;
 use App\Http\Resources\AdminUserResource;
 use App\Services\AdminAuthenticationService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +19,20 @@ class AuthController extends Controller
     public function login(LoginRequest $request): Response
     {
         $this->authenticationService->login($request);
+
+        return response()->noContent();
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request): Response
+    {
+        $this->authenticationService->sendPasswordResetLink($request);
+
+        return response()->noContent();
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): Response
+    {
+        $this->authenticationService->resetPassword($request);
 
         return response()->noContent();
     }

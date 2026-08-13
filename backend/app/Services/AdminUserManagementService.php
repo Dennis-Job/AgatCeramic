@@ -36,8 +36,13 @@ class AdminUserManagementService
         $this->ensureActiveSuperAdminRemains($user, $attributes);
 
         return DB::transaction(function () use ($actor, $user, $attributes): User {
+            $passwordChanged = array_key_exists('password', $attributes);
             $roleIds = Arr::pull($attributes, 'role_ids');
             $user->fill($attributes)->save();
+
+            if ($passwordChanged) {
+                DB::table('sessions')->where('user_id', $user->getKey())->delete();
+            }
 
             if ($roleIds !== null) {
                 $user->roles()->sync($roleIds);

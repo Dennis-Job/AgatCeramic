@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\AdminUserManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -62,7 +63,18 @@ class AdminUserController extends Controller
     {
         Gate::authorize('update', $user);
 
-        return new AdminUserResource($this->managementService->update($request->user(), $user, $request->validated()));
+        $attributes = $request->validated();
+        $updatedUser = $this->managementService->update($request->user(), $user, $attributes);
+
+        if (array_key_exists('password', $attributes) && $request->user()->is($user)) {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        }
+
+        return new AdminUserResource($updatedUser);
     }
 
     public function destroy(User $user): Response

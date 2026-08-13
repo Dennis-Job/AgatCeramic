@@ -27,6 +27,7 @@
 | TASK-027 | Roles and permission assignments API and page | 2026-08-13 | Реализованы CRUD API пользовательских ролей, редактор ролей и назначений прав в Admin SPA, аудит изменений и признак системной роли. Системные роли нельзя удалить или переименовать; оператор может назначать только permissions, которыми уже обладает. | `RoleManagementTest` — 3 passed (9 assertions); `OpenApiDocumentationTest`; `vendor/bin/pint --test`; `composer validate --strict`; OpenAPI JSON validation; `npm.cmd run build --prefix frontend/admin` |
 | TASK-028 | Permission catalogue API and page | 2026-08-13 | Добавлен read-only каталог прав с названиями, техническими кодами, описаниями и назначенными ролями; в Admin SPA доступна страница поиска и фильтрации по модулю. | `PermissionCatalogueTest`; полный `php artisan test`; Pint; Composer; OpenAPI JSON; сборка Admin |
 | TASK-029 | Audit log API and page | 2026-08-13 | Добавлен read-only API журнала аудита с пагинацией и фильтрами, а также страница Admin для поиска и просмотра безопасных деталей событий. | `AuditLogApiTest`; полный `php artisan test`; Pint; Composer; OpenAPI JSON; сборка Admin |
+| TASK-029A | Admin password reset API and page | 2026-08-13 | Безопасный сброс пароля администратора: одноразовый токен с ограниченным сроком, ответ без раскрытия существования учётной записи, отзыв сессий, аудит успешного сброса и страницы Admin SPA. | `php artisan test` (55 passed); Pint; Composer; OpenAPI JSON; `npm.cmd run build --prefix frontend/admin` |
 
 После завершения каждой задачи добавлять:
 - ID;

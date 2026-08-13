@@ -10,6 +10,7 @@ use App\Policies\AuditLogPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -42,6 +43,19 @@ class AppServiceProvider extends ServiceProvider
             $identity = strtolower($request->input('email', '')).'|'.$request->ip();
 
             return Limit::perMinute(5)->by(hash('sha256', $identity));
+        });
+
+        RateLimiter::for('password-reset', static function (Request $request): Limit {
+            $identity = strtolower($request->input('email', '')).'|'.$request->ip();
+
+            return Limit::perMinute(5)->by(hash('sha256', $identity));
+        });
+
+        ResetPassword::createUrlUsing(static function (User $user, string $token): string {
+            return rtrim((string) config('admin.url'), '/').'/reset-password?'.http_build_query([
+                'token' => $token,
+                'email' => $user->getEmailForPasswordReset(),
+            ]);
         });
     }
 }

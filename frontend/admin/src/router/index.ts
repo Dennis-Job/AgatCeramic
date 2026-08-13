@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import DashboardView from '../views/DashboardView.vue'
 import LoginView from '../views/LoginView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import ResetPasswordView from '../views/ResetPasswordView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 import EmployeesView from '../views/EmployeesView.vue'
 import RolesView from '../views/RolesView.vue'
@@ -12,6 +14,8 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true } },
+    { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true } },
     { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true, requiredPermission: 'admin-users.view' } },
     { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view' } },

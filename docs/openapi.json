@@ -42,6 +42,23 @@
         }
       }
     },
+    "/admin/auth/forgot-password": {
+      "post": {
+        "operationId": "requestAdminPasswordReset",
+        "summary": "Request an administrator password-reset email",
+        "description": "Always returns 204 for a syntactically valid email to avoid account enumeration. Only active accounts receive a link.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ForgotPasswordRequest" } } } },
+        "responses": { "204": { "description": "The request was accepted." }, "422": { "$ref": "#/components/responses/ValidationFailed" }, "429": { "$ref": "#/components/responses/TooManyRequests" } }
+      }
+    },
+    "/admin/auth/reset-password": {
+      "post": {
+        "operationId": "resetAdminPassword",
+        "summary": "Reset an administrator password using an emailed token",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ResetPasswordRequest" } } } },
+        "responses": { "204": { "description": "Password reset and existing sessions revoked." }, "422": { "$ref": "#/components/responses/ValidationFailed" }, "429": { "$ref": "#/components/responses/TooManyRequests" } }
+      }
+    },
     "/admin/auth/me": {
       "get": {
         "operationId": "getCurrentAdmin",
@@ -202,6 +219,18 @@
             "format": "password"
           }
         },
+        "additionalProperties": false
+      },
+      "ForgotPasswordRequest": {
+        "type": "object",
+        "required": ["email"],
+        "properties": { "email": { "type": "string", "format": "email" } },
+        "additionalProperties": false
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": ["email", "token", "password", "password_confirmation"],
+        "properties": { "email": { "type": "string", "format": "email" }, "token": { "type": "string" }, "password": { "type": "string", "format": "password", "minLength": 12 }, "password_confirmation": { "type": "string", "format": "password", "minLength": 12 } },
         "additionalProperties": false
       },
       "AdminUser": {

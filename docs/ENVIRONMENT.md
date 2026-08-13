@@ -45,6 +45,10 @@ allowlist. Both must be set to the deployed Admin SPA origin in each environment
 origins are not compatible with credentialed cookie requests. For HTTPS deployments set
 `SESSION_SECURE_COOKIE=true`.
 
+`ADMIN_APP_URL` is the absolute Admin SPA origin used in password-reset emails. It must be the
+deployed HTTPS Admin SPA URL in non-local environments; links target `/reset-password` on that
+origin and must never point at the Laravel API host.
+
 ## Initial Super Admin
 
 The first staff account is created only from the backend CLI, never through a public route:

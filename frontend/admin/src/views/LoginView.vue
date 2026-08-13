@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import BaseInput from '../components/BaseInput.vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const email = ref('')
 const password = ref('')
 const error = ref('')
@@ -34,6 +35,7 @@ async function submit(): Promise<void> {
       <p class="mt-2 text-sm text-[#667085]">Используйте учётную запись сотрудника.</p>
 
       <p v-if="error" class="mt-5 rounded-lg bg-[#fef3f2] px-3 py-2 text-sm text-[#b42318]" role="alert">{{ error }}</p>
+      <p v-if="route.query.password_reset === '1' || route.query.password_changed === '1'" class="mt-5 rounded-lg bg-[#ecfdf3] px-3 py-2 text-sm text-[#027a48]" role="status">Пароль изменён. Теперь войдите с новым паролем.</p>
 
       <label class="mt-6 block text-sm font-medium text-[#344054]">
         Email
@@ -43,6 +45,7 @@ async function submit(): Promise<void> {
         Пароль
         <BaseInput v-model="password" class="mt-1.5 w-full" type="password" autocomplete="current-password" required />
       </label>
+      <RouterLink class="mt-3 inline-block text-sm font-semibold text-[#6941c6] hover:text-[#53389e]" :to="{ name: 'forgot-password' }">Забыли пароль?</RouterLink>
       <button class="mt-6 w-full rounded-lg bg-[#7f56d9] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="isSubmitting">
         {{ isSubmitting ? 'Выполняется вход…' : 'Войти' }}
       </button>

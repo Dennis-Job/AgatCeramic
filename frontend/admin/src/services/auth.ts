@@ -13,7 +13,14 @@ export type AdminUser = {
 type ApiError = {
   error?: {
     message?: string
+    details?: Record<string, string[]>
   }
+}
+
+async function throwApiError(response: Response, fallback: string): Promise<never> {
+  const body = (await response.json().catch(() => ({}))) as ApiError
+  const firstDetail = body.error?.details ? Object.values(body.error.details).flat()[0] : undefined
+  throw new Error(firstDetail ?? body.error?.message ?? fallback)
 }
 
 export async function requestCsrfCookie(): Promise<void> {
@@ -73,4 +80,26 @@ export async function login(email: string, password: string): Promise<void> {
 export async function logout(): Promise<void> {
   await requestCsrfCookie()
   await apiFetch('/admin/auth/logout', { method: 'POST' })
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await requestCsrfCookie()
+  const response = await apiFetch('/admin/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+
+  if (!response.ok) return throwApiError(response, 'Не удалось отправить ссылку для сброса пароля.')
+}
+
+export async function resetPassword(payload: { email: string; token: string; password: string; password_confirmation: string }): Promise<void> {
+  await requestCsrfCookie()
+  const response = await apiFetch('/admin/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) return throwApiError(response, 'Не удалось сбросить пароль.')
 }
