@@ -14,19 +14,19 @@ import ProfileView from '../views/ProfileView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
-    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true } },
-    { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true } },
-    { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
-    { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
-    { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true, requiredPermission: 'admin-users.view' } },
-    { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view' } },
-    { path: '/permissions', name: 'permissions', component: PermissionsView, meta: { requiresAuth: true, requiredPermission: 'permissions.view' } },
-    { path: '/audit-log', name: 'audit-log', component: AuditLogView, meta: { requiresAuth: true, requiredPermission: 'audit-log.view' } },
-    { path: '/products', name: 'products', component: PlaceholderView, props: { title: 'Каталог' }, meta: { requiresAuth: true } },
-    { path: '/orders', name: 'orders', component: PlaceholderView, props: { title: 'Заказы' }, meta: { requiresAuth: true } },
-    { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true } },
-    { path: '/settings', name: 'settings', component: PlaceholderView, props: { title: 'Настройки' }, meta: { requiresAuth: true } },
+    { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, title: 'Вход' } },
+    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true, title: 'Восстановление пароля' } },
+    { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true, title: 'Сброс пароля' } },
+    { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true, title: 'Главная' } },
+    { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true, title: 'Мой профиль' } },
+    { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true, requiredPermission: 'admin-users.view', title: 'Сотрудники' } },
+    { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view', title: 'Роли' } },
+    { path: '/permissions', name: 'permissions', component: PermissionsView, meta: { requiresAuth: true, requiredPermission: 'permissions.view', title: 'Права доступа' } },
+    { path: '/audit-log', name: 'audit-log', component: AuditLogView, meta: { requiresAuth: true, requiredPermission: 'audit-log.view', title: 'Журнал аудита' } },
+    { path: '/products', name: 'products', component: PlaceholderView, props: { title: 'Каталог' }, meta: { requiresAuth: true, title: 'Каталог' } },
+    { path: '/orders', name: 'orders', component: PlaceholderView, props: { title: 'Заказы' }, meta: { requiresAuth: true, title: 'Заказы' } },
+    { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true, title: 'Контент' } },
+    { path: '/settings', name: 'settings', component: PlaceholderView, props: { title: 'Настройки' }, meta: { requiresAuth: true, title: 'Настройки' } },
   ],
 })
 
@@ -38,6 +38,11 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.user) return { name: 'login' }
   if (to.meta.guestOnly && auth.user) return { name: 'dashboard' }
   if (to.meta.requiredPermission && !auth.hasPermission(to.meta.requiredPermission as string)) return { name: 'dashboard' }
+})
+
+router.afterEach((to) => {
+  const pageTitle = to.meta.title as string | undefined
+  document.title = pageTitle ? `${pageTitle} — AgatCeramic` : 'AgatCeramic'
 })
 
 export default router

@@ -1,7 +1,116 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/nunito-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/nunito-500.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./assets/fonts/nunito-600.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/nunito-700.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-500.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-600.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./assets/fonts/poppins-700.ttf') format('truetype');
+}
+
 @theme {
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  --font-poppins: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand palette */
+  --color-primary-25: #fcfbff;
+  --color-primary-50: #f4f3ff;
+  --color-primary-75: #f4ebff;
+  --color-primary-100: #d9d6fe;
+  --color-primary-200: #bdb4fe;
+  --color-primary-500: #7f56d9;
+  --color-primary-600: #6941c6;
+  --color-primary-700: #53389e;
+
+  /* Neutral palette */
+  --color-white: #ffffff;
+  --color-page: #f7f9fc;
+  --color-gray-25: #f9fafb;
+  --color-gray-50: #f2f4f7;
+  --color-gray-100: #eaecf0;
+  --color-gray-200: #e4e7ec;
+  --color-gray-300: #d0d5dd;
+  --color-gray-400: #98a2b3;
+  --color-gray-500: #667085;
+  --color-gray-600: #475467;
+  --color-gray-700: #344054;
+  --color-gray-800: #1d2939;
+  --color-gray-900: #101828;
+
+  /* Status palette */
+  --color-success-50: #ecfdf3;
+  --color-success-75: #eafaf1;
+  --color-success-500: #12b76a;
+  --color-success-700: #027a48;
+  --color-warning-50: #fff6ed;
+  --color-warning-500: #f79009;
+  --color-info-50: #eff8ff;
+  --color-info-500: #2e90fa;
+  --color-error-50: #fef3f2;
+  --color-error-200: #fecdca;
+  --color-error-500: #b42318;
+  --color-error-700: #912018;
+
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-input: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-dialog: 0 8px 24px rgb(16 24 40 / 0.08);
+  --shadow-dropdown: 0 12px 20px rgb(16 24 40 / 0.12);
 }
 
 html {

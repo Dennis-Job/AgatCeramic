@@ -45,27 +45,27 @@ async function submit(): Promise<void> {
 <template>
   <section class="mx-auto max-w-2xl">
     <div class="mb-7">
-      <p class="text-sm font-medium text-[#667085]">Учётная запись</p>
-      <h1 class="mt-1 text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">Мой профиль</h1>
-      <p class="mt-2 text-sm text-[#667085]">Изменяйте только свои имя, email и пароль.</p>
+      <p class="text-sm font-medium text-gray-500">Учётная запись</p>
+      <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Мой профиль</h1>
+      <p class="mt-2 text-sm text-gray-500">Изменяйте только свои имя, email и пароль.</p>
     </div>
 
-    <form class="rounded-xl border border-[#e4e7ec] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,.04)] sm:p-6" @submit.prevent="submit">
-      <p v-if="error" class="mb-5 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-4 py-3 text-sm text-[#b42318]" role="alert">{{ error }}</p>
-      <p v-if="success" class="mb-5 rounded-lg bg-[#ecfdf3] px-4 py-3 text-sm text-[#027a48]" role="status">{{ success }}</p>
+    <form class="rounded-xl border border-gray-200 bg-white p-5 shadow-card sm:p-6" @submit.prevent="submit">
+      <p v-if="error" class="mb-5 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500" role="alert">{{ error }}</p>
+      <p v-if="success" class="mb-5 rounded-lg bg-success-50 px-4 py-3 text-sm text-success-700" role="status">{{ success }}</p>
       <div class="grid gap-4">
-        <label class="text-sm font-medium text-[#344054]">Имя<BaseInput v-model="name" class="mt-1.5 w-full font-normal" required /></label>
-        <label class="text-sm font-medium text-[#344054]">Email<BaseInput v-model="email" class="mt-1.5 w-full font-normal" type="email" required /></label>
-        <div class="border-t border-[#eaecf0] pt-5">
-          <h2 class="text-base font-semibold text-[#344054]">Смена пароля</h2>
-          <p class="mt-1 text-sm text-[#667085]">Оставьте поля пустыми, если менять пароль не нужно.</p>
+        <label class="text-sm font-medium text-gray-700">Имя<BaseInput v-model="name" class="mt-1.5 w-full font-normal" required /></label>
+        <label class="text-sm font-medium text-gray-700">Email<BaseInput v-model="email" class="mt-1.5 w-full font-normal" type="email" required /></label>
+        <div class="border-t border-gray-100 pt-5">
+          <h2 class="text-base font-semibold text-gray-700">Смена пароля</h2>
+          <p class="mt-1 text-sm text-gray-500">Оставьте поля пустыми, если менять пароль не нужно.</p>
           <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <label class="text-sm font-medium text-[#344054]">Новый пароль<BaseInput v-model="password" class="mt-1.5 w-full font-normal" type="password" autocomplete="new-password" minlength="12" /></label>
-            <label class="text-sm font-medium text-[#344054]">Подтверждение<BaseInput v-model="passwordConfirmation" class="mt-1.5 w-full font-normal" type="password" autocomplete="new-password" minlength="12" :required="Boolean(password)" /></label>
+            <label class="text-sm font-medium text-gray-700">Новый пароль<BaseInput v-model="password" class="mt-1.5 w-full font-normal" type="password" autocomplete="new-password" minlength="12" /></label>
+            <label class="text-sm font-medium text-gray-700">Подтверждение<BaseInput v-model="passwordConfirmation" class="mt-1.5 w-full font-normal" type="password" autocomplete="new-password" minlength="12" :required="Boolean(password)" /></label>
           </div>
         </div>
       </div>
-      <div class="mt-6 flex justify-end"><button class="rounded-lg bg-[#7f56d9] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="isSubmitting">{{ isSubmitting ? 'Сохранение…' : 'Сохранить' }}</button></div>
+      <div class="mt-6 flex justify-end"><button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="isSubmitting">{{ isSubmitting ? 'Сохранение…' : 'Сохранить' }}</button></div>
     </form>
   </section>
 </template>

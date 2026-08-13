@@ -26,16 +26,16 @@ function clear(): void {
 </script>
 
 <template>
-  <div :class="containerClass" class="flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 shadow-[0_1px_2px_rgba(16,24,40,.05)] transition focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#f4f3ff]">
-    <Search v-if="searchable" :size="17" class="shrink-0 text-[#98a2b3]" />
+  <div :class="containerClass" class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 shadow-input transition focus-within:border-primary-500 focus-within:ring-4 focus-within:ring-primary-50">
+    <Search v-if="searchable" :size="17" class="shrink-0 text-gray-400" />
     <input
       v-bind="inputAttrs"
       :value="modelValue"
       :type="type"
-      class="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[#344054] outline-none placeholder:text-[#98a2b3]"
+      class="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-gray-700 outline-none placeholder:text-gray-400"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />
-    <button v-if="hasValue" type="button" class="grid h-5 w-5 shrink-0 place-items-center rounded text-[#98a2b3] transition hover:bg-[#f2f4f7] hover:text-[#475467]" aria-label="Очистить поле" @click="clear">
+    <button v-if="hasValue" type="button" class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-400 transition hover:bg-gray-50 hover:text-gray-600" aria-label="Очистить поле" @click="clear">
       <X :size="16" />
     </button>
   </div>

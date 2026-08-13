@@ -18,22 +18,22 @@ async function signOut(): Promise<void> {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f7f9fc] text-[#1d2939]">
+  <div class="min-h-screen bg-page text-gray-800">
     <AppSidebar :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
     <main class="min-h-screen lg:pl-[290px]">
-      <header class="sticky top-0 z-20 flex h-[76px] items-center gap-4 border-b border-[#e4e7ec] bg-white px-4 sm:px-6 lg:px-8">
-        <button class="grid h-10 w-10 place-items-center rounded-lg border border-[#e4e7ec] text-[#475467] lg:hidden" aria-label="Открыть меню" @click="isSidebarOpen = true">
+      <header class="sticky top-0 z-20 flex h-[76px] items-center gap-4 border-b border-gray-200 bg-white px-4 sm:px-6 lg:px-8">
+        <button class="grid h-10 w-10 place-items-center rounded-lg border border-gray-200 text-gray-600 lg:hidden" aria-label="Открыть меню" @click="isSidebarOpen = true">
           <Menu :size="20" />
         </button>
         <BaseInput class="hidden max-w-[360px] flex-1 md:flex" searchable placeholder="Поиск…" type="search" />
         <div class="ml-auto flex items-center gap-3">
-          <button class="grid h-10 w-10 place-items-center rounded-full text-[#667085] hover:bg-[#f2f4f7]" aria-label="Уведомления"><Bell :size="20" /></button>
+          <button class="grid h-10 w-10 place-items-center rounded-full text-gray-500 hover:bg-gray-50" aria-label="Уведомления"><Bell :size="20" /></button>
           <div class="hidden text-right sm:block">
-            <p class="text-sm font-semibold text-[#344054]">{{ auth.user?.name }}</p>
-            <p class="text-xs text-[#98a2b3]">{{ auth.user?.email }}</p>
+            <p class="text-sm font-semibold text-gray-700">{{ auth.user?.name }}</p>
+            <p class="text-xs text-gray-400">{{ auth.user?.email }}</p>
           </div>
-          <button class="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-[#7f56d9] text-sm font-bold text-white hover:bg-[#6941c6]" aria-label="Мой профиль" @click="router.push({ name: 'profile' })">{{ initial }}</button>
-          <button class="grid h-10 w-10 place-items-center rounded-full text-[#667085] hover:bg-[#f2f4f7]" aria-label="Выйти" @click="signOut"><LogOut :size="19" /></button>
+          <button class="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-primary-500 text-sm font-bold text-white hover:bg-primary-600" aria-label="Мой профиль" @click="router.push({ name: 'profile' })">{{ initial }}</button>
+          <button class="grid h-10 w-10 place-items-center rounded-full text-gray-500 hover:bg-gray-50" aria-label="Выйти" @click="signOut"><LogOut :size="19" /></button>
         </div>
       </header>
       <div class="p-4 sm:p-6 lg:p-8">

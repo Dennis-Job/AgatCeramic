@@ -34,21 +34,21 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
   <div ref="root" class="relative" @keydown.escape="isOpen = false">
     <button
       type="button"
-      class="flex w-full items-center justify-between gap-3 rounded-lg border border-[#d0d5dd] bg-white px-3 py-2.5 text-left text-sm font-medium text-[#475467] shadow-[0_1px_2px_rgba(16,24,40,.05)] outline-none transition hover:border-[#bdb4fe] focus:border-[#7f56d9] focus:ring-4 focus:ring-[#f4f3ff]"
+      class="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
       :aria-expanded="isOpen"
       :aria-label="accessibleName"
       @click="isOpen = !isOpen"
     >
       <span class="truncate">{{ selectedLabel }}</span>
-      <ChevronDown :size="18" class="shrink-0 text-[#667085] transition-transform" :class="{ 'rotate-180': isOpen }" />
+      <ChevronDown :size="18" class="shrink-0 text-gray-500 transition-transform" :class="{ 'rotate-180': isOpen }" />
     </button>
-    <div v-if="isOpen" class="absolute left-0 right-0 z-40 mt-1.5 overflow-hidden rounded-lg border border-[#eaecf0] bg-white py-1 shadow-[0_12px_20px_rgba(16,24,40,.12)]">
+    <div v-if="isOpen" class="absolute left-0 right-0 z-40 mt-1.5 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-dropdown">
       <button
         v-for="option in options"
         :key="option.value"
         type="button"
-        class="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-[#344054] transition hover:bg-[#f9fafb]"
-        :class="{ 'bg-[#f4f3ff] font-semibold text-[#6941c6]': option.value === modelValue }"
+        class="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-25"
+        :class="{ 'bg-primary-50 font-semibold text-primary-600': option.value === modelValue }"
         @click="select(option.value)"
       >
         {{ option.label }}

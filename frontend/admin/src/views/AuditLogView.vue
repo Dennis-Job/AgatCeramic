@@ -60,42 +60,42 @@ onMounted(load)
 <template>
   <section class="mx-auto max-w-[1440px]">
     <div class="mb-7">
-      <p class="text-sm font-medium text-[#667085]">Безопасность</p>
-      <h1 class="mt-1 text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">Журнал аудита</h1>
-      <p class="mt-2 text-sm text-[#667085]">История важных действий в административной панели.</p>
+      <p class="text-sm font-medium text-gray-500">Безопасность</p>
+      <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Журнал аудита</h1>
+      <p class="mt-2 text-sm text-gray-500">История важных действий в административной панели.</p>
     </div>
 
-    <p v-if="error" class="mb-4 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-4 py-3 text-sm text-[#b42318]">{{ error }}</p>
+    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
 
-    <div class="rounded-xl border border-[#e4e7ec] bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)]">
-      <div class="grid gap-3 border-b border-[#eaecf0] p-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_170px_170px_auto_auto]">
+    <div class="rounded-xl border border-gray-200 bg-white shadow-card">
+      <div class="grid gap-3 border-b border-gray-100 p-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_170px_170px_auto_auto]">
         <BaseInput v-model="filters.search" searchable placeholder="Действие или сотрудник" aria-label="Поиск в журнале" @keyup.enter="() => load()" />
         <BaseSelect v-model="filters.action" :options="actionOptions" accessible-name="Тип действия" @change="() => load()" />
         <BaseInput v-model="filters.date_from" type="date" aria-label="Дата с" />
         <BaseInput v-model="filters.date_to" type="date" aria-label="Дата по" />
-        <button class="rounded-lg border border-[#d0d5dd] px-4 py-2.5 text-sm font-semibold text-[#475467] hover:bg-[#f9fafb]" @click="() => load()">Найти</button>
-        <button class="px-3 py-2.5 text-sm font-semibold text-[#6941c6] hover:text-[#53389e]" @click="reset">Сбросить</button>
+        <button class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-25" @click="() => load()">Найти</button>
+        <button class="px-3 py-2.5 text-sm font-semibold text-primary-600 hover:text-primary-700" @click="reset">Сбросить</button>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full min-w-[850px] text-left text-sm">
-          <thead class="bg-[#f9fafb] text-xs font-medium text-[#667085]"><tr><th class="px-6 py-3">Действие</th><th class="px-6 py-3">Сотрудник</th><th class="px-6 py-3">Объект</th><th class="px-6 py-3">Время</th><th class="px-6 py-3">Детали</th></tr></thead>
+          <thead class="bg-gray-25 text-xs font-medium text-gray-500"><tr><th class="px-6 py-3">Действие</th><th class="px-6 py-3">Сотрудник</th><th class="px-6 py-3">Объект</th><th class="px-6 py-3">Время</th><th class="px-6 py-3">Детали</th></tr></thead>
           <tbody>
-            <tr v-if="loading"><td colspan="5" class="px-6 py-8 text-[#667085]">Загрузка…</td></tr>
-            <tr v-else-if="!logs.length"><td colspan="5" class="px-6 py-8 text-[#667085]">Записи не найдены.</td></tr>
-            <tr v-for="log in logs" :key="log.id" class="border-t border-[#eaecf0] text-[#475467]">
-              <td class="px-6 py-4"><span class="admin-badge inline-flex items-center gap-2 rounded-full bg-[#f4f3ff] px-2.5 py-1 text-xs font-medium text-[#6941c6]"><ScrollText :size="14" />{{ actionName(log.action) }}</span><p class="mt-1 text-xs text-[#98a2b3]">{{ log.action }}</p></td>
-              <td class="px-6 py-4 font-medium text-[#344054]">{{ log.actor?.name ?? 'Система' }}</td>
-              <td class="px-6 py-4 text-[#667085]"><template v-if="log.entity?.name"><p class="font-medium text-[#344054]">{{ log.entity.name }}</p><p v-if="log.entity.email" class="mt-0.5 text-xs">{{ log.entity.email }}</p></template><template v-else-if="log.entity">{{ log.entity.type }} #{{ log.entity.id }}</template><template v-else>—</template></td>
-              <td class="px-6 py-4 whitespace-nowrap text-[#667085]">{{ new Date(log.occurred_at).toLocaleString('ru-RU') }}</td>
-              <td class="max-w-72 px-6 py-4"><div v-if="log.details.length" class="space-y-1.5 text-sm"><p v-for="detail in log.details" :key="detail.label"><span class="text-[#667085]">{{ detail.label }}:</span> <span class="font-medium text-[#344054]">{{ detail.value }}</span></p></div><span v-else class="text-[#98a2b3]">—</span></td>
+            <tr v-if="loading"><td colspan="5" class="px-6 py-8 text-gray-500">Загрузка…</td></tr>
+            <tr v-else-if="!logs.length"><td colspan="5" class="px-6 py-8 text-gray-500">Записи не найдены.</td></tr>
+            <tr v-for="log in logs" :key="log.id" class="border-t border-gray-100 text-gray-600">
+              <td class="px-6 py-4"><span class="admin-badge inline-flex items-center gap-2 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600"><ScrollText :size="14" />{{ actionName(log.action) }}</span><p class="mt-1 text-xs text-gray-400">{{ log.action }}</p></td>
+              <td class="px-6 py-4 font-medium text-gray-700">{{ log.actor?.name ?? 'Система' }}</td>
+              <td class="px-6 py-4 text-gray-500"><template v-if="log.entity?.name"><p class="font-medium text-gray-700">{{ log.entity.name }}</p><p v-if="log.entity.email" class="mt-0.5 text-xs">{{ log.entity.email }}</p></template><template v-else-if="log.entity">{{ log.entity.type }} #{{ log.entity.id }}</template><template v-else>—</template></td>
+              <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ new Date(log.occurred_at).toLocaleString('ru-RU') }}</td>
+              <td class="max-w-72 px-6 py-4"><div v-if="log.details.length" class="space-y-1.5 text-sm"><p v-for="detail in log.details" :key="detail.label"><span class="text-gray-500">{{ detail.label }}:</span> <span class="font-medium text-gray-700">{{ detail.value }}</span></p></div><span v-else class="text-gray-400">—</span></td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[#eaecf0] px-5 py-4 text-sm text-[#667085]">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 text-sm text-gray-500">
         <span>Всего: {{ total }}</span>
-        <div class="flex items-center gap-3"><button class="rounded-lg border border-[#d0d5dd] px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50" :disabled="page === 1 || loading" @click="load(page - 1)">Назад</button><span>Страница {{ page }} из {{ lastPage }}</span><button class="rounded-lg border border-[#d0d5dd] px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50" :disabled="page === lastPage || loading" @click="load(page + 1)">Вперёд</button></div>
+        <div class="flex items-center gap-3"><button class="rounded-lg border border-gray-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50" :disabled="page === 1 || loading" @click="load(page - 1)">Назад</button><span>Страница {{ page }} из {{ lastPage }}</span><button class="rounded-lg border border-gray-300 px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50" :disabled="page === lastPage || loading" @click="load(page + 1)">Вперёд</button></div>
       </div>
     </div>
   </section>

@@ -59,38 +59,38 @@ onMounted(load)
 <template>
   <section class="mx-auto max-w-[1440px]">
     <div class="mb-7">
-      <p class="text-sm font-medium text-[#667085]">Управление доступом</p>
-      <h1 class="mt-1 text-2xl font-bold tracking-tight text-[#101828] sm:text-3xl">Права</h1>
-      <p class="mt-2 text-sm text-[#667085]">Каталог системных прав и ролей, которым они назначены.</p>
+      <p class="text-sm font-medium text-gray-500">Управление доступом</p>
+      <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Права</h1>
+      <p class="mt-2 text-sm text-gray-500">Каталог системных прав и ролей, которым они назначены.</p>
     </div>
 
-    <p v-if="error" class="mb-4 rounded-lg border border-[#fecdca] bg-[#fef3f2] px-4 py-3 text-sm text-[#b42318]">{{ error }}</p>
+    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
 
-    <div class="rounded-xl border border-[#e4e7ec] bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)]">
-      <div class="grid gap-3 border-b border-[#eaecf0] p-4 sm:grid-cols-[minmax(0,1fr)_240px]">
+    <div class="rounded-xl border border-gray-200 bg-white shadow-card">
+      <div class="grid gap-3 border-b border-gray-100 p-4 sm:grid-cols-[minmax(0,1fr)_240px]">
         <BaseInput v-model="search" class="min-w-0" searchable placeholder="Поиск по названию или коду" aria-label="Поиск прав" />
         <BaseSelect v-model="selectedModule" :options="moduleOptions" accessible-name="Модуль прав" />
       </div>
 
-      <div class="divide-y divide-[#eaecf0]">
+      <div class="divide-y divide-gray-100">
         <article v-for="permission in filteredPermissions" :key="permission.id" class="flex gap-3 p-4 sm:p-5">
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#f4f3ff] text-[#6941c6]"><KeyRound :size="19" /></span>
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"><KeyRound :size="19" /></span>
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h2 class="font-semibold text-[#344054]">{{ permission.name }}</h2>
-                <code class="mt-1 inline-block rounded bg-[#f9fafb] px-1.5 py-0.5 text-xs text-[#667085]">{{ permission.code }}</code>
+                <h2 class="font-semibold text-gray-700">{{ permission.name }}</h2>
+                <code class="mt-1 inline-block rounded bg-gray-25 px-1.5 py-0.5 text-xs text-gray-500">{{ permission.code }}</code>
               </div>
-              <span class="admin-badge rounded-full bg-[#f2f4f7] px-2.5 py-1 text-xs font-medium text-[#667085]">Ролей: {{ permission.roles.length }}</span>
+              <span class="admin-badge rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-500">Ролей: {{ permission.roles.length }}</span>
             </div>
-            <p v-if="permission.description" class="mt-3 text-sm text-[#667085]">{{ permission.description }}</p>
+            <p v-if="permission.description" class="mt-3 text-sm text-gray-500">{{ permission.description }}</p>
             <div class="mt-3 flex flex-wrap gap-2">
-              <span v-for="role in permission.roles" :key="role.id" class="admin-badge rounded-full bg-[#f4f3ff] px-2.5 py-1 text-xs font-medium text-[#6941c6]">{{ role.name }}</span>
-              <span v-if="!permission.roles.length" class="text-sm text-[#98a2b3]">Не назначено ни одной роли</span>
+              <span v-for="role in permission.roles" :key="role.id" class="admin-badge rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600">{{ role.name }}</span>
+              <span v-if="!permission.roles.length" class="text-sm text-gray-400">Не назначено ни одной роли</span>
             </div>
           </div>
         </article>
-        <p v-if="!filteredPermissions.length" class="p-8 text-center text-sm text-[#667085]">Права не найдены.</p>
+        <p v-if="!filteredPermissions.length" class="p-8 text-center text-sm text-gray-500">Права не найдены.</p>
       </div>
     </div>
   </section>

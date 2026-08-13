@@ -19,9 +19,9 @@ function toggle(): void {
 </script>
 
 <template>
-  <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-[#eaecf0] p-3 text-sm text-[#475467] transition hover:border-[#bdb4fe] hover:bg-[#fcfbff]" :class="{ 'border-[#7f56d9] bg-[#f4f3ff] text-[#6941c6]': modelValue.includes(value) }">
+  <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-100 p-3 text-sm text-gray-600 transition hover:border-primary-200 hover:bg-primary-25" :class="{ 'border-primary-500 bg-primary-50 text-primary-600': modelValue.includes(value) }">
     <input class="sr-only" type="checkbox" :checked="modelValue.includes(value)" @change="toggle" />
-    <span class="grid h-5 w-5 shrink-0 place-items-center rounded-md border transition" :class="modelValue.includes(value) ? 'border-[#7f56d9] bg-[#7f56d9] text-white' : 'border-[#98a2b3] bg-white text-transparent'">
+    <span class="grid h-5 w-5 shrink-0 place-items-center rounded-md border transition" :class="modelValue.includes(value) ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-400 bg-white text-transparent'">
       <Check :size="14" :stroke-width="3" />
     </span>
     <span><slot /></span>
