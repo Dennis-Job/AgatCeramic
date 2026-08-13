@@ -13,16 +13,19 @@ const primaryNavigation = [
   { label: 'Заказы', to: '/orders', icon: ShoppingCart },
 ]
 
-const secondaryNavigation = [
+const employeeNavigation = [
   { label: 'Сотрудники', to: '/employees', icon: UsersRound, requiredPermission: 'admin-users.view' },
   { label: 'Роли', to: '/roles', icon: ShieldCheck, requiredPermission: 'roles.view' },
   { label: 'Права', to: '/permissions', icon: KeyRound, requiredPermission: 'permissions.view' },
   { label: 'Журнал аудита', to: '/audit-log', icon: ScrollText, requiredPermission: 'audit-log.view' },
+]
+
+const siteManagementNavigation = [
   { label: 'Контент', to: '/content', icon: FileText },
   { label: 'Настройки', to: '/settings', icon: Settings },
 ]
 
-const visibleSecondaryNavigation = computed(() => secondaryNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
+const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
 </script>
 
 <template>
@@ -52,10 +55,26 @@ const visibleSecondaryNavigation = computed(() => secondaryNavigation.filter((it
       </RouterLink>
     </nav>
 
-    <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#98a2b3]">Управление</p>
+    <template v-if="visibleEmployeeNavigation.length">
+      <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#98a2b3]">Управление сотрудниками</p>
+      <nav class="space-y-1">
+        <RouterLink
+          v-for="item in visibleEmployeeNavigation"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#475467] transition hover:bg-[#f9fafb]"
+          active-class="!bg-[#f4f3ff] !text-[#6941c6]"
+          @click="$emit('close')"
+        >
+          <component :is="item.icon" :size="19" :stroke-width="1.8" />{{ item.label }}
+        </RouterLink>
+      </nav>
+    </template>
+
+    <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#98a2b3]">Управление сайтом</p>
     <nav class="space-y-1">
       <RouterLink
-        v-for="item in visibleSecondaryNavigation"
+        v-for="item in siteManagementNavigation"
         :key="item.to"
         :to="item.to"
         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#475467] transition hover:bg-[#f9fafb]"
