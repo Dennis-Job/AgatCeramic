@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminAuthenticationService
 {
+    public function __construct(private readonly AuditLogService $auditLogService) {}
+
     public function login(LoginRequest $request): void
     {
         $user = User::query()
@@ -28,10 +30,15 @@ class AdminAuthenticationService
         $request->session()->regenerate();
 
         $user->forceFill(['last_login_at' => now()])->save();
+        $this->auditLogService->record($user, 'auth.login', $user);
     }
 
     public function logout(Request $request): void
     {
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->auditLogService->record($user, 'auth.logout', $user);
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

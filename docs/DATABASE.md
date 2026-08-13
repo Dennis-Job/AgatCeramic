@@ -157,10 +157,15 @@ SKU/варианты.
 
 ### audit_logs
 
-Содержит:
-- actor;
-- action;
-- entity;
-- entity_id;
-- timestamp;
-- sanitized metadata.
+TASK-025 creates the append-only audit trail for material administrative actions.
+
+- `actor_id` — nullable reference to the staff account which performed the action; it becomes
+  `NULL` if that account is deleted, preserving the event without retaining a deleted account;
+- `action` — stable dot-notated code, for example `auth.login` or `admin-users.update`;
+- `entity_type` and `entity_id` — optional target model class and identifier;
+- `metadata` — optional minimal JSON context, sanitised before persistence;
+- `occurred_at` — event time.
+
+The audit payload must never contain passwords, tokens, contact details, names, addresses, or
+other unnecessary PII. Models do not write audit records themselves: application services record
+explicit action codes and an allowlisted minimal context through `AuditLogService`.

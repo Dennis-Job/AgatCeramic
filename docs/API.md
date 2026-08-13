@@ -73,6 +73,10 @@ header. Browser requests must include credentials.
 All other administrative API routes require `auth:sanctum` and an active account. Fine-grained
 authorization is enforced through Laravel policies introduced in TASK-024.
 
+Successful administrative login and logout are recorded in the internal audit trail. There is no
+audit-log API endpoint yet; a future read endpoint must enforce the existing `audit-log.view`
+permission and return only explicitly mapped fields.
+
 Role storage, granular permissions, and their relations are introduced in TASK-022 and TASK-023.
 TASK-024 registers policies for `User`, `Role`, and `Permission`: only permissions such as
 `admin-users.manage`, `roles.manage`, and `permissions.manage` authorize mutations. Future
