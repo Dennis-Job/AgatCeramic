@@ -26,10 +26,13 @@ an optional `description`, and timestamps. Baseline roles are seeded without per
 `seo-manager`, and `analyst`.
 
 ### permissions
-Права.
+Granular permissions. TASK-023 stores a human-readable unique `name`, a stable unique
+`code` in the `module.action` format, an optional `description`, and timestamps. Permissions
+are granted only through roles; users do not receive direct permission assignments.
 
 ### role_permissions
-Связь ролей и прав.
+Many-to-many assignment of permissions to roles. The composite primary key prevents duplicate
+assignments; deleting a role or permission removes its pivot rows.
 
 ### user_roles
 Many-to-many assignment of staff accounts to roles. The composite primary key prevents duplicate

@@ -73,9 +73,9 @@ header. Browser requests must include credentials.
 All other administrative API routes require `auth:sanctum` and an active account. Fine-grained
 authorization is introduced in TASK-024.
 
-Role storage and the user-role relation are introduced in TASK-022. Role and assignment endpoints
-remain unavailable until permissions and policies are in place, so an authenticated staff member
-cannot escalate privileges before TASK-024.
+Role storage, granular permissions, and their relations are introduced in TASK-022 and TASK-023.
+Role or permission assignment endpoints remain unavailable until policies are in place, so an
+authenticated staff member cannot escalate privileges before TASK-024.
 
 ## Административный API
 

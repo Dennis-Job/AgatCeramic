@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
+        $this->call(PermissionSeeder::class);
 
         // Administrative accounts are provisioned through the controlled admin-user flow.
         // A seed account with known credentials must not be created by default.

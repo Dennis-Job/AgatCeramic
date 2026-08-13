@@ -26,7 +26,7 @@
 - [x] TASK-020 Admin users
 - [x] TASK-021 Authentication
 - [x] TASK-022 Roles
-- [ ] TASK-023 Permissions
+- [x] TASK-023 Permissions
 - [ ] TASK-024 Policies
 - [ ] TASK-025 Audit log
 
