@@ -28,6 +28,7 @@
 | TASK-028 | Permission catalogue API and page | 2026-08-13 | Добавлен read-only каталог прав с названиями, техническими кодами, описаниями и назначенными ролями; в Admin SPA доступна страница поиска и фильтрации по модулю. | `PermissionCatalogueTest`; полный `php artisan test`; Pint; Composer; OpenAPI JSON; сборка Admin |
 | TASK-029 | Audit log API and page | 2026-08-13 | Добавлен read-only API журнала аудита с пагинацией и фильтрами, а также страница Admin для поиска и просмотра безопасных деталей событий. | `AuditLogApiTest`; полный `php artisan test`; Pint; Composer; OpenAPI JSON; сборка Admin |
 | TASK-029A | Admin password reset API and page | 2026-08-13 | Безопасный сброс пароля администратора: одноразовый токен с ограниченным сроком, ответ без раскрытия существования учётной записи, отзыв сессий, аудит успешного сброса и страницы Admin SPA. | `php artisan test` (55 passed); Pint; Composer; OpenAPI JSON; `npm.cmd run build --prefix frontend/admin` |
+| TASK-029B | Audit entity snapshots and retention policy | 2026-08-13 | Для событий аудита сохраняются allowlisted snapshots участников и объектов, включая удалённые учётные записи; ежедневная команда удаляет записи старше пяти лет. | `php artisan test` (61 passed); Pint; Composer; PostgreSQL migration preview; `php artisan schedule:list` |
 
 После завершения каждой задачи добавлять:
 - ID;

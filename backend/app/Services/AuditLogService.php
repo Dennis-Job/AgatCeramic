@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
@@ -23,12 +25,25 @@ class AuditLogService
 
         return AuditLog::query()->create([
             'actor_id' => $actor?->getKey(),
+            'actor_snapshot' => $actor ? ['name' => $actor->name] : null,
             'action' => $action,
             'entity_type' => $entity ? $entity::class : null,
             'entity_id' => $entity?->getKey(),
+            'entity_snapshot' => $this->entitySnapshot($entity),
             'metadata' => $this->sanitizeMetadata($metadata),
             'occurred_at' => now(),
         ]);
+    }
+
+    /** @return array<string, string>|null */
+    private function entitySnapshot(?Model $entity): ?array
+    {
+        return match (true) {
+            $entity instanceof User => ['name' => $entity->name, 'email' => $entity->email],
+            $entity instanceof Role => ['name' => $entity->name, 'slug' => $entity->slug],
+            $entity instanceof Permission => ['name' => $entity->name, 'code' => $entity->code],
+            default => null,
+        };
     }
 
     /**

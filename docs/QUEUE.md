@@ -17,6 +17,9 @@ Docker перезапускает его. Это позволяет подхва
 планирования Laravel при реализации соответствующей бизнес-задачи. Не добавляйте
 команды-заглушки в расписание.
 
+TASK-029B registers the daily `audit:prune` command. It permanently removes audit records older
+than the configured five-year retention period.
+
 ## Локальный запуск
 
 Запустите окружение:

@@ -164,8 +164,15 @@ TASK-025 creates the append-only audit trail for material administrative actions
 - `action` — stable dot-notated code, for example `auth.login` or `admin-users.update`;
 - `entity_type` and `entity_id` — optional target model class and identifier;
 - `metadata` — optional minimal JSON context, sanitised before persistence;
+- `actor_snapshot` — the actor name at the event time, retained if the account is later deleted or renamed;
+- `entity_snapshot` — an allowlisted identity snapshot for the event target: employee name/email,
+  role name/slug, or permission name/code;
 - `occurred_at` — event time.
 
 The audit payload must never contain passwords, tokens, contact details, names, addresses, or
 other unnecessary PII. Models do not write audit records themselves: application services record
 explicit action codes and an allowlisted minimal context through `AuditLogService`.
+
+Snapshots are an explicit exception for administrative-account identification: they preserve only
+the fields listed above so that material actions remain understandable after a target is deleted.
+They are retained for five years and then deleted with the audit record.
