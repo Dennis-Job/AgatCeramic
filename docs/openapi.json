@@ -132,6 +132,19 @@
       "patch": { "operationId": "updateRole", "summary": "Update role and permission assignments", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Updated role" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } },
       "delete": { "operationId": "deleteRole", "summary": "Delete custom role", "security": [{ "sanctumSession": [] }], "responses": { "204": { "description": "Role deleted" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }
     },
+    "/admin/permissions": {
+      "get": {
+        "operationId": "listPermissions",
+        "summary": "List the controlled permission catalogue with assigned roles",
+        "security": [{ "sanctumSession": [] }],
+        "parameters": [{ "name": "module", "in": "query", "schema": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } }],
+        "responses": { "200": { "description": "Permission catalogue" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } }
+      }
+    },
+    "/admin/permissions/{permission}": {
+      "parameters": [{ "name": "permission", "in": "path", "required": true, "schema": { "type": "integer" } }],
+      "get": { "operationId": "getPermission", "summary": "Get a permission with assigned roles", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Permission" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } }
+    },
     "/": {
       "get": {
         "operationId": "getApiVersion",

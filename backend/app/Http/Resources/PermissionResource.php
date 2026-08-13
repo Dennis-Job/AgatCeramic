@@ -14,6 +14,7 @@ class PermissionResource extends ApiResource
             'name' => $this->name,
             'code' => $this->code,
             'description' => $this->description,
+            'roles' => AdminRoleResource::collection($this->whenLoaded('roles')),
         ];
     }
 }

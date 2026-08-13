@@ -104,6 +104,15 @@ controllers must call the registered policy through `Gate::authorize()` before c
 System roles cannot be deleted or renamed. A role editor can assign only permissions it already
 holds; every mutation is written to the audit trail.
 
+### Permission catalogue
+
+- `GET /admin/permissions` returns the controlled permission catalogue with its assigned roles.
+  The optional `module` query parameter filters codes by their `module.action` prefix.
+- `GET /admin/permissions/{permission}` returns one catalogue entry and its assigned roles.
+
+The catalogue is read-only: permissions are introduced through controlled application releases and
+seed data, rather than arbitrary administrative CRUD.
+
 ## Административный API
 
 Административный API должен быть защищён аутентификацией и авторизацией.
