@@ -24,10 +24,14 @@ async function throwApiError(response: Response, fallback: string): Promise<neve
 }
 
 export async function requestCsrfCookie(): Promise<void> {
-  await fetch(`${backendBaseUrl}/sanctum/csrf-cookie`, {
-    credentials: 'include',
-    headers: { Accept: 'application/json' },
-  })
+  try {
+    await fetch(`${backendBaseUrl}/sanctum/csrf-cookie`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+  } catch {
+    throw new Error('Не удалось подключиться к серверу. Попробуйте ещё раз.')
+  }
 }
 
 function csrfToken(): string | undefined {
@@ -47,11 +51,15 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     headers.set('X-XSRF-TOKEN', csrfToken() ?? '')
   }
 
-  return fetch(`${apiBaseUrl}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers,
-  })
+  try {
+    return await fetch(`${apiBaseUrl}${path}`, {
+      ...init,
+      credentials: 'include',
+      headers,
+    })
+  } catch {
+    throw new Error('Не удалось подключиться к серверу. Попробуйте ещё раз.')
+  }
 }
 
 export async function currentAdmin(): Promise<AdminUser> {
