@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Boxes, FileText, LayoutDashboard, Settings, ShoppingCart, X } from '@lucide/vue'
+import { Boxes, FileText, LayoutDashboard, Settings, ShoppingCart, UsersRound, X } from '@lucide/vue'
 defineProps<{ isOpen: boolean }>()
 defineEmits<{ close: [] }>()
 
@@ -10,6 +10,7 @@ const primaryNavigation = [
 ]
 
 const secondaryNavigation = [
+  { label: 'Employees', to: '/employees', icon: UsersRound },
   { label: 'Контент', to: '/content', icon: FileText },
   { label: 'Настройки', to: '/settings', icon: Settings },
 ]

@@ -85,6 +85,40 @@
         }
       }
     },
+    "/admin/users": {
+      "get": {
+        "operationId": "listAdminUsers",
+        "summary": "List administrative users",
+        "security": [{ "sanctumSession": [] }],
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["active", "blocked"] } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } }
+        ],
+        "responses": { "200": { "description": "Users", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminUserCollection" } } } }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } }
+      },
+      "post": {
+        "operationId": "createAdminUser",
+        "summary": "Create an administrative user",
+        "security": [{ "sanctumSession": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StoreAdminUserRequest" } } } },
+        "responses": { "201": { "description": "Created user", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminUserResponse" } } } }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } }
+      }
+    },
+    "/admin/users/roles": {
+      "get": {
+        "operationId": "listAssignableRoles",
+        "summary": "List roles available for employee assignment",
+        "security": [{ "sanctumSession": [] }],
+        "responses": { "200": { "description": "Roles", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminRoleCollection" } } } }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } }
+      }
+    },
+    "/admin/users/{user}": {
+      "parameters": [{ "name": "user", "in": "path", "required": true, "schema": { "type": "integer" } }],
+      "get": { "operationId": "getAdminUser", "summary": "Get an administrative user", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "User", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminUserResponse" } } } }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } },
+      "patch": { "operationId": "updateAdminUser", "summary": "Update an administrative user", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateAdminUserRequest" } } } }, "responses": { "200": { "description": "Updated user", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminUserResponse" } } } }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } },
+      "delete": { "operationId": "deleteAdminUser", "summary": "Delete an administrative user", "security": [{ "sanctumSession": [] }], "responses": { "204": { "description": "User deleted" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }
+    },
     "/": {
       "get": {
         "operationId": "getApiVersion",
@@ -132,7 +166,8 @@
           "name": { "type": "string" },
           "email": { "type": "string", "format": "email" },
           "status": { "type": "string", "enum": ["active", "blocked"] },
-          "last_login_at": { "type": ["string", "null"], "format": "date-time" }
+          "last_login_at": { "type": ["string", "null"], "format": "date-time" },
+          "roles": { "type": "array", "items": { "$ref": "#/components/schemas/AdminRole" } }
         },
         "additionalProperties": false
       },
@@ -143,6 +178,34 @@
           "data": { "$ref": "#/components/schemas/AdminUser" }
         },
         "additionalProperties": false
+      },
+      "AdminUserCollection": {
+        "type": "object",
+        "required": ["data", "links", "meta"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/AdminUser" } }, "links": { "type": "object" }, "meta": { "type": "object" } }
+      },
+      "AdminRole": {
+        "type": "object",
+        "required": ["id", "name", "slug"],
+        "properties": { "id": { "type": "integer" }, "name": { "type": "string" }, "slug": { "type": "string" } },
+        "additionalProperties": false
+      },
+      "AdminRoleCollection": {
+        "type": "object",
+        "required": ["data"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/AdminRole" } } }
+      },
+      "StoreAdminUserRequest": {
+        "type": "object",
+        "required": ["name", "email", "password", "password_confirmation", "status", "role_ids"],
+        "properties": { "name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "password": { "type": "string", "format": "password", "minLength": 12 }, "password_confirmation": { "type": "string", "format": "password" }, "status": { "type": "string", "enum": ["active", "blocked"] }, "role_ids": { "type": "array", "minItems": 1, "items": { "type": "integer" } } },
+        "additionalProperties": false
+      },
+      "UpdateAdminUserRequest": {
+        "type": "object",
+        "properties": { "name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "password": { "type": "string", "format": "password", "minLength": 12 }, "password_confirmation": { "type": "string", "format": "password" }, "status": { "type": "string", "enum": ["active", "blocked"] }, "role_ids": { "type": "array", "minItems": 1, "items": { "type": "integer" } } },
+        "additionalProperties": false,
+        "description": "All fields are optional; password_confirmation is required when password is supplied."
       },
       "VersionResponse": {
         "type": "object",

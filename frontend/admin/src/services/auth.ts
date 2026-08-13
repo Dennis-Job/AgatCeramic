@@ -15,7 +15,7 @@ type ApiError = {
   }
 }
 
-async function requestCsrfCookie(): Promise<void> {
+export async function requestCsrfCookie(): Promise<void> {
   await fetch(`${backendBaseUrl}/sanctum/csrf-cookie`, {
     credentials: 'include',
     headers: { Accept: 'application/json' },
@@ -31,7 +31,7 @@ function csrfToken(): string | undefined {
   return token ? decodeURIComponent(token) : undefined
 }
 
-async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
 

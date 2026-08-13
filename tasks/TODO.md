@@ -29,6 +29,10 @@
 - [x] TASK-023 Permissions
 - [x] TASK-024 Policies
 - [x] TASK-025 Audit log
+- [x] TASK-026 Employee management API and page
+- [ ] TASK-027 Roles and permission assignments API and page
+- [ ] TASK-028 Permission catalogue API and page
+- [ ] TASK-029 Audit log API and page
 
 ## Phase 3 — Catalog
 

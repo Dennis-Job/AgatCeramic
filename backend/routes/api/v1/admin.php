@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AdminUserController;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Admin API v1 Routes
@@ -10,3 +13,6 @@
 | in TASK-024.
 |
 */
+
+Route::get('users/roles', [AdminUserController::class, 'roles'])->name('users.roles');
+Route::apiResource('users', AdminUserController::class);

@@ -80,7 +80,20 @@ permission and return only explicitly mapped fields.
 Role storage, granular permissions, and their relations are introduced in TASK-022 and TASK-023.
 TASK-024 registers policies for `User`, `Role`, and `Permission`: only permissions such as
 `admin-users.manage`, `roles.manage`, and `permissions.manage` authorize mutations. Future
-controllers must call `$this->authorize()` for model actions before changing access-control data.
+controllers must call the registered policy through `Gate::authorize()` before changing access-control data.
+
+### Сотрудники
+
+- `GET /admin/users` — постраничный список сотрудников; поддерживает `search`, `status` и `per_page`.
+- `POST /admin/users` — создаёт сотрудника с минимум одной ролью.
+- `GET /admin/users/{user}` — возвращает сотрудника и его роли.
+- `PATCH /admin/users/{user}` — изменяет учётные данные, статус, пароль и назначенные роли.
+- `DELETE /admin/users/{user}` — удаляет сотрудника.
+- `GET /admin/users/roles` — возвращает роли, доступные для назначения в форме сотрудника.
+
+Все операции требуют `admin-users.view` или `admin-users.manage` согласно policy. Изменения
+сотрудников записываются в audit trail; нельзя заблокировать или удалить собственную учётную
+запись, а также лишить систему последнего активного Super Admin.
 
 ## Административный API
 
