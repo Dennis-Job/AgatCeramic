@@ -20,6 +20,8 @@
 | TASK-020 | Admin users | 2026-08-12 | Для административных учётных записей добавлены статус `active`/`blocked`, поле последнего входа `last_login_at`, enum и factory state; seed-пользователь с известными учётными данными удалён. | `php artisan test` — 21 passed; `vendor/bin/pint --test`; PostgreSQL `php artisan migrate --pretend` в Docker |
 | TASK-021 | Authentication | 2026-08-12 | Настроена cookie/session аутентификация Laravel Sanctum для Admin SPA: CSRF cookie, `login`/`me`/`logout`, регенерация сессии, rate limiting и запрет входа/доступа для заблокированных учётных записей. | `php artisan test` — 28 passed; `vendor/bin/pint --test`; `composer validate --strict`; PostgreSQL auth tests и `php artisan migrate --pretend` в Docker; CSRF/CORS smoke-check |
 
+| TASK-022 | Roles | 2026-08-13 | Добавлены роли, связь многие-ко-многим `user_roles`, модель, factory и идемпотентный seed семи базовых административных ролей. HTTP-управление ролями отложено до появления permissions и policies, чтобы исключить повышение привилегий. | `php artisan test` — 30 passed; `vendor/bin/pint --test`; `composer validate --strict`; PostgreSQL `php artisan migrate --pretend` и `RoleTest` в Docker |
+
 После завершения каждой задачи добавлять:
 - ID;
 - название;

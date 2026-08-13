@@ -20,7 +20,10 @@ endpoints require a valid active administrator session; individual authorization
 are added in TASK-024.
 
 ### roles
-Роли.
+Administrative roles. TASK-022 stores a human-readable unique `name`, a stable unique `slug`,
+an optional `description`, and timestamps. Baseline roles are seeded without permissions:
+`super-admin`, `administrator`, `catalog-manager`, `order-manager`, `content-manager`,
+`seo-manager`, and `analyst`.
 
 ### permissions
 Права.
@@ -29,7 +32,8 @@ are added in TASK-024.
 Связь ролей и прав.
 
 ### user_roles
-Связь пользователей и ролей.
+Many-to-many assignment of staff accounts to roles. The composite primary key prevents duplicate
+assignments; deleting a staff account or role removes its pivot rows.
 
 ## Catalog
 
