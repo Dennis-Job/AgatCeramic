@@ -145,6 +145,26 @@
       "parameters": [{ "name": "permission", "in": "path", "required": true, "schema": { "type": "integer" } }],
       "get": { "operationId": "getPermission", "summary": "Get a permission with assigned roles", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Permission" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } }
     },
+    "/admin/audit-logs": {
+      "get": {
+        "operationId": "listAuditLogs",
+        "summary": "List audit records",
+        "security": [{ "sanctumSession": [] }],
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "action", "in": "query", "schema": { "type": "string" } },
+          { "name": "actor_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "date_from", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "date_to", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "per_page", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } }
+        ],
+        "responses": { "200": { "description": "Paginated audit records" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } }
+      }
+    },
+    "/admin/audit-logs/{audit_log}": {
+      "parameters": [{ "name": "audit_log", "in": "path", "required": true, "schema": { "type": "integer" } }],
+      "get": { "operationId": "getAuditLog", "summary": "Get an audit record", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Audit record" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } }
+    },
     "/": {
       "get": {
         "operationId": "getApiVersion",

@@ -113,6 +113,16 @@ holds; every mutation is written to the audit trail.
 The catalogue is read-only: permissions are introduced through controlled application releases and
 seed data, rather than arbitrary administrative CRUD.
 
+### Audit log
+
+- `GET /admin/audit-logs` returns a paginated read-only audit trail. It supports `search`, exact
+  `action`, `actor_id`, `date_from`, `date_to`, and `per_page` filters.
+- `GET /admin/audit-logs/{audit_log}` returns one audit record.
+
+Both operations require `audit-log.view`. For employee-targeted events the response includes the
+target's current name and email to make the event identifiable; all other metadata remains
+sanitised, so passwords, tokens, and other sensitive values are never exposed.
+
 ## Административный API
 
 Административный API должен быть защищён аутентификацией и авторизацией.

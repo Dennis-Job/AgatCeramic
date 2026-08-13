@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Boxes, FileText, KeyRound, LayoutDashboard, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
+import { Boxes, FileText, KeyRound, LayoutDashboard, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 defineProps<{ isOpen: boolean }>()
 defineEmits<{ close: [] }>()
@@ -17,6 +17,7 @@ const secondaryNavigation = [
   { label: 'Сотрудники', to: '/employees', icon: UsersRound, requiredPermission: 'admin-users.view' },
   { label: 'Роли', to: '/roles', icon: ShieldCheck, requiredPermission: 'roles.view' },
   { label: 'Права', to: '/permissions', icon: KeyRound, requiredPermission: 'permissions.view' },
+  { label: 'Журнал аудита', to: '/audit-log', icon: ScrollText, requiredPermission: 'audit-log.view' },
   { label: 'Контент', to: '/content', icon: FileText },
   { label: 'Настройки', to: '/settings', icon: Settings },
 ]

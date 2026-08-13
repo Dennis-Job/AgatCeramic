@@ -32,7 +32,7 @@
 - [x] TASK-026 Employee management API and page
 - [x] TASK-027 Roles and permission assignments API and page
 - [x] TASK-028 Permission catalogue API and page
-- [ ] TASK-029 Audit log API and page
+- [x] TASK-029 Audit log API and page
 
 ## Phase 3 — Catalog
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[Fillable(['actor_id', 'action', 'entity_type', 'entity_id', 'metadata', 'occurred_at'])]
 class AuditLog extends Model
@@ -30,5 +31,13 @@ class AuditLog extends Model
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
+    }
+
+    /**
+     * @return MorphTo<Model, $this>
+     */
+    public function entity(): MorphTo
+    {
+        return $this->morphTo();
     }
 }
