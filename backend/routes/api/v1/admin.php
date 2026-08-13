@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
+use App\Http\Controllers\Api\V1\Admin\RoleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +17,5 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('users/roles', [AdminUserController::class, 'roles'])->name('users.roles');
 Route::apiResource('users', AdminUserController::class);
+Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+Route::apiResource('roles', RoleController::class);

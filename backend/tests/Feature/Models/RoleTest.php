@@ -29,7 +29,7 @@ class RoleTest extends TestCase
         $this->seed(RoleSeeder::class);
 
         $this->assertSame(7, Role::query()->count());
-        $this->assertDatabaseHas('roles', ['slug' => 'super-admin', 'name' => 'Super Admin']);
-        $this->assertDatabaseHas('roles', ['slug' => 'analyst', 'name' => 'Analyst']);
+        $this->assertDatabaseHas('roles', ['slug' => 'super-admin', 'name' => 'Супер Администратор']);
+        $this->assertDatabaseHas('roles', ['slug' => 'analyst', 'name' => 'Аналитик']);
     }
 }

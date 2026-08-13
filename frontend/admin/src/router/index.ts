@@ -4,6 +4,7 @@ import DashboardView from '../views/DashboardView.vue'
 import LoginView from '../views/LoginView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 import EmployeesView from '../views/EmployeesView.vue'
+import RolesView from '../views/RolesView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -11,6 +12,7 @@ const router = createRouter({
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
     { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true, requiredPermission: 'admin-users.view' } },
+    { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view' } },
     { path: '/products', name: 'products', component: PlaceholderView, props: { title: 'Каталог' }, meta: { requiresAuth: true } },
     { path: '/orders', name: 'orders', component: PlaceholderView, props: { title: 'Заказы' }, meta: { requiresAuth: true } },
     { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true } },

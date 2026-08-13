@@ -119,6 +119,19 @@
       "patch": { "operationId": "updateAdminUser", "summary": "Update an administrative user", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateAdminUserRequest" } } } }, "responses": { "200": { "description": "Updated user", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminUserResponse" } } } }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } },
       "delete": { "operationId": "deleteAdminUser", "summary": "Delete an administrative user", "security": [{ "sanctumSession": [] }], "responses": { "204": { "description": "User deleted" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }
     },
+    "/admin/roles": {
+      "get": { "operationId": "listRoles", "summary": "List roles", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Roles" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } },
+      "post": { "operationId": "createRole", "summary": "Create custom role", "security": [{ "sanctumSession": [] }], "responses": { "201": { "description": "Created role" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }
+    },
+    "/admin/roles/permissions": {
+      "get": { "operationId": "listRolePermissions", "summary": "List permission catalogue for role editor", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Permissions" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } }
+    },
+    "/admin/roles/{role}": {
+      "parameters": [{ "name": "role", "in": "path", "required": true, "schema": { "type": "integer" } }],
+      "get": { "operationId": "getRole", "summary": "Get role", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Role" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } },
+      "patch": { "operationId": "updateRole", "summary": "Update role and permission assignments", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Updated role" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } },
+      "delete": { "operationId": "deleteRole", "summary": "Delete custom role", "security": [{ "sanctumSession": [] }], "responses": { "204": { "description": "Role deleted" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }
+    },
     "/": {
       "get": {
         "operationId": "getApiVersion",

@@ -95,6 +95,15 @@ controllers must call the registered policy through `Gate::authorize()` before c
 сотрудников записываются в audit trail; нельзя заблокировать или удалить собственную учётную
 запись, а также лишить систему последнего активного Super Admin.
 
+### Roles
+
+- `GET /admin/roles` and `GET /admin/roles/{role}` return roles with assigned permissions.
+- `POST /admin/roles`, `PATCH /admin/roles/{role}`, and `DELETE /admin/roles/{role}` manage custom roles.
+- `GET /admin/roles/permissions` returns the controlled permission catalogue required by the role editor.
+
+System roles cannot be deleted or renamed. A role editor can assign only permissions it already
+holds; every mutation is written to the audit trail.
+
 ## Административный API
 
 Административный API должен быть защищён аутентификацией и авторизацией.
