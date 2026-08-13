@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, LogOut, Menu, Search } from '@lucide/vue'
+import { Bell, LogOut, Menu } from '@lucide/vue'
+import BaseInput from '../components/BaseInput.vue'
 import AppSidebar from '../components/AppSidebar.vue'
 import { useAuthStore } from '../stores/auth'
 
@@ -24,10 +25,7 @@ async function signOut(): Promise<void> {
         <button class="grid h-10 w-10 place-items-center rounded-lg border border-[#e4e7ec] text-[#475467] lg:hidden" aria-label="Открыть меню" @click="isSidebarOpen = true">
           <Menu :size="20" />
         </button>
-        <label class="hidden max-w-[360px] flex-1 items-center gap-3 rounded-lg border border-[#e4e7ec] bg-[#f9fafb] px-3.5 py-2.5 md:flex">
-          <Search :size="18" class="shrink-0 text-[#98a2b3]" />
-          <input class="w-full bg-transparent text-sm outline-none placeholder:text-[#98a2b3]" placeholder="Поиск…" type="search" />
-        </label>
+        <BaseInput class="hidden max-w-[360px] flex-1 md:flex" searchable placeholder="Поиск…" type="search" />
         <div class="ml-auto flex items-center gap-3">
           <button class="grid h-10 w-10 place-items-center rounded-full text-[#667085] hover:bg-[#f2f4f7]" aria-label="Уведомления"><Bell :size="20" /></button>
           <div class="hidden text-right sm:block">

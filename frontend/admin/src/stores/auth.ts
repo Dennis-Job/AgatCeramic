@@ -7,6 +7,9 @@ export const useAuthStore = defineStore('auth', {
     initialized: false,
   }),
   actions: {
+    hasPermission(permission: string): boolean {
+      return this.user?.permissions?.includes(permission) ?? false
+    },
     async restoreSession(): Promise<boolean> {
       try {
         this.user = await currentAdmin()

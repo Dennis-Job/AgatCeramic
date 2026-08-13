@@ -7,6 +7,7 @@ export type AdminUser = {
   email: string
   status: 'active' | 'blocked'
   last_login_at: string | null
+  permissions?: string[]
 }
 
 type ApiError = {

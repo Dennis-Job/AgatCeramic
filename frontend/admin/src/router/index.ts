@@ -10,7 +10,7 @@ const router = createRouter({
   routes: [
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true } },
     { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
-    { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true } },
+    { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true, requiredPermission: 'admin-users.view' } },
     { path: '/products', name: 'products', component: PlaceholderView, props: { title: 'Каталог' }, meta: { requiresAuth: true } },
     { path: '/orders', name: 'orders', component: PlaceholderView, props: { title: 'Заказы' }, meta: { requiresAuth: true } },
     { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true } },
@@ -25,6 +25,7 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !auth.user) return { name: 'login' }
   if (to.meta.guestOnly && auth.user) return { name: 'dashboard' }
+  if (to.meta.requiredPermission && !auth.hasPermission(to.meta.requiredPermission as string)) return { name: 'dashboard' }
 })
 
 export default router

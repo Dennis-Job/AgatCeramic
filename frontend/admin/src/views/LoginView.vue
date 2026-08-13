@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import BaseInput from '../components/BaseInput.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -36,11 +37,11 @@ async function submit(): Promise<void> {
 
       <label class="mt-6 block text-sm font-medium text-[#344054]">
         Email
-        <input v-model="email" class="mt-1.5 w-full rounded-lg border border-[#d0d5dd] px-3 py-2.5 outline-none focus:border-[#7f56d9] focus:ring-2 focus:ring-[#ebe9fe]" type="email" autocomplete="username" required />
+        <BaseInput v-model="email" class="mt-1.5 w-full" type="email" autocomplete="username" required />
       </label>
       <label class="mt-4 block text-sm font-medium text-[#344054]">
         Пароль
-        <input v-model="password" class="mt-1.5 w-full rounded-lg border border-[#d0d5dd] px-3 py-2.5 outline-none focus:border-[#7f56d9] focus:ring-2 focus:ring-[#ebe9fe]" type="password" autocomplete="current-password" required />
+        <BaseInput v-model="password" class="mt-1.5 w-full" type="password" autocomplete="current-password" required />
       </label>
       <button class="mt-6 w-full rounded-lg bg-[#7f56d9] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="isSubmitting">
         {{ isSubmitting ? 'Выполняется вход…' : 'Войти' }}

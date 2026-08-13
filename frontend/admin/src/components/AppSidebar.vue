@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Boxes, FileText, LayoutDashboard, Settings, ShoppingCart, UsersRound, X } from '@lucide/vue'
+import { useAuthStore } from '../stores/auth'
 defineProps<{ isOpen: boolean }>()
 defineEmits<{ close: [] }>()
+
+const auth = useAuthStore()
 
 const primaryNavigation = [
   { label: 'Обзор', to: '/', icon: LayoutDashboard },
@@ -10,10 +14,12 @@ const primaryNavigation = [
 ]
 
 const secondaryNavigation = [
-  { label: 'Employees', to: '/employees', icon: UsersRound },
+  { label: 'Сотрудники', to: '/employees', icon: UsersRound, requiredPermission: 'admin-users.view' },
   { label: 'Контент', to: '/content', icon: FileText },
   { label: 'Настройки', to: '/settings', icon: Settings },
 ]
+
+const visibleSecondaryNavigation = computed(() => secondaryNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
 </script>
 
 <template>
@@ -46,7 +52,7 @@ const secondaryNavigation = [
     <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#98a2b3]">Управление</p>
     <nav class="space-y-1">
       <RouterLink
-        v-for="item in secondaryNavigation"
+        v-for="item in visibleSecondaryNavigation"
         :key="item.to"
         :to="item.to"
         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[#475467] transition hover:bg-[#f9fafb]"

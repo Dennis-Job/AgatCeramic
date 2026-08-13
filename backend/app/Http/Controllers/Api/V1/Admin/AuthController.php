@@ -23,7 +23,7 @@ class AuthController extends Controller
 
     public function me(Request $request): AdminUserResource
     {
-        return new AdminUserResource($request->user());
+        return new AdminUserResource($request->user()->load('roles.permissions'));
     }
 
     public function logout(Request $request): JsonResponse

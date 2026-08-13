@@ -16,3 +16,12 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Shared treatment for compact status and role badges. */
+[class*='rounded-full'][class*='text-xs'] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.25;
+}

@@ -3,7 +3,10 @@
 namespace Tests\Feature\Api;
 
 use App\Enums\AdminUserStatus;
+use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -136,6 +139,19 @@ class AdminAuthenticationTest extends TestCase
         $this->getJson('/api/v1/admin/auth/me')
             ->assertUnauthorized()
             ->assertJsonPath('error.code', 'unauthenticated');
+    }
+
+    public function test_current_admin_response_contains_effective_permissions(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $this->seed(PermissionSeeder::class);
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::query()->where('slug', 'analyst')->sole());
+
+        $this->actingAs($user)
+            ->getJson('/api/v1/admin/auth/me')
+            ->assertOk()
+            ->assertJsonPath('data.permissions.0', 'analytics.view');
     }
 
     private function fromAdminSpa(): static
