@@ -60,7 +60,7 @@ class AdminUserManagementService
     public function delete(User $actor, User $user): void
     {
         if ($actor->is($user)) {
-            throw ValidationException::withMessages(['user' => ['You cannot delete your own account.']]);
+            throw ValidationException::withMessages(['user' => ['Нельзя удалить собственную учётную запись.']]);
         }
 
         $this->ensureActiveSuperAdminRemains($user, ['status' => AdminUserStatus::Blocked->value, 'role_ids' => []]);
@@ -78,7 +78,7 @@ class AdminUserManagementService
     private function ensureNotBlockingSelf(User $actor, User $user, array $attributes): void
     {
         if ($actor->is($user) && ($attributes['status'] ?? null) === AdminUserStatus::Blocked->value) {
-            throw ValidationException::withMessages(['status' => ['You cannot block your own account.']]);
+            throw ValidationException::withMessages(['status' => ['Нельзя заблокировать собственную учётную запись.']]);
         }
     }
 
@@ -103,7 +103,7 @@ class AdminUserManagementService
             ->count();
 
         if ($activeSuperAdmins <= 1) {
-            throw ValidationException::withMessages(['role_ids' => ['At least one active Super Admin must remain.']]);
+            throw ValidationException::withMessages(['role_ids' => ['В системе должен остаться хотя бы один активный Супер Администратор.']]);
         }
     }
 }

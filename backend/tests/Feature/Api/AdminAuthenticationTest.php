@@ -193,6 +193,19 @@ class AdminAuthenticationTest extends TestCase
         $this->assertGuest('web');
     }
 
+    public function test_validation_errors_are_localized_in_russian(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->patchJson('/api/v1/admin/auth/me', [
+                'password' => 'new-secure-password',
+                'password_confirmation' => 'different-password',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('error.details.password.0', 'Поле пароль не совпадает с подтверждением.');
+    }
+
     private function fromAdminSpa(): static
     {
         return $this->withHeader('Origin', 'http://localhost:5173');

@@ -69,8 +69,13 @@ class AdminUserManagementTest extends TestCase
     {
         $actor = $this->superAdmin();
 
-        $this->actingAs($actor)->patchJson("/api/v1/admin/users/{$actor->id}", ['status' => AdminUserStatus::Blocked->value])->assertUnprocessable();
-        $this->actingAs($actor)->deleteJson("/api/v1/admin/users/{$actor->id}")->assertUnprocessable();
+        $this->actingAs($actor)
+            ->patchJson("/api/v1/admin/users/{$actor->id}", ['status' => AdminUserStatus::Blocked->value])
+            ->assertUnprocessable();
+        $this->actingAs($actor)
+            ->deleteJson("/api/v1/admin/users/{$actor->id}")
+            ->assertUnprocessable()
+            ->assertJsonPath('error.details.user.0', 'Нельзя удалить собственную учётную запись.');
     }
 
     public function test_changing_an_employee_password_revokes_their_sessions(): void

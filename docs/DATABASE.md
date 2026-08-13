@@ -159,8 +159,8 @@ SKU/варианты.
 
 TASK-025 creates the append-only audit trail for material administrative actions.
 
-- `actor_id` — nullable reference to the staff account which performed the action; it becomes
-  `NULL` if that account is deleted, preserving the event without retaining a deleted account;
+- `actor_id` — nullable historical staff-account identifier. It deliberately has no database foreign
+  key: deleting an account must not alter an immutable audit record;
 - `action` — stable dot-notated code, for example `auth.login` or `admin-users.update`;
 - `entity_type` and `entity_id` — optional target model class and identifier;
 - `metadata` — optional minimal JSON context, sanitised before persistence;
@@ -176,3 +176,7 @@ explicit action codes and an allowlisted minimal context through `AuditLogServic
 Snapshots are an explicit exception for administrative-account identification: they preserve only
 the fields listed above so that material actions remain understandable after a target is deleted.
 They are retained for five years and then deleted with the audit record.
+
+PostgreSQL permits only INSERT operations on `audit_logs`. Database triggers reject every UPDATE
+and direct DELETE; the retention command is the sole exception, using a transaction-local database
+setting that applies only while it removes records older than the approved retention period.

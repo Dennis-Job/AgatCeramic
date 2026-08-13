@@ -38,7 +38,7 @@
 
 - [x] TASK-029A Admin password reset API and page
 - [x] TASK-029B Audit entity snapshots and retention policy
-- [ ] TASK-029C Database-level audit log immutability
+- [x] TASK-029C Database-level audit log immutability
 
 ## Phase 3 — Catalog
 
