@@ -17,7 +17,7 @@ TASK-020 adds these `users` fields:
 
 Roles and permissions are introduced in TASK-022 and TASK-023. Administrative HTTP
 endpoints require a valid active administrator session; individual authorization policies
-are added in TASK-024.
+are enforced by Laravel policies added in TASK-024.
 
 ### roles
 Administrative roles. TASK-022 stores a human-readable unique `name`, a stable unique `slug`,

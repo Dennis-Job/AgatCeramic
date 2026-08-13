@@ -27,7 +27,7 @@
 - [x] TASK-021 Authentication
 - [x] TASK-022 Roles
 - [x] TASK-023 Permissions
-- [ ] TASK-024 Policies
+- [x] TASK-024 Policies
 - [ ] TASK-025 Audit log
 
 ## Phase 3 — Catalog

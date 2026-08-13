@@ -71,11 +71,12 @@ header. Browser requests must include credentials.
 - `POST /admin/auth/logout` — invalidates the current session and CSRF token.
 
 All other administrative API routes require `auth:sanctum` and an active account. Fine-grained
-authorization is introduced in TASK-024.
+authorization is enforced through Laravel policies introduced in TASK-024.
 
 Role storage, granular permissions, and their relations are introduced in TASK-022 and TASK-023.
-Role or permission assignment endpoints remain unavailable until policies are in place, so an
-authenticated staff member cannot escalate privileges before TASK-024.
+TASK-024 registers policies for `User`, `Role`, and `Permission`: only permissions such as
+`admin-users.manage`, `roles.manage`, and `permissions.manage` authorize mutations. Future
+controllers must call `$this->authorize()` for model actions before changing access-control data.
 
 ## Административный API
 
