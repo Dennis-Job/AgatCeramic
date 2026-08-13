@@ -4,14 +4,11 @@ namespace Tests\Integration;
 
 use App\Models\AuditLog;
 use Illuminate\Database\QueryException;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PostgresAuditLogImmutabilityTest extends TestCase
 {
-    use RefreshDatabase;
-
     public function test_postgresql_trigger_rejects_direct_audit_log_updates(): void
     {
         $this->requirePostgres();
@@ -49,6 +46,10 @@ class PostgresAuditLogImmutabilityTest extends TestCase
 
     private function requirePostgres(): void
     {
+        if (getenv('CI') !== 'true') {
+            $this->markTestSkipped('This integration test runs only in CI.');
+        }
+
         if (DB::getDriverName() !== 'pgsql') {
             $this->markTestSkipped('This integration test requires PostgreSQL.');
         }
