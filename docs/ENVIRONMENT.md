@@ -45,6 +45,21 @@ allowlist. Both must be set to the deployed Admin SPA origin in each environment
 origins are not compatible with credentialed cookie requests. For HTTPS deployments set
 `SESSION_SECURE_COOKIE=true`.
 
+## Initial Super Admin
+
+The first staff account is created only from the backend CLI, never through a public route:
+
+```sh
+php artisan admin:bootstrap --email=admin@example.test
+```
+
+The command asks for the password through a hidden prompt, seeds the baseline roles and
+permissions, assigns the `super-admin` role, and records `admin.bootstrap` in the audit trail.
+It refuses to run when any staff account already exists. In production it additionally requires
+the explicit `--force` option. Do not pass a password with `--password` except for an isolated
+local development environment, because command-line arguments can be visible to other local
+processes.
+
 Тесты Laravel изолированно работают с SQLite `:memory:`, а CI дополнительно прогоняет миграции на PostgreSQL 17.
 
 Подключение Redis реализуется в TASK-011.
