@@ -13,6 +13,12 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const attrs = useAttrs()
 const hasValue = computed(() => props.modelValue.length > 0)
+const containerClass = computed(() => attrs.class)
+const inputAttrs = computed(() => {
+  const { class: ignored, ...attributes } = attrs
+
+  return attributes
+})
 
 function clear(): void {
   emit('update:modelValue', '')
@@ -20,10 +26,10 @@ function clear(): void {
 </script>
 
 <template>
-  <div class="flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 shadow-[0_1px_2px_rgba(16,24,40,.05)] transition focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#f4f3ff]">
+  <div :class="containerClass" class="flex items-center gap-2 rounded-lg border border-[#d0d5dd] bg-white px-3 shadow-[0_1px_2px_rgba(16,24,40,.05)] transition focus-within:border-[#7f56d9] focus-within:ring-4 focus-within:ring-[#f4f3ff]">
     <Search v-if="searchable" :size="17" class="shrink-0 text-[#98a2b3]" />
     <input
-      v-bind="attrs"
+      v-bind="inputAttrs"
       :value="modelValue"
       :type="type"
       class="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[#344054] outline-none placeholder:text-[#98a2b3]"
