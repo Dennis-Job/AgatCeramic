@@ -32,6 +32,7 @@ Route::prefix('admin')
                     ->as('auth.')
                     ->group(function (): void {
                         Route::get('me', [AuthController::class, 'me'])->name('me');
+                        Route::patch('me', [AuthController::class, 'updateProfile'])->name('me.update');
                         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
                     });
 

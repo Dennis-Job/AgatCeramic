@@ -68,6 +68,9 @@ header. Browser requests must include credentials.
   minute for an email/IP combination. Invalid credentials and blocked accounts both return
   the standard `401 unauthenticated` response.
 - `GET /admin/auth/me` — returns the authenticated active administrator.
+- `PATCH /admin/auth/me` — allows every authenticated administrator to update only their own
+  `name`, `email`, and password. It does not require `admin-users.manage`; it cannot alter roles or
+  status. Changing the password ends the current session and revokes all other sessions.
 - `POST /admin/auth/logout` — invalidates the current session and CSRF token.
 - `POST /admin/auth/forgot-password` — accepts an administrator email and always returns `204` to
   prevent account enumeration. Active accounts receive a single-use password-reset link by email.

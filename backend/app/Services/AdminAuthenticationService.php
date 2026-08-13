@@ -93,6 +93,34 @@ class AdminAuthenticationService
         }
     }
 
+    /** @param array<string, mixed> $attributes */
+    public function updateProfile(User $user, array $attributes): User
+    {
+        return DB::transaction(function () use ($user, $attributes): User {
+            $passwordChanged = array_key_exists('password', $attributes);
+            $changedFields = array_keys(array_diff_key($attributes, ['password' => true]));
+
+            $user->fill($attributes);
+
+            if ($passwordChanged) {
+                $user->forceFill(['remember_token' => Str::random(60)]);
+            }
+
+            $user->save();
+
+            if ($passwordChanged) {
+                DB::table('sessions')->where('user_id', $user->getKey())->delete();
+            }
+
+            $this->auditLogService->record($user, 'auth.profile.updated', $user, [
+                'changed_fields' => $changedFields,
+                'credentials_changed' => $passwordChanged,
+            ]);
+
+            return $user->load('roles.permissions');
+        });
+    }
+
     private function throwInvalidPasswordReset(): never
     {
         throw ValidationException::withMessages([

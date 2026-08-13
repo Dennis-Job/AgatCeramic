@@ -70,6 +70,19 @@ export async function currentAdmin(): Promise<AdminUser> {
   return ((await response.json()) as { data: AdminUser }).data
 }
 
+export async function updateCurrentAdmin(payload: { name?: string; email?: string; password?: string; password_confirmation?: string }): Promise<AdminUser> {
+  await requestCsrfCookie()
+  const response = await apiFetch('/admin/auth/me', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) return throwApiError(response, 'Не удалось сохранить профиль.')
+
+  return ((await response.json()) as { data: AdminUser }).data
+}
+
 export async function login(email: string, password: string): Promise<void> {
   await requestCsrfCookie()
 

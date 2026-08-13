@@ -9,6 +9,7 @@ import EmployeesView from '../views/EmployeesView.vue'
 import RolesView from '../views/RolesView.vue'
 import PermissionsView from '../views/PermissionsView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
+import ProfileView from '../views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true } },
     { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true } },
     { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
+    { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
     { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true, requiredPermission: 'admin-users.view' } },
     { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view' } },
     { path: '/permissions', name: 'permissions', component: PermissionsView, meta: { requiresAuth: true, requiredPermission: 'permissions.view' } },

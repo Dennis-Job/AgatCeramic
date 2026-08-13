@@ -154,6 +154,45 @@ class AdminAuthenticationTest extends TestCase
             ->assertJsonPath('data.permissions.0', 'analytics.view');
     }
 
+    public function test_administrator_can_update_their_own_profile_without_employee_management_permission(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $this->seed(PermissionSeeder::class);
+        $user = User::factory()->create(['email' => 'analyst@example.test']);
+        $user->roles()->attach(Role::query()->where('slug', 'analyst')->sole());
+
+        $this->actingAs($user)
+            ->withoutMiddleware(ValidateCsrfToken::class)
+            ->patchJson('/api/v1/admin/auth/me', [
+                'name' => 'Updated Analyst',
+                'email' => 'updated@example.test',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Updated Analyst')
+            ->assertJsonPath('data.email', 'updated@example.test');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'auth.profile.updated',
+            'actor_id' => $user->id,
+            'entity_id' => $user->id,
+        ]);
+    }
+
+    public function test_administrator_is_logged_out_after_changing_their_own_profile_password(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->withoutMiddleware(ValidateCsrfToken::class)
+            ->patchJson('/api/v1/admin/auth/me', [
+                'password' => 'new-secure-password',
+                'password_confirmation' => 'new-secure-password',
+            ])
+            ->assertOk();
+
+        $this->assertGuest('web');
+    }
+
     private function fromAdminSpa(): static
     {
         return $this->withHeader('Origin', 'http://localhost:5173');

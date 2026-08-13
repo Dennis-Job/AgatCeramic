@@ -32,7 +32,7 @@ async function signOut(): Promise<void> {
             <p class="text-sm font-semibold text-[#344054]">{{ auth.user?.name }}</p>
             <p class="text-xs text-[#98a2b3]">{{ auth.user?.email }}</p>
           </div>
-          <div class="grid h-10 w-10 place-items-center rounded-full bg-[#7f56d9] text-sm font-bold text-white">{{ initial }}</div>
+          <button class="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-[#7f56d9] text-sm font-bold text-white hover:bg-[#6941c6]" aria-label="Мой профиль" @click="router.push({ name: 'profile' })">{{ initial }}</button>
           <button class="grid h-10 w-10 place-items-center rounded-full text-[#667085] hover:bg-[#f2f4f7]" aria-label="Выйти" @click="signOut"><LogOut :size="19" /></button>
         </div>
       </header>
