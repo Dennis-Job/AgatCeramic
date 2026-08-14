@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Pencil, Plus, ShieldCheck, Trash2, X } from '@lucide/vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
@@ -13,11 +13,25 @@ const error = ref('')
 const opened = ref(false)
 const editing = ref<AccessRole | null>(null)
 const form = ref<RolePayload>({ name: '', slug: '', description: '', permission_ids: [] })
+const generatedSlug = ref('')
 const canManage = computed(() => auth.hasPermission('roles.manage'))
 const title = computed(() => editing.value ? `Роль: ${editing.value.name}` : 'Новая роль')
 
+const transliterationMap: Record<string, string> = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' }
+
+function toSlug(value: string): string {
+  return Array.from(value.toLowerCase(), (character) => transliterationMap[character] ?? character).join('').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
+watch(() => form.value.name, (name) => {
+  if (editing.value || (form.value.slug !== '' && form.value.slug !== generatedSlug.value)) return
+  generatedSlug.value = toSlug(name)
+  form.value.slug = generatedSlug.value
+})
+
 function open(role: AccessRole | null = null): void {
   editing.value = role
+  generatedSlug.value = ''
   form.value = role ? { name: role.name, slug: role.slug, description: role.description ?? '', permission_ids: role.permissions.map((item) => item.id) } : { name: '', slug: '', description: '', permission_ids: [] }
   opened.value = true
 }
