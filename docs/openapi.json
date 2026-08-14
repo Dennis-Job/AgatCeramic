@@ -194,6 +194,9 @@
       "parameters": [{ "name": "audit_log", "in": "path", "required": true, "schema": { "type": "integer" } }],
       "get": { "operationId": "getAuditLog", "summary": "Get an audit record", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Audit record" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } }
     },
+    "/admin/categories/tree": {
+      "get": { "operationId": "getCategoryTree", "summary": "Get the nested category tree", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Nested categories ordered by sort order and name" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } }
+    },
     "/admin/categories": {
       "get": { "operationId": "listCategories", "summary": "List categories", "security": [{ "sanctumSession": [] }], "parameters": [{ "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1 } }], "responses": { "200": { "description": "Paginated categories" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } },
       "post": { "operationId": "createCategory", "summary": "Create a category", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StoreCategoryRequest" } } } }, "responses": { "201": { "description": "Created category" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }

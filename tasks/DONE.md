@@ -31,6 +31,7 @@
 | TASK-029B | Audit entity snapshots and retention policy | 2026-08-13 | Для событий аудита сохраняются allowlisted snapshots участников и объектов, включая удалённые учётные записи; ежедневная команда удаляет записи старше пяти лет. | `php artisan test` (61 passed); Pint; Composer; PostgreSQL migration preview; `php artisan schedule:list` |
 | TASK-029C | Database-level audit log immutability | 2026-08-13 | PostgreSQL trigger запрещает изменения и прямое удаление audit-записей; retention-команда получает ограниченное transaction-local разрешение только для удаления устаревших записей. | `php artisan test` (62 passed); Pint; Composer; PostgreSQL migration applied; `audit:prune` smoke-check; отдельный PostgreSQL integration-test в CI |
 | TASK-030 | Categories | 2026-08-14 | Добавлены базовая сущность категорий, административный CRUD API с авторизацией `catalog.manage`, аудит действий и страница управления в Admin SPA. Поддержка дерева и медиа остаётся в TASK-031 и TASK-096. | `php artisan test` (65 passed); Pint; Composer; PostgreSQL migration preview в Docker; `npm.cmd run build --prefix frontend/admin`; OpenAPI JSON validation |
+| TASK-031 | Category tree | 2026-08-14 | Добавлена иерархия категорий с `parent_id`, рекурсивным административным API дерева и защитой от назначения категории самой себе или в потомки. | `CategoryManagementTest` (5 passed); Pint; Composer; OpenAPI JSON validation; `npm.cmd run build --prefix frontend/admin` |
 
 После завершения каждой задачи добавлять:
 - ID;

@@ -43,7 +43,7 @@
 ## Phase 3 — Catalog
 
 - [x] TASK-030 Categories
-- [ ] TASK-031 Category tree
+- [x] TASK-031 Category tree
 - [ ] TASK-032 Attribute groups
 - [ ] TASK-033 Attributes
 - [ ] TASK-034 Category attributes

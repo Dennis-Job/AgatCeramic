@@ -24,4 +24,5 @@ Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('r
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('permissions', PermissionController::class)->only(['index', 'show']);
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+Route::get('categories/tree', [CategoryController::class, 'tree'])->name('categories.tree');
 Route::apiResource('categories', CategoryController::class);

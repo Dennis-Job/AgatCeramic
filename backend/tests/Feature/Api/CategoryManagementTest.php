@@ -73,6 +73,30 @@ class CategoryManagementTest extends TestCase
         $this->actingAs($actor)->getJson('/api/v1/admin/categories')->assertForbidden();
     }
 
+    public function test_catalog_manager_can_receive_a_nested_category_tree(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $root = Category::factory()->create(['name' => 'Root', 'sort_order' => 10]);
+        $child = Category::factory()->create(['name' => 'Child', 'parent_id' => $root->id]);
+        $grandchild = Category::factory()->create(['name' => 'Grandchild', 'parent_id' => $child->id]);
+
+        $this->actingAs($actor)->getJson('/api/v1/admin/categories/tree')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $root->id)
+            ->assertJsonPath('data.0.children.0.id', $child->id)
+            ->assertJsonPath('data.0.children.0.children.0.id', $grandchild->id);
+    }
+
+    public function test_category_cannot_be_moved_inside_itself_or_a_descendant(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $root = Category::factory()->create();
+        $child = Category::factory()->create(['parent_id' => $root->id]);
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$root->id}", ['parent_id' => $root->id])->assertUnprocessable();
+        $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$root->id}", ['parent_id' => $child->id])->assertUnprocessable();
+    }
+
     private function userWithRole(string $slug): User
     {
         $this->seed(RoleSeeder::class);

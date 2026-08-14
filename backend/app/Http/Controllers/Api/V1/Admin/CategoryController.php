@@ -24,6 +24,13 @@ class CategoryController extends Controller
         return CategoryResource::collection(Category::query()->orderBy('sort_order')->orderBy('name')->paginate(25));
     }
 
+    public function tree(): AnonymousResourceCollection
+    {
+        Gate::authorize('viewAny', Category::class);
+
+        return CategoryResource::collection($this->managementService->tree());
+    }
+
     public function store(StoreCategoryRequest $request): JsonResponse
     {
         Gate::authorize('create', Category::class);
