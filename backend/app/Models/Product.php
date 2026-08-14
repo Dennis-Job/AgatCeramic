@@ -33,6 +33,12 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    /** @return HasMany<ProductAttributeValue, $this> */
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

@@ -172,6 +172,16 @@ less than the current price. `stock_quantity`, `is_active`, and `sort_order` def
 `true`, and `0`. Changes are audited as `product.variant-created`, `product.variant-updated`, and
 `product.variant-deleted`.
 
+### Product attributes
+
+- `GET /admin/products/{product}/attributes`
+- `PUT /admin/products/{product}/attributes`
+
+The `PUT` endpoint replaces the full value set with an `attributes` array of
+`{attribute_id, value}` entries. An attribute must be assigned to the product category; required
+category attributes must be supplied. Values are validated against the attribute type and allowed
+options. Changes require `catalog.manage` and are recorded as `product.attributes-updated`.
+
 ### Категории
 
 - `GET /admin/categories`

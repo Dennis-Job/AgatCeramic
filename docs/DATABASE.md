@@ -93,6 +93,10 @@ flag, sort order, and timestamps. Deleting a product cascades to its variants.
 SKU/варианты.
 
 ### product_attribute_values
+TASK-038 stores one JSON value per product and category-assigned attribute. The product and
+attribute pair is unique; deleting a product removes its values. Attribute deletion is restricted
+while a value exists.
+
 Значения характеристик.
 
 ### product_images
