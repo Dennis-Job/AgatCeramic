@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { ScrollText } from '@lucide/vue'
 import BaseDatePicker from '../components/BaseDatePicker.vue'
 import BaseInput from '../components/BaseInput.vue'
@@ -14,6 +14,7 @@ const lastPage = ref(1)
 const total = ref(0)
 const loading = ref(false)
 const error = ref('')
+let loadSequence = 0
 
 const actionOptions = [
   { label: 'Все действия', value: '' },
@@ -35,25 +36,37 @@ function actionName(action: string): string {
 }
 
 async function load(nextPage = 1): Promise<void> {
+  const sequence = ++loadSequence
+  const query = { ...filters.value, page: nextPage }
   loading.value = true
   error.value = ''
   try {
-    const response = await getAuditLogs({ ...filters.value, page: nextPage })
+    const response = await getAuditLogs(query)
+    if (sequence !== loadSequence) return
+
     logs.value = response.data
     page.value = response.meta.current_page
     lastPage.value = response.meta.last_page
     total.value = response.meta.total
   } catch (reason) {
+    if (sequence !== loadSequence) return
+
     error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить журнал аудита.'
   } finally {
-    loading.value = false
+    if (sequence === loadSequence) loading.value = false
   }
 }
 
 function reset(): void {
+  const reactiveFiltersChanged = Boolean(filters.value.action || filters.value.date_from || filters.value.date_to)
   filters.value = { search: '', action: '', date_from: '', date_to: '' }
-  void load()
+  if (!reactiveFiltersChanged) void load()
 }
+
+watch(
+  () => [filters.value.action, filters.value.date_from, filters.value.date_to],
+  () => void load(),
+)
 
 onMounted(load)
 </script>
@@ -71,7 +84,7 @@ onMounted(load)
     <div class="rounded-xl border border-gray-200 bg-white shadow-card">
       <div class="grid gap-3 border-b border-gray-100 p-4 md:grid-cols-2 admin-audit-log-filter-grid">
         <BaseInput v-model="filters.search" searchable placeholder="Действие или сотрудник" aria-label="Поиск в журнале" @keyup.enter="() => load()" />
-        <BaseSelect v-model="filters.action" :options="actionOptions" accessible-name="Тип действия" @change="() => load()" />
+        <BaseSelect v-model="filters.action" :options="actionOptions" accessible-name="Тип действия" />
         <BaseDatePicker v-model="filters.date_from" accessible-name="Дата с" />
         <BaseDatePicker v-model="filters.date_to" accessible-name="Дата по" />
         <button class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-25" @click="() => load()">Найти</button>
