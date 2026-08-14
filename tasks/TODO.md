@@ -49,7 +49,7 @@
 - [x] TASK-034 Category attributes
 - [x] TASK-035 Brands
 - [x] TASK-036 Products
-- [ ] TASK-037 Product variants
+- [x] TASK-037 Product variants
 - [ ] TASK-038 Product attributes
 - [ ] TASK-039 Product images
 - [ ] TASK-040 Related products

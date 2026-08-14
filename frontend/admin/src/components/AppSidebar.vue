@@ -9,6 +9,7 @@ defineEmits<{ close: [] }>()
 const auth = useAuthStore()
 
 const primaryNavigation = [
+  { label: 'Product variants', to: '/product-variants', icon: Boxes, requiredPermission: 'catalog.manage' },
   { label: 'Бренды', to: '/brands', icon: BadgeCheck, requiredPermission: 'catalog.manage' },
   { label: 'Характеристики', to: '/attributes', icon: ListFilter, requiredPermission: 'catalog.manage' },
   { label: 'Группы характеристик', to: '/attribute-groups', icon: Layers3, requiredPermission: 'catalog.manage' },

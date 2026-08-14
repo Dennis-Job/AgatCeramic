@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Admin\CategoryAttributeController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
+use App\Http\Controllers\Api\V1\Admin\ProductVariantController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,3 +40,4 @@ Route::apiResource('attribute-groups', AttributeGroupController::class);
 Route::apiResource('attributes', AttributeController::class);
 Route::apiResource('brands', BrandController::class);
 Route::apiResource('products', ProductController::class);
+Route::apiResource('products.variants', ProductVariantController::class);

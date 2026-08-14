@@ -37,6 +37,7 @@
 | TASK-034 | Category attributes | 2026-08-14 | Added ordered category-to-attribute assignments, protected API, audit logging, and an Admin SPA editor. | `php artisan test` (75 passed); Pint; Composer; OpenAPI JSON; PostgreSQL migration preview in Docker; `npm.cmd run build --prefix frontend/admin` |
 | TASK-035 | Brands | 2026-08-14 | Added brands with a protected admin CRUD API, `catalog.manage` authorization, audit logging, OpenAPI contract, and an Admin SPA page. The optional ISO 3166-1 alpha-2 country of origin is supported. Brand logo/media and SEO metadata remain in their dedicated later modules. | `php artisan test`; Pint; Composer; OpenAPI JSON validation; PostgreSQL migrations in Docker; `npm.cmd run build --prefix frontend/admin` |
 | TASK-036 | Products | 2026-08-14 | Added base product cards with required category, optional brand, protected admin CRUD API, audit logging, OpenAPI contract, and an Admin SPA page. Variants, SKU/prices, attributes, images, and relations remain in TASK-037–040. | `ProductManagementTest` (2 passed, 24 assertions); OpenAPI JSON validation; `npm.cmd run build --prefix frontend/admin` |
+| TASK-037 | Product variants | 2026-08-14 | Added product-owned variants with globally unique SKU, prices, stock, publication state, ordering, protected nested CRUD API, ownership scoping, and audit logging. Product attributes, images, and relations remain in TASK-038–040. | `ProductVariantManagementTest` (2 passed, 23 assertions); Pint; admin build |
 
 После завершения каждой задачи добавлять:
 - ID;

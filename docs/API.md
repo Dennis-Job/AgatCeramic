@@ -158,6 +158,20 @@ URL-safe `slug`; `brand_id`, `description`, and `is_active` are optional. Produc
 include the assigned category and brand (when present). These endpoints require `catalog.manage`
 and record `product.created`, `product.updated`, and `product.deleted` in the audit log.
 
+### Product variants
+
+- `GET /admin/products/{product}/variants`
+- `POST /admin/products/{product}/variants`
+- `GET /admin/products/{product}/variants/{variant}`
+- `PATCH /admin/products/{product}/variants/{variant}`
+- `DELETE /admin/products/{product}/variants/{variant}`
+
+Variants are managed under their owning product and require `catalog.manage`. Creation requires
+`name`, a globally unique SKU, and a non-negative `price`; `old_price` is optional but cannot be
+less than the current price. `stock_quantity`, `is_active`, and `sort_order` default to `0`,
+`true`, and `0`. Changes are audited as `product.variant-created`, `product.variant-updated`, and
+`product.variant-deleted`.
+
 ### Категории
 
 - `GET /admin/categories`

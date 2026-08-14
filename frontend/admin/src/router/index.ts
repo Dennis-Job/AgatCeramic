@@ -15,10 +15,12 @@ import AttributeGroupsView from '../views/AttributeGroupsView.vue'
 import AttributesView from '../views/AttributesView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import ProductsView from '../views/ProductsView.vue'
+import ProductVariantsView from '../views/ProductVariantsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/product-variants', name: 'product-variants', component: ProductVariantsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Product variants' } },
     { path: '/brands', name: 'brands', component: BrandsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Бренды' } },
     { path: '/attributes', name: 'attributes', component: AttributesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Характеристики' } },
     { path: '/attribute-groups', name: 'attribute-groups', component: AttributeGroupsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Группы характеристик' } },

@@ -86,6 +86,10 @@ their respective later catalog tasks. Categories cannot be deleted while referen
 deleting a brand clears the optional reference.
 
 ### product_variants
+TASK-037 creates variants owned by a product. Each has a globally unique SKU, display name,
+current price, optional old price (never below the current price), stock quantity, publication
+flag, sort order, and timestamps. Deleting a product cascades to its variants.
+
 SKU/варианты.
 
 ### product_attribute_values
