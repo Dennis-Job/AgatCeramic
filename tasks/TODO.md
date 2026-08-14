@@ -48,7 +48,7 @@
 - [x] TASK-033 Attributes
 - [x] TASK-034 Category attributes
 - [x] TASK-035 Brands
-- [ ] TASK-036 Products
+- [x] TASK-036 Products
 - [ ] TASK-037 Product variants
 - [ ] TASK-038 Product attributes
 - [ ] TASK-039 Product images

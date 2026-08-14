@@ -79,7 +79,11 @@ keeps its attributes and clears their group reference.
 `logo_id` и флаг `is_active`.
 
 ### products
-Основная карточка товара.
+TASK-036 creates the base product card: a required `category_id`, optional `brand_id`, name,
+unique URL-safe slug, optional description, publication flag `is_active`, and timestamps.
+Product variants, prices, SKU, attributes, images, and relations are intentionally introduced by
+their respective later catalog tasks. Categories cannot be deleted while referenced by products;
+deleting a brand clears the optional reference.
 
 ### product_variants
 SKU/варианты.

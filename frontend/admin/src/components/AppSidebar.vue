@@ -14,7 +14,7 @@ const primaryNavigation = [
   { label: 'Группы характеристик', to: '/attribute-groups', icon: Layers3, requiredPermission: 'catalog.manage' },
   { label: 'Категории', to: '/categories', icon: FolderTree, requiredPermission: 'catalog.manage' },
   { label: 'Обзор', to: '/', icon: LayoutDashboard },
-  { label: 'Каталог', to: '/products', icon: Boxes },
+  { label: 'Товары', to: '/products', icon: Boxes, requiredPermission: 'catalog.manage' },
   { label: 'Заказы', to: '/orders', icon: ShoppingCart },
 ]
 

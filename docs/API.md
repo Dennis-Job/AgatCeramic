@@ -153,6 +153,11 @@ sanitised, so passwords, tokens, and other sensitive values are never exposed.
 - `PATCH /admin/products/{product}`
 - `DELETE /admin/products/{product}`
 
+TASK-036 provides the base product card. Create requires `category_id`, `name`, and a unique
+URL-safe `slug`; `brand_id`, `description`, and `is_active` are optional. Product responses
+include the assigned category and brand (when present). These endpoints require `catalog.manage`
+and record `product.created`, `product.updated`, and `product.deleted` in the audit log.
+
 ### Категории
 
 - `GET /admin/categories`

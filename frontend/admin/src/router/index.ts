@@ -14,6 +14,7 @@ import BrandsView from '../views/BrandsView.vue'
 import AttributeGroupsView from '../views/AttributeGroupsView.vue'
 import AttributesView from '../views/AttributesView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import ProductsView from '../views/ProductsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -22,6 +23,7 @@ const router = createRouter({
     { path: '/attributes', name: 'attributes', component: AttributesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Характеристики' } },
     { path: '/attribute-groups', name: 'attribute-groups', component: AttributeGroupsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Группы характеристик' } },
     { path: '/categories', name: 'categories', component: CategoriesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Категории' } },
+    { path: '/products', name: 'products', component: ProductsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Товары' } },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, title: 'Вход' } },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true, title: 'Восстановление пароля' } },
     { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true, title: 'Сброс пароля' } },
@@ -31,7 +33,6 @@ const router = createRouter({
     { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view', title: 'Роли' } },
     { path: '/permissions', name: 'permissions', component: PermissionsView, meta: { requiresAuth: true, requiredPermission: 'permissions.view', title: 'Права доступа' } },
     { path: '/audit-log', name: 'audit-log', component: AuditLogView, meta: { requiresAuth: true, requiredPermission: 'audit-log.view', title: 'Журнал аудита' } },
-    { path: '/products', name: 'products', component: PlaceholderView, props: { title: 'Каталог' }, meta: { requiresAuth: true, title: 'Каталог' } },
     { path: '/orders', name: 'orders', component: PlaceholderView, props: { title: 'Заказы' }, meta: { requiresAuth: true, title: 'Заказы' } },
     { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true, title: 'Контент' } },
     { path: '/settings', name: 'settings', component: PlaceholderView, props: { title: 'Настройки' }, meta: { requiresAuth: true, title: 'Настройки' } },
