@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'boolean' => 'Поле :attribute должно быть логическим значением.',
     'accepted' => 'Поле :attribute должно быть принято.',
     'after_or_equal' => 'Дата в поле :attribute должна быть не раньше :date.',
     'array' => 'Поле :attribute должно быть массивом.',

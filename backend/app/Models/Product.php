@@ -39,6 +39,12 @@ class Product extends Model
         return $this->hasMany(ProductAttributeValue::class);
     }
 
+    /** @return HasMany<ProductImage, $this> */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

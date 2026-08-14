@@ -51,7 +51,7 @@
 - [x] TASK-036 Products
 - [x] TASK-037 Product variants
 - [x] TASK-038 Product attributes
-- [ ] TASK-039 Product images
+- [x] TASK-039 Product images
 - [ ] TASK-040 Related products
 - [ ] TASK-041 Product search/filtering
 

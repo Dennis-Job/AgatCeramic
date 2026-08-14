@@ -182,6 +182,17 @@ The `PUT` endpoint replaces the full value set with an `attributes` array of
 category attributes must be supplied. Values are validated against the attribute type and allowed
 options. Changes require `catalog.manage` and are recorded as `product.attributes-updated`.
 
+### Product images
+
+- `GET /admin/products/{product}/images`
+- `POST /admin/products/{product}/images` (multipart, `image` field)
+- `PATCH /admin/products/{product}/images/{image}`
+- `DELETE /admin/products/{product}/images/{image}`
+
+Uploads require `catalog.manage` and accept JPEG, PNG, or WebP images up to 10 MiB. Files receive
+a generated storage name; the API returns their public URL and metadata. Each product always has
+one primary image while it has images. Alt text and sort order may be edited after upload.
+
 ### Категории
 
 - `GET /admin/categories`

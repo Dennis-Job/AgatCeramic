@@ -100,6 +100,10 @@ while a value exists.
 Значения характеристик.
 
 ### product_images
+TASK-039 stores product-owned image metadata: public-disk path, MIME type, byte size, optional
+alt text, primary-image flag, and sort order. Image files use generated names under
+`product-images/{product_id}`; deleting a product cascades to its image records.
+
 Изображения.
 
 ### product_relations
