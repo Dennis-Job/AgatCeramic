@@ -133,10 +133,10 @@ function open(category: Category | null = null): void {
     opened.value = true;
   });
 }
-function flattenTree(items: Category[], depth = 0): Category[] {
+function flattenTree(items: Category[]): Category[] {
   return items.flatMap((item) => [
-    { ...item, name: `${"— ".repeat(depth)}${item.name}` },
-    ...flattenTree(item.children ?? [], depth + 1),
+    item,
+    ...flattenTree(item.children ?? []),
   ]);
 }
 function descendantIds(category: Category): Set<number> {
@@ -173,7 +173,7 @@ function categoryName(id: number | null | undefined): string | null {
     ? null
     : (categories.value
         .find((category) => category.id === id)
-        ?.name.replace(/^(— )+/, "") ?? null);
+        ?.name ?? null);
 }
 async function load(): Promise<void> {
   try {
