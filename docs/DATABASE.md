@@ -56,9 +56,18 @@ assignments; deleting a staff account or role removes its pivot rows.
 Группы характеристик.
 
 ### attributes
+TASK-033 creates the shared attribute catalogue. An attribute can belong to an optional
+attribute group and has a stable unique `name` and `slug`, a `type` (`text`, `number`,
+`boolean`, `select`, or `multiselect`), an optional display `unit`, flags for filtering
+and requiredness, and `sort_order`. Choice types keep their values in `attribute_options`.
+
 Характеристики.
 
 ### attribute_options
+Each option belongs to one attribute and stores a stable per-attribute `value`, a human-readable
+`label`, and `sort_order`. Attribute deletion cascades to its options; deleting an attribute group
+keeps its attributes and clears their group reference.
+
 Значения select/multiselect.
 
 ### category_attributes

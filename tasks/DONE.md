@@ -34,6 +34,8 @@
 | TASK-031 | Category tree | 2026-08-14 | Добавлена иерархия категорий с `parent_id`, рекурсивным административным API дерева, признаком доступности родительства, защитой от циклов и визуальным отображением дерева в Admin SPA. | `CategoryManagementTest` (6 passed); Pint; PostgreSQL migration в Docker; OpenAPI JSON validation; `npm.cmd run build --prefix frontend/admin` |
 | TASK-032 | Attribute groups | 2026-08-14 | Добавлены группы характеристик: migration, model/factory, защищённый CRUD API, аудит, OpenAPI-контракт и страница Admin SPA. | `php artisan test` (70 passed); Pint; Composer; PostgreSQL migration в Docker; OpenAPI JSON validation; `npm.cmd run build --prefix frontend/admin` |
 
+| TASK-033 | Attributes | 2026-08-14 | Добавлены характеристики, типизированные значения select/multiselect, защищённый CRUD API, аудит и страница Admin SPA. | `AttributeManagementTest` (3 passed); Pint; OpenAPI JSON; сборка Admin SPA |
+
 После завершения каждой задачи добавлять:
 - ID;
 - название;

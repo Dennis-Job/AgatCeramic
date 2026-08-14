@@ -1,0 +1,73 @@
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { ListFilter, Pencil, Plus, Trash2, X } from '@lucide/vue'
+import BaseCheckbox from '../components/BaseCheckbox.vue'
+import BaseInput from '../components/BaseInput.vue'
+import BaseSelect from '../components/BaseSelect.vue'
+import { getAttributeGroups, type AttributeGroup } from '../services/attributeGroups'
+import { deleteAttribute, getAttributes, saveAttribute, type Attribute, type AttributePayload, type AttributeType } from '../services/attributes'
+import { useAuthStore } from '../stores/auth'
+
+const types: { value: AttributeType; label: string }[] = [{ value: 'text', label: 'Текст' }, { value: 'number', label: 'Число' }, { value: 'boolean', label: 'Да / нет' }, { value: 'select', label: 'Список' }, { value: 'multiselect', label: 'Множественный список' }]
+const auth = useAuthStore()
+const attributes = ref<Attribute[]>([])
+const groups = ref<AttributeGroup[]>([])
+const error = ref('')
+const opened = ref(false)
+const editing = ref<Attribute | null>(null)
+const deleting = ref<Attribute | null>(null)
+const isDeleting = ref(false)
+const manuallyEditedSlug = ref(false)
+const form = ref<AttributePayload>(emptyForm())
+const canManage = computed(() => auth.hasPermission('catalog.manage'))
+const hasOptions = computed(() => ['select', 'multiselect'].includes(form.value.type))
+const title = computed(() => editing.value ? `Характеристика: ${editing.value.name}` : 'Новая характеристика')
+const groupOptions = computed(() => [{ label: 'Без группы', value: '' }, ...groups.value.map(group => ({ label: group.name, value: String(group.id) }))])
+const selectedGroupId = computed({ get: () => form.value.attribute_group_id === null ? '' : String(form.value.attribute_group_id), set: (value: string) => { form.value.attribute_group_id = value === '' ? null : Number(value) } })
+const selectedType = computed({ get: () => form.value.type, set: (value: string) => { form.value.type = value as AttributeType; changeType() } })
+
+function emptyForm(): AttributePayload { return { attribute_group_id: null, name: '', slug: '', type: 'text', unit: null, is_filterable: false, is_required: false, sort_order: 0, options: [] } }
+function slug(value: string): string { return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') }
+function updateName(value: string): void { form.value.name = value; if (!manuallyEditedSlug.value) form.value.slug = slug(value) }
+function addOption(): void { form.value.options.push({ value: '', label: '', sort_order: form.value.options.length }) }
+function changeType(): void { if (hasOptions.value && form.value.options.length === 0) addOption() }
+function open(attribute: Attribute | null = null): void {
+  opened.value = false; editing.value = attribute; manuallyEditedSlug.value = attribute !== null
+  form.value = attribute ? { attribute_group_id: attribute.attribute_group_id, name: attribute.name, slug: attribute.slug, type: attribute.type, unit: attribute.unit, is_filterable: attribute.is_filterable, is_required: attribute.is_required, sort_order: attribute.sort_order, options: attribute.options.map(option => ({ ...option })) } : emptyForm()
+  queueMicrotask(() => { opened.value = true })
+}
+async function load(): Promise<void> { try { [attributes.value, groups.value] = await Promise.all([getAttributes(), getAttributeGroups()]) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить характеристики.' } }
+async function save(): Promise<void> { try { await saveAttribute(editing.value?.id ?? null, form.value); opened.value = false; await load() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить характеристику.' } }
+async function remove(): Promise<void> { if (!deleting.value) return; isDeleting.value = true; try { await deleteAttribute(deleting.value.id); deleting.value = null; await load() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось удалить характеристику.' } finally { isDeleting.value = false } }
+onMounted(load)
+</script>
+
+<template>
+  <section class="mx-auto admin-page">
+    <div class="mb-7 flex items-end justify-between gap-4">
+      <div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold text-gray-900">Характеристики</h1></div>
+      <button v-if="canManage" class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white" @click="open()"><Plus :size="18" />Добавить</button>
+    </div>
+    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
+      <div v-if="attributes.length" class="divide-y divide-gray-100"><article v-for="attribute in attributes" :key="attribute.id" class="flex items-center gap-4 p-4"><span class="grid h-10 w-10 place-items-center rounded-lg bg-primary-50 text-primary-600"><ListFilter :size="20" /></span><div class="min-w-0 flex-1"><h2 class="font-semibold text-gray-800">{{ attribute.name }}</h2><p class="text-sm text-gray-500">{{ types.find(type => type.value === attribute.type)?.label }} · /{{ attribute.slug }} · значений: {{ attribute.options.length }}</p></div><div v-if="canManage" class="flex gap-1"><button class="p-2 text-gray-500" @click="open(attribute)"><Pencil :size="17" /></button><button class="p-2 text-error-500" @click="deleting = attribute"><Trash2 :size="17" /></button></div></article></div>
+      <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Характеристик пока нет.</div>
+    </div>
+    <div v-if="opened" class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4" @click.self="opened = false">
+      <form class="admin-dialog-content w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @submit.prevent="save">
+        <div class="flex items-start justify-between"><div><h2 class="text-lg font-bold text-gray-900">{{ title }}</h2><p class="mt-1 text-sm text-gray-500">Укажите тип значения и варианты выбора, если они нужны.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" @click="opened = false"><X :size="20" /></button></div>
+        <div class="mt-6 grid gap-4">
+          <label class="text-sm font-medium text-gray-700">Название<BaseInput :model-value="form.name" class="mt-1.5 w-full font-normal" required @update:model-value="updateName" /></label>
+          <label class="text-sm font-medium text-gray-700">Технический код (slug)<BaseInput :model-value="form.slug" class="mt-1.5 w-full font-normal" required pattern="[a-z0-9]+(-[a-z0-9]+)*" @update:model-value="value => { form.slug = value; manuallyEditedSlug = true }" /></label>
+          <div class="grid gap-4 sm:grid-cols-2"><label class="text-sm font-medium text-gray-700">Группа<BaseSelect v-model="selectedGroupId" class="mt-1.5 w-full font-normal" accessible-name="Группа характеристики" :options="groupOptions" /></label><label class="text-sm font-medium text-gray-700">Тип<BaseSelect v-model="selectedType" class="mt-1.5 w-full font-normal" accessible-name="Тип характеристики" :options="types" /></label></div>
+          <label class="text-sm font-medium text-gray-700">Единица измерения<BaseInput :model-value="form.unit ?? ''" class="mt-1.5 w-full font-normal" placeholder="мм, м², кг" @update:model-value="value => form.unit = value || null" /></label>
+          <div class="grid gap-2 sm:grid-cols-2"><BaseCheckbox mode="boolean" :checked="form.is_filterable" @update:checked="form.is_filterable = $event">Использовать в фильтре</BaseCheckbox><BaseCheckbox mode="boolean" :checked="form.is_required" @update:checked="form.is_required = $event">Обязательная характеристика</BaseCheckbox></div>
+          <section v-if="hasOptions" class="rounded-xl border border-gray-200 bg-gray-25 p-4"><div class="flex items-center justify-between"><div><h3 class="font-semibold text-gray-800">Варианты</h3><p class="mt-0.5 text-xs text-gray-500">Код должен быть уникален в пределах характеристики.</p></div><button type="button" class="rounded-lg px-3 py-2 text-sm font-semibold text-primary-600 hover:bg-primary-50" @click="addOption">Добавить</button></div><div v-for="(option, index) in form.options" :key="index" class="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2"><BaseInput v-model="option.label" required placeholder="Название" /><BaseInput v-model="option.value" required placeholder="Код" /><button type="button" class="rounded-lg p-2 text-error-500 hover:bg-error-50 disabled:cursor-not-allowed disabled:opacity-50" :disabled="form.options.length === 1" aria-label="Удалить вариант" @click="form.options.splice(index, 1)"><Trash2 :size="17" /></button></div></section>
+          <label class="text-sm font-medium text-gray-700">Порядок сортировки<input v-model.number="form.sort_order" class="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-normal outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-50" min="0" required type="number" /></label>
+        </div>
+        <div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" @click="opened = false">Отмена</button><button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600">Сохранить</button></div>
+      </form>
+    </div>
+    <div v-if="deleting" class="fixed inset-0 z-[60] grid place-items-center bg-gray-900/50 p-4" @click.self="!isDeleting && (deleting = null)"><section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="delete-attribute-title"><h2 id="delete-attribute-title" class="text-lg font-bold text-gray-900">Удалить характеристику?</h2><p class="mt-3 text-sm leading-6 text-gray-500">Характеристика «{{ deleting.name }}» и её варианты будут удалены. Это действие нельзя отменить.</p><div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isDeleting" @click="deleting = null">Отмена</button><button type="button" class="rounded-lg bg-error-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-error-700 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isDeleting" @click="remove">{{ isDeleting ? 'Удаление…' : 'Удалить' }}</button></div></section></div>
+  </section>
+</template>
