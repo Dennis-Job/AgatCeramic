@@ -40,6 +40,7 @@
 | TASK-037 | Product variants | 2026-08-14 | Added product-owned variants with globally unique SKU, prices, stock, publication state, ordering, protected nested CRUD API, ownership scoping, and audit logging. Product attributes, images, and relations remain in TASK-038–040. | `ProductVariantManagementTest` (2 passed, 23 assertions); Pint; admin build |
 | TASK-038 | Product attributes | 2026-08-14 | Added typed values for category-assigned product attributes, protected full-set replacement API, required-field and option validation, audit logging, and an Admin SPA page. Images and product relations remain in TASK-039–040. | `ProductAttributeValueManagementTest` (2 passed, 20 assertions); Pint; admin build |
 | TASK-039 | Product images | 2026-08-14 | Added validated JPEG/PNG/WebP uploads, generated public storage paths, primary-image and ordering management, audit logging, and an Admin SPA page with previews. Related products remain in TASK-040. | `ProductImageManagementTest` (2 passed, 27 assertions); Pint; admin build |
+| TASK-040 | Related products | 2026-08-14 | Added related/recommended product relations with ordering, protected atomic replacement API, duplicate/self/reverse-relation validation, audit logging, and an Admin SPA page. | `ProductRelationManagementTest` (2 passed, 19 assertions); Pint; admin build |
 
 После завершения каждой задачи добавлять:
 - ID;

@@ -193,6 +193,16 @@ Uploads require `catalog.manage` and accept JPEG, PNG, or WebP images up to 10 M
 a generated storage name; the API returns their public URL and metadata. Each product always has
 one primary image while it has images. Alt text and sort order may be edited after upload.
 
+### Product relations
+
+- `GET /admin/products/{product}/relations`
+- `PUT /admin/products/{product}/relations`
+
+The `PUT` endpoint atomically replaces the `relations` array of `{related_product_id, type,
+sort_order}` entries. Supported types are `related` and `recommended`. A product cannot relate to
+itself or create a reverse duplicate; changes require `catalog.manage` and are audited as
+`product.relations-updated`.
+
 ### Категории
 
 - `GET /admin/categories`

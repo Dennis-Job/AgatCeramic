@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\ProductAttributeValueController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
+use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
 use App\Http\Controllers\Api\V1\Admin\ProductVariantController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use Illuminate\Support\Facades\Route;
@@ -48,4 +49,6 @@ Route::get('products/{product}/images', [ProductImageController::class, 'index']
 Route::post('products/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');
 Route::patch('products/{product}/images/{image}', [ProductImageController::class, 'update'])->name('products.images.update');
 Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
+Route::get('products/{product}/relations', [ProductRelationController::class, 'index'])->name('products.relations.index');
+Route::put('products/{product}/relations', [ProductRelationController::class, 'replace'])->name('products.relations.replace');
 Route::apiResource('products.variants', ProductVariantController::class);

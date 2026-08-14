@@ -107,6 +107,10 @@ alt text, primary-image flag, and sort order. Image files use generated names un
 Изображения.
 
 ### product_relations
+TASK-040 stores directed `related` or `recommended` relationships between products with sort
+order. The source/product/type combination is unique; deleting either product cascades to its
+relations.
+
 Связанные/рекомендуемые товары.
 
 ## Orders

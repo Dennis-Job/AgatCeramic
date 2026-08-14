@@ -45,6 +45,12 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
 
+    /** @return HasMany<ProductRelation, $this> */
+    public function outgoingRelations(): HasMany
+    {
+        return $this->hasMany(ProductRelation::class);
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {
