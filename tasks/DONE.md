@@ -35,6 +35,7 @@
 | TASK-032 | Attribute groups | 2026-08-14 | Добавлены группы характеристик: migration, model/factory, защищённый CRUD API, аудит, OpenAPI-контракт и страница Admin SPA. | `php artisan test` (70 passed); Pint; Composer; PostgreSQL migration в Docker; OpenAPI JSON validation; `npm.cmd run build --prefix frontend/admin` |
 | TASK-033 | Attributes | 2026-08-14 | Добавлены характеристики, типизированные значения select/multiselect, защищённый CRUD API, аудит и страница Admin SPA. | `AttributeManagementTest` (3 passed); Pint; OpenAPI JSON; сборка Admin SPA |
 | TASK-034 | Category attributes | 2026-08-14 | Added ordered category-to-attribute assignments, protected API, audit logging, and an Admin SPA editor. | `php artisan test` (75 passed); Pint; Composer; OpenAPI JSON; PostgreSQL migration preview in Docker; `npm.cmd run build --prefix frontend/admin` |
+| TASK-035 | Brands | 2026-08-14 | Added brands with a protected admin CRUD API, `catalog.manage` authorization, audit logging, OpenAPI contract, and an Admin SPA page. The optional ISO 3166-1 alpha-2 country of origin is supported. Brand logo/media and SEO metadata remain in their dedicated later modules. | `php artisan test`; Pint; Composer; OpenAPI JSON validation; PostgreSQL migrations in Docker; `npm.cmd run build --prefix frontend/admin` |
 
 После завершения каждой задачи добавлять:
 - ID;

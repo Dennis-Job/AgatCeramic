@@ -74,7 +74,9 @@ keeps its attributes and clears their group reference.
 Какие характеристики используются категорией.
 
 ### brands
-Бренды.
+Бренды. TASK-035 хранит уникальные `name` и `slug`, необязательное описание,
+двухбуквенный ISO 3166-1 alpha-2 `country_code` страны происхождения, будущую ссылку
+`logo_id` и флаг `is_active`.
 
 ### products
 Основная карточка товара.

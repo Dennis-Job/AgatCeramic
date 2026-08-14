@@ -47,7 +47,7 @@
 - [x] TASK-032 Attribute groups
 - [x] TASK-033 Attributes
 - [x] TASK-034 Category attributes
-- [ ] TASK-035 Brands
+- [x] TASK-035 Brands
 - [ ] TASK-036 Products
 - [ ] TASK-037 Product variants
 - [ ] TASK-038 Product attributes
