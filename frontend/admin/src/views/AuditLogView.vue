@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ScrollText } from '@lucide/vue'
+import BaseDatePicker from '../components/BaseDatePicker.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import { getAuditLogs, type AuditLog, type AuditLogFilters } from '../services/audit-logs'
@@ -71,8 +72,8 @@ onMounted(load)
       <div class="grid gap-3 border-b border-gray-100 p-4 md:grid-cols-2 admin-audit-log-filter-grid">
         <BaseInput v-model="filters.search" searchable placeholder="Действие или сотрудник" aria-label="Поиск в журнале" @keyup.enter="() => load()" />
         <BaseSelect v-model="filters.action" :options="actionOptions" accessible-name="Тип действия" @change="() => load()" />
-        <BaseInput v-model="filters.date_from" type="date" aria-label="Дата с" />
-        <BaseInput v-model="filters.date_to" type="date" aria-label="Дата по" />
+        <BaseDatePicker v-model="filters.date_from" accessible-name="Дата с" />
+        <BaseDatePicker v-model="filters.date_to" accessible-name="Дата по" />
         <button class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-25" @click="() => load()">Найти</button>
         <button class="px-3 py-2.5 text-sm font-semibold text-primary-600 hover:text-primary-700" @click="reset">Сбросить</button>
       </div>
