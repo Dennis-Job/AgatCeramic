@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { FolderTree } from '@lucide/vue'
 import { Boxes, FileText, KeyRound, LayoutDashboard, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 defineProps<{ isOpen: boolean }>()
@@ -8,6 +9,7 @@ defineEmits<{ close: [] }>()
 const auth = useAuthStore()
 
 const primaryNavigation = [
+  { label: 'Категории', to: '/categories', icon: FolderTree, requiredPermission: 'catalog.manage' },
   { label: 'Обзор', to: '/', icon: LayoutDashboard },
   { label: 'Каталог', to: '/products', icon: Boxes },
   { label: 'Заказы', to: '/orders', icon: ShoppingCart },
@@ -26,6 +28,7 @@ const siteManagementNavigation = [
 ]
 
 const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
+const visiblePrimaryNavigation = computed(() => primaryNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
 </script>
 
 <template>
@@ -44,7 +47,7 @@ const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item
 
     <nav class="space-y-1">
       <RouterLink
-        v-for="item in primaryNavigation"
+        v-for="item in visiblePrimaryNavigation"
         :key="item.to"
         :to="item.to"
         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-25"

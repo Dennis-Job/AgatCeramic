@@ -194,6 +194,16 @@
       "parameters": [{ "name": "audit_log", "in": "path", "required": true, "schema": { "type": "integer" } }],
       "get": { "operationId": "getAuditLog", "summary": "Get an audit record", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Audit record" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } }
     },
+    "/admin/categories": {
+      "get": { "operationId": "listCategories", "summary": "List categories", "security": [{ "sanctumSession": [] }], "parameters": [{ "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1 } }], "responses": { "200": { "description": "Paginated categories" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } },
+      "post": { "operationId": "createCategory", "summary": "Create a category", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StoreCategoryRequest" } } } }, "responses": { "201": { "description": "Created category" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }
+    },
+    "/admin/categories/{category}": {
+      "parameters": [{ "name": "category", "in": "path", "required": true, "schema": { "type": "integer" } }],
+      "get": { "operationId": "getCategory", "summary": "Get a category", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Category" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } },
+      "patch": { "operationId": "updateCategory", "summary": "Update a category", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateCategoryRequest" } } } }, "responses": { "200": { "description": "Updated category" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } },
+      "delete": { "operationId": "deleteCategory", "summary": "Delete a category", "security": [{ "sanctumSession": [] }], "responses": { "204": { "description": "Category deleted" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } }
+    },
     "/": {
       "get": {
         "operationId": "getApiVersion",
@@ -304,6 +314,17 @@
         "properties": { "name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "password": { "type": "string", "format": "password", "minLength": 12 }, "password_confirmation": { "type": "string", "format": "password" }, "status": { "type": "string", "enum": ["active", "blocked"] }, "role_ids": { "type": "array", "minItems": 1, "items": { "type": "integer" } } },
         "additionalProperties": false,
         "description": "All fields are optional; password_confirmation is required when password is supplied."
+      },
+      "StoreCategoryRequest": {
+        "type": "object",
+        "required": ["name", "slug"],
+        "properties": { "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "is_active": { "type": "boolean" }, "sort_order": { "type": "integer", "minimum": 0 } },
+        "additionalProperties": false
+      },
+      "UpdateCategoryRequest": {
+        "type": "object",
+        "properties": { "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "is_active": { "type": "boolean" }, "sort_order": { "type": "integer", "minimum": 0 } },
+        "additionalProperties": false
       },
       "VersionResponse": {
         "type": "object",

@@ -9,11 +9,13 @@ import EmployeesView from '../views/EmployeesView.vue'
 import RolesView from '../views/RolesView.vue'
 import PermissionsView from '../views/PermissionsView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
+import CategoriesView from '../views/CategoriesView.vue'
 import ProfileView from '../views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/categories', name: 'categories', component: CategoriesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Категории' } },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, title: 'Вход' } },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true, title: 'Восстановление пароля' } },
     { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true, title: 'Сброс пароля' } },

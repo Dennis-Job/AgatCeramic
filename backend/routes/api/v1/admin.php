@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
+use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use Illuminate\Support\Facades\Route;
@@ -23,3 +24,4 @@ Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('r
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('permissions', PermissionController::class)->only(['index', 'show']);
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+Route::apiResource('categories', CategoryController::class);

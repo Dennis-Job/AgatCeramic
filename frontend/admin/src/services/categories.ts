@@ -1,0 +1,28 @@
+import { apiFetch, requestCsrfCookie } from './auth'
+
+export type Category = { id: number; name: string; slug: string; description: string | null; is_active: boolean; sort_order: number; created_at: string; updated_at: string }
+export type CategoryPayload = Omit<Category, 'id' | 'created_at' | 'updated_at'>
+
+async function fail(response: Response): Promise<never> {
+  const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }
+  throw new Error(Object.values(body.error?.details ?? {}).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.')
+}
+
+export async function getCategories(): Promise<Category[]> {
+  const response = await apiFetch('/admin/categories')
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: Category[] }).data
+}
+
+export async function saveCategory(id: number | null, payload: CategoryPayload): Promise<Category> {
+  await requestCsrfCookie()
+  const response = await apiFetch(id === null ? '/admin/categories' : `/admin/categories/${id}`, { method: id === null ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: Category }).data
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  await requestCsrfCookie()
+  const response = await apiFetch(`/admin/categories/${id}`, { method: 'DELETE' })
+  if (!response.ok) return fail(response)
+}
