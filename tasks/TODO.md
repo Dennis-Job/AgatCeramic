@@ -53,7 +53,7 @@
 - [x] TASK-038 Product attributes
 - [x] TASK-039 Product images
 - [x] TASK-040 Related products
-- [ ] TASK-041 Product search/filtering
+- [x] TASK-041 Product search/filtering
 
 ## Phase 4 — Import/export
 

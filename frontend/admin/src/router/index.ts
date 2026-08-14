@@ -19,10 +19,12 @@ import ProductVariantsView from '../views/ProductVariantsView.vue'
 import ProductAttributesView from '../views/ProductAttributesView.vue'
 import ProductImagesView from '../views/ProductImagesView.vue'
 import ProductRelationsView from '../views/ProductRelationsView.vue'
+import ProductSearchView from '../views/ProductSearchView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/product-search', name: 'product-search', component: ProductSearchView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Product search' } },
     { path: '/product-relations', name: 'product-relations', component: ProductRelationsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Product relations' } },
     { path: '/product-images', name: 'product-images', component: ProductImagesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Product images' } },
     { path: '/product-attributes', name: 'product-attributes', component: ProductAttributesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Product attributes' } },

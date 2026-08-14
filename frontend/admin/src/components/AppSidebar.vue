@@ -9,6 +9,7 @@ defineEmits<{ close: [] }>()
 const auth = useAuthStore()
 
 const primaryNavigation = [
+  { label: 'Product search', to: '/product-search', icon: ListFilter, requiredPermission: 'catalog.manage' },
   { label: 'Product relations', to: '/product-relations', icon: Boxes, requiredPermission: 'catalog.manage' },
   { label: 'Product images', to: '/product-images', icon: Boxes, requiredPermission: 'catalog.manage' },
   { label: 'Product attributes', to: '/product-attributes', icon: ListFilter, requiredPermission: 'catalog.manage' },

@@ -41,6 +41,7 @@
 | TASK-038 | Product attributes | 2026-08-14 | Added typed values for category-assigned product attributes, protected full-set replacement API, required-field and option validation, audit logging, and an Admin SPA page. Images and product relations remain in TASK-039–040. | `ProductAttributeValueManagementTest` (2 passed, 20 assertions); Pint; admin build |
 | TASK-039 | Product images | 2026-08-14 | Added validated JPEG/PNG/WebP uploads, generated public storage paths, primary-image and ordering management, audit logging, and an Admin SPA page with previews. Related products remain in TASK-040. | `ProductImageManagementTest` (2 passed, 27 assertions); Pint; admin build |
 | TASK-040 | Related products | 2026-08-14 | Added related/recommended product relations with ordering, protected atomic replacement API, duplicate/self/reverse-relation validation, audit logging, and an Admin SPA page. | `ProductRelationManagementTest` (2 passed, 19 assertions); Pint; admin build |
+| TASK-041 | Product search/filtering | 2026-08-14 | Added protected product search by name, slug, and variant SKU, plus category, brand, activity, stock, and price-range filters with an Admin SPA search page. | `ProductSearchFilterTest` (2 passed, 15 assertions); Pint; admin build |
 
 После завершения каждой задачи добавлять:
 - ID;

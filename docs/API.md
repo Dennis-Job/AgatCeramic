@@ -158,6 +158,10 @@ URL-safe `slug`; `brand_id`, `description`, and `is_active` are optional. Produc
 include the assigned category and brand (when present). These endpoints require `catalog.manage`
 and record `product.created`, `product.updated`, and `product.deleted` in the audit log.
 
+`GET /admin/products` supports `search` (product name, slug, variant SKU or variant name),
+`category_id`, `brand_id`, `is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.
+Price and stock filters apply to product variants; all filters can be combined.
+
 ### Product variants
 
 - `GET /admin/products/{product}/variants`
