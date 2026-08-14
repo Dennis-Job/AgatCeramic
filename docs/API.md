@@ -160,6 +160,8 @@ sanitised, so passwords, tokens, and other sensitive values are never exposed.
 - `GET /admin/categories/{category}`
 - `PATCH /admin/categories/{category}`
 - `DELETE /admin/categories/{category}`
+- `GET /admin/categories/{category}/attributes` — assigned category attributes.
+- `PUT /admin/categories/{category}/attributes` — replaces assignments with an `attributes` array of `{id, sort_order}` objects; an empty array clears assignments.
 
 ### Бренды
 

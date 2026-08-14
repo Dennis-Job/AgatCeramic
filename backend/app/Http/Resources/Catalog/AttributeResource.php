@@ -20,6 +20,7 @@ class AttributeResource extends ApiResource
             'is_filterable' => $this->is_filterable,
             'is_required' => $this->is_required,
             'sort_order' => $this->sort_order,
+            'category_sort_order' => $this->when($this->pivot !== null, fn (): int => $this->pivot->sort_order),
             'options' => AttributeOptionResource::collection($this->whenLoaded('options')),
             'created_at' => $this->created_at?->toAtomString(),
             'updated_at' => $this->updated_at?->toAtomString(),

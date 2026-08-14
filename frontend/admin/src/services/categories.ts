@@ -1,4 +1,5 @@
 import { apiFetch, requestCsrfCookie } from './auth'
+import type { Attribute } from './attributes'
 
 export type Category = { id: number; parent_id?: number | null; name: string; slug: string; description: string | null; is_parent: boolean; is_active: boolean; sort_order: number; children?: Category[]; created_at: string; updated_at: string }
 export type CategoryPayload = Omit<Category, 'id' | 'created_at' | 'updated_at' | 'children'>
@@ -25,4 +26,17 @@ export async function deleteCategory(id: number): Promise<void> {
   await requestCsrfCookie()
   const response = await apiFetch(`/admin/categories/${id}`, { method: 'DELETE' })
   if (!response.ok) return fail(response)
+}
+
+export async function getCategoryAttributes(id: number): Promise<Attribute[]> {
+  const response = await apiFetch(`/admin/categories/${id}/attributes`)
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: Attribute[] }).data
+}
+
+export async function replaceCategoryAttributes(id: number, attributes: { id: number; sort_order: number }[]): Promise<Attribute[]> {
+  await requestCsrfCookie()
+  const response = await apiFetch(`/admin/categories/${id}/attributes`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attributes }) })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: Attribute[] }).data
 }

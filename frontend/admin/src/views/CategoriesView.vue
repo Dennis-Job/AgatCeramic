@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { FolderTree, Pencil, Plus, Trash2, X } from "@lucide/vue";
+import { FolderTree, ListFilter, Pencil, Plus, Trash2, X } from "@lucide/vue";
 import BaseCheckbox from "../components/BaseCheckbox.vue";
 import BaseInput from "../components/BaseInput.vue";
 import BaseSelect from "../components/BaseSelect.vue";
 import {
   deleteCategory,
+  getCategoryAttributes,
   getCategories,
+  replaceCategoryAttributes,
   saveCategory,
   type Category,
   type CategoryPayload,
 } from "../services/categories";
+import { getAttributes, type Attribute } from "../services/attributes";
 import { useAuthStore } from "../stores/auth";
 const auth = useAuthStore();
 const categories = ref<Category[]>([]);
@@ -19,6 +22,10 @@ const opened = ref(false);
 const editing = ref<Category | null>(null);
 const deleting = ref<Category | null>(null);
 const isDeleting = ref(false);
+const attributesOpened = ref(false);
+const configuringAttributes = ref<Category | null>(null);
+const allAttributes = ref<Attribute[]>([]);
+const selectedAttributeIds = ref<number[]>([]);
 const form = ref<CategoryPayload>({
   parent_id: null,
   name: "",
@@ -181,6 +188,33 @@ async function save(): Promise<void> {
 function remove(category: Category): void {
   deleting.value = category;
 }
+async function openAttributes(category: Category): Promise<void> {
+  configuringAttributes.value = category;
+  attributesOpened.value = true;
+  try {
+    const [attributes, assigned] = await Promise.all([
+      getAttributes(),
+      getCategoryAttributes(category.id),
+    ]);
+    allAttributes.value = attributes;
+    selectedAttributeIds.value = assigned.map((attribute) => attribute.id);
+  } catch (reason) {
+    attributesOpened.value = false;
+    error.value = reason instanceof Error ? reason.message : "Не удалось загрузить характеристики категории.";
+  }
+}
+async function saveAttributes(): Promise<void> {
+  if (!configuringAttributes.value) return;
+  try {
+    await replaceCategoryAttributes(
+      configuringAttributes.value.id,
+      selectedAttributeIds.value.map((id, sortOrder) => ({ id, sort_order: sortOrder })),
+    );
+    attributesOpened.value = false;
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : "Не удалось сохранить характеристики категории.";
+  }
+}
 async function confirmRemoval(): Promise<void> {
   if (!deleting.value) return;
   isDeleting.value = true;
@@ -276,6 +310,13 @@ onMounted(load);
           <div v-if="canManage" class="flex gap-1">
             <button
               class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600"
+              title="Характеристики категории"
+              @click="openAttributes(category)"
+            >
+              <ListFilter :size="17" />
+            </button>
+            <button
+              class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600"
               @click="open(category)"
             >
               <Pencil :size="17" /></button
@@ -291,8 +332,42 @@ onMounted(load);
       <div v-else class="px-5 py-14 text-center text-sm text-gray-500">
         Категорий пока нет.
       </div>
-    </div>
-    <div
+  </div>
+  <div
+    v-if="attributesOpened && configuringAttributes"
+    class="fixed inset-0 z-[60] grid place-items-center bg-gray-900/50 p-4"
+    @click.self="attributesOpened = false"
+  >
+    <form
+      class="admin-dialog-content w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+      @submit.prevent="saveAttributes"
+    >
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-gray-900">Характеристики: {{ configuringAttributes.name }}</h2>
+          <p class="mt-1 text-sm text-gray-500">Выберите характеристики, доступные для товаров этой категории.</p>
+        </div>
+        <button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" @click="attributesOpened = false"><X :size="20" /></button>
+      </div>
+      <div class="mt-6 max-h-80 divide-y divide-gray-100 overflow-y-auto rounded-xl border border-gray-200">
+        <BaseCheckbox
+          v-for="attribute in allAttributes"
+          :key="attribute.id"
+          v-model="selectedAttributeIds"
+          :value="attribute.id"
+          class="h-auto min-h-[58px] rounded-none border-0 px-4 py-3 first:rounded-t-xl last:rounded-b-xl"
+        >
+          <span class="min-w-0 flex-1"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span>
+        </BaseCheckbox>
+        <p v-if="!allAttributes.length" class="p-5 text-sm text-gray-500">Характеристики пока не созданы.</p>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" @click="attributesOpened = false">Отмена</button>
+        <button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600">Сохранить</button>
+      </div>
+    </form>
+  </div>
+  <div
       v-if="opened"
       class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4"
       @click.self="opened = false"
