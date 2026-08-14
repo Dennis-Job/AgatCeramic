@@ -27,10 +27,13 @@ const deleting = ref<Category | null>(null);
 const isDeleting = ref(false);
 const attributesOpened = ref(false);
 const configuringAttributes = ref<Category | null>(null);
+const viewingCategory = ref<Category | null>(null);
 const allAttributes = ref<Attribute[]>([]);
 const allAttributeGroups = ref<AttributeGroup[]>([]);
 const selectedAttributeIds = ref<number[]>([]);
 const selectedAttributeGroupIds = ref<number[]>([]);
+const categoryAttributes = ref<Attribute[]>([]);
+const categoryAttributeGroups = ref<AttributeGroup[]>([]);
 const groupedAttributes = computed(() => allAttributeGroups.value
   .filter((group) => selectedAttributeGroupIds.value.includes(group.id))
   .map((group) => ({ ...group, attributes: allAttributes.value.filter((attribute) => attribute.attribute_group_id === group.id) })));
@@ -197,6 +200,21 @@ async function save(): Promise<void> {
 function remove(category: Category): void {
   deleting.value = category;
 }
+async function showDetails(category: Category): Promise<void> {
+  viewingCategory.value = category;
+  try {
+    const [attributes, attributeGroups] = await Promise.all([
+      getCategoryAttributes(category.id),
+      getCategoryAttributeGroups(category.id),
+    ]);
+    categoryAttributes.value = attributes;
+    categoryAttributeGroups.value = attributeGroups;
+  } catch (reason) {
+    viewingCategory.value = null;
+    error.value = reason instanceof Error ? reason.message : "Не удалось загрузить информацию о категории.";
+  }
+}
+const filterAttributes = computed(() => categoryAttributes.value.filter((attribute) => attribute.is_filterable));
 async function openAttributes(category: Category): Promise<void> {
   configuringAttributes.value = category;
   attributesOpened.value = true;
@@ -296,9 +314,7 @@ onMounted(load);
           /></span>
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
-              <h2 class="truncate font-semibold text-gray-800">
-                {{ category.name }}
-              </h2>
+              <button class="truncate font-semibold text-gray-800 hover:text-primary-600 hover:underline" type="button" @click="showDetails(category)">{{ category.name }}</button>
               <span
                 class="admin-badge rounded-full px-2 py-1 text-xs font-medium"
                 :class="
@@ -355,6 +371,15 @@ onMounted(load);
       <div v-else class="px-5 py-14 text-center text-sm text-gray-500">
         Категорий пока нет.
       </div>
+  </div>
+  <div v-if="viewingCategory" class="fixed inset-0 z-[70] grid place-items-center bg-gray-900/50 p-4" @click.self="viewingCategory = null">
+    <section class="admin-dialog-content w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="category-details-title">
+      <div class="flex items-start justify-between"><div><p class="text-sm font-medium text-gray-500">Категория</p><h2 id="category-details-title" class="mt-1 text-xl font-bold text-gray-900">{{ viewingCategory.name }}</h2></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" aria-label="Закрыть" @click="viewingCategory = null"><X :size="20" /></button></div>
+      <dl class="mt-6 grid gap-4 rounded-xl border border-gray-200 p-4 text-sm sm:grid-cols-2"><div><dt class="text-gray-500">Slug</dt><dd class="mt-1 font-medium text-gray-800">/{{ viewingCategory.slug }}</dd></div><div><dt class="text-gray-500">Статус</dt><dd class="mt-1 font-medium" :class="viewingCategory.is_active ? 'text-success-600' : 'text-gray-500'">{{ viewingCategory.is_active ? 'Активна' : 'Скрыта' }}</dd></div><div><dt class="text-gray-500">Родительская категория</dt><dd class="mt-1 font-medium text-gray-800">{{ categoryName(viewingCategory.parent_id) ?? 'Нет' }}</dd></div><div><dt class="text-gray-500">Порядок сортировки</dt><dd class="mt-1 font-medium text-gray-800">{{ viewingCategory.sort_order }}</dd></div><div class="sm:col-span-2"><dt class="text-gray-500">Описание</dt><dd class="mt-1 whitespace-pre-wrap text-gray-800">{{ viewingCategory.description || 'Не указано' }}</dd></div></dl>
+      <section class="mt-5"><h3 class="font-semibold text-gray-900">Применённые группы</h3><div v-if="categoryAttributeGroups.length" class="mt-2 flex flex-wrap gap-2"><span v-for="group in categoryAttributeGroups" :key="group.id" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600">{{ group.name }}</span></div><p v-else class="mt-2 text-sm text-gray-500">Группы не назначены.</p></section>
+      <section class="mt-5"><h3 class="font-semibold text-gray-900">Фильтры категории</h3><div v-if="filterAttributes.length" class="mt-2 flex flex-wrap gap-2"><span v-for="attribute in filterAttributes" :key="attribute.id" class="rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-600">{{ attribute.name }}<template v-if="attribute.unit"> ({{ attribute.unit }})</template></span></div><p v-else class="mt-2 text-sm text-gray-500">Характеристики для фильтрации не назначены.</p></section>
+      <section class="mt-5"><h3 class="font-semibold text-gray-900">Все назначенные характеристики</h3><div v-if="categoryAttributes.length" class="mt-2 flex flex-wrap gap-2"><span v-for="attribute in categoryAttributes" :key="attribute.id" class="rounded-lg bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700">{{ attribute.name }}<template v-if="attribute.unit"> ({{ attribute.unit }})</template><span v-if="attribute.is_required" class="ml-1.5 font-medium text-error-500">Обязательная</span></span></div><p v-else class="mt-2 text-sm text-gray-500">Не назначены.</p></section>
+    </section>
   </div>
   <div
     v-if="attributesOpened && configuringAttributes"
