@@ -27,7 +27,17 @@ const selectedGroupId = computed({ get: () => form.value.attribute_group_id === 
 const selectedType = computed({ get: () => form.value.type, set: (value: string) => { form.value.type = value as AttributeType; changeType() } })
 
 function emptyForm(): AttributePayload { return { attribute_group_id: null, name: '', slug: '', type: 'text', unit: null, is_filterable: false, is_required: false, sort_order: 0, options: [] } }
-function slug(value: string): string { return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') }
+const transliterationMap: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+}
+function slug(value: string): string {
+  return Array.from(value.toLowerCase(), (character) => transliterationMap[character] ?? character)
+    .join('')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 function updateName(value: string): void { form.value.name = value; if (!manuallyEditedSlug.value) form.value.slug = slug(value) }
 function addOption(): void { form.value.options.push({ value: '', label: '', sort_order: form.value.options.length }) }
 function changeType(): void { if (hasOptions.value && form.value.options.length === 0) addOption() }
