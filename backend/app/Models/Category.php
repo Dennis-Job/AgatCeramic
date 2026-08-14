@@ -38,6 +38,13 @@ class Category extends Model
             ->orderBy('attributes.name');
     }
 
+    /** @return BelongsToMany<AttributeGroup, $this> */
+    public function attributeGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(AttributeGroup::class, 'category_attribute_group')
+            ->withPivot('sort_order')->withTimestamps()->orderByPivot('sort_order')->orderBy('attribute_groups.name');
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

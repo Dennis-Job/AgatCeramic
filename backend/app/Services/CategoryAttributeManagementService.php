@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,24 @@ class CategoryAttributeManagementService
             ]);
 
             return $category->load(['attributes.options']);
+        });
+    }
+
+    /** @param array<int, array{id: int, sort_order?: int}> $groups */
+    public function replaceGroups(User $actor, Category $category, array $groups): Category
+    {
+        return DB::transaction(function () use ($actor, $category, $groups): Category {
+            $assignments = collect($groups)->mapWithKeys(static fn (array $group, int $index): array => [$group['id'] => ['sort_order' => $group['sort_order'] ?? $index]])->all();
+            $category->attributeGroups()->sync($assignments);
+            $removedAttributeIds = Attribute::query()
+                ->whereNotNull('attribute_group_id')
+                ->when($assignments !== [], fn ($query) => $query->whereNotIn('attribute_group_id', array_keys($assignments)))
+                ->when($assignments === [], fn ($query) => $query)
+                ->pluck('id');
+            $category->attributes()->detach($removedAttributeIds);
+            $this->auditLogService->record($actor, 'category.attribute-groups-updated', $category, ['attribute_group_ids' => array_keys($assignments)]);
+
+            return $category->load('attributeGroups');
         });
     }
 }

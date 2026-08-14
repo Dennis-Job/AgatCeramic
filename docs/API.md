@@ -162,6 +162,8 @@ sanitised, so passwords, tokens, and other sensitive values are never exposed.
 - `DELETE /admin/categories/{category}`
 - `GET /admin/categories/{category}/attributes` — assigned category attributes.
 - `PUT /admin/categories/{category}/attributes` — replaces assignments with an `attributes` array of `{id, sort_order}` objects; an empty array clears assignments.
+- `GET /admin/categories/{category}/attribute-groups` — assigned attribute groups.
+- `PUT /admin/categories/{category}/attribute-groups` — replaces groups with an `attribute_groups` array of `{id, sort_order}` objects.
 
 ### Бренды
 

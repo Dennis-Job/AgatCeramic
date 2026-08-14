@@ -7,13 +7,16 @@ import BaseSelect from "../components/BaseSelect.vue";
 import {
   deleteCategory,
   getCategoryAttributes,
+  getCategoryAttributeGroups,
   getCategories,
   replaceCategoryAttributes,
+  replaceCategoryAttributeGroups,
   saveCategory,
   type Category,
   type CategoryPayload,
 } from "../services/categories";
 import { getAttributes, type Attribute } from "../services/attributes";
+import { getAttributeGroups, type AttributeGroup } from "../services/attributeGroups";
 import { useAuthStore } from "../stores/auth";
 const auth = useAuthStore();
 const categories = ref<Category[]>([]);
@@ -25,7 +28,13 @@ const isDeleting = ref(false);
 const attributesOpened = ref(false);
 const configuringAttributes = ref<Category | null>(null);
 const allAttributes = ref<Attribute[]>([]);
+const allAttributeGroups = ref<AttributeGroup[]>([]);
 const selectedAttributeIds = ref<number[]>([]);
+const selectedAttributeGroupIds = ref<number[]>([]);
+const groupedAttributes = computed(() => allAttributeGroups.value
+  .filter((group) => selectedAttributeGroupIds.value.includes(group.id))
+  .map((group) => ({ ...group, attributes: allAttributes.value.filter((attribute) => attribute.attribute_group_id === group.id) })));
+const ungroupedAttributes = computed(() => allAttributes.value.filter((attribute) => attribute.attribute_group_id === null));
 const form = ref<CategoryPayload>({
   parent_id: null,
   name: "",
@@ -192,12 +201,16 @@ async function openAttributes(category: Category): Promise<void> {
   configuringAttributes.value = category;
   attributesOpened.value = true;
   try {
-    const [attributes, assigned] = await Promise.all([
+    const [attributes, groups, assigned, assignedGroups] = await Promise.all([
       getAttributes(),
+      getAttributeGroups(),
       getCategoryAttributes(category.id),
+      getCategoryAttributeGroups(category.id),
     ]);
     allAttributes.value = attributes;
+    allAttributeGroups.value = groups;
     selectedAttributeIds.value = assigned.map((attribute) => attribute.id);
+    selectedAttributeGroupIds.value = assignedGroups.map((group) => group.id);
   } catch (reason) {
     attributesOpened.value = false;
     error.value = reason instanceof Error ? reason.message : "Не удалось загрузить характеристики категории.";
@@ -206,6 +219,10 @@ async function openAttributes(category: Category): Promise<void> {
 async function saveAttributes(): Promise<void> {
   if (!configuringAttributes.value) return;
   try {
+    await replaceCategoryAttributeGroups(
+      configuringAttributes.value.id,
+      selectedAttributeGroupIds.value.map((id, sortOrder) => ({ id, sort_order: sortOrder })),
+    );
     await replaceCategoryAttributes(
       configuringAttributes.value.id,
       selectedAttributeIds.value.map((id, sortOrder) => ({ id, sort_order: sortOrder })),
@@ -214,6 +231,12 @@ async function saveAttributes(): Promise<void> {
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "Не удалось сохранить характеристики категории.";
   }
+}
+function setAttributeGroupIds(ids: Array<number | string>): void {
+  const previous = selectedAttributeGroupIds.value;
+  selectedAttributeGroupIds.value = ids.map(Number);
+  const removed = previous.filter((id) => !selectedAttributeGroupIds.value.includes(id));
+  if (removed.length) selectedAttributeIds.value = selectedAttributeIds.value.filter((attributeId) => !removed.includes(allAttributes.value.find((attribute) => attribute.id === attributeId)?.attribute_group_id ?? -1));
 }
 async function confirmRemoval(): Promise<void> {
   if (!deleting.value) return;
@@ -349,17 +372,31 @@ onMounted(load);
         </div>
         <button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" @click="attributesOpened = false"><X :size="20" /></button>
       </div>
-      <div class="mt-6 max-h-80 divide-y divide-gray-100 overflow-y-auto rounded-xl border border-gray-200">
-        <BaseCheckbox
-          v-for="attribute in allAttributes"
-          :key="attribute.id"
-          v-model="selectedAttributeIds"
-          :value="attribute.id"
-          class="h-auto min-h-[58px] rounded-none border-0 px-4 py-3 first:rounded-t-xl last:rounded-b-xl"
-        >
-          <span class="min-w-0 flex-1"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span>
-        </BaseCheckbox>
-        <p v-if="!allAttributes.length" class="p-5 text-sm text-gray-500">Характеристики пока не созданы.</p>
+      <div class="mt-6 max-h-80 space-y-4 overflow-y-auto">
+        <section class="rounded-xl border border-gray-200 p-3">
+          <h3 class="mb-2 text-sm font-semibold text-gray-800">Группы характеристик</h3>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <BaseCheckbox v-for="group in allAttributeGroups" :key="group.id" :model-value="selectedAttributeGroupIds" :value="group.id" class="h-auto min-h-[42px]" @update:model-value="setAttributeGroupIds">{{ group.name }}</BaseCheckbox>
+          </div>
+        </section>
+        <section v-for="group in groupedAttributes" :key="group.id" class="overflow-hidden rounded-xl border border-gray-200">
+          <div class="bg-gray-50 px-4 py-3"><h3 class="font-semibold text-gray-800">{{ group.name }}</h3><p class="text-xs text-gray-500">Выберите характеристики этой группы.</p></div>
+          <div class="divide-y divide-gray-100">
+            <BaseCheckbox v-for="attribute in group.attributes" :key="attribute.id" v-model="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[58px] rounded-none border-0 px-4 py-3">
+              <span class="min-w-0 flex-1"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span>
+            </BaseCheckbox>
+            <p v-if="!group.attributes.length" class="px-4 py-3 text-sm text-gray-500">В группе пока нет характеристик.</p>
+          </div>
+        </section>
+        <section v-if="ungroupedAttributes.length" class="overflow-hidden rounded-xl border border-gray-200">
+          <div class="bg-gray-50 px-4 py-3"><h3 class="font-semibold text-gray-800">Без группы</h3><p class="text-xs text-gray-500">Характеристики, доступные для любой категории.</p></div>
+          <div class="divide-y divide-gray-100">
+            <BaseCheckbox v-for="attribute in ungroupedAttributes" :key="attribute.id" v-model="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[58px] rounded-none border-0 px-4 py-3">
+              <span class="min-w-0 flex-1"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span>
+            </BaseCheckbox>
+          </div>
+        </section>
+        <p v-if="!allAttributeGroups.length" class="p-5 text-sm text-gray-500">Группы характеристик пока не созданы.</p>
       </div>
       <div class="mt-6 flex justify-end gap-3">
         <button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" @click="attributesOpened = false">Отмена</button>

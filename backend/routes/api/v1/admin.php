@@ -30,6 +30,8 @@ Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'sho
 Route::get('categories/tree', [CategoryController::class, 'tree'])->name('categories.tree');
 Route::get('categories/{category}/attributes', [CategoryAttributeController::class, 'index'])->name('categories.attributes.index');
 Route::put('categories/{category}/attributes', [CategoryAttributeController::class, 'replace'])->name('categories.attributes.replace');
+Route::get('categories/{category}/attribute-groups', [CategoryAttributeController::class, 'groups'])->name('categories.attribute-groups.index');
+Route::put('categories/{category}/attribute-groups', [CategoryAttributeController::class, 'replaceGroups'])->name('categories.attribute-groups.replace');
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('attribute-groups', AttributeGroupController::class);
 Route::apiResource('attributes', AttributeController::class);

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Attribute;
+use App\Models\AttributeGroup;
 use App\Models\Category;
 use App\Models\Role;
 use App\Models\User;
@@ -56,6 +57,22 @@ class CategoryAttributeManagementTest extends TestCase
 
         $this->actingAs($this->userWithRole('analyst'))->getJson("/api/v1/admin/categories/{$category->id}/attributes")
             ->assertForbidden();
+    }
+
+    public function test_catalog_manager_can_assign_groups_and_then_select_their_attributes(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $category = Category::factory()->create();
+        $group = AttributeGroup::factory()->create();
+        $attribute = Attribute::factory()->create(['attribute_group_id' => $group->id]);
+
+        $this->actingAs($actor)->putJson("/api/v1/admin/categories/{$category->id}/attribute-groups", [
+            'attribute_groups' => [['id' => $group->id]],
+        ])->assertOk()->assertJsonPath('data.0.id', $group->id);
+
+        $this->actingAs($actor)->putJson("/api/v1/admin/categories/{$category->id}/attributes", [
+            'attributes' => [['id' => $attribute->id]],
+        ])->assertOk()->assertJsonPath('data.0.id', $attribute->id);
     }
 
     private function userWithRole(string $slug): User

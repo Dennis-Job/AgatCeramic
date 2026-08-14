@@ -1,5 +1,6 @@
 import { apiFetch, requestCsrfCookie } from './auth'
 import type { Attribute } from './attributes'
+import type { AttributeGroup } from './attributeGroups'
 
 export type Category = { id: number; parent_id?: number | null; name: string; slug: string; description: string | null; is_parent: boolean; is_active: boolean; sort_order: number; children?: Category[]; created_at: string; updated_at: string }
 export type CategoryPayload = Omit<Category, 'id' | 'created_at' | 'updated_at' | 'children'>
@@ -39,4 +40,17 @@ export async function replaceCategoryAttributes(id: number, attributes: { id: nu
   const response = await apiFetch(`/admin/categories/${id}/attributes`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attributes }) })
   if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Attribute[] }).data
+}
+
+export async function getCategoryAttributeGroups(id: number): Promise<AttributeGroup[]> {
+  const response = await apiFetch(`/admin/categories/${id}/attribute-groups`)
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: AttributeGroup[] }).data
+}
+
+export async function replaceCategoryAttributeGroups(id: number, attributeGroups: { id: number; sort_order: number }[]): Promise<AttributeGroup[]> {
+  await requestCsrfCookie()
+  const response = await apiFetch(`/admin/categories/${id}/attribute-groups`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attribute_groups: attributeGroups }) })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: AttributeGroup[] }).data
 }
