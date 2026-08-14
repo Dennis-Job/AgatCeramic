@@ -216,7 +216,7 @@ onMounted(load);
           </div>
           <button
             type="button"
-            class="p-1 text-gray-500"
+            class="rounded-lg p-1 text-gray-500 hover:bg-gray-50"
             @click="opened = false"
           >
             <X :size="20" />
@@ -263,12 +263,12 @@ onMounted(load);
         <div class="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            class="px-4 py-2.5 text-sm font-semibold text-gray-600"
+            class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
             @click="opened = false"
           >
             Отмена</button
           ><button
-            class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white"
+            class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600"
           >
             Сохранить
           </button>
@@ -286,13 +286,13 @@ onMounted(load);
         </p>
         <div class="mt-6 flex justify-end gap-3">
           <button
-            class="px-4 py-2.5 text-sm font-semibold text-gray-600"
+            class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
             type="button"
             @click="deleting = null"
           >
             Отмена</button
           ><button
-            class="rounded-lg bg-error-500 px-4 py-2.5 text-sm font-semibold text-white"
+            class="rounded-lg bg-error-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-error-700"
             type="button"
             :disabled="isDeleting"
             @click="remove"
