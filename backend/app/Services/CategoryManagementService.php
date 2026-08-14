@@ -31,6 +31,9 @@ class CategoryManagementService
         if (array_key_exists('parent_id', $attributes)) {
             $this->ensureParentCanBeAssigned($category, $attributes['parent_id']);
         }
+        if (($attributes['is_parent'] ?? true) === false && $category->children()->exists()) {
+            throw ValidationException::withMessages(['is_parent' => ['A category with children must remain a parent category.']]);
+        }
 
         return DB::transaction(function () use ($actor, $category, $attributes): Category {
             $category->fill($attributes)->save();
@@ -72,6 +75,9 @@ class CategoryManagementService
         }
 
         $parent = Category::query()->find($parentId);
+        if ($parent?->is_parent !== true) {
+            throw ValidationException::withMessages(['parent_id' => ['The selected category cannot be a parent category.']]);
+        }
         while ($parent !== null) {
             if ($parent->id === $category?->id) {
                 throw ValidationException::withMessages(['parent_id' => ['A category cannot be placed inside its descendant.']]);

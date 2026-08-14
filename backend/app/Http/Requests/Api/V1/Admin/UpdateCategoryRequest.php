@@ -20,6 +20,7 @@ class UpdateCategoryRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'slug' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('categories', 'slug')->ignore($this->route('category'))],
             'description' => ['sometimes', 'nullable', 'string', 'max:10000'],
+            'is_parent' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],
         ];

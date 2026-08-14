@@ -44,7 +44,7 @@
 
 - [x] TASK-030 Categories
 - [x] TASK-031 Category tree
-- [ ] TASK-032 Attribute groups
+- [x] TASK-032 Attribute groups
 - [ ] TASK-033 Attributes
 - [ ] TASK-034 Category attributes
 - [ ] TASK-035 Brands

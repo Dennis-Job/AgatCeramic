@@ -47,6 +47,7 @@ assignments; deleting a staff account or role removes its pivot rows.
 - slug
 - description
 - image_id
+- is_parent
 - is_active
 - sort_order
 - timestamps

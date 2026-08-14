@@ -20,6 +20,7 @@ class CategoryFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name),
             'description' => fake()->optional()->paragraph(),
+            'is_parent' => true,
             'is_active' => true,
             'sort_order' => fake()->numberBetween(0, 100),
         ];

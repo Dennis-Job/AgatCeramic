@@ -1,7 +1,7 @@
 import { apiFetch, requestCsrfCookie } from './auth'
 
-export type Category = { id: number; parent_id?: number | null; name: string; slug: string; description: string | null; is_active: boolean; sort_order: number; children?: Category[]; created_at: string; updated_at: string }
-export type CategoryPayload = Omit<Category, 'id' | 'created_at' | 'updated_at'>
+export type Category = { id: number; parent_id?: number | null; name: string; slug: string; description: string | null; is_parent: boolean; is_active: boolean; sort_order: number; children?: Category[]; created_at: string; updated_at: string }
+export type CategoryPayload = Omit<Category, 'id' | 'created_at' | 'updated_at' | 'children'>
 
 async function fail(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }

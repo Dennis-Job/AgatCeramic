@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\AttributeGroup;
 use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Policies\AttributeGroupPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\PermissionPolicy;
@@ -38,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(Permission::class, PermissionPolicy::class);
         Gate::policy(AuditLog::class, AuditLogPolicy::class);
+        Gate::policy(AttributeGroup::class, AttributeGroupPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
 
         RateLimiter::for('api', static fn (Request $request): Limit => Limit::perMinute(60)->by($request->ip()));

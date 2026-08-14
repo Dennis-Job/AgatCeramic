@@ -10,11 +10,13 @@ import RolesView from '../views/RolesView.vue'
 import PermissionsView from '../views/PermissionsView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import CategoriesView from '../views/CategoriesView.vue'
+import AttributeGroupsView from '../views/AttributeGroupsView.vue'
 import ProfileView from '../views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/attribute-groups', name: 'attribute-groups', component: AttributeGroupsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Группы характеристик' } },
     { path: '/categories', name: 'categories', component: CategoriesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Категории' } },
     { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, title: 'Вход' } },
     { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true, title: 'Восстановление пароля' } },

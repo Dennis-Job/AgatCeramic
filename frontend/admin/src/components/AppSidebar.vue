@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FolderTree } from '@lucide/vue'
+import { FolderTree, Layers3 } from '@lucide/vue'
 import { Boxes, FileText, KeyRound, LayoutDashboard, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 defineProps<{ isOpen: boolean }>()
@@ -9,6 +9,7 @@ defineEmits<{ close: [] }>()
 const auth = useAuthStore()
 
 const primaryNavigation = [
+  { label: 'Группы характеристик', to: '/attribute-groups', icon: Layers3, requiredPermission: 'catalog.manage' },
   { label: 'Категории', to: '/categories', icon: FolderTree, requiredPermission: 'catalog.manage' },
   { label: 'Обзор', to: '/', icon: LayoutDashboard },
   { label: 'Каталог', to: '/products', icon: Boxes },

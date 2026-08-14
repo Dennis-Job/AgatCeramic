@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
+use App\Http\Controllers\Api\V1\Admin\AttributeGroupController;
 use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
@@ -26,3 +27,4 @@ Route::apiResource('permissions', PermissionController::class)->only(['index', '
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
 Route::get('categories/tree', [CategoryController::class, 'tree'])->name('categories.tree');
 Route::apiResource('categories', CategoryController::class);
+Route::apiResource('attribute-groups', AttributeGroupController::class);

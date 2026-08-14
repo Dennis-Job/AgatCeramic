@@ -16,6 +16,7 @@ class CategoryResource extends ApiResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'is_parent' => $this->is_parent,
             'is_active' => $this->is_active,
             'sort_order' => $this->sort_order,
             'children' => self::collection($this->whenLoaded('children')),

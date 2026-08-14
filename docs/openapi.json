@@ -207,6 +207,16 @@
       "patch": { "operationId": "updateCategory", "summary": "Update a category", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateCategoryRequest" } } } }, "responses": { "200": { "description": "Updated category" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } },
       "delete": { "operationId": "deleteCategory", "summary": "Delete a category", "security": [{ "sanctumSession": [] }], "responses": { "204": { "description": "Category deleted" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } }
     },
+    "/admin/attribute-groups": {
+      "get": { "operationId": "listAttributeGroups", "summary": "List attribute groups", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Paginated attribute groups" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } },
+      "post": { "operationId": "createAttributeGroup", "summary": "Create an attribute group", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StoreAttributeGroupRequest" } } } }, "responses": { "201": { "description": "Created attribute group" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } }
+    },
+    "/admin/attribute-groups/{attribute_group}": {
+      "parameters": [{ "name": "attribute_group", "in": "path", "required": true, "schema": { "type": "integer" } }],
+      "get": { "operationId": "getAttributeGroup", "summary": "Get an attribute group", "security": [{ "sanctumSession": [] }], "responses": { "200": { "description": "Attribute group" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/BadRequest" } } },
+      "patch": { "operationId": "updateAttributeGroup", "summary": "Update an attribute group", "security": [{ "sanctumSession": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateAttributeGroupRequest" } } } }, "responses": { "200": { "description": "Updated attribute group" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/ValidationFailed" } } },
+      "delete": { "operationId": "deleteAttributeGroup", "summary": "Delete an attribute group", "security": [{ "sanctumSession": [] }], "responses": { "204": { "description": "Attribute group deleted" }, "401": { "$ref": "#/components/responses/Unauthenticated" }, "403": { "$ref": "#/components/responses/Forbidden" } } }
+    },
     "/": {
       "get": {
         "operationId": "getApiVersion",
@@ -321,14 +331,16 @@
       "StoreCategoryRequest": {
         "type": "object",
         "required": ["name", "slug"],
-        "properties": { "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "is_active": { "type": "boolean" }, "sort_order": { "type": "integer", "minimum": 0 } },
+        "properties": { "parent_id": { "type": ["integer", "null"], "minimum": 1 }, "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "is_parent": { "type": "boolean" }, "is_active": { "type": "boolean" }, "sort_order": { "type": "integer", "minimum": 0 } },
         "additionalProperties": false
       },
       "UpdateCategoryRequest": {
         "type": "object",
-        "properties": { "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "is_active": { "type": "boolean" }, "sort_order": { "type": "integer", "minimum": 0 } },
+        "properties": { "parent_id": { "type": ["integer", "null"], "minimum": 1 }, "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "is_parent": { "type": "boolean" }, "is_active": { "type": "boolean" }, "sort_order": { "type": "integer", "minimum": 0 } },
         "additionalProperties": false
       },
+      "StoreAttributeGroupRequest": { "type": "object", "required": ["name", "slug"], "properties": { "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "sort_order": { "type": "integer", "minimum": 0 } }, "additionalProperties": false },
+      "UpdateAttributeGroupRequest": { "type": "object", "properties": { "name": { "type": "string", "maxLength": 255 }, "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }, "description": { "type": ["string", "null"] }, "sort_order": { "type": "integer", "minimum": 0 } }, "additionalProperties": false },
       "VersionResponse": {
         "type": "object",
         "required": [
