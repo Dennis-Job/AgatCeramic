@@ -21,6 +21,7 @@ class ProductImageManagementService
 
         try {
             return DB::transaction(function () use ($actor, $product, $file, $attributes, $path): ProductImage {
+                $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
                 $isPrimary = ($attributes['is_primary'] ?? false) || ! $product->images()->exists();
                 if ($isPrimary) {
                     $product->images()->update(['is_primary' => false]);
@@ -48,6 +49,8 @@ class ProductImageManagementService
     public function update(User $actor, Product $product, ProductImage $image, array $attributes): ProductImage
     {
         return DB::transaction(function () use ($actor, $product, $image, $attributes): ProductImage {
+            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            $image = $product->images()->findOrFail($image->id);
             $isPrimary = $attributes['is_primary'] ?? $image->is_primary;
             if ($isPrimary) {
                 $product->images()->whereKeyNot($image->id)->update(['is_primary' => false]);
@@ -66,12 +69,17 @@ class ProductImageManagementService
 
     public function delete(User $actor, Product $product, ProductImage $image): void
     {
-        DB::transaction(function () use ($actor, $product, $image): void {
-            if ($image->is_primary) {
-                $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first()?->update(['is_primary' => true]);
-            }
+        $image = DB::transaction(function () use ($actor, $product, $image): ProductImage {
+            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            $image = $product->images()->findOrFail($image->id);
+            $replacement = $image->is_primary
+                ? $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first()
+                : null;
             $this->auditLogService->record($actor, 'product.image-deleted', $image);
             $image->delete();
+            $replacement?->update(['is_primary' => true]);
+
+            return $image;
         });
 
         Storage::disk($image->disk)->delete($image->path);

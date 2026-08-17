@@ -228,9 +228,9 @@ defines all validation request bodies and normal error responses (`401`, `403`, 
 applicable). Clients should treat the specification as the authoritative machine-readable contract.
 
 Product image upload is `multipart/form-data`: the required `image` is JPEG, PNG, or WebP and no
-larger than 10 MiB; `alt`, `is_primary`, and `sort_order` are optional. The current API maintains a
-primary image during ordinary image changes; the concurrent-upload invariant is tracked separately
-in TASK-041D.
+larger than 10 MiB; `alt`, `is_primary`, and `sort_order` are optional. Product-image mutations are
+serialised per product, and a database partial unique index guarantees that concurrent uploads or
+updates cannot leave more than one primary image.
 
 When an attribute is changed to `select` or `multiselect`, the same update request must include a
 non-empty replacement `options` array. This prevents a choice-type attribute from being persisted

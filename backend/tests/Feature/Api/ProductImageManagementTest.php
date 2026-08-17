@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -69,6 +70,16 @@ class ProductImageManagementTest extends TestCase
         $other = Product::factory()->create();
         $image = ProductImage::query()->create(['product_id' => $other->id, 'path' => 'product-images/test.jpg', 'mime_type' => 'image/jpeg', 'size' => 1]);
         $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}/images/{$image->id}", ['alt' => 'No access'])->assertNotFound();
+    }
+
+    public function test_database_allows_only_one_primary_image_per_product(): void
+    {
+        $product = Product::factory()->create();
+        ProductImage::query()->create(['product_id' => $product->id, 'path' => 'product-images/primary.jpg', 'mime_type' => 'image/jpeg', 'size' => 1, 'is_primary' => true]);
+
+        $this->expectException(QueryException::class);
+
+        ProductImage::query()->create(['product_id' => $product->id, 'path' => 'product-images/another-primary.jpg', 'mime_type' => 'image/jpeg', 'size' => 1, 'is_primary' => true]);
     }
 
     private function userWithRole(string $slug): User
