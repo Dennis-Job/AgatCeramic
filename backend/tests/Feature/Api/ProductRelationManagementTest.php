@@ -6,9 +6,12 @@ use App\Models\Product;
 use App\Models\ProductRelation;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ProductRelationManagementService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ProductRelationManagementTest extends TestCase
@@ -55,6 +58,37 @@ class ProductRelationManagementTest extends TestCase
             'relations' => [['related_product_id' => $other->id, 'type' => 'recommended']],
         ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['relations.0.related_product_id']]]);
         $this->actingAs($this->userWithRole('analyst'))->getJson("/api/v1/admin/products/{$product->id}/relations")->assertForbidden();
+    }
+
+    public function test_relation_replacement_rechecks_reverse_relations_after_acquiring_product_locks(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create();
+        $other = Product::factory()->create();
+        ProductRelation::query()->create(['product_id' => $other->id, 'related_product_id' => $product->id, 'type' => 'related']);
+
+        try {
+            app(ProductRelationManagementService::class)->replace($actor, $product, [
+                ['related_product_id' => $other->id, 'type' => 'recommended'],
+            ]);
+            $this->fail('A reverse product relation must be rejected after locks are acquired.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('relations.0.related_product_id', $exception->errors());
+        }
+
+        $this->assertDatabaseHas('product_relations', ['product_id' => $other->id, 'related_product_id' => $product->id]);
+        $this->assertDatabaseMissing('product_relations', ['product_id' => $product->id, 'related_product_id' => $other->id]);
+    }
+
+    public function test_database_prevents_reverse_product_relations(): void
+    {
+        $product = Product::factory()->create();
+        $other = Product::factory()->create();
+        ProductRelation::query()->create(['product_id' => $product->id, 'related_product_id' => $other->id, 'type' => 'related']);
+
+        $this->expectException(QueryException::class);
+
+        ProductRelation::query()->create(['product_id' => $other->id, 'related_product_id' => $product->id, 'type' => 'recommended']);
     }
 
     private function userWithRole(string $slug): User

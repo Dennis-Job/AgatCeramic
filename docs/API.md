@@ -215,8 +215,10 @@ one primary image while it has images. Alt text and sort order may be edited aft
 
 The `PUT` endpoint atomically replaces the `relations` array of `{related_product_id, type,
 sort_order}` entries. Supported types are `related` and `recommended`. A product cannot relate to
-itself or create a reverse duplicate; changes require `catalog.manage` and are audited as
-`product.relations-updated`.
+itself or create a reverse duplicate. Replacements acquire locks for the source and every related
+product in a consistent order, then revalidate reverse relations within the transaction; a unique
+database index on the unordered product pair is a final guard. Changes require `catalog.manage`
+and are audited as `product.relations-updated`.
 
 ### Catalog response contract
 

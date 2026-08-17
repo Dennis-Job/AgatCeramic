@@ -2591,6 +2591,7 @@
             "put": {
                 "operationId": "replaceProductRelations",
                 "summary": "Replace product relations",
+                "description": "Serialises replacements involving the same products and rejects self-references or reverse relations, including concurrent requests.",
                 "security": [
                     {
                         "sanctumSession": []
