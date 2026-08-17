@@ -157,6 +157,8 @@ TASK-036 provides the base product card. Create requires `category_id`, `name`, 
 URL-safe `slug`; `brand_id`, `description`, and `is_active` are optional. Product responses
 include the assigned category and brand (when present). These endpoints require `catalog.manage`
 and record `product.created`, `product.updated`, and `product.deleted` in the audit log.
+Deleting a product also removes all files referenced by its product images after the database
+transaction commits.
 
 `GET /admin/products` supports `search` (product name, slug, variant SKU or variant name),
 `category_id`, `brand_id`, `is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.

@@ -44,6 +44,7 @@
 | TASK-041 | Product search/filtering | 2026-08-14 | Added protected product search by name, slug, and variant SKU, plus category, brand, activity, stock, and price-range filters with an Admin SPA search page. | `ProductSearchFilterTest` (2 passed, 15 assertions); Pint; admin build |
 | TASK-041A | Complete the Catalog OpenAPI contract and reconcile API documentation | 2026-08-17 | Completed the administrative Catalog contract: typed resource and request schemas, all nested product routes, exact pagination envelopes, documented PUT/PATCH behavior, and reconciled API guidance. | `OpenApiCatalogContractTest` (1 passed, 105 assertions); Pint; OpenAPI JSON validation; route-list reconciliation |
 | TASK-041B | Require options when changing an attribute to select/multiselect | 2026-08-17 | Attribute updates now require a non-empty replacement option set whenever the submitted type becomes `select` or `multiselect`; ordinary updates that do not change type remain unaffected. | `AttributeManagementTest`; Pint; OpenAPI JSON validation |
+| TASK-041C | Remove product image files when deleting a product | 2026-08-17 | Product deletion now collects image storage references before the database cascade and removes every referenced file after a successful transaction. | `ProductManagementTest`; Pint; OpenAPI JSON validation |
 
 После завершения каждой задачи добавлять:
 - ID;

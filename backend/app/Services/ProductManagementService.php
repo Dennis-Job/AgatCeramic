@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductManagementService
 {
@@ -34,9 +35,15 @@ class ProductManagementService
 
     public function delete(User $actor, Product $product): void
     {
+        $images = $product->images()->get(['disk', 'path']);
+
         DB::transaction(function () use ($actor, $product): void {
             $this->auditLogService->record($actor, 'product.deleted', $product);
             $product->delete();
         });
+
+        foreach ($images as $image) {
+            Storage::disk($image->disk)->delete($image->path);
+        }
     }
 }

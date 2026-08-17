@@ -1988,6 +1988,7 @@
             "delete": {
                 "operationId": "deleteProduct",
                 "summary": "Delete a product",
+                "description": "Deletes the product and its dependent records. Product image files are removed from their configured storage disks after the database transaction commits.",
                 "security": [
                     {
                         "sanctumSession": []
