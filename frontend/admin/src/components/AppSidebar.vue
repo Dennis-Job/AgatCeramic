@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { BadgeCheck, FolderTree, Layers3, ListFilter } from '@lucide/vue'
-import { Boxes, FileText, KeyRound, LayoutDashboard, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
+import { Package, FileText, KeyRound, LayoutDashboard, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 defineProps<{ isOpen: boolean }>()
 defineEmits<{ close: [] }>()
@@ -10,16 +10,16 @@ const auth = useAuthStore()
 
 const primaryNavigation = [
   { label: 'Product search', to: '/product-search', icon: ListFilter, requiredPermission: 'catalog.manage' },
-  { label: 'Product relations', to: '/product-relations', icon: Boxes, requiredPermission: 'catalog.manage' },
-  { label: 'Product images', to: '/product-images', icon: Boxes, requiredPermission: 'catalog.manage' },
+  { label: 'Product relations', to: '/product-relations', icon: Package, requiredPermission: 'catalog.manage' },
+  { label: 'Product images', to: '/product-images', icon: Package, requiredPermission: 'catalog.manage' },
   { label: 'Product attributes', to: '/product-attributes', icon: ListFilter, requiredPermission: 'catalog.manage' },
-  { label: 'Product variants', to: '/product-variants', icon: Boxes, requiredPermission: 'catalog.manage' },
+  { label: 'Product variants', to: '/product-variants', icon: Package, requiredPermission: 'catalog.manage' },
   { label: 'Бренды', to: '/brands', icon: BadgeCheck, requiredPermission: 'catalog.manage' },
   { label: 'Характеристики', to: '/attributes', icon: ListFilter, requiredPermission: 'catalog.manage' },
   { label: 'Группы характеристик', to: '/attribute-groups', icon: Layers3, requiredPermission: 'catalog.manage' },
   { label: 'Категории', to: '/categories', icon: FolderTree, requiredPermission: 'catalog.manage' },
   { label: 'Обзор', to: '/', icon: LayoutDashboard },
-  { label: 'Товары', to: '/products', icon: Boxes, requiredPermission: 'catalog.manage' },
+  { label: 'Товары', to: '/products', icon: Package, requiredPermission: 'catalog.manage' },
   { label: 'Заказы', to: '/orders', icon: ShoppingCart },
 ]
 
@@ -47,8 +47,13 @@ const visiblePrimaryNavigation = computed(() => primaryNavigation.filter((item) 
   >
     <div class="mb-9 flex items-center justify-between px-2">
       <RouterLink class="flex items-center gap-3" to="/" @click="$emit('close')">
-        <span class="grid h-10 w-10 place-items-center rounded-xl bg-primary-500 text-lg font-bold text-white">А</span>
-        <span class="text-lg font-bold tracking-tight text-gray-800">AgatCeramic</span>
+        <span class="grid h-10 w-10 place-items-center">
+          <img src="/public/logo.svg" alt="Logo">
+        </span>
+        <span>
+          <p class="text-2xl leading-6 font-bold tracking-tight text-gray-800">Agat<span class="text-gray-400">Ceramic</span></p>
+          <p class="text-xs text-end">Админ-панель</p>
+        </span>
       </RouterLink>
       <button class="grid h-9 w-9 place-items-center rounded-lg text-gray-500 hover:bg-gray-50 lg:hidden" aria-label="Закрыть меню" @click="$emit('close')"><X :size="20" /></button>
     </div>
@@ -95,11 +100,5 @@ const visiblePrimaryNavigation = computed(() => primaryNavigation.filter((item) 
         <component :is="item.icon" :size="19" :stroke-width="1.8" />{{ item.label }}
       </RouterLink>
     </nav>
-
-    <div class="mt-auto rounded-xl bg-gray-25 p-4">
-      <p class="text-sm font-semibold text-gray-700">Нужна помощь?</p>
-      <p class="mt-1 text-xs leading-5 text-gray-500">Документация и поддержка проекта.</p>
-      <button class="mt-3 text-xs font-semibold text-primary-600">Открыть справку</button>
-    </div>
   </aside>
 </template>

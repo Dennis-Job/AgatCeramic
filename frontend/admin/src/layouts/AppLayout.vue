@@ -27,13 +27,13 @@ async function signOut(): Promise<void> {
         </button>
         <BaseInput class="hidden admin-header-search flex-1 md:flex" searchable placeholder="Поиск…" type="search" />
         <div class="ml-auto flex items-center gap-3">
-          <button class="grid h-10 w-10 place-items-center rounded-full text-gray-500 hover:bg-gray-50" aria-label="Уведомления"><Bell :size="20" /></button>
+          <button class="grid h-10 w-10 place-items-center border border-gray-200 rounded-full text-gray-500 hover:bg-gray-50" aria-label="Уведомления"><Bell :size="20" /></button>
           <div class="hidden text-right sm:block">
             <p class="text-sm font-semibold text-gray-700">{{ auth.user?.name }}</p>
             <p class="text-xs text-gray-400">{{ auth.user?.email }}</p>
           </div>
           <button class="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-primary-500 text-sm font-bold text-white hover:bg-primary-600" aria-label="Мой профиль" @click="router.push({ name: 'profile' })">{{ initial }}</button>
-          <button class="grid h-10 w-10 place-items-center rounded-full text-gray-500 hover:bg-gray-50" aria-label="Выйти" @click="signOut"><LogOut :size="19" /></button>
+          <button class="grid h-10 w-10 place-items-center border border-gray-200 rounded-full text-gray-500 hover:bg-gray-50" aria-label="Выйти" @click="signOut"><LogOut :size="19" /></button>
         </div>
       </header>
       <div class="p-4 sm:p-6 lg:p-8">

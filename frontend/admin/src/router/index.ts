@@ -61,7 +61,7 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   const pageTitle = to.meta.title as string | undefined
-  document.title = pageTitle ? `${pageTitle} — AgatCeramic` : 'AgatCeramic'
+  document.title = pageTitle ? `${pageTitle} | AgatCeramic` : 'AgatCeramic'
 })
 
 export default router

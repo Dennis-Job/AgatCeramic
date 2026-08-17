@@ -4,7 +4,7 @@ import { ArrowRight, ChevronDown, CircleHelp, FilePlus2, MessageSquare, Package,
 const metrics = [
   { label: 'Заказы', value: '0', change: 'Данные появятся после подключения API', icon: ShoppingCart, color: 'bg-primary-75 text-primary-500' },
   { label: 'Выручка', value: '0 ₽', change: 'Оплаченные заказы за период', icon: RussianRuble, color: 'bg-success-75 text-success-500' },
-  { label: 'Товары', value: '0', change: 'Активные позиции каталога', icon: Package, color: 'bg-info-50 text-info-500' },
+  { label: 'Товары', value: '0', change: 'Активные позиции каталога', icon: Package, color: 'bg-blue-light-50 text-blue-light-500' },
   { label: 'Обращения', value: '0', change: 'Новые заявки клиентов', icon: MessageSquare, color: 'bg-warning-50 text-warning-500' },
 ]
 
