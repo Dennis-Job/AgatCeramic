@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\Role;
 use App\Models\User;
@@ -54,6 +55,22 @@ class AttributeManagementTest extends TestCase
             ->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.details.options.0', 'validation.required_if');
         $this->actingAs($actor)->postJson('/api/v1/admin/attributes', ['name' => 'Material', 'slug' => 'material', 'type' => 'text', 'options' => [['value' => 'porcelain', 'label' => 'Porcelain']]])
             ->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.details.options.0', 'Options are available only for select and multiselect attributes.');
+    }
+
+    public function test_changing_an_attribute_to_a_choice_type_requires_replacement_options(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $attribute = Attribute::factory()->create(['type' => 'text']);
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/attributes/{$attribute->id}", ['type' => 'select'])
+            ->assertUnprocessable()
+            ->assertJsonPath('error.code', 'validation_failed')
+            ->assertJsonPath('error.details.options.0', 'validation.required_if');
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/attributes/{$attribute->id}", [
+            'type' => 'multiselect',
+            'options' => [['value' => 'warm', 'label' => 'Warm']],
+        ])->assertOk()->assertJsonPath('data.type', 'multiselect')->assertJsonPath('data.options.0.value', 'warm');
     }
 
     public function test_analyst_cannot_access_attributes(): void

@@ -29,7 +29,7 @@ class UpdateAttributeRequest extends FormRequest
             'is_filterable' => ['sometimes', 'boolean'],
             'is_required' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],
-            'options' => ['sometimes', 'array', 'max:500'],
+            'options' => ['required_if:type,select,multiselect', 'array', 'max:500'],
             'options.*.value' => ['required', 'string', 'max:255', 'distinct'],
             'options.*.label' => ['required', 'string', 'max:255'],
             'options.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],

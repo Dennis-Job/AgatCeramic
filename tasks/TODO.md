@@ -57,8 +57,8 @@
 
 ## Phase 3 — Catalog follow-ups
 
-- [ ] TASK-041A Complete the Catalog OpenAPI contract and reconcile API documentation
-- [ ] TASK-041B Require options when changing an attribute to select/multiselect
+- [x] TASK-041A Complete the Catalog OpenAPI contract and reconcile API documentation
+- [x] TASK-041B Require options when changing an attribute to select/multiselect
 - [ ] TASK-041C Remove product image files when deleting a product
 - [ ] TASK-041D Enforce a single primary product image under concurrent uploads
 

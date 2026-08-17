@@ -91,9 +91,9 @@ and the interface redirects them to the login page.
 All other administrative API routes require `auth:sanctum` and an active account. Fine-grained
 authorization is enforced through Laravel policies introduced in TASK-024.
 
-Successful administrative login and logout are recorded in the internal audit trail. There is no
-audit-log API endpoint yet; a future read endpoint must enforce the existing `audit-log.view`
-permission and return only explicitly mapped fields.
+Successful administrative login and logout are recorded in the internal audit trail. The read-only
+audit-log endpoints enforce the `audit-log.view` permission and return only explicitly mapped,
+sanitised fields.
 
 Role storage, granular permissions, and their relations are introduced in TASK-022 and TASK-023.
 TASK-024 registers policies for `User`, `Role`, and `Permission`: only permissions such as
@@ -178,6 +178,10 @@ characteristics that distinguish the SKU, as `{attribute_id, value}` entries; va
 against the attribute type and its allowed options. Changes are audited as `product.variant-created`, `product.variant-updated`, and
 `product.variant-deleted`.
 
+For categories, attribute groups, attributes, brands, products, and product variants, Laravel's
+resource routes accept both `PUT` and `PATCH` on the documented update URL; both methods use the
+same partial-update validation and response. Product-image metadata remains `PATCH` only.
+
 ### Product attributes
 
 - `GET /admin/products/{product}/attributes`
@@ -208,6 +212,27 @@ The `PUT` endpoint atomically replaces the `relations` array of `{related_produc
 sort_order}` entries. Supported types are `related` and `recommended`. A product cannot relate to
 itself or create a reverse duplicate; changes require `catalog.manage` and are audited as
 `product.relations-updated`.
+
+### Catalog response contract
+
+Every Catalog resource response is wrapped in `{"data": ...}`. Category, attribute group,
+attribute, brand, and product lists are paginated and include `data`, `links`, and `meta`; product
+variant and image lists are also paginated with a maximum page size of 100. Category attributes,
+attribute groups, product attribute values, and product relations return unpaginated `data` arrays.
+
+The OpenAPI contract defines the exact fields returned by every Catalog resource, including nested
+category, brand, attribute-option, variant-attribute-value, and related-product fields. It also
+defines all validation request bodies and normal error responses (`401`, `403`, `404`, and `422` as
+applicable). Clients should treat the specification as the authoritative machine-readable contract.
+
+Product image upload is `multipart/form-data`: the required `image` is JPEG, PNG, or WebP and no
+larger than 10 MiB; `alt`, `is_primary`, and `sort_order` are optional. The current API maintains a
+primary image during ordinary image changes; the concurrent-upload invariant is tracked separately
+in TASK-041D.
+
+When an attribute is changed to `select` or `multiselect`, the same update request must include a
+non-empty replacement `options` array. This prevents a choice-type attribute from being persisted
+without permitted values.
 
 ### Категории
 
