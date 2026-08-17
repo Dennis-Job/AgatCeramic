@@ -20,6 +20,7 @@ class ProductVariantResource extends ApiResource
             'stock_quantity' => $this->stock_quantity,
             'is_active' => $this->is_active,
             'sort_order' => $this->sort_order,
+            'attribute_values' => ProductVariantAttributeValueResource::collection($this->whenLoaded('attributeValues')),
             'created_at' => $this->created_at?->toAtomString(),
             'updated_at' => $this->updated_at?->toAtomString(),
         ];

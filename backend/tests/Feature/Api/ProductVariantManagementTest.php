@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Attribute;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Role;
@@ -53,6 +54,35 @@ class ProductVariantManagementTest extends TestCase
         $anotherProduct = Product::factory()->create();
         $variant = ProductVariant::factory()->create(['product_id' => $anotherProduct->id]);
         $this->actingAs($actor)->getJson("/api/v1/admin/products/{$product->id}/variants/{$variant->id}")->assertNotFound();
+    }
+
+    public function test_variant_can_store_only_its_distinguishing_category_attributes(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create();
+        $size = Attribute::factory()->create(['name' => 'Размер', 'slug' => 'size', 'type' => 'text']);
+        $color = Attribute::factory()->create(['name' => 'Цвет', 'slug' => 'color', 'type' => 'text']);
+        $notAssigned = Attribute::factory()->create(['name' => 'Материал', 'slug' => 'material', 'type' => 'text']);
+        $product->category->attributes()->attach([$size->id => ['sort_order' => 0], $color->id => ['sort_order' => 1]]);
+
+        $created = $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
+            'name' => 'Белый 60 × 60', 'sku' => 'MARBLE-WHITE-6060', 'price' => '1990.00',
+            'attribute_values' => [['attribute_id' => $size->id, 'value' => '60 × 60'], ['attribute_id' => $color->id, 'value' => 'Белый']],
+        ])->assertCreated()->assertJsonPath('data.attribute_values.0.attribute_id', $size->id)
+            ->assertJsonPath('data.attribute_values.1.value', 'Белый');
+
+        $variantId = $created->json('data.id');
+        $this->assertDatabaseHas('product_variant_attribute_values', ['product_variant_id' => $variantId, 'attribute_id' => $size->id]);
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}/variants/{$variantId}", [
+            'attribute_values' => [['attribute_id' => $color->id, 'value' => 'Серый']],
+        ])->assertOk()->assertJsonCount(1, 'data.attribute_values')->assertJsonPath('data.attribute_values.0.value', 'Серый');
+        $this->assertDatabaseMissing('product_variant_attribute_values', ['product_variant_id' => $variantId, 'attribute_id' => $size->id]);
+
+        $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
+            'name' => 'Неверный вариант', 'sku' => 'MARBLE-INVALID', 'price' => '100.00',
+            'attribute_values' => [['attribute_id' => $notAssigned->id, 'value' => 'Керамогранит']],
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['attribute_values.0.attribute_id']]]);
     }
 
     private function userWithRole(string $slug): User

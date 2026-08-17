@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Api\V1\Admin;
 
+use App\Http\Requests\Api\V1\Admin\Concerns\HasProductVariantAttributeValueRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateProductVariantRequest extends FormRequest
 {
+    use HasProductVariantAttributeValueRules;
+
     public function authorize(): bool
     {
         return true;
@@ -15,7 +18,7 @@ class UpdateProductVariantRequest extends FormRequest
     /** @return array<string, list<mixed>> */
     public function rules(): array
     {
-        return [
+        return [...[
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'sku' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/', Rule::unique('product_variants', 'sku')->ignore($this->route('variant'))],
             'price' => ['sometimes', 'required', 'numeric', 'min:0', 'max:9999999999.99'],
@@ -23,12 +26,12 @@ class UpdateProductVariantRequest extends FormRequest
             'stock_quantity' => ['sometimes', 'integer', 'min:0', 'max:4294967295'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:4294967295'],
-        ];
+        ], ...$this->productVariantAttributeValueRules()];
     }
 
     public function after(): array
     {
-        return [function ($validator): void {
+        return [...$this->productVariantAttributeValueValidation(), function ($validator): void {
             $price = $this->input('price', $this->route('variant')->price);
             $oldPrice = $this->input('old_price', $this->route('variant')->old_price);
 

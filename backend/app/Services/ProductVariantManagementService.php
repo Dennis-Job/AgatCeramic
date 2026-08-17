@@ -15,10 +15,13 @@ class ProductVariantManagementService
     public function create(User $actor, Product $product, array $attributes): ProductVariant
     {
         return DB::transaction(function () use ($actor, $product, $attributes): ProductVariant {
+            $attributeValues = $attributes['attribute_values'] ?? [];
+            unset($attributes['attribute_values']);
             $variant = $product->variants()->create($attributes);
-            $this->auditLogService->record($actor, 'product.variant-created', $variant);
+            $this->replaceAttributeValues($variant, $attributeValues);
+            $this->auditLogService->record($actor, 'product.variant-created', $variant, ['attribute_ids' => collect($attributeValues)->pluck('attribute_id')->all()]);
 
-            return $variant;
+            return $variant->load('attributeValues.attribute.options');
         });
     }
 
@@ -26,10 +29,16 @@ class ProductVariantManagementService
     public function update(User $actor, ProductVariant $variant, array $attributes): ProductVariant
     {
         return DB::transaction(function () use ($actor, $variant, $attributes): ProductVariant {
+            $hasAttributeValues = array_key_exists('attribute_values', $attributes);
+            $attributeValues = $attributes['attribute_values'] ?? [];
+            unset($attributes['attribute_values']);
             $variant->fill($attributes)->save();
-            $this->auditLogService->record($actor, 'product.variant-updated', $variant);
+            if ($hasAttributeValues) {
+                $this->replaceAttributeValues($variant, $attributeValues);
+            }
+            $this->auditLogService->record($actor, 'product.variant-updated', $variant, $hasAttributeValues ? ['attribute_ids' => collect($attributeValues)->pluck('attribute_id')->all()] : []);
 
-            return $variant;
+            return $variant->load('attributeValues.attribute.options');
         });
     }
 
@@ -39,5 +48,19 @@ class ProductVariantManagementService
             $this->auditLogService->record($actor, 'product.variant-deleted', $variant);
             $variant->delete();
         });
+    }
+
+    /** @param array<int, array{attribute_id: int, value: mixed}> $attributeValues */
+    private function replaceAttributeValues(ProductVariant $variant, array $attributeValues): void
+    {
+        $attributeIds = collect($attributeValues)->pluck('attribute_id');
+        $variant->attributeValues()->whereNotIn('attribute_id', $attributeIds)->delete();
+
+        foreach ($attributeValues as $attributeValue) {
+            $variant->attributeValues()->updateOrCreate(
+                ['attribute_id' => $attributeValue['attribute_id']],
+                ['value' => $attributeValue['value']],
+            );
+        }
     }
 }

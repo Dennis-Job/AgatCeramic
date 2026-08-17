@@ -22,7 +22,7 @@ class ProductVariantController extends Controller
     {
         Gate::authorize('view', $product);
 
-        return ProductVariantResource::collection($product->variants()->orderBy('sort_order')->orderBy('name')->paginate(100));
+        return ProductVariantResource::collection($product->variants()->with('attributeValues.attribute.options')->orderBy('sort_order')->orderBy('name')->paginate(100));
     }
 
     public function store(StoreProductVariantRequest $request, Product $product): JsonResponse
@@ -38,7 +38,7 @@ class ProductVariantController extends Controller
         Gate::authorize('view', $product);
         $this->ensureBelongsToProduct($product, $variant);
 
-        return new ProductVariantResource($variant);
+        return new ProductVariantResource($variant->load('attributeValues.attribute.options'));
     }
 
     public function update(UpdateProductVariantRequest $request, Product $product, ProductVariant $variant): ProductVariantResource

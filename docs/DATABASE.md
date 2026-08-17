@@ -99,6 +99,12 @@ while a value exists.
 
 Значения характеристик.
 
+### product_variant_attribute_values
+Stores only category-assigned characteristics that distinguish one SKU variant from another.
+Each row belongs to a variant and an attribute and contains one JSON value; the variant/attribute
+pair is unique. Deleting a variant deletes its values, while an attribute cannot be deleted while
+variant values refer to it.
+
 ### product_images
 TASK-039 stores product-owned image metadata: public-disk path, MIME type, byte size, optional
 alt text, primary-image flag, and sort order. Image files use generated names under

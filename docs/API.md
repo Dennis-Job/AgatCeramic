@@ -173,7 +173,9 @@ Price and stock filters apply to product variants; all filters can be combined.
 Variants are managed under their owning product and require `catalog.manage`. Creation requires
 `name`, a globally unique SKU, and a non-negative `price`; `old_price` is optional but cannot be
 less than the current price. `stock_quantity`, `is_active`, and `sort_order` default to `0`,
-`true`, and `0`. Changes are audited as `product.variant-created`, `product.variant-updated`, and
+`true`, and `0`. The optional `attribute_values` array contains only the category-assigned
+characteristics that distinguish the SKU, as `{attribute_id, value}` entries; values are validated
+against the attribute type and its allowed options. Changes are audited as `product.variant-created`, `product.variant-updated`, and
 `product.variant-deleted`.
 
 ### Product attributes
