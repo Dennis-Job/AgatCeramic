@@ -62,6 +62,15 @@
 - [x] TASK-041C Remove product image files when deleting a product
 - [x] TASK-041D Enforce a single primary product image under concurrent uploads
 
+## Phase 3 — Catalog hardening follow-ups
+
+- [ ] TASK-041E Make product deletion and image uploads race-safe, including cleanup of every cascaded storage file
+- [ ] TASK-041F Enforce the no-reverse-product-relations invariant under concurrent replacements
+- [ ] TASK-041G Make category-tree acyclicity and parent eligibility race-safe under concurrent updates
+- [ ] TASK-041H Add pagination handling to the Admin Catalog UI for all paginated catalog collections and selectors
+- [ ] TASK-041I Complete the human Catalog API guide for category, brand, attribute, and image-management behavior
+- [ ] TASK-041J Reconcile or remove unused standalone Catalog Admin views
+
 ## Phase 4 — Import/export
 
 - [ ] TASK-050 Excel product export

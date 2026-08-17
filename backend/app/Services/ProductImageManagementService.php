@@ -57,7 +57,12 @@ class ProductImageManagementService
             } elseif ($image->is_primary && ! $product->images()->whereKeyNot($image->id)->exists()) {
                 $isPrimary = true;
             } elseif ($image->is_primary) {
-                $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first()?->update(['is_primary' => true]);
+                $replacement = $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first();
+                $image->fill([...Arr::except($attributes, ['is_primary']), 'is_primary' => false])->save();
+                $replacement?->update(['is_primary' => true]);
+                $this->auditLogService->record($actor, 'product.image-updated', $image);
+
+                return $image;
             }
 
             $image->fill([...Arr::except($attributes, ['is_primary']), 'is_primary' => $isPrimary])->save();

@@ -44,8 +44,13 @@ class ProductImageManagementTest extends TestCase
         $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}/images/{$firstId}", [
             'is_primary' => true, 'alt' => 'Main image',
         ])->assertOk()->assertJsonPath('data.is_primary', true)->assertJsonPath('data.alt', 'Main image');
+        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}/images/{$firstId}", [
+            'is_primary' => false,
+        ])->assertOk()->assertJsonPath('data.is_primary', false);
+        $this->assertDatabaseHas('product_images', ['id' => $secondId, 'is_primary' => true]);
+        $this->assertSame(1, ProductImage::query()->where('product_id', $product->id)->where('is_primary', true)->count());
         $this->actingAs($actor)->getJson("/api/v1/admin/products/{$product->id}/images")
-            ->assertOk()->assertJsonPath('data.0.id', $firstId)->assertJsonPath('meta.per_page', 100);
+            ->assertOk()->assertJsonPath('data.0.id', $secondId)->assertJsonPath('meta.per_page', 100);
         $this->actingAs($actor)->deleteJson("/api/v1/admin/products/{$product->id}/images/{$firstId}")->assertNoContent();
 
         $this->assertDatabaseMissing('product_images', ['id' => $firstId]);
