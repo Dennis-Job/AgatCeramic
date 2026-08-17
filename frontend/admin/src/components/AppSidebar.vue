@@ -8,13 +8,16 @@ defineEmits<{ close: [] }>()
 
 const auth = useAuthStore()
 
-const primaryNavigation = [
-  { label: 'Бренды', to: '/brands', icon: BadgeCheck, requiredPermission: 'catalog.manage' },
-  { label: 'Характеристики', to: '/attributes', icon: ListFilter, requiredPermission: 'catalog.manage' },
-  { label: 'Группы характеристик', to: '/attribute-groups', icon: Layers3, requiredPermission: 'catalog.manage' },
-  { label: 'Категории', to: '/categories', icon: FolderTree, requiredPermission: 'catalog.manage' },
-  { label: 'Обзор', to: '/', icon: LayoutDashboard },
+const productManagementNavigation = [
   { label: 'Товары', to: '/products', icon: Package, requiredPermission: 'catalog.manage' },
+  { label: 'Категории', to: '/categories', icon: FolderTree, requiredPermission: 'catalog.manage' },
+  { label: 'Бренды', to: '/brands', icon: BadgeCheck, requiredPermission: 'catalog.manage' },
+  { label: 'Группы характеристик', to: '/attribute-groups', icon: Layers3, requiredPermission: 'catalog.manage' },
+  { label: 'Характеристики', to: '/attributes', icon: ListFilter, requiredPermission: 'catalog.manage' },
+]
+
+const primaryNavigation = [
+  { label: 'Обзор', to: '/', icon: LayoutDashboard },
   { label: 'Заказы', to: '/orders', icon: ShoppingCart },
 ]
 
@@ -31,7 +34,8 @@ const siteManagementNavigation = [
 ]
 
 const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
-const visiblePrimaryNavigation = computed(() => primaryNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
+const visiblePrimaryNavigation = computed(() => primaryNavigation)
+const visibleProductManagementNavigation = computed(() => productManagementNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
 </script>
 
 <template>
@@ -65,6 +69,22 @@ const visiblePrimaryNavigation = computed(() => primaryNavigation.filter((item) 
         <component :is="item.icon" :size="19" :stroke-width="1.8" />{{ item.label }}
       </RouterLink>
     </nav>
+
+    <template v-if="visibleProductManagementNavigation.length">
+      <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400">Управление товарами</p>
+      <nav class="space-y-1">
+        <RouterLink
+          v-for="item in visibleProductManagementNavigation"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-25"
+          active-class="!bg-primary-50 !text-primary-600"
+          @click="$emit('close')"
+        >
+          <component :is="item.icon" :size="19" :stroke-width="1.8" />{{ item.label }}
+        </RouterLink>
+      </nav>
+    </template>
 
     <template v-if="visibleEmployeeNavigation.length">
       <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400">Управление сотрудниками</p>
