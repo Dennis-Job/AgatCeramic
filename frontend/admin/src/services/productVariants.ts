@@ -1,7 +1,9 @@
 import { apiFetch, requestCsrfCookie } from './auth'
+import type { Attribute } from './attributes'
 
-export type ProductVariant = { id: number; product_id: number; name: string; sku: string; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number; created_at: string; updated_at: string }
-export type ProductVariantPayload = { name: string; sku: string; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number }
+export type ProductVariantAttributeValue = { id?: number; product_variant_id?: number; attribute_id: number; value: string | number | boolean | string[]; attribute?: Attribute }
+export type ProductVariant = { id: number; product_id: number; name: string; sku: string; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number; attribute_values: ProductVariantAttributeValue[]; created_at: string; updated_at: string }
+export type ProductVariantPayload = { name: string; sku: string; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number; attribute_values?: Array<{ attribute_id: number; value: string | number | boolean | string[] }> }
 
 async function fail(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }
