@@ -157,8 +157,11 @@ TASK-036 provides the base product card. Create requires `category_id`, `name`, 
 URL-safe `slug`; `brand_id`, `description`, and `is_active` are optional. Product responses
 include the assigned category and brand (when present). These endpoints require `catalog.manage`
 and record `product.created`, `product.updated`, and `product.deleted` in the audit log.
-Deleting a product also removes all files referenced by its product images after the database
-transaction commits.
+Deleting a product locks the product against concurrent image mutations, collects every current
+product-image storage reference, then removes the product and its cascaded records. After the
+database transaction commits, it removes every collected file from its configured storage disk.
+An upload that loses this race fails without creating a database image record and removes its
+newly stored file.
 
 `GET /admin/products` supports `search` (product name, slug, variant SKU or variant name),
 `category_id`, `brand_id`, `is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.
@@ -228,9 +231,9 @@ defines all validation request bodies and normal error responses (`401`, `403`, 
 applicable). Clients should treat the specification as the authoritative machine-readable contract.
 
 Product image upload is `multipart/form-data`: the required `image` is JPEG, PNG, or WebP and no
-larger than 10 MiB; `alt`, `is_primary`, and `sort_order` are optional. Product-image mutations are
-serialised per product, and a database partial unique index guarantees that concurrent uploads or
-updates cannot leave more than one primary image.
+larger than 10 MiB; `alt`, `is_primary`, and `sort_order` are optional. Product-image mutations and
+product deletion are serialised per product, and a database partial unique index guarantees that
+concurrent uploads or updates cannot leave more than one primary image.
 
 When an attribute is changed to `select` or `multiselect`, the same update request must include a
 non-empty replacement `options` array. This prevents a choice-type attribute from being persisted

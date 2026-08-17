@@ -92,6 +92,34 @@ class ProductManagementTest extends TestCase
         }
     }
 
+    public function test_deleting_a_product_removes_image_files_from_every_configured_disk(): void
+    {
+        Storage::fake('public');
+        Storage::fake('archive');
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create();
+        $images = [
+            ['disk' => 'public', 'path' => "product-images/{$product->id}/main.jpg", 'mime_type' => 'image/jpeg'],
+            ['disk' => 'archive', 'path' => "product-images/{$product->id}/detail.webp", 'mime_type' => 'image/webp'],
+        ];
+
+        foreach ($images as $index => $image) {
+            Storage::disk($image['disk'])->put($image['path'], 'image content');
+            ProductImage::query()->create([
+                'product_id' => $product->id,
+                ...$image,
+                'size' => 13,
+                'is_primary' => $index === 0,
+            ]);
+        }
+
+        $this->actingAs($actor)->deleteJson("/api/v1/admin/products/{$product->id}")->assertNoContent();
+
+        foreach ($images as $image) {
+            Storage::disk($image['disk'])->assertMissing($image['path']);
+        }
+    }
+
     private function userWithRole(string $slug): User
     {
         $this->seed(RoleSeeder::class);

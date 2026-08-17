@@ -35,11 +35,13 @@ class ProductManagementService
 
     public function delete(User $actor, Product $product): void
     {
-        $images = $product->images()->get(['disk', 'path']);
-
-        DB::transaction(function () use ($actor, $product): void {
+        $images = DB::transaction(function () use ($actor, $product): array {
+            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            $images = $product->images()->get(['disk', 'path'])->all();
             $this->auditLogService->record($actor, 'product.deleted', $product);
             $product->delete();
+
+            return $images;
         });
 
         foreach ($images as $image) {

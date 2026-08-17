@@ -64,7 +64,7 @@
 
 ## Phase 3 — Catalog hardening follow-ups
 
-- [ ] TASK-041E Make product deletion and image uploads race-safe, including cleanup of every cascaded storage file
+- [x] TASK-041E Make product deletion and image uploads race-safe, including cleanup of every cascaded storage file
 - [ ] TASK-041F Enforce the no-reverse-product-relations invariant under concurrent replacements
 - [ ] TASK-041G Make category-tree acyclicity and parent eligibility race-safe under concurrent updates
 - [ ] TASK-041H Add pagination handling to the Admin Catalog UI for all paginated catalog collections and selectors
