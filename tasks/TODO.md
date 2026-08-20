@@ -92,6 +92,10 @@
   - Explicitly map category images and brand logos/documents to the Media Library work in Phase 7.
   - Explicitly map category and brand SEO fields to Phase 8 and reconcile placeholder database fields with the documented plan.
   - Update requirements/task documentation so no Catalog requirement is left without an owner.
+- [x] TASK-041P Make Admin Catalog pagination resistant to stale requests and last-page deletions
+  - Prevent out-of-order responses from replacing newer page state and disable or guard navigation while appropriate.
+  - Clamp or reload the previous valid page after deleting the final item on a page.
+  - Cover products, brands, attributes, and attribute groups with automated tests.
 - [ ] TASK-041Q Bring Catalog dialogs and image ordering into compliance with the UI Design Review standard
   - Add dialog semantics, accessible names, focus management, focus restoration, Escape/backdrop behavior, and keyboard-safe destructive confirmations.
   - Add accessible names to icon-only actions and a keyboard-operable alternative for product image reordering with announced state changes.

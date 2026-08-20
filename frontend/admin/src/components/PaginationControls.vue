@@ -18,11 +18,10 @@ const range = computed(() => {
     <p class="text-sm text-gray-500" role="status" aria-live="polite">Показано {{ range }}</p>
     <div class="flex items-center gap-2">
       <button class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading || meta.current_page <= 1" aria-label="Предыдущая страница" @click="emit('change', meta.current_page - 1)">
-        <ChevronLeft :size="17" />Назад
+        <ChevronLeft :size="17" />
       </button>
       <span class="text-sm font-medium text-gray-600" :aria-label="`Текущая страница ${meta.current_page} из ${meta.last_page}`">{{ meta.current_page }} / {{ meta.last_page }}</span>
-      <button class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading || meta.current_page >= meta.last_page" aria-label="Следующая страница" @click="emit('change', meta.current_page + 1)">
-        Вперёд<ChevronRight :size="17" />
+      <button class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading || meta.current_page >= meta.last_page" aria-label="Следующая страница" @click="emit('change', meta.current_page + 1)"><ChevronRight :size="17" />
       </button>
     </div>
   </nav>
