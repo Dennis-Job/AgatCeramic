@@ -243,28 +243,123 @@ without permitted values.
 
 ### Категории
 
-- `GET /admin/categories`
-- `POST /admin/categories`
-- `GET /admin/categories/{category}`
-- `PATCH /admin/categories/{category}`
-- `DELETE /admin/categories/{category}`
-- `GET /admin/categories/{category}/attributes` — assigned category attributes.
-- `PUT /admin/categories/{category}/attributes` — replaces assignments with an `attributes` array of `{id, sort_order}` objects; an empty array clears assignments.
-- `GET /admin/categories/{category}/attribute-groups` — assigned attribute groups.
-- `PUT /admin/categories/{category}/attribute-groups` — replaces groups with an `attribute_groups` array of `{id, sort_order}` objects.
+Все административные операции Catalog ниже требуют активную Sanctum-сессию и permission
+`catalog.manage`. Одиночные ответы имеют конверт `data`; списки категорий, групп, характеристик,
+брендов и изображений используют стандартные `data`, `links`, `meta`. Для обновления обычных
+ресурсов допустимы `PATCH` и `PUT`; оба метода означают частичное обновление. Точные JSON-схемы,
+коды ответов и все поля приведены в [`openapi.json`](openapi.json).
 
-Category-tree mutations are serialised with row locks. Assigning or moving a category verifies the
-target is still an eligible parent while locked; category moves also lock the current tree before
-checking the ancestor path, preventing concurrent updates from introducing a cycle. A category with
-children cannot be changed to a non-parent while those rows are locked.
+- `GET /admin/categories` — постраничный плоский список (25 элементов на страницу).
+- `GET /admin/categories/tree` — непостраничное дерево корневых категорий с `children`; применять
+  для построения иерархии, а не для экранов с постраничным списком.
+- `POST /admin/categories`, `GET|PATCH|PUT|DELETE /admin/categories/{category}`.
+
+При создании обязательны `name` и уникальный URL-safe `slug` (`lowercase-kebab-case`). Дополнительно
+принимаются `parent_id`, `description`, `is_parent`, `is_active` и `sort_order`. Родителем может быть
+только категория с `is_parent: true`; нельзя назначить себя родителем или переместить категорию в
+собственного потомка. Категорию с детьми нельзя перевести в `is_parent: false`. Эти проверки выполняются
+в транзакции, поэтому клиенту следует обработать `422`, если параллельное изменение сделало выбранного
+родителя недопустимым.
+
+```json
+POST /api/v1/admin/categories
+{
+  "parent_id": 12,
+  "name": "Настенная плитка",
+  "slug": "wall-tiles",
+  "is_parent": true,
+  "is_active": true,
+  "sort_order": 20
+}
+```
+
+Назначения характеристик и групп являются полными заменами, а не добавлением к текущему набору:
+
+- `GET /admin/categories/{category}/attributes` — характеристики категории; при назначении
+  возвращается `category_sort_order`.
+- `PUT /admin/categories/{category}/attributes` — тело
+  `{"attributes":[{"id":17,"sort_order":0}]}`; пустой массив очищает все назначения.
+- `GET /admin/categories/{category}/attribute-groups` — назначенные группы.
+- `PUT /admin/categories/{category}/attribute-groups` — тело
+  `{"attribute_groups":[{"id":4,"sort_order":0}]}`; пустой массив очищает группы. При удалении
+  группы из категории открепляются и относящиеся к ней характеристики.
+
+### Группы характеристик
+
+- `GET /admin/attribute-groups` — постраничный список (25 элементов).
+- `POST /admin/attribute-groups`, `GET|PATCH|PUT|DELETE /admin/attribute-groups/{attribute_group}`.
+
+Для создания требуются уникальные `name` и `slug`. `description` может быть `null`, а `sort_order`
+определяет порядок группы в категории. Удаление группы не удаляет сами характеристики: перед удалением
+клиент должен при необходимости переназначить их другой группе или оставить без группы.
+
+```json
+POST /api/v1/admin/attribute-groups
+{"name":"Размеры","slug":"dimensions","description":"Габариты товара","sort_order":10}
+```
 
 ### Бренды
 
-Операции создания, просмотра, изменения и удаления.
+- `GET /admin/brands` — постраничный список (25 элементов), упорядоченный по названию.
+- `POST /admin/brands`, `GET|PATCH|PUT|DELETE /admin/brands/{brand}`.
+
+Создание требует уникальные `name` и `slug`. Поля `description` и `country_code` необязательны;
+`country_code` — ISO 3166-1 alpha-2 в верхнем регистре, например `IT`. `is_active` управляет
+доступностью бренда на витрине и по умолчанию включён. Удаление бренда не удаляет товары: связанные
+товары сохраняются без бренда.
+
+```json
+PATCH /api/v1/admin/brands/8
+{"country_code":"IT","is_active":true}
+```
 
 ### Характеристики
 
-Операции создания, просмотра, изменения и удаления.
+- `GET /admin/attributes` — постраничный список (25 элементов), включающий `options`.
+- `POST /admin/attributes`, `GET|PATCH|PUT|DELETE /admin/attributes/{attribute}`.
+
+Поддерживаемые `type`: `text`, `number`, `boolean`, `select`, `multiselect`. Имя и slug уникальны
+во всём каталоге; `attribute_group_id`, `unit`, `is_filterable`, `is_required` и `sort_order`
+необязательны. Поле `options` разрешено только для `select` и `multiselect`; при их создании оно
+обязательно и содержит от одного до 500 вариантов с уникальным `value`. Каждый вариант задаётся как
+`value`, `label` и необязательный `sort_order`.
+
+При переключении существующей характеристики на `select` или `multiselect` в том же запросе должен
+быть передан непустой полный набор `options`. Передача `options` для другого типа возвращает `422`.
+Если `options` передано для типа выбора, оно целиком заменяет существующие варианты; при переключении
+на иной тип варианты удаляются.
+
+```json
+POST /api/v1/admin/attributes
+{
+  "attribute_group_id": 4,
+  "name": "Поверхность",
+  "slug": "surface",
+  "type": "select",
+  "is_filterable": true,
+  "options": [
+    {"value":"matte","label":"Матовая","sort_order":0},
+    {"value":"glossy","label":"Глянцевая","sort_order":1}
+  ]
+}
+```
+
+### Изображения товаров
+
+- `GET /admin/products/{product}/images` — постраничный список до 100 элементов на страницу,
+  упорядоченный обложкой, затем `sort_order` и идентификатором.
+- `POST /admin/products/{product}/images` — `multipart/form-data`; обязательный файл находится в
+  поле `image`. Принимаются JPEG, PNG и WebP не больше 10 МиБ. Дополнительно: `alt`, `is_primary`,
+  `sort_order`.
+- `PATCH /admin/products/{product}/images/{image}` — изменяет только `alt`, `is_primary` и/или
+  `sort_order`; заменять исходный файл этим маршрутом нельзя.
+- `DELETE /admin/products/{product}/images/{image}` — удаляет запись и файл из storage.
+
+Первое изображение товара автоматически становится обложкой. Передача `is_primary: true` снимает этот
+признак с остальных изображений. При удалении или снятии признака с текущей единственной обложки
+сервис назначает следующую по `sort_order`/id, поэтому товар с изображениями всегда имеет ровно одну
+обложку. Операции изображений и удаление товара сериализованы для одного товара; клиенту не следует
+пытаться самостоятельно эмулировать это несколькими параллельными запросами.
 
 ### Заказы
 
