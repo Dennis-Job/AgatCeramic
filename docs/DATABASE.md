@@ -109,7 +109,14 @@ deleting a brand clears the optional reference.
 ### product_variants
 TASK-037 creates variants owned by a product. Each has a globally unique SKU, display name,
 current price, optional old price (never below the current price), stock quantity, publication
-flag, sort order, and timestamps. Deleting a product cascades to its variants.
+flag, sort order, and timestamps. TASK-041N makes the variant the single sellable catalog entity:
+it also owns an optional globally unique supplier/manufacturer `article_number`, an optional globally
+unique digit-only GTIN-like `barcode`, and the required controlled sale `unit`. Product rows remain
+shared model cards and do not duplicate commercial identifiers or units; a product without genuine
+options still has one default variant. Supported unit codes are `piece`, `square_meter`,
+`linear_meter`, `package`, `kilogram`, `liter`, and `set`. The additive migration backfills legacy
+variants as `piece`; deployments with existing catalog data must review and correct that operational
+default before relying on unit-based display or exchange. Deleting a product cascades to its variants.
 
 SKU/варианты.
 

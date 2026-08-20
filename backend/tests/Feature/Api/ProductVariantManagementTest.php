@@ -26,15 +26,19 @@ class ProductVariantManagementTest extends TestCase
 
         $created = $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
             'name' => '60 × 60, matte', 'sku' => 'MARBLE-WHITE-6060-MATTE', 'price' => '1990.00',
+            'article_number' => ' AC-6060-M ', 'barcode' => '04601234567890', 'unit' => 'square_meter',
             'old_price' => '2490.00', 'stock_quantity' => 12, 'sort_order' => 10,
-        ])->assertCreated()->assertJsonPath('data.product_id', $product->id)->assertJsonPath('data.price', '1990.00');
+        ])->assertCreated()->assertJsonPath('data.product_id', $product->id)
+            ->assertJsonPath('data.article_number', 'AC-6060-M')->assertJsonPath('data.barcode', '04601234567890')
+            ->assertJsonPath('data.unit', 'square_meter')->assertJsonPath('data.price', '1990.00');
         $id = $created->json('data.id');
 
         $this->actingAs($actor)->getJson("/api/v1/admin/products/{$product->id}/variants")
             ->assertOk()->assertJsonPath('data.0.id', $id)->assertJsonPath('meta.per_page', 100);
         $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}/variants/{$id}", [
-            'price' => '1890.00', 'is_active' => false,
-        ])->assertOk()->assertJsonPath('data.old_price', '2490.00')->assertJsonPath('data.is_active', false);
+            'price' => '1890.00', 'unit' => 'package', 'barcode' => null, 'is_active' => false,
+        ])->assertOk()->assertJsonPath('data.old_price', '2490.00')->assertJsonPath('data.unit', 'package')
+            ->assertJsonPath('data.barcode', null)->assertJsonPath('data.is_active', false);
         $this->actingAs($actor)->deleteJson("/api/v1/admin/products/{$product->id}/variants/{$id}")->assertNoContent();
 
         $this->assertDatabaseMissing('product_variants', ['id' => $id]);
@@ -51,12 +55,44 @@ class ProductVariantManagementTest extends TestCase
         $actor = $this->userWithRole('catalog-manager');
 
         $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
-            'name' => 'Broken', 'sku' => 'bad sku', 'price' => 100, 'old_price' => 90, 'stock_quantity' => -1,
-        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sku', 'old_price', 'stock_quantity']]]);
+            'name' => 'Broken', 'sku' => 'bad sku', 'barcode' => 'ABC123', 'unit' => 'box',
+            'price' => 100, 'old_price' => 90, 'stock_quantity' => -1,
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sku', 'barcode', 'unit', 'old_price', 'stock_quantity']]]);
 
         $anotherProduct = Product::factory()->create();
         $variant = ProductVariant::factory()->create(['product_id' => $anotherProduct->id]);
         $this->actingAs($actor)->getJson("/api/v1/admin/products/{$product->id}/variants/{$variant->id}")->assertNotFound();
+    }
+
+    public function test_variant_identifiers_are_nullable_but_globally_unique_and_unit_is_required(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create();
+        $existing = ProductVariant::factory()->create([
+            'article_number' => 'VENDOR-100',
+            'barcode' => '0123456789012',
+            'unit' => 'piece',
+        ]);
+
+        $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
+            'name' => 'Missing unit', 'sku' => 'MISSING-UNIT', 'price' => '100.00',
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['unit']]]);
+
+        $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
+            'name' => 'Duplicate identifiers', 'sku' => 'DUPLICATE-IDENTIFIERS', 'price' => '100.00',
+            'article_number' => $existing->article_number, 'barcode' => $existing->barcode, 'unit' => 'piece',
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['article_number', 'barcode']]]);
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$existing->product_id}/variants/{$existing->id}", [
+            'article_number' => $existing->article_number, 'barcode' => $existing->barcode, 'unit' => 'liter',
+        ])->assertOk()->assertJsonPath('data.unit', 'liter');
+
+        $created = $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
+            'name' => 'No external identifiers', 'sku' => 'NO-EXTERNAL-ID', 'price' => '100.00',
+            'article_number' => '   ', 'barcode' => '', 'unit' => 'set',
+        ])->assertCreated()->assertJsonPath('data.article_number', null)->assertJsonPath('data.barcode', null);
+
+        $this->assertDatabaseHas('product_variants', ['id' => $created->json('data.id'), 'unit' => 'set']);
     }
 
     public function test_variant_can_store_only_its_distinguishing_category_attributes(): void
@@ -69,7 +105,7 @@ class ProductVariantManagementTest extends TestCase
         $product->category->attributes()->attach([$size->id => ['sort_order' => 0], $color->id => ['sort_order' => 1]]);
 
         $created = $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
-            'name' => 'Белый 60 × 60', 'sku' => 'MARBLE-WHITE-6060', 'price' => '1990.00',
+            'name' => 'Белый 60 × 60', 'sku' => 'MARBLE-WHITE-6060', 'unit' => 'square_meter', 'price' => '1990.00',
             'attribute_values' => [['attribute_id' => $size->id, 'value' => '60 × 60'], ['attribute_id' => $color->id, 'value' => 'Белый']],
         ])->assertCreated()->assertJsonPath('data.attribute_values.0.attribute_id', $size->id)
             ->assertJsonPath('data.attribute_values.1.value', 'Белый');
@@ -83,7 +119,7 @@ class ProductVariantManagementTest extends TestCase
         $this->assertDatabaseMissing('product_variant_attribute_values', ['product_variant_id' => $variantId, 'attribute_id' => $size->id]);
 
         $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
-            'name' => 'Неверный вариант', 'sku' => 'MARBLE-INVALID', 'price' => '100.00',
+            'name' => 'Неверный вариант', 'sku' => 'MARBLE-INVALID', 'unit' => 'piece', 'price' => '100.00',
             'attribute_values' => [['attribute_id' => $notAssigned->id, 'value' => 'Керамогранит']],
         ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['attribute_values.0.attribute_id']]]);
     }

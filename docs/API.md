@@ -163,8 +163,9 @@ database transaction commits, it removes every collected file from its configure
 An upload that loses this race fails without creating a database image record and removes its
 newly stored file.
 
-`GET /admin/products` supports `search` (product name, slug, variant SKU or variant name),
-`category_id`, `brand_id`, `is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.
+`GET /admin/products` supports case-insensitive substring `search` for product name or slug and
+variant name, SKU, article number, or barcode. It also supports `category_id`, `brand_id`,
+`is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.
 Price and stock filters apply to product variants; all filters can be combined.
 
 Changing `category_id` is rejected with `422` when the destination category does not assign every
@@ -179,10 +180,16 @@ a required destination-category attribute. The update is atomic and never silent
 - `PATCH /admin/products/{product}/variants/{variant}`
 - `DELETE /admin/products/{product}/variants/{variant}`
 
-Variants are managed under their owning product and require `catalog.manage`. Creation requires
-`name`, a globally unique SKU, and a non-negative `price`; `old_price` is optional but cannot be
-less than the current price. `stock_quantity`, `is_active`, and `sort_order` default to `0`,
-`true`, and `0`. The optional `attribute_values` array contains only the category-assigned
+Variants are managed under their owning product and require `catalog.manage`. A variant is the
+sellable entity and exclusively owns its commercial identifiers and sale unit; the parent product
+does not duplicate them. Creation requires `name`, a globally unique SKU, a controlled `unit`, and
+a non-negative `price`. Supported unit codes are `piece`, `square_meter`, `linear_meter`, `package`,
+`kilogram`, `liter`, and `set`. `article_number` is an optional globally unique string up to 100
+characters. `barcode` is an optional globally unique string of 8, 12, 13, or 14 digits and remains
+a string so leading zeroes are preserved. Blank identifiers are normalized to `null`. `old_price`
+is optional but cannot be less than the current price. `stock_quantity`, `is_active`, and
+`sort_order` default to `0`, `true`, and `0`. A product without genuine options is represented by
+one default variant. The optional `attribute_values` array contains only the category-assigned
 characteristics that distinguish the SKU, as `{attribute_id, value}` entries; values are validated
 against the attribute type and its allowed options. Changes are audited as `product.variant-created`, `product.variant-updated`, and
 `product.variant-deleted`.

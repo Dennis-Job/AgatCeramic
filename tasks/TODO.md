@@ -85,7 +85,7 @@
   - Reconcile `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`, and `date`; normalize colors to `select` options whose codes may be HEX values.
   - Add product-page visibility control and typed backend/Admin validation and editing.
   - Update migrations, API Resources, OpenAPI, the human API guide, and tests.
-- [ ] TASK-041N Add catalog identifiers and units required for products and variants
+- [x] TASK-041N Add catalog identifiers and units required for products and variants
   - Define product-versus-variant ownership for article numbers, barcodes, and units of measure.
   - Add database constraints, CRUD/search behavior, Admin fields, OpenAPI documentation, and tests.
 - [ ] TASK-041O Trace deferred Catalog media and SEO requirements to their delivery phases

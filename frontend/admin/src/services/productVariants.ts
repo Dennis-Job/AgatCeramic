@@ -3,12 +3,20 @@ import type { Attribute } from './attributes'
 import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from './pagination'
 
 export type ProductVariantAttributeValue = { id?: number; product_variant_id?: number; attribute_id: number; value: string | number | boolean | string[]; attribute?: Attribute }
-export type ProductVariant = { id: number; product_id: number; name: string; sku: string; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number; attribute_values: ProductVariantAttributeValue[]; created_at: string; updated_at: string }
-export type ProductVariantPayload = { name: string; sku: string; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number; attribute_values?: Array<{ attribute_id: number; value: string | number | boolean | string[] }> }
+export type ProductUnit = 'piece' | 'square_meter' | 'linear_meter' | 'package' | 'kilogram' | 'liter' | 'set'
+export type ProductVariant = { id: number; product_id: number; name: string; sku: string; article_number: string | null; barcode: string | null; unit: ProductUnit; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number; attribute_values: ProductVariantAttributeValue[]; created_at: string; updated_at: string }
+export type ProductVariantPayload = { name: string; sku: string; article_number: string | null; barcode: string | null; unit: ProductUnit; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; sort_order: number; attribute_values?: Array<{ attribute_id: number; value: string | number | boolean | string[] }> }
+
+export class ProductVariantRequestError extends Error {
+  readonly details: Record<string, string[]>
+
+  constructor(message: string, details: Record<string, string[]>) { super(message); this.details = details }
+}
 
 async function fail(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }
-  throw new Error(Object.values(body.error?.details ?? {}).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.')
+  const details = body.error?.details ?? {}
+  throw new ProductVariantRequestError(Object.values(details).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.', details)
 }
 
 export async function getProductVariants(productId: number, request: PageRequest = {}): Promise<PaginatedResponse<ProductVariant>> { const query = new URLSearchParams(); withPage(query, request); const response = await apiFetch(`/admin/products/${productId}/variants${query.size ? `?${query}` : ''}`); if (!response.ok) return fail(response); return (await response.json()) as PaginatedResponse<ProductVariant> }

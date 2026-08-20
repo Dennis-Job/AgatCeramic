@@ -30,7 +30,11 @@ class ProductController extends Controller
             $query->where(function ($query) use ($pattern): void {
                 $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
                     ->orWhereRaw('LOWER(slug) LIKE ?', [$pattern])
-                    ->orWhereHas('variants', fn ($variants) => $variants->whereRaw('LOWER(sku) LIKE ?', [$pattern])->orWhereRaw('LOWER(name) LIKE ?', [$pattern]));
+                    ->orWhereHas('variants', fn ($variants) => $variants
+                        ->whereRaw('LOWER(sku) LIKE ?', [$pattern])
+                        ->orWhereRaw('LOWER(name) LIKE ?', [$pattern])
+                        ->orWhereRaw('LOWER(article_number) LIKE ?', [$pattern])
+                        ->orWhere('barcode', 'LIKE', $pattern));
             });
         }
 

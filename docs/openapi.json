@@ -1846,9 +1846,21 @@
             "get": {
                 "operationId": "listProducts",
                 "summary": "List products",
+                "description": "Search matches product name or slug and variant name, SKU, article number, or barcode by case-insensitive substring.",
                 "security": [
                     {
                         "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
                     }
                 ],
                 "responses": {
@@ -4136,6 +4148,9 @@
                     "product_id",
                     "name",
                     "sku",
+                    "article_number",
+                    "barcode",
+                    "unit",
                     "price",
                     "old_price",
                     "stock_quantity",
@@ -4157,6 +4172,31 @@
                     },
                     "sku": {
                         "type": "string"
+                    },
+                    "article_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "barcode": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": [
+                            "piece",
+                            "square_meter",
+                            "linear_meter",
+                            "package",
+                            "kilogram",
+                            "liter",
+                            "set"
+                        ]
                     },
                     "price": {
                         "type": "string"
@@ -4482,6 +4522,7 @@
                 "required": [
                     "name",
                     "sku",
+                    "unit",
                     "price"
                 ],
                 "properties": {
@@ -4492,6 +4533,32 @@
                     "sku": {
                         "type": "string",
                         "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+                    },
+                    "article_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "barcode": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": [
+                            "piece",
+                            "square_meter",
+                            "linear_meter",
+                            "package",
+                            "kilogram",
+                            "liter",
+                            "set"
+                        ]
                     },
                     "price": {
                         "type": "number",
@@ -4546,6 +4613,32 @@
                     "sku": {
                         "type": "string",
                         "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+                    },
+                    "article_number": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "barcode": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": [
+                            "piece",
+                            "square_meter",
+                            "linear_meter",
+                            "package",
+                            "kilogram",
+                            "liter",
+                            "set"
+                        ]
                     },
                     "price": {
                         "type": "number",

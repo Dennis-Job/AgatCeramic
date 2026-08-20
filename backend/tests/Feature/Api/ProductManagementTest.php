@@ -107,6 +107,7 @@ class ProductManagementTest extends TestCase
         $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
             'name' => 'Variant',
             'sku' => 'REQUIRED-VARIANT-ONLY',
+            'unit' => 'piece',
             'price' => '100.00',
             'attribute_values' => [['attribute_id' => $required->id, 'value' => 'variant-only']],
         ])->assertCreated();
