@@ -19,6 +19,7 @@ class AttributeResource extends ApiResource
             'unit' => $this->unit,
             'is_filterable' => $this->is_filterable,
             'is_required' => $this->is_required,
+            'is_visible_on_product_page' => $this->is_visible_on_product_page,
             'sort_order' => $this->sort_order,
             'category_sort_order' => $this->when($this->pivot !== null, fn (): int => $this->pivot->sort_order),
             'options' => AttributeOptionResource::collection($this->whenLoaded('options')),

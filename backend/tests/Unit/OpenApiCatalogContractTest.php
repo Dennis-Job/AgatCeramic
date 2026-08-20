@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\Attribute;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -54,6 +55,9 @@ class OpenApiCatalogContractTest extends TestCase
         self::assertArrayNotHasKey('required', $spec['components']['schemas']['UpdateProductVariantRequest']);
         self::assertSame(['options'], $spec['components']['schemas']['StoreAttributeRequest']['allOf'][0]['then']['required']);
         self::assertSame(['options'], $spec['components']['schemas']['UpdateAttributeRequest']['allOf'][0]['then']['required']);
+        self::assertSame(Attribute::TYPES, $spec['components']['schemas']['Attribute']['properties']['type']['enum']);
+        self::assertContains('is_visible_on_product_page', $spec['components']['schemas']['Attribute']['required']);
+        self::assertArrayHasKey('AttributeValue', $spec['components']['schemas']);
         self::assertArrayHasKey('422', $spec['paths']['/admin/attributes/{attribute}']['delete']['responses']);
         self::assertNotEmpty($spec['paths']['/admin/attributes/{attribute}']['patch']['description']);
         self::assertSame(

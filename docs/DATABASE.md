@@ -57,9 +57,12 @@ assignments; deleting a staff account or role removes its pivot rows.
 
 ### attributes
 TASK-033 creates the shared attribute catalogue. An attribute can belong to an optional
-attribute group and has a stable unique `name` and `slug`, a `type` (`text`, `number`,
-`boolean`, `select`, or `multiselect`), an optional display `unit`, flags for filtering
-and requiredness, and `sort_order`. Choice types keep their values in `attribute_options`.
+attribute group and has a stable unique `name` and `slug`. TASK-041M completes `type` with
+`string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`, and `date`.
+The former unrestricted `number` type is migrated to `decimal`; legacy numeric JSON strings are
+converted to JSON numbers in the same migration. Attributes also have an optional display `unit`,
+flags for filtering, requiredness, and product-page visibility (`is_visible_on_product_page`, true
+by default), and `sort_order`. Choice types keep their values in `attribute_options`.
 
 Характеристики.
 
@@ -75,6 +78,16 @@ removal of unused option codes are allowed; a change that invalidates any stored
 value returns `422` without mutating the definition or audit trail. Definition writers lock assigned
 categories in ID order before products and the attribute row, and value writers repeat semantic
 validation inside their transaction. Attributes with stored values cannot be deleted.
+
+Value shapes are strict: `string` is non-empty and at most 255 characters, `text` is non-empty and
+at most 10000 characters, `integer` is a
+JSON integer, `decimal` a finite JSON number, `boolean` a JSON boolean, `select` an option code,
+`multiselect` a non-empty unique array of option codes, and `date` is a valid
+calendar date formatted as `YYYY-MM-DD`.
+
+Colors intentionally use the ordinary `select` model instead of a separate attribute type: the
+option label is the human-readable color name and its option code may be a HEX value such as
+`#A1B2C3`.
 
 Значения select/multiselect.
 

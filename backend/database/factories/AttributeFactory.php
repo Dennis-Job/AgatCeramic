@@ -16,6 +16,6 @@ class AttributeFactory extends Factory
     {
         $name = fake()->unique()->words(2, true);
 
-        return ['name' => $name, 'slug' => Str::slug($name), 'type' => 'text', 'unit' => null, 'is_filterable' => false, 'is_required' => false, 'sort_order' => fake()->numberBetween(0, 100)];
+        return ['name' => $name, 'slug' => Str::slug($name), 'type' => 'string', 'unit' => null, 'is_filterable' => false, 'is_required' => false, 'is_visible_on_product_page' => true, 'sort_order' => fake()->numberBetween(0, 100)];
     }
 }

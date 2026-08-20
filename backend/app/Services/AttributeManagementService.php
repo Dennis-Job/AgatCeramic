@@ -42,6 +42,7 @@ class AttributeManagementService
             $options = Arr::pull($attributes, 'options', []);
             $typeBefore = $attribute->type;
             $isRequiredBefore = $attribute->is_required;
+            $isVisibleOnProductPageBefore = $attribute->is_visible_on_product_page;
             $optionValuesBefore = $attribute->options()->pluck('value')->all();
             $typeAfter = $attributes['type'] ?? $typeBefore;
             $optionValuesAfter = in_array($typeAfter, ['select', 'multiselect'], true)
@@ -74,6 +75,10 @@ class AttributeManagementService
                 $metadata['is_required_before'] = $isRequiredBefore;
                 $metadata['is_required_after'] = $attribute->is_required;
             }
+            if ($isVisibleOnProductPageBefore !== $attribute->is_visible_on_product_page) {
+                $metadata['is_visible_on_product_page_before'] = $isVisibleOnProductPageBefore;
+                $metadata['is_visible_on_product_page_after'] = $attribute->is_visible_on_product_page;
+            }
             if ($hasOptions || $optionValuesBefore !== $optionValuesAfter) {
                 $metadata['options_replaced'] = true;
                 $metadata['option_values_before'] = $optionValuesBefore;
@@ -97,6 +102,7 @@ class AttributeManagementService
             $this->auditLogService->record($actor, 'attribute.deleted', $attribute, [
                 'type' => $attribute->type,
                 'is_required' => $attribute->is_required,
+                'is_visible_on_product_page' => $attribute->is_visible_on_product_page,
                 'option_values' => $attribute->options()->pluck('value')->all(),
             ]);
             $attribute->delete();

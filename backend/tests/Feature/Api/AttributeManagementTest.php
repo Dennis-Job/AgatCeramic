@@ -60,14 +60,35 @@ class AttributeManagementTest extends TestCase
 
         $this->actingAs($actor)->postJson('/api/v1/admin/attributes', ['name' => 'Color', 'slug' => 'color', 'type' => 'select', 'options' => []])
             ->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.details.options.0', 'validation.required_if');
-        $this->actingAs($actor)->postJson('/api/v1/admin/attributes', ['name' => 'Material', 'slug' => 'material', 'type' => 'text', 'options' => [['value' => 'porcelain', 'label' => 'Porcelain']]])
+        $this->actingAs($actor)->postJson('/api/v1/admin/attributes', ['name' => 'Material', 'slug' => 'material', 'type' => 'string', 'options' => [['value' => 'porcelain', 'label' => 'Porcelain']]])
             ->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed')->assertJsonPath('error.details.options.0', 'Options are available only for select and multiselect attributes.');
+    }
+
+    public function test_color_is_a_select_option_with_a_hex_code_not_a_separate_attribute_type(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+
+        $this->actingAs($actor)->postJson('/api/v1/admin/attributes', [
+            'name' => 'Unsupported color type',
+            'slug' => 'unsupported-color-type',
+            'type' => 'color',
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['type']]]);
+
+        $this->actingAs($actor)->postJson('/api/v1/admin/attributes', [
+            'name' => 'Цвет',
+            'slug' => 'color',
+            'type' => 'select',
+            'options' => [['value' => '#A1B2C3', 'label' => 'Серо-голубой']],
+        ])->assertCreated()
+            ->assertJsonPath('data.type', 'select')
+            ->assertJsonPath('data.options.0.value', '#A1B2C3')
+            ->assertJsonPath('data.options.0.label', 'Серо-голубой');
     }
 
     public function test_changing_an_attribute_to_a_choice_type_requires_replacement_options(): void
     {
         $actor = $this->userWithRole('catalog-manager');
-        $attribute = Attribute::factory()->create(['type' => 'text']);
+        $attribute = Attribute::factory()->create(['type' => 'string']);
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/attributes/{$attribute->id}", ['type' => 'select'])
             ->assertUnprocessable()
@@ -83,7 +104,7 @@ class AttributeManagementTest extends TestCase
     public function test_options_without_a_type_are_validated_against_the_current_attribute_type(): void
     {
         $actor = $this->userWithRole('catalog-manager');
-        $attribute = Attribute::factory()->create(['type' => 'text']);
+        $attribute = Attribute::factory()->create(['type' => 'string']);
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/attributes/{$attribute->id}", [
             'options' => [['value' => 'ignored', 'label' => 'Ignored']],
@@ -139,7 +160,7 @@ class AttributeManagementTest extends TestCase
     {
         $actor = $this->userWithRole('catalog-manager');
         $category = Category::factory()->create();
-        $attribute = Attribute::factory()->create(['type' => 'text']);
+        $attribute = Attribute::factory()->create(['type' => 'string']);
         $category->attributes()->attach($attribute->id);
         $product = Product::factory()->create(['category_id' => $category->id]);
         $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
@@ -147,20 +168,21 @@ class AttributeManagementTest extends TestCase
         ProductVariantAttributeValue::query()->create(['product_variant_id' => $variant->id, 'attribute_id' => $attribute->id, 'value' => '12.5']);
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/attributes/{$attribute->id}", [
-            'type' => 'number',
+            'type' => 'decimal',
         ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['type']]]);
 
-        $this->assertDatabaseHas('attributes', ['id' => $attribute->id, 'type' => 'text']);
+        $this->assertDatabaseHas('attributes', ['id' => $attribute->id, 'type' => 'string']);
         $this->assertDatabaseMissing('audit_logs', ['action' => 'attribute.updated', 'entity_id' => $attribute->id]);
 
-        $productValue->update(['value' => '10']);
+        $productValue->update(['value' => 10]);
+        ProductVariantAttributeValue::query()->where('product_variant_id', $variant->id)->update(['value' => json_encode(12.5)]);
         $this->actingAs($actor)->putJson("/api/v1/admin/attributes/{$attribute->id}", [
-            'type' => 'number',
-        ])->assertOk()->assertJsonPath('data.type', 'number');
+            'type' => 'decimal',
+        ])->assertOk()->assertJsonPath('data.type', 'decimal');
 
         $metadata = AuditLog::query()->where('action', 'attribute.updated')->where('entity_id', $attribute->id)->sole()->metadata;
-        $this->assertSame('text', $metadata['type_before']);
-        $this->assertSame('number', $metadata['type_after']);
+        $this->assertSame('string', $metadata['type_before']);
+        $this->assertSame('decimal', $metadata['type_after']);
     }
 
     public function test_attribute_with_product_or_variant_values_cannot_be_deleted(): void
@@ -200,6 +222,27 @@ class AttributeManagementTest extends TestCase
         $metadata = AuditLog::query()->where('action', 'attribute.updated')->where('entity_id', $attribute->id)->sole()->metadata;
         $this->assertFalse($metadata['is_required_before']);
         $this->assertTrue($metadata['is_required_after']);
+    }
+
+    public function test_product_page_visibility_is_exposed_and_audited(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+
+        $created = $this->actingAs($actor)->postJson('/api/v1/admin/attributes', [
+            'name' => 'Internal note',
+            'slug' => 'internal-note',
+            'type' => 'text',
+            'is_visible_on_product_page' => false,
+        ])->assertCreated()->assertJsonPath('data.is_visible_on_product_page', false);
+
+        $id = $created->json('data.id');
+        $this->actingAs($actor)->patchJson("/api/v1/admin/attributes/{$id}", [
+            'is_visible_on_product_page' => true,
+        ])->assertOk()->assertJsonPath('data.is_visible_on_product_page', true);
+
+        $metadata = AuditLog::query()->where('action', 'attribute.updated')->where('entity_id', $id)->sole()->metadata;
+        $this->assertFalse($metadata['is_visible_on_product_page_before']);
+        $this->assertTrue($metadata['is_visible_on_product_page_after']);
     }
 
     public function test_analyst_cannot_access_attributes(): void

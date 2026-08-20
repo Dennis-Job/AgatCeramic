@@ -81,8 +81,8 @@
   - Detect values that would become invalid when changing an attribute type or replacing/removing options.
   - Define and implement an explicit conflict, migration, or cleanup policy without silently preserving invalid values.
   - Cover product and variant values, audit events, OpenAPI behavior, and regression tests.
-- [ ] TASK-041M Complete the attribute model required by the Catalog specification
-  - Reconcile `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`, `color`, and `date`; document any intentional normalization between types.
+- [x] TASK-041M Complete the attribute model required by the Catalog specification
+  - Reconcile `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`, and `date`; normalize colors to `select` options whose codes may be HEX values.
   - Add product-page visibility control and typed backend/Admin validation and editing.
   - Update migrations, API Resources, OpenAPI, the human API guide, and tests.
 - [ ] TASK-041N Add catalog identifiers and units required for products and variants

@@ -3248,11 +3248,14 @@
                     "type": {
                         "type": "string",
                         "enum": [
+                            "string",
                             "text",
-                            "number",
+                            "integer",
+                            "decimal",
                             "boolean",
                             "select",
-                            "multiselect"
+                            "multiselect",
+                            "date"
                         ]
                     },
                     "unit": {
@@ -3267,6 +3270,10 @@
                     },
                     "is_required": {
                         "type": "boolean"
+                    },
+                    "is_visible_on_product_page": {
+                        "type": "boolean",
+                        "default": true
                     },
                     "sort_order": {
                         "type": "integer",
@@ -3347,11 +3354,14 @@
                     "type": {
                         "type": "string",
                         "enum": [
+                            "string",
                             "text",
-                            "number",
+                            "integer",
+                            "decimal",
                             "boolean",
                             "select",
-                            "multiselect"
+                            "multiselect",
+                            "date"
                         ]
                     },
                     "unit": {
@@ -3365,6 +3375,9 @@
                         "type": "boolean"
                     },
                     "is_required": {
+                        "type": "boolean"
+                    },
+                    "is_visible_on_product_page": {
                         "type": "boolean"
                     },
                     "sort_order": {
@@ -3545,6 +3558,7 @@
                     "unit",
                     "is_filterable",
                     "is_required",
+                    "is_visible_on_product_page",
                     "sort_order",
                     "options",
                     "created_at",
@@ -3569,11 +3583,14 @@
                     "type": {
                         "type": "string",
                         "enum": [
+                            "string",
                             "text",
-                            "number",
+                            "integer",
+                            "decimal",
                             "boolean",
                             "select",
-                            "multiselect"
+                            "multiselect",
+                            "date"
                         ]
                     },
                     "unit": {
@@ -3586,6 +3603,9 @@
                         "type": "boolean"
                     },
                     "is_required": {
+                        "type": "boolean"
+                    },
+                    "is_visible_on_product_page": {
                         "type": "boolean"
                     },
                     "sort_order": {
@@ -4027,6 +4047,34 @@
                 },
                 "additionalProperties": false
             },
+            "AttributeValue": {
+                "description": "The concrete JSON shape is selected by Attribute.type: string is a non-empty string up to 255 characters; text is a non-empty string up to 10000 characters; integer is a JSON integer; decimal is a finite JSON number; boolean is a JSON boolean; select is one option value (including a HEX color code when the attribute represents a color); multiselect is a non-empty unique array of up to 500 option values; date is a real calendar date in YYYY-MM-DD format. Colors use select options rather than a separate attribute type.",
+                "anyOf": [
+                    {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 10000
+                    },
+                    {
+                        "type": "integer"
+                    },
+                    {
+                        "type": "number"
+                    },
+                    {
+                        "type": "boolean"
+                    },
+                    {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 500,
+                        "uniqueItems": true,
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
             "ProductVariantAttributeValue": {
                 "type": "object",
                 "required": [
@@ -4045,7 +4093,9 @@
                     "attribute_id": {
                         "type": "integer"
                     },
-                    "value": [],
+                    "value": {
+                        "$ref": "#/components/schemas/AttributeValue"
+                    },
                     "attribute": {
                         "$ref": "#/components/schemas/Attribute"
                     }
@@ -4204,7 +4254,9 @@
                     "attribute_id": {
                         "type": "integer"
                     },
-                    "value": [],
+                    "value": {
+                        "$ref": "#/components/schemas/AttributeValue"
+                    },
                     "attribute": {
                         "$ref": "#/components/schemas/Attribute"
                     },
@@ -4475,7 +4527,9 @@
                                 "attribute_id": {
                                     "type": "integer"
                                 },
-                                "value": []
+                                "value": {
+                                    "$ref": "#/components/schemas/AttributeValue"
+                                }
                             }
                         }
                     }
@@ -4527,7 +4581,9 @@
                                 "attribute_id": {
                                     "type": "integer"
                                 },
-                                "value": []
+                                "value": {
+                                    "$ref": "#/components/schemas/AttributeValue"
+                                }
                             }
                         }
                     }
@@ -4553,7 +4609,9 @@
                                 "attribute_id": {
                                     "type": "integer"
                                 },
-                                "value": []
+                                "value": {
+                                    "$ref": "#/components/schemas/AttributeValue"
+                                }
                             },
                             "additionalProperties": false
                         }

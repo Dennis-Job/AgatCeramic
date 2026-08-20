@@ -25,7 +25,7 @@ class ProductAttributeValueManagementTest extends TestCase
         $category = Category::factory()->create();
         $material = Attribute::factory()->create(['type' => 'select', 'is_required' => true]);
         AttributeOption::factory()->create(['attribute_id' => $material->id, 'value' => 'porcelain', 'label' => 'Porcelain']);
-        $thickness = Attribute::factory()->create(['type' => 'number', 'unit' => 'mm']);
+        $thickness = Attribute::factory()->create(['type' => 'decimal', 'unit' => 'mm']);
         $category->attributes()->attach([$material->id => ['sort_order' => 0], $thickness->id => ['sort_order' => 1]]);
         $product = Product::factory()->create(['category_id' => $category->id]);
 
@@ -52,7 +52,7 @@ class ProductAttributeValueManagementTest extends TestCase
         $actor = $this->userWithRole('catalog-manager');
         $category = Category::factory()->create();
         $required = Attribute::factory()->create(['type' => 'boolean', 'is_required' => true]);
-        $unassigned = Attribute::factory()->create(['type' => 'text']);
+        $unassigned = Attribute::factory()->create(['type' => 'string']);
         $category->attributes()->attach($required->id);
         $product = Product::factory()->create(['category_id' => $category->id]);
 

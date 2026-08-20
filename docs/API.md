@@ -328,11 +328,21 @@ PATCH /api/v1/admin/brands/8
 - `GET /admin/attributes` — постраничный список (25 элементов), включающий `options`.
 - `POST /admin/attributes`, `GET|PATCH|PUT|DELETE /admin/attributes/{attribute}`.
 
-Поддерживаемые `type`: `text`, `number`, `boolean`, `select`, `multiselect`. Имя и slug уникальны
-во всём каталоге; `attribute_group_id`, `unit`, `is_filterable`, `is_required` и `sort_order`
-необязательны. Поле `options` разрешено только для `select` и `multiselect`; при их создании оно
+Поддерживаемые `type`: `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`,
+`date`. Цвет задаётся характеристикой типа `select`: `label` хранит название варианта, а `value`
+может содержать HEX-код, например `#A1B2C3`. Прежний `number` нормализован миграцией в `decimal`; новые запросы с `number`
+отклоняются. Имя и slug уникальны во всём каталоге; `attribute_group_id`, `unit`, `is_filterable`,
+`is_required`, `is_visible_on_product_page` и `sort_order` необязательны. Видимость на странице
+товара по умолчанию включена и не влияет на возможность редактировать или фильтровать значение.
+Поле `options` разрешено только для `select` и `multiselect`; при их создании оно
 обязательно и содержит от одного до 500 вариантов с уникальным `value`. Каждый вариант задаётся как
 `value`, `label` и необязательный `sort_order`.
+
+Форма JSON-значения зависит от типа: `string` — непустая строка до 255 символов, `text` — непустая строка до 10000,
+`integer` — JSON integer, `decimal` — конечный JSON number, `boolean` — JSON boolean, `select` — код
+одной опции (в том числе HEX-код цвета), `multiselect` — непустой массив до 500 уникальных кодов, `date` —
+существующая календарная дата `YYYY-MM-DD`. Числовые и логические строки (`"12.5"`, `"true"`) не
+считаются типизированными значениями и возвращают `422`.
 
 При переключении существующей характеристики на `select` или `multiselect` в том же запросе должен
 быть передан непустой полный набор `options`. Передача `options` для другого типа возвращает `422`.
@@ -356,6 +366,7 @@ POST /api/v1/admin/attributes
   "slug": "surface",
   "type": "select",
   "is_filterable": true,
+  "is_visible_on_product_page": true,
   "options": [
     {"value":"matte","label":"Матовая","sort_order":0},
     {"value":"glossy","label":"Глянцевая","sort_order":1}
