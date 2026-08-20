@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { Layers3, Pencil, Plus, Trash2, X } from "@lucide/vue";
 import BaseInput from "../components/BaseInput.vue";
+import BaseDialog from "../components/BaseDialog.vue";
 import PaginationControls from "../components/PaginationControls.vue";
 import { usePaginatedCollection } from "../composables/usePaginatedCollection";
 import {
@@ -19,6 +20,7 @@ const opened = ref(false);
 const editing = ref<AttributeGroup | null>(null);
 const deleting = ref<AttributeGroup | null>(null);
 const isDeleting = ref(false);
+const isSaving = ref(false);
 const form = ref<AttributeGroupPayload>({
   name: "",
   slug: "",
@@ -101,6 +103,7 @@ async function load(page = pagination.value?.current_page ?? 1): Promise<void> {
   );
 }
 async function save(): Promise<void> {
+  isSaving.value = true;
   try {
     await saveAttributeGroup(editing.value?.id ?? null, form.value);
     opened.value = false;
@@ -108,6 +111,8 @@ async function save(): Promise<void> {
   } catch (reason) {
     error.value =
       reason instanceof Error ? reason.message : "Не удалось сохранить группу.";
+  } finally {
+    isSaving.value = false;
   }
 }
 async function remove(): Promise<void> {
@@ -184,11 +189,13 @@ onMounted(load);
           <div v-if="canManage" class="flex gap-1">
             <button
               class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600"
+              :aria-label="`Редактировать группу ${group.name}`"
               @click="open(group)"
             >
               <Pencil :size="17" /></button
             ><button
               class="rounded-lg p-2 text-gray-500 hover:bg-error-50 hover:text-error-500"
+              :aria-label="`Удалить группу ${group.name}`"
               @click="deleting = group"
             >
               <Trash2 :size="17" />
@@ -206,25 +213,30 @@ onMounted(load);
       :loading="loading"
       @change="load"
     />
-    <div
-      v-if="opened"
-      class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4"
-      @click.self="opened = false"
+    <BaseDialog
+      :open="opened"
+      labelledby="attribute-group-dialog-title"
+      describedby="attribute-group-dialog-description"
+      :close-disabled="isSaving"
+      panel-class="w-full max-w-xl"
+      @close="opened = false"
     >
       <form
-        class="admin-dialog-content w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+        class="max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
         @submit.prevent="save"
       >
         <div class="flex items-start justify-between">
           <div>
-            <h2 class="text-lg font-bold text-gray-900">{{ title }}</h2>
-            <p class="mt-1 text-sm text-gray-500">
+            <h2 id="attribute-group-dialog-title" class="text-lg font-bold text-gray-900">{{ title }}</h2>
+            <p id="attribute-group-dialog-description" class="mt-1 text-sm text-gray-500">
               Сгруппируйте характеристики для карточек товаров.
             </p>
           </div>
           <button
             type="button"
             class="rounded-lg p-1 text-gray-500 hover:bg-gray-50"
+            aria-label="Закрыть окно группы характеристик"
+            :disabled="isSaving"
             @click="opened = false"
           >
             <X :size="20" />
@@ -235,6 +247,7 @@ onMounted(load);
             >Название<BaseInput
               :model-value="form.name"
               class="mt-1.5"
+              data-autofocus
               required
               @update:model-value="updateName" /></label
           ><label class="text-sm font-medium text-gray-700"
@@ -272,30 +285,38 @@ onMounted(load);
           <button
             type="button"
             class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            :disabled="isSaving"
             @click="opened = false"
           >
             Отмена</button
           ><button
             class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600"
+            :disabled="isSaving"
           >
-            Сохранить
+            {{ isSaving ? "Сохранение…" : "Сохранить" }}
           </button>
         </div>
       </form>
-    </div>
-    <div
-      v-if="deleting"
-      class="fixed inset-0 z-[60] grid place-items-center bg-gray-900/50 p-4"
+    </BaseDialog>
+    <BaseDialog
+      :open="Boolean(deleting)"
+      labelledby="delete-attribute-group-title"
+      describedby="delete-attribute-group-description"
+      :close-disabled="isDeleting"
+      overlay-class="z-[60] grid place-items-center p-4"
+      panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+      @close="deleting = null"
     >
-      <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h2 class="text-lg font-bold text-gray-900">Удалить группу?</h2>
-        <p class="mt-3 text-sm text-gray-500">
-          Группа «{{ deleting.name }}» будет удалена.
+      <template v-if="deleting">
+        <h2 id="delete-attribute-group-title" class="text-lg font-bold text-gray-900">Удалить группу?</h2>
+        <p id="delete-attribute-group-description" class="mt-3 text-sm text-gray-500">
+          Группа «{{ deleting.name }}» будет удалена. Это действие нельзя отменить.
         </p>
         <div class="mt-6 flex justify-end gap-3">
           <button
             class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
             type="button"
+            :disabled="isDeleting"
             @click="deleting = null"
           >
             Отмена</button
@@ -305,10 +326,10 @@ onMounted(load);
             :disabled="isDeleting"
             @click="remove"
           >
-            Удалить
+            {{ isDeleting ? "Удаление…" : "Удалить" }}
           </button>
         </div>
-      </section>
-    </div>
+      </template>
+    </BaseDialog>
   </section>
 </template>

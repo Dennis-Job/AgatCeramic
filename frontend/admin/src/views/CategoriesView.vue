@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { FolderTree, ListFilter, Pencil, Plus, Trash2, X } from "@lucide/vue";
 import BaseCheckbox from "../components/BaseCheckbox.vue";
+import BaseDialog from "../components/BaseDialog.vue";
 import BaseInput from "../components/BaseInput.vue";
 import BaseSelect from "../components/BaseSelect.vue";
 import {
@@ -25,6 +26,7 @@ const opened = ref(false);
 const editing = ref<Category | null>(null);
 const deleting = ref<Category | null>(null);
 const isDeleting = ref(false);
+const isSaving = ref(false);
 const attributesOpened = ref(false);
 const configuringAttributes = ref<Category | null>(null);
 const viewingCategory = ref<Category | null>(null);
@@ -186,6 +188,7 @@ async function load(): Promise<void> {
   }
 }
 async function save(): Promise<void> {
+  isSaving.value = true;
   try {
     await saveCategory(editing.value?.id ?? null, form.value);
     opened.value = false;
@@ -195,6 +198,8 @@ async function save(): Promise<void> {
       reason instanceof Error
         ? reason.message
         : "Не удалось сохранить категорию.";
+  } finally {
+    isSaving.value = false;
   }
 }
 function remove(category: Category): void {
@@ -236,6 +241,7 @@ async function openAttributes(category: Category): Promise<void> {
 }
 async function saveAttributes(): Promise<void> {
   if (!configuringAttributes.value) return;
+  isSaving.value = true;
   try {
     await replaceCategoryAttributeGroups(
       configuringAttributes.value.id,
@@ -248,6 +254,8 @@ async function saveAttributes(): Promise<void> {
     attributesOpened.value = false;
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "Не удалось сохранить характеристики категории.";
+  } finally {
+    isSaving.value = false;
   }
 }
 function setAttributeGroupIds(ids: Array<number | string>): void {
@@ -349,18 +357,20 @@ onMounted(load);
           <div v-if="canManage" class="flex gap-1">
             <button
               class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600"
-              title="Характеристики категории"
+              :aria-label="`Настроить характеристики категории ${category.name}`"
               @click="openAttributes(category)"
             >
               <ListFilter :size="17" />
             </button>
             <button
               class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600"
+              :aria-label="`Редактировать категорию ${category.name}`"
               @click="open(category)"
             >
               <Pencil :size="17" /></button
             ><button
               class="rounded-lg p-2 text-gray-500 hover:bg-error-50 hover:text-error-500"
+              :aria-label="`Удалить категорию ${category.name}`"
               @click="remove(category)"
             >
               <Trash2 :size="17" />
@@ -372,30 +382,35 @@ onMounted(load);
         Категорий пока нет.
       </div>
   </div>
-  <div v-if="viewingCategory" class="fixed inset-0 z-[70] grid place-items-center bg-gray-900/50 p-4" @click.self="viewingCategory = null">
-    <section class="admin-dialog-content w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="category-details-title">
+  <BaseDialog :open="Boolean(viewingCategory)" labelledby="category-details-title" overlay-class="z-[70] grid place-items-center p-4" panel-class="w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @close="viewingCategory = null">
+    <template v-if="viewingCategory">
       <div class="flex items-start justify-between"><div><p class="text-sm font-medium text-gray-500">Категория</p><h2 id="category-details-title" class="mt-1 text-xl font-bold text-gray-900">{{ viewingCategory.name }}</h2></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" aria-label="Закрыть" @click="viewingCategory = null"><X :size="20" /></button></div>
       <dl class="mt-6 grid gap-4 rounded-xl border border-gray-200 p-4 text-sm sm:grid-cols-2"><div><dt class="text-gray-500">Slug</dt><dd class="mt-1 font-medium text-gray-800">/{{ viewingCategory.slug }}</dd></div><div><dt class="text-gray-500">Статус</dt><dd class="mt-1 font-medium" :class="viewingCategory.is_active ? 'text-success-500' : 'text-gray-500'">{{ viewingCategory.is_active ? 'Активна' : 'Скрыта' }}</dd></div><div><dt class="text-gray-500">Родительская категория</dt><dd class="mt-1 font-medium text-gray-800">{{ categoryName(viewingCategory.parent_id) ?? 'Нет' }}</dd></div><div><dt class="text-gray-500">Порядок сортировки</dt><dd class="mt-1 font-medium text-gray-800">{{ viewingCategory.sort_order }}</dd></div><div class="sm:col-span-2"><dt class="text-gray-500">Описание</dt><dd class="mt-1 whitespace-pre-wrap text-gray-800">{{ viewingCategory.description || 'Не указано' }}</dd></div></dl>
       <section class="mt-5"><h3 class="font-semibold text-gray-900">Применённые группы</h3><div v-if="categoryAttributeGroups.length" class="mt-2 flex flex-wrap gap-2"><span v-for="group in categoryAttributeGroups" :key="group.id" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600">{{ group.name }}</span></div><p v-else class="mt-2 text-sm text-gray-500">Группы не назначены.</p></section>
       <section class="mt-5"><h3 class="font-semibold text-gray-900">Фильтры категории</h3><div v-if="filterAttributes.length" class="mt-2 flex flex-wrap gap-2"><span v-for="attribute in filterAttributes" :key="attribute.id" class="rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-500">{{ attribute.name }}<template v-if="attribute.unit"> ({{ attribute.unit }})</template></span></div><p v-else class="mt-2 text-sm text-gray-500">Характеристики для фильтрации не назначены.</p></section>
       <section class="mt-5"><h3 class="font-semibold text-gray-900">Все назначенные характеристики</h3><div v-if="categoryAttributes.length" class="mt-2 flex flex-wrap gap-2"><span v-for="attribute in categoryAttributes" :key="attribute.id" class="rounded-lg bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700">{{ attribute.name }}<template v-if="attribute.unit"> ({{ attribute.unit }})</template><span v-if="attribute.is_required" class="ml-1.5 font-medium text-error-500">Обязательная</span></span></div><p v-else class="mt-2 text-sm text-gray-500">Не назначены.</p></section>
-    </section>
-  </div>
-  <div
-    v-if="attributesOpened && configuringAttributes"
-    class="fixed inset-0 z-[60] grid place-items-center bg-gray-900/50 p-4"
-    @click.self="attributesOpened = false"
+    </template>
+  </BaseDialog>
+  <BaseDialog
+    :open="attributesOpened && Boolean(configuringAttributes)"
+    labelledby="category-attributes-title"
+    describedby="category-attributes-description"
+    :close-disabled="isSaving"
+    overlay-class="z-[60] grid place-items-center p-4"
+    panel-class="w-full max-w-xl"
+    @close="attributesOpened = false"
   >
     <form
-      class="admin-dialog-content w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+      v-if="configuringAttributes"
+      class="max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
       @submit.prevent="saveAttributes"
     >
       <div class="flex items-start justify-between">
         <div>
-          <h2 class="text-lg font-bold text-gray-900">Характеристики: {{ configuringAttributes.name }}</h2>
-          <p class="mt-1 text-sm text-gray-500">Выберите характеристики, доступные для товаров этой категории.</p>
+          <h2 id="category-attributes-title" class="text-lg font-bold text-gray-900">Характеристики: {{ configuringAttributes.name }}</h2>
+          <p id="category-attributes-description" class="mt-1 text-sm text-gray-500">Выберите характеристики, доступные для товаров этой категории.</p>
         </div>
-        <button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" @click="attributesOpened = false"><X :size="20" /></button>
+        <button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50 disabled:opacity-60" aria-label="Закрыть окно характеристик категории" :disabled="isSaving" @click="attributesOpened = false"><X :size="20" /></button>
       </div>
       <div class="mt-6 max-h-80 space-y-4 overflow-y-auto">
         <section class="rounded-xl border border-gray-200 p-3">
@@ -424,30 +439,35 @@ onMounted(load);
         <p v-if="!allAttributeGroups.length" class="p-5 text-sm text-gray-500">Группы характеристик пока не созданы.</p>
       </div>
       <div class="mt-6 flex justify-end gap-3">
-        <button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" @click="attributesOpened = false">Отмена</button>
-        <button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600">Сохранить</button>
+        <button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60" :disabled="isSaving" @click="attributesOpened = false">Отмена</button>
+        <button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-60" :disabled="isSaving">{{ isSaving ? "Сохранение…" : "Сохранить" }}</button>
       </div>
     </form>
-  </div>
-  <div
-      v-if="opened"
-      class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4"
-      @click.self="opened = false"
+  </BaseDialog>
+  <BaseDialog
+      :open="opened"
+      labelledby="category-dialog-title"
+      describedby="category-dialog-description"
+      :close-disabled="isSaving"
+      panel-class="w-full max-w-2xl"
+      @close="opened = false"
     >
       <form
-        class="admin-dialog-content w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+        class="max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
         @submit.prevent="save"
       >
         <div class="flex items-start justify-between">
           <div>
-            <h2 class="text-lg font-bold text-gray-900">{{ title }}</h2>
-            <p class="mt-1 text-sm text-gray-500">
+            <h2 id="category-dialog-title" class="text-lg font-bold text-gray-900">{{ title }}</h2>
+            <p id="category-dialog-description" class="mt-1 text-sm text-gray-500">
               Настройте отображаемое название и адрес страницы категории.
             </p>
           </div>
           <button
             type="button"
             class="rounded-lg p-1 text-gray-500 hover:bg-gray-50"
+            aria-label="Закрыть окно категории"
+            :disabled="isSaving"
             @click="opened = false"
           >
             <X :size="20" />
@@ -459,6 +479,7 @@ onMounted(load);
               >Название<BaseInput
                 :model-value="form.name"
                 class="mt-1.5"
+                data-autofocus
                 required
                 @update:model-value="updateName" /></label
             ><label class="text-sm font-medium text-gray-700"
@@ -515,33 +536,34 @@ onMounted(load);
           <button
             type="button"
             class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            :disabled="isSaving"
             @click="opened = false"
           >
             Отмена</button
           ><button
             class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600"
+            :disabled="isSaving"
           >
-            Сохранить
+            {{ isSaving ? "Сохранение…" : "Сохранить" }}
           </button>
         </div>
       </form>
-    </div>
+    </BaseDialog>
   </section>
-  <div
-    v-if="deleting"
-    class="fixed inset-0 z-[60] grid place-items-center bg-gray-900/50 p-4"
-    @click.self="!isDeleting && (deleting = null)"
+  <BaseDialog
+    :open="Boolean(deleting)"
+    labelledby="delete-category-title"
+    describedby="delete-category-description"
+    :close-disabled="isDeleting"
+    overlay-class="z-[60] grid place-items-center p-4"
+    panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+    @close="deleting = null"
   >
-    <section
-      class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-category-title"
-    >
+    <template v-if="deleting">
       <h2 id="delete-category-title" class="text-lg font-bold text-gray-900">
         Удалить категорию?
       </h2>
-      <p class="mt-3 text-sm leading-6 text-gray-500">
+      <p id="delete-category-description" class="mt-3 text-sm leading-6 text-gray-500">
         Категория «{{ deleting.name }}» будет удалена. Это действие нельзя
         отменить.
       </p>
@@ -562,6 +584,6 @@ onMounted(load);
           {{ isDeleting ? "Удаление…" : "Удалить" }}
         </button>
       </div>
-    </section>
-  </div>
+    </template>
+  </BaseDialog>
 </template>

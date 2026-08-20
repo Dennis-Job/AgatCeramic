@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { BadgeCheck, Pencil, Plus, Trash2, X } from '@lucide/vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
+import BaseDialog from '../components/BaseDialog.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import PaginationControls from '../components/PaginationControls.vue'
@@ -17,6 +18,7 @@ const opened = ref(false)
 const editing = ref<Brand | null>(null)
 const deleting = ref<Brand | null>(null)
 const isDeleting = ref(false)
+const isSaving = ref(false)
 const manuallyEditedSlug = ref(false)
 const form = ref<BrandPayload>({
   name: '', slug: '', description: '', country_code: null, is_active: true,
@@ -53,11 +55,12 @@ async function load(page = pagination.value?.current_page ?? 1): Promise<void> {
   await brandList.load(page, (requestedPage) => getBrands({ page: requestedPage }))
 }
 async function save(): Promise<void> {
+  isSaving.value = true
   try {
     await saveBrand(editing.value?.id ?? null, form.value)
     opened.value = false
     await load()
-  } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить бренд.' }
+  } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить бренд.' } finally { isSaving.value = false }
 }
 async function remove(): Promise<void> {
   if (!deleting.value) return
@@ -90,21 +93,19 @@ onMounted(load)
       <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
     </div>
     <PaginationControls v-if="pagination" :meta="pagination" :loading="loading" @change="load" />
-    <div v-if="opened" class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4" @click.self="opened = false">
-      <form class="admin-dialog-content w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @submit.prevent="save">
-        <div class="flex items-start justify-between"><div><h2 class="text-lg font-bold text-gray-900">{{ title }}</h2><p class="mt-1 text-sm text-gray-500">Укажите сведения о бренде для каталога.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" aria-label="Закрыть" @click="opened = false"><X :size="20" /></button></div>
+    <BaseDialog :open="opened" labelledby="brand-dialog-title" describedby="brand-dialog-description" :close-disabled="isSaving" panel-class="w-full max-w-2xl" @close="opened = false">
+      <form class="max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @submit.prevent="save">
+        <div class="flex items-start justify-between"><div><h2 id="brand-dialog-title" class="text-lg font-bold text-gray-900">{{ title }}</h2><p id="brand-dialog-description" class="mt-1 text-sm text-gray-500">Укажите сведения о бренде для каталога.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50 disabled:opacity-60" aria-label="Закрыть окно бренда" :disabled="isSaving" @click="opened = false"><X :size="20" /></button></div>
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
-          <label class="text-sm font-medium text-gray-700">Название<BaseInput :model-value="form.name" class="mt-1.5" required @update:model-value="updateName" /></label>
+          <label class="text-sm font-medium text-gray-700">Название<BaseInput :model-value="form.name" class="mt-1.5" data-autofocus required @update:model-value="updateName" /></label>
           <label class="text-sm font-medium text-gray-700">Технический код (slug)<BaseInput :model-value="form.slug" class="mt-1.5" pattern="[a-z0-9]+(-[a-z0-9]+)*" required @update:model-value="(value) => { form.slug = value; manuallyEditedSlug = true }" /></label>
           <label class="text-sm font-medium text-gray-700">Страна происхождения<BaseSelect v-model="selectedCountryCode" class="mt-1.5" :options="COUNTRY_OPTIONS" placeholder="Не выбрана" accessible-name="Страна происхождения" searchable /></label>
           <label class="text-sm font-medium text-gray-700 sm:col-span-2">Описание<textarea v-model="form.description" class="mt-1.5 min-h-24 w-full rounded-lg border border-gray-300 p-3 font-normal outline-none focus:border-primary-500" /></label>
           <BaseCheckbox :checked="form.is_active" mode="boolean" class="sm:col-span-2" @update:checked="form.is_active = $event">Бренд активен и доступен на витрине</BaseCheckbox>
         </div>
-        <div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" @click="opened = false">Отмена</button><button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600">Сохранить</button></div>
+        <div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60" :disabled="isSaving" @click="opened = false">Отмена</button><button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-60" :disabled="isSaving">{{ isSaving ? 'Сохранение…' : 'Сохранить' }}</button></div>
       </form>
-    </div>
-    <div v-if="deleting" class="fixed inset-0 z-[60] grid place-items-center bg-gray-900/50 p-4">
-      <section class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"><h2 class="text-lg font-bold text-gray-900">Удалить бренд?</h2><p class="mt-3 text-sm text-gray-500">Бренд «{{ deleting.name }}» будет удалён. Это действие нельзя отменить.</p><div class="mt-6 flex justify-end gap-3"><button class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" type="button" :disabled="isDeleting" @click="deleting = null">Отмена</button><button class="rounded-lg bg-error-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-error-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="isDeleting" @click="remove">{{ isDeleting ? 'Удаление…' : 'Удалить' }}</button></div></section>
-    </div>
+    </BaseDialog>
+    <BaseDialog :open="Boolean(deleting)" labelledby="delete-brand-title" describedby="delete-brand-description" :close-disabled="isDeleting" overlay-class="z-[60] grid place-items-center p-4" panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" @close="deleting = null"><template v-if="deleting"><h2 id="delete-brand-title" class="text-lg font-bold text-gray-900">Удалить бренд?</h2><p id="delete-brand-description" class="mt-3 text-sm text-gray-500">Бренд «{{ deleting.name }}» будет удалён. Это действие нельзя отменить.</p><div class="mt-6 flex justify-end gap-3"><button class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" type="button" :disabled="isDeleting" @click="deleting = null">Отмена</button><button class="rounded-lg bg-error-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-error-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="isDeleting" @click="remove">{{ isDeleting ? 'Удаление…' : 'Удалить' }}</button></div></template></BaseDialog>
   </section>
 </template>
