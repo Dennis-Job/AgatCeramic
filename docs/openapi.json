@@ -1708,6 +1708,7 @@
             "put": {
                 "operationId": "replaceCategoryAttributes",
                 "summary": "Replace attributes assigned to a category",
+                "description": "Atomically replaces category assignments. Returns 422 without changing assignments when a removed attribute is used by a category product or variant.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1793,6 +1794,7 @@
             "put": {
                 "operationId": "replaceCategoryAttributeGroups",
                 "summary": "Replace attribute groups assigned to a category",
+                "description": "Atomically replaces group assignments and detaches attributes from removed groups. Returns 422 without changing either set when an implicitly detached attribute is used by a category product or variant.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1947,6 +1949,7 @@
             "patch": {
                 "operationId": "updateProduct",
                 "summary": "Update a product",
+                "description": "A category change is atomic and returns 422 when the destination omits an attribute used by the product or a variant, or when a required destination attribute has no product value. Existing attribute values are never removed automatically.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -2014,6 +2017,7 @@
             "put": {
                 "operationId": "putUpdateProduct",
                 "summary": "Replace: Update a product",
+                "description": "A category change is atomic and returns 422 when the destination omits an attribute used by the product or a variant, or when a required destination attribute has no product value. Existing attribute values are never removed automatically.",
                 "security": [
                     {
                         "sanctumSession": []

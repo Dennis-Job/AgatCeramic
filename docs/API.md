@@ -167,6 +167,10 @@ newly stored file.
 `category_id`, `brand_id`, `is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.
 Price and stock filters apply to product variants; all filters can be combined.
 
+Changing `category_id` is rejected with `422` when the destination category does not assign every
+attribute already used by the product or any of its variants, or when the product has no value for
+a required destination-category attribute. The update is atomic and never silently removes values.
+
 ### Product variants
 
 - `GET /admin/products/{product}/variants`
@@ -283,6 +287,12 @@ POST /api/v1/admin/categories
 - `PUT /admin/categories/{category}/attribute-groups` — тело
   `{"attribute_groups":[{"id":4,"sort_order":0}]}`; пустой массив очищает группы. При удалении
   группы из категории открепляются и относящиеся к ней характеристики.
+
+Полная замена отклоняется с `422`, если она прямо или через удаление группы открепила бы
+характеристику, уже используемую товаром или вариантом этой категории. Проверка и изменение
+назначений выполняются в одной транзакции; существующие значения никогда не удаляются
+автоматически. Новую обязательную характеристику можно назначить до заполнения значений, но после
+этого полный набор значений каждого товара проходит обычную проверку обязательности.
 
 ### Группы характеристик
 

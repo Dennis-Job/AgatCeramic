@@ -105,6 +105,13 @@ Each row belongs to a variant and an attribute and contains one JSON value; the 
 pair is unique. Deleting a variant deletes its values, while an attribute cannot be deleted while
 variant values refer to it.
 
+Category reassignment and category-attribute replacement use a reject-on-conflict policy. A product
+cannot move while any product or variant value refers to an attribute absent from the destination,
+or while a required destination attribute has no product value. An assigned attribute cannot be
+detached, directly or through group replacement, while category products or variants use it.
+These writers lock category rows in ID order before product and variant rows, then repeat assignment
+validation inside the transaction so an HTTP pre-validation race cannot persist a stale value.
+
 ### product_images
 TASK-039 stores product-owned image metadata: public-disk path, MIME type, byte size, optional
 alt text, primary-image flag, and sort order. Image files use generated names under

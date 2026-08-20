@@ -2,10 +2,14 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductAttributeValue;
 use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Models\ProductVariantAttributeValue;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -63,6 +67,60 @@ class ProductManagementTest extends TestCase
         $this->actingAs($actor)->postJson('/api/v1/admin/products', [
             'category_id' => $product->category_id, 'name' => 'Other product', 'slug' => 'existing-product',
         ])->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed');
+    }
+
+    public function test_product_cannot_move_when_its_product_or_variant_values_are_not_assigned_to_the_target_category(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $source = Category::factory()->create();
+        $target = Category::factory()->create();
+        $productAttribute = Attribute::factory()->create();
+        $variantAttribute = Attribute::factory()->create();
+        $source->attributes()->attach([$productAttribute->id, $variantAttribute->id]);
+        $product = Product::factory()->create(['category_id' => $source->id]);
+        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $productAttribute->id, 'value' => 'porcelain']);
+        ProductVariantAttributeValue::query()->create(['product_variant_id' => $variant->id, 'attribute_id' => $variantAttribute->id, 'value' => '60x60']);
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}", [
+            'category_id' => $target->id,
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['category_id']]]);
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'category_id' => $source->id]);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'product.updated', 'entity_id' => $product->id]);
+    }
+
+    public function test_product_category_move_enforces_required_attributes_and_accepts_a_compatible_value_set(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $source = Category::factory()->create();
+        $target = Category::factory()->create();
+        $required = Attribute::factory()->create(['is_required' => true]);
+        $source->attributes()->attach($required->id);
+        $target->attributes()->attach($required->id);
+        $product = Product::factory()->create(['category_id' => $source->id]);
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}", [
+            'category_id' => $target->id,
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['category_id']]]);
+
+        $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
+            'name' => 'Variant',
+            'sku' => 'REQUIRED-VARIANT-ONLY',
+            'price' => '100.00',
+            'attribute_values' => [['attribute_id' => $required->id, 'value' => 'variant-only']],
+        ])->assertCreated();
+        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}", [
+            'category_id' => $target->id,
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['category_id']]]);
+
+        $this->actingAs($actor)->putJson("/api/v1/admin/products/{$product->id}/attributes", [
+            'attributes' => [['attribute_id' => $required->id, 'value' => 'present']],
+        ])->assertOk();
+
+        $this->actingAs($actor)->putJson("/api/v1/admin/products/{$product->id}", [
+            'category_id' => $target->id,
+        ])->assertOk()->assertJsonPath('data.category_id', $target->id);
     }
 
     public function test_deleting_a_product_removes_all_its_image_files(): void

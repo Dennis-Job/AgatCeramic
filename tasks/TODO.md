@@ -73,7 +73,7 @@
 
 ## Phase 3 — Catalog audit remediation
 
-- [ ] TASK-041K Preserve product and variant attribute-value integrity when product categories or category attribute assignments change
+- [x] TASK-041K Preserve product and variant attribute-value integrity when product categories or category attribute assignments change
   - Reject or transactionally reconcile stale values when moving a product to another category.
   - Reject or transactionally reconcile affected product and variant values when detaching a category attribute.
   - Enforce required attributes after category changes and cover the selected policy in API documentation and tests.
