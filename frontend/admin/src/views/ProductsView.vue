@@ -11,7 +11,7 @@ import { getCategories, type Category } from '../services/categories'
 import { getCategoryAttributes, getProductAttributeValues, saveProductAttributeValues } from '../services/productAttributes'
 import { deleteProductImage, getAllProductImages, getAllProductImages as getProductImages, updateProductImage, uploadProductImage, type ProductImage } from '../services/productImages'
 import { getProductRelations, saveProductRelations, type ProductRelationType } from '../services/productRelations'
-import { deleteProduct, getProducts, saveProduct, type Product, type ProductFilters, type ProductPayload } from '../services/products'
+import { deleteProduct, getAllProducts, getProducts, saveProduct, type Product, type ProductFilters, type ProductPayload } from '../services/products'
 import type { PaginationMeta } from '../services/pagination'
 import { deleteProductVariant, getAllProductVariants, getAllProductVariants as getProductVariants, saveProductVariant, type ProductVariant, type ProductVariantPayload } from '../services/productVariants'
 import { useAuthStore } from '../stores/auth'
@@ -24,6 +24,7 @@ type RelationForm = { related_product_id: string; type: ProductRelationType; sor
 
 const auth = useAuthStore()
 const products = ref<Product[]>([])
+const relationProducts = ref<Product[]>([])
 const pagination = ref<PaginationMeta | null>(null)
 const categories = ref<Category[]>([])
 const brands = ref<Brand[]>([])
@@ -66,7 +67,7 @@ const stateOptions = [{ value: '', label: 'Любая активность' }, {
 const stockOptions = [{ value: '', label: 'Любой остаток' }, { value: '1', label: 'В наличии' }, { value: '0', label: 'Нет в наличии' }]
 const selectedCategory = computed({ get: () => form.value.category_id ? String(form.value.category_id) : '', set: (value: string) => { form.value.category_id = Number(value) } })
 const selectedBrand = computed({ get: () => form.value.brand_id === null ? '' : String(form.value.brand_id), set: (value: string) => { form.value.brand_id = value ? Number(value) : null } })
-const relatedProductOptions = computed(() => products.value.filter((product) => product.id !== editing.value?.id).map((product) => ({ value: String(product.id), label: product.name })))
+const relatedProductOptions = computed(() => relationProducts.value.filter((product) => product.id !== editing.value?.id).map((product) => ({ value: String(product.id), label: product.name })))
 const relationTypeOptions = [{ value: 'related', label: 'Связанный товар' }, { value: 'recommended', label: 'Рекомендуемый товар' }]
 
 const transliteration: Record<string, string> = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' }
@@ -77,7 +78,7 @@ async function load(page?: number | SubmitEvent): Promise<void> { const requeste
 function resetFilters(): void { filters.value = { search: '', category_id: '', brand_id: '', is_active: '', has_stock: '', price_from: '', price_to: '' }; void load() }
 function resetDetails(): void { variants.value = []; variantEditor.value = null; variantEditorOpen.value = false; attributes.value = []; attributeValues.value = {}; images.value = []; draggedImageId.value = null; selectedFile.value = null; imageForm.value = { alt: '' }; imageDrafts.value = {}; relations.value = [] }
 function setImages(imageList: ProductImage[]): void { images.value = imageList; imageDrafts.value = Object.fromEntries(imageList.map((image) => [image.id, { alt: image.alt ?? '' }])) }
-async function loadDetails(product: Product): Promise<void> { try { const [variantList, categoryAttributes, currentAttributes, imageList, relationList] = await Promise.all([getAllProductVariants(product.id), getCategoryAttributes(product.category_id), getProductAttributeValues(product.id), getAllProductImages(product.id), getProductRelations(product.id)]); variants.value = variantList; attributes.value = categoryAttributes; const saved = new Map(currentAttributes.map((item) => [item.attribute_id, item.value])); attributeValues.value = Object.fromEntries(categoryAttributes.map((attribute) => [attribute.id, valueToInput(saved.get(attribute.id))])); setImages(imageList); relations.value = relationList.map((relation) => ({ related_product_id: String(relation.related_product_id), type: relation.type, sort_order: String(relation.sort_order) })) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить данные товара.' } }
+async function loadDetails(product: Product): Promise<void> { try { const [variantList, categoryAttributes, currentAttributes, imageList, relationList, allProducts] = await Promise.all([getAllProductVariants(product.id), getCategoryAttributes(product.category_id), getProductAttributeValues(product.id), getAllProductImages(product.id), getProductRelations(product.id), getAllProducts()]); variants.value = variantList; attributes.value = categoryAttributes; const saved = new Map(currentAttributes.map((item) => [item.attribute_id, item.value])); attributeValues.value = Object.fromEntries(categoryAttributes.map((attribute) => [attribute.id, valueToInput(saved.get(attribute.id))])); setImages(imageList); relations.value = relationList.map((relation) => ({ related_product_id: String(relation.related_product_id), type: relation.type, sort_order: String(relation.sort_order) })); relationProducts.value = allProducts } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить данные товара.' } }
 function open(product: Product | null = null): void { error.value = ''; editing.value = product; manuallyEditedSlug.value = product !== null; activeTab.value = 'main'; resetDetails(); form.value = product ? { category_id: product.category_id, brand_id: product.brand_id, name: product.name, slug: product.slug, description: product.description ?? '', is_active: product.is_active } : { category_id: 0, brand_id: null, name: '', slug: '', description: '', is_active: true }; opened.value = true; if (product) void loadDetails(product) }
 function close(): void { opened.value = false; editing.value = null }
 async function saveMain(): Promise<void> { saving.value = true; try { const saved = await saveProduct(editing.value?.id ?? null, form.value); editing.value = saved; manuallyEditedSlug.value = true; await load(); await loadDetails(saved) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить товар.' } finally { saving.value = false } }
