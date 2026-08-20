@@ -145,6 +145,12 @@ jobs:
       - name: Build Admin SPA
         run: npm run build
 
+      - name: Install Playwright Chromium
+        run: npm exec playwright install --with-deps chromium
+
+      - name: Run Admin end-to-end tests
+        run: npm run test:e2e
+
   client:
     name: Client checks
     runs-on: ubuntu-24.04

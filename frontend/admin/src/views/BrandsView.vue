@@ -80,7 +80,7 @@ onMounted(load)
       <div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Бренды</h1></div>
       <button v-if="canManage" class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-600" @click="open()"><Plus :size="18" />Добавить бренд</button>
     </div>
-    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
+    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500" role="alert">{{ error }}</p>
     <p v-if="loading" class="sr-only" role="status">Загрузка брендов…</p>
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
       <div v-if="brands.length" class="divide-y divide-gray-100">
@@ -90,7 +90,7 @@ onMounted(load)
           <div v-if="canManage" class="flex gap-1"><button class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600" :aria-label="`Изменить бренд ${brand.name}`" @click="open(brand)"><Pencil :size="17" /></button><button class="rounded-lg p-2 text-gray-500 hover:bg-error-50 hover:text-error-500" :aria-label="`Удалить бренд ${brand.name}`" @click="deleting = brand"><Trash2 :size="17" /></button></div>
         </article>
       </div>
-      <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
+      <div v-else-if="!loading" class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
     </div>
     <PaginationControls v-if="pagination" :meta="pagination" :loading="loading" @change="load" />
     <BaseDialog :open="opened" labelledby="brand-dialog-title" describedby="brand-dialog-description" :close-disabled="isSaving" panel-class="w-full max-w-2xl" @close="opened = false">

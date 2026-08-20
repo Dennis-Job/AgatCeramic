@@ -153,6 +153,7 @@ onMounted(load);
     <p
       v-if="error"
       class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500"
+      role="alert"
     >
       {{ error }}
     </p>
@@ -203,7 +204,7 @@ onMounted(load);
           </div>
         </article>
       </div>
-      <div v-else class="px-5 py-14 text-center text-sm text-gray-500">
+      <div v-else-if="!loading" class="px-5 py-14 text-center text-sm text-gray-500">
         Групп пока нет.
       </div>
     </div>

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
+import { describe, test } from 'vitest'
 import { usePaginatedCollection } from '../src/composables/usePaginatedCollection.ts'
 import type { PaginatedResponse } from '../src/services/pagination.ts'
 

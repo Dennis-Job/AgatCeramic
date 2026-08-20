@@ -16,7 +16,12 @@ requests, and supports logout from the application header.
 npm install
 npm run dev
 npm run build
+npm run test:unit
+npm exec playwright install chromium
+npm run test:e2e
 ```
+
+`test:unit` запускает Vitest для composable и Vue component-тестов. `test:e2e` запускает authenticated Catalog flows в Chromium; API изолирован browser-level fixtures в `e2e/catalogApi.ts`.
 
 ## Initial structure
 

@@ -22,6 +22,7 @@ import { useAuthStore } from "../stores/auth";
 const auth = useAuthStore();
 const categories = ref<Category[]>([]);
 const error = ref("");
+const loading = ref(false);
 const opened = ref(false);
 const editing = ref<Category | null>(null);
 const deleting = ref<Category | null>(null);
@@ -178,6 +179,8 @@ function categoryName(id: number | null | undefined): string | null {
         ?.name ?? null);
 }
 async function load(): Promise<void> {
+  loading.value = true;
+  error.value = "";
   try {
     categories.value = flattenTree(await getCategories());
   } catch (reason) {
@@ -185,6 +188,8 @@ async function load(): Promise<void> {
       reason instanceof Error
         ? reason.message
         : "Не удалось загрузить категории.";
+  } finally {
+    loading.value = false;
   }
 }
 async function save(): Promise<void> {
@@ -283,7 +288,7 @@ async function confirmRemoval(): Promise<void> {
 onMounted(load);
 </script>
 <template>
-  <section class="mx-auto admin-page">
+  <section class="mx-auto admin-page" :aria-busy="loading">
     <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-sm font-medium text-gray-500">Каталог</p>
@@ -304,9 +309,11 @@ onMounted(load);
     <p
       v-if="error"
       class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500"
+      role="alert"
     >
       {{ error }}
     </p>
+    <p v-if="loading" class="sr-only" role="status">Загрузка категорий…</p>
     <div
       class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card"
     >
@@ -378,7 +385,7 @@ onMounted(load);
           </div>
         </article>
       </div>
-      <div v-else class="px-5 py-14 text-center text-sm text-gray-500">
+      <div v-else-if="!loading" class="px-5 py-14 text-center text-sm text-gray-500">
         Категорий пока нет.
       </div>
   </div>

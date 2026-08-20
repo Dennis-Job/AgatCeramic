@@ -100,7 +100,7 @@
   - Add dialog semantics, accessible names, focus management, focus restoration, Escape/backdrop behavior, and keyboard-safe destructive confirmations.
   - Add accessible names to icon-only actions and a keyboard-operable alternative for product image reordering with announced state changes.
   - Complete authenticated responsive QA at the required breakpoints and obtain an independent UI Design Guard review.
-- [ ] TASK-041R Add automated Admin Catalog component and end-to-end coverage
+- [x] TASK-041R Add automated Admin Catalog component and end-to-end coverage
   - Introduce the minimal frontend test tooling needed for pagination, filters, integrated product tabs, selectors, error/loading/empty states, and accessibility regressions.
   - Exercise the authenticated `/products`, `/categories`, `/brands`, `/attribute-groups`, and `/attributes` flows.
 - [ ] TASK-041S Add real PostgreSQL concurrency regression tests for Catalog invariants
