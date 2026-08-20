@@ -15,8 +15,8 @@ import {
   type Category,
   type CategoryPayload,
 } from "../services/categories";
-import { getAttributes, type Attribute } from "../services/attributes";
-import { getAttributeGroups, type AttributeGroup } from "../services/attributeGroups";
+import { getAllAttributes, type Attribute } from "../services/attributes";
+import { getAllAttributeGroups, type AttributeGroup } from "../services/attributeGroups";
 import { useAuthStore } from "../stores/auth";
 const auth = useAuthStore();
 const categories = ref<Category[]>([]);
@@ -220,8 +220,8 @@ async function openAttributes(category: Category): Promise<void> {
   attributesOpened.value = true;
   try {
     const [attributes, groups, assigned, assignedGroups] = await Promise.all([
-      getAttributes(),
-      getAttributeGroups(),
+      getAllAttributes(),
+      getAllAttributeGroups(),
       getCategoryAttributes(category.id),
       getCategoryAttributeGroups(category.id),
     ]);

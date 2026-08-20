@@ -4,14 +4,17 @@ import { ListFilter, Pencil, Plus, Trash2, X } from '@lucide/vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
-import { getAttributeGroups, type AttributeGroup } from '../services/attributeGroups'
+import PaginationControls from '../components/PaginationControls.vue'
+import { getAllAttributeGroups, type AttributeGroup } from '../services/attributeGroups'
 import { deleteAttribute, getAttributes, saveAttribute, type Attribute, type AttributePayload, type AttributeType } from '../services/attributes'
+import type { PaginationMeta } from '../services/pagination'
 import { useAuthStore } from '../stores/auth'
 
 const types: { value: AttributeType; label: string }[] = [{ value: 'text', label: 'Текст' }, { value: 'number', label: 'Число' }, { value: 'boolean', label: 'Да / нет' }, { value: 'select', label: 'Список' }, { value: 'multiselect', label: 'Множественный список' }]
 const auth = useAuthStore()
 const attributes = ref<Attribute[]>([])
 const groups = ref<AttributeGroup[]>([])
+const pagination = ref<PaginationMeta | null>(null)
 const error = ref('')
 const opened = ref(false)
 const editing = ref<Attribute | null>(null)
@@ -47,7 +50,7 @@ function open(attribute: Attribute | null = null): void {
   form.value = attribute ? { attribute_group_id: attribute.attribute_group_id, name: attribute.name, slug: attribute.slug, type: attribute.type, unit: attribute.unit, is_filterable: attribute.is_filterable, is_required: attribute.is_required, sort_order: attribute.sort_order, options: attribute.options.map(option => ({ ...option })) } : emptyForm()
   queueMicrotask(() => { opened.value = true })
 }
-async function load(): Promise<void> { try { [attributes.value, groups.value] = await Promise.all([getAttributes(), getAttributeGroups()]) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить характеристики.' } }
+async function load(page = pagination.value?.current_page ?? 1): Promise<void> { try { const [attributePage, attributeGroups] = await Promise.all([getAttributes({ page }), getAllAttributeGroups()]); attributes.value = attributePage.data; pagination.value = attributePage.meta; groups.value = attributeGroups } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить характеристики.' } }
 async function save(): Promise<void> { try { await saveAttribute(editing.value?.id ?? null, form.value); opened.value = false; await load() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить характеристику.' } }
 async function remove(): Promise<void> { if (!deleting.value) return; isDeleting.value = true; try { await deleteAttribute(deleting.value.id); deleting.value = null; await load() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось удалить характеристику.' } finally { isDeleting.value = false } }
 onMounted(load)
@@ -64,6 +67,7 @@ onMounted(load)
       <div v-if="attributes.length" class="divide-y divide-gray-100"><article v-for="attribute in attributes" :key="attribute.id" class="flex items-center gap-4 p-4"><span class="grid h-10 w-10 place-items-center rounded-lg bg-primary-50 text-primary-600"><ListFilter :size="20" /></span><div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-x-1.5 gap-y-1"><h2 class="font-semibold text-gray-800">{{ attribute.name }}<span v-if="attribute.unit" class="font-medium text-gray-500"> ({{ attribute.unit }})</span><span v-if="attribute.is_required" class="ml-1 text-error-500" title="Обязательная характеристика">*</span></h2><span v-if="groupName(attribute)" class="rounded-full bg-blue-light-50 px-2 py-0.5 text-xs font-medium text-blue-light-500">Группа: {{ groupName(attribute) }}</span><span v-if="attribute.is_filterable" class="rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-500">В фильтрах</span></div><p class="mt-0.5 text-sm text-gray-500">{{ types.find(type => type.value === attribute.type)?.label }} · /{{ attribute.slug }} · значений: {{ attribute.options.length }}</p></div><div v-if="canManage" class="flex gap-1"><button class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600" title="Редактировать характеристику" @click="open(attribute)"><Pencil :size="17" /></button><button class="rounded-lg p-2 text-gray-500 hover:bg-error-50 hover:text-error-500" title="Удалить характеристику" @click="deleting = attribute"><Trash2 :size="17" /></button></div></article></div>
       <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Характеристик пока нет.</div>
     </div>
+    <PaginationControls v-if="pagination" :meta="pagination" @change="load" />
     <div v-if="opened" class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4" @click.self="opened = false">
       <form class="admin-dialog-content w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @submit.prevent="save">
         <div class="flex items-start justify-between"><div><h2 class="text-lg font-bold text-gray-900">{{ title }}</h2><p class="mt-1 text-sm text-gray-500">Укажите тип значения и варианты выбора, если они нужны.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" @click="opened = false"><X :size="20" /></button></div>

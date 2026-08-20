@@ -4,8 +4,8 @@ import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
-import { getProducts, type Product } from '../services/products'
-import { deleteProductVariant, getProductVariants, saveProductVariant, type ProductVariant, type ProductVariantPayload } from '../services/productVariants'
+import { getAllProducts, type Product } from '../services/products'
+import { deleteProductVariant, getAllProductVariants, saveProductVariant, type ProductVariant, type ProductVariantPayload } from '../services/productVariants'
 import { useAuthStore } from '../stores/auth'
 
 type VariantForm = { name: string; sku: string; price: string; old_price: string; stock_quantity: string; is_active: boolean; sort_order: string }
@@ -15,8 +15,8 @@ const canManage = computed(() => auth.hasPermission('catalog.manage'))
 const productOptions = computed(() => products.value.map((product) => ({ value: String(product.id), label: product.name })))
 function resetForm(variant: ProductVariant | null = null): void { editing.value = variant; form.value = variant ? { name: variant.name, sku: variant.sku, price: variant.price, old_price: variant.old_price ?? '', stock_quantity: String(variant.stock_quantity), is_active: variant.is_active, sort_order: String(variant.sort_order) } : { name: '', sku: '', price: '0.00', old_price: '', stock_quantity: '0', is_active: true, sort_order: '0' } }
 function open(variant: ProductVariant | null = null): void { resetForm(variant); editorOpen.value = true }
-async function loadProducts(): Promise<void> { try { products.value = await getProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
-async function loadVariants(): Promise<void> { if (!selectedProductId.value) { variants.value = []; return }; try { variants.value = await getProductVariants(Number(selectedProductId.value)) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить варианты.' } }
+async function loadProducts(): Promise<void> { try { products.value = await getAllProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
+async function loadVariants(): Promise<void> { if (!selectedProductId.value) { variants.value = []; return }; try { variants.value = await getAllProductVariants(Number(selectedProductId.value)) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить варианты.' } }
 async function save(): Promise<void> { if (!selectedProductId.value) return; saving.value = true; try { const payload: ProductVariantPayload = { ...form.value, old_price: form.value.old_price || null, stock_quantity: Number(form.value.stock_quantity), sort_order: Number(form.value.sort_order) }; await saveProductVariant(Number(selectedProductId.value), editing.value?.id ?? null, payload); editorOpen.value = false; await loadVariants() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить вариант.' } finally { saving.value = false } }
 async function remove(): Promise<void> { if (!selectedProductId.value || !deleting.value) return; saving.value = true; try { await deleteProductVariant(Number(selectedProductId.value), deleting.value.id); deleting.value = null; await loadVariants() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось удалить вариант.' } finally { saving.value = false } }
 watch(selectedProductId, () => { editorOpen.value = false; void loadVariants() }); onMounted(loadProducts)

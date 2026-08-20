@@ -1,4 +1,5 @@
 import { apiFetch, requestCsrfCookie } from './auth'
+import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from './pagination'
 
 async function fail(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }
@@ -10,11 +11,15 @@ export type AttributeType = 'text' | 'number' | 'boolean' | 'select' | 'multisel
 export type Attribute = { id: number; attribute_group_id: number | null; name: string; slug: string; type: AttributeType; unit: string | null; is_filterable: boolean; is_required: boolean; sort_order: number; options: AttributeOption[]; created_at: string; updated_at: string }
 export type AttributePayload = Omit<Attribute, 'id' | 'created_at' | 'updated_at'>
 
-export async function getAttributes(): Promise<Attribute[]> {
-  const response = await apiFetch('/admin/attributes')
+export async function getAttributes(request: PageRequest = {}): Promise<PaginatedResponse<Attribute>> {
+  const query = new URLSearchParams()
+  withPage(query, request)
+  const response = await apiFetch(`/admin/attributes${query.size ? `?${query}` : ''}`)
   if (!response.ok) return fail(response)
-  return ((await response.json()) as { data: Attribute[] }).data
+  return (await response.json()) as PaginatedResponse<Attribute>
 }
+
+export async function getAllAttributes(): Promise<Attribute[]> { return loadAllPages(getAttributes) }
 
 export async function saveAttribute(id: number | null, payload: AttributePayload): Promise<Attribute> {
   await requestCsrfCookie()

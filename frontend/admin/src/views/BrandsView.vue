@@ -4,12 +4,15 @@ import { BadgeCheck, Pencil, Plus, Trash2, X } from '@lucide/vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import PaginationControls from '../components/PaginationControls.vue'
 import { COUNTRY_OPTIONS, countryName } from '../constants/countries'
 import { deleteBrand, getBrands, saveBrand, type Brand, type BrandPayload } from '../services/brands'
+import type { PaginationMeta } from '../services/pagination'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 const brands = ref<Brand[]>([])
+const pagination = ref<PaginationMeta | null>(null)
 const error = ref('')
 const opened = ref(false)
 const editing = ref<Brand | null>(null)
@@ -47,8 +50,8 @@ function open(brand: Brand | null = null): void {
     : { name: '', slug: '', description: '', country_code: null, is_active: true }
   queueMicrotask(() => { opened.value = true })
 }
-async function load(): Promise<void> {
-  try { brands.value = await getBrands() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить бренды.' }
+async function load(page = pagination.value?.current_page ?? 1): Promise<void> {
+  try { const response = await getBrands({ page }); brands.value = response.data; pagination.value = response.meta } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить бренды.' }
 }
 async function save(): Promise<void> {
   try {
@@ -86,6 +89,7 @@ onMounted(load)
       </div>
       <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
     </div>
+    <PaginationControls v-if="pagination" :meta="pagination" @change="load" />
     <div v-if="opened" class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4" @click.self="opened = false">
       <form class="admin-dialog-content w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @submit.prevent="save">
         <div class="flex items-start justify-between"><div><h2 class="text-lg font-bold text-gray-900">{{ title }}</h2><p class="mt-1 text-sm text-gray-500">Укажите сведения о бренде для каталога.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" aria-label="Закрыть" @click="opened = false"><X :size="20" /></button></div>

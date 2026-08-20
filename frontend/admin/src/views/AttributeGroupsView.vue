@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { Layers3, Pencil, Plus, Trash2, X } from "@lucide/vue";
 import BaseInput from "../components/BaseInput.vue";
+import PaginationControls from "../components/PaginationControls.vue";
 import {
   deleteAttributeGroup,
   getAttributeGroups,
@@ -9,9 +10,11 @@ import {
   type AttributeGroup,
   type AttributeGroupPayload,
 } from "../services/attributeGroups";
+import type { PaginationMeta } from "../services/pagination";
 import { useAuthStore } from "../stores/auth";
 const auth = useAuthStore();
 const groups = ref<AttributeGroup[]>([]);
+const pagination = ref<PaginationMeta | null>(null);
 const error = ref("");
 const opened = ref(false);
 const editing = ref<AttributeGroup | null>(null);
@@ -93,9 +96,11 @@ function open(group: AttributeGroup | null = null): void {
     opened.value = true;
   });
 }
-async function load(): Promise<void> {
+async function load(page = pagination.value?.current_page ?? 1): Promise<void> {
   try {
-    groups.value = await getAttributeGroups();
+    const response = await getAttributeGroups({ page });
+    groups.value = response.data;
+    pagination.value = response.meta;
   } catch (reason) {
     error.value =
       reason instanceof Error ? reason.message : "Не удалось загрузить группы.";
@@ -198,6 +203,7 @@ onMounted(load);
         Групп пока нет.
       </div>
     </div>
+    <PaginationControls v-if="pagination" :meta="pagination" @change="load" />
     <div
       v-if="opened"
       class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4"

@@ -4,8 +4,8 @@ import { ImagePlus, Save, Star, Trash2 } from '@lucide/vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
-import { getProducts, type Product } from '../services/products'
-import { deleteProductImage, getProductImages, updateProductImage, uploadProductImage, type ProductImage } from '../services/productImages'
+import { getAllProducts, type Product } from '../services/products'
+import { deleteProductImage, getAllProductImages, updateProductImage, uploadProductImage, type ProductImage } from '../services/productImages'
 import { useAuthStore } from '../stores/auth'
 
 type ImageForm = { alt: string; sort_order: string; is_primary: boolean }
@@ -13,8 +13,8 @@ const auth = useAuthStore(); const products = ref<Product[]>([]); const images =
 const canManage = computed(() => auth.hasPermission('catalog.manage')); const productOptions = computed(() => products.value.map((product) => ({ value: String(product.id), label: product.name })))
 function draft(image: ProductImage): ImageForm { return drafts.value[image.id] ?? { alt: image.alt ?? '', sort_order: String(image.sort_order), is_primary: image.is_primary } }
 function resetUpload(): void { selectedFile.value = null; form.value = { alt: '', sort_order: '0', is_primary: false } }
-async function loadProducts(): Promise<void> { try { products.value = await getProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
-async function loadImages(): Promise<void> { if (!selectedProductId.value) { images.value = []; return }; try { images.value = await getProductImages(Number(selectedProductId.value)); drafts.value = Object.fromEntries(images.value.map((image) => [image.id, { alt: image.alt ?? '', sort_order: String(image.sort_order), is_primary: image.is_primary }])) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить изображения.' } }
+async function loadProducts(): Promise<void> { try { products.value = await getAllProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
+async function loadImages(): Promise<void> { if (!selectedProductId.value) { images.value = []; return }; try { images.value = await getAllProductImages(Number(selectedProductId.value)); drafts.value = Object.fromEntries(images.value.map((image) => [image.id, { alt: image.alt ?? '', sort_order: String(image.sort_order), is_primary: image.is_primary }])) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить изображения.' } }
 function selectFile(event: Event): void { selectedFile.value = (event.target as HTMLInputElement).files?.[0] ?? null }
 async function upload(): Promise<void> { if (!selectedProductId.value || !selectedFile.value) return; saving.value = true; try { await uploadProductImage(Number(selectedProductId.value), selectedFile.value, { alt: form.value.alt || null, is_primary: form.value.is_primary, sort_order: Number(form.value.sort_order) }); resetUpload(); await loadImages() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить изображение.' } finally { saving.value = false } }
 async function save(image: ProductImage): Promise<void> { if (!selectedProductId.value) return; saving.value = true; try { const item = draft(image); await updateProductImage(Number(selectedProductId.value), image.id, { alt: item.alt || null, sort_order: Number(item.sort_order), is_primary: item.is_primary }); await loadImages() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить изображение.' } finally { saving.value = false } }

@@ -5,7 +5,7 @@ import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import type { Attribute } from '../services/attributes'
-import { getProducts, type Product } from '../services/products'
+import { getAllProducts, type Product } from '../services/products'
 import { getCategoryAttributes, getProductAttributeValues, saveProductAttributeValues } from '../services/productAttributes'
 import { useAuthStore } from '../stores/auth'
 
@@ -14,7 +14,7 @@ const canManage = computed(() => auth.hasPermission('catalog.manage'))
 const productOptions = computed(() => products.value.map((product) => ({ value: String(product.id), label: product.name })))
 function valueToInput(value: unknown): string { if (Array.isArray(value)) return value.join(', '); if (typeof value === 'boolean') return value ? 'true' : 'false'; return String(value ?? '') }
 function options(attribute: Attribute): Array<{ value: string; label: string }> { return attribute.options.map((option) => ({ value: option.value, label: option.label })) }
-async function loadProducts(): Promise<void> { try { products.value = await getProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
+async function loadProducts(): Promise<void> { try { products.value = await getAllProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
 async function loadAttributes(): Promise<void> { if (!selectedProductId.value) { attributes.value = []; return }; try { const product = products.value.find((item) => item.id === Number(selectedProductId.value)); if (!product) return; const [assigned, current] = await Promise.all([getCategoryAttributes(product.category_id), getProductAttributeValues(product.id)]); attributes.value = assigned; const saved = new Map(current.map((item) => [item.attribute_id, item.value])); values.value = Object.fromEntries(assigned.map((attribute) => [attribute.id, valueToInput(saved.get(attribute.id))])) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить характеристики.' } }
 function valueFor(attribute: Attribute): string | number | boolean | string[] { const value = values.value[attribute.id] ?? ''; if (attribute.type === 'number') return Number(value); if (attribute.type === 'boolean') return value === 'true'; if (attribute.type === 'multiselect') return value.split(',').map((item) => item.trim()).filter(Boolean); return value }
 async function save(): Promise<void> { if (!selectedProductId.value) return; saving.value = true; try { const payload = { attributes: attributes.value.filter((attribute) => attribute.is_required || (values.value[attribute.id] ?? '') !== '').map((attribute) => ({ attribute_id: attribute.id, value: valueFor(attribute) })) }; await saveProductAttributeValues(Number(selectedProductId.value), payload); await loadAttributes() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить характеристики.' } finally { saving.value = false } }

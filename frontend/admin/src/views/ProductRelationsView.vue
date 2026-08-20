@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { Plus, Save, Trash2 } from '@lucide/vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
-import { getProducts, type Product } from '../services/products'
+import { getAllProducts, type Product } from '../services/products'
 import { getProductRelations, saveProductRelations, type ProductRelationType } from '../services/productRelations'
 import { useAuthStore } from '../stores/auth'
 
@@ -11,7 +11,7 @@ type RelationForm = { related_product_id: string; type: ProductRelationType; sor
 const auth = useAuthStore(); const products = ref<Product[]>([]); const selectedProductId = ref(''); const relations = ref<RelationForm[]>([]); const error = ref(''); const saving = ref(false)
 const canManage = computed(() => auth.hasPermission('catalog.manage')); const productOptions = computed(() => products.value.map((product) => ({ value: String(product.id), label: product.name }))); const relatedProductOptions = computed(() => productOptions.value.filter((product) => product.value !== selectedProductId.value)); const typeOptions = [{ value: 'related', label: 'Связанный товар' }, { value: 'recommended', label: 'Рекомендуемый товар' }]
 function add(): void { const first = relatedProductOptions.value[0]?.value ?? ''; relations.value.push({ related_product_id: first, type: 'related', sort_order: String(relations.value.length) }) }
-async function loadProducts(): Promise<void> { try { products.value = await getProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
+async function loadProducts(): Promise<void> { try { products.value = await getAllProducts() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить товары.' } }
 async function loadRelations(): Promise<void> { if (!selectedProductId.value) { relations.value = []; return }; try { relations.value = (await getProductRelations(Number(selectedProductId.value))).map((relation) => ({ related_product_id: String(relation.related_product_id), type: relation.type, sort_order: String(relation.sort_order) })) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить связи.' } }
 async function save(): Promise<void> { if (!selectedProductId.value) return; saving.value = true; try { await saveProductRelations(Number(selectedProductId.value), { relations: relations.value.map((relation) => ({ related_product_id: Number(relation.related_product_id), type: relation.type, sort_order: Number(relation.sort_order) })) }); await loadRelations() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить связи.' } finally { saving.value = false } }
 watch(selectedProductId, () => void loadRelations()); onMounted(loadProducts)

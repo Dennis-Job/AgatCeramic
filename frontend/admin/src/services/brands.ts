@@ -1,4 +1,5 @@
 import { apiFetch, requestCsrfCookie } from './auth'
+import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from './pagination'
 
 export type Brand = {
   id: number
@@ -19,12 +20,16 @@ async function fail(response: Response): Promise<never> {
   throw new Error(Object.values(body.error?.details ?? {}).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.')
 }
 
-export async function getBrands(): Promise<Brand[]> {
-  const response = await apiFetch('/admin/brands')
+export async function getBrands(request: PageRequest = {}): Promise<PaginatedResponse<Brand>> {
+  const query = new URLSearchParams()
+  withPage(query, request)
+  const response = await apiFetch(`/admin/brands${query.size ? `?${query}` : ''}`)
   if (!response.ok) return fail(response)
 
-  return ((await response.json()) as { data: Brand[] }).data
+  return (await response.json()) as PaginatedResponse<Brand>
 }
+
+export async function getAllBrands(): Promise<Brand[]> { return loadAllPages(getBrands) }
 
 export async function saveBrand(id: number | null, payload: BrandPayload): Promise<Brand> {
   await requestCsrfCookie()
