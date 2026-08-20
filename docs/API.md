@@ -253,6 +253,11 @@ without permitted values.
 - `GET /admin/categories/{category}/attribute-groups` — assigned attribute groups.
 - `PUT /admin/categories/{category}/attribute-groups` — replaces groups with an `attribute_groups` array of `{id, sort_order}` objects.
 
+Category-tree mutations are serialised with row locks. Assigning or moving a category verifies the
+target is still an eligible parent while locked; category moves also lock the current tree before
+checking the ancestor path, preventing concurrent updates from introducing a cycle. A category with
+children cannot be changed to a non-parent while those rows are locked.
+
 ### Бренды
 
 Операции создания, просмотра, изменения и удаления.

@@ -888,6 +888,7 @@
             "patch": {
                 "operationId": "updateCategory",
                 "summary": "Update a category",
+                "description": "Serialises category-tree mutations and rejects a concurrent change that would make the selected parent ineligible or introduce a cycle.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -947,6 +948,7 @@
             "put": {
                 "operationId": "putUpdateCategory",
                 "summary": "Replace: Update a category",
+                "description": "Serialises category-tree mutations and rejects a concurrent change that would make the selected parent ineligible or introduce a cycle.",
                 "security": [
                     {
                         "sanctumSession": []

@@ -15,9 +15,10 @@ class CategoryManagementService
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): Category
     {
-        $this->ensureParentCanBeAssigned(null, $attributes['parent_id'] ?? null);
-
         return DB::transaction(function () use ($actor, $attributes): Category {
+            $parentId = $attributes['parent_id'] ?? null;
+            $parent = $this->lockParent($parentId);
+            $this->ensureParentCanBeAssigned(null, $parentId, $parent);
             $category = Category::query()->create($attributes);
             $this->auditLogService->record($actor, 'category.created', $category);
 
@@ -28,14 +29,23 @@ class CategoryManagementService
     /** @param array<string, mixed> $attributes */
     public function update(User $actor, Category $category, array $attributes): Category
     {
-        if (array_key_exists('parent_id', $attributes)) {
-            $this->ensureParentCanBeAssigned($category, $attributes['parent_id']);
-        }
-        if (($attributes['is_parent'] ?? true) === false && $category->children()->exists()) {
-            throw ValidationException::withMessages(['is_parent' => ['A category with children must remain a parent category.']]);
-        }
-
         return DB::transaction(function () use ($actor, $category, $attributes): Category {
+            $categories = array_key_exists('parent_id', $attributes) && $attributes['parent_id'] !== null
+                ? Category::query()->orderBy('id')->lockForUpdate()->get()
+                : null;
+            $category = $categories?->firstWhere('id', $category->id)
+                ?? Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+
+            if (array_key_exists('parent_id', $attributes)) {
+                $parent = $attributes['parent_id'] === null
+                    ? null
+                    : $categories?->firstWhere('id', $attributes['parent_id']);
+                $this->ensureParentCanBeAssigned($category, $attributes['parent_id'], $parent, $categories);
+            }
+            if (($attributes['is_parent'] ?? true) === false && $category->children()->exists()) {
+                throw ValidationException::withMessages(['is_parent' => ['A category with children must remain a parent category.']]);
+            }
+
             $category->fill($attributes)->save();
             $this->auditLogService->record($actor, 'category.updated', $category);
 
@@ -65,7 +75,17 @@ class CategoryManagementService
         return $byParent->get(null, collect())->map($attach)->values();
     }
 
-    private function ensureParentCanBeAssigned(?Category $category, ?int $parentId): void
+    private function lockParent(?int $parentId): ?Category
+    {
+        if ($parentId === null) {
+            return null;
+        }
+
+        return Category::query()->whereKey($parentId)->lockForUpdate()->first();
+    }
+
+    /** @param Collection<int, Category>|null $categories */
+    private function ensureParentCanBeAssigned(?Category $category, ?int $parentId, ?Category $parent, ?Collection $categories = null): void
     {
         if ($parentId === null) {
             return;
@@ -74,7 +94,6 @@ class CategoryManagementService
             throw ValidationException::withMessages(['parent_id' => ['A category cannot be its own parent.']]);
         }
 
-        $parent = Category::query()->find($parentId);
         if ($parent?->is_parent !== true) {
             throw ValidationException::withMessages(['parent_id' => ['The selected category cannot be a parent category.']]);
         }
@@ -82,7 +101,7 @@ class CategoryManagementService
             if ($parent->id === $category?->id) {
                 throw ValidationException::withMessages(['parent_id' => ['A category cannot be placed inside its descendant.']]);
             }
-            $parent = $parent->parent;
+            $parent = $categories?->firstWhere('id', $parent->parent_id) ?? $parent->parent;
         }
     }
 }
