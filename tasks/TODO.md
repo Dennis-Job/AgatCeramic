@@ -71,6 +71,48 @@
 - [x] TASK-041I Complete the human Catalog API guide for category, brand, attribute, and image-management behavior
 - [x] TASK-041J Reconcile or remove unused standalone Catalog Admin views
 
+## Phase 3 — Catalog audit remediation
+
+- [ ] TASK-041K Preserve product and variant attribute-value integrity when product categories or category attribute assignments change
+  - Reject or transactionally reconcile stale values when moving a product to another category.
+  - Reject or transactionally reconcile affected product and variant values when detaching a category attribute.
+  - Enforce required attributes after category changes and cover the selected policy in API documentation and tests.
+- [ ] TASK-041L Make attribute type and option changes safe for existing product and variant values
+  - Detect values that would become invalid when changing an attribute type or replacing/removing options.
+  - Define and implement an explicit conflict, migration, or cleanup policy without silently preserving invalid values.
+  - Cover product and variant values, audit events, OpenAPI behavior, and regression tests.
+- [ ] TASK-041M Complete the attribute model required by the Catalog specification
+  - Reconcile `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`, `color`, and `date`; document any intentional normalization between types.
+  - Add product-page visibility control and typed backend/Admin validation and editing.
+  - Update migrations, API Resources, OpenAPI, the human API guide, and tests.
+- [ ] TASK-041N Add catalog identifiers and units required for products and variants
+  - Define product-versus-variant ownership for article numbers, barcodes, and units of measure.
+  - Add database constraints, CRUD/search behavior, Admin fields, OpenAPI documentation, and tests.
+- [ ] TASK-041O Trace deferred Catalog media and SEO requirements to their delivery phases
+  - Explicitly map category images and brand logos/documents to the Media Library work in Phase 7.
+  - Explicitly map category and brand SEO fields to Phase 8 and reconcile placeholder database fields with the documented plan.
+  - Update requirements/task documentation so no Catalog requirement is left without an owner.
+- [ ] TASK-041P Make Admin Catalog pagination resistant to stale requests and last-page deletions
+  - Prevent out-of-order responses from replacing newer page state and disable or guard navigation while appropriate.
+  - Clamp or reload the previous valid page after deleting the final item on a page.
+  - Cover products, brands, attributes, and attribute groups with automated tests.
+- [ ] TASK-041Q Bring Catalog dialogs and image ordering into compliance with the UI Design Review standard
+  - Add dialog semantics, accessible names, focus management, focus restoration, Escape/backdrop behavior, and keyboard-safe destructive confirmations.
+  - Add accessible names to icon-only actions and a keyboard-operable alternative for product image reordering with announced state changes.
+  - Complete authenticated responsive QA at the required breakpoints and obtain an independent UI Design Guard review.
+- [ ] TASK-041R Add automated Admin Catalog component and end-to-end coverage
+  - Introduce the minimal frontend test tooling needed for pagination, filters, integrated product tabs, selectors, error/loading/empty states, and accessibility regressions.
+  - Exercise the authenticated `/products`, `/categories`, `/brands`, `/attribute-groups`, and `/attributes` flows.
+- [ ] TASK-041S Add real PostgreSQL concurrency regression tests for Catalog invariants
+  - Exercise competing transactions for primary images, product deletion versus image uploads, reverse relations, and category-tree mutations.
+  - Run these tests against PostgreSQL in CI rather than relying on sequential SQLite coverage.
+- [ ] TASK-041T Make product image storage cleanup durable and retryable
+  - Handle storage deletion failures without silently leaving orphaned files or skipping remaining disks/files.
+  - Add an idempotent retry/outbox/queue cleanup mechanism with operational visibility and tests.
+- [ ] TASK-041U Stabilize shared backend test factories used by the Catalog suite
+  - Prevent `RoleFactory` from generating names that collide with seeded system roles.
+  - Add a regression check proving repeated full-suite runs remain deterministic.
+
 ## Phase 4 — Import/export
 
 - [ ] TASK-050 Excel product export
