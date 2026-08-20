@@ -3,13 +3,16 @@
 namespace Tests\Feature\Api;
 
 use App\Models\Attribute;
+use App\Models\AttributeOption;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ProductVariantManagementService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ProductVariantManagementTest extends TestCase
@@ -83,6 +86,29 @@ class ProductVariantManagementTest extends TestCase
             'name' => 'Неверный вариант', 'sku' => 'MARBLE-INVALID', 'price' => '100.00',
             'attribute_values' => [['attribute_id' => $notAssigned->id, 'value' => 'Керамогранит']],
         ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['attribute_values.0.attribute_id']]]);
+    }
+
+    public function test_service_revalidates_variant_values_against_current_options_inside_its_transaction(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create();
+        $attribute = Attribute::factory()->create(['type' => 'select']);
+        AttributeOption::factory()->create(['attribute_id' => $attribute->id, 'value' => 'allowed']);
+        $product->category->attributes()->attach($attribute->id);
+
+        try {
+            app(ProductVariantManagementService::class)->create($actor, $product, [
+                'name' => 'Invalid option',
+                'sku' => 'INVALID-SERVICE-OPTION',
+                'price' => '100.00',
+                'attribute_values' => [['attribute_id' => $attribute->id, 'value' => 'removed']],
+            ]);
+            $this->fail('Expected transactional semantic validation to reject the value.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('attribute_values', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('product_variants', ['sku' => 'INVALID-SERVICE-OPTION']);
     }
 
     private function userWithRole(string $slug): User

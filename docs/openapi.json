@@ -1557,6 +1557,7 @@
             "patch": {
                 "operationId": "updateAttribute",
                 "summary": "Update an attribute and optionally replace its options",
+                "description": "Type and full option-set changes are atomic. Returns 422 without changing the attribute, options, values, or audit log when any existing product or variant value would become invalid. Compatible conversions, option additions, label/order changes, and removal of unused option values are allowed.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1600,6 +1601,7 @@
             "delete": {
                 "operationId": "deleteAttribute",
                 "summary": "Delete an attribute and its options",
+                "description": "Returns 422 without deleting anything when product or variant values still reference the attribute.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1615,6 +1617,9 @@
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
                     },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
                     }
@@ -1623,6 +1628,7 @@
             "put": {
                 "operationId": "putUpdateAttribute",
                 "summary": "Replace: Update an attribute and optionally replace its options",
+                "description": "Type and full option-set changes are atomic. Returns 422 without changing the attribute, options, values, or audit log when any existing product or variant value would become invalid. Compatible conversions, option additions, label/order changes, and removal of unused option values are allowed.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -3223,6 +3229,7 @@
             },
             "StoreAttributeRequest": {
                 "type": "object",
+                "description": "Choice attributes require a non-empty full option set.",
                 "properties": {
                     "attribute_group_id": {
                         "type": [
@@ -3267,6 +3274,7 @@
                     },
                     "options": {
                         "type": "array",
+                        "minItems": 1,
                         "maxItems": 500,
                         "items": {
                             "type": "object",
@@ -3293,6 +3301,25 @@
                     }
                 },
                 "additionalProperties": false,
+                "allOf": [
+                    {
+                        "if": {
+                            "properties": {
+                                "type": {
+                                    "enum": [
+                                        "select",
+                                        "multiselect"
+                                    ]
+                                }
+                            }
+                        },
+                        "then": {
+                            "required": [
+                                "options"
+                            ]
+                        }
+                    }
+                ],
                 "required": [
                     "name",
                     "slug",
@@ -3301,6 +3328,7 @@
             },
             "UpdateAttributeRequest": {
                 "type": "object",
+                "description": "When supplied for a choice attribute, options is a non-empty full replacement. Without type it is validated against the current stored type. Existing product and variant values must remain valid for the prospective definition.",
                 "properties": {
                     "attribute_group_id": {
                         "type": [
@@ -3345,6 +3373,7 @@
                     },
                     "options": {
                         "type": "array",
+                        "minItems": 1,
                         "maxItems": 500,
                         "items": {
                             "type": "object",

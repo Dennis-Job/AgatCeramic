@@ -8,9 +8,11 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ProductAttributeValueManagementService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ProductAttributeValueManagementTest extends TestCase
@@ -62,6 +64,26 @@ class ProductAttributeValueManagementTest extends TestCase
             'attributes' => [['attribute_id' => $required->id, 'value' => 'true']],
         ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['attributes.0.value']]]);
         $this->actingAs($this->userWithRole('analyst'))->getJson("/api/v1/admin/products/{$product->id}/attributes")->assertForbidden();
+    }
+
+    public function test_service_revalidates_the_current_type_and_options_inside_its_transaction(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $category = Category::factory()->create();
+        $attribute = Attribute::factory()->create(['type' => 'boolean']);
+        $category->attributes()->attach($attribute->id);
+        $product = Product::factory()->create(['category_id' => $category->id]);
+
+        try {
+            app(ProductAttributeValueManagementService::class)->replace($actor, $product, [
+                ['attribute_id' => $attribute->id, 'value' => 'not-a-boolean'],
+            ]);
+            $this->fail('Expected transactional semantic validation to reject the value.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('attributes', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('product_attribute_values', ['product_id' => $product->id, 'attribute_id' => $attribute->id]);
     }
 
     private function userWithRole(string $slug): User

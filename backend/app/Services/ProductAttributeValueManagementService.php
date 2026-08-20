@@ -27,7 +27,7 @@ class ProductAttributeValueManagementService
             $product->setRelation('category', $category);
 
             $attributeIds = collect($attributes)->pluck('attribute_id');
-            $this->integrityService->assertValuesBelongToCategory($product, $attributeIds->all(), 'attributes', true);
+            $this->integrityService->assertValuesMatchCategory($product, $attributes, 'attributes', true);
             $product->attributeValues()->whereNotIn('attribute_id', $attributeIds)->delete();
 
             foreach ($attributes as $attribute) {

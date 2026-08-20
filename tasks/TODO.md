@@ -77,7 +77,7 @@
   - Reject or transactionally reconcile stale values when moving a product to another category.
   - Reject or transactionally reconcile affected product and variant values when detaching a category attribute.
   - Enforce required attributes after category changes and cover the selected policy in API documentation and tests.
-- [ ] TASK-041L Make attribute type and option changes safe for existing product and variant values
+- [x] TASK-041L Make attribute type and option changes safe for existing product and variant values
   - Detect values that would become invalid when changing an attribute type or replacing/removing options.
   - Define and implement an explicit conflict, migration, or cleanup policy without silently preserving invalid values.
   - Cover product and variant values, audit events, OpenAPI behavior, and regression tests.

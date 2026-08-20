@@ -8,6 +8,8 @@ use Illuminate\Validation\ValidationException;
 
 class CatalogAttributeIntegrityService
 {
+    public function __construct(private readonly AttributeValueValidator $valueValidator) {}
+
     /** @param array<int, int> $attributeIds */
     public function assertCategoryAssignmentsCanBeReplaced(Category $category, array $attributeIds, string $field = 'attributes'): void
     {
@@ -20,7 +22,6 @@ class CatalogAttributeIntegrityService
                 $field => ['Cannot detach attributes that are used by products or variants in this category.'],
             ]);
         }
-
     }
 
     public function assertProductCanUseCategory(Product $product, Category $category): void
@@ -52,16 +53,29 @@ class CatalogAttributeIntegrityService
         }
     }
 
-    /** @param array<int, int> $attributeIds */
-    public function assertValuesBelongToCategory(Product $product, array $attributeIds, string $field, bool $requireAll): void
+    /** @param array<int, array{attribute_id: int, value: mixed}> $values */
+    public function assertValuesMatchCategory(Product $product, array $values, string $field, bool $requireAll): void
     {
-        $assigned = $product->category->attributes()->get(['attributes.id', 'attributes.name', 'attributes.is_required']);
-        $submittedIds = collect($attributeIds)->map(static fn (mixed $id): int => (int) $id)->unique();
+        $assigned = $product->category->attributes()->with('options')->get()->keyBy('id');
+        $submittedIds = collect($values)->pluck('attribute_id')->map(static fn (mixed $id): int => (int) $id)->unique();
 
         if ($submittedIds->diff($assigned->pluck('id'))->isNotEmpty()) {
             throw ValidationException::withMessages([
                 $field => ['One or more attributes are not assigned to the product category.'],
             ]);
+        }
+
+        foreach ($values as $value) {
+            $attribute = $assigned->get((int) $value['attribute_id']);
+            if ($attribute === null || ! $this->valueValidator->isValid(
+                $attribute->type,
+                $value['value'],
+                $attribute->options->pluck('value')->all(),
+            )) {
+                throw ValidationException::withMessages([
+                    $field => ['One or more values do not match the current attribute type or options.'],
+                ]);
+            }
         }
 
         if ($requireAll) {

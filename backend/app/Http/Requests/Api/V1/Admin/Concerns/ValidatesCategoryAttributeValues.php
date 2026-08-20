@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\V1\Admin\Concerns;
 
 use App\Models\Attribute;
 use App\Models\Product;
+use App\Services\AttributeValueValidator;
 use Illuminate\Validation\Validator;
 
 trait ValidatesCategoryAttributeValues
@@ -38,16 +39,11 @@ trait ValidatesCategoryAttributeValues
 
     private function validateCategoryAttributeValue(Validator $validator, string $key, Attribute $attribute, mixed $value): void
     {
-        $valid = match ($attribute->type) {
-            'text' => is_string($value) && mb_strlen($value) <= 10000,
-            'number' => is_numeric($value),
-            'boolean' => is_bool($value),
-            'select' => is_string($value) && $attribute->options->contains('value', $value),
-            'multiselect' => is_array($value) && $value !== [] && count($value) <= 500
-                && count($value) === count(array_unique($value))
-                && collect($value)->every(fn (mixed $option): bool => is_string($option) && $attribute->options->contains('value', $option)),
-            default => false,
-        };
+        $valid = app(AttributeValueValidator::class)->isValid(
+            $attribute->type,
+            $value,
+            $attribute->options->pluck('value')->all(),
+        );
 
         if (! $valid) {
             $validator->errors()->add($key, "The value does not match the {$attribute->type} attribute type.");

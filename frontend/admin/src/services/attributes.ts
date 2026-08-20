@@ -23,10 +23,12 @@ export async function getAllAttributes(): Promise<Attribute[]> { return loadAllP
 
 export async function saveAttribute(id: number | null, payload: AttributePayload): Promise<Attribute> {
   await requestCsrfCookie()
+  const body: Partial<AttributePayload> = { ...payload }
+  if (!['select', 'multiselect'].includes(payload.type)) delete body.options
   const response = await apiFetch(id === null ? '/admin/attributes' : `/admin/attributes/${id}`, {
     method: id === null ? 'POST' : 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   })
   if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Attribute }).data

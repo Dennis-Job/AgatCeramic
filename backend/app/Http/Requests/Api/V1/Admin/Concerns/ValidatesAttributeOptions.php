@@ -8,7 +8,7 @@ trait ValidatesAttributeOptions
 {
     protected function validateOptionsForType(Validator $validator): void
     {
-        $type = $this->input('type');
+        $type = $this->input('type', $this->route('attribute')?->type);
 
         if ($type === null) {
             return;
@@ -21,7 +21,7 @@ trait ValidatesAttributeOptions
             $validator->errors()->add('options', 'Select attributes must have at least one option.');
         }
 
-        if (! $acceptsOptions && is_array($options) && count($options) > 0) {
+        if (! $acceptsOptions && is_array($options)) {
             $validator->errors()->add('options', 'Options are available only for select and multiselect attributes.');
         }
     }

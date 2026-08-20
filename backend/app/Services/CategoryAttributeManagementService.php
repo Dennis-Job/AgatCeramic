@@ -23,6 +23,8 @@ class CategoryAttributeManagementService
             $assignments = collect($attributes)->mapWithKeys(static fn (array $attribute, int $index): array => [
                 $attribute['id'] => ['sort_order' => $attribute['sort_order'] ?? $index],
             ])->all();
+            $attributeIdsToLock = $category->attributes()->pluck('attributes.id')->merge(array_keys($assignments))->unique()->sort()->values();
+            Attribute::query()->whereIn('id', $attributeIdsToLock->all())->orderBy('id')->lockForUpdate()->get();
 
             $this->integrityService->assertCategoryAssignmentsCanBeReplaced($category, array_keys($assignments));
 
@@ -48,6 +50,7 @@ class CategoryAttributeManagementService
                 ->when($assignments === [], fn ($query) => $query)
                 ->pluck('id');
             $remainingAttributeIds = $category->attributes()->whereNotIn('attributes.id', $removedAttributeIds)->pluck('attributes.id')->all();
+            Attribute::query()->whereIn('id', $removedAttributeIds)->orderBy('id')->lockForUpdate()->get();
 
             $this->integrityService->assertCategoryAssignmentsCanBeReplaced($category, $remainingAttributeIds, 'attribute_groups');
 

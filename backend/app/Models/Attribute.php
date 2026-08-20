@@ -42,4 +42,14 @@ class Attribute extends Model
     {
         return in_array($this->type, ['select', 'multiselect'], true);
     }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'is_filterable' => 'boolean',
+            'is_required' => 'boolean',
+            'sort_order' => 'integer',
+        ];
+    }
 }

@@ -68,6 +68,14 @@ Each option belongs to one attribute and stores a stable per-attribute `value`, 
 `label`, and `sort_order`. Attribute deletion cascades to its options; deleting an attribute group
 keeps its attributes and clears their group reference.
 
+Product and variant JSON values must remain valid for the current attribute type. Choice values
+refer to the stable option `value`, not the option row ID. Type and option replacement uses a
+reject-on-conflict policy: compatible conversions, option additions, label/order changes, and
+removal of unused option codes are allowed; a change that invalidates any stored product or variant
+value returns `422` without mutating the definition or audit trail. Definition writers lock assigned
+categories in ID order before products and the attribute row, and value writers repeat semantic
+validation inside their transaction. Attributes with stored values cannot be deleted.
+
 Значения select/multiselect.
 
 ### category_attributes

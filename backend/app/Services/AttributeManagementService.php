@@ -3,6 +3,10 @@
 namespace App\Services;
 
 use App\Models\Attribute;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\ProductAttributeValue;
+use App\Models\ProductVariantAttributeValue;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -10,7 +14,10 @@ use Illuminate\Validation\ValidationException;
 
 class AttributeManagementService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly AttributeValueValidator $valueValidator,
+    ) {}
 
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): Attribute
@@ -29,8 +36,27 @@ class AttributeManagementService
     public function update(User $actor, Attribute $attribute, array $attributes): Attribute
     {
         return DB::transaction(function () use ($actor, $attribute, $attributes): Attribute {
+            $attribute = $this->lockForDefinitionMutation($attribute);
+
             $hasOptions = array_key_exists('options', $attributes);
             $options = Arr::pull($attributes, 'options', []);
+            $typeBefore = $attribute->type;
+            $isRequiredBefore = $attribute->is_required;
+            $optionValuesBefore = $attribute->options()->pluck('value')->all();
+            $typeAfter = $attributes['type'] ?? $typeBefore;
+            $optionValuesAfter = in_array($typeAfter, ['select', 'multiselect'], true)
+                ? ($hasOptions ? array_column($options, 'value') : $optionValuesBefore)
+                : [];
+
+            if ($typeAfter !== $typeBefore || $hasOptions) {
+                $this->ensureExistingValuesRemainValid(
+                    $attribute,
+                    $typeAfter,
+                    $optionValuesAfter,
+                    $typeAfter !== $typeBefore ? 'type' : 'options',
+                );
+            }
+
             $attribute->fill($attributes)->save();
 
             if (! $attribute->acceptsOptions()) {
@@ -39,7 +65,21 @@ class AttributeManagementService
                 $this->replaceOptions($attribute, $options);
             }
 
-            $this->auditLogService->record($actor, 'attribute.updated', $attribute);
+            $metadata = [];
+            if ($typeBefore !== $attribute->type) {
+                $metadata['type_before'] = $typeBefore;
+                $metadata['type_after'] = $attribute->type;
+            }
+            if ($isRequiredBefore !== $attribute->is_required) {
+                $metadata['is_required_before'] = $isRequiredBefore;
+                $metadata['is_required_after'] = $attribute->is_required;
+            }
+            if ($hasOptions || $optionValuesBefore !== $optionValuesAfter) {
+                $metadata['options_replaced'] = true;
+                $metadata['option_values_before'] = $optionValuesBefore;
+                $metadata['option_values_after'] = $optionValuesAfter;
+            }
+            $this->auditLogService->record($actor, 'attribute.updated', $attribute, $metadata);
 
             return $attribute->load('options');
         });
@@ -48,7 +88,17 @@ class AttributeManagementService
     public function delete(User $actor, Attribute $attribute): void
     {
         DB::transaction(function () use ($actor, $attribute): void {
-            $this->auditLogService->record($actor, 'attribute.deleted', $attribute);
+            $attribute = $this->lockForDefinitionMutation($attribute);
+            if ($this->attributeHasValues($attribute)) {
+                throw ValidationException::withMessages([
+                    'attribute' => ['An attribute with existing product or variant values cannot be deleted.'],
+                ]);
+            }
+            $this->auditLogService->record($actor, 'attribute.deleted', $attribute, [
+                'type' => $attribute->type,
+                'is_required' => $attribute->is_required,
+                'option_values' => $attribute->options()->pluck('value')->all(),
+            ]);
             $attribute->delete();
         });
     }
@@ -70,5 +120,40 @@ class AttributeManagementService
             'label' => $option['label'],
             'sort_order' => $option['sort_order'] ?? 0,
         ], $options));
+    }
+
+    /** @param array<int, string> $optionValues */
+    private function ensureExistingValuesRemainValid(Attribute $attribute, string $type, array $optionValues, string $field): void
+    {
+        $values = ProductAttributeValue::query()->where('attribute_id', $attribute->id)->pluck('value')
+            ->merge(ProductVariantAttributeValue::query()->where('attribute_id', $attribute->id)->pluck('value'));
+
+        if ($values->contains(fn (mixed $value): bool => ! $this->valueValidator->isValid($type, $value, $optionValues))) {
+            throw ValidationException::withMessages([
+                $field => ['The change would invalidate existing product or variant attribute values.'],
+            ]);
+        }
+    }
+
+    private function lockForDefinitionMutation(Attribute $attribute): Attribute
+    {
+        $lockedCategoryIds = $attribute->categories()->pluck('categories.id')->sort()->values();
+        Category::query()->whereIn('id', $lockedCategoryIds->all())->orderBy('id')->lockForUpdate()->get();
+        Product::query()->whereIn('category_id', $lockedCategoryIds->all())->orderBy('id')->lockForUpdate()->get();
+        $attribute = Attribute::query()->whereKey($attribute->id)->lockForUpdate()->firstOrFail();
+
+        if ($attribute->categories()->whereNotIn('categories.id', $lockedCategoryIds)->exists()) {
+            throw ValidationException::withMessages([
+                'type' => ['The attribute category assignments changed concurrently. Retry the request.'],
+            ]);
+        }
+
+        return $attribute;
+    }
+
+    private function attributeHasValues(Attribute $attribute): bool
+    {
+        return ProductAttributeValue::query()->where('attribute_id', $attribute->id)->exists()
+            || ProductVariantAttributeValue::query()->where('attribute_id', $attribute->id)->exists();
     }
 }

@@ -23,7 +23,7 @@ class ProductVariantManagementService
             $product = $this->lockProductAndCategory($product);
             $attributeValues = $attributes['attribute_values'] ?? [];
             unset($attributes['attribute_values']);
-            $this->integrityService->assertValuesBelongToCategory($product, collect($attributeValues)->pluck('attribute_id')->all(), 'attribute_values', false);
+            $this->integrityService->assertValuesMatchCategory($product, $attributeValues, 'attribute_values', false);
             $variant = $product->variants()->create($attributes);
             $this->replaceAttributeValues($variant, $attributeValues);
             $this->auditLogService->record($actor, 'product.variant-created', $variant, ['attribute_ids' => collect($attributeValues)->pluck('attribute_id')->all()]);
@@ -46,7 +46,7 @@ class ProductVariantManagementService
             unset($attributes['attribute_values']);
             $variant->fill($attributes)->save();
             if ($hasAttributeValues) {
-                $this->integrityService->assertValuesBelongToCategory($product, collect($attributeValues)->pluck('attribute_id')->all(), 'attribute_values', false);
+                $this->integrityService->assertValuesMatchCategory($product, $attributeValues, 'attribute_values', false);
                 $this->replaceAttributeValues($variant, $attributeValues);
             }
             $this->auditLogService->record($actor, 'product.variant-updated', $variant, $hasAttributeValues ? ['attribute_ids' => collect($attributeValues)->pluck('attribute_id')->all()] : []);
