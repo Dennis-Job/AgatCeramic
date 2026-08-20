@@ -139,6 +139,9 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Run Admin unit tests
+        run: npm run test:unit
+
       - name: Build Admin SPA
         run: npm run build
 

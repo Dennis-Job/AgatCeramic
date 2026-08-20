@@ -8,7 +8,7 @@ Workflow получает только право `contents: read` и не ис�
 | Job | Проверки |
 | --- | --- |
 | Backend checks | Composer manifest и audit, Laravel Pint, PHPUnit/Laravel tests |
-| Admin checks | `npm ci`, audit production-зависимостей, TypeScript/Vite build |
+| Admin checks | `npm ci`, audit production-зависимостей, unit-тесты, TypeScript/Vite build |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose configuration | Валидация `compose.yaml` с `.env.example` |
 

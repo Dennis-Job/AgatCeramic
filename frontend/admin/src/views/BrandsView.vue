@@ -5,15 +5,14 @@ import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import PaginationControls from '../components/PaginationControls.vue'
+import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { COUNTRY_OPTIONS, countryName } from '../constants/countries'
 import { deleteBrand, getBrands, saveBrand, type Brand, type BrandPayload } from '../services/brands'
-import type { PaginationMeta } from '../services/pagination'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
-const brands = ref<Brand[]>([])
-const pagination = ref<PaginationMeta | null>(null)
-const error = ref('')
+const brandList = usePaginatedCollection<Brand>('Не удалось загрузить бренды.')
+const { items: brands, pagination, error, loading } = brandList
 const opened = ref(false)
 const editing = ref<Brand | null>(null)
 const deleting = ref<Brand | null>(null)
@@ -51,7 +50,7 @@ function open(brand: Brand | null = null): void {
   queueMicrotask(() => { opened.value = true })
 }
 async function load(page = pagination.value?.current_page ?? 1): Promise<void> {
-  try { const response = await getBrands({ page }); brands.value = response.data; pagination.value = response.meta } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить бренды.' }
+  await brandList.load(page, (requestedPage) => getBrands({ page: requestedPage }))
 }
 async function save(): Promise<void> {
   try {
@@ -66,19 +65,20 @@ async function remove(): Promise<void> {
   try {
     await deleteBrand(deleting.value.id)
     deleting.value = null
-    await load()
+    await brandList.reloadAfterDeletion((page) => getBrands({ page }))
   } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось удалить бренд.' } finally { isDeleting.value = false }
 }
 onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
+  <section class="mx-auto admin-page" :aria-busy="loading">
     <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Бренды</h1></div>
       <button v-if="canManage" class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-600" @click="open()"><Plus :size="18" />Добавить бренд</button>
     </div>
     <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
+    <p v-if="loading" class="sr-only" role="status">Загрузка брендов…</p>
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
       <div v-if="brands.length" class="divide-y divide-gray-100">
         <article v-for="brand in brands" :key="brand.id" class="flex items-center gap-4 p-4 sm:p-5">
@@ -89,7 +89,7 @@ onMounted(load)
       </div>
       <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
     </div>
-    <PaginationControls v-if="pagination" :meta="pagination" @change="load" />
+    <PaginationControls v-if="pagination" :meta="pagination" :loading="loading" @change="load" />
     <div v-if="opened" class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4" @click.self="opened = false">
       <form class="admin-dialog-content w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @submit.prevent="save">
         <div class="flex items-start justify-between"><div><h2 class="text-lg font-bold text-gray-900">{{ title }}</h2><p class="mt-1 text-sm text-gray-500">Укажите сведения о бренде для каталога.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" aria-label="Закрыть" @click="opened = false"><X :size="20" /></button></div>

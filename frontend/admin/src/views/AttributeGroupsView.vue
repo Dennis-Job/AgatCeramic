@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { Layers3, Pencil, Plus, Trash2, X } from "@lucide/vue";
 import BaseInput from "../components/BaseInput.vue";
 import PaginationControls from "../components/PaginationControls.vue";
+import { usePaginatedCollection } from "../composables/usePaginatedCollection";
 import {
   deleteAttributeGroup,
   getAttributeGroups,
@@ -10,12 +11,10 @@ import {
   type AttributeGroup,
   type AttributeGroupPayload,
 } from "../services/attributeGroups";
-import type { PaginationMeta } from "../services/pagination";
 import { useAuthStore } from "../stores/auth";
 const auth = useAuthStore();
-const groups = ref<AttributeGroup[]>([]);
-const pagination = ref<PaginationMeta | null>(null);
-const error = ref("");
+const groupList = usePaginatedCollection<AttributeGroup>("Не удалось загрузить группы.");
+const { items: groups, pagination, error, loading } = groupList;
 const opened = ref(false);
 const editing = ref<AttributeGroup | null>(null);
 const deleting = ref<AttributeGroup | null>(null);
@@ -97,14 +96,9 @@ function open(group: AttributeGroup | null = null): void {
   });
 }
 async function load(page = pagination.value?.current_page ?? 1): Promise<void> {
-  try {
-    const response = await getAttributeGroups({ page });
-    groups.value = response.data;
-    pagination.value = response.meta;
-  } catch (reason) {
-    error.value =
-      reason instanceof Error ? reason.message : "Не удалось загрузить группы.";
-  }
+  await groupList.load(page, (requestedPage) =>
+    getAttributeGroups({ page: requestedPage }),
+  );
 }
 async function save(): Promise<void> {
   try {
@@ -122,7 +116,7 @@ async function remove(): Promise<void> {
   try {
     await deleteAttributeGroup(deleting.value.id);
     deleting.value = null;
-    await load();
+    await groupList.reloadAfterDeletion((page) => getAttributeGroups({ page }));
   } catch (reason) {
     error.value =
       reason instanceof Error ? reason.message : "Не удалось удалить группу.";
@@ -133,7 +127,7 @@ async function remove(): Promise<void> {
 onMounted(load);
 </script>
 <template>
-  <section class="mx-auto admin-page">
+  <section class="mx-auto admin-page" :aria-busy="loading">
     <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="text-sm font-medium text-gray-500">Каталог</p>
@@ -156,6 +150,9 @@ onMounted(load);
       class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500"
     >
       {{ error }}
+    </p>
+    <p v-if="loading" class="sr-only" role="status">
+      Загрузка групп характеристик…
     </p>
     <div
       class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card"
@@ -203,7 +200,12 @@ onMounted(load);
         Групп пока нет.
       </div>
     </div>
-    <PaginationControls v-if="pagination" :meta="pagination" @change="load" />
+    <PaginationControls
+      v-if="pagination"
+      :meta="pagination"
+      :loading="loading"
+      @change="load"
+    />
     <div
       v-if="opened"
       class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4"

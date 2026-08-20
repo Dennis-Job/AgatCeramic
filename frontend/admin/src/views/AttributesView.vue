@@ -5,17 +5,16 @@ import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import PaginationControls from '../components/PaginationControls.vue'
+import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { getAllAttributeGroups, type AttributeGroup } from '../services/attributeGroups'
 import { deleteAttribute, getAttributes, saveAttribute, type Attribute, type AttributePayload, type AttributeType } from '../services/attributes'
-import type { PaginationMeta } from '../services/pagination'
 import { useAuthStore } from '../stores/auth'
 
 const types: { value: AttributeType; label: string }[] = [{ value: 'string', label: 'Строка' }, { value: 'text', label: 'Многострочный текст' }, { value: 'integer', label: 'Целое число' }, { value: 'decimal', label: 'Десятичное число' }, { value: 'boolean', label: 'Да / нет' }, { value: 'select', label: 'Список' }, { value: 'multiselect', label: 'Множественный список' }, { value: 'date', label: 'Дата' }]
 const auth = useAuthStore()
-const attributes = ref<Attribute[]>([])
+const attributeList = usePaginatedCollection<Attribute>('Не удалось загрузить характеристики.')
+const { items: attributes, pagination, error, loading } = attributeList
 const groups = ref<AttributeGroup[]>([])
-const pagination = ref<PaginationMeta | null>(null)
-const error = ref('')
 const dialogError = ref('')
 const opened = ref(false)
 const isSaving = ref(false)
@@ -55,24 +54,25 @@ function open(attribute: Attribute | null = null): void {
   queueMicrotask(() => { opened.value = true; void nextTick(() => dialog.value?.querySelector<HTMLInputElement>('input')?.focus()) })
 }
 function closeDialog(): void { opened.value = false; void nextTick(() => dialogOpener.value?.focus()) }
-async function load(page = pagination.value?.current_page ?? 1): Promise<void> { try { const [attributePage, attributeGroups] = await Promise.all([getAttributes({ page }), getAllAttributeGroups()]); attributes.value = attributePage.data; pagination.value = attributePage.meta; groups.value = attributeGroups } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить характеристики.' } }
+async function load(page = pagination.value?.current_page ?? 1): Promise<void> { const response = await attributeList.load(page, async (requestedPage) => { const [attributePage, attributeGroups] = await Promise.all([getAttributes({ page: requestedPage }), getAllAttributeGroups()]); return { ...attributePage, attributeGroups } }); if (response) groups.value = response.attributeGroups }
 async function save(): Promise<void> { isSaving.value = true; dialogError.value = ''; try { await saveAttribute(editing.value?.id ?? null, form.value); closeDialog(); await load() } catch (reason) { dialogError.value = reason instanceof Error ? reason.message : 'Не удалось сохранить характеристику.' } finally { isSaving.value = false } }
-async function remove(): Promise<void> { if (!deleting.value) return; isDeleting.value = true; try { await deleteAttribute(deleting.value.id); deleting.value = null; await load() } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось удалить характеристику.' } finally { isDeleting.value = false } }
+async function remove(): Promise<void> { if (!deleting.value) return; isDeleting.value = true; try { await deleteAttribute(deleting.value.id); deleting.value = null; const response = await attributeList.reloadAfterDeletion(async (page) => { const [attributePage, attributeGroups] = await Promise.all([getAttributes({ page }), getAllAttributeGroups()]); return { ...attributePage, attributeGroups } }); if (response) groups.value = response.attributeGroups } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось удалить характеристику.' } finally { isDeleting.value = false } }
 onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
+  <section class="mx-auto admin-page" :aria-busy="loading">
     <div class="mb-7 flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold text-gray-900">Характеристики</h1></div>
       <button v-if="canManage" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white sm:justify-start" @click="open()"><Plus :size="18" />Добавить</button>
     </div>
     <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
+    <p v-if="loading" class="sr-only" role="status">Загрузка характеристик…</p>
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
       <div v-if="attributes.length" class="divide-y divide-gray-100"><article v-for="attribute in attributes" :key="attribute.id" class="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center sm:gap-4"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"><ListFilter :size="20" /></span><div class="min-w-0 flex-[1_1_calc(100%-52px)] sm:flex-1"><div class="flex flex-wrap items-center gap-x-1.5 gap-y-1"><h2 class="font-semibold text-gray-800">{{ attribute.name }}<span v-if="attribute.unit" class="font-medium text-gray-500"> ({{ attribute.unit }})</span><span v-if="attribute.is_required" class="ml-1 text-error-500" title="Обязательная характеристика">*</span></h2><span v-if="groupName(attribute)" class="rounded-full bg-blue-light-50 px-2 py-0.5 text-xs font-medium text-blue-light-500">Группа: {{ groupName(attribute) }}</span><span v-if="attribute.is_filterable" class="rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-500">В фильтрах</span><span v-if="attribute.is_visible_on_product_page" class="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">На странице товара</span></div><p class="mt-0.5 text-sm text-gray-500">{{ types.find(type => type.value === attribute.type)?.label }} · /{{ attribute.slug }} · значений: {{ attribute.options.length }}</p></div><div v-if="canManage" class="ml-[52px] flex gap-1 sm:ml-0"><button class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600" title="Редактировать характеристику" @click="open(attribute)"><Pencil :size="17" /></button><button class="rounded-lg p-2 text-gray-500 hover:bg-error-50 hover:text-error-500" title="Удалить характеристику" @click="deleting = attribute"><Trash2 :size="17" /></button></div></article></div>
       <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Характеристик пока нет.</div>
     </div>
-    <PaginationControls v-if="pagination" :meta="pagination" @change="load" />
+    <PaginationControls v-if="pagination" :meta="pagination" :loading="loading" @change="load" />
     <div v-if="opened" class="fixed inset-0 z-50 grid place-items-center bg-gray-900/50 p-4" @click.self="closeDialog">
       <form ref="dialog" class="admin-dialog-content w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="attribute-dialog-title" @keydown.esc.prevent="closeDialog" @submit.prevent="save">
         <div class="flex items-start justify-between"><div><h2 id="attribute-dialog-title" class="text-lg font-bold text-gray-900">{{ title }}</h2><p class="mt-1 text-sm text-gray-500">Укажите тип значения и варианты выбора, если они нужны.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50" aria-label="Закрыть окно характеристики" @click="closeDialog"><X :size="20" /></button></div>
