@@ -52,6 +52,12 @@ assignments; deleting a staff account or role removes its pivot rows.
 - sort_order
 - timestamps
 
+`image_id` is a nullable Catalog-phase placeholder, not an active media foreign key and not a raw
+storage path. `TASK-096` (Phase 7) owns the `media` entity, the migration that turns this placeholder
+into an enforced managed-media relationship, and its replacement/deletion lifecycle. Until then the
+Catalog API does not accept or expose category image management. Category SEO is intentionally absent
+from this table; `TASK-100` (Phase 8) owns it through the separate `seo_metadata` layer.
+
 ### attribute_groups
 Группы характеристик.
 
@@ -98,6 +104,12 @@ option label is the human-readable color name and its option code may be a HEX v
 Бренды. TASK-035 хранит уникальные `name` и `slug`, необязательное описание,
 двухбуквенный ISO 3166-1 alpha-2 `country_code` страны происхождения, будущую ссылку
 `logo_id` и флаг `is_active`.
+
+`logo_id` is a nullable Catalog-phase placeholder with no active foreign key and no raw storage-path
+semantics. `TASK-096` (Phase 7) owns the media table, the enforced relationship and lifecycle for the
+logo, and a separate attachment relationship for reusable brand/catalog documents. The singular
+`logo_id` must not be overloaded as a document association. Brand SEO columns are intentionally
+absent; `TASK-100` (Phase 8) owns brand metadata through the separate `seo_metadata` layer.
 
 ### products
 TASK-036 creates the base product card: a required `category_id`, optional `brand_id`, name,
@@ -211,9 +223,22 @@ relations.
 
 ### media
 
+Owned by `TASK-096` (Phase 7). Besides content assets, this entity supplies managed category images,
+brand logos, and reusable brand/catalog documents. The task must reconcile the existing nullable
+`categories.image_id` and `brands.logo_id` placeholders by adding valid relationships and explicit
+replacement/deletion behavior. Before adding foreign keys, its migration must define how every
+pre-existing non-null value is mapped, backfilled, nulled, or rejected and must define the on-delete
+semantics. Documents require their own association, cardinality, role/order, and lifecycle instead
+of overloading `brands.logo_id`. The task must not preserve unconstrained IDs or file paths.
+
 ## SEO
 
 ### seo_metadata
+
+Owned by `TASK-100` (Phase 8) as the single managed metadata layer for products, categories, and
+brands. Category/brand SEO title and meta description are not Catalog-table columns. `TASK-100` must
+define the entity association, constraints, permissions, validation, API/Admin behavior, and any
+legacy-field migration before exposing the metadata.
 
 ### redirects
 

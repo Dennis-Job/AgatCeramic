@@ -88,7 +88,7 @@
 - [x] TASK-041N Add catalog identifiers and units required for products and variants
   - Define product-versus-variant ownership for article numbers, barcodes, and units of measure.
   - Add database constraints, CRUD/search behavior, Admin fields, OpenAPI documentation, and tests.
-- [ ] TASK-041O Trace deferred Catalog media and SEO requirements to their delivery phases
+- [x] TASK-041O Trace deferred Catalog media and SEO requirements to their delivery phases
   - Explicitly map category images and brand logos/documents to the Media Library work in Phase 7.
   - Explicitly map category and brand SEO fields to Phase 8 and reconcile placeholder database fields with the documented plan.
   - Update requirements/task documentation so no Catalog requirement is left without an owner.
@@ -153,16 +153,30 @@
 - [ ] TASK-094 Stores
 - [ ] TASK-095 Working hours
 - [ ] TASK-096 Media library
+  - Deliver category images and brand logos through managed media references, replacing the
+    Catalog-phase `categories.image_id` and `brands.logo_id` placeholders with enforced media
+    relationships and lifecycle rules.
+  - Deliver reusable brand/catalog documents and file attachments through the same media layer;
+    define their attachment association, cardinality, role/order, and lifecycle without overloading
+    the singular brand `logo_id` or adding unmanaged file paths/a Catalog-owned upload subsystem.
+  - Before adding foreign keys, define and execute a safe policy for every pre-existing non-null
+    placeholder value (map, backfill, null, or reject), including explicit on-delete behavior.
 
 ## Phase 8 — SEO
 
 - [ ] TASK-100 SEO metadata
-- [ ] TASK-101 Canonical
-- [ ] TASK-102 Sitemap
-- [ ] TASK-103 Robots
-- [ ] TASK-104 Redirects
-- [ ] TASK-105 Structured data
-- [ ] TASK-106 SEO AI draft generation
+  - Create the separate managed SEO layer required for products, categories, and brands, including
+    title, meta description, OG title, OG description, and a managed-media OG image reference; do
+    not duplicate those values in Catalog tables.
+  - Define the entity relationship, permissions, validation, API/Admin CRUD, and migration policy
+    for any legacy SEO fields before they can be exposed; current Catalog tables have no SEO
+    placeholder columns.
+- [ ] TASK-101 Canonical for products, categories, brands, and other indexable entities
+- [ ] TASK-102 Sitemap generation for indexable catalog entities and content
+- [ ] TASK-103 Robots metadata/directives and robots.txt behavior
+- [ ] TASK-104 Redirects, including redirects required by catalog slug changes
+- [ ] TASK-105 Structured data for products, categories, brands, and other supported entities
+- [ ] TASK-106 SEO AI draft generation for the managed SEO workflow
 
 ## Phase 9 — Analytics
 

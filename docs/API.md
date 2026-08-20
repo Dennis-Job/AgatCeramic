@@ -272,6 +272,10 @@ without permitted values.
 в транзакции, поэтому клиенту следует обработать `422`, если параллельное изменение сделало выбранного
 родителя недопустимым.
 
+`image_id` and SEO fields are intentionally unavailable in category requests and responses. Category
+images are owned by `TASK-096` (Phase 7), while category metadata is owned by `TASK-100` and the
+related SEO tasks (Phase 8); clients must not send placeholder IDs before those contracts exist.
+
 ```json
 POST /api/v1/admin/categories
 {
@@ -324,6 +328,11 @@ POST /api/v1/admin/attribute-groups
 `country_code` — ISO 3166-1 alpha-2 в верхнем регистре, например `IT`. `is_active` управляет
 доступностью бренда на витрине и по умолчанию включён. Удаление бренда не удаляет товары: связанные
 товары сохраняются без бренда.
+
+`logo_id`, document attachments, and SEO fields are intentionally unavailable in brand requests and
+responses. Logos and documents are owned by `TASK-096` (Phase 7), while brand metadata is owned by
+`TASK-100` and the related SEO tasks (Phase 8); clients must not send placeholder IDs before those
+contracts exist.
 
 ```json
 PATCH /api/v1/admin/brands/8
