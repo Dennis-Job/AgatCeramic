@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ProductManagementService
@@ -14,6 +13,7 @@ class ProductManagementService
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly CatalogAttributeIntegrityService $integrityService,
+        private readonly StorageCleanupService $storageCleanupService,
     ) {}
 
     /** @param array<string, mixed> $attributes */
@@ -65,17 +65,15 @@ class ProductManagementService
 
     public function delete(User $actor, Product $product): void
     {
-        $images = DB::transaction(function () use ($actor, $product): array {
+        DB::transaction(function () use ($actor, $product): void {
             $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $images = $product->images()->get(['disk', 'path'])->all();
             $this->auditLogService->record($actor, 'product.deleted', $product);
+            foreach ($images as $image) {
+                $this->storageCleanupService->schedule($image->disk, $image->path);
+            }
             $product->delete();
 
-            return $images;
         });
-
-        foreach ($images as $image) {
-            Storage::disk($image->disk)->delete($image->path);
-        }
     }
 }

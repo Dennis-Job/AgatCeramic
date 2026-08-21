@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Jobs\DeleteStoredFile;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
@@ -11,6 +12,7 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\ProductVariantAttributeValue;
 use App\Models\Role;
+use App\Models\StorageCleanupTask;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -146,6 +148,9 @@ class ProductManagementTest extends TestCase
         $this->actingAs($actor)->deleteJson("/api/v1/admin/products/{$product->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('product_images', ['product_id' => $product->id]);
+        StorageCleanupTask::query()->whereIn('path', $paths)->each(
+            fn (StorageCleanupTask $task) => (new DeleteStoredFile($task->id))->handle()
+        );
         foreach ($paths as $path) {
             Storage::disk('public')->assertMissing($path);
         }
@@ -174,6 +179,9 @@ class ProductManagementTest extends TestCase
 
         $this->actingAs($actor)->deleteJson("/api/v1/admin/products/{$product->id}")->assertNoContent();
 
+        StorageCleanupTask::query()->whereIn('path', collect($images)->pluck('path'))->each(
+            fn (StorageCleanupTask $task) => (new DeleteStoredFile($task->id))->handle()
+        );
         foreach ($images as $image) {
             Storage::disk($image['disk'])->assertMissing($image['path']);
         }

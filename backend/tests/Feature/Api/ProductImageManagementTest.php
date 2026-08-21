@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Api;
 
+use App\Jobs\DeleteStoredFile;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Role;
+use App\Models\StorageCleanupTask;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -54,6 +56,8 @@ class ProductImageManagementTest extends TestCase
         $this->actingAs($actor)->deleteJson("/api/v1/admin/products/{$product->id}/images/{$firstId}")->assertNoContent();
 
         $this->assertDatabaseMissing('product_images', ['id' => $firstId]);
+        $cleanupTask = StorageCleanupTask::query()->where('disk', 'public')->where('path', $firstPath)->sole();
+        (new DeleteStoredFile($cleanupTask->id))->handle();
         Storage::disk('public')->assertMissing($firstPath);
         $this->assertDatabaseHas('product_images', ['id' => $secondId, 'is_primary' => true]);
         $this->assertDatabaseHas('audit_logs', ['action' => 'product.image-uploaded', 'entity_id' => $firstId]);

@@ -20,6 +20,28 @@ Docker перезапускает его. Это позволяет подхва
 TASK-029B registers the daily `audit:prune` command. It permanently removes audit records older
 than the configured five-year retention period.
 
+## Durable storage cleanup
+
+Product and product-image deletion writes one `storage_cleanup_tasks` record per
+file in the same database transaction that removes the catalog row. A
+`DeleteStoredFile` job is dispatched only after commit, so a storage or Redis
+failure cannot lose the cleanup intent or roll back an already accepted catalog
+deletion. Jobs are idempotent, record attempt count, last error and completion
+time, and use Laravel's normal retry/`failed_jobs` handling.
+
+The scheduler runs `storage-cleanup:retry` every five minutes. It redispatches
+eligible pending/failed records and recovers tasks left behind by queue outages.
+Operators can inspect and trigger a bounded batch manually:
+
+```powershell
+docker compose exec backend php artisan storage-cleanup:retry --limit=100
+```
+
+The command prints the dispatched count and a status summary. Persistent
+`pending` or `failed` rows, increasing `attempts`, and populated `last_error`
+values are the operational signal to investigate the configured disk before
+retrying. Completed rows are retained as cleanup history.
+
 ## Локальный запуск
 
 Запустите окружение:

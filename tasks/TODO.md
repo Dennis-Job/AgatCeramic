@@ -106,7 +106,7 @@
 - [x] TASK-041S Add real PostgreSQL concurrency regression tests for Catalog invariants
   - Exercise competing transactions for primary images, product deletion versus image uploads, reverse relations, and category-tree mutations.
   - Run these tests against PostgreSQL in CI rather than relying on sequential SQLite coverage.
-- [ ] TASK-041T Make product image storage cleanup durable and retryable
+- [x] TASK-041T Make product image storage cleanup durable and retryable
   - Handle storage deletion failures without silently leaving orphaned files or skipping remaining disks/files.
   - Add an idempotent retry/outbox/queue cleanup mechanism with operational visibility and tests.
 - [ ] TASK-041U Stabilize shared backend test factories used by the Catalog suite

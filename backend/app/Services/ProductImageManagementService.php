@@ -8,11 +8,13 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ProductImageManagementService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly StorageCleanupService $storageCleanupService,
+    ) {}
 
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, Product $product, UploadedFile $file, array $attributes): ProductImage
@@ -40,7 +42,7 @@ class ProductImageManagementService
                 return $image;
             });
         } catch (\Throwable $exception) {
-            Storage::disk('public')->delete($path);
+            $this->storageCleanupService->schedule('public', $path);
             throw $exception;
         }
     }
@@ -81,12 +83,12 @@ class ProductImageManagementService
                 ? $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first()
                 : null;
             $this->auditLogService->record($actor, 'product.image-deleted', $image);
+            $this->storageCleanupService->schedule($image->disk, $image->path);
             $image->delete();
             $replacement?->update(['is_primary' => true]);
 
             return $image;
         });
 
-        Storage::disk($image->disk)->delete($image->path);
     }
 }
