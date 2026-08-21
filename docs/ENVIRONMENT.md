@@ -64,6 +64,8 @@ the explicit `--force` option. Do not pass a password with `--password` except f
 local development environment, because command-line arguments can be visible to other local
 processes.
 
-Тесты Laravel изолированно работают с SQLite `:memory:`, а CI дополнительно прогоняет миграции на PostgreSQL 17.
+Основные тесты Laravel изолированно работают с SQLite `:memory:`. CI дополнительно прогоняет
+миграции и отдельные integration tests на PostgreSQL 17, включая реальные конкурентные транзакции
+Catalog в независимых PHP-процессах.
 
 Подключение Redis реализуется в TASK-011.

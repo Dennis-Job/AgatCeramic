@@ -102,6 +102,18 @@ jobs:
           DB_SSLMODE: prefer
         run: php artisan test tests/Integration/PostgresAuditLogImmutabilityTest.php
 
+      - name: Test PostgreSQL Catalog concurrency invariants
+        env:
+          CI: "true"
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: agatceramic_test
+          DB_USERNAME: agatceramic
+          DB_PASSWORD: ci-only-password
+          DB_SSLMODE: prefer
+        run: php artisan test tests/Integration/PostgresCatalogConcurrencyTest.php
+
       - name: Verify Redis cache connection
         env:
           CACHE_STORE: redis

@@ -21,7 +21,10 @@ vendor/bin/pint --test
 
 PostgreSQL is the default application database. Set the `DB_*` values in `backend/.env`; when Laravel runs through Docker Compose, those values are supplied by the root `.env` and the database host is `postgres`.
 
-The automated test suite continues to use an in-memory SQLite database for fast, isolated tests. CI additionally runs all migrations against PostgreSQL 17 to catch database-specific incompatibilities.
+The automated test suite continues to use an in-memory SQLite database for fast, isolated tests.
+CI additionally runs all migrations and dedicated integration tests against PostgreSQL 17. The
+PostgreSQL-only Catalog suite uses independent processes/connections to exercise real competing
+transactions for image, relation, product-deletion, and category-tree invariants.
 
 Redis is configured as the default cache store. The application API is versioned under
 `/api/v1`; public and administrative route declarations live in
