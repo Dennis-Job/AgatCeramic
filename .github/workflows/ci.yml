@@ -127,8 +127,10 @@ jobs:
           throw_unless(config('queue.default') === 'redis');
           throw_unless(app('queue')->connection()->size() >= 0);"
 
-      - name: Run tests
-        run: composer test
+      - name: Run tests twice
+        run: |
+          composer test
+          composer test
 
   admin:
     name: Admin checks

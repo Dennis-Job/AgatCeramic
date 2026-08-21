@@ -109,7 +109,7 @@
 - [x] TASK-041T Make product image storage cleanup durable and retryable
   - Handle storage deletion failures without silently leaving orphaned files or skipping remaining disks/files.
   - Add an idempotent retry/outbox/queue cleanup mechanism with operational visibility and tests.
-- [ ] TASK-041U Stabilize shared backend test factories used by the Catalog suite
+- [x] TASK-041U Stabilize shared backend test factories used by the Catalog suite
   - Prevent `RoleFactory` from generating names that collide with seeded system roles.
   - Add a regression check proving repeated full-suite runs remain deterministic.
 

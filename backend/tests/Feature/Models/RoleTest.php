@@ -32,4 +32,21 @@ class RoleTest extends TestCase
         $this->assertDatabaseHas('roles', ['slug' => 'super-admin', 'name' => 'Супер Администратор']);
         $this->assertDatabaseHas('roles', ['slug' => 'analyst', 'name' => 'Аналитик']);
     }
+
+    public function test_factory_roles_do_not_collide_with_seeded_system_roles(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $roles = Role::factory()->count(25)->create();
+
+        $this->assertCount(25, $roles);
+        $this->assertTrue($roles->every(
+            static fn (Role $role): bool => str_starts_with($role->name, 'Test role ')
+                && str_starts_with($role->slug, 'test-role-')
+                && ! $role->is_system
+        ));
+        $this->assertSame(32, Role::query()->count());
+        $this->assertDatabaseHas('roles', ['slug' => 'super-admin', 'name' => 'Супер Администратор', 'is_system' => true]);
+        $this->assertDatabaseHas('roles', ['slug' => 'analyst', 'name' => 'Аналитик', 'is_system' => true]);
+    }
 }

@@ -16,11 +16,11 @@ class RoleFactory extends Factory
      */
     public function definition(): array
     {
-        $name = fake()->unique()->jobTitle();
+        $identifier = (string) Str::uuid();
 
         return [
-            'name' => $name,
-            'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
+            'name' => "Test role {$identifier}",
+            'slug' => "test-role-{$identifier}",
             'description' => fake()->sentence(),
         ];
     }

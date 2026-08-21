@@ -7,12 +7,15 @@ Workflow получает только право `contents: read` и не ис�
 
 | Job | Проверки |
 | --- | --- |
-| Backend checks | Composer manifest и audit, Laravel Pint, быстрые PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
+| Backend checks | Composer manifest и audit, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Admin checks | `npm ci`, audit production-зависимостей, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose configuration | Валидация `compose.yaml` с `.env.example` |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+Два последовательных запуска полного backend test suite защищают общие factory и другое
+состояние тестовой инфраструктуры от недетерминированных коллизий между прогонами.
 
 PostgreSQL integration suite отдельно проверяет неизменяемость audit log и реальные конкурентные
 транзакции Catalog. Concurrency-тесты используют независимые PHP-процессы и соединения, подтверждают
