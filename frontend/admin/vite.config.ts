@@ -1,4 +1,5 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vite'
+import type { ViteUserConfigExport } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -10,4 +11,4 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     restoreMocks: true,
   },
-})
+} as ViteUserConfigExport)
