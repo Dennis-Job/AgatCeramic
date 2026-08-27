@@ -119,6 +119,28 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Редактировать товар' })).toBeFocused()
 })
 
+test('dialog stays open when text selection leaves the panel and still closes on an intentional backdrop click', async ({ page }) => {
+  await mockCatalogApi(page)
+  await page.goto('/products')
+  await page.getByRole('button', { name: 'Редактировать товар' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+  const nameInput = dialog.getByLabel('Название')
+  const inputBox = await nameInput.boundingBox()
+  expect(inputBox).not.toBeNull()
+
+  await page.mouse.move(inputBox!.x + inputBox!.width / 2, inputBox!.y + inputBox!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(5, 5)
+  await page.mouse.up()
+
+  await expect(dialog).toBeVisible()
+  await expect(nameInput).toHaveValue('Монте Тиберио')
+
+  await page.mouse.click(5, 5)
+  await expect(dialog).toBeHidden()
+})
+
 for (const width of [320, 640, 768, 1024, 1280]) {
   test(`product editor remains usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })

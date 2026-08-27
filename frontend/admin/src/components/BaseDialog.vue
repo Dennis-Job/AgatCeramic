@@ -20,6 +20,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ close: [] }>()
 const panel = ref<HTMLElement | null>(null)
 let opener: HTMLElement | null = null
+let backdropPointerId: number | null = null
 
 const focusableSelector = [
   'button:not([disabled])',
@@ -36,6 +37,20 @@ function focusableElements(): HTMLElement[] {
 
 function requestClose(): void {
   if (!props.closeDisabled && !props.suspended) emit('close')
+}
+
+function handleBackdropPointerDown(event: PointerEvent): void {
+  backdropPointerId = event.target === event.currentTarget && event.button === 0 ? event.pointerId : null
+}
+
+function handleBackdropPointerUp(event: PointerEvent): void {
+  const shouldClose = backdropPointerId === event.pointerId && event.target === event.currentTarget
+  backdropPointerId = null
+  if (shouldClose) requestClose()
+}
+
+function resetBackdropPointer(): void {
+  backdropPointerId = null
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -88,7 +103,9 @@ onBeforeUnmount(() => {
     :class="overlayClass"
     :aria-hidden="suspended ? 'true' : undefined"
     :inert="suspended ? true : undefined"
-    @click.self="requestClose"
+    @pointerdown="handleBackdropPointerDown"
+    @pointerup="handleBackdropPointerUp"
+    @pointercancel="resetBackdropPointer"
     @keydown="handleKeydown"
   >
     <section

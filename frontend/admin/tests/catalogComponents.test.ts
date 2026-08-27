@@ -1,7 +1,35 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, test } from 'vitest'
 import BaseSelect from '../src/components/BaseSelect.vue'
+import BaseDialog from '../src/components/BaseDialog.vue'
 import PaginationControls from '../src/components/PaginationControls.vue'
+
+describe('BaseDialog', () => {
+  test('does not close when a text-selection drag starts inside the panel and ends on the backdrop', async () => {
+    const wrapper = mount(BaseDialog, {
+      props: { open: true, labelledby: 'dialog-title' },
+      slots: { default: '<h2 id="dialog-title">Редактирование</h2><input value="Текст для выделения">' },
+    })
+
+    await wrapper.get('input').trigger('pointerdown')
+    await wrapper.get('.fixed.inset-0').trigger('pointerup')
+
+    expect(wrapper.emitted('close')).toBeUndefined()
+  })
+
+  test('closes only after a complete primary-pointer action on the backdrop', async () => {
+    const wrapper = mount(BaseDialog, {
+      props: { open: true, labelledby: 'dialog-title' },
+      slots: { default: '<h2 id="dialog-title">Подтверждение</h2>' },
+    })
+    const backdrop = wrapper.get('.fixed.inset-0')
+
+    await backdrop.trigger('pointerdown')
+    await backdrop.trigger('pointerup')
+
+    expect(wrapper.emitted('close')).toEqual([[]])
+  })
+})
 
 describe('BaseSelect', () => {
   test('filters options and emits the selected value with accessible names', async () => {
