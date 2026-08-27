@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['attribute_group_id', 'name', 'slug', 'type', 'unit', 'is_filterable', 'is_required', 'is_visible_on_product_page', 'sort_order'])]
+#[Fillable(['attribute_group_id', 'name', 'slug', 'type', 'unit', 'is_filterable', 'is_visible_on_product_page', 'sort_order'])]
 class Attribute extends Model
 {
     /** @use HasFactory<AttributeFactory> */
@@ -48,7 +48,6 @@ class Attribute extends Model
     {
         return [
             'is_filterable' => 'boolean',
-            'is_required' => 'boolean',
             'is_visible_on_product_page' => 'boolean',
             'sort_order' => 'integer',
         ];

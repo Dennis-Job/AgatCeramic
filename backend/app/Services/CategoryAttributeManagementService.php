@@ -14,14 +14,17 @@ class CategoryAttributeManagementService
         private readonly CatalogAttributeIntegrityService $integrityService,
     ) {}
 
-    /** @param array<int, array{id: int, sort_order?: int}> $attributes */
+    /** @param array<int, array{id: int, sort_order?: int, is_required?: bool}> $attributes */
     public function replace(User $actor, Category $category, array $attributes): Category
     {
         return DB::transaction(function () use ($actor, $category, $attributes): Category {
             $category = Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
             $category->products()->orderBy('id')->lockForUpdate()->get();
             $assignments = collect($attributes)->mapWithKeys(static fn (array $attribute, int $index): array => [
-                $attribute['id'] => ['sort_order' => $attribute['sort_order'] ?? $index],
+                $attribute['id'] => [
+                    'sort_order' => $attribute['sort_order'] ?? $index,
+                    'is_required' => $attribute['is_required'] ?? false,
+                ],
             ])->all();
             $attributeIdsToLock = $category->attributes()->pluck('attributes.id')->merge(array_keys($assignments))->unique()->sort()->values();
             Attribute::query()->whereIn('id', $attributeIdsToLock->all())->orderBy('id')->lockForUpdate()->get();

@@ -36,6 +36,10 @@ class ProductManagementTest extends TestCase
             'name' => 'Marble White 60x60',
             'slug' => 'marble-white-60x60',
             'description' => 'Porcelain tile.',
+            'sku' => 'MARBLE-WHITE-6060',
+            'unit' => 'square_meter',
+            'price' => '1990.00',
+            'stock_quantity' => 12,
             'is_active' => true,
         ])->assertCreated()
             ->assertJsonPath('data.category.id', $category->id)
@@ -97,22 +101,11 @@ class ProductManagementTest extends TestCase
         $actor = $this->userWithRole('catalog-manager');
         $source = Category::factory()->create();
         $target = Category::factory()->create();
-        $required = Attribute::factory()->create(['is_required' => true]);
-        $source->attributes()->attach($required->id);
-        $target->attributes()->attach($required->id);
+        $required = Attribute::factory()->create();
+        $source->attributes()->attach($required->id, ['is_required' => true]);
+        $target->attributes()->attach($required->id, ['is_required' => true]);
         $product = Product::factory()->create(['category_id' => $source->id]);
 
-        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}", [
-            'category_id' => $target->id,
-        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['category_id']]]);
-
-        $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/variants", [
-            'name' => 'Variant',
-            'sku' => 'REQUIRED-VARIANT-ONLY',
-            'unit' => 'piece',
-            'price' => '100.00',
-            'attribute_values' => [['attribute_id' => $required->id, 'value' => 'variant-only']],
-        ])->assertCreated();
         $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}", [
             'category_id' => $target->id,
         ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['category_id']]]);

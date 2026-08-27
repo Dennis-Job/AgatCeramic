@@ -20,7 +20,7 @@ class ReplaceProductAttributeValuesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'attributes' => ['required', 'array', 'max:500'],
+            'attributes' => ['present', 'array', 'max:500'],
             'attributes.*' => ['required', 'array:attribute_id,value'],
             'attributes.*.attribute_id' => ['required', 'integer', 'distinct', 'exists:attributes,id'],
             'attributes.*.value' => ['present'],
@@ -32,7 +32,7 @@ class ReplaceProductAttributeValuesRequest extends FormRequest
         return [function (Validator $validator): void {
             /** @var Product $product */
             $product = $this->route('product');
-            $this->validateCategoryAttributeValues($validator, $product, $this->input('attributes', []), 'attributes', true);
+            $this->validateCategoryAttributeValues($validator, $product, $this->input('attributes', []), 'attributes', $product->is_active);
         }];
     }
 }

@@ -1557,7 +1557,7 @@
             "patch": {
                 "operationId": "updateAttribute",
                 "summary": "Update an attribute and optionally replace its options",
-                "description": "Type and full option-set changes are atomic. Returns 422 without changing the attribute, options, values, or audit log when any existing product or variant value would become invalid. Compatible conversions, option additions, label/order changes, and removal of unused option values are allowed.",
+                "description": "Type and full option-set changes are atomic. Returns 422 without changing the attribute, options, values, or audit log when an existing product or legacy migration value would become invalid. Compatible conversions, option additions, label/order changes, and removal of unused option values are allowed.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1601,7 +1601,7 @@
             "delete": {
                 "operationId": "deleteAttribute",
                 "summary": "Delete an attribute and its options",
-                "description": "Returns 422 without deleting anything when product or variant values still reference the attribute.",
+                "description": "Returns 422 without deleting anything when product or legacy migration values still reference the attribute.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1628,7 +1628,7 @@
             "put": {
                 "operationId": "putUpdateAttribute",
                 "summary": "Replace: Update an attribute and optionally replace its options",
-                "description": "Type and full option-set changes are atomic. Returns 422 without changing the attribute, options, values, or audit log when any existing product or variant value would become invalid. Compatible conversions, option additions, label/order changes, and removal of unused option values are allowed.",
+                "description": "Type and full option-set changes are atomic. Returns 422 without changing the attribute, options, values, or audit log when an existing product or legacy migration value would become invalid. Compatible conversions, option additions, label/order changes, and removal of unused option values are allowed.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1714,7 +1714,7 @@
             "put": {
                 "operationId": "replaceCategoryAttributes",
                 "summary": "Replace attributes assigned to a category",
-                "description": "Atomically replaces category assignments. Returns 422 without changing assignments when a removed attribute is used by a category product or variant.",
+                "description": "Atomically replaces category assignments, including per-assignment requiredness. Returns 422 without changing assignments when a removed attribute is used by a category product.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1800,7 +1800,7 @@
             "put": {
                 "operationId": "replaceCategoryAttributeGroups",
                 "summary": "Replace attribute groups assigned to a category",
-                "description": "Atomically replaces group assignments and detaches attributes from removed groups. Returns 422 without changing either set when an implicitly detached attribute is used by a category product or variant.",
+                "description": "Atomically replaces group assignments and detaches attributes from removed groups. Returns 422 without changing either set when an implicitly detached attribute is used by a category product.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1846,7 +1846,7 @@
             "get": {
                 "operationId": "listProducts",
                 "summary": "List products",
-                "description": "Search matches product name or slug and variant name, SKU, article number, or barcode by case-insensitive substring.",
+                "description": "Search matches standalone product name, slug, SKU, article number, or barcode by case-insensitive substring. Price and stock filters apply directly to products.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -1861,7 +1861,14 @@
                             "type": "string",
                             "maxLength": 255
                         }
-                    }
+                    },
+                    {"name": "category_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "brand_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "is_active", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "has_stock", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "price_from", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},
+                    {"name": "price_to", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},
+                    {"name": "per_page", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1, "maximum": 100}}
                 ],
                 "responses": {
                     "200": {
@@ -1967,7 +1974,7 @@
             "patch": {
                 "operationId": "updateProduct",
                 "summary": "Update a product",
-                "description": "A category change is atomic and returns 422 when the destination omits an attribute used by the product or a variant, or when a required destination attribute has no product value. Existing attribute values are never removed automatically.",
+                "description": "A category change is atomic and returns 422 when the destination omits an attribute used by the product. Missing assignment-required values are allowed only while inactive; activation returns 422 until all required values are valid.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -2035,7 +2042,7 @@
             "put": {
                 "operationId": "putUpdateProduct",
                 "summary": "Replace: Update a product",
-                "description": "A category change is atomic and returns 422 when the destination omits an attribute used by the product or a variant, or when a required destination attribute has no product value. Existing attribute values are never removed automatically.",
+                "description": "A category change is atomic and returns 422 when the destination omits an attribute used by the product. Missing assignment-required values are allowed only while inactive; activation returns 422 until all required values are valid.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -2077,241 +2084,81 @@
                 }
             }
         },
-        "/admin/products/{product}/variants": {
-            "parameters": [
-                {
-                    "name": "product",
-                    "in": "path",
-                    "required": true,
-                    "schema": {
-                        "type": "integer"
-                    }
-                }
-            ],
+        "/admin/product-groups": {
             "get": {
-                "operationId": "listProductVariants",
-                "summary": "List product variants",
-                "security": [
-                    {
-                        "sanctumSession": []
-                    }
-                ],
+                "operationId": "listProductGroups",
+                "summary": "List product variation groups",
+                "security": [{"sanctumSession": []}],
                 "responses": {
-                    "200": {
-                        "description": "Product variants",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductVariantCollection"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthenticated"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    }
+                    "200": {"description": "Paginated product groups", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductGroupCollection"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"}
                 }
             },
             "post": {
-                "operationId": "createProductVariant",
-                "summary": "Create a product variant",
-                "security": [
-                    {
-                        "sanctumSession": []
-                    }
-                ],
+                "operationId": "createProductGroup",
+                "summary": "Create a product variation group",
+                "description": "Requires at least two same-category and same-brand standalone products, scalar category-assigned axes, unique axis tuples, and equal non-axis attributes.",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StoreProductGroupRequest"}}}},
                 "responses": {
-                    "201": {
-                        "description": "Created product variant",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductVariantResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthenticated"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationFailed"
-                    }
-                },
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/StoreProductVariantRequest"
-                            }
-                        }
-                    }
+                    "201": {"description": "Created product group", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductGroupResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
                 }
             }
         },
-        "/admin/products/{product}/variants/{variant}": {
-            "parameters": [
-                {
-                    "name": "product",
-                    "in": "path",
-                    "required": true,
-                    "schema": {
-                        "type": "integer"
-                    }
-                },
-                {
-                    "name": "variant",
-                    "in": "path",
-                    "required": true,
-                    "schema": {
-                        "type": "integer"
-                    }
-                }
-            ],
+        "/admin/product-groups/{product_group}": {
+            "parameters": [{"name": "product_group", "in": "path", "required": true, "schema": {"type": "integer"}}],
             "get": {
-                "operationId": "getProductVariant",
-                "summary": "Get a product variant",
-                "security": [
-                    {
-                        "sanctumSession": []
-                    }
-                ],
+                "operationId": "getProductGroup",
+                "summary": "Get a product variation group",
+                "security": [{"sanctumSession": []}],
                 "responses": {
-                    "200": {
-                        "description": "Product variant",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductVariantResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthenticated"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/NotFound"
-                    }
+                    "200": {"description": "Product group", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductGroupResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"}
                 }
             },
             "patch": {
-                "operationId": "updateProductVariant",
-                "summary": "Update a product variant",
-                "security": [
-                    {
-                        "sanctumSession": []
-                    }
-                ],
+                "operationId": "updateProductGroup",
+                "summary": "Update a product variation group",
+                "description": "Atomically replaces the supplied group definition and revalidates every group invariant.",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateProductGroupRequest"}}}},
                 "responses": {
-                    "200": {
-                        "description": "Updated product variant",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductVariantResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthenticated"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationFailed"
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/NotFound"
-                    }
-                },
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateProductVariantRequest"
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "operationId": "deleteProductVariant",
-                "summary": "Delete a product variant",
-                "security": [
-                    {
-                        "sanctumSession": []
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Product variant deleted"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthenticated"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/NotFound"
-                    }
+                    "200": {"description": "Updated product group", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductGroupResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
                 }
             },
             "put": {
-                "operationId": "putUpdateProductVariant",
-                "summary": "Replace: Update a product variant",
-                "security": [
-                    {
-                        "sanctumSession": []
-                    }
-                ],
+                "operationId": "putUpdateProductGroup",
+                "summary": "Update a product variation group",
+                "description": "Uses the same partial-update validation as PATCH and atomically revalidates every group invariant.",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateProductGroupRequest"}}}},
                 "responses": {
-                    "200": {
-                        "description": "Updated product variant",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductVariantResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthenticated"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationFailed"
-                    },
-                    "404": {
-                        "$ref": "#/components/responses/NotFound"
-                    }
-                },
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateProductVariantRequest"
-                            }
-                        }
-                    }
+                    "200": {"description": "Updated product group", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductGroupResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            },
+            "delete": {
+                "operationId": "deleteProductGroup",
+                "summary": "Delete a product variation group without deleting member products",
+                "security": [{"sanctumSession": []}],
+                "responses": {
+                    "204": {"description": "Deleted product group"},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"}
                 }
             }
         },
@@ -2568,6 +2415,26 @@
                     "404": {
                         "$ref": "#/components/responses/NotFound"
                     }
+                }
+            }
+        },
+        "/admin/products/{product}/relation-candidates": {
+            "parameters": [
+                {"name": "product", "in": "path", "required": true, "schema": {"type": "integer"}},
+                {"name": "search", "in": "query", "required": false, "schema": {"type": "string", "maxLength": 255}},
+                {"name": "limit", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1, "maximum": 50, "default": 20}}
+            ],
+            "get": {
+                "operationId": "listProductRelationCandidates",
+                "summary": "List valid related-product candidates",
+                "description": "Returns an unpaginated product collection excluding the source product and products with an existing outgoing or incoming relation. Search matches name, slug, or SKU.",
+                "security": [{"sanctumSession": []}],
+                "responses": {
+                    "200": {"description": "Candidate products", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductArrayResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
                 }
             }
         },
@@ -3120,7 +2987,11 @@
                 "required": [
                     "category_id",
                     "name",
-                    "slug"
+                    "slug",
+                    "sku",
+                    "unit",
+                    "price",
+                    "stock_quantity"
                 ],
                 "properties": {
                     "category_id": {
@@ -3146,10 +3017,45 @@
                         "type": [
                             "string",
                             "null"
-                        ]
+                        ],
+                        "maxLength": 10000
+                    },
+                    "sku": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+                        "maxLength": 255
+                    },
+                    "article_number": {
+                        "type": ["string", "null"],
+                        "maxLength": 100
+                    },
+                    "barcode": {
+                        "type": ["string", "null"],
+                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": ["piece", "square_meter", "linear_meter", "package", "kilogram", "liter", "set"]
+                    },
+                    "price": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 9999999999.99
+                    },
+                    "old_price": {
+                        "type": ["number", "null"],
+                        "minimum": 0,
+                        "maximum": 9999999999.99,
+                        "description": "When present, must be greater than or equal to price."
+                    },
+                    "stock_quantity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 4294967295
                     },
                     "is_active": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "default": false
                     }
                 },
                 "additionalProperties": false
@@ -3180,7 +3086,41 @@
                         "type": [
                             "string",
                             "null"
-                        ]
+                        ],
+                        "maxLength": 10000
+                    },
+                    "sku": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+                        "maxLength": 255
+                    },
+                    "article_number": {
+                        "type": ["string", "null"],
+                        "maxLength": 100
+                    },
+                    "barcode": {
+                        "type": ["string", "null"],
+                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "enum": ["piece", "square_meter", "linear_meter", "package", "kilogram", "liter", "set"]
+                    },
+                    "price": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 9999999999.99
+                    },
+                    "old_price": {
+                        "type": ["number", "null"],
+                        "minimum": 0,
+                        "maximum": 9999999999.99,
+                        "description": "When present, must be greater than or equal to the resulting price."
+                    },
+                    "stock_quantity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 4294967295
                     },
                     "is_active": {
                         "type": "boolean"
@@ -3280,9 +3220,6 @@
                     "is_filterable": {
                         "type": "boolean"
                     },
-                    "is_required": {
-                        "type": "boolean"
-                    },
                     "is_visible_on_product_page": {
                         "type": "boolean",
                         "default": true
@@ -3347,7 +3284,7 @@
             },
             "UpdateAttributeRequest": {
                 "type": "object",
-                "description": "When supplied for a choice attribute, options is a non-empty full replacement. Without type it is validated against the current stored type. Existing product and variant values must remain valid for the prospective definition.",
+                "description": "When supplied for a choice attribute, options is a non-empty full replacement. Without type it is validated against the current stored type. Existing product and legacy migration values must remain valid for the prospective definition.",
                 "properties": {
                     "attribute_group_id": {
                         "type": [
@@ -3384,9 +3321,6 @@
                         "maxLength": 64
                     },
                     "is_filterable": {
-                        "type": "boolean"
-                    },
-                    "is_required": {
                         "type": "boolean"
                     },
                     "is_visible_on_product_page": {
@@ -3470,6 +3404,10 @@
                                 "sort_order": {
                                     "type": "integer",
                                     "minimum": 0
+                                },
+                                "is_required": {
+                                    "type": "boolean",
+                                    "default": false
                                 }
                             },
                             "additionalProperties": false
@@ -3615,7 +3553,8 @@
                         "type": "boolean"
                     },
                     "is_required": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "Category-assignment requiredness when the resource is returned in category context; false otherwise."
                     },
                     "is_visible_on_product_page": {
                         "type": "boolean"
@@ -3969,7 +3908,15 @@
                     "name",
                     "slug",
                     "description",
+                    "sku",
+                    "article_number",
+                    "barcode",
+                    "unit",
+                    "price",
+                    "old_price",
+                    "stock_quantity",
                     "is_active",
+                    "primary_image",
                     "created_at",
                     "updated_at"
                 ],
@@ -3998,8 +3945,51 @@
                             "null"
                         ]
                     },
+                    "sku": {
+                        "type": ["string", "null"],
+                        "description": "Null only for an unconverted legacy row during the Phase 3.1 migration window."
+                    },
+                    "article_number": {
+                        "type": ["string", "null"]
+                    },
+                    "barcode": {
+                        "type": ["string", "null"]
+                    },
+                    "unit": {
+                        "type": ["string", "null"],
+                        "enum": ["piece", "square_meter", "linear_meter", "package", "kilogram", "liter", "set", null]
+                    },
+                    "price": {
+                        "type": ["string", "null"],
+                        "pattern": "^[0-9]+(?:\\.[0-9]{2})$"
+                    },
+                    "old_price": {
+                        "type": ["string", "null"],
+                        "pattern": "^[0-9]+(?:\\.[0-9]{2})$"
+                    },
+                    "stock_quantity": {
+                        "type": ["integer", "null"]
+                    },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "primary_image": {
+                        "description": "The product-owned primary image, or null when the product has no images.",
+                        "oneOf": [
+                            {"type": "null"},
+                            {"$ref": "#/components/schemas/ProductImage"}
+                        ]
+                    },
+                    "group": {
+                        "oneOf": [
+                            {"type": "null"},
+                            {"$ref": "#/components/schemas/ProductGroupSummary"}
+                        ]
+                    },
+                    "axis_values": {
+                        "description": "Present only when the product is embedded as a product-group member.",
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/ProductAttributeValue"}
                     },
                     "category": {
                         "$ref": "#/components/schemas/Category"
@@ -4059,6 +4049,93 @@
                 },
                 "additionalProperties": false
             },
+            "ProductArrayResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/Product"}}
+                },
+                "additionalProperties": false
+            },
+            "ProductGroupSummary": {
+                "type": "object",
+                "required": ["id", "name", "code"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "code": {"type": "string"}
+                },
+                "additionalProperties": false
+            },
+            "ProductGroup": {
+                "type": "object",
+                "required": ["id", "name", "code", "axes", "products", "created_at", "updated_at"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "code": {"type": "string"},
+                    "axes": {"type": "array", "minItems": 1, "items": {"$ref": "#/components/schemas/ProductGroupAxis"}},
+                    "products": {"type": "array", "minItems": 2, "items": {"$ref": "#/components/schemas/ProductGroupMember"}},
+                    "created_at": {"type": ["string", "null"], "format": "date-time"},
+                    "updated_at": {"type": ["string", "null"], "format": "date-time"}
+                },
+                "additionalProperties": false
+            },
+            "ProductGroupAxis": {
+                "type": "object",
+                "required": ["id", "name", "slug", "type"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "slug": {"type": "string"},
+                    "type": {"type": "string", "enum": ["string", "integer", "decimal", "boolean", "select", "date"]}
+                },
+                "additionalProperties": false
+            },
+            "ProductGroupMember": {
+                "description": "A standalone Product resource plus axis_values containing only this group's selected axis attributes.",
+                "allOf": [
+                    {"$ref": "#/components/schemas/Product"},
+                    {"type": "object", "required": ["axis_values"]}
+                ]
+            },
+            "ProductGroupResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {"data": {"$ref": "#/components/schemas/ProductGroup"}},
+                "additionalProperties": false
+            },
+            "ProductGroupCollection": {
+                "type": "object",
+                "required": ["data", "links", "meta"],
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/ProductGroup"}},
+                    "links": {"type": "object"},
+                    "meta": {"type": "object"}
+                },
+                "additionalProperties": false
+            },
+            "StoreProductGroupRequest": {
+                "type": "object",
+                "required": ["name", "code", "axis_attribute_ids", "product_ids"],
+                "properties": {
+                    "name": {"type": "string", "maxLength": 255},
+                    "code": {"type": "string", "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+                    "axis_attribute_ids": {"type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+                    "product_ids": {"type": "array", "minItems": 2, "maxItems": 500, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}}
+                },
+                "additionalProperties": false
+            },
+            "UpdateProductGroupRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "maxLength": 255},
+                    "code": {"type": "string", "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+                    "axis_attribute_ids": {"type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+                    "product_ids": {"type": "array", "minItems": 2, "maxItems": 500, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}}
+                },
+                "additionalProperties": false
+            },
             "AttributeValue": {
                 "description": "The concrete JSON shape is selected by Attribute.type: string is a non-empty string up to 255 characters; text is a non-empty string up to 10000 characters; integer is a JSON integer; decimal is a finite JSON number; boolean is a JSON boolean; select is one option value (including a HEX color code when the attribute represents a color); multiselect is a non-empty unique array of up to 500 option values; date is a real calendar date in YYYY-MM-DD format. Colors use select options rather than a separate attribute type.",
                 "anyOf": [
@@ -4086,193 +4163,6 @@
                         }
                     }
                 ]
-            },
-            "ProductVariantAttributeValue": {
-                "type": "object",
-                "required": [
-                    "id",
-                    "product_variant_id",
-                    "attribute_id",
-                    "value"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "product_variant_id": {
-                        "type": "integer"
-                    },
-                    "attribute_id": {
-                        "type": "integer"
-                    },
-                    "value": {
-                        "$ref": "#/components/schemas/AttributeValue"
-                    },
-                    "attribute": {
-                        "$ref": "#/components/schemas/Attribute"
-                    }
-                },
-                "additionalProperties": false
-            },
-            "ProductVariantAttributeValueResponse": {
-                "type": "object",
-                "required": [
-                    "data"
-                ],
-                "properties": {
-                    "data": {
-                        "$ref": "#/components/schemas/ProductVariantAttributeValue"
-                    }
-                },
-                "additionalProperties": false
-            },
-            "ProductVariantAttributeValueCollection": {
-                "type": "object",
-                "required": [
-                    "data"
-                ],
-                "properties": {
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ProductVariantAttributeValue"
-                        }
-                    }
-                },
-                "additionalProperties": false
-            },
-            "ProductVariant": {
-                "type": "object",
-                "required": [
-                    "id",
-                    "product_id",
-                    "name",
-                    "sku",
-                    "article_number",
-                    "barcode",
-                    "unit",
-                    "price",
-                    "old_price",
-                    "stock_quantity",
-                    "is_active",
-                    "sort_order",
-                    "attribute_values",
-                    "created_at",
-                    "updated_at"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "product_id": {
-                        "type": "integer"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "sku": {
-                        "type": "string"
-                    },
-                    "article_number": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "barcode": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
-                    },
-                    "unit": {
-                        "type": "string",
-                        "enum": [
-                            "piece",
-                            "square_meter",
-                            "linear_meter",
-                            "package",
-                            "kilogram",
-                            "liter",
-                            "set"
-                        ]
-                    },
-                    "price": {
-                        "type": "string"
-                    },
-                    "old_price": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "stock_quantity": {
-                        "type": "integer"
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "sort_order": {
-                        "type": "integer"
-                    },
-                    "attribute_values": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ProductVariantAttributeValue"
-                        }
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
-                },
-                "additionalProperties": false
-            },
-            "ProductVariantResponse": {
-                "type": "object",
-                "required": [
-                    "data"
-                ],
-                "properties": {
-                    "data": {
-                        "$ref": "#/components/schemas/ProductVariant"
-                    }
-                },
-                "additionalProperties": false
-            },
-            "ProductVariantCollection": {
-                "type": "object",
-                "required": [
-                    "data",
-                    "links",
-                    "meta"
-                ],
-                "properties": {
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/ProductVariant"
-                        }
-                    },
-                    "links": {
-                        "type": "object"
-                    },
-                    "meta": {
-                        "type": "object"
-                    }
-                },
-                "additionalProperties": false
             },
             "ProductAttributeValue": {
                 "type": "object",
@@ -4512,172 +4402,6 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ProductRelation"
-                        }
-                    }
-                },
-                "additionalProperties": false
-            },
-            "StoreProductVariantRequest": {
-                "type": "object",
-                "required": [
-                    "name",
-                    "sku",
-                    "unit",
-                    "price"
-                ],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "sku": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
-                    },
-                    "article_number": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 100
-                    },
-                    "barcode": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
-                    },
-                    "unit": {
-                        "type": "string",
-                        "enum": [
-                            "piece",
-                            "square_meter",
-                            "linear_meter",
-                            "package",
-                            "kilogram",
-                            "liter",
-                            "set"
-                        ]
-                    },
-                    "price": {
-                        "type": "number",
-                        "minimum": 0
-                    },
-                    "old_price": {
-                        "type": [
-                            "number",
-                            "null"
-                        ],
-                        "minimum": 0
-                    },
-                    "stock_quantity": {
-                        "type": "integer",
-                        "minimum": 0
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "sort_order": {
-                        "type": "integer",
-                        "minimum": 0
-                    },
-                    "attribute_values": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "required": [
-                                "attribute_id",
-                                "value"
-                            ],
-                            "properties": {
-                                "attribute_id": {
-                                    "type": "integer"
-                                },
-                                "value": {
-                                    "$ref": "#/components/schemas/AttributeValue"
-                                }
-                            }
-                        }
-                    }
-                },
-                "additionalProperties": false
-            },
-            "UpdateProductVariantRequest": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "sku": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
-                    },
-                    "article_number": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 100
-                    },
-                    "barcode": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "pattern": "^(?:[0-9]{8}|[0-9]{12,14})$"
-                    },
-                    "unit": {
-                        "type": "string",
-                        "enum": [
-                            "piece",
-                            "square_meter",
-                            "linear_meter",
-                            "package",
-                            "kilogram",
-                            "liter",
-                            "set"
-                        ]
-                    },
-                    "price": {
-                        "type": "number",
-                        "minimum": 0
-                    },
-                    "old_price": {
-                        "type": [
-                            "number",
-                            "null"
-                        ],
-                        "minimum": 0
-                    },
-                    "stock_quantity": {
-                        "type": "integer",
-                        "minimum": 0
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "sort_order": {
-                        "type": "integer",
-                        "minimum": 0
-                    },
-                    "attribute_values": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "required": [
-                                "attribute_id",
-                                "value"
-                            ],
-                            "properties": {
-                                "attribute_id": {
-                                    "type": "integer"
-                                },
-                                "value": {
-                                    "$ref": "#/components/schemas/AttributeValue"
-                                }
-                            }
                         }
                     }
                 },

@@ -51,9 +51,9 @@ class ProductAttributeValueManagementTest extends TestCase
     {
         $actor = $this->userWithRole('catalog-manager');
         $category = Category::factory()->create();
-        $required = Attribute::factory()->create(['type' => 'boolean', 'is_required' => true]);
+        $required = Attribute::factory()->create(['type' => 'boolean']);
         $unassigned = Attribute::factory()->create(['type' => 'string']);
-        $category->attributes()->attach($required->id);
+        $category->attributes()->attach($required->id, ['is_required' => true]);
         $product = Product::factory()->create(['category_id' => $category->id]);
 
         $this->actingAs($actor)->putJson("/api/v1/admin/products/{$product->id}/attributes", [

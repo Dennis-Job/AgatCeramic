@@ -10,9 +10,9 @@ use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\ProductAttributeValueController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
+use App\Http\Controllers\Api\V1\Admin\ProductGroupController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
 use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
-use App\Http\Controllers\Api\V1\Admin\ProductVariantController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +43,7 @@ Route::apiResource('attribute-groups', AttributeGroupController::class);
 Route::apiResource('attributes', AttributeController::class);
 Route::apiResource('brands', BrandController::class);
 Route::apiResource('products', ProductController::class);
+Route::apiResource('product-groups', ProductGroupController::class);
 Route::get('products/{product}/attributes', [ProductAttributeValueController::class, 'index'])->name('products.attributes.index');
 Route::put('products/{product}/attributes', [ProductAttributeValueController::class, 'replace'])->name('products.attributes.replace');
 Route::get('products/{product}/images', [ProductImageController::class, 'index'])->name('products.images.index');
@@ -50,5 +51,5 @@ Route::post('products/{product}/images', [ProductImageController::class, 'store'
 Route::patch('products/{product}/images/{image}', [ProductImageController::class, 'update'])->name('products.images.update');
 Route::delete('products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
 Route::get('products/{product}/relations', [ProductRelationController::class, 'index'])->name('products.relations.index');
+Route::get('products/{product}/relation-candidates', [ProductRelationController::class, 'candidates'])->name('products.relations.candidates');
 Route::put('products/{product}/relations', [ProductRelationController::class, 'replace'])->name('products.relations.replace');
-Route::apiResource('products.variants', ProductVariantController::class);

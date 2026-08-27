@@ -94,7 +94,7 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await page.goto('/products')
   await page.getByRole('button', { name: 'Редактировать товар' }).click()
 
-  const dialog = page.getByRole('dialog', { name: 'Товар: Монте Тиберио' })
+  const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
   await expect(dialog).toBeVisible()
   await expect(dialog.getByLabel('Категория')).toContainText('Керамогранит')
   await expect(dialog.getByLabel('Бренд')).toContainText('Kerama Marazzi')
@@ -102,15 +102,15 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   expect(dialogA11y.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
 
   const expectations = [
-    ['Варианты', 'Вариантов пока нет.'],
     ['Характеристики', 'Ширина'],
-    ['Фото', 'Фотографий пока нет.'],
-    ['Связи', 'Связанных товаров пока нет.'],
-    ['Основное', 'Сохранить изменения'],
+    ['Фото', 'Галерея не распространяется'],
+    ['Варианты модели', 'Объедините самостоятельные товары'],
+    ['Проверка', 'Сопутствующие товары'],
+    ['Основное и продажа', 'Сохранить и продолжить'],
   ] as const
 
   for (const [tab, expectedText] of expectations) {
-    await dialog.getByRole('button', { name: tab, exact: true }).click()
+    await dialog.getByRole('button', { name: tab, exact: false }).click()
     await expect(dialog.getByText(expectedText, { exact: false }).first()).toBeVisible()
   }
 
@@ -118,6 +118,23 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await expect(dialog).toBeHidden()
   await expect(page.getByRole('button', { name: 'Редактировать товар' })).toBeFocused()
 })
+
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`product editor remains usable at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    await mockCatalogApi(page)
+    await page.goto('/products')
+    await page.getByRole('button', { name: 'Редактировать товар' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+
+    for (const step of ['Основное и продажа', 'Характеристики', 'Фото', 'Варианты модели', 'Проверка']) {
+      await dialog.getByRole('button', { name: step, exact: false }).click()
+      expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    }
+
+    await expect(dialog.getByRole('heading', { name: 'Сопутствующие товары' })).toBeVisible()
+  })
+}
 
 test('categories, brands, groups, and attributes expose their dialog and selector flows', async ({ page }) => {
   await mockCatalogApi(page)
@@ -161,14 +178,14 @@ test('catalog exposes loading, error, and empty states', async ({ page }) => {
   await mockCatalogApi(page, { delayPath: '/admin/products' })
   await page.goto('/products')
   await expect(page.getByRole('status', { name: '' }).filter({ hasText: 'Загрузка товаров' })).toBeAttached()
-  await expect(page.getByText('По выбранным условиям товары не найдены.')).toBeHidden()
+  await expect(page.getByText('Товары не найдены.')).toBeHidden()
   await expect(page.getByRole('status').filter({ hasText: 'Загрузка товаров' })).toBeHidden()
   await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
 
   const emptyPage = await page.context().newPage()
   await mockCatalogApi(emptyPage, { emptyPath: '/admin/products' })
   await emptyPage.goto('/products')
-  await expect(emptyPage.getByText('По выбранным условиям товары не найдены.')).toBeVisible()
+  await expect(emptyPage.getByText('Товары не найдены.')).toBeVisible()
   await expect(emptyPage.getByRole('alert')).toHaveCount(0)
   await emptyPage.close()
 

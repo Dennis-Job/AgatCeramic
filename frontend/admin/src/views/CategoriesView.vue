@@ -34,6 +34,7 @@ const viewingCategory = ref<Category | null>(null);
 const allAttributes = ref<Attribute[]>([]);
 const allAttributeGroups = ref<AttributeGroup[]>([]);
 const selectedAttributeIds = ref<number[]>([]);
+const requiredAttributeIds = ref<number[]>([]);
 const selectedAttributeGroupIds = ref<number[]>([]);
 const categoryAttributes = ref<Attribute[]>([]);
 const categoryAttributeGroups = ref<AttributeGroup[]>([]);
@@ -238,6 +239,7 @@ async function openAttributes(category: Category): Promise<void> {
     allAttributes.value = attributes;
     allAttributeGroups.value = groups;
     selectedAttributeIds.value = assigned.map((attribute) => attribute.id);
+    requiredAttributeIds.value = assigned.filter((attribute) => attribute.is_required).map((attribute) => attribute.id);
     selectedAttributeGroupIds.value = assignedGroups.map((group) => group.id);
   } catch (reason) {
     attributesOpened.value = false;
@@ -254,7 +256,7 @@ async function saveAttributes(): Promise<void> {
     );
     await replaceCategoryAttributes(
       configuringAttributes.value.id,
-      selectedAttributeIds.value.map((id, sortOrder) => ({ id, sort_order: sortOrder })),
+      selectedAttributeIds.value.map((id, sortOrder) => ({ id, sort_order: sortOrder, is_required: requiredAttributeIds.value.includes(id) })),
     );
     attributesOpened.value = false;
   } catch (reason) {
@@ -268,6 +270,11 @@ function setAttributeGroupIds(ids: Array<number | string>): void {
   selectedAttributeGroupIds.value = ids.map(Number);
   const removed = previous.filter((id) => !selectedAttributeGroupIds.value.includes(id));
   if (removed.length) selectedAttributeIds.value = selectedAttributeIds.value.filter((attributeId) => !removed.includes(allAttributes.value.find((attribute) => attribute.id === attributeId)?.attribute_group_id ?? -1));
+  requiredAttributeIds.value = requiredAttributeIds.value.filter((attributeId) => selectedAttributeIds.value.includes(attributeId));
+}
+function setSelectedAttributeIds(ids: Array<number | string>): void {
+  selectedAttributeIds.value = ids.map(Number);
+  requiredAttributeIds.value = requiredAttributeIds.value.filter((id) => selectedAttributeIds.value.includes(id));
 }
 async function confirmRemoval(): Promise<void> {
   if (!deleting.value) return;
@@ -429,18 +436,20 @@ onMounted(load);
         <section v-for="group in groupedAttributes" :key="group.id" class="overflow-hidden rounded-xl border border-gray-200">
           <div class="bg-gray-50 px-4 py-3"><h3 class="font-semibold text-gray-800">{{ group.name }}</h3><p class="text-xs text-gray-500">Выберите характеристики этой группы.</p></div>
           <div class="divide-y divide-gray-100">
-            <BaseCheckbox v-for="attribute in group.attributes" :key="attribute.id" v-model="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[58px] rounded-none border-0 px-4 py-3">
-              <span class="min-w-0 flex-1"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span>
-            </BaseCheckbox>
+            <div v-for="attribute in group.attributes" :key="attribute.id" class="flex flex-wrap items-center gap-2 px-4 py-3">
+              <BaseCheckbox :model-value="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[42px] flex-1 border-0" @update:model-value="setSelectedAttributeIds"><span class="min-w-0"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span></BaseCheckbox>
+              <BaseCheckbox v-if="selectedAttributeIds.includes(attribute.id)" v-model="requiredAttributeIds" :value="attribute.id" class="h-auto min-h-[42px]" :accessible-name="`Обязательная характеристика: ${attribute.name}`">Обязательная</BaseCheckbox>
+            </div>
             <p v-if="!group.attributes.length" class="px-4 py-3 text-sm text-gray-500">В группе пока нет характеристик.</p>
           </div>
         </section>
         <section v-if="ungroupedAttributes.length" class="overflow-hidden rounded-xl border border-gray-200">
           <div class="bg-gray-50 px-4 py-3"><h3 class="font-semibold text-gray-800">Без группы</h3><p class="text-xs text-gray-500">Характеристики, доступные для любой категории.</p></div>
           <div class="divide-y divide-gray-100">
-            <BaseCheckbox v-for="attribute in ungroupedAttributes" :key="attribute.id" v-model="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[58px] rounded-none border-0 px-4 py-3">
-              <span class="min-w-0 flex-1"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span>
-            </BaseCheckbox>
+            <div v-for="attribute in ungroupedAttributes" :key="attribute.id" class="flex flex-wrap items-center gap-2 px-4 py-3">
+              <BaseCheckbox :model-value="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[42px] flex-1 border-0" @update:model-value="setSelectedAttributeIds"><span class="min-w-0"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span></BaseCheckbox>
+              <BaseCheckbox v-if="selectedAttributeIds.includes(attribute.id)" v-model="requiredAttributeIds" :value="attribute.id" class="h-auto min-h-[42px]" :accessible-name="`Обязательная характеристика: ${attribute.name}`">Обязательная</BaseCheckbox>
+            </div>
           </div>
         </section>
         <p v-if="!allAttributeGroups.length" class="p-5 text-sm text-gray-500">Группы характеристик пока не созданы.</p>

@@ -38,7 +38,7 @@ class Category extends Model
     public function attributes(): BelongsToMany
     {
         return $this->belongsToMany(Attribute::class, 'category_attribute')
-            ->withPivot('sort_order')
+            ->withPivot(['sort_order', 'is_required'])
             ->withTimestamps()
             ->orderByPivot('sort_order')
             ->orderBy('attributes.name');

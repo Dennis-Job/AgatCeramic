@@ -27,7 +27,6 @@ class UpdateAttributeRequest extends FormRequest
             'type' => ['sometimes', 'required', 'string', Rule::in(Attribute::TYPES)],
             'unit' => ['sometimes', 'nullable', 'string', 'max:64'],
             'is_filterable' => ['sometimes', 'boolean'],
-            'is_required' => ['sometimes', 'boolean'],
             'is_visible_on_product_page' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],
             'options' => ['required_if:type,select,multiselect', 'array', 'max:500'],

@@ -1,13 +1,18 @@
 import { apiFetch, requestCsrfCookie } from './auth'
 import type { Brand } from './brands'
 import type { Category } from './categories'
+import type { ProductAttributeValue } from './productAttributes'
 import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from './pagination'
 
 export type Product = {
-  id: number; category_id: number; brand_id: number | null; name: string; slug: string; description: string | null; is_active: boolean
+  id: number; category_id: number; brand_id: number | null; name: string; slug: string; description: string | null
+  sku: string; article_number: string | null; barcode: string | null; unit: ProductUnit; price: string; old_price: string | null; stock_quantity: number; is_active: boolean
+  attribute_values?: ProductAttributeValue[]
+  primary_image?: { id: number; url: string; alt: string | null } | null
   category: Category; brand: Brand | null; created_at: string; updated_at: string
 }
-export type ProductPayload = Omit<Product, 'id' | 'category' | 'brand' | 'created_at' | 'updated_at'>
+export type ProductUnit = 'piece' | 'square_meter' | 'linear_meter' | 'package' | 'kilogram' | 'liter' | 'set'
+export type ProductPayload = Omit<Product, 'id' | 'category' | 'brand' | 'attribute_values' | 'primary_image' | 'created_at' | 'updated_at'>
 export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; has_stock?: boolean; price_from?: string; price_to?: string } & PageRequest
 
 async function fail(response: Response): Promise<never> {

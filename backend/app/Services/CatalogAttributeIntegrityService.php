@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class CatalogAttributeIntegrityService
@@ -27,15 +28,16 @@ class CatalogAttributeIntegrityService
     public function assertProductCanUseCategory(Product $product, Category $category): void
     {
         $assignedIds = $category->attributes()->pluck('attributes.id')->map(static fn (mixed $id): int => (int) $id);
-        $usedIds = $product->attributeValues()->pluck('attribute_id')
-            ->merge($product->variants()->join(
+        $usedIds = $product->attributeValues()->pluck('attribute_id');
+        if (Schema::hasTable('product_variant_attribute_values')) {
+            $usedIds = $usedIds->merge($product->variants()->join(
                 'product_variant_attribute_values',
                 'product_variants.id',
                 '=',
                 'product_variant_attribute_values.product_variant_id',
-            )->pluck('product_variant_attribute_values.attribute_id'))
-            ->map(static fn (mixed $id): int => (int) $id)
-            ->unique();
+            )->pluck('product_variant_attribute_values.attribute_id'));
+        }
+        $usedIds = $usedIds->map(static fn (mixed $id): int => (int) $id)->unique();
 
         if ($usedIds->diff($assignedIds)->isNotEmpty()) {
             throw ValidationException::withMessages([
@@ -43,10 +45,10 @@ class CatalogAttributeIntegrityService
             ]);
         }
 
-        $requiredIds = $category->attributes()->where('is_required', true)->pluck('attributes.id');
+        $requiredIds = $category->attributes()->wherePivot('is_required', true)->pluck('attributes.id');
         $productValueIds = $product->attributeValues()->pluck('attribute_id');
 
-        if ($requiredIds->diff($productValueIds)->isNotEmpty()) {
+        if ($product->is_active && $requiredIds->diff($productValueIds)->isNotEmpty()) {
             throw ValidationException::withMessages([
                 'category_id' => ['The selected category requires attributes that are missing from the product.'],
             ]);
@@ -79,7 +81,7 @@ class CatalogAttributeIntegrityService
         }
 
         if ($requireAll) {
-            $missing = $assigned->where('is_required', true)->pluck('id')->diff($submittedIds);
+            $missing = $assigned->filter(static fn ($attribute): bool => (bool) $attribute->pivot?->is_required)->pluck('id')->diff($submittedIds);
             if ($missing->isNotEmpty()) {
                 throw ValidationException::withMessages([
                     $field => ['One or more required category attributes are missing.'],
@@ -91,12 +93,14 @@ class CatalogAttributeIntegrityService
     /** @param array<int, int> $attributeIds */
     private function categoryUsesAnyAttribute(Category $category, array $attributeIds): bool
     {
-        return $category->products()->whereHas(
+        $productsUseAttribute = $category->products()->whereHas(
             'attributeValues',
             fn ($query) => $query->whereIn('attribute_id', $attributeIds),
-        )->exists() || $category->products()->whereHas(
+        )->exists();
+
+        return $productsUseAttribute || (Schema::hasTable('product_variant_attribute_values') && $category->products()->whereHas(
             'variants.attributeValues',
             fn ($query) => $query->whereIn('attribute_id', $attributeIds),
-        )->exists();
+        )->exists());
     }
 }

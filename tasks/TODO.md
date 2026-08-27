@@ -113,6 +113,46 @@
   - Prevent `RoleFactory` from generating names that collide with seeded system roles.
   - Add a regression check proving repeated full-suite runs remain deterministic.
 
+## Phase 3.1 — Standalone products and variation groups
+
+- [x] TASK-042A Define standalone sellable product model
+  - Make every product an independently sellable catalogue item that owns its SKU, article number, barcode, unit, price, old price, stock, attributes, and images.
+  - Keep SKU, article number, and barcode globally unique.
+  - Remove nested variants from the active domain model while retaining legacy storage until migration verification and cleanup are complete.
+- [x] TASK-042B Make category attribute requirements assignment-specific
+  - Move requiredness from the global attribute definition to each category-to-attribute assignment.
+  - Treat required values as an activation gate: drafts may remain incomplete, but an active product must contain every required value assigned by its category.
+  - Keep one product-owned attribute-value set and allow only scalar attributes as group axes; exclude `text` and `multiselect`.
+- [x] TASK-042C Add product variation groups
+  - Add standalone product groups with a unique code, display name, two or more member products, and one or more differentiating axis attributes.
+  - Require members to share category and brand, have equal non-axis attributes, and have a unique tuple of scalar axis values; exclude `text` and `multiselect` axes.
+  - Allow a product in at most one group; replace axes and members atomically, and delete a group without deleting its products.
+- [x] TASK-042D Rebuild Product Admin API
+  - Move commercial fields into top-level product create, update, resource, search, filtering, and validation contracts.
+  - Add `/admin/product-groups` CRUD with `name`, `code`, `axis_attribute_ids`, and `product_ids`; remove nested product-variant routes from the supported API.
+  - Return group summaries and axis values with products, allow incomplete inactive drafts, and reject incomplete activation.
+- [x] TASK-042E Migrate legacy products and variants safely
+  - Provide idempotent dry-run and apply modes that expand every legacy nested variant into a standalone product without losing identifiers, commercial data, attributes, images, or audit traceability.
+  - Compose names from model and offer, slugs from model slug and SKU, overlay variant attributes over shared values, and infer groups only for complete unique axis tuples.
+  - Copy the shared gallery into independent storage paths for every additional product, report visual review needs and conflicts, and keep zero-variant models inactive for manual completion.
+  - Keep legacy tables read-only until reconciliation reports are accepted, then schedule their separately verified cleanup.
+- [x] TASK-042F Rebuild product creation/editing flow
+  - Replace the tab sequence with a single standalone-product workflow covering main data, commercial identifiers, category characteristics, activation validation, and that product's own images.
+  - Make ownership and validation states explicit and prevent incomplete drafts from being activated.
+  - Save each step independently and provide “Create similar product” without copying SKU, identifiers, or images by default.
+- [x] TASK-042G Add variation-group management to Admin
+  - Add group creation and editing for compatible products, axis selection, duplicate-tuple detection, and clear explanations of incompatibilities.
+  - Show group membership and differentiating values without presenting groups as nested sellable variants.
+  - Use server-side product search with thumbnail, name, SKU, and axis values; support adding, removing, and opening standalone members.
+- [x] TASK-042H Restore/separate related-product management
+  - Keep related and recommended products independent from variation groups and restore a reliable dedicated management flow.
+  - Make outgoing and incoming relation state understandable and preserve concurrency-safe relation invariants.
+  - Exclude self, duplicates, and forbidden reverse pairs from a server-side picker and surface success plus row-specific validation errors.
+- [x] TASK-042I Complete contracts/regression coverage/UI review
+  - Reconcile Requirements, Database, Decisions, API, and OpenAPI documentation with the standalone-product model and migration lifecycle.
+  - Cover API, migration, activation, grouping, relation, Admin component, and end-to-end regressions; complete responsive/accessibility QA and obtain an independent UI Design Guard review.
+  - Reconcile entity and file counts after migration and verify the Admin flow at 320/640/768/1024/1280 px with keyboard and focus checks.
+
 ## Phase 4 — Import/export
 
 - [ ] TASK-050 Excel product export

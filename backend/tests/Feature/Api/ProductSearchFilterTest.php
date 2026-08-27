@@ -5,7 +5,6 @@ namespace Tests\Feature\Api;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -24,9 +23,9 @@ class ProductSearchFilterTest extends TestCase
         $mosaic = Category::factory()->create();
         $brand = Brand::factory()->create();
         $match = Product::factory()->create(['category_id' => $tiles->id, 'brand_id' => $brand->id, 'name' => 'Marble White', 'slug' => 'marble-white', 'is_active' => true]);
-        ProductVariant::factory()->create(['product_id' => $match->id, 'sku' => 'MARBLE-6060', 'article_number' => 'Vendor-Art-6060', 'barcode' => '0123456789012', 'price' => 1990, 'stock_quantity' => 10]);
+        $match->update(['sku' => 'MARBLE-6060', 'article_number' => 'Vendor-Art-6060', 'barcode' => '0123456789012', 'price' => 1990, 'stock_quantity' => 10]);
         $other = Product::factory()->create(['category_id' => $mosaic->id, 'brand_id' => null, 'name' => 'Blue Mosaic', 'slug' => 'blue-mosaic', 'is_active' => false]);
-        ProductVariant::factory()->create(['product_id' => $other->id, 'sku' => 'MOSAIC-BLUE', 'price' => 990, 'stock_quantity' => 0]);
+        $other->update(['sku' => 'MOSAIC-BLUE', 'price' => 990, 'stock_quantity' => 0]);
 
         $this->actingAs($actor)->getJson('/api/v1/admin/products?search=marble-6060')
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $match->id);

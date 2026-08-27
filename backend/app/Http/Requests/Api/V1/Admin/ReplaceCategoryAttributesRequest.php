@@ -18,6 +18,7 @@ class ReplaceCategoryAttributesRequest extends FormRequest
             'attributes' => ['present', 'array', 'max:500'],
             'attributes.*.id' => ['required', 'integer', 'distinct', 'exists:attributes,id'],
             'attributes.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],
+            'attributes.*.is_required' => ['sometimes', 'boolean'],
         ];
     }
 }

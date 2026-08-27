@@ -60,6 +60,13 @@ export const product = {
   name: 'Монте Тиберио',
   slug: 'monte-tiberio',
   description: 'Матовый керамогранит',
+  sku: 'MONTE-TIBERIO',
+  article_number: 'KM-100',
+  barcode: '4601234567890',
+  unit: 'square_meter',
+  price: '1990.00',
+  old_price: null,
+  stock_quantity: 12,
   is_active: true,
   category,
   brand,
@@ -140,7 +147,7 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
       return
     }
 
-    if (path === '/admin/products/1/variants' || path === '/admin/products/1/images') {
+    if (path === '/admin/products/1/images') {
       await route.fulfill({ json: page([]) })
       return
     }
@@ -157,6 +164,16 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
 
     if (path === '/admin/products/1/attributes' || path === '/admin/products/1/relations') {
       await route.fulfill({ json: { data: [] } })
+      return
+    }
+
+    if (path === '/admin/product-groups') {
+      await route.fulfill({ json: page([]) })
+      return
+    }
+
+    if (path === '/admin/products/1/relation-candidates') {
+      await route.fulfill({ json: { data: [{ ...product, id: 2, name: 'Про Стоун', sku: 'PRO-STONE', slug: 'pro-stone' }] } })
       return
     }
 

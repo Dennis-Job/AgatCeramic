@@ -257,6 +257,11 @@ button[class*='text-error-500']:not([class*='bg-']):not(:disabled):hover {
   min-width: 850px;
 }
 
+@media (max-width: 639px) {
+  .admin-dialog-content .mt-3.flex.gap-2 { flex-direction: column; }
+  .admin-dialog-content .mt-3.flex.gap-2 > :first-child { min-width: 0; width: 100%; }
+}
+
 @media (min-width: 640px) {
   .admin-permissions-filter-grid {
     grid-template-columns: minmax(0, 1fr) 240px;

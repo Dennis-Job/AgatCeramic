@@ -67,8 +67,11 @@ attribute group and has a stable unique `name` and `slug`. TASK-041M completes `
 `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`, and `date`.
 The former unrestricted `number` type is migrated to `decimal`; legacy numeric JSON strings are
 converted to JSON numbers in the same migration. Attributes also have an optional display `unit`,
-flags for filtering, requiredness, and product-page visibility (`is_visible_on_product_page`, true
-by default), and `sort_order`. Choice types keep their values in `attribute_options`.
+flags for filtering and product-page visibility (`is_visible_on_product_page`, true by default),
+and `sort_order`. Requiredness belongs to each `category_attributes` assignment in the Phase 3.1
+target model, not to the global attribute definition. The old `attributes.is_required` column is
+legacy migration state and is no longer writable through the API. Choice types keep values in
+`attribute_options`.
 
 Характеристики.
 
@@ -77,10 +80,11 @@ Each option belongs to one attribute and stores a stable per-attribute `value`, 
 `label`, and `sort_order`. Attribute deletion cascades to its options; deleting an attribute group
 keeps its attributes and clears their group reference.
 
-Product and variant JSON values must remain valid for the current attribute type. Choice values
+Product JSON values must remain valid for the current attribute type. Legacy variant values remain
+covered by the same validation only during migration. Choice values
 refer to the stable option `value`, not the option row ID. Type and option replacement uses a
 reject-on-conflict policy: compatible conversions, option additions, label/order changes, and
-removal of unused option codes are allowed; a change that invalidates any stored product or variant
+removal of unused option codes are allowed; a change that invalidates any stored product or legacy variant
 value returns `422` without mutating the definition or audit trail. Definition writers lock assigned
 categories in ID order before products and the attribute row, and value writers repeat semantic
 validation inside their transaction. Attributes with stored values cannot be deleted.
@@ -98,7 +102,9 @@ option label is the human-readable color name and its option code may be a HEX v
 Значения select/multiselect.
 
 ### category_attributes
-Какие характеристики используются категорией.
+Defines which characteristics a category uses, their assignment-specific `is_required` flag, and
+their display order. Inactive drafts may omit required values; activation requires every required
+assignment to have a valid product value.
 
 ### brands
 Бренды. TASK-035 хранит уникальные `name` и `slug`, необязательное описание,
@@ -112,25 +118,25 @@ logo, and a separate attachment relationship for reusable brand/catalog document
 absent; `TASK-100` (Phase 8) owns brand metadata through the separate `seo_metadata` layer.
 
 ### products
-TASK-036 creates the base product card: a required `category_id`, optional `brand_id`, name,
-unique URL-safe slug, optional description, publication flag `is_active`, and timestamps.
-Product variants, prices, SKU, attributes, images, and relations are intentionally introduced by
-their respective later catalog tasks. Categories cannot be deleted while referenced by products;
-deleting a brand clears the optional reference.
+Phase 3.1 makes `products` the only sellable catalogue entity. In addition to required
+`category_id`, optional `brand_id`, name, unique URL-safe slug, optional description, activation
+state, and timestamps, each product owns a globally unique SKU, optional globally unique article
+number and barcode, required controlled sale unit, current and optional old price, and stock.
+The supported units remain `piece`, `square_meter`, `linear_meter`, `package`, `kilogram`, `liter`,
+and `set`. Each product owns its own attribute values and images. Categories cannot be deleted while
+referenced by products; deleting a brand clears the optional reference. Commercial columns remain
+nullable at database level only for unconverted legacy rows; Admin create/update and activation
+enforce the standalone-product contract.
 
 ### product_variants
-TASK-037 creates variants owned by a product. Each has a globally unique SKU, display name,
-current price, optional old price (never below the current price), stock quantity, publication
-flag, sort order, and timestamps. TASK-041N makes the variant the single sellable catalog entity:
-it also owns an optional globally unique supplier/manufacturer `article_number`, an optional globally
-unique digit-only GTIN-like `barcode`, and the required controlled sale `unit`. Product rows remain
-shared model cards and do not duplicate commercial identifiers or units; a product without genuine
-options still has one default variant. Supported unit codes are `piece`, `square_meter`,
-`linear_meter`, `package`, `kilogram`, `liter`, and `set`. The additive migration backfills legacy
-variants as `piece`; deployments with existing catalog data must review and correct that operational
-default before relying on unit-based display or exchange. Deleting a product cascades to its variants.
-
-SKU/варианты.
+Legacy-only storage during Phase 3.1 migration. Existing rows are expanded into standalone products
+by an idempotent command with explicit dry-run and apply modes. The command reports identifier,
+attribute, image, and grouping conflicts before writes. Nested-variant API writes are removed; only
+the migration command may update conversion markers until reconciliation is accepted and cleanup is
+authorised. `catalog:migrate-standalone-products` defaults to dry run, `--apply` converts rows,
+and verified converted rows are removed with `--apply --finalize`. After the accepted reconciliation,
+the explicitly invoked migration in `database/finalization-migrations` refuses non-empty legacy storage
+and then drops both legacy variant tables; it is intentionally excluded from the ordinary migration path.
 
 ### product_attribute_values
 TASK-038 stores one JSON value per product and category-assigned attribute. The product and
@@ -140,17 +146,14 @@ while a value exists.
 Значения характеристик.
 
 ### product_variant_attribute_values
-Stores only category-assigned characteristics that distinguish one SKU variant from another.
-Each row belongs to a variant and an attribute and contains one JSON value; the variant/attribute
-pair is unique. Deleting a variant deletes its values, while an attribute cannot be deleted while
-variant values refer to it.
+Legacy-only values consumed by the Phase 3.1 migration. Their values are merged with the former
+parent product values when creating each standalone product; a conflict is reported and never
+silently resolved. This table is removed together with `product_variants` by the opt-in finalization migration.
 
 Category reassignment and category-attribute replacement use a reject-on-conflict policy. A product
-cannot move while any product or variant value refers to an attribute absent from the destination,
-or while a required destination attribute has no product value. An assigned attribute cannot be
-detached, directly or through group replacement, while category products or variants use it.
-These writers lock category rows in ID order before product and variant rows, then repeat assignment
-validation inside the transaction so an HTTP pre-validation race cannot persist a stale value.
+cannot move while it uses an attribute absent from the destination. Requiredness gates activation,
+not inactive draft persistence. An assigned attribute cannot be detached while category products
+use it. Writers repeat assignment validation inside the transaction.
 
 ### product_images
 TASK-039 stores product-owned image metadata: public-disk path, MIME type, byte size, optional
@@ -165,6 +168,14 @@ order. The source/product/type combination is unique; deleting either product ca
 relations.
 
 Связанные/рекомендуемые товары.
+
+### product_groups
+Variation-family metadata with a unique stable `code` and display `name`. A group has at least two
+standalone products through `product_group_members` and one or more ordered axis attributes through
+`product_group_axes`. Each product may belong to at most one group. Members must share category and brand, have equal non-axis values,
+and have a unique tuple of axis values. Axis attributes must be assigned to the category and must be
+scalar; `text` and `multiselect` are prohibited. Membership/group writes validate and lock all
+affected products atomically. Product groups are independent of `product_relations`.
 
 ## Orders
 

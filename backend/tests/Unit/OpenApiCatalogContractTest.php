@@ -27,12 +27,13 @@ class OpenApiCatalogContractTest extends TestCase
             '/admin/brands/{brand}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products' => ['get', 'post'],
             '/admin/products/{product}' => ['get', 'put', 'patch', 'delete'],
-            '/admin/products/{product}/variants' => ['get', 'post'],
-            '/admin/products/{product}/variants/{variant}' => ['get', 'put', 'patch', 'delete'],
+            '/admin/product-groups' => ['get', 'post'],
+            '/admin/product-groups/{product_group}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products/{product}/attributes' => ['get', 'put'],
             '/admin/products/{product}/images' => ['get', 'post'],
             '/admin/products/{product}/images/{image}' => ['patch', 'delete'],
             '/admin/products/{product}/relations' => ['get', 'put'],
+            '/admin/products/{product}/relation-candidates' => ['get'],
         ];
 
         foreach ($expectedOperations as $path => $methods) {
@@ -43,16 +44,14 @@ class OpenApiCatalogContractTest extends TestCase
             }
         }
 
-        foreach (['Category', 'AttributeGroup', 'Attribute', 'AttributeOption', 'Brand', 'Product', 'ProductVariant', 'ProductVariantAttributeValue', 'ProductAttributeValue', 'ProductImage', 'ProductRelation'] as $schema) {
+        foreach (['Category', 'AttributeGroup', 'Attribute', 'AttributeOption', 'Brand', 'Product', 'ProductGroup', 'ProductAttributeValue', 'ProductImage', 'ProductRelation'] as $schema) {
             self::assertArrayHasKey($schema, $spec['components']['schemas']);
             self::assertArrayHasKey($schema.'Response', $spec['components']['schemas']);
             self::assertArrayHasKey($schema.'Collection', $spec['components']['schemas']);
         }
 
         self::assertSame('multipart/form-data', array_key_first($spec['paths']['/admin/products/{product}/images']['post']['requestBody']['content']));
-        self::assertContains('links', $spec['components']['schemas']['ProductVariantCollection']['required']);
         self::assertContains('meta', $spec['components']['schemas']['ProductImageCollection']['required']);
-        self::assertArrayNotHasKey('required', $spec['components']['schemas']['UpdateProductVariantRequest']);
         self::assertSame(['options'], $spec['components']['schemas']['StoreAttributeRequest']['allOf'][0]['then']['required']);
         self::assertSame(['options'], $spec['components']['schemas']['UpdateAttributeRequest']['allOf'][0]['then']['required']);
         self::assertSame(Attribute::TYPES, $spec['components']['schemas']['Attribute']['properties']['type']['enum']);

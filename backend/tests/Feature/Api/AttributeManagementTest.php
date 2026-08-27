@@ -206,7 +206,7 @@ class AttributeManagementTest extends TestCase
         $this->assertDatabaseMissing('audit_logs', ['action' => 'attribute.deleted', 'entity_id' => $attribute->id]);
     }
 
-    public function test_requiredness_can_be_enabled_before_values_are_filled_and_is_audited(): void
+    public function test_requiredness_is_not_mutated_on_the_global_attribute_endpoint(): void
     {
         $actor = $this->userWithRole('catalog-manager');
         $category = Category::factory()->create();
@@ -216,12 +216,11 @@ class AttributeManagementTest extends TestCase
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/attributes/{$attribute->id}", [
             'is_required' => true,
-        ])->assertOk()->assertJsonPath('data.is_required', true);
+        ])->assertOk()->assertJsonPath('data.is_required', false);
 
         $this->assertDatabaseMissing('product_attribute_values', ['product_id' => $product->id, 'attribute_id' => $attribute->id]);
         $metadata = AuditLog::query()->where('action', 'attribute.updated')->where('entity_id', $attribute->id)->sole()->metadata;
-        $this->assertFalse($metadata['is_required_before']);
-        $this->assertTrue($metadata['is_required_after']);
+        $this->assertArrayNotHasKey('is_required_before', $metadata);
     }
 
     public function test_product_page_visibility_is_exposed_and_audited(): void

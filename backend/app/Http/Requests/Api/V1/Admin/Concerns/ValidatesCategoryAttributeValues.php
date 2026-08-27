@@ -30,7 +30,7 @@ trait ValidatesCategoryAttributeValues
             return;
         }
 
-        foreach ($assigned->where('is_required', true) as $attribute) {
+        foreach ($assigned->filter(static fn (Attribute $attribute): bool => (bool) $attribute->pivot?->is_required) as $attribute) {
             if (! $submittedIds->contains($attribute->id)) {
                 $validator->errors()->add($field, "The required attribute {$attribute->name} is missing.");
             }

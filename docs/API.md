@@ -153,48 +153,58 @@ sanitised, so passwords, tokens, and other sensitive values are never exposed.
 - `PATCH /admin/products/{product}`
 - `DELETE /admin/products/{product}`
 
-TASK-036 provides the base product card. Create requires `category_id`, `name`, and a unique
-URL-safe `slug`; `brand_id`, `description`, and `is_active` are optional. Product responses
-include the assigned category and brand (when present). These endpoints require `catalog.manage`
-and record `product.created`, `product.updated`, and `product.deleted` in the audit log.
+Phase 3.1 makes each product a standalone sellable item. Create requires `category_id`, `name`, a
+unique URL-safe `slug`, a globally unique `sku`, a controlled `unit`, and a non-negative `price`.
+Create also requires non-negative `stock_quantity`. Optional commercial fields are globally unique
+`article_number`, digit-only `barcode`, and `old_price` (not below current price). `brand_id`, `description`, and
+`is_active` are optional. Product responses include these commercial fields, category, brand, and
+nullable `primary_image`. The same primary-image projection is present in product lists, relation
+candidates, and product-group members so selectors can show the correct standalone product image.
+The endpoints require `catalog.manage` and record `product.created`, `product.updated`, and
+`product.deleted` in the audit log.
 Deleting a product locks the product against concurrent image mutations, collects every current
 product-image storage reference, then removes the product and its cascaded records. After the
 database transaction commits, it removes every collected file from its configured storage disk.
 An upload that loses this race fails without creating a database image record and removes its
 newly stored file.
 
-`GET /admin/products` supports case-insensitive substring `search` for product name or slug and
-variant name, SKU, article number, or barcode. It also supports `category_id`, `brand_id`,
+`GET /admin/products` supports case-insensitive substring `search` for product name, slug, SKU,
+article number, or barcode. It also supports `category_id`, `brand_id`,
 `is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.
-Price and stock filters apply to product variants; all filters can be combined.
+Price and stock filters apply directly to products; all filters can be combined.
 
 Changing `category_id` is rejected with `422` when the destination category does not assign every
-attribute already used by the product or any of its variants, or when the product has no value for
-a required destination-category attribute. The update is atomic and never silently removes values.
+attribute already used by the product. Missing required destination values are permitted while the
+product remains inactive; activation is rejected until all assignment-specific required values are
+valid. The update is atomic and never silently removes values.
 
-### Product variants
+### Product groups
 
-- `GET /admin/products/{product}/variants`
-- `POST /admin/products/{product}/variants`
-- `GET /admin/products/{product}/variants/{variant}`
-- `PATCH /admin/products/{product}/variants/{variant}`
-- `DELETE /admin/products/{product}/variants/{variant}`
+- `GET /admin/product-groups`
+- `POST /admin/product-groups`
+- `GET /admin/product-groups/{product_group}`
+- `PATCH|PUT /admin/product-groups/{product_group}`
+- `DELETE /admin/product-groups/{product_group}`
 
-Variants are managed under their owning product and require `catalog.manage`. A variant is the
-sellable entity and exclusively owns its commercial identifiers and sale unit; the parent product
-does not duplicate them. Creation requires `name`, a globally unique SKU, a controlled `unit`, and
-a non-negative `price`. Supported unit codes are `piece`, `square_meter`, `linear_meter`, `package`,
-`kilogram`, `liter`, and `set`. `article_number` is an optional globally unique string up to 100
-characters. `barcode` is an optional globally unique string of 8, 12, 13, or 14 digits and remains
-a string so leading zeroes are preserved. Blank identifiers are normalized to `null`. `old_price`
-is optional but cannot be less than the current price. `stock_quantity`, `is_active`, and
-`sort_order` default to `0`, `true`, and `0`. A product without genuine options is represented by
-one default variant. The optional `attribute_values` array contains only the category-assigned
-characteristics that distinguish the SKU, as `{attribute_id, value}` entries; values are validated
-against the attribute type and its allowed options. Changes are audited as `product.variant-created`, `product.variant-updated`, and
-`product.variant-deleted`.
+Groups require `catalog.manage`. Create requires unique `code`, `name`, `axis_attribute_ids`, and
+`product_ids`; updates use the same fields as a full desired group definition. A group contains at
+least two standalone products. Members must share category and brand, provide a unique tuple for the
+selected axes, and have equal values for every non-axis characteristic. Each axis must be assigned
+to the common category and be scalar; `text` and `multiselect` are rejected. Group changes are
+atomic, lock affected products consistently, and are audited. Groups do not copy product fields or
+images and are independent of related/recommended product relations.
 
-For categories, attribute groups, attributes, brands, products, and product variants, Laravel's
+The former `/admin/products/{product}/variants` routes are removed from the supported API. Legacy
+variant tables are read-only migration inputs and are not exposed through public Admin routes.
+
+Legacy conversion is operated with `php artisan catalog:migrate-standalone-products`: no option is
+a read-only dry run, `--apply` performs the idempotent conversion, and `--apply --finalize` removes
+only verified converted legacy rows. Finalization is run only after the dry-run/apply reconciliation
+report is accepted. Physical table removal is deliberately opt-in and runs only after that step:
+`php artisan migrate --path=database/finalization-migrations/2026_08_21_230000_drop_legacy_product_variant_tables.php --force`.
+The finalization migration refuses to run while any legacy variant row remains.
+
+For categories, attribute groups, attributes, brands, products, and product groups, Laravel's
 resource routes accept both `PUT` and `PATCH` on the documented update URL; both methods use the
 same partial-update validation and response. Product-image metadata remains `PATCH` only.
 
@@ -204,9 +214,10 @@ same partial-update validation and response. Product-image metadata remains `PAT
 - `PUT /admin/products/{product}/attributes`
 
 The `PUT` endpoint replaces the full value set with an `attributes` array of
-`{attribute_id, value}` entries. An attribute must be assigned to the product category; required
-category attributes must be supplied. Values are validated against the attribute type and allowed
-options. Changes require `catalog.manage` and are recorded as `product.attributes-updated`.
+`{attribute_id, value}` entries. An attribute must be assigned to the product category. Inactive
+drafts may omit category-assignment required values; activation requires all of them. Values are
+validated against the attribute type and allowed options. Changes require `catalog.manage` and are
+recorded as `product.attributes-updated`.
 
 ### Product images
 
@@ -222,6 +233,7 @@ one primary image while it has images. Alt text and sort order may be edited aft
 ### Product relations
 
 - `GET /admin/products/{product}/relations`
+- `GET /admin/products/{product}/relation-candidates?search=&limit=`
 - `PUT /admin/products/{product}/relations`
 
 The `PUT` endpoint atomically replaces the `relations` array of `{related_product_id, type,
@@ -229,17 +241,18 @@ sort_order}` entries. Supported types are `related` and `recommended`. A product
 itself or create a reverse duplicate. Replacements acquire locks for the source and every related
 product in a consistent order, then revalidate reverse relations within the transaction; a unique
 database index on the unordered product pair is a final guard. Changes require `catalog.manage`
-and are audited as `product.relations-updated`.
+and are audited as `product.relations-updated`. The candidates endpoint returns up to 50 products,
+excludes the source and both outgoing and incoming existing relations, and searches name, slug, or SKU.
 
 ### Catalog response contract
 
 Every Catalog resource response is wrapped in `{"data": ...}`. Category, attribute group,
-attribute, brand, and product lists are paginated and include `data`, `links`, and `meta`; product
-variant and image lists are also paginated with a maximum page size of 100. Category attributes,
+attribute, brand, product, and product-group lists are paginated and include `data`, `links`, and
+`meta`; image lists are also paginated with a maximum page size of 100. Category attributes,
 attribute groups, product attribute values, and product relations return unpaginated `data` arrays.
 
 The OpenAPI contract defines the exact fields returned by every Catalog resource, including nested
-category, brand, attribute-option, variant-attribute-value, and related-product fields. It also
+category, brand, attribute-option, product-group, and related-product fields. It also
 defines all validation request bodies and normal error responses (`401`, `403`, `404`, and `422` as
 applicable). Clients should treat the specification as the authoritative machine-readable contract.
 
@@ -291,19 +304,19 @@ POST /api/v1/admin/categories
 Назначения характеристик и групп являются полными заменами, а не добавлением к текущему набору:
 
 - `GET /admin/categories/{category}/attributes` — характеристики категории; при назначении
-  возвращается `category_sort_order`.
+  возвращаются `category_sort_order` и assignment-specific `is_required`.
 - `PUT /admin/categories/{category}/attributes` — тело
-  `{"attributes":[{"id":17,"sort_order":0}]}`; пустой массив очищает все назначения.
+  `{"attributes":[{"id":17,"sort_order":0,"is_required":true}]}`; пустой массив очищает все назначения.
 - `GET /admin/categories/{category}/attribute-groups` — назначенные группы.
 - `PUT /admin/categories/{category}/attribute-groups` — тело
   `{"attribute_groups":[{"id":4,"sort_order":0}]}`; пустой массив очищает группы. При удалении
   группы из категории открепляются и относящиеся к ней характеристики.
 
 Полная замена отклоняется с `422`, если она прямо или через удаление группы открепила бы
-характеристику, уже используемую товаром или вариантом этой категории. Проверка и изменение
+характеристику, уже используемую товаром этой категории. Проверка и изменение
 назначений выполняются в одной транзакции; существующие значения никогда не удаляются
-автоматически. Новую обязательную характеристику можно назначить до заполнения значений, но после
-этого полный набор значений каждого товара проходит обычную проверку обязательности.
+автоматически. Новую обязательную характеристику можно назначить до заполнения значений; неполные
+неактивные товары остаются черновиками, а их активация блокируется до заполнения.
 
 ### Группы характеристик
 
@@ -345,10 +358,11 @@ PATCH /api/v1/admin/brands/8
 - `POST /admin/attributes`, `GET|PATCH|PUT|DELETE /admin/attributes/{attribute}`.
 
 Поддерживаемые `type`: `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`,
-`date`. Цвет задаётся характеристикой типа `select`: `label` хранит название варианта, а `value`
+`date`. Цвет задаётся характеристикой типа `select`: `label` хранит название цвета, а `value`
 может содержать HEX-код, например `#A1B2C3`. Прежний `number` нормализован миграцией в `decimal`; новые запросы с `number`
 отклоняются. Имя и slug уникальны во всём каталоге; `attribute_group_id`, `unit`, `is_filterable`,
-`is_required`, `is_visible_on_product_page` и `sort_order` необязательны. Видимость на странице
+`is_visible_on_product_page` и `sort_order` необязательны. `is_required` задаётся только в назначении
+характеристики категории. Видимость на странице
 товара по умолчанию включена и не влияет на возможность редактировать или фильтровать значение.
 Поле `options` разрешено только для `select` и `multiselect`; при их создании оно
 обязательно и содержит от одного до 500 вариантов с уникальным `value`. Каждый вариант задаётся как
@@ -364,15 +378,14 @@ PATCH /api/v1/admin/brands/8
 быть передан непустой полный набор `options`. Передача `options` для другого типа возвращает `422`.
 Если `options` передано для типа выбора, оно целиком заменяет существующие варианты; при переключении
 на иной тип варианты удаляются. Изменение типа или полного набора опций атомарно отклоняется с `422`,
-если хотя бы одно существующее значение товара или варианта перестало бы соответствовать новому
+если хотя бы одно существующее значение товара или legacy-варианта в окне миграции перестало бы соответствовать новому
 определению. Добавлять опции, менять их подписи/порядок и удалять неиспользуемые коды разрешено;
 используемый код опции переименовывать или удалять нельзя. Проверка повторяется в транзакции под
 блокировками, поэтому параллельная запись значения не оставит каталог в несовместимом состоянии.
 
-Изменение `is_required` использует staged workflow: флаг можно включить до заполнения всех товаров,
-но последующая полная запись характеристик товара требует обязательное значение, а перенос товара
-в такую категорию отклоняется до его заполнения. Удаление характеристики с существующими product-
-или variant-значениями также возвращает `422`; значения автоматически не удаляются.
+Изменение assignment-specific `is_required` использует staged workflow: флаг можно включить до
+заполнения всех товаров, но неполный товар нельзя активировать. Удаление характеристики с
+существующими product- или legacy-значениями также возвращает `422`; значения автоматически не удаляются.
 
 ```json
 POST /api/v1/admin/attributes

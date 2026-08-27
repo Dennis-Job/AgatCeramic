@@ -35,7 +35,7 @@ export async function getCategoryAttributes(id: number): Promise<Attribute[]> {
   return ((await response.json()) as { data: Attribute[] }).data
 }
 
-export async function replaceCategoryAttributes(id: number, attributes: { id: number; sort_order: number }[]): Promise<Attribute[]> {
+export async function replaceCategoryAttributes(id: number, attributes: { id: number; sort_order: number; is_required: boolean }[]): Promise<Attribute[]> {
   await requestCsrfCookie()
   const response = await apiFetch(`/admin/categories/${id}/attributes`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attributes }) })
   if (!response.ok) return fail(response)

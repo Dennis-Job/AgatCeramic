@@ -10,6 +10,7 @@ use App\Models\ProductVariantAttributeValue;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class AttributeManagementService
@@ -41,7 +42,6 @@ class AttributeManagementService
             $hasOptions = array_key_exists('options', $attributes);
             $options = Arr::pull($attributes, 'options', []);
             $typeBefore = $attribute->type;
-            $isRequiredBefore = $attribute->is_required;
             $isVisibleOnProductPageBefore = $attribute->is_visible_on_product_page;
             $optionValuesBefore = $attribute->options()->pluck('value')->all();
             $typeAfter = $attributes['type'] ?? $typeBefore;
@@ -71,10 +71,6 @@ class AttributeManagementService
                 $metadata['type_before'] = $typeBefore;
                 $metadata['type_after'] = $attribute->type;
             }
-            if ($isRequiredBefore !== $attribute->is_required) {
-                $metadata['is_required_before'] = $isRequiredBefore;
-                $metadata['is_required_after'] = $attribute->is_required;
-            }
             if ($isVisibleOnProductPageBefore !== $attribute->is_visible_on_product_page) {
                 $metadata['is_visible_on_product_page_before'] = $isVisibleOnProductPageBefore;
                 $metadata['is_visible_on_product_page_after'] = $attribute->is_visible_on_product_page;
@@ -101,7 +97,6 @@ class AttributeManagementService
             }
             $this->auditLogService->record($actor, 'attribute.deleted', $attribute, [
                 'type' => $attribute->type,
-                'is_required' => $attribute->is_required,
                 'is_visible_on_product_page' => $attribute->is_visible_on_product_page,
                 'option_values' => $attribute->options()->pluck('value')->all(),
             ]);
@@ -131,8 +126,10 @@ class AttributeManagementService
     /** @param array<int, string> $optionValues */
     private function ensureExistingValuesRemainValid(Attribute $attribute, string $type, array $optionValues, string $field): void
     {
-        $values = ProductAttributeValue::query()->where('attribute_id', $attribute->id)->pluck('value')
-            ->merge(ProductVariantAttributeValue::query()->where('attribute_id', $attribute->id)->pluck('value'));
+        $values = ProductAttributeValue::query()->where('attribute_id', $attribute->id)->pluck('value');
+        if (Schema::hasTable('product_variant_attribute_values')) {
+            $values = $values->merge(ProductVariantAttributeValue::query()->where('attribute_id', $attribute->id)->pluck('value'));
+        }
 
         if ($values->contains(fn (mixed $value): bool => ! $this->valueValidator->isValid($type, $value, $optionValues))) {
             throw ValidationException::withMessages([
@@ -160,6 +157,7 @@ class AttributeManagementService
     private function attributeHasValues(Attribute $attribute): bool
     {
         return ProductAttributeValue::query()->where('attribute_id', $attribute->id)->exists()
-            || ProductVariantAttributeValue::query()->where('attribute_id', $attribute->id)->exists();
+            || (Schema::hasTable('product_variant_attribute_values')
+                && ProductVariantAttributeValue::query()->where('attribute_id', $attribute->id)->exists());
     }
 }
