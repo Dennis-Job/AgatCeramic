@@ -74,11 +74,27 @@ export const product = {
   updated_at: now,
 }
 
+const groupedVariant = { ...product, id: 2, name: 'Монте Тиберио Тёмный', slug: 'monte-tiberio-dark', sku: 'MONTE-TIBERIO-DARK', article_number: 'KM-101', barcode: null }
+const sourceProductGroup = {
+  id: 1,
+  name: 'Монте Тиберио',
+  code: 'MONTE-TIBERIO-GROUP',
+  axes: [attribute],
+  products: [
+    { ...product, axis_values: [{ attribute_id: attribute.id, value: '60.00', attribute }] },
+    { ...groupedVariant, axis_values: [{ attribute_id: attribute.id, value: '120.00', attribute }] },
+  ],
+  created_at: now,
+  updated_at: now,
+}
+
 type ApiOptions = {
   emptyPath?: string
   errorPath?: string
   delayPath?: string
   auth?: 'allowed' | 'unauthenticated' | 'forbidden'
+  sourceProductInGroup?: boolean
+  sourceProduct?: Partial<typeof product>
 }
 
 function page(data: unknown[], currentPage = 1, lastPage = 1, total = data.length) {
@@ -103,6 +119,8 @@ function paginatedFixture(url: URL, first: Record<string, unknown>, secondName: 
 }
 
 export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}): Promise<void> {
+  const catalogProduct = { ...product, ...options.sourceProduct }
+  await pageContext.route('**/sanctum/csrf-cookie', async (route) => route.fulfill({ status: 204 }))
   await pageContext.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname.replace('/api/v1', '')
@@ -143,11 +161,17 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/products') {
-      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, product, 'Про Стоун') })
+      if (route.request().method() === 'POST') {
+        const payload = route.request().postDataJSON() as typeof product
+        const createdProduct = { ...catalogProduct, ...payload, id: 3, category, brand, is_active: false, created_at: now, updated_at: now }
+        await route.fulfill({ status: 201, json: { data: createdProduct } })
+        return
+      }
+      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, catalogProduct, 'Про Стоун') })
       return
     }
 
-    if (path === '/admin/products/1/images') {
+    if (path === '/admin/products/1/images' || path === '/admin/products/3/images') {
       await route.fulfill({ json: page([]) })
       return
     }
@@ -162,17 +186,23 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
       return
     }
 
-    if (path === '/admin/products/1/attributes' || path === '/admin/products/1/relations') {
+    if (path === '/admin/products/1/attributes') {
+      await route.fulfill({ json: { data: [{ id: 1, product_id: 1, attribute_id: attribute.id, value: '60.00', attribute }] } })
+      return
+    }
+
+    if (path === '/admin/products/1/relations' || path === '/admin/products/3/attributes' || path === '/admin/products/3/relations') {
       await route.fulfill({ json: { data: [] } })
       return
     }
 
     if (path === '/admin/product-groups') {
-      await route.fulfill({ json: page([]) })
+      const groupFixture = { ...sourceProductGroup, products: [{ ...catalogProduct, axis_values: [{ attribute_id: attribute.id, value: '60.00', attribute }] }, sourceProductGroup.products[1]] }
+      await route.fulfill({ json: page(options.sourceProductInGroup ? [groupFixture] : []) })
       return
     }
 
-    if (path === '/admin/products/1/relation-candidates') {
+    if (path === '/admin/products/1/relation-candidates' || path === '/admin/products/3/relation-candidates') {
       await route.fulfill({ json: { data: [{ ...product, id: 2, name: 'Про Стоун', sku: 'PRO-STONE', slug: 'pro-stone' }] } })
       return
     }

@@ -119,6 +119,63 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Редактировать товар' })).toBeFocused()
 })
 
+test('creating a similar product requires a different name and generates a clean slug', async ({ page }) => {
+  const longSourceSku = 'MONTETIBERIOEXTRALONGSOURCEIDENTIFIERWITHOUTSEPARATORS1234567890'
+  await page.setViewportSize({ width: 320, height: 800 })
+  await mockCatalogApi(page, { sourceProduct: { sku: longSourceSku } })
+  await page.goto('/products')
+  await page.getByRole('button', { name: 'Создать похожий товар Монте Тиберио' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Новый товар' })
+  const nameInput = dialog.getByLabel('Название')
+  const slugInput = dialog.getByLabel('URL (slug)')
+
+  await expect(nameInput).toHaveValue('')
+  await expect(slugInput).toHaveValue('')
+  await expect(dialog.getByText('Укажите название, отличающееся от «Монте Тиберио».')).toBeVisible()
+  await expect(dialog.getByRole('status')).toContainText('URL сформируется из названия')
+
+  await nameInput.fill(' МОНТЕ  ТИБЕРИО ')
+  await dialog.getByLabel('SKU').fill('MONTE-TIBERIO-LIGHT')
+  await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
+  await expect(dialog.getByRole('alert')).toContainText('Название должно отличаться от исходного товара')
+
+  await nameInput.fill('Монте Тиберио Светлый')
+  await expect(slugInput).toHaveValue('monte-tiberio-svetlyy')
+  await expect(dialog.getByRole('alert')).toHaveCount(0)
+
+  await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
+  const savedDialog = page.getByRole('dialog', { name: 'Монте Тиберио Светлый' })
+  await expect(savedDialog.getByLabel('Ширина')).toHaveValue('60.00')
+  await savedDialog.getByRole('button', { name: 'Варианты модели', exact: false }).click()
+  await expect(savedDialog.getByRole('checkbox', { name: new RegExp(`Монте Тиберио · ${longSourceSku}$`) })).toBeChecked()
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · MONTE-TIBERIO-LIGHT$/ })).toBeChecked()
+  const copyStatus = savedDialog.getByRole('status').filter({ hasText: 'Исходный товар' })
+  await expect(copyStatus).toContainText(longSourceSku)
+  await expect(savedDialog.getByLabel('Группа вариантов')).toContainText('Новая группа')
+  expect(await savedDialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+  expect(await copyStatus.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+})
+
+test('a similar product is prepared for the source product existing group', async ({ page }) => {
+  await mockCatalogApi(page, { sourceProductInGroup: true })
+  await page.goto('/products')
+  await page.getByRole('button', { name: 'Создать похожий товар Монте Тиберио' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Новый товар' })
+  await dialog.getByLabel('Название').fill('Монте Тиберио Светлый')
+  await dialog.getByLabel('SKU').fill('MONTE-TIBERIO-LIGHT')
+  await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
+  const savedDialog = page.getByRole('dialog', { name: 'Монте Тиберио Светлый' })
+  await savedDialog.getByRole('button', { name: 'Варианты модели', exact: false }).click()
+
+  await expect(savedDialog.getByLabel('Группа вариантов')).toContainText('Монте Тиберио · MONTE-TIBERIO-GROUP')
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио · MONTE-TIBERIO/ })).toBeChecked()
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Тёмный · MONTE-TIBERIO-DARK/ })).toBeChecked()
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · MONTE-TIBERIO-LIGHT$/ })).toBeChecked()
+  await expect(savedDialog.getByRole('status').filter({ hasText: 'Исходный товар' })).toContainText('подготовлен для добавления в существующую группу')
+})
+
 test('dialog stays open when text selection leaves the panel and still closes on an intentional backdrop click', async ({ page }) => {
   await mockCatalogApi(page)
   await page.goto('/products')

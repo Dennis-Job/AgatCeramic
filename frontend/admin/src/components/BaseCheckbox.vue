@@ -35,11 +35,11 @@ function toggle(): void {
 </script>
 
 <template>
-  <label class="flex h-[42px] cursor-pointer items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-600 transition hover:border-primary-200 hover:bg-primary-25 focus-within:border-primary-500 focus-within:ring-4 focus-within:ring-primary-50" :class="{ 'border-primary-500 bg-primary-50 text-primary-600': isChecked }">
+  <label class="flex min-h-[42px] cursor-pointer items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-600 transition hover:border-primary-200 hover:bg-primary-25 focus-within:border-primary-500 focus-within:ring-4 focus-within:ring-primary-50" :class="{ 'border-primary-500 bg-primary-50 text-primary-600': isChecked }">
     <input class="sr-only" type="checkbox" :checked="isChecked" :aria-label="accessibleName" @change="toggle" />
     <span class="grid h-5 w-5 shrink-0 place-items-center rounded-md border transition" :class="isChecked ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-400 bg-white text-transparent'">
       <Check :size="14" :stroke-width="3" />
     </span>
-    <span><slot /></span>
+    <span class="min-w-0 break-words [overflow-wrap:anywhere]"><slot /></span>
   </label>
 </template>
