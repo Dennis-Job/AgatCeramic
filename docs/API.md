@@ -226,9 +226,11 @@ recorded as `product.attributes-updated`.
 - `PATCH /admin/products/{product}/images/{image}`
 - `DELETE /admin/products/{product}/images/{image}`
 
-Uploads require `catalog.manage` and accept JPEG, PNG, or WebP images up to 10 MiB. Files receive
-a generated storage name; the API returns their public URL and metadata. Each product always has
-one primary image while it has images. Alt text and sort order may be edited after upload.
+Uploads require `catalog.manage` and accept JPEG, PNG, or WebP images up to 10 MiB. The backend
+assigns each file a deterministic `<SKU>_<ordinal>.<extension>` name and sets Alt text to
+`<SKU>_<ordinal>` automatically; an `alt` value supplied during upload is ignored. The API returns
+the public URL and metadata. Each product always has one primary image while it has images. Alt text
+and sort order may still be edited through the API after upload.
 
 ### Product relations
 
@@ -257,7 +259,8 @@ defines all validation request bodies and normal error responses (`401`, `403`, 
 applicable). Clients should treat the specification as the authoritative machine-readable contract.
 
 Product image upload is `multipart/form-data`: the required `image` is JPEG, PNG, or WebP and no
-larger than 10 MiB; `alt`, `is_primary`, and `sort_order` are optional. Product-image mutations and
+larger than 10 MiB; `is_primary` and `sort_order` are optional. The stored filename and Alt text are
+generated from the current product SKU and the next image ordinal. Product-image mutations and
 product deletion are serialised per product, and a database partial unique index guarantees that
 concurrent uploads or updates cannot leave more than one primary image.
 

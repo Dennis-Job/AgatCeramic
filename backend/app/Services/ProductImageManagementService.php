@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class ProductImageManagementService
 {
@@ -19,22 +21,32 @@ class ProductImageManagementService
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, Product $product, UploadedFile $file, array $attributes): ProductImage
     {
-        $path = $file->storePublicly("product-images/{$product->id}", 'public');
+        $path = null;
 
         try {
-            return DB::transaction(function () use ($actor, $product, $file, $attributes, $path): ProductImage {
+            return DB::transaction(function () use ($actor, $product, $file, $attributes, &$path): ProductImage {
                 $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+                $ordinal = $this->nextOrdinal($product);
+                $baseName = "{$product->sku}_{$ordinal}";
+                $directory = "product-images/{$product->id}";
+                $fileName = "{$baseName}.{$this->extensionFor($file)}";
+                $path = $file->storePubliclyAs($directory, $fileName, 'public');
+                if (! is_string($path)) {
+                    throw new RuntimeException('Unable to store the product image.');
+                }
+
                 $isPrimary = ($attributes['is_primary'] ?? false) || ! $product->images()->exists();
                 if ($isPrimary) {
                     $product->images()->update(['is_primary' => false]);
                 }
 
                 $image = $product->images()->create([
-                    ...Arr::except($attributes, ['is_primary']),
+                    ...Arr::except($attributes, ['alt', 'is_primary']),
                     'disk' => 'public',
                     'path' => $path,
                     'mime_type' => $file->getMimeType(),
                     'size' => $file->getSize(),
+                    'alt' => $baseName,
                     'is_primary' => $isPrimary,
                 ]);
                 $this->auditLogService->record($actor, 'product.image-uploaded', $image);
@@ -42,9 +54,40 @@ class ProductImageManagementService
                 return $image;
             });
         } catch (\Throwable $exception) {
-            $this->storageCleanupService->schedule('public', $path);
+            if (is_string($path)) {
+                $this->storageCleanupService->schedule('public', $path);
+            }
             throw $exception;
         }
+    }
+
+    private function nextOrdinal(Product $product): int
+    {
+        $pattern = '/^'.preg_quote($product->sku, '/').'_(\d+)\.[^.]+$/';
+        $ordinal = $product->images()
+            ->pluck('path')
+            ->map(function (string $path) use ($pattern): int {
+                return preg_match($pattern, basename($path), $matches) === 1 ? (int) $matches[1] : 0;
+            })
+            ->max() + 1;
+
+        while (Storage::disk('public')->exists("product-images/{$product->id}/{$product->sku}_{$ordinal}.jpg")
+            || Storage::disk('public')->exists("product-images/{$product->id}/{$product->sku}_{$ordinal}.png")
+            || Storage::disk('public')->exists("product-images/{$product->id}/{$product->sku}_{$ordinal}.webp")) {
+            $ordinal++;
+        }
+
+        return $ordinal;
+    }
+
+    private function extensionFor(UploadedFile $file): string
+    {
+        return match ($file->getMimeType()) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => throw new RuntimeException('Unsupported product image type.'),
+        };
     }
 
     /** @param array<string, mixed> $attributes */

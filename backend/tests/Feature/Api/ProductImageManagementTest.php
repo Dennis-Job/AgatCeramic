@@ -24,24 +24,35 @@ class ProductImageManagementTest extends TestCase
     {
         Storage::fake('public');
         $actor = $this->userWithRole('catalog-manager');
-        $product = Product::factory()->create();
+        $product = Product::factory()->create(['sku' => 'TILE-42']);
 
         $first = $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/images", [
-            'image' => UploadedFile::fake()->image('tile.jpg', 800, 600), 'alt' => 'White tile', 'sort_order' => 20,
-        ])->assertCreated()->assertJsonPath('data.is_primary', true)->assertJsonPath('data.alt', 'White tile');
+            'image' => UploadedFile::fake()->image('tile.jpg', 800, 600), 'alt' => 'Manager text is ignored', 'sort_order' => 20,
+        ])->assertCreated()->assertJsonPath('data.is_primary', true)->assertJsonPath('data.alt', 'TILE-42_1');
         $firstId = $first->json('data.id');
         $firstPath = ProductImage::query()->findOrFail($firstId)->path;
+        $this->assertSame("product-images/{$product->id}/TILE-42_1.jpg", $firstPath);
         Storage::disk('public')->assertExists($firstPath);
 
         $second = $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/images", [
             'image' => UploadedFile::fake()->image('tile-detail.png'), 'is_primary' => true,
-        ])->assertCreated()->assertJsonPath('data.is_primary', true);
+        ])->assertCreated()->assertJsonPath('data.is_primary', true)->assertJsonPath('data.alt', 'TILE-42_2');
         $secondId = $second->json('data.id');
+        $this->assertSame("product-images/{$product->id}/TILE-42_2.png", ProductImage::query()->findOrFail($secondId)->path);
         $this->assertDatabaseHas('product_images', ['id' => $firstId, 'is_primary' => false]);
 
-        $this->actingAs($actor)->post("/api/v1/admin/products/{$product->id}/images", [
+        $third = $this->actingAs($actor)->post("/api/v1/admin/products/{$product->id}/images", [
             'image' => UploadedFile::fake()->image('tile-side.webp'), 'is_primary' => '0',
-        ])->assertCreated()->assertJsonPath('data.is_primary', false);
+        ])->assertCreated()->assertJsonPath('data.is_primary', false)->assertJsonPath('data.alt', 'TILE-42_3');
+        $this->assertMatchesRegularExpression(
+            "#^product-images/{$product->id}/TILE-42_3\.(jpg|webp)$#",
+            ProductImage::query()->findOrFail($third->json('data.id'))->path,
+        );
+
+        $product->update(['sku' => 'TILE-EDITED']);
+        $this->actingAs($actor)->postJson("/api/v1/admin/products/{$product->id}/images", [
+            'image' => UploadedFile::fake()->image('edited-sku.jpg'),
+        ])->assertCreated()->assertJsonPath('data.alt', 'TILE-EDITED_1');
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$product->id}/images/{$firstId}", [
             'is_primary' => true, 'alt' => 'Main image',

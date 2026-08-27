@@ -209,6 +209,30 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     for (const step of ['Основное и продажа', 'Характеристики', 'Фото', 'Варианты модели', 'Проверка']) {
       await dialog.getByRole('button', { name: step, exact: false }).click()
       expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+      if (step === 'Фото') {
+        const longFileName = 'очень-длинное-название-фотографии-керамогранита-с-ракурсом-и-деталями-поверхности.jpg'
+        await expect(dialog.getByText('Допустимые форматы: JPG, PNG или WebP. Максимальный размер — 10 МБ.')).toBeVisible()
+        await expect(dialog.getByRole('button', { name: 'Выбрать файл' })).toBeVisible()
+        const uploadButton = dialog.getByRole('button', { name: 'Загрузить' })
+        await expect(uploadButton).toBeDisabled()
+        await expect(dialog.getByLabel('Alt-текст')).toHaveCount(0)
+        await dialog.getByLabel('Файл изображения').setInputFiles({ name: longFileName, mimeType: 'image/jpeg', buffer: Buffer.from('test image') })
+        await expect(dialog.locator('output')).toHaveText(longFileName)
+        expect(await dialog.locator('output').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+        await expect(uploadButton).toBeEnabled()
+        await uploadButton.click()
+        await expect(dialog.locator('output')).toHaveText('Файл не выбран')
+        await expect(uploadButton).toBeDisabled()
+      }
+      if (step === 'Проверка') {
+        await expect(dialog.getByRole('heading', { name: 'Информация о товаре' })).toBeVisible()
+        await expect(dialog.getByRole('button', { name: 'Добавить' })).toBeVisible()
+        expect(await dialog.locator('#product-review').evaluate(element => {
+          const summary = element.querySelector('#product-review-summary')!.getBoundingClientRect()
+          const relations = element.querySelector('#product-review-relations')!.getBoundingClientRect()
+          return relations.top >= summary.bottom
+        })).toBe(true)
+      }
     }
 
     await expect(dialog.getByRole('heading', { name: 'Сопутствующие товары' })).toBeVisible()

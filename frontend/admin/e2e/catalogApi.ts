@@ -172,6 +172,11 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/products/1/images' || path === '/admin/products/3/images') {
+      if (route.request().method() === 'POST') {
+        const productId = path.includes('/3/') ? 3 : 1
+        await route.fulfill({ status: 201, json: { data: { id: 1, product_id: productId, url: '/logo.svg', mime_type: 'image/jpeg', size: 1024, alt: `${catalogProduct.sku}_1`, is_primary: true, sort_order: 0, created_at: now, updated_at: now } } })
+        return
+      }
       await route.fulfill({ json: page([]) })
       return
     }

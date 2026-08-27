@@ -4446,13 +4446,6 @@
                         "type": "string",
                         "format": "binary"
                     },
-                    "alt": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 255
-                    },
                     "is_primary": {
                         "type": "boolean"
                     },

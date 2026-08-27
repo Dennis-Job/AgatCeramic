@@ -16,7 +16,6 @@ class StoreProductImageRequest extends FormRequest
     {
         return [
             'image' => ['required', 'file', 'image', 'mimetypes:image/jpeg,image/png,image/webp', 'max:10240'],
-            'alt' => ['nullable', 'string', 'max:255'],
             'is_primary' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:4294967295'],
         ];

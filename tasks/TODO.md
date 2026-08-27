@@ -152,6 +152,10 @@
   - Reconcile Requirements, Database, Decisions, API, and OpenAPI documentation with the standalone-product model and migration lifecycle.
   - Cover API, migration, activation, grouping, relation, Admin component, and end-to-end regressions; complete responsive/accessibility QA and obtain an independent UI Design Guard review.
   - Reconcile entity and file counts after migration and verify the Admin flow at 320/640/768/1024/1280 px with keyboard and focus checks.
+- [x] TASK-042L Automate product image filenames and Alt text
+  - Name new uploads from the current product SKU and a stable per-product ordinal, populate matching Alt text automatically, and remove manual Alt fields from Admin.
+- [x] TASK-042M Redesign the product review step
+  - Place the product summary above related-product management and bring every review-step action into the Admin button system.
 
 ## Phase 4 — Import/export
 
