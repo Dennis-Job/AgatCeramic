@@ -6,6 +6,7 @@ import BaseDatePicker from './BaseDatePicker.vue'
 import BaseInput from './BaseInput.vue'
 import BaseSelect from './BaseSelect.vue'
 import BaseTextarea from './BaseTextarea.vue'
+import { sortByLabel } from '../utils/alphabetical'
 
 export type AttributeDraftValue = string | string[]
 
@@ -22,7 +23,7 @@ const selectedValues = computed({
   get: () => Array.isArray(props.modelValue) ? props.modelValue : [],
   set: (value: Array<number | string>) => emit('update:modelValue', value.map(String)),
 })
-const options = computed(() => props.attribute.options.map(option => ({ value: option.value, label: option.label })))
+const options = computed(() => sortByLabel(props.attribute.options.map(option => ({ value: option.value, label: option.label }))))
 const label = computed(() => props.accessibleName ?? props.attribute.name)
 </script>
 
@@ -35,7 +36,7 @@ const label = computed(() => props.accessibleName ?? props.attribute.name)
   <BaseCheckbox v-else-if="attribute.type === 'boolean'" :checked="stringValue === 'true'" mode="boolean" @update:checked="emit('update:modelValue', $event ? 'true' : 'false')">Да</BaseCheckbox>
   <BaseSelect v-else-if="attribute.type === 'select'" :model-value="stringValue" :options="options" :required="required" :accessible-name="label" @update:model-value="emit('update:modelValue', $event)" />
   <div v-else-if="attribute.type === 'multiselect'" class="grid gap-2" role="group" :aria-label="label">
-    <BaseCheckbox v-for="option in attribute.options" :key="option.value" v-model="selectedValues" :value="option.value">{{ option.label }}</BaseCheckbox>
+    <BaseCheckbox v-for="option in options" :key="option.value" v-model="selectedValues" :value="option.value">{{ option.label }}</BaseCheckbox>
   </div>
   <BaseDatePicker v-else :model-value="stringValue" :accessible-name="label" @update:model-value="emit('update:modelValue', $event)" />
   </div>

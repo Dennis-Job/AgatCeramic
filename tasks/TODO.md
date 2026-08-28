@@ -160,6 +160,10 @@
   - Assign stable two-digit type prefixes to root categories and inherit them through their subtrees.
   - Generate the remaining six digits from one concurrency-safe global counter and prohibit client-authored SKU changes.
   - Replace manual SKU entry in Admin with an accessible read-only generated state and update contracts and tests.
+- [x] TASK-042S Sort product editor dropdown values alphabetically
+  - Sort category siblings, brands, sale units, variation groups, relation choices, and attribute choice values using Russian locale-aware ordering.
+  - Keep contextual service options such as “Без бренда” and “Новая группа” at the top.
+  - Cover the ordering rules with Admin unit and end-to-end tests and complete the required UI Design Guard review.
 
 ## Phase 4 — Import/export
 

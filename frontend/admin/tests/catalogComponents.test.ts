@@ -4,6 +4,53 @@ import BaseSelect from '../src/components/BaseSelect.vue'
 import BaseDialog from '../src/components/BaseDialog.vue'
 import CollectionLoadingState from '../src/components/CollectionLoadingState.vue'
 import PaginationControls from '../src/components/PaginationControls.vue'
+import AttributeValueField from '../src/components/AttributeValueField.vue'
+import { sortByLabel } from '../src/utils/alphabetical'
+
+describe('alphabetical option ordering', () => {
+  test('sorts Russian labels naturally without mutating the source collection', () => {
+    const source = [
+      { value: '3', label: 'Плитка 10' },
+      { value: '1', label: 'ёж' },
+      { value: '2', label: 'Ель' },
+      { value: '4', label: 'Плитка 2' },
+    ]
+
+    expect(sortByLabel(source).map(option => option.label)).toEqual(['ёж', 'Ель', 'Плитка 2', 'Плитка 10'])
+    expect(source.map(option => option.label)).toEqual(['Плитка 10', 'ёж', 'Ель', 'Плитка 2'])
+  })
+
+  test('shows product attribute choices alphabetically', async () => {
+    const wrapper = mount(AttributeValueField, {
+      props: {
+        modelValue: '',
+        accessibleName: 'Цвет',
+        attribute: {
+          id: 1,
+          attribute_group_id: null,
+          name: 'Цвет',
+          slug: 'color',
+          type: 'select',
+          unit: null,
+          is_filterable: true,
+          is_required: false,
+          is_visible_on_product_page: true,
+          sort_order: 0,
+          options: [
+            { value: 'white', label: 'Белый', sort_order: 2 },
+            { value: 'azure', label: 'Лазурный', sort_order: 0 },
+            { value: 'beige', label: 'Бежевый', sort_order: 1 },
+          ],
+          created_at: '',
+          updated_at: '',
+        },
+      },
+    })
+
+    await wrapper.get('button[aria-label="Цвет"]').trigger('click')
+    expect(wrapper.findAll('.max-h-64 button').map(button => button.text())).toEqual(['Бежевый', 'Белый', 'Лазурный'])
+  })
+})
 
 describe('CollectionLoadingState', () => {
   test('shows a visible, accessible loading message', () => {
