@@ -119,6 +119,48 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Редактировать товар' })).toBeFocused()
 })
 
+test('product list thumbnail updates immediately when the primary image changes', async ({ page }) => {
+  await mockCatalogApi(page, {
+    initialProductImages: [
+      { id: 1, url: '/first-product-image.jpg', alt: 'Первое фото', is_primary: true, sort_order: 0 },
+      { id: 2, url: '/second-product-image.jpg', alt: 'Второе фото', is_primary: false, sort_order: 1 },
+    ],
+  })
+  await page.goto('/products')
+
+  const productRow = page.locator('article').filter({ hasText: 'Монте Тиберио' }).first()
+  await expect(productRow.locator('img')).toHaveAttribute('src', '/first-product-image.jpg')
+  await page.getByRole('button', { name: 'Редактировать товар Монте Тиберио' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+  await dialog.getByRole('button', { name: 'Фото', exact: false }).click()
+  await dialog.getByRole('button', { name: 'Переместить изображение 1 ниже' }).click()
+  await dialog.getByRole('button', { name: 'Закрыть карточку товара' }).click()
+
+  await expect(productRow.locator('img')).toHaveAttribute('src', '/second-product-image.jpg')
+})
+
+test('new product thumbnail appears after its first image is uploaded and the editor closes', async ({ page }) => {
+  await mockCatalogApi(page)
+  await page.goto('/products')
+  await page.getByRole('button', { name: 'Добавить товар' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Новый товар' })
+  await dialog.getByLabel('Название').fill('Новый керамогранит')
+  await dialog.getByLabel('Категория').click()
+  await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
+  await dialog.getByLabel('SKU').fill('NEW-TILE')
+  await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
+
+  const savedDialog = page.getByRole('dialog', { name: 'Новый керамогранит' })
+  await savedDialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
+  await savedDialog.getByLabel('Файл изображения').setInputFiles({ name: 'new-tile.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('test image') })
+  await savedDialog.getByRole('button', { name: 'Загрузить' }).click()
+  await savedDialog.getByRole('button', { name: 'Закрыть карточку товара' }).click()
+
+  const newProductRow = page.locator('article').filter({ hasText: 'Новый керамогранит' })
+  await expect(newProductRow.locator('img')).toHaveAttribute('src', '/uploaded-3-1.jpg')
+})
+
 test('creating a similar product requires a different name and generates a clean slug', async ({ page }) => {
   const longSourceSku = 'MONTETIBERIOEXTRALONGSOURCEIDENTIFIERWITHOUTSEPARATORS1234567890'
   await page.setViewportSize({ width: 320, height: 800 })

@@ -95,6 +95,7 @@ type ApiOptions = {
   auth?: 'allowed' | 'unauthenticated' | 'forbidden'
   sourceProductInGroup?: boolean
   sourceProduct?: Partial<typeof product>
+  initialProductImages?: Array<{ id: number; url: string; alt: string; is_primary: boolean; sort_order: number }>
 }
 
 function page(data: unknown[], currentPage = 1, lastPage = 1, total = data.length) {
@@ -120,6 +121,14 @@ function paginatedFixture(url: URL, first: Record<string, unknown>, secondName: 
 
 export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}): Promise<void> {
   const catalogProduct = { ...product, ...options.sourceProduct }
+  const createdProducts: Array<typeof product> = []
+  const productImages = new Map<number, Array<{ id: number; product_id: number; url: string; mime_type: string; size: number; alt: string; is_primary: boolean; sort_order: number; created_at: string; updated_at: string }>>([
+    [1, (options.initialProductImages ?? []).map(image => ({ ...image, product_id: 1, mime_type: 'image/jpeg', size: 1024, created_at: now, updated_at: now }))],
+  ])
+  const withPrimaryImage = (item: typeof product) => {
+    const primary = (productImages.get(item.id) ?? []).find(image => image.is_primary) ?? null
+    return { ...item, primary_image: primary ? { id: primary.id, url: primary.url, alt: primary.alt } : null }
+  }
   await pageContext.route('**/sanctum/csrf-cookie', async (route) => route.fulfill({ status: 204 }))
   await pageContext.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
@@ -164,20 +173,53 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
       if (route.request().method() === 'POST') {
         const payload = route.request().postDataJSON() as typeof product
         const createdProduct = { ...catalogProduct, ...payload, id: 3, category, brand, is_active: false, created_at: now, updated_at: now }
+        createdProducts.push(createdProduct)
+        productImages.set(createdProduct.id, [])
         await route.fulfill({ status: 201, json: { data: createdProduct } })
         return
       }
-      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, catalogProduct, 'Про Стоун') })
+      if (createdProducts.length) {
+        await route.fulfill({ json: page([withPrimaryImage(catalogProduct), ...createdProducts.map(withPrimaryImage)]) })
+        return
+      }
+      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, withPrimaryImage(catalogProduct), 'Про Стоун') })
       return
     }
 
-    if (path === '/admin/products/1/images' || path === '/admin/products/3/images') {
+    const imageCollectionMatch = path.match(/^\/admin\/products\/(1|3)\/images$/)
+    if (imageCollectionMatch) {
+      const productId = Number(imageCollectionMatch[1])
+      const images = productImages.get(productId) ?? []
       if (route.request().method() === 'POST') {
-        const productId = path.includes('/3/') ? 3 : 1
-        await route.fulfill({ status: 201, json: { data: { id: 1, product_id: productId, url: '/logo.svg', mime_type: 'image/jpeg', size: 1024, alt: `${catalogProduct.sku}_1`, is_primary: true, sort_order: 0, created_at: now, updated_at: now } } })
+        const id = Math.max(0, ...images.map(image => image.id)) + 1
+        const sku = createdProducts.find(item => item.id === productId)?.sku ?? catalogProduct.sku
+        const image = { id, product_id: productId, url: `/uploaded-${productId}-${id}.jpg`, mime_type: 'image/jpeg', size: 1024, alt: `${sku}_${id}`, is_primary: images.length === 0, sort_order: images.length, created_at: now, updated_at: now }
+        images.push(image)
+        productImages.set(productId, images)
+        await route.fulfill({ status: 201, json: { data: image } })
         return
       }
-      await route.fulfill({ json: page([]) })
+      await route.fulfill({ json: page([...images].sort((a, b) => a.sort_order - b.sort_order)) })
+      return
+    }
+
+    const imageItemMatch = path.match(/^\/admin\/products\/(1|3)\/images\/(\d+)$/)
+    if (imageItemMatch) {
+      const productId = Number(imageItemMatch[1])
+      const imageId = Number(imageItemMatch[2])
+      const images = productImages.get(productId) ?? []
+      if (route.request().method() === 'DELETE') {
+        const remaining = images.filter(image => image.id !== imageId)
+        if (remaining.length && !remaining.some(image => image.is_primary)) remaining[0].is_primary = true
+        productImages.set(productId, remaining)
+        await route.fulfill({ status: 204 })
+        return
+      }
+      const payload = route.request().postDataJSON() as { sort_order?: number; is_primary?: boolean }
+      if (payload.is_primary) images.forEach(image => { image.is_primary = image.id === imageId })
+      const image = images.find(item => item.id === imageId)!
+      Object.assign(image, payload)
+      await route.fulfill({ json: { data: image } })
       return
     }
 
