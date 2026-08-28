@@ -156,9 +156,9 @@ test('published product can be hidden without changing its stock', async ({ page
   await dialog.getByRole('button', { name: 'Скрыть товар' }).click()
 
   await expect(dialog.getByRole('status')).toContainText('Товар скрыт и перемещён в черновики')
-  await expect(dialog.getByText('Черновик', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('Скрыт', { exact: true })).toBeVisible()
   await expect(dialog.getByRole('button', { name: 'Опубликовать товар' })).toBeVisible()
-  await expect(productRow.getByText('Черновик', { exact: true })).toBeVisible()
+  await expect(productRow.getByText('Скрыт', { exact: true })).toBeVisible()
   await expect(productRow).toContainText('Остаток: 12')
 })
 
