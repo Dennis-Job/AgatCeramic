@@ -22,7 +22,7 @@ class StoreProductRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:products,slug'],
             'description' => ['nullable', 'string', 'max:10000'],
-            'sku' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/', 'unique:products,sku'],
+            'sku' => ['prohibited'],
             'article_number' => ['nullable', 'string', 'max:100', 'unique:products,article_number'],
             'barcode' => ['nullable', 'string', 'regex:/^(?:[0-9]{8}|[0-9]{12,14})$/', 'unique:products,barcode'],
             'unit' => ['required', Rule::enum(ProductUnit::class)],

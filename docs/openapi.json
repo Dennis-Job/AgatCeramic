@@ -2988,7 +2988,6 @@
                     "category_id",
                     "name",
                     "slug",
-                    "sku",
                     "unit",
                     "price",
                     "stock_quantity"
@@ -3019,11 +3018,6 @@
                             "null"
                         ],
                         "maxLength": 10000
-                    },
-                    "sku": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
-                        "maxLength": 255
                     },
                     "article_number": {
                         "type": ["string", "null"],
@@ -3092,11 +3086,6 @@
                             "null"
                         ],
                         "maxLength": 10000
-                    },
-                    "sku": {
-                        "type": "string",
-                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
-                        "maxLength": 255
                     },
                     "article_number": {
                         "type": ["string", "null"],
@@ -3810,6 +3799,7 @@
                     "name",
                     "slug",
                     "description",
+                    "sku_prefix",
                     "is_parent",
                     "is_active",
                     "sort_order",
@@ -3838,6 +3828,11 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "sku_prefix": {
+                        "type": ["string", "null"],
+                        "pattern": "^[0-9]{2}$",
+                        "description": "Server-owned root product-type prefix inherited by descendants. Null is possible only for a legacy or directly inserted category until first use."
                     },
                     "is_parent": {
                         "type": "boolean"
@@ -3955,7 +3950,7 @@
                     },
                     "sku": {
                         "type": ["string", "null"],
-                        "description": "Null only for an unconverted legacy row during the Phase 3.1 migration window."
+                        "description": "Server-generated immutable TTNNNNNN identifier. Null or a legacy format is possible only for a row created before automatic numbering."
                     },
                     "article_number": {
                         "type": ["string", "null"]

@@ -148,7 +148,7 @@ test('sale flag can be set while creating a product and is shown in the product 
   await dialog.getByLabel('Название').fill('Распродажный керамогранит')
   await dialog.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
-  await dialog.getByLabel('SKU').fill('SALE-TILE')
+  await expect(dialog.getByLabel('SKU')).toHaveText('Будет назначен автоматически после сохранения')
   await dialog.getByText('Распродажа', { exact: true }).click()
   await expect(dialog.getByRole('checkbox', { name: 'Товар участвует в распродаже' })).toBeChecked()
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
@@ -209,7 +209,7 @@ test('new product thumbnail appears after its first image is uploaded and the ed
   await dialog.getByLabel('Название').fill('Новый керамогранит')
   await dialog.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
-  await dialog.getByLabel('SKU').fill('NEW-TILE')
+  await expect(dialog.getByLabel('SKU')).toHaveText('Будет назначен автоматически после сохранения')
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
 
   const savedDialog = page.getByRole('dialog', { name: 'Новый керамогранит' })
@@ -239,7 +239,6 @@ test('creating a similar product requires a different name and generates a clean
   await expect(dialog.getByRole('status')).toContainText('URL сформируется из названия')
 
   await nameInput.fill(' МОНТЕ  ТИБЕРИО ')
-  await dialog.getByLabel('SKU').fill('MONTE-TIBERIO-LIGHT')
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
   await expect(dialog.getByRole('alert')).toContainText('Название должно отличаться от исходного товара')
 
@@ -252,7 +251,7 @@ test('creating a similar product requires a different name and generates a clean
   await expect(savedDialog.getByLabel('Ширина')).toHaveValue('60.00')
   await savedDialog.getByRole('button', { name: 'Варианты модели', exact: false }).click()
   await expect(savedDialog.getByRole('checkbox', { name: new RegExp(`Монте Тиберио · ${longSourceSku}$`) })).toBeChecked()
-  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · MONTE-TIBERIO-LIGHT$/ })).toBeChecked()
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · 01000001$/ })).toBeChecked()
   const copyStatus = savedDialog.getByRole('status').filter({ hasText: 'Исходный товар' })
   await expect(copyStatus).toContainText(longSourceSku)
   await expect(savedDialog.getByLabel('Группа вариантов')).toContainText('Новая группа')
@@ -267,7 +266,6 @@ test('a similar product is prepared for the source product existing group', asyn
 
   const dialog = page.getByRole('dialog', { name: 'Новый товар' })
   await dialog.getByLabel('Название').fill('Монте Тиберио Светлый')
-  await dialog.getByLabel('SKU').fill('MONTE-TIBERIO-LIGHT')
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
   const savedDialog = page.getByRole('dialog', { name: 'Монте Тиберио Светлый' })
   await savedDialog.getByRole('button', { name: 'Варианты модели', exact: false }).click()
@@ -275,7 +273,7 @@ test('a similar product is prepared for the source product existing group', asyn
   await expect(savedDialog.getByLabel('Группа вариантов')).toContainText('Монте Тиберио · MONTE-TIBERIO-GROUP')
   await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио · MONTE-TIBERIO/ })).toBeChecked()
   await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Тёмный · MONTE-TIBERIO-DARK/ })).toBeChecked()
-  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · MONTE-TIBERIO-LIGHT$/ })).toBeChecked()
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · 01000001$/ })).toBeChecked()
   await expect(savedDialog.getByRole('status').filter({ hasText: 'Исходный товар' })).toContainText('подготовлен для добавления в существующую группу')
 })
 

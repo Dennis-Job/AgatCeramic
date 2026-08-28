@@ -8,6 +8,7 @@ export const category = {
   name: 'Керамогранит',
   slug: 'keramogranit',
   description: 'Напольная плитка',
+  sku_prefix: '01',
   is_parent: true,
   is_active: true,
   sort_order: 10,
@@ -173,7 +174,7 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     if (path === '/admin/products') {
       if (route.request().method() === 'POST') {
         const payload = route.request().postDataJSON() as typeof product
-        const createdProduct = { ...catalogProduct, ...payload, id: 3, category, brand, is_active: false, created_at: now, updated_at: now }
+        const createdProduct = { ...catalogProduct, ...payload, id: 3, sku: '01000001', category, brand, is_active: false, created_at: now, updated_at: now }
         createdProducts.push(createdProduct)
         productImages.set(createdProduct.id, [])
         await route.fulfill({ status: 201, json: { data: createdProduct } })

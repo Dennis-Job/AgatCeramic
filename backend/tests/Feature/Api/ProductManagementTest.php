@@ -36,7 +36,6 @@ class ProductManagementTest extends TestCase
             'name' => 'Marble White 60x60',
             'slug' => 'marble-white-60x60',
             'description' => 'Porcelain tile.',
-            'sku' => 'MARBLE-WHITE-6060',
             'unit' => 'square_meter',
             'price' => '1990.00',
             'stock_quantity' => 12,
@@ -45,6 +44,7 @@ class ProductManagementTest extends TestCase
         ])->assertCreated()
             ->assertJsonPath('data.category.id', $category->id)
             ->assertJsonPath('data.brand.id', $brand->id)
+            ->assertJsonPath('data.sku', '01000001')
             ->assertJsonPath('data.is_on_sale', true);
         $id = $created->json('data.id');
 

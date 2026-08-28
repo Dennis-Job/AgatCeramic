@@ -46,10 +46,10 @@ assignments; deleting a staff account or role removes its pivot rows.
 - name
 - slug
 - description
+- sku_prefix (server-owned two-digit root type code inherited by descendants)
 - image_id
 - is_parent
 - is_active
-- is_on_sale (boolean, default false; existing products remain outside the sale after migration)
 - sort_order
 - timestamps
 
@@ -58,6 +58,15 @@ storage path. `TASK-096` (Phase 7) owns the `media` entity, the migration that t
 into an enforced managed-media relationship, and its replacement/deletion lifecycle. Until then the
 Catalog API does not accept or expose category image management. Category SEO is intentionally absent
 from this table; `TASK-100` (Phase 8) owns it through the separate `seo_metadata` layer.
+
+Root categories receive `sku_prefix` values from `01` through `99`; descendants inherit the same
+value. Moving a subtree to another root updates its prefix for future product creation but never
+rewrites existing product SKUs.
+
+### catalog_counters
+Concurrency-safe transactional counters used for category type prefixes and the global six-digit
+product number. Counter rows are locked before incrementing, so parallel product creation cannot
+issue the same number.
 
 ### attribute_groups
 Группы характеристик.
@@ -123,6 +132,10 @@ Phase 3.1 makes `products` the only sellable catalogue entity. In addition to re
 `category_id`, optional `brand_id`, name, unique URL-safe slug, optional description, activation
 state, and timestamps, each product owns a globally unique SKU, optional globally unique article
 number and barcode, required controlled sale unit, current and optional old price, and stock.
+New SKUs are immutable server-generated `TTNNNNNN` strings. `TT` comes from the product category's
+root-type prefix; `NNNNNN` comes from the locked `catalog_counters.product_sku_number` row and is
+global across all category types. The counter allocation is transactional and never uses
+`MAX(products.sku) + 1`. Legacy identifiers are preserved without reformatting.
 The supported units remain `piece`, `square_meter`, `linear_meter`, `package`, `kilogram`, `liter`,
 and `set`. Each product owns its own attribute values and images. Categories cannot be deleted while
 referenced by products; deleting a brand clears the optional reference. Commercial columns remain

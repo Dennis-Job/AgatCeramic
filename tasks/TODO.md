@@ -156,6 +156,10 @@
   - Name new uploads from the current product SKU and a stable per-product ordinal, populate matching Alt text automatically, and remove manual Alt fields from Admin.
 - [x] TASK-042M Redesign the product review step
   - Place the product summary above related-product management and bring every review-step action into the Admin button system.
+- [x] TASK-042R Generate immutable eight-digit product SKUs
+  - Assign stable two-digit type prefixes to root categories and inherit them through their subtrees.
+  - Generate the remaining six digits from one concurrency-safe global counter and prohibit client-authored SKU changes.
+  - Replace manual SKU entry in Admin with an accessible read-only generated state and update contracts and tests.
 
 ## Phase 4 — Import/export
 

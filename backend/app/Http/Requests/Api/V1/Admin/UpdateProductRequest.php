@@ -23,7 +23,7 @@ class UpdateProductRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'slug' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('products', 'slug')->ignore($this->route('product'))],
             'description' => ['sometimes', 'nullable', 'string', 'max:10000'],
-            'sku' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[A-Za-z0-9][A-Za-z0-9._-]*$/', Rule::unique('products', 'sku')->ignore($this->route('product'))],
+            'sku' => ['prohibited'],
             'article_number' => ['sometimes', 'nullable', 'string', 'max:100', Rule::unique('products', 'article_number')->ignore($this->route('product'))],
             'barcode' => ['sometimes', 'nullable', 'string', 'regex:/^(?:[0-9]{8}|[0-9]{12,14})$/', Rule::unique('products', 'barcode')->ignore($this->route('product'))],
             'unit' => ['sometimes', 'required', Rule::enum(ProductUnit::class)],

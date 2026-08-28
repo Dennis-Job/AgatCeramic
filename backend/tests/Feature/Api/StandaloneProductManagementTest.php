@@ -32,8 +32,8 @@ class StandaloneProductManagementTest extends TestCase
 
         $response = $this->actingAs($actor)->postJson('/api/v1/admin/products', [
             'category_id' => $category->id, 'name' => 'White tile', 'slug' => 'white-tile',
-            'sku' => 'WHITE-001', 'unit' => 'piece', 'price' => 100, 'stock_quantity' => 4,
-        ])->assertCreated()->assertJsonPath('data.is_active', false)->assertJsonPath('data.sku', 'WHITE-001');
+            'unit' => 'piece', 'price' => 100, 'stock_quantity' => 4,
+        ])->assertCreated()->assertJsonPath('data.is_active', false)->assertJsonPath('data.sku', '01000001');
         $productId = $response->json('data.id');
 
         $this->actingAs($actor)->putJson("/api/v1/admin/products/{$productId}/attributes", ['attributes' => []])->assertOk();
@@ -45,6 +45,30 @@ class StandaloneProductManagementTest extends TestCase
         ])->assertOk();
         $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$productId}", ['is_active' => true])
             ->assertOk()->assertJsonPath('data.is_active', true);
+    }
+
+    public function test_sku_uses_root_category_prefix_and_a_global_six_digit_number(): void
+    {
+        $actor = $this->catalogManager();
+        $tileRoot = Category::factory()->create();
+        $tileChild = Category::factory()->create(['parent_id' => $tileRoot->id]);
+        $plumbingRoot = Category::factory()->create();
+
+        $create = fn (Category $category, string $slug) => $this->actingAs($actor)->postJson('/api/v1/admin/products', [
+            'category_id' => $category->id,
+            'name' => $slug,
+            'slug' => $slug,
+            'unit' => 'piece',
+            'price' => 10,
+            'stock_quantity' => 0,
+        ])->assertCreated();
+
+        $create($tileChild, 'tile-one')->assertJsonPath('data.sku', '01000001');
+        $create($plumbingRoot, 'sink-one')->assertJsonPath('data.sku', '02000002');
+        $create($tileRoot, 'tile-two')->assertJsonPath('data.sku', '01000003');
+
+        $this->assertDatabaseHas('categories', ['id' => $tileChild->id, 'sku_prefix' => '01']);
+        $this->assertDatabaseHas('categories', ['id' => $plumbingRoot->id, 'sku_prefix' => '02']);
     }
 
     public function test_product_groups_validate_axes_members_and_return_axis_values(): void
@@ -149,15 +173,23 @@ class StandaloneProductManagementTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $redLarge->id]);
     }
 
-    public function test_standalone_identifiers_are_globally_unique(): void
+    public function test_standalone_identifiers_are_globally_unique_and_sku_is_server_owned(): void
     {
         $actor = $this->catalogManager();
         $existing = Product::factory()->create(['sku' => 'UNIQUE-SKU', 'article_number' => 'UNIQUE-ART', 'barcode' => '0123456789012']);
         $this->actingAs($actor)->postJson('/api/v1/admin/products', [
             'category_id' => $existing->category_id, 'name' => 'Duplicate', 'slug' => 'duplicate-identifiers',
-            'sku' => $existing->sku, 'article_number' => $existing->article_number, 'barcode' => $existing->barcode,
+            'article_number' => $existing->article_number, 'barcode' => $existing->barcode,
             'unit' => 'piece', 'price' => 10, 'stock_quantity' => 0,
-        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sku', 'article_number', 'barcode']]]);
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['article_number', 'barcode']]]);
+
+        $this->actingAs($actor)->postJson('/api/v1/admin/products', [
+            'category_id' => $existing->category_id, 'name' => 'Manual SKU', 'slug' => 'manual-sku',
+            'sku' => '99000001', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 0,
+        ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sku']]]);
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$existing->id}", ['sku' => '99000002'])
+            ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sku']]]);
     }
 
     public function test_relation_candidates_exclude_self_existing_outgoing_and_reverse_pairs(): void

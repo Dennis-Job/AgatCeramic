@@ -10,7 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 class CategoryManagementService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly CatalogSkuService $skuService,
+    ) {}
 
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): Category
@@ -19,7 +22,9 @@ class CategoryManagementService
             $parentId = $attributes['parent_id'] ?? null;
             $parent = $this->lockParent($parentId);
             $this->ensureParentCanBeAssigned(null, $parentId, $parent);
-            $category = Category::query()->create($attributes);
+            $category = new Category($attributes);
+            $category->sku_prefix = $this->skuService->prefixForNewCategory($parent);
+            $category->save();
             $this->auditLogService->record($actor, 'category.created', $category);
 
             return $category;
@@ -35,6 +40,8 @@ class CategoryManagementService
                 : null;
             $category = $categories?->firstWhere('id', $category->id)
                 ?? Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+            $originalParentId = $category->parent_id;
+            $parent = null;
 
             if (array_key_exists('parent_id', $attributes)) {
                 $parent = $attributes['parent_id'] === null
@@ -47,6 +54,9 @@ class CategoryManagementService
             }
 
             $category->fill($attributes)->save();
+            if (array_key_exists('parent_id', $attributes) && $attributes['parent_id'] !== $originalParentId) {
+                $this->skuService->reassignSubtree($category, $parent);
+            }
             $this->auditLogService->record($actor, 'category.updated', $category);
 
             return $category;

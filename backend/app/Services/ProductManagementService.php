@@ -15,12 +15,15 @@ class ProductManagementService
         private readonly CatalogAttributeIntegrityService $integrityService,
         private readonly StorageCleanupService $storageCleanupService,
         private readonly ProductCompletenessService $completenessService,
+        private readonly CatalogSkuService $skuService,
     ) {}
 
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): Product
     {
         return DB::transaction(function () use ($actor, $attributes): Product {
+            $category = Category::query()->whereKey($attributes['category_id'])->lockForUpdate()->firstOrFail();
+            $attributes['sku'] = $this->skuService->generate($category);
             $product = Product::query()->create($attributes);
             if ($product->is_active) {
                 $this->completenessService->assertCanActivate($product->load('category'));

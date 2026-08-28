@@ -27,6 +27,7 @@ class CategoryManagementTest extends TestCase
             'sort_order' => 20,
         ])->assertCreated()
             ->assertJsonPath('data.slug', 'ceramic-tile')
+            ->assertJsonPath('data.sku_prefix', '01')
             ->assertJsonPath('data.is_parent', false)
             ->assertJsonPath('data.is_active', true);
 
@@ -79,7 +80,9 @@ class CategoryManagementTest extends TestCase
     {
         $actor = $this->userWithRole('catalog-manager');
         $plumbing = Category::factory()->create(['name' => 'Сантехника', 'slug' => 'santekhnika', 'sort_order' => 10]);
-        $sinks = $this->actingAs($actor)->postJson('/api/v1/admin/categories', ['parent_id' => $plumbing->id, 'name' => 'Раковины', 'slug' => 'rakoviny', 'sort_order' => 10])->assertCreated()->json('data.id');
+        $sinksResponse = $this->actingAs($actor)->postJson('/api/v1/admin/categories', ['parent_id' => $plumbing->id, 'name' => 'Раковины', 'slug' => 'rakoviny', 'sort_order' => 10])->assertCreated();
+        $sinksResponse->assertJsonPath('data.sku_prefix', '01');
+        $sinks = $sinksResponse->json('data.id');
         $tubs = $this->actingAs($actor)->postJson('/api/v1/admin/categories', ['parent_id' => $plumbing->id, 'name' => 'Ванны', 'slug' => 'vanny', 'sort_order' => 20])->assertCreated()->json('data.id');
         $toilets = $this->actingAs($actor)->postJson('/api/v1/admin/categories', ['parent_id' => $plumbing->id, 'name' => 'Унитазы', 'slug' => 'unitazy', 'sort_order' => 30])->assertCreated()->json('data.id');
 
@@ -120,6 +123,28 @@ class CategoryManagementTest extends TestCase
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$parent->id}", ['is_parent' => false])
             ->assertUnprocessable()->assertJsonPath('error.details.is_parent.0', 'A category with children must remain a parent category.');
+    }
+
+    public function test_moving_a_category_subtree_updates_its_prefix_for_future_products(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $firstRoot = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
+            'name' => 'Tile', 'slug' => 'tile', 'is_parent' => true,
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '01')->json('data.id');
+        $secondRoot = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
+            'name' => 'Plumbing', 'slug' => 'plumbing', 'is_parent' => true,
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '02')->json('data.id');
+        $child = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
+            'parent_id' => $firstRoot, 'name' => 'Mosaic', 'slug' => 'mosaic', 'is_parent' => true,
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '01')->json('data.id');
+        $grandchild = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
+            'parent_id' => $child, 'name' => 'Glass mosaic', 'slug' => 'glass-mosaic',
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '01')->json('data.id');
+
+        $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$child}", ['parent_id' => $secondRoot])
+            ->assertOk()->assertJsonPath('data.sku_prefix', '02');
+
+        $this->assertDatabaseHas('categories', ['id' => $grandchild, 'sku_prefix' => '02']);
     }
 
     private function userWithRole(string $slug): User

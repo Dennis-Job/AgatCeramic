@@ -154,7 +154,10 @@ sanitised, so passwords, tokens, and other sensitive values are never exposed.
 - `DELETE /admin/products/{product}`
 
 Phase 3.1 makes each product a standalone sellable item. Create requires `category_id`, `name`, a
-unique URL-safe `slug`, a globally unique `sku`, a controlled `unit`, and a non-negative `price`.
+unique URL-safe `slug`, a controlled `unit`, and a non-negative `price`. The server generates the
+immutable, globally unique eight-digit SKU as `TTNNNNNN`: `TT` is the stable two-digit prefix of the
+root category inherited by its descendants, while `NNNNNN` is one global product sequence. Clients
+must not send `sku` on create or update. Existing legacy SKUs remain readable and are not rewritten.
 Create also requires non-negative `stock_quantity`. Optional commercial fields are globally unique
 `article_number`, digit-only `barcode`, and `old_price` (not below current price). `brand_id`, `description`, and
 `is_active` and `is_on_sale` are optional boolean flags. Product responses include these commercial fields, category, brand, and
@@ -162,6 +165,9 @@ nullable `primary_image`. The same primary-image projection is present in produc
 candidates, and product-group members so selectors can show the correct standalone product image.
 The endpoints require `catalog.manage` and record `product.created`, `product.updated`, and
 `product.deleted` in the audit log.
+Category responses expose the read-only `sku_prefix`. New root categories receive the next permanent
+code; a child inherits its parent's code. Moving a category subtree changes the prefix used for
+products created there in the future but does not change any existing SKU.
 Deleting a product locks the product against concurrent image mutations, collects every current
 product-image storage reference, then removes the product and its cascaded records. After the
 database transaction commits, it removes every collected file from its configured storage disk.
