@@ -47,7 +47,7 @@ const visibleProductManagementNavigation = computed(() => productManagementNavig
     <div class="mb-9 flex items-center justify-between px-2">
       <RouterLink class="flex items-center gap-3" to="/" @click="$emit('close')">
         <span class="grid h-10 w-10 place-items-center">
-          <img src="/logo.svg" alt="Logo">
+          <img src="/logo.svg" alt="Logo" class="logo-primary">
         </span>
         <span>
           <p class="text-2xl leading-6 font-bold tracking-tight text-gray-800">Agat<span class="text-gray-400">Ceramic</span></p>

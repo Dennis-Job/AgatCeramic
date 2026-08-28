@@ -78,9 +78,8 @@
   --color-primary-600: #6941c6;
   --color-primary-700: #53389e; */
 
-  --color-primary-25: #f7fafc;
+  --color-primary-25: #f2f7ff;
   --color-primary-50: #ecf3ff;
-  --color-primary-75: #e2e8ff;
   --color-primary-100: #dde9ff;
   --color-primary-200: #c2d6ff;
   --color-primary-300: #9cb9ff;
@@ -89,13 +88,17 @@
   --color-primary-600: #3641f5;
   --color-primary-700: #2a31d8;
   --color-primary-800: #252dae;
+  --color-primary-900: #262e89;
+  --color-primary-950: #161950;
 
   /* Neutral palette */
   --color-white: #ffffff;
   --color-page: #f7f9fc;
-  --color-gray-25: #f9fafb;
-  --color-gray-50: #f2f4f7;
-  --color-gray-100: #eaecf0;
+  /* --color-page: #F6F8F7; */
+
+  --color-gray-25: #fcfcfd;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f2f4f7;
   --color-gray-200: #e4e7ec;
   --color-gray-300: #d0d5dd;
   --color-gray-400: #98a2b3;
@@ -104,41 +107,93 @@
   --color-gray-700: #344054;
   --color-gray-800: #1d2939;
   --color-gray-900: #101828;
+  --color-gray-950: #0c111d;
+  --color-gray-dark: #1a2231;
 
   /* Status palette */
+  --color-success-25: #f6fef9;
   --color-success-50: #ecfdf3;
-  --color-success-75: #eafaf1;
+  --color-success-100: #d1fadf;
+  --color-success-200: #a6f4c5;
+  --color-success-300: #6ce9a6;
+  --color-success-400: #32d583;
   --color-success-500: #12b76a;
-  --color-success-600: #0d945d;
+  --color-success-600: #039855;
   --color-success-700: #027a48;
-  --color-warning-50: #fff6ed;
+  --color-success-800: #05603a;
+  --color-success-900: #054f31;
+  --color-success-950: #053321;
+
+  --color-warning-25: #fffcf5;
+  --color-warning-50: #fffaeb;
+  --color-warning-100: #fef0c7;
+  --color-warning-200: #fedf89;
+  --color-warning-300: #fec84b;
+  --color-warning-400: #fdb022;
   --color-warning-500: #f79009;
-  --color-warning-600: #d97706;
-  --color-warning-700: #b45309;
-  --color-warning-800: #92400e;
-  --color-warning-900: #78350f;
-  --color-info-50: #f0f9ff;
-  --color-info-100: #e0f2fe;
-  --color-info-200: #cbe5f7;
-  --color-info-600: #117a8b;
-  --color-info-700: #0b5361;
-  --color-info-800: #083e4c;
-  --color-info-900: #042a3a;
+  --color-warning-600: #dc6803;
+  --color-warning-700: #b54708;
+  --color-warning-800: #93370d;
+  --color-warning-900: #7a2e0e;
+  --color-warning-950: #4e1d09;
+
+  /* --color-primary-25: #FBFDFD;
+  --color-primary-50: #F8FCFC;
+  --color-primary-100: #F1F8F8;
+  --color-primary-200: #E0F0F0;
+  --color-primary-300: #C1E1E0;
+  --color-primary-400: #91CAC8;
+  --color-primary-500: #36716F;
+  --color-primary-600: #2D5D5C;
+  --color-primary-700: #244C4B;
+  --color-primary-800: #1C3B3A;
+  --color-primary-900: #142929;
+  --color-primary-950: #0D1C1B; */
+
+  --color-error-25: #fffbfa;
   --color-error-50: #fef3f2;
+  --color-error-100: #fee4e2;
   --color-error-200: #fecdca;
-  --color-error-500: #b42318;
-  --color-error-700: #912018;
+  --color-error-300: #fda29b;
+  --color-error-400: #f97066;
+  --color-error-500: #f04438;
+  --color-error-600: #d92d20;
+  --color-error-700: #b42318;
+  --color-error-800: #912018;
+  --color-error-900: #7a271a;
+  --color-error-950: #55160c;
+
   --color-blue-50: #eff6ff;
   --color-blue-500: #3b82f6;
   --color-blue-700: #2563eb;
+
+  --color-green-500: #10B981;
+
+  --color-orange-25: #fffaf5;
+  --color-orange-50: #fff6ed;
+  --color-orange-100: #ffead5;
+  --color-orange-200: #fddcab;
+  --color-orange-300: #feb273;
+  --color-orange-400: #fd853a;
+  --color-orange-500: #fb6514;
+  --color-orange-600: #ec4a0a;
+  --color-orange-700: #c4320a;
+  --color-orange-800: #9c2a10;
+  --color-orange-900: #7e2410;
+  --color-orange-950: #511c10;
+
+  --color-blue-light-25: #f5fbff;
   --color-blue-light-50: #f0f9ff;
   --color-blue-light-100: #e0f2fe;
   --color-blue-light-200: #b9e6fe;
+  --color-blue-light-300: #7cd4fd;
   --color-blue-light-400: #36bffa;
   --color-blue-light-500: #0ba5ec;
   --color-blue-light-600: #0086c9;
+  --color-blue-light-700: #026aa2;
   --color-blue-light-800: #065986;
-  --color-blue-light-900: #03396c;
+  --color-blue-light-900: #0b4a6f;
+  --color-blue-light-950: #062c41;
 
   --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
   --shadow-input: 0 1px 2px rgb(16 24 40 / 0.05);
@@ -255,6 +310,11 @@ button[class*='text-error-500']:not([class*='bg-']):not(:disabled):hover {
 
 .admin-table-audit-log {
   min-width: 850px;
+}
+
+.logo-primary {
+  /* fill: #3641F5; */
+  filter: brightness(0) saturate(100%) invert(28%) sepia(98%) saturate(3000%) hue-rotate(231deg) brightness(95%) contrast(101%);
 }
 
 @media (max-width: 639px) {
