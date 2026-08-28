@@ -308,10 +308,23 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     await page.goto('/products')
     await page.getByRole('button', { name: 'Редактировать товар' }).click()
     const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+    const editorBody = dialog.getByTestId('product-editor-body')
+    const editorFooter = dialog.getByTestId('product-editor-footer')
+
+    await expect(editorFooter.getByRole('button', { name: 'Сохранить и продолжить' })).toBeVisible()
+    if (width === 320) {
+      const footerTop = await editorFooter.evaluate(element => element.getBoundingClientRect().top)
+      expect(await editorBody.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true)
+      await editorBody.evaluate(element => { element.scrollTop = element.scrollHeight })
+      expect(await editorBody.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+      expect(await editorFooter.evaluate(element => element.getBoundingClientRect().top)).toBe(footerTop)
+    }
 
     for (const step of ['Основное и продажа', 'Характеристики', 'Фото', 'Варианты модели', 'Проверка']) {
       await dialog.getByRole('button', { name: step, exact: false }).click()
       expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+      expect(await editorFooter.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+      for (const button of await editorFooter.getByRole('button').all()) await expect(button).toBeVisible()
       if (step === 'Фото') {
         const longFileName = 'очень-длинное-название-фотографии-керамогранита-с-ракурсом-и-деталями-поверхности.jpg'
         await expect(dialog.getByText('Допустимые форматы: JPG, PNG или WebP. Максимальный размер — 10 МБ.')).toBeVisible()
