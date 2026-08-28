@@ -3,11 +3,11 @@ import { expect, test } from '@playwright/test'
 import { mockCatalogApi } from './catalogApi'
 
 const catalogRoutes = [
-  { path: '/products', heading: 'Товары', item: 'Монте Тиберио' },
-  { path: '/categories', heading: 'Категории', item: 'Керамогранит' },
-  { path: '/brands', heading: 'Бренды', item: 'Kerama Marazzi' },
-  { path: '/attribute-groups', heading: 'Группы характеристик', item: 'Размеры' },
-  { path: '/attributes', heading: 'Характеристики', item: 'Ширина' },
+  { path: '/products', apiPath: '/admin/products', heading: 'Товары', item: 'Монте Тиберио', loadingLabel: 'Загрузка товаров…' },
+  { path: '/categories', apiPath: '/admin/categories/tree', heading: 'Категории', item: 'Керамогранит', loadingLabel: 'Загрузка категорий…' },
+  { path: '/brands', apiPath: '/admin/brands', heading: 'Бренды', item: 'Kerama Marazzi', loadingLabel: 'Загрузка брендов…' },
+  { path: '/attribute-groups', apiPath: '/admin/attribute-groups', heading: 'Группы характеристик', item: 'Размеры', loadingLabel: 'Загрузка групп характеристик…' },
+  { path: '/attributes', apiPath: '/admin/attributes', heading: 'Характеристики', item: 'Ширина', loadingLabel: 'Загрузка характеристик…' },
 ] as const
 
 for (const route of catalogRoutes) {
@@ -24,6 +24,24 @@ for (const route of catalogRoutes) {
     // in the shared layout into unrelated Catalog failures.
     const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
     expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
+  })
+}
+
+for (const route of catalogRoutes) {
+  test(`${route.path} shows a full visible loading state without responsive overflow`, async ({ page }) => {
+    await mockCatalogApi(page, { delayPath: route.apiPath })
+
+    for (const width of [320, 640, 768, 1024, 1280]) {
+      await page.setViewportSize({ width, height: 720 })
+      await page.goto(route.path)
+
+      const status = page.getByRole('status').filter({ hasText: route.loadingLabel })
+      await expect(status).toBeVisible()
+      const loadingBox = await status.boundingBox()
+      expect(loadingBox?.height).toBeGreaterThanOrEqual(100)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+      await expect(page.getByText(route.item, { exact: false }).first()).toBeVisible()
+    }
   })
 }
 
@@ -365,7 +383,7 @@ test('categories, brands, groups, and attributes expose their dialog and selecto
 test('catalog exposes loading, error, and empty states', async ({ page }) => {
   await mockCatalogApi(page, { delayPath: '/admin/products' })
   await page.goto('/products')
-  await expect(page.getByRole('status', { name: '' }).filter({ hasText: 'Загрузка товаров' })).toBeAttached()
+  await expect(page.getByRole('status').filter({ hasText: 'Загрузка товаров' })).toBeVisible()
   await expect(page.getByText('Товары не найдены.')).toBeHidden()
   await expect(page.getByRole('status').filter({ hasText: 'Загрузка товаров' })).toBeHidden()
   await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()

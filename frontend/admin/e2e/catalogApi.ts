@@ -135,7 +135,7 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     const url = new URL(route.request().url())
     const path = url.pathname.replace('/api/v1', '')
 
-    if (options.delayPath === path) await new Promise((resolve) => setTimeout(resolve, 300))
+    if (options.delayPath === path) await new Promise((resolve) => setTimeout(resolve, 1000))
     if (options.errorPath === path) {
       await route.fulfill({ status: 500, json: { error: { message: 'Тестовая ошибка каталога' } } })
       return

@@ -5,6 +5,7 @@ import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseDialog from '../components/BaseDialog.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import CollectionLoadingState from '../components/CollectionLoadingState.vue'
 import PaginationControls from '../components/PaginationControls.vue'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { COUNTRY_OPTIONS, countryName } from '../constants/countries'
@@ -81,16 +82,16 @@ onMounted(load)
       <button v-if="canManage" class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-600" @click="open()"><Plus :size="18" />Добавить бренд</button>
     </div>
     <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500" role="alert">{{ error }}</p>
-    <p v-if="loading" class="sr-only" role="status">Загрузка брендов…</p>
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
-      <div v-if="brands.length" class="divide-y divide-gray-100">
+      <CollectionLoadingState v-if="loading" label="Загрузка брендов…" />
+      <div v-else-if="brands.length" class="divide-y divide-gray-100">
         <article v-for="brand in brands" :key="brand.id" class="flex items-center gap-4 p-4 sm:p-5">
           <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"><BadgeCheck :size="20" /></span>
           <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 class="truncate font-semibold text-gray-800">{{ brand.name }}</h2><span class="admin-badge rounded-full px-2 py-1 text-xs font-medium" :class="brand.is_active ? 'bg-success-50 text-success-500' : 'bg-gray-100 text-gray-500'">{{ brand.is_active ? 'Активен' : 'Скрыт' }}</span></div><p class="mt-1 truncate text-sm text-gray-500">/{{ brand.slug }}<template v-if="brand.country_code"> · {{ countryName(brand.country_code) }}</template></p><p v-if="brand.description" class="mt-1 truncate text-sm text-gray-500">{{ brand.description }}</p></div>
           <div v-if="canManage" class="flex gap-1"><button class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600" :aria-label="`Изменить бренд ${brand.name}`" @click="open(brand)"><Pencil :size="17" /></button><button class="rounded-lg p-2 text-gray-500 hover:bg-error-50 hover:text-error-500" :aria-label="`Удалить бренд ${brand.name}`" @click="deleting = brand"><Trash2 :size="17" /></button></div>
         </article>
       </div>
-      <div v-else-if="!loading" class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
+      <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
     </div>
     <PaginationControls v-if="pagination" :meta="pagination" :loading="loading" @change="load" />
     <BaseDialog :open="opened" labelledby="brand-dialog-title" describedby="brand-dialog-description" :close-disabled="isSaving" panel-class="w-full max-w-2xl" @close="opened = false">

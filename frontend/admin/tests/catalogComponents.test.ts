@@ -2,7 +2,22 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, test } from 'vitest'
 import BaseSelect from '../src/components/BaseSelect.vue'
 import BaseDialog from '../src/components/BaseDialog.vue'
+import CollectionLoadingState from '../src/components/CollectionLoadingState.vue'
 import PaginationControls from '../src/components/PaginationControls.vue'
+
+describe('CollectionLoadingState', () => {
+  test('shows a visible, accessible loading message', () => {
+    const wrapper = mount(CollectionLoadingState, {
+      props: { label: 'Загрузка товаров…' },
+    })
+
+    const status = wrapper.get('[role="status"]')
+    expect(status.text()).toBe('Загрузка товаров…')
+    expect(status.classes()).not.toContain('sr-only')
+    expect(status.attributes('aria-live')).toBe('polite')
+    expect(status.get('svg').attributes('aria-hidden')).toBe('true')
+  })
+})
 
 describe('BaseDialog', () => {
   test('does not close when a text-selection drag starts inside the panel and ends on the backdrop', async () => {

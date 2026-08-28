@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { Layers3, Pencil, Plus, Trash2, X } from "@lucide/vue";
 import BaseInput from "../components/BaseInput.vue";
 import BaseDialog from "../components/BaseDialog.vue";
+import CollectionLoadingState from "../components/CollectionLoadingState.vue";
 import PaginationControls from "../components/PaginationControls.vue";
 import { usePaginatedCollection } from "../composables/usePaginatedCollection";
 import {
@@ -157,13 +158,11 @@ onMounted(load);
     >
       {{ error }}
     </p>
-    <p v-if="loading" class="sr-only" role="status">
-      Загрузка групп характеристик…
-    </p>
     <div
       class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card"
     >
-      <div v-if="groups.length" class="divide-y divide-gray-100">
+      <CollectionLoadingState v-if="loading" label="Загрузка групп характеристик…" />
+      <div v-else-if="groups.length" class="divide-y divide-gray-100">
         <article
           v-for="group in groups"
           :key="group.id"
@@ -204,7 +203,7 @@ onMounted(load);
           </div>
         </article>
       </div>
-      <div v-else-if="!loading" class="px-5 py-14 text-center text-sm text-gray-500">
+      <div v-else class="px-5 py-14 text-center text-sm text-gray-500">
         Групп пока нет.
       </div>
     </div>
