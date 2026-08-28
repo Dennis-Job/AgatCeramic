@@ -121,7 +121,7 @@ function paginatedFixture(url: URL, first: Record<string, unknown>, secondName: 
 }
 
 export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}): Promise<void> {
-  const catalogProduct = { ...product, ...options.sourceProduct }
+  let catalogProduct = { ...product, ...options.sourceProduct }
   const createdProducts: Array<typeof product> = []
   const productImages = new Map<number, Array<{ id: number; product_id: number; url: string; mime_type: string; size: number; alt: string; is_primary: boolean; sort_order: number; created_at: string; updated_at: string }>>([
     [1, (options.initialProductImages ?? []).map(image => ({ ...image, product_id: 1, mime_type: 'image/jpeg', size: 1024, created_at: now, updated_at: now }))],
@@ -184,6 +184,21 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
         return
       }
       await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, withPrimaryImage(catalogProduct), 'Про Стоун') })
+      return
+    }
+
+    const productItemMatch = path.match(/^\/admin\/products\/(1|3)$/)
+    if (productItemMatch && route.request().method() === 'PATCH') {
+      const productId = Number(productItemMatch[1])
+      const payload = route.request().postDataJSON() as Partial<typeof product>
+      if (productId === 1) {
+        catalogProduct = { ...catalogProduct, ...payload }
+        await route.fulfill({ json: { data: withPrimaryImage(catalogProduct) } })
+        return
+      }
+      const createdProduct = createdProducts.find(item => item.id === productId)!
+      Object.assign(createdProduct, payload)
+      await route.fulfill({ json: { data: withPrimaryImage(createdProduct) } })
       return
     }
 

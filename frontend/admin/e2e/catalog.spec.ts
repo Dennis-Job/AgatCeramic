@@ -142,6 +142,26 @@ test('sale flag can be set while creating a product and is shown in the product 
   await expect(productRow.getByText('Распродажа', { exact: true })).toBeVisible()
 })
 
+test('published product can be hidden without changing its stock', async ({ page }) => {
+  await mockCatalogApi(page)
+  await page.goto('/products')
+
+  const productRow = page.locator('article').filter({ hasText: 'Монте Тиберио' }).first()
+  await expect(productRow.getByText('Активен', { exact: true })).toBeVisible()
+  await expect(productRow).toContainText('Остаток: 12')
+  await productRow.getByRole('button', { name: 'Редактировать товар Монте Тиберио' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+  await dialog.getByRole('button', { name: 'Проверка', exact: false }).click()
+  await dialog.getByRole('button', { name: 'Скрыть товар' }).click()
+
+  await expect(dialog.getByRole('status')).toContainText('Товар скрыт и перемещён в черновики')
+  await expect(dialog.getByText('Черновик', { exact: true })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Опубликовать товар' })).toBeVisible()
+  await expect(productRow.getByText('Черновик', { exact: true })).toBeVisible()
+  await expect(productRow).toContainText('Остаток: 12')
+})
+
 test('product list thumbnail updates immediately when the primary image changes', async ({ page }) => {
   await mockCatalogApi(page, {
     initialProductImages: [
