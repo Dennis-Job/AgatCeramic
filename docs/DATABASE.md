@@ -49,6 +49,7 @@ assignments; deleting a staff account or role removes its pivot rows.
 - image_id
 - is_parent
 - is_active
+- is_on_sale (boolean, default false; existing products remain outside the sale after migration)
 - sort_order
 - timestamps
 

@@ -41,16 +41,21 @@ class ProductManagementTest extends TestCase
             'price' => '1990.00',
             'stock_quantity' => 12,
             'is_active' => true,
+            'is_on_sale' => true,
         ])->assertCreated()
             ->assertJsonPath('data.category.id', $category->id)
-            ->assertJsonPath('data.brand.id', $brand->id);
+            ->assertJsonPath('data.brand.id', $brand->id)
+            ->assertJsonPath('data.is_on_sale', true);
         $id = $created->json('data.id');
 
         $this->actingAs($actor)->getJson('/api/v1/admin/products')
             ->assertOk()->assertJsonPath('data.0.id', $id)->assertJsonPath('meta.per_page', 25);
         $this->actingAs($actor)->patchJson("/api/v1/admin/products/{$id}", [
-            'brand_id' => null, 'is_active' => false,
-        ])->assertOk()->assertJsonPath('data.brand_id', null)->assertJsonPath('data.is_active', false);
+            'brand_id' => null, 'is_active' => false, 'is_on_sale' => false,
+        ])->assertOk()
+            ->assertJsonPath('data.brand_id', null)
+            ->assertJsonPath('data.is_active', false)
+            ->assertJsonPath('data.is_on_sale', false);
         $this->actingAs($actor)->deleteJson("/api/v1/admin/products/{$id}")->assertNoContent();
 
         $this->assertDatabaseMissing('products', ['id' => $id]);

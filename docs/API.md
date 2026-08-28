@@ -157,7 +157,7 @@ Phase 3.1 makes each product a standalone sellable item. Create requires `catego
 unique URL-safe `slug`, a globally unique `sku`, a controlled `unit`, and a non-negative `price`.
 Create also requires non-negative `stock_quantity`. Optional commercial fields are globally unique
 `article_number`, digit-only `barcode`, and `old_price` (not below current price). `brand_id`, `description`, and
-`is_active` are optional. Product responses include these commercial fields, category, brand, and
+`is_active` and `is_on_sale` are optional boolean flags. Product responses include these commercial fields, category, brand, and
 nullable `primary_image`. The same primary-image projection is present in product lists, relation
 candidates, and product-group members so selectors can show the correct standalone product image.
 The endpoints require `catalog.manage` and record `product.created`, `product.updated`, and

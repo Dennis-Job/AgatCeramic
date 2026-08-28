@@ -30,6 +30,7 @@ class StoreProductRequest extends FormRequest
             'old_price' => ['nullable', 'numeric', 'gte:price', 'max:9999999999.99'],
             'stock_quantity' => ['required', 'integer', 'min:0', 'max:4294967295'],
             'is_active' => ['sometimes', 'boolean'],
+            'is_on_sale' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -37,6 +38,9 @@ class StoreProductRequest extends FormRequest
     {
         if (! $this->has('is_active')) {
             $this->merge(['is_active' => false]);
+        }
+        if (! $this->has('is_on_sale')) {
+            $this->merge(['is_on_sale' => false]);
         }
         foreach (['article_number', 'barcode'] as $field) {
             if ($this->has($field)) {

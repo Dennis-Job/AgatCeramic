@@ -31,6 +31,7 @@ class UpdateProductRequest extends FormRequest
             'old_price' => ['sometimes', 'nullable', 'numeric', 'max:9999999999.99'],
             'stock_quantity' => ['sometimes', 'required', 'integer', 'min:0', 'max:4294967295'],
             'is_active' => ['sometimes', 'boolean'],
+            'is_on_sale' => ['sometimes', 'boolean'],
         ];
     }
 

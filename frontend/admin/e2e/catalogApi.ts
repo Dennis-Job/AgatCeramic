@@ -68,6 +68,7 @@ export const product = {
   old_price: null,
   stock_quantity: 12,
   is_active: true,
+  is_on_sale: false,
   category,
   brand,
   created_at: now,

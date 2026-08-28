@@ -98,6 +98,8 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await expect(dialog).toBeVisible()
   await expect(dialog.getByLabel('Категория')).toContainText('Керамогранит')
   await expect(dialog.getByLabel('Бренд')).toContainText('Kerama Marazzi')
+  await dialog.getByRole('button', { name: 'Проверка', exact: false }).click()
+  await expect(dialog.getByText('Не на распродаже', { exact: true })).toBeVisible()
   const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
   expect(dialogA11y.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
 
@@ -117,6 +119,27 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
   await expect(page.getByRole('button', { name: 'Редактировать товар' })).toBeFocused()
+})
+
+test('sale flag can be set while creating a product and is shown in the product list', async ({ page }) => {
+  await mockCatalogApi(page)
+  await page.goto('/products')
+  await page.getByRole('button', { name: 'Добавить товар' }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'Новый товар' })
+  await dialog.getByLabel('Название').fill('Распродажный керамогранит')
+  await dialog.getByLabel('Категория').click()
+  await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
+  await dialog.getByLabel('SKU').fill('SALE-TILE')
+  await dialog.getByText('Распродажа', { exact: true }).click()
+  await expect(dialog.getByRole('checkbox', { name: 'Товар участвует в распродаже' })).toBeChecked()
+  await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
+
+  const savedDialog = page.getByRole('dialog', { name: 'Распродажный керамогранит' })
+  await savedDialog.getByRole('button', { name: 'Проверка', exact: false }).click()
+  await expect(savedDialog.getByText('Распродажа', { exact: true })).toBeVisible()
+  const productRow = page.locator('article').filter({ hasText: 'Распродажный керамогранит' })
+  await expect(productRow.getByText('Распродажа', { exact: true })).toBeVisible()
 })
 
 test('product list thumbnail updates immediately when the primary image changes', async ({ page }) => {

@@ -33,6 +33,7 @@ class ProductFactory extends Factory
             'old_price' => null,
             'stock_quantity' => fake()->numberBetween(0, 500),
             'is_active' => true,
+            'is_on_sale' => false,
         ];
     }
 }

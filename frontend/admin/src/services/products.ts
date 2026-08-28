@@ -6,7 +6,7 @@ import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from
 
 export type Product = {
   id: number; category_id: number; brand_id: number | null; name: string; slug: string; description: string | null
-  sku: string; article_number: string | null; barcode: string | null; unit: ProductUnit; price: string; old_price: string | null; stock_quantity: number; is_active: boolean
+  sku: string; article_number: string | null; barcode: string | null; unit: ProductUnit; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; is_on_sale: boolean
   attribute_values?: ProductAttributeValue[]
   primary_image?: { id: number; url: string; alt: string | null } | null
   category: Category; brand: Brand | null; created_at: string; updated_at: string

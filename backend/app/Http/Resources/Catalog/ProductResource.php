@@ -25,6 +25,7 @@ class ProductResource extends ApiResource
             'old_price' => $this->old_price,
             'stock_quantity' => $this->stock_quantity,
             'is_active' => $this->is_active,
+            'is_on_sale' => $this->is_on_sale,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'primary_image' => new ProductImageResource($this->whenLoaded('primaryImage')),

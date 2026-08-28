@@ -3056,6 +3056,10 @@
                     "is_active": {
                         "type": "boolean",
                         "default": false
+                    },
+                    "is_on_sale": {
+                        "type": "boolean",
+                        "default": false
                     }
                 },
                 "additionalProperties": false
@@ -3123,6 +3127,9 @@
                         "maximum": 4294967295
                     },
                     "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_on_sale": {
                         "type": "boolean"
                     }
                 },
@@ -3916,6 +3923,7 @@
                     "old_price",
                     "stock_quantity",
                     "is_active",
+                    "is_on_sale",
                     "primary_image",
                     "created_at",
                     "updated_at"
@@ -3971,6 +3979,9 @@
                         "type": ["integer", "null"]
                     },
                     "is_active": {
+                        "type": "boolean"
+                    },
+                    "is_on_sale": {
                         "type": "boolean"
                     },
                     "primary_image": {
