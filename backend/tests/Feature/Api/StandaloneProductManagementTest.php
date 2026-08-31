@@ -75,11 +75,11 @@ class StandaloneProductManagementTest extends TestCase
     {
         $actor = $this->catalogManager();
         $category = Category::factory()->create();
-        $color = Attribute::factory()->create(['type' => 'select']);
+        $color = Attribute::factory()->create(['type' => 'string']);
         $material = Attribute::factory()->create(['type' => 'string']);
         $category->attributes()->attach([$color->id => ['is_required' => true], $material->id => ['is_required' => false]]);
-        $red = Product::factory()->create(['category_id' => $category->id, 'brand_id' => null, 'sku' => 'RED']);
-        $blue = Product::factory()->create(['category_id' => $category->id, 'brand_id' => null, 'sku' => 'BLUE']);
+        $red = Product::factory()->create(['category_id' => $category->id, 'brand_id' => null, 'sku' => 'RED', 'is_active' => true]);
+        $blue = Product::factory()->create(['category_id' => $category->id, 'brand_id' => null, 'sku' => 'BLUE', 'is_active' => true]);
         foreach ([[$red, 'red'], [$blue, 'blue']] as [$product, $value]) {
             $product->attributeValues()->create(['attribute_id' => $color->id, 'value' => $value]);
             $product->attributeValues()->create(['attribute_id' => $material->id, 'value' => 'porcelain']);
@@ -102,14 +102,71 @@ class StandaloneProductManagementTest extends TestCase
         $this->actingAs($actor)->getJson("/api/v1/admin/products/{$red->id}")
             ->assertOk()->assertJsonPath('data.group.code', 'TILE-COLORS');
 
+        $texture = Attribute::factory()->create(['type' => 'string', 'name' => 'Texture']);
+        $category->attributes()->attach($texture->id, ['is_required' => false]);
+
+        $this->actingAs($actor)->putJson("/api/v1/admin/products/{$red->id}/attributes", [
+            'attributes' => [
+                ['attribute_id' => $color->id, 'value' => 'red'],
+                ['attribute_id' => $material->id, 'value' => 'ceramic'],
+                ['attribute_id' => $texture->id, 'value' => 'matte'],
+            ],
+        ])->assertOk();
+        $this->assertDatabaseHas('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $material->id, 'value' => json_encode('ceramic'),
+        ]);
+        $this->assertDatabaseHas('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $texture->id, 'value' => json_encode('matte'),
+        ]);
+        $this->assertDatabaseHas('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $color->id, 'value' => json_encode('blue'),
+        ]);
+
+        $this->actingAs($actor)->putJson("/api/v1/admin/products/{$red->id}/attributes", [
+            'attributes' => [
+                ['attribute_id' => $color->id, 'value' => 'blue'],
+                ['attribute_id' => $material->id, 'value' => 'stoneware'],
+            ],
+        ])->assertUnprocessable()->assertJsonPath(
+            'error.details.product_ids.0',
+            'Каждый товар должен иметь уникальное сочетание значений осей группы.',
+        );
+        $this->assertDatabaseHas('product_attribute_values', [
+            'product_id' => $red->id, 'attribute_id' => $color->id, 'value' => json_encode('red'),
+        ]);
+        $this->assertDatabaseHas('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $material->id, 'value' => json_encode('ceramic'),
+        ]);
+        $this->assertDatabaseHas('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $texture->id, 'value' => json_encode('matte'),
+        ]);
+
+        $category->attributes()->updateExistingPivot($material->id, ['is_required' => true]);
+        $red->update(['is_active' => false]);
+        $this->actingAs($actor)->putJson("/api/v1/admin/products/{$red->id}/attributes", [
+            'attributes' => [
+                ['attribute_id' => $color->id, 'value' => 'red'],
+                ['attribute_id' => $texture->id, 'value' => 'matte'],
+            ],
+        ])->assertUnprocessable()->assertJsonPath(
+            'error.details.attributes.0',
+            'Общие обязательные характеристики нельзя очистить, пока в группе есть опубликованные товары.',
+        );
+        $this->assertDatabaseHas('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $material->id, 'value' => json_encode('ceramic'),
+        ]);
+
         $this->actingAs($actor)->putJson("/api/v1/admin/products/{$red->id}/attributes", [
             'attributes' => [
                 ['attribute_id' => $color->id, 'value' => 'red'],
                 ['attribute_id' => $material->id, 'value' => 'ceramic'],
             ],
-        ])->assertUnprocessable();
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $red->id, 'attribute_id' => $material->id, 'value' => json_encode('porcelain'),
+        ])->assertOk();
+        $this->assertDatabaseMissing('product_attribute_values', [
+            'product_id' => $red->id, 'attribute_id' => $texture->id,
+        ]);
+        $this->assertDatabaseMissing('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $texture->id,
         ]);
 
         $third = Product::factory()->create(['category_id' => $category->id, 'brand_id' => null]);
@@ -156,7 +213,10 @@ class StandaloneProductManagementTest extends TestCase
         $this->actingAs($actor)->postJson('/api/v1/admin/product-groups', [
             'name' => 'Common mismatch', 'code' => 'COMMON-MISMATCH',
             'axis_attribute_ids' => [$color->id], 'product_ids' => [$make('black', '30x30', 'ceramic')->id, $make('white', '30x30', 'porcelain')->id],
-        ])->assertUnprocessable();
+        ])->assertUnprocessable()->assertJsonPath(
+            'error.details.product_ids.0',
+            'Значение общей характеристики «'.$material->name.'» должно совпадать у всех товаров группы.',
+        );
         $this->actingAs($actor)->postJson('/api/v1/admin/product-groups', [
             'name' => 'Category mismatch', 'code' => 'CATEGORY-MISMATCH',
             'axis_attribute_ids' => [$color->id], 'product_ids' => [$make('gold', '20x20')->id, $make('silver', '20x20', 'porcelain', $otherCategory->id)->id],

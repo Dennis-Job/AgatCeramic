@@ -62,27 +62,28 @@ class ProductGroupManagementService
         $products = Product::query()->whereKey($productIds)->orderBy('id')->lockForUpdate()
             ->with('attributeValues')->get();
         if ($products->count() !== count($productIds) || $products->count() < 2) {
-            throw ValidationException::withMessages(['product_ids' => ['A product group requires at least two available products.']]);
+            throw ValidationException::withMessages(['product_ids' => ['В группе вариантов должно быть не менее двух доступных товаров.']]);
         }
 
         $first = $products->first();
         if ($products->contains(fn (Product $product): bool => $product->category_id !== $first->category_id || $product->brand_id !== $first->brand_id)) {
-            throw ValidationException::withMessages(['product_ids' => ['All grouped products must have the same category and brand.']]);
+            throw ValidationException::withMessages(['product_ids' => ['Все товары группы должны относиться к одной категории и одному бренду.']]);
         }
 
         $conflict = ProductGroupMember::query()->whereIn('product_id', $productIds)
             ->where('product_group_id', '!=', $group->id)->exists();
         if ($conflict) {
-            throw ValidationException::withMessages(['product_ids' => ['A product can belong to only one product group.']]);
+            throw ValidationException::withMessages(['product_ids' => ['Товар может входить только в одну группу вариантов.']]);
         }
 
         $axes = Attribute::query()->whereKey($axisIds)->orderBy('id')->lockForUpdate()->get();
         if ($axes->count() !== count($axisIds) || $axes->contains(fn (Attribute $attribute): bool => in_array($attribute->type, ['text', 'multiselect'], true))) {
-            throw ValidationException::withMessages(['axis_attribute_ids' => ['Axes must be existing scalar attributes; text and multiselect are not supported.']]);
+            throw ValidationException::withMessages(['axis_attribute_ids' => ['Осями могут быть только существующие скалярные характеристики; текст и множественный выбор не поддерживаются.']]);
         }
-        $categoryAttributeIds = $first->category->attributes()->pluck('attributes.id');
+        $categoryAttributes = $first->category->attributes()->get(['attributes.id', 'attributes.name']);
+        $categoryAttributeIds = $categoryAttributes->pluck('id');
         if (collect($axisIds)->diff($categoryAttributeIds)->isNotEmpty()) {
-            throw ValidationException::withMessages(['axis_attribute_ids' => ['Every axis must be assigned to the products category.']]);
+            throw ValidationException::withMessages(['axis_attribute_ids' => ['Каждая ось должна быть назначена категории товаров.']]);
         }
 
         $valuesByProduct = $products->mapWithKeys(fn (Product $product): array => [
@@ -92,11 +93,11 @@ class ProductGroupManagementService
         foreach ($products as $product) {
             $values = $valuesByProduct[$product->id];
             if (collect($axisIds)->contains(fn (int $id): bool => ! $values->has($id))) {
-                throw ValidationException::withMessages(['product_ids' => ["Product {$product->id} has no value for one or more group axes."]]);
+                throw ValidationException::withMessages(['product_ids' => ["У товара {$product->id} не заполнено значение одной или нескольких осей группы."]]);
             }
             $tuple = json_encode(collect($axisIds)->map(fn (int $id) => $values[$id])->all(), JSON_THROW_ON_ERROR);
             if (isset($tuples[$tuple])) {
-                throw ValidationException::withMessages(['product_ids' => ['Every product must have a unique combination of group axis values.']]);
+                throw ValidationException::withMessages(['product_ids' => ['Каждый товар должен иметь уникальное сочетание значений осей группы.']]);
             }
             $tuples[$tuple] = true;
         }
@@ -106,7 +107,10 @@ class ProductGroupManagementService
             $expected = $this->canonical($valuesByProduct[$first->id]->get($attributeId));
             foreach ($products->skip(1) as $product) {
                 if ($this->canonical($valuesByProduct[$product->id]->get($attributeId)) !== $expected) {
-                    throw ValidationException::withMessages(['product_ids' => ['All non-axis category attribute values must be equal within a group.']]);
+                    $attributeName = $categoryAttributes->firstWhere('id', $attributeId)?->name ?? "ID {$attributeId}";
+                    throw ValidationException::withMessages([
+                        'product_ids' => ["Значение общей характеристики «{$attributeName}» должно совпадать у всех товаров группы."],
+                    ]);
                 }
             }
         }

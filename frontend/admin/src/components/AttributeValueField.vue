@@ -33,7 +33,7 @@ const label = computed(() => props.accessibleName ?? props.attribute.name)
   <BaseTextarea v-else-if="attribute.type === 'text'" :model-value="stringValue" maxlength="10000" :required="required" :aria-label="label" @update:model-value="emit('update:modelValue', $event)" />
   <BaseInput v-else-if="attribute.type === 'integer'" :model-value="stringValue" type="number" inputmode="numeric" step="1" :required="required" :aria-label="label" @update:model-value="emit('update:modelValue', $event)" />
   <BaseInput v-else-if="attribute.type === 'decimal'" :model-value="stringValue" type="number" inputmode="decimal" step="any" :required="required" :aria-label="label" @update:model-value="emit('update:modelValue', $event)" />
-  <BaseCheckbox v-else-if="attribute.type === 'boolean'" :checked="stringValue === 'true'" mode="boolean" @update:checked="emit('update:modelValue', $event ? 'true' : 'false')">Да</BaseCheckbox>
+  <BaseCheckbox v-else-if="attribute.type === 'boolean'" :checked="stringValue === 'true'" mode="boolean" :accessible-name="label" @update:checked="emit('update:modelValue', $event ? 'true' : 'false')">Да</BaseCheckbox>
   <BaseSelect v-else-if="attribute.type === 'select'" :model-value="stringValue" :options="options" :required="required" :accessible-name="label" @update:model-value="emit('update:modelValue', $event)" />
   <div v-else-if="attribute.type === 'multiselect'" class="grid gap-2" role="group" :aria-label="label">
     <BaseCheckbox v-for="option in options" :key="option.value" v-model="selectedValues" :value="option.value">{{ option.label }}</BaseCheckbox>

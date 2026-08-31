@@ -189,7 +189,9 @@ standalone products through `product_group_members` and one or more ordered axis
 `product_group_axes`. Each product may belong to at most one group. Members must share category and brand, have equal non-axis values,
 and have a unique tuple of axis values. Axis attributes must be assigned to the category and must be
 scalar; `text` and `multiselect` are prohibited. Membership/group writes validate and lock all
-affected products atomically. Product groups are independent of `product_relations`.
+affected products atomically. Updating one member's product-owned attribute rows changes its axis
+values only, while non-axis rows are atomically synchronized across all members. Product groups are
+independent of `product_relations`.
 
 ## Orders
 

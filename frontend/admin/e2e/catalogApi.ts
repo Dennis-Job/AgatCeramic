@@ -54,6 +54,18 @@ export const attribute = {
   updated_at: now,
 }
 
+export const sharedAttribute = {
+  ...attribute,
+  id: 2,
+  attribute_group_id: null,
+  name: 'Тип поверхности и декоративной текстуры',
+  slug: 'surface-and-decorative-texture-type',
+  type: 'string',
+  unit: null,
+  is_required: false,
+  sort_order: 20,
+}
+
 export const product = {
   id: 1,
   category_id: 1,
@@ -96,6 +108,7 @@ type ApiOptions = {
   delayPath?: string
   auth?: 'allowed' | 'unauthenticated' | 'forbidden'
   sourceProductInGroup?: boolean
+  includeSharedAttribute?: boolean
   sourceProduct?: Partial<typeof product>
   initialProductImages?: Array<{ id: number; url: string; alt: string; is_primary: boolean; sort_order: number }>
 }
@@ -241,7 +254,7 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/categories/1/attributes') {
-      await route.fulfill({ json: { data: [attribute] } })
+      await route.fulfill({ json: { data: options.includeSharedAttribute ? [attribute, sharedAttribute] : [attribute] } })
       return
     }
 
@@ -251,7 +264,8 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/products/1/attributes') {
-      await route.fulfill({ json: { data: [{ id: 1, product_id: 1, attribute_id: attribute.id, value: '60.00', attribute }] } })
+      const values = [{ id: 1, product_id: 1, attribute_id: attribute.id, value: '60.00', attribute }]
+      await route.fulfill({ json: { data: options.includeSharedAttribute ? [...values, { id: 2, product_id: 1, attribute_id: sharedAttribute.id, value: 'Матовая', attribute: sharedAttribute }] : values } })
       return
     }
 

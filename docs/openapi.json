@@ -2206,6 +2206,7 @@
             "put": {
                 "operationId": "replaceProductAttributeValues",
                 "summary": "Replace product attribute values",
+                "description": "Fully replaces the requested product values. For grouped products, axis values affect only the requested product, while supplied or omitted non-axis values are atomically synchronized across all group members.",
                 "security": [
                     {
                         "sanctumSession": []

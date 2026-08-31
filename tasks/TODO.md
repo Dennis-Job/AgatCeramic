@@ -164,6 +164,10 @@
   - Sort category siblings, brands, sale units, variation groups, relation choices, and attribute choice values using Russian locale-aware ordering.
   - Keep contextual service options such as “Без бренда” and “Новая группа” at the top.
   - Cover the ordering rules with Admin unit and end-to-end tests and complete the required UI Design Guard review.
+- [x] TASK-042T Synchronize shared attributes in product groups
+  - Apply non-axis characteristic changes atomically to every product in a variation group while keeping axis values product-specific.
+  - Allow characteristics added to an existing category to be filled without dismantling its product groups, preserve active-product completeness, and return Russian group-validation messages.
+  - Clarify the behavior in Admin and cover propagation, removal, rollback, API contracts, and responsive/accessibility review.
 
 ## Phase 4 — Import/export
 

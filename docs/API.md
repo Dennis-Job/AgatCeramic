@@ -219,6 +219,13 @@ same partial-update validation and response. Product-image metadata remains `PAT
 - `GET /admin/products/{product}/attributes`
 - `PUT /admin/products/{product}/attributes`
 
+`PUT` fully replaces the requested product's attribute values. For a product in a variation group,
+axis values belong only to that product, while every non-axis value is shared by the group: supplied
+shared values are copied atomically to every member and omitted shared values are removed from every
+member. A shared required value cannot be removed while any member is active. Axis uniqueness and all
+group invariants are checked before commit; a conflict rolls back the complete update. The response
+contains the requested product's resulting values.
+
 The `PUT` endpoint replaces the full value set with an `attributes` array of
 `{attribute_id, value}` entries. An attribute must be assigned to the product category. Inactive
 drafts may omit category-assignment required values; activation requires all of them. Values are

@@ -127,6 +127,10 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
   expect(dialogA11y.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
 
+  await dialog.getByRole('button', { name: 'Характеристики', exact: false }).click()
+  await expect(dialog.getByText('Характеристики принадлежат только этой позиции.')).toBeVisible()
+  await expect(dialog.getByText('общая для группы')).toHaveCount(0)
+
   const expectations = [
     ['Характеристики', 'Ширина'],
     ['Фото', 'Фото этой позиции'],
@@ -144,6 +148,26 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
   await expect(dialog).toBeHidden()
   await expect(page.getByRole('button', { name: 'Редактировать товар' })).toBeFocused()
 })
+
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`grouped product identifies product-specific and shared characteristics at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    await mockCatalogApi(page, { sourceProductInGroup: true, includeSharedAttribute: true })
+    await page.goto('/products')
+    await page.getByRole('button', { name: 'Редактировать товар Монте Тиберио' }).click()
+
+    const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+    await dialog.getByRole('button', { name: 'Характеристики', exact: false }).click()
+
+    await expect(dialog.getByText('Общие характеристики автоматически применяются ко всем товарам группы.')).toBeVisible()
+    await expect(dialog.getByLabel('Ширина, только для этой позиции', { exact: true })).toHaveValue('60.00')
+    await expect(dialog.getByLabel('Тип поверхности и декоративной текстуры, общая для группы', { exact: true })).toHaveValue('Матовая')
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+
+    const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+    expect(dialogA11y.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
+  })
+}
 
 test('sale flag can be set while creating a product and is shown in the product list', async ({ page }) => {
   await mockCatalogApi(page)
