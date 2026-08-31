@@ -107,6 +107,93 @@ test('product filters send the selected values and reset to the first page', asy
   await expect(page.getByLabel('Категория')).toContainText('Все категории')
 })
 
+test('product table sorts through the API and remains usable at supported widths', async ({ page }) => {
+  await mockCatalogApi(page)
+  const initialRequest = page.waitForRequest((request) => new URL(request.url()).pathname.endsWith('/admin/products'))
+  await page.goto('/products')
+  const initialQuery = new URL((await initialRequest).url()).searchParams
+  expect(initialQuery.get('sort')).toBe('created_at')
+  expect(initialQuery.get('direction')).toBe('desc')
+
+  const createdHeader = page.getByRole('columnheader', { name: /Создан/ })
+  await expect(createdHeader).toHaveAttribute('aria-sort', 'descending')
+  const ascendingCreatedRequest = page.waitForRequest((request) => {
+    const query = new URL(request.url()).searchParams
+    return query.get('sort') === 'created_at' && query.get('direction') === 'asc'
+  })
+  await createdHeader.getByRole('button', { name: 'Создан' }).click()
+  await ascendingCreatedRequest
+  await expect(createdHeader).toHaveAttribute('aria-sort', 'ascending')
+
+  const nameHeader = page.getByRole('columnheader', { name: /Наименование/ })
+  const nameRequest = page.waitForRequest((request) => {
+    const query = new URL(request.url()).searchParams
+    return query.get('sort') === 'name' && query.get('direction') === 'asc'
+  })
+  await nameHeader.getByRole('button', { name: 'Наименование' }).click()
+  await nameRequest
+  await expect(nameHeader).toHaveAttribute('aria-sort', 'ascending')
+
+  await page.route('**/api/v1/admin/products?*', async (route) => {
+    const query = new URL(route.request().url()).searchParams
+    if (query.get('sort') === 'updated_at') {
+      await route.fulfill({ status: 500, json: { error: { message: 'Сортировка временно недоступна.', details: {} } } })
+      return
+    }
+    await route.fallback()
+  })
+  await page.getByRole('columnheader', { name: /Изменён/ }).getByRole('button', { name: 'Изменён' }).click()
+  await expect(page.getByRole('alert')).toContainText('Сортировка временно недоступна.')
+  await expect(nameHeader).toHaveAttribute('aria-sort', 'ascending')
+  await expect(page.getByRole('columnheader', { name: /Изменён/ })).toHaveAttribute('aria-sort', 'none')
+
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 720 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    const tableRegion = page.getByRole('region', { name: 'Таблица товаров' })
+    const productName = page.getByText('Монте Тиберио', { exact: true }).first()
+    const editAction = page.getByRole('button', { name: 'Редактировать товар Монте Тиберио' })
+    await expect(tableRegion).toBeVisible()
+    await tableRegion.evaluate((element) => { element.scrollLeft = 0 })
+    const regionBox = await tableRegion.boundingBox()
+    const nameBox = await productName.boundingBox()
+    const initialActionBox = await editAction.boundingBox()
+    expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(regionBox!.x + regionBox!.width)
+    expect(initialActionBox!.x).toBeGreaterThanOrEqual(regionBox!.x + regionBox!.width)
+    await tableRegion.evaluate((element) => { element.scrollLeft = element.scrollWidth })
+    const scrolledActionBox = await editAction.boundingBox()
+    expect(scrolledActionBox!.x).toBeGreaterThanOrEqual(regionBox!.x)
+    expect(scrolledActionBox!.x + scrolledActionBox!.width).toBeLessThanOrEqual(regionBox!.x + regionBox!.width)
+  }
+})
+
+test('product table limits long displayed names to 50 characters without losing the full name', async ({ page }) => {
+  const longName = 'Керамогранит коллекционный полированный с декоративной фактурой белого мрамора'
+  const preview = `${Array.from(longName).slice(0, 49).join('')}…`
+  await mockCatalogApi(page, { sourceProduct: { name: longName } })
+  await page.goto('/products')
+
+  const productName = page.locator('tbody tr').first().locator('td').first().locator('p').first()
+  const visiblePreview = productName.getByTestId('product-name-preview')
+  await expect(visiblePreview).toHaveText(preview)
+  await expect(visiblePreview).toHaveAttribute('aria-hidden', 'true')
+  await expect(productName).toHaveAttribute('title', longName)
+  await expect(productName.locator('.sr-only')).toHaveText(longName)
+  expect(Array.from(await visiblePreview.innerText())).toHaveLength(50)
+
+  const accessibility = await new AxeBuilder({ page }).include('[aria-label="Таблица товаров"]').disableRules(['color-contrast']).analyze()
+  expect(accessibility.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
+})
+
+test('product table displays article numbers in a dedicated column', async ({ page }) => {
+  await mockCatalogApi(page)
+  await page.goto('/products')
+
+  await expect(page.getByRole('columnheader', { name: 'Артикул', exact: true })).toBeVisible()
+  const productRow = page.locator('tbody tr').filter({ hasText: 'Монте Тиберио' }).first()
+  await expect(productRow.getByRole('cell', { name: 'KM-100', exact: true })).toBeVisible()
+})
+
 test('product card integrates all tabs and its selectors', async ({ page }) => {
   await mockCatalogApi(page)
   await page.goto('/products')
@@ -219,7 +306,7 @@ test('sale flag can be set while creating a product and is shown in the product 
   await expect(savedDialog.getByRole('region', { name: 'Без группы' }).getByRole('button', { name: 'Рисунок', exact: true })).toBeVisible()
   await savedDialog.getByRole('button', { name: 'Проверка', exact: false }).click()
   await expect(savedDialog.getByText('Распродажа', { exact: true })).toBeVisible()
-  const productRow = page.locator('article').filter({ hasText: 'Распродажный керамогранит' })
+  const productRow = page.locator('tbody tr').filter({ hasText: 'Распродажный керамогранит' })
   await expect(productRow.getByText('Распродажа', { exact: true })).toBeVisible()
 })
 
@@ -227,9 +314,9 @@ test('published product can be hidden without changing its stock', async ({ page
   await mockCatalogApi(page)
   await page.goto('/products')
 
-  const productRow = page.locator('article').filter({ hasText: 'Монте Тиберио' }).first()
+  const productRow = page.locator('tbody tr').filter({ hasText: 'Монте Тиберио' }).first()
   await expect(productRow.getByText('Активен', { exact: true })).toBeVisible()
-  await expect(productRow).toContainText('Остаток: 12')
+  await expect(productRow.getByText('12', { exact: true })).toBeVisible()
   await productRow.getByRole('button', { name: 'Редактировать товар Монте Тиберио' }).click()
 
   const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
@@ -240,7 +327,7 @@ test('published product can be hidden without changing its stock', async ({ page
   await expect(dialog.getByText('Скрыт', { exact: true })).toBeVisible()
   await expect(dialog.getByRole('button', { name: 'Опубликовать товар' })).toBeVisible()
   await expect(productRow.getByText('Скрыт', { exact: true })).toBeVisible()
-  await expect(productRow).toContainText('Остаток: 12')
+  await expect(productRow.getByText('12', { exact: true })).toBeVisible()
 })
 
 test('product list thumbnail updates immediately when the primary image changes', async ({ page }) => {
@@ -252,7 +339,7 @@ test('product list thumbnail updates immediately when the primary image changes'
   })
   await page.goto('/products')
 
-  const productRow = page.locator('article').filter({ hasText: 'Монте Тиберио' }).first()
+  const productRow = page.locator('tbody tr').filter({ hasText: 'Монте Тиберио' }).first()
   await expect(productRow.locator('img')).toHaveAttribute('src', '/first-product-image.jpg')
   await page.getByRole('button', { name: 'Редактировать товар Монте Тиберио' }).click()
   const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
@@ -281,7 +368,7 @@ test('new product thumbnail appears after its first image is uploaded and the ed
   await savedDialog.getByRole('button', { name: 'Загрузить' }).click()
   await savedDialog.getByRole('button', { name: 'Закрыть карточку товара' }).click()
 
-  const newProductRow = page.locator('article').filter({ hasText: 'Новый керамогранит' })
+  const newProductRow = page.locator('tbody tr').filter({ hasText: 'Новый керамогранит' })
   await expect(newProductRow.locator('img')).toHaveAttribute('src', '/uploaded-3-1.jpg')
 })
 

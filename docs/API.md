@@ -176,8 +176,10 @@ newly stored file.
 
 `GET /admin/products` supports case-insensitive substring `search` for product name, slug, SKU,
 article number, or barcode. It also supports `category_id`, `brand_id`,
-`is_active`, `has_stock`, `price_from`, `price_to`, and `per_page`.
-Price and stock filters apply directly to products; all filters can be combined.
+`is_active`, `has_stock`, `price_from`, `price_to`, `sort`, `direction`, and `per_page`.
+`sort` accepts `sku`, `name`, `created_at`, or `updated_at`; `direction` accepts `asc` or `desc`.
+The default order is `created_at desc`, so newly created products appear first. Price and stock
+filters apply directly to products; all filters can be combined.
 
 Changing `category_id` is rejected with `422` when the destination category does not assign every
 attribute already used by the product. Missing required destination values are permitted while the

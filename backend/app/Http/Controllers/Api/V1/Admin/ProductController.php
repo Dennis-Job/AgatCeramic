@@ -55,7 +55,12 @@ class ProductController extends Controller
             }
         }
 
-        return ProductResource::collection($query->orderBy('name')->paginate($filters['per_page'] ?? 25)->withQueryString());
+        $sort = $filters['sort'] ?? 'created_at';
+        $direction = $filters['direction'] ?? 'desc';
+
+        return ProductResource::collection(
+            $query->orderBy($sort, $direction)->orderByDesc('id')->paginate($filters['per_page'] ?? 25)->withQueryString()
+        );
     }
 
     public function store(StoreProductRequest $request): JsonResponse

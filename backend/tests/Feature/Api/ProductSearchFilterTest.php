@@ -46,6 +46,47 @@ class ProductSearchFilterTest extends TestCase
 
         $this->actingAs($actor)->getJson('/api/v1/admin/products?price_from=100&price_to=10&has_stock=invalid')
             ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['price_to', 'has_stock']]]);
+
+        $this->actingAs($actor)->getJson('/api/v1/admin/products?sort=price&direction=sideways')
+            ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sort', 'direction']]]);
+    }
+
+    public function test_products_default_to_newest_first_and_support_table_sorting(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $category = Category::factory()->create();
+        $alpha = Product::factory()->create([
+            'category_id' => $category->id,
+            'name' => 'Альфа',
+            'sku' => '03000003',
+            'created_at' => now()->subDays(3),
+            'updated_at' => now()->subHour(),
+        ]);
+        $beta = Product::factory()->create([
+            'category_id' => $category->id,
+            'name' => 'Бета',
+            'sku' => '01000001',
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDays(3),
+        ]);
+        $gamma = Product::factory()->create([
+            'category_id' => $category->id,
+            'name' => 'Гамма',
+            'sku' => '02000002',
+            'created_at' => now()->subDays(2),
+            'updated_at' => now()->subDays(2),
+        ]);
+
+        $this->actingAs($actor)->getJson('/api/v1/admin/products')
+            ->assertOk()->assertJsonPath('data.*.id', [$beta->id, $gamma->id, $alpha->id]);
+        $this->actingAs($actor)->getJson('/api/v1/admin/products?sort=sku&direction=asc')
+            ->assertOk()->assertJsonPath('data.*.id', [$beta->id, $gamma->id, $alpha->id]);
+        $this->actingAs($actor)->getJson('/api/v1/admin/products?sort=name&direction=desc')
+            ->assertOk()->assertJsonPath('data.*.id', [$gamma->id, $beta->id, $alpha->id]);
+        $this->actingAs($actor)->getJson('/api/v1/admin/products?sort=created_at&direction=asc')
+            ->assertOk()->assertJsonPath('data.*.id', [$alpha->id, $gamma->id, $beta->id]);
+        $this->actingAs($actor)->getJson('/api/v1/admin/products?sort=updated_at&direction=desc')
+            ->assertOk()->assertJsonPath('data.*.id', [$alpha->id, $gamma->id, $beta->id]);
     }
 
     private function userWithRole(string $slug): User

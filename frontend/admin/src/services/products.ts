@@ -12,8 +12,10 @@ export type Product = {
   category: Category; brand: Brand | null; created_at: string; updated_at: string
 }
 export type ProductUnit = 'piece' | 'square_meter' | 'linear_meter' | 'package' | 'kilogram' | 'liter' | 'set'
+export type ProductSort = 'sku' | 'name' | 'created_at' | 'updated_at'
+export type SortDirection = 'asc' | 'desc'
 export type ProductPayload = Omit<Product, 'id' | 'sku' | 'category' | 'brand' | 'attribute_values' | 'primary_image' | 'created_at' | 'updated_at'>
-export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; has_stock?: boolean; price_from?: string; price_to?: string } & PageRequest
+export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; has_stock?: boolean; price_from?: string; price_to?: string; sort?: ProductSort; direction?: SortDirection } & PageRequest
 
 async function fail(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }
