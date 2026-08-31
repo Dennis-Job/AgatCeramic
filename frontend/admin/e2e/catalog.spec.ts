@@ -178,7 +178,10 @@ for (const width of [320, 640, 768, 1024, 1280]) {
 
     const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
     await dialog.getByRole('button', { name: 'Характеристики', exact: false }).click()
-    await expect(dialog.getByRole('button', { name: 'Рисунок', exact: true })).toContainText('Камень')
+    const dimensionsSection = dialog.getByRole('region', { name: 'Размеры' })
+    const ungroupedSection = dialog.getByRole('region', { name: 'Без группы' })
+    await expect(dimensionsSection.getByLabel('Ширина', { exact: true })).toHaveValue('60.00')
+    await expect(ungroupedSection.getByRole('button', { name: 'Рисунок', exact: true })).toContainText('Камень')
 
     const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
     expect(dialogA11y.violations.filter(violation => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
@@ -198,7 +201,7 @@ for (const width of [320, 640, 768, 1024, 1280]) {
 }
 
 test('sale flag can be set while creating a product and is shown in the product list', async ({ page }) => {
-  await mockCatalogApi(page)
+  await mockCatalogApi(page, { includeOptionalSelectAttribute: true })
   await page.goto('/products')
   await page.getByRole('button', { name: 'Добавить товар' }).click()
 
@@ -212,6 +215,8 @@ test('sale flag can be set while creating a product and is shown in the product 
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
 
   const savedDialog = page.getByRole('dialog', { name: 'Распродажный керамогранит' })
+  await expect(savedDialog.getByRole('region', { name: 'Размеры' }).getByLabel('Ширина', { exact: true })).toBeVisible()
+  await expect(savedDialog.getByRole('region', { name: 'Без группы' }).getByRole('button', { name: 'Рисунок', exact: true })).toBeVisible()
   await savedDialog.getByRole('button', { name: 'Проверка', exact: false }).click()
   await expect(savedDialog.getByText('Распродажа', { exact: true })).toBeVisible()
   const productRow = page.locator('article').filter({ hasText: 'Распродажный керамогранит' })

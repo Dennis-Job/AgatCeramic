@@ -171,6 +171,9 @@
 - [x] TASK-042U Allow optional select characteristics to be cleared
   - Add an accessible clear action to optional select characteristics in the product editor while keeping required choices protected.
   - Persist a cleared characteristic as an omitted value and cover responsive, accessibility, focus, and payload behavior.
+- [x] TASK-042V Group product characteristic fields into sections
+  - Render category characteristics under their characteristic-group names in the product create/edit flow.
+  - Keep characteristics without a group together in a separate list and preserve validation, variation, and clear behavior.
 
 ## Phase 4 — Import/export
 
