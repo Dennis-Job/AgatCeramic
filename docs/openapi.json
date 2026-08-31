@@ -1865,6 +1865,7 @@
                     {"name": "category_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
                     {"name": "brand_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
                     {"name": "is_active", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "is_on_sale", "in": "query", "required": false, "schema": {"type": "boolean"}},
                     {"name": "has_stock", "in": "query", "required": false, "schema": {"type": "boolean"}},
                     {"name": "price_from", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},
                     {"name": "price_to", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},

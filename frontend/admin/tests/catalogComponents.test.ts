@@ -117,10 +117,12 @@ describe('BaseSelect', () => {
 
   test('filters options and emits the selected value with accessible names', async () => {
     const wrapper = mount(BaseSelect, {
+      attachTo: document.body,
       props: {
         modelValue: '',
         accessibleName: 'Категория',
         searchable: true,
+        searchPlaceholder: 'Начните вводить название категории',
         options: [
           { value: '1', label: 'Керамогранит' },
           { value: '2', label: 'Мозаика' },
@@ -134,6 +136,7 @@ describe('BaseSelect', () => {
     expect(trigger.attributes('aria-expanded')).toBe('true')
 
     const search = wrapper.get('input[aria-label="Поиск: Категория"]')
+    expect(search.attributes('placeholder')).toBe('Начните вводить название категории')
     await search.setValue('моз')
     expect(wrapper.text()).toContain('Мозаика')
     expect(wrapper.text()).not.toContain('Керамогранит')
@@ -144,6 +147,8 @@ describe('BaseSelect', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([['2']])
     expect(wrapper.emitted('change')).toEqual([['2']])
     expect(trigger.attributes('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(trigger.element)
+    wrapper.unmount()
   })
 
   test('closes with Escape and reports an empty search result', async () => {
@@ -162,6 +167,7 @@ describe('BaseSelect', () => {
     expect(wrapper.text()).toContain('Ничего не найдено')
     await wrapper.get('input[type="search"]').trigger('keydown', { key: 'Escape' })
     expect(wrapper.find('input[type="search"]').exists()).toBe(false)
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Бренд')
     wrapper.unmount()
   })
 })

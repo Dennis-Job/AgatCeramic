@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ArrowDown, ArrowUp, ArrowUpDown, Copy, EyeOff, GripVertical, ImagePlus, Package, Pencil, Plus, Save, Search, Star, Trash2, X } from '@lucide/vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ArrowDown, ArrowUp, ArrowUpDown, Copy, EyeOff, GripVertical, ImagePlus, Package, Pencil, Plus, Save, Star, Trash2, X } from '@lucide/vue'
 import AttributeValueField, { type AttributeDraftValue } from '../components/AttributeValueField.vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseDialog from '../components/BaseDialog.vue'
 import BaseInput from '../components/BaseInput.vue'
+import BaseRadio from '../components/BaseRadio.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import BaseTextarea from '../components/BaseTextarea.vue'
 import CollectionLoadingState from '../components/CollectionLoadingState.vue'
@@ -30,7 +31,8 @@ const { items: products, pagination, error, loading } = list
 const categories = ref<Category[]>([]); const brands = ref<Brand[]>([]); const candidates = ref<Product[]>([]); const groupProducts = ref<ProductGroup['products']>([])
 const opened = ref(false); const saving = ref(false); const editing = ref<Product | null>(null); const deleting = ref<Product | null>(null); const activeStep = ref<Step>('main'); const success = ref('')
 const confirmError = ref('')
-const filters = ref({ search: '', category_id: '', brand_id: '', is_active: '', has_stock: '', price_from: '', price_to: '' })
+const filterResultStatus = ref('')
+const filters = ref({ search: '', category_id: '', brand_id: '', is_active: '', is_on_sale: '' })
 const sort = ref<ProductSort>('created_at'); const direction = ref<SortDirection>('desc')
 const form = ref<ProductPayload>(emptyProduct()); const manuallyEditedSlug = ref(false); const copiedFromProduct = ref<Product | null>(null); const copiedNameError = ref('')
 const attributes = ref<Attribute[]>([]); const attributeGroups = ref<AttributeGroup[]>([]); const attributeValues = ref<Record<number, AttributeDraftValue>>({}); const requiredIds = ref<number[]>([])
@@ -45,7 +47,8 @@ const copiedFromName = computed(() => copiedFromProduct.value?.name ?? null)
 const steps = [{ id: 'main', label: 'Основное и продажа' }, { id: 'attributes', label: 'Характеристики' }, { id: 'images', label: 'Фото' }, { id: 'group', label: 'Варианты модели' }, { id: 'review', label: 'Проверка' }]
 const units: Array<{ value: ProductUnit; label: string }> = sortByLabel([{ value:'piece',label:'Штука'},{value:'square_meter',label:'Квадратный метр'},{value:'linear_meter',label:'Погонный метр'},{value:'package',label:'Упаковка'},{value:'kilogram',label:'Килограмм'},{value:'liter',label:'Литр'},{value:'set',label:'Комплект'}])
 const relationTypes = sortByLabel([{ value: 'related', label: 'Сопутствующий товар' }, { value: 'recommended', label: 'Рекомендуемый товар' }])
-const stateOptions=[{value:'',label:'Любая активность'},{value:'1',label:'Активные'},{value:'0',label:'Скрытые'}];const stockOptions=[{value:'',label:'Любой остаток'},{value:'1',label:'В наличии'},{value:'0',label:'Нет в наличии'}]
+const activityOptions=[{value:'',label:'Все'},{value:'1',label:'Активные'},{value:'0',label:'Скрытые'}]
+const saleOptions=[{value:'',label:'Все'},{value:'1',label:'Распродажа'},{value:'0',label:'Не распродажа'}]
 function flatten(nodes: Category[], depth=0): Array<Category & {depth:number}> { return [...nodes].sort((left,right)=>compareAlphabetically(left.name,right.name)).flatMap(item => [{...item,depth},...flatten(item.children??[],depth+1)]) }
 const categoryOptions = computed(() => flatten(categories.value).filter(item=>item.is_active).map(item=>({value:String(item.id),label:`${'— '.repeat(item.depth)}${item.name}`})))
 const brandOptions = computed(() => [{value:'',label:'Без бренда'},...sortByLabel(brands.value.map(item=>({value:String(item.id),label:item.name})))]); const filterCategoryOptions=computed(()=>[{value:'',label:'Все категории'},...categoryOptions.value]); const filterBrandOptions=computed(()=>[{value:'',label:'Все бренды'},...brandOptions.value.slice(1)])
@@ -56,6 +59,7 @@ const attributeSections=computed(()=>[...groupedAttributeSections.value,...(ungr
 const selectedCategory=computed({get:()=>form.value.category_id?String(form.value.category_id):'',set:value=>form.value.category_id=Number(value)}); const selectedBrand=computed({get:()=>form.value.brand_id===null?'':String(form.value.brand_id),set:value=>form.value.brand_id=value?Number(value):null})
 const groupOptions=computed(()=>[{value:'',label:'Новая группа'},...sortByLabel(groups.value.map(group=>({value:String(group.id),label:`${group.name} · ${group.code}`})))]); const currentGroup=computed(()=>groups.value.find(group=>group.products.some(product=>product.id===editing.value?.id))??null)
 const selectableCandidates=computed(()=>sortByLabel(candidates.value.filter(product=>!relations.value.some(row=>Number(row.related_product_id)===product.id)).map(product=>({value:String(product.id),label:`${product.name} · ${product.sku}`}))))
+const hasActiveFilters=computed(()=>Object.values(filters.value).some(Boolean))
 function relationOptions(selectedId:string){return sortByLabel([...selectableCandidates.value,...candidates.value.filter(product=>String(product.id)===selectedId).map(product=>({value:String(product.id),label:`${product.name} · ${product.sku}`}))])}
 const translit:Record<string,string>={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'shch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'}
 function slugify(value:string){return Array.from(value.toLowerCase(),c=>translit[c]??c).join('').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')}
@@ -72,15 +76,15 @@ function displayAttributeValue(attribute:Attribute|undefined,value:unknown):stri
 function hasValue(v:AttributeDraftValue|undefined){return Array.isArray(v)?v.length>0:String(v??'').trim()!==''}
 function typed(a:Attribute,v:AttributeDraftValue):string|number|boolean|string[]{if(a.type==='integer')return Number.parseInt(String(v),10);if(a.type==='decimal')return Number(v);if(a.type==='boolean')return v==='true';if(a.type==='multiselect')return Array.isArray(v)?v:[];return String(v)}
 function enabled(step:string){return step==='main'||editing.value!==null}
-function filtersPayload():ProductFilters{return{search:filters.value.search||undefined,category_id:filters.value.category_id?Number(filters.value.category_id):undefined,brand_id:filters.value.brand_id?Number(filters.value.brand_id):undefined,is_active:filters.value.is_active===''?undefined:filters.value.is_active==='1',has_stock:filters.value.has_stock===''?undefined:filters.value.has_stock==='1',price_from:filters.value.price_from||undefined,price_to:filters.value.price_to||undefined,sort:sort.value,direction:direction.value}}
+function filtersPayload():ProductFilters{return{search:filters.value.search.trim()||undefined,category_id:filters.value.category_id?Number(filters.value.category_id):undefined,brand_id:filters.value.brand_id?Number(filters.value.brand_id):undefined,is_active:filters.value.is_active===''?undefined:filters.value.is_active==='1',is_on_sale:filters.value.is_on_sale===''?undefined:filters.value.is_on_sale==='1',sort:sort.value,direction:direction.value}}
 async function fetchPage(page:number){const [productPage,categoryList,brandList]=await Promise.all([getProducts({...filtersPayload(),page}),getCategories(),getAllBrands()]);return{...productPage,categoryList,brandList}}
-async function load(page=pagination.value?.current_page??1):Promise<boolean>{const response=await list.load(page,fetchPage);if(!response)return false;categories.value=response.categoryList;brands.value=response.brandList;return true}
+async function load(page=pagination.value?.current_page??1):Promise<boolean>{filterResultStatus.value='';const response=await list.load(page,fetchPage);if(!response)return false;categories.value=response.categoryList;brands.value=response.brandList;filterResultStatus.value=response.meta.total===0?'Товары не найдены.':'';return true}
 async function changeSort(field:ProductSort){if(loading.value)return;const previousSort=sort.value;const previousDirection=direction.value;if(sort.value===field)direction.value=direction.value==='asc'?'desc':'asc';else{sort.value=field;direction.value=field==='created_at'||field==='updated_at'?'desc':'asc'}if(!await load(1)){sort.value=previousSort;direction.value=previousDirection}}
 function ariaSort(field:ProductSort):'none'|'ascending'|'descending'{return sort.value===field?(direction.value==='asc'?'ascending':'descending'):'none'}
 function formatDate(value:string):string{return productDateFormatter.format(new Date(value))}
 function isProductNameTruncated(value:string):boolean{return Array.from(value).length>50}
 function productNamePreview(value:string):string{const symbols=Array.from(value);return symbols.length>50?`${symbols.slice(0,49).join('')}…`:value}
-function resetFilters(){filters.value={search:'',category_id:'',brand_id:'',is_active:'',has_stock:'',price_from:'',price_to:''};void load(1)}
+function resetFilters(){filters.value={search:'',category_id:'',brand_id:'',is_active:'',is_on_sale:''}}
 function fillGroup(group:ProductGroup|null,id:number){selectedGroupId.value=group?String(group.id):'';groupForm.value=group?{name:group.name,code:group.code,axis_attribute_ids:group.axes.map(a=>a.id),product_ids:group.products.map(p=>p.id)}:{name:'',code:'',axis_attribute_ids:[],product_ids:[id]}}
 function prepareGroupDraft(product:Product,groupList:ProductGroup[]){
   const ownGroup=groupList.find(group=>group.products.some(item=>item.id===product.id))??null
@@ -128,13 +132,22 @@ async function removeProduct(){if(!deleting.value||saving.value)return;saving.va
 async function ungroup(){if(!selectedGroupId.value||saving.value)return;saving.value=true;confirmError.value='';try{await deleteProductGroup(Number(selectedGroupId.value));groups.value=await getAllProductGroups();fillGroup(null,editing.value!.id);groupDeleting.value=false;success.value='Группа удалена.'}catch(reason){confirmError.value=reason instanceof Error?reason.message:'Не удалось удалить группу.'}finally{saving.value=false}}
 async function publish(){if(!editing.value)return;saving.value=true;error.value='';try{const saved=await saveProduct(editing.value.id,{...form.value,is_active:true});editing.value=saved;form.value=toPayload(saved);success.value='Товар опубликован.';await load()}catch(reason){error.value=reason instanceof Error?reason.message:'Не удалось опубликовать товар.'}finally{saving.value=false}}
 async function hideProduct(){if(!editing.value)return;saving.value=true;error.value='';try{const saved=await saveProduct(editing.value.id,{...form.value,is_active:false});editing.value=saved;form.value=toPayload(saved);success.value='Товар скрыт и перемещён в черновики.';await load()}catch(reason){error.value=reason instanceof Error?reason.message:'Не удалось скрыть товар.'}finally{saving.value=false}}
+let filterTimer: ReturnType<typeof setTimeout> | null = null
+let previousFilterSearch = filters.value.search
+watch(filters,(next)=>{
+  if(filterTimer)clearTimeout(filterTimer)
+  const delay=next.search!==previousFilterSearch?350:0
+  previousFilterSearch=next.search
+  filterTimer=setTimeout(()=>{filterTimer=null;void load(1)},delay)
+},{deep:true})
+onBeforeUnmount(()=>{if(filterTimer)clearTimeout(filterTimer)})
 onMounted(load)
 </script>
 
 <template>
 <section class="mx-auto" :aria-busy="loading"><div class="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1></div><button v-if="canManage" class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white" @click="open()"><Plus :size="18"/>Добавить товар</button></div>
 <p v-if="error&&!opened" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500" role="alert">{{error}}</p>
-<form class="rounded-xl border border-gray-200 bg-white p-5 shadow-card" @submit.prevent="load(1)"><div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><label class="text-sm font-medium text-gray-700 xl:col-span-2">Поиск<BaseInput v-model="filters.search" class="mt-1.5" searchable placeholder="Название, SKU, артикул"/></label><label class="text-sm font-medium text-gray-700">Категория<BaseSelect v-model="filters.category_id" class="mt-1.5" :options="filterCategoryOptions" accessible-name="Категория" searchable/></label><label class="text-sm font-medium text-gray-700">Бренд<BaseSelect v-model="filters.brand_id" class="mt-1.5" :options="filterBrandOptions" accessible-name="Бренд" searchable/></label><label class="text-sm font-medium text-gray-700">Активность<BaseSelect v-model="filters.is_active" class="mt-1.5" :options="stateOptions" accessible-name="Активность"/></label><label class="text-sm font-medium text-gray-700">Остаток<BaseSelect v-model="filters.has_stock" class="mt-1.5" :options="stockOptions" accessible-name="Остаток"/></label><label class="text-sm font-medium text-gray-700">Цена от<BaseInput v-model="filters.price_from" class="mt-1.5" type="number" min="0" step="0.01"/></label><label class="text-sm font-medium text-gray-700">Цена до<BaseInput v-model="filters.price_to" class="mt-1.5" type="number" min="0" step="0.01"/></label></div><div class="mt-4 flex gap-2"><button class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white"><Search :size="17"/>Найти</button><button type="button" class="px-4 py-2 text-sm font-semibold text-gray-600" @click="resetFilters">Сбросить</button></div></form>
+<form class="rounded-xl border border-gray-200 bg-white p-5 shadow-card" role="search" @submit.prevent><div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><label class="text-sm font-medium text-gray-700 xl:col-span-2">Поиск<BaseInput v-model="filters.search" class="mt-1.5" searchable placeholder="Название, SKU, артикул"/></label><label class="text-sm font-medium text-gray-700">Категория<BaseSelect v-model="filters.category_id" class="mt-1.5" :options="filterCategoryOptions" accessible-name="Категория" search-placeholder="Начните вводить название категории" searchable/></label><label class="text-sm font-medium text-gray-700">Бренд<BaseSelect v-model="filters.brand_id" class="mt-1.5" :options="filterBrandOptions" accessible-name="Бренд" search-placeholder="Начните вводить название бренда" searchable/></label></div><div class="mt-5 grid gap-4 lg:grid-cols-2"><fieldset><legend class="text-sm font-semibold text-gray-700">Активность</legend><div class="mt-2 grid gap-2 sm:grid-cols-3"><BaseRadio v-for="option in activityOptions" :key="option.value" v-model="filters.is_active" class="focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2" :value="option.value" name="product-activity-filter">{{option.label}}</BaseRadio></div></fieldset><fieldset><legend class="text-sm font-semibold text-gray-700">Распродажа</legend><div class="mt-2 grid gap-2 sm:grid-cols-3"><BaseRadio v-for="option in saleOptions" :key="option.value" v-model="filters.is_on_sale" class="focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2" :value="option.value" name="product-sale-filter">{{option.label}}</BaseRadio></div></fieldset></div><div class="mt-4 flex flex-wrap items-center justify-between gap-2"><button type="button" class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40" :disabled="!hasActiveFilters" @click="resetFilters">Сбросить</button></div></form><p class="sr-only" role="status" aria-live="polite">{{filterResultStatus}}</p>
 <div class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
   <CollectionLoadingState v-if="loading" label="Загрузка товаров…" />
   <template v-else>

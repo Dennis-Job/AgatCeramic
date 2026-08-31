@@ -20,6 +20,7 @@ class ListProductsRequest extends FormRequest
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'is_active' => ['nullable', 'boolean'],
+            'is_on_sale' => ['nullable', 'boolean'],
             'has_stock' => ['nullable', 'boolean'],
             'price_from' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'price_to' => ['nullable', 'numeric', 'gte:price_from', 'max:9999999999.99'],

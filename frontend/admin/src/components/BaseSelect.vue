@@ -10,8 +10,9 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   accessibleName: string
   searchable?: boolean
+  searchPlaceholder?: string
   clearable?: boolean
-}>(), { placeholder: 'Выберите значение', searchable: false, clearable: false })
+}>(), { placeholder: 'Выберите значение', searchable: false, searchPlaceholder: 'Начните вводить для поиска', clearable: false })
 
 const emit = defineEmits<{ 'update:modelValue': [value: string]; change: [value: string] }>()
 const isOpen = ref(false)
@@ -41,6 +42,13 @@ function select(value: string): void {
   emit('change', value)
   isOpen.value = false
   search.value = ''
+  void nextTick(() => triggerButton.value?.focus())
+}
+
+function closeAndFocus(): void {
+  isOpen.value = false
+  search.value = ''
+  void nextTick(() => triggerButton.value?.focus())
 }
 
 function clear(): void {
@@ -60,7 +68,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
 </script>
 
 <template>
-  <div ref="root" class="relative" @keydown.escape="isOpen = false">
+  <div ref="root" class="relative" @keydown.escape.stop.prevent="closeAndFocus">
     <button
       ref="triggerButton"
       type="button"
@@ -91,9 +99,8 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
           v-model="search"
           type="search"
           class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-500"
-          placeholder="Начните вводить страну"
+          :placeholder="searchPlaceholder"
           :aria-label="`Поиск: ${accessibleName}`"
-          @keydown.escape="isOpen = false"
         >
       </div>
       <div class="max-h-64 overflow-y-auto">

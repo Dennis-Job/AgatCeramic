@@ -80,31 +80,66 @@ test('catalog route guards require an authenticated user with catalog permission
   await forbidden.close()
 })
 
-test('product filters send the selected values and reset to the first page', async ({ page }) => {
+test('product filters apply dynamically and reset to the first page', async ({ page }) => {
   await mockCatalogApi(page)
   await page.goto('/products')
   await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
 
+  const categoryRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url())
+    return url.pathname.endsWith('/admin/products') && url.searchParams.get('category_id') === '1'
+  })
   await page.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
-  await page.getByLabel('Активность').click()
-  await page.getByRole('button', { name: 'Активные', exact: true }).click()
-  await page.getByLabel('Поиск').fill('монте')
+  await categoryRequest
+
+  const activityRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url())
+    return url.pathname.endsWith('/admin/products') && url.searchParams.get('is_active') === '1'
+  })
+  await page.getByRole('radio', { name: 'Активные', exact: true }).locator('..').click()
+  await activityRequest
+
+  const saleRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url())
+    return url.pathname.endsWith('/admin/products') && url.searchParams.get('is_on_sale') === '1'
+  })
+  await page.getByRole('radio', { name: 'На распродаже', exact: true }).locator('..').click()
+  await saleRequest
 
   const requestPromise = page.waitForRequest((request) => {
     const url = new URL(request.url())
     return url.pathname.endsWith('/admin/products') && url.searchParams.get('search') === 'монте'
   })
-  await page.getByRole('button', { name: 'Найти' }).click()
+  await page.getByLabel('Поиск').fill('монте')
   const request = await requestPromise
   const query = new URL(request.url()).searchParams
   expect(query.get('category_id')).toBe('1')
   expect(query.get('is_active')).toBe('1')
+  expect(query.get('is_on_sale')).toBe('1')
   expect(query.has('page')).toBe(false)
+  await expect(page.getByRole('status').filter({ hasText: 'Показано' })).toBeVisible()
+  await expect(page.getByText('Поиск и фильтры применяются автоматически.')).toBeVisible()
+  await expect(page.getByRole('search').getByText('Остаток', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('search').getByText('Цена от', { exact: true })).toHaveCount(0)
 
+  const resetRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url())
+    return url.pathname.endsWith('/admin/products') && !url.searchParams.has('search') && !url.searchParams.has('category_id') && !url.searchParams.has('is_active') && !url.searchParams.has('is_on_sale')
+  })
   await page.getByRole('button', { name: 'Сбросить' }).click()
+  await resetRequest
   await expect(page.getByLabel('Поиск')).toHaveValue('')
   await expect(page.getByLabel('Категория')).toContainText('Все категории')
+  await expect(page.getByRole('radio', { name: 'Все' }).first()).toBeChecked()
+
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 720 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await expect(page.getByRole('search')).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Активность' })).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Распродажа' })).toBeVisible()
+  }
 })
 
 test('product table sorts through the API and remains usable at supported widths', async ({ page }) => {

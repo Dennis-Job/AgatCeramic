@@ -58,6 +58,9 @@ class OpenApiCatalogContractTest extends TestCase
         self::assertContains('is_visible_on_product_page', $spec['components']['schemas']['Attribute']['required']);
         self::assertContains('is_on_sale', $spec['components']['schemas']['Product']['required']);
         self::assertFalse($spec['components']['schemas']['StoreProductRequest']['properties']['is_on_sale']['default']);
+        $productListParameters = array_column($spec['paths']['/admin/products']['get']['parameters'], null, 'name');
+        self::assertArrayHasKey('is_on_sale', $productListParameters);
+        self::assertSame('boolean', $productListParameters['is_on_sale']['schema']['type']);
         self::assertArrayNotHasKey('sku', $spec['components']['schemas']['StoreProductRequest']['properties']);
         self::assertArrayNotHasKey('sku', $spec['components']['schemas']['UpdateProductRequest']['properties']);
         self::assertContains('sku_prefix', $spec['components']['schemas']['Category']['required']);

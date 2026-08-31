@@ -22,7 +22,7 @@ class ProductSearchFilterTest extends TestCase
         $tiles = Category::factory()->create();
         $mosaic = Category::factory()->create();
         $brand = Brand::factory()->create();
-        $match = Product::factory()->create(['category_id' => $tiles->id, 'brand_id' => $brand->id, 'name' => 'Marble White', 'slug' => 'marble-white', 'is_active' => true]);
+        $match = Product::factory()->create(['category_id' => $tiles->id, 'brand_id' => $brand->id, 'name' => 'Marble White', 'slug' => 'marble-white', 'is_active' => true, 'is_on_sale' => true]);
         $match->update(['sku' => 'MARBLE-6060', 'article_number' => 'Vendor-Art-6060', 'barcode' => '0123456789012', 'price' => 1990, 'stock_quantity' => 10]);
         $other = Product::factory()->create(['category_id' => $mosaic->id, 'brand_id' => null, 'name' => 'Blue Mosaic', 'slug' => 'blue-mosaic', 'is_active' => false]);
         $other->update(['sku' => 'MOSAIC-BLUE', 'price' => 990, 'stock_quantity' => 0]);
@@ -37,6 +37,8 @@ class ProductSearchFilterTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $match->id);
         $this->actingAs($actor)->getJson('/api/v1/admin/products?has_stock=0&is_active=0')
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $other->id);
+        $this->actingAs($actor)->getJson('/api/v1/admin/products?is_on_sale=1')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $match->id);
     }
 
     public function test_product_filters_validate_and_require_catalog_access(): void
@@ -44,8 +46,8 @@ class ProductSearchFilterTest extends TestCase
         $this->actingAs($this->userWithRole('analyst'))->getJson('/api/v1/admin/products?search=tile')->assertForbidden();
         $actor = $this->userWithRole('catalog-manager');
 
-        $this->actingAs($actor)->getJson('/api/v1/admin/products?price_from=100&price_to=10&has_stock=invalid')
-            ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['price_to', 'has_stock']]]);
+        $this->actingAs($actor)->getJson('/api/v1/admin/products?price_from=100&price_to=10&has_stock=invalid&is_on_sale=invalid')
+            ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['price_to', 'has_stock', 'is_on_sale']]]);
 
         $this->actingAs($actor)->getJson('/api/v1/admin/products?sort=price&direction=sideways')
             ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sort', 'direction']]]);

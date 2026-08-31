@@ -36,7 +36,7 @@ class ProductController extends Controller
             });
         }
 
-        foreach (['category_id', 'brand_id', 'is_active'] as $filter) {
+        foreach (['category_id', 'brand_id', 'is_active', 'is_on_sale'] as $filter) {
             if (isset($filters[$filter])) {
                 $query->where($filter, $filters[$filter]);
             }
