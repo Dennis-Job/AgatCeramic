@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { mockCatalogApi } from './catalogApi'
+import { attribute, mockCatalogApi, optionalSelectAttribute } from './catalogApi'
 
 const catalogRoutes = [
   { path: '/products', apiPath: '/admin/products', heading: 'Товары', item: 'Монте Тиберио', loadingLabel: 'Загрузка товаров…' },
@@ -166,6 +166,34 @@ for (const width of [320, 640, 768, 1024, 1280]) {
 
     const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
     expect(dialogA11y.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
+  })
+}
+
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`optional select characteristic can be cleared and saved empty at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    await mockCatalogApi(page, { includeOptionalSelectAttribute: true })
+    await page.goto('/products')
+    await page.getByRole('button', { name: 'Редактировать товар Монте Тиберио' }).click()
+
+    const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+    await dialog.getByRole('button', { name: 'Характеристики', exact: false }).click()
+    await expect(dialog.getByRole('button', { name: 'Рисунок', exact: true })).toContainText('Камень')
+
+    const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+    expect(dialogA11y.violations.filter(violation => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
+
+    await dialog.getByRole('button', { name: 'Очистить выбор: Рисунок', exact: true }).click()
+    await expect(dialog.getByRole('button', { name: 'Рисунок', exact: true })).toBeFocused()
+    await expect(dialog.getByRole('button', { name: 'Рисунок', exact: true })).toContainText('Выберите значение')
+    await expect(dialog.getByRole('button', { name: 'Очистить выбор: Рисунок', exact: true })).toHaveCount(0)
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+
+    const requestPromise = page.waitForRequest(request => request.method() === 'PUT' && new URL(request.url()).pathname.endsWith('/admin/products/1/attributes'))
+    await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
+    const payload = (await requestPromise).postDataJSON() as { attributes: Array<{ attribute_id: number; value: unknown }> }
+    expect(payload.attributes).toContainEqual({ attribute_id: attribute.id, value: 60 })
+    expect(payload.attributes.some(item => item.attribute_id === optionalSelectAttribute.id)).toBe(false)
   })
 }
 

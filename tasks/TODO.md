@@ -168,6 +168,9 @@
   - Apply non-axis characteristic changes atomically to every product in a variation group while keeping axis values product-specific.
   - Allow characteristics added to an existing category to be filled without dismantling its product groups, preserve active-product completeness, and return Russian group-validation messages.
   - Clarify the behavior in Admin and cover propagation, removal, rollback, API contracts, and responsive/accessibility review.
+- [x] TASK-042U Allow optional select characteristics to be cleared
+  - Add an accessible clear action to optional select characteristics in the product editor while keeping required choices protected.
+  - Persist a cleared characteristic as an omitted value and cover responsive, accessibility, focus, and payload behavior.
 
 ## Phase 4 — Import/export
 

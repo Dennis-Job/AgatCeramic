@@ -94,6 +94,27 @@ describe('BaseDialog', () => {
 })
 
 describe('BaseSelect', () => {
+  test('clears a selected value only when explicitly enabled', async () => {
+    const wrapper = mount(BaseSelect, {
+      attachTo: document.body,
+      props: {
+        modelValue: 'matte',
+        accessibleName: 'Поверхность',
+        clearable: true,
+        options: [{ value: 'matte', label: 'Матовая' }],
+      },
+    })
+
+    await wrapper.get('button[aria-label="Очистить выбор: Поверхность"]').trigger('click')
+    expect(wrapper.emitted('update:modelValue')).toEqual([['']])
+    expect(wrapper.emitted('change')).toEqual([['']])
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Поверхность')
+
+    await wrapper.setProps({ clearable: false })
+    expect(wrapper.find('button[aria-label="Очистить выбор: Поверхность"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   test('filters options and emits the selected value with accessible names', async () => {
     const wrapper = mount(BaseSelect, {
       props: {

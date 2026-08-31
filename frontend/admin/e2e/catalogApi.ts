@@ -66,6 +66,22 @@ export const sharedAttribute = {
   sort_order: 20,
 }
 
+export const optionalSelectAttribute = {
+  ...attribute,
+  id: 3,
+  attribute_group_id: null,
+  name: 'Рисунок',
+  slug: 'pattern',
+  type: 'select',
+  unit: null,
+  is_required: false,
+  sort_order: 30,
+  options: [
+    { value: 'stone', label: 'Камень', sort_order: 0 },
+    { value: 'wood', label: 'Дерево', sort_order: 1 },
+  ],
+}
+
 export const product = {
   id: 1,
   category_id: 1,
@@ -109,6 +125,7 @@ type ApiOptions = {
   auth?: 'allowed' | 'unauthenticated' | 'forbidden'
   sourceProductInGroup?: boolean
   includeSharedAttribute?: boolean
+  includeOptionalSelectAttribute?: boolean
   sourceProduct?: Partial<typeof product>
   initialProductImages?: Array<{ id: number; url: string; alt: string; is_primary: boolean; sort_order: number }>
 }
@@ -254,7 +271,10 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/categories/1/attributes') {
-      await route.fulfill({ json: { data: options.includeSharedAttribute ? [attribute, sharedAttribute] : [attribute] } })
+      const categoryAttributes: unknown[] = [attribute]
+      if (options.includeSharedAttribute) categoryAttributes.push(sharedAttribute)
+      if (options.includeOptionalSelectAttribute) categoryAttributes.push(optionalSelectAttribute)
+      await route.fulfill({ json: { data: categoryAttributes } })
       return
     }
 
@@ -264,8 +284,10 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/products/1/attributes') {
-      const values = [{ id: 1, product_id: 1, attribute_id: attribute.id, value: '60.00', attribute }]
-      await route.fulfill({ json: { data: options.includeSharedAttribute ? [...values, { id: 2, product_id: 1, attribute_id: sharedAttribute.id, value: 'Матовая', attribute: sharedAttribute }] : values } })
+      const values: unknown[] = [{ id: 1, product_id: 1, attribute_id: attribute.id, value: '60.00', attribute }]
+      if (options.includeSharedAttribute) values.push({ id: 2, product_id: 1, attribute_id: sharedAttribute.id, value: 'Матовая', attribute: sharedAttribute })
+      if (options.includeOptionalSelectAttribute) values.push({ id: 3, product_id: 1, attribute_id: optionalSelectAttribute.id, value: 'stone', attribute: optionalSelectAttribute })
+      await route.fulfill({ json: { data: values } })
       return
     }
 

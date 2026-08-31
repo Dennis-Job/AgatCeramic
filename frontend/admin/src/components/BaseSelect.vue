@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
-import { Check, ChevronDown } from '@lucide/vue'
+import { Check, ChevronDown, X } from '@lucide/vue'
 
 type SelectOption = { label: string; value: string }
 
@@ -10,11 +10,13 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   accessibleName: string
   searchable?: boolean
-}>(), { placeholder: 'Выберите значение', searchable: false })
+  clearable?: boolean
+}>(), { placeholder: 'Выберите значение', searchable: false, clearable: false })
 
 const emit = defineEmits<{ 'update:modelValue': [value: string]; change: [value: string] }>()
 const isOpen = ref(false)
 const root = ref<HTMLElement | null>(null)
+const triggerButton = ref<HTMLButtonElement | null>(null)
 const search = ref('')
 const searchInput = ref<HTMLInputElement | null>(null)
 const selectedLabel = computed(() => props.options.find((option) => option.value === props.modelValue)?.label ?? props.placeholder)
@@ -41,6 +43,14 @@ function select(value: string): void {
   search.value = ''
 }
 
+function clear(): void {
+  emit('update:modelValue', '')
+  emit('change', '')
+  isOpen.value = false
+  search.value = ''
+  void nextTick(() => triggerButton.value?.focus())
+}
+
 function closeOnOutsideClick(event: MouseEvent): void {
   if (root.value && !root.value.contains(event.target as Node)) isOpen.value = false
 }
@@ -52,6 +62,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
 <template>
   <div ref="root" class="relative" @keydown.escape="isOpen = false">
     <button
+      ref="triggerButton"
       type="button"
       class="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
       :aria-expanded="isOpen"
@@ -59,7 +70,19 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
       @click="toggle"
     >
       <span class="truncate">{{ selectedLabel }}</span>
-      <ChevronDown :size="18" class="shrink-0 text-gray-500 transition-transform" :class="{ 'rotate-180': isOpen }" />
+      <span class="flex shrink-0 items-center gap-2">
+        <span v-if="clearable && modelValue" class="h-5 w-5" aria-hidden="true" />
+        <ChevronDown :size="18" class="text-gray-500 transition-transform" :class="{ 'rotate-180': isOpen }" />
+      </span>
+    </button>
+    <button
+      v-if="clearable && modelValue"
+      type="button"
+      class="absolute right-9 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50"
+      :aria-label="`Очистить выбор: ${accessibleName}`"
+      @click="clear"
+    >
+      <X :size="15" aria-hidden="true" />
     </button>
     <div v-if="isOpen" class="absolute left-0 right-0 z-40 mt-1.5 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-dropdown">
       <div v-if="searchable" class="border-b border-gray-100 p-2">
