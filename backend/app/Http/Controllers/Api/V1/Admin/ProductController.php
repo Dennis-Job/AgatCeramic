@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\Admin\StoreProductRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateProductRequest;
 use App\Http\Resources\Catalog\ProductResource;
 use App\Models\Product;
+use App\Queries\ProductQuery;
 use App\Services\ProductManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,50 +17,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
-    public function __construct(private readonly ProductManagementService $managementService) {}
+    public function __construct(
+        private readonly ProductManagementService $managementService,
+        private readonly ProductQuery $productQuery,
+    ) {}
 
     public function index(ListProductsRequest $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Product::class);
 
         $filters = $request->validated();
-        $query = Product::query()->with(['category', 'brand', 'primaryImage', 'groupMembership.group']);
-
-        if ($search = $filters['search'] ?? null) {
-            $pattern = '%'.mb_strtolower($search).'%';
-            $query->where(function ($query) use ($pattern): void {
-                $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
-                    ->orWhereRaw('LOWER(slug) LIKE ?', [$pattern])
-                    ->orWhereRaw('LOWER(sku) LIKE ?', [$pattern])
-                    ->orWhereRaw('LOWER(article_number) LIKE ?', [$pattern])
-                    ->orWhere('barcode', 'LIKE', $pattern);
-            });
-        }
-
-        foreach (['category_id', 'brand_id', 'is_active', 'is_on_sale'] as $filter) {
-            if (isset($filters[$filter])) {
-                $query->where($filter, $filters[$filter]);
-            }
-        }
-
-        if (isset($filters['has_stock'])) {
-            $filters['has_stock'] ? $query->where('stock_quantity', '>', 0) : $query->where(fn ($query) => $query->whereNull('stock_quantity')->orWhere('stock_quantity', 0));
-        }
-
-        if (isset($filters['price_from']) || isset($filters['price_to'])) {
-            if (isset($filters['price_from'])) {
-                $query->where('price', '>=', $filters['price_from']);
-            }
-            if (isset($filters['price_to'])) {
-                $query->where('price', '<=', $filters['price_to']);
-            }
-        }
-
-        $sort = $filters['sort'] ?? 'created_at';
-        $direction = $filters['direction'] ?? 'desc';
+        $query = $this->productQuery->filtered($filters)
+            ->with(['category', 'brand', 'primaryImage', 'groupMembership.group']);
 
         return ProductResource::collection(
-            $query->orderBy($sort, $direction)->orderByDesc('id')->paginate($filters['per_page'] ?? 25)->withQueryString()
+            $query->paginate($filters['per_page'] ?? 25)->withQueryString()
         );
     }
 

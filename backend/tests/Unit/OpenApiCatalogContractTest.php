@@ -26,6 +26,7 @@ class OpenApiCatalogContractTest extends TestCase
             '/admin/brands' => ['get', 'post'],
             '/admin/brands/{brand}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products' => ['get', 'post'],
+            '/admin/products/export' => ['get'],
             '/admin/products/{product}' => ['get', 'put', 'patch', 'delete'],
             '/admin/product-groups' => ['get', 'post'],
             '/admin/product-groups/{product_group}' => ['get', 'put', 'patch', 'delete'],
@@ -63,6 +64,15 @@ class OpenApiCatalogContractTest extends TestCase
         self::assertSame('boolean', $productListParameters['is_on_sale']['schema']['type']);
         self::assertArrayNotHasKey('sku', $spec['components']['schemas']['StoreProductRequest']['properties']);
         self::assertArrayNotHasKey('sku', $spec['components']['schemas']['UpdateProductRequest']['properties']);
+        $productExport = $spec['paths']['/admin/products/export']['get'];
+        self::assertSame(
+            'binary',
+            $productExport['responses']['200']['content']['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']['schema']['format'],
+        );
+        self::assertSame(
+            ['search', 'category_id', 'brand_id', 'is_active', 'is_on_sale', 'has_stock', 'price_from', 'price_to', 'sort', 'direction'],
+            array_column($productExport['parameters'], 'name'),
+        );
         self::assertContains('sku_prefix', $spec['components']['schemas']['Category']['required']);
         self::assertArrayHasKey('AttributeValue', $spec['components']['schemas']);
         self::assertArrayHasKey('422', $spec['paths']['/admin/attributes/{attribute}']['delete']['responses']);

@@ -177,7 +177,7 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
         await route.fulfill({ status: 401, json: { error: { message: 'Unauthenticated' } } })
         return
       }
-      await route.fulfill({ json: { data: { id: 1, name: 'Тестовый администратор', email: 'admin@example.test', status: 'active', last_login_at: now, permissions: options.auth === 'forbidden' ? [] : ['catalog.manage'] } } })
+      await route.fulfill({ json: { data: { id: 1, name: 'Тестовый администратор', email: 'admin@example.test', status: 'active', last_login_at: now, permissions: options.auth === 'forbidden' ? [] : ['catalog.manage', 'imports.manage'] } } })
       return
     }
 
@@ -198,6 +198,18 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
 
     if (path === '/admin/attributes') {
       await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, attribute, 'Длина') })
+      return
+    }
+
+    if (path === '/admin/products/export') {
+      await route.fulfill({
+        body: 'mock xlsx',
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': 'attachment; filename="products-2026-09-01-120000.xlsx"',
+          'Access-Control-Expose-Headers': 'Content-Disposition',
+        },
+      })
       return
     }
 

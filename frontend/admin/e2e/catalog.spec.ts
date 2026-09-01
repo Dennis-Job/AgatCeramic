@@ -158,6 +158,35 @@ test('product filters apply dynamically and reset to the first page', async ({ p
   await expect(page.getByTestId('product-count')).toHaveText('Количество товаров недоступно')
 })
 
+test('product Excel export downloads the current filtered and sorted selection', async ({ page }) => {
+  await mockCatalogApi(page, { delayPath: '/admin/products/export' })
+  await page.goto('/products')
+  await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
+
+  await page.getByLabel('Категория').click()
+  await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
+  await page.getByRole('radio', { name: 'Активные', exact: true }).locator('..').click()
+  await page.getByLabel('Поиск').fill('монте')
+
+  const requestPromise = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/export'))
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Экспорт в Excel' }).click()
+  const request = await requestPromise
+  await expect(page.getByRole('button', { name: 'Экспорт…' })).toHaveAttribute('aria-busy', 'true')
+  await page.getByRole('button', { name: 'Сбросить' }).click()
+  const download = await downloadPromise
+  const query = new URL(request.url()).searchParams
+
+  expect(query.get('search')).toBe('монте')
+  expect(query.get('category_id')).toBe('1')
+  expect(query.get('is_active')).toBe('1')
+  expect(query.get('sort')).toBe('created_at')
+  expect(query.get('direction')).toBe('desc')
+  expect(query.has('page')).toBe(false)
+  expect(download.suggestedFilename()).toBe('products-2026-09-01-120000.xlsx')
+  await expect(page.getByRole('status').filter({ hasText: 'Отфильтрованные товары экспортированы в Excel.' })).toBeVisible()
+})
+
 test('product table sorts through the API and remains usable at supported widths', async ({ page }) => {
   await mockCatalogApi(page)
   const initialRequest = page.waitForRequest((request) => new URL(request.url()).pathname.endsWith('/admin/products'))

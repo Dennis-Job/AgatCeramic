@@ -1933,6 +1933,49 @@
                 }
             }
         },
+        "/admin/products/export": {
+            "get": {
+                "operationId": "exportProducts",
+                "summary": "Export products to Excel",
+                "description": "Downloads every product matching the list filters and sort order without pagination. Requires imports.manage. Base columns use stable field names; characteristic columns use attribute.<slug>. SKU and barcode are text and multiselect values are compact JSON arrays.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {"name": "search", "in": "query", "required": false, "schema": {"type": "string", "maxLength": 255}},
+                    {"name": "category_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "brand_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "is_active", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "is_on_sale", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "has_stock", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "price_from", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},
+                    {"name": "price_to", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},
+                    {"name": "sort", "in": "query", "required": false, "description": "Sort field. Defaults to created_at.", "schema": {"type": "string", "enum": ["sku", "name", "created_at", "updated_at"], "default": "created_at"}},
+                    {"name": "direction", "in": "query", "required": false, "description": "Sort direction. Defaults to desc.", "schema": {"type": "string", "enum": ["asc", "desc"], "default": "desc"}}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "XLSX product export",
+                        "headers": {
+                            "Content-Disposition": {
+                                "description": "Attachment filename",
+                                "schema": {"type": "string"}
+                            }
+                        },
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {"type": "string", "format": "binary"}
+                            }
+                        }
+                    },
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            }
+        },
         "/admin/products/{product}": {
             "parameters": [
                 {
