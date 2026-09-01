@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\AdminUserStatus;
 use App\Models\ProductImport;
 use App\Services\ProductImportService;
 use App\Services\StorageCleanupService;
@@ -40,7 +41,7 @@ class ProcessProductImport implements ShouldQueue
             'started_at' => $import->started_at ?? now(),
         ])->save();
 
-        if ($import->user === null || $import->user->status !== 'active' || ! $import->user->hasPermission('imports.manage')) {
+        if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $import->user->hasPermission('imports.manage')) {
             throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
         }
         $storage = Storage::disk($import->disk);
