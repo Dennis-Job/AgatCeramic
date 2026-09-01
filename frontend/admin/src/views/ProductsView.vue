@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ArrowDown, ArrowUp, ArrowUpDown, Copy, EyeOff, GripVertical, ImagePlus, Package, Pencil, Plus, Save, Star, Trash2, X } from '@lucide/vue'
+import { ArrowDown, ArrowUp, ArrowUpDown, Copy, Download, EyeOff, GripVertical, ImagePlus, Package, Pencil, Plus, Save, Star, Trash2, X } from '@lucide/vue'
 import AttributeValueField, { type AttributeDraftValue } from '../components/AttributeValueField.vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseDialog from '../components/BaseDialog.vue'
@@ -20,7 +20,7 @@ import { getCategoryAttributes, getProductAttributeValues, saveProductAttributeV
 import { deleteProductGroup, getAllProductGroups, ProductGroupRequestError, saveProductGroup, type ProductGroup, type ProductGroupPayload } from '../services/productGroups'
 import { deleteProductImage, getAllProductImages, updateProductImage, uploadProductImage, type ProductImage } from '../services/productImages'
 import { getProductRelations, getRelationCandidates, ProductRelationRequestError, saveProductRelations, type ProductRelationType } from '../services/productRelations'
-import { deleteProduct, getProducts, saveProduct, type Product, type ProductFilters, type ProductPayload, type ProductSort, type ProductUnit, type SortDirection } from '../services/products'
+import { deleteProduct, getProductExport, getProducts, saveProduct, type Product, type ProductFilters, type ProductPayload, type ProductSort, type ProductUnit, type SortDirection } from '../services/products'
 import { useAuthStore } from '../stores/auth'
 import { compareAlphabetically, sortByLabel } from '../utils/alphabetical'
 
@@ -32,6 +32,8 @@ const categories = ref<Category[]>([]); const brands = ref<Brand[]>([]); const c
 const opened = ref(false); const saving = ref(false); const editing = ref<Product | null>(null); const deleting = ref<Product | null>(null); const activeStep = ref<Step>('main'); const success = ref('')
 const confirmError = ref('')
 const filterResultStatus = ref('')
+const exportStatus = ref('')
+const exporting = ref(false)
 const productCountUnavailable = ref(false)
 const filters = ref({ search: '', category_id: '', brand_id: '', is_active: '', is_on_sale: '' })
 const sort = ref<ProductSort>('created_at'); const direction = ref<SortDirection>('desc')
@@ -41,6 +43,7 @@ const images = ref<ProductImage[]>([]); const draggedImageId = ref<number|null>(
 const groups = ref<ProductGroup[]>([]); const selectedGroupId = ref(''); const groupErrors = ref<Record<string, string[]>>({}); const groupForm = ref<ProductGroupPayload>({ name: '', code: '', axis_attribute_ids: [], product_ids: [] }); const groupSearch=ref(''); const groupDeleting=ref(false)
 const relations = ref<RelationForm[]>([]); const relationErrors = ref<Record<number, string>>({}); const relationSearch=ref('')
 const canManage = computed(() => auth.hasPermission('catalog.manage'))
+const canExport = computed(() => auth.hasPermission('imports.manage'))
 const sortLabels: Record<ProductSort, string> = { sku: 'SKU', name: 'наименованию', created_at: 'дате создания', updated_at: 'дате изменения' }
 const sortStatus = computed(() => `Сортировка по ${sortLabels[sort.value]}, ${direction.value === 'asc' ? 'по возрастанию' : 'по убыванию'}.`)
 const productDateFormatter = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -93,6 +96,20 @@ function formatDate(value:string):string{return productDateFormatter.format(new 
 function isProductNameTruncated(value:string):boolean{return Array.from(value).length>50}
 function productNamePreview(value:string):string{const symbols=Array.from(value);return symbols.length>50?`${symbols.slice(0,49).join('')}…`:value}
 function resetFilters(){filters.value={search:'',category_id:'',brand_id:'',is_active:'',is_on_sale:''}}
+async function exportFilteredProducts(){
+  if(exporting.value)return
+  const exportedFilteredSelection=hasActiveFilters.value
+  const exportedFilters=filtersPayload()
+  exporting.value=true;error.value='';exportStatus.value=''
+  try{
+    const file=await getProductExport(exportedFilters)
+    const url=URL.createObjectURL(file.blob)
+    const link=document.createElement('a')
+    link.href=url;link.download=file.filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url)
+    exportStatus.value=exportedFilteredSelection?'Отфильтрованные товары экспортированы в Excel.':'Все товары экспортированы в Excel.'
+  }catch(reason){error.value=reason instanceof Error?reason.message:'Не удалось экспортировать товары.'}
+  finally{exporting.value=false}
+}
 function fillGroup(group:ProductGroup|null,id:number){selectedGroupId.value=group?String(group.id):'';groupForm.value=group?{name:group.name,code:group.code,axis_attribute_ids:group.axes.map(a=>a.id),product_ids:group.products.map(p=>p.id)}:{name:'',code:'',axis_attribute_ids:[],product_ids:[id]}}
 function prepareGroupDraft(product:Product,groupList:ProductGroup[]){
   const ownGroup=groupList.find(group=>group.products.some(item=>item.id===product.id))??null
@@ -153,8 +170,9 @@ onMounted(load)
 </script>
 
 <template>
-<section class="mx-auto" :aria-busy="loading"><div class="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1></div><button v-if="canManage" class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white" @click="open()"><Plus :size="18"/>Добавить товар</button></div>
+<section class="mx-auto" :aria-busy="loading"><div class="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1></div><div class="flex flex-wrap gap-2"><button v-if="canExport" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60" :disabled="exporting" :aria-busy="exporting" @click="exportFilteredProducts"><Download :size="18" aria-hidden="true"/>{{exporting?'Экспорт…':'Экспорт в Excel'}}</button><button v-if="canManage" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" @click="open()"><Plus :size="18" aria-hidden="true"/>Добавить товар</button></div></div>
 <p v-if="error&&!opened" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500" role="alert">{{error}}</p>
+<p v-if="exportStatus" class="mb-4 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700" role="status">{{exportStatus}}</p>
 <form class="rounded-xl border border-gray-200 bg-white p-5 shadow-card" role="search" @submit.prevent><div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><label class="text-sm font-medium text-gray-700 xl:col-span-2">Поиск<BaseInput v-model="filters.search" class="mt-1.5" searchable placeholder="Название, SKU, артикул"/></label><label class="text-sm font-medium text-gray-700">Категория<BaseSelect v-model="filters.category_id" class="mt-1.5" :options="filterCategoryOptions" accessible-name="Категория" search-placeholder="Начните вводить название категории" searchable/></label><label class="text-sm font-medium text-gray-700">Бренд<BaseSelect v-model="filters.brand_id" class="mt-1.5" :options="filterBrandOptions" accessible-name="Бренд" search-placeholder="Начните вводить название бренда" searchable/></label></div><div class="mt-5 grid gap-4 lg:grid-cols-2"><fieldset><legend class="text-sm font-semibold text-gray-700">Активность</legend><div class="mt-2 grid gap-2 sm:grid-cols-3"><BaseRadio v-for="option in activityOptions" :key="option.value" v-model="filters.is_active" class="focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2" :value="option.value" name="product-activity-filter">{{option.label}}</BaseRadio></div></fieldset><fieldset><legend class="text-sm font-semibold text-gray-700">Распродажа</legend><div class="mt-2 grid gap-2 sm:grid-cols-3"><BaseRadio v-for="option in saleOptions" :key="option.value" v-model="filters.is_on_sale" class="focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2" :value="option.value" name="product-sale-filter">{{option.label}}</BaseRadio></div></fieldset></div><div class="mt-4 flex flex-wrap items-center justify-between gap-2"><p data-testid="product-count" class="rounded-full px-3 py-1.5 text-sm font-semibold" :class="productCountUnavailable?'bg-error-50 text-error-500':loading?'bg-gray-100 text-gray-500':'bg-primary-50 text-primary-600'">{{productCountLabel}}</p><button type="button" class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40" :disabled="!hasActiveFilters" @click="resetFilters">Сбросить</button></div></form><p class="sr-only" role="status" aria-live="polite">{{filterResultStatus}}</p>
 <p class="sr-only" role="status" aria-live="polite">{{sortStatus}}</p>
 <div class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">

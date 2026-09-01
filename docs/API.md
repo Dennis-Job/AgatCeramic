@@ -181,6 +181,14 @@ article number, or barcode. It also supports `category_id`, `brand_id`,
 The default order is `created_at desc`, so newly created products appear first. Price and stock
 filters apply directly to products; all filters can be combined.
 
+`GET /admin/products/export` downloads every product matching the same filters and sort order as
+`GET /admin/products`; pagination is deliberately not accepted. The endpoint requires
+`imports.manage` and returns a streaming XLSX attachment. Stable base columns use field names such
+as `sku`, `barcode`, `category_slug`, and `product_group_code`; every catalogue characteristic is
+exported in a deterministic `attribute.<slug>` column. SKU and barcode remain text, multiselect
+values use compact JSON arrays, and blank characteristics remain blank so the workbook can be used
+as a lossless input source for the later import workflow.
+
 Changing `category_id` is rejected with `422` when the destination category does not assign every
 attribute already used by the product. Missing required destination values are permitted while the
 product remains inactive; activation is rejected until all assignment-specific required values are

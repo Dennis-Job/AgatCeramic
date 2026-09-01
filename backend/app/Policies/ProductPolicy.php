@@ -31,4 +31,9 @@ class ProductPolicy
     {
         return $user->hasPermission('catalog.manage');
     }
+
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('imports.manage');
+    }
 }
