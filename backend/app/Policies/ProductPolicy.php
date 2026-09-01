@@ -36,4 +36,9 @@ class ProductPolicy
     {
         return $user->hasPermission('imports.manage');
     }
+
+    public function import(User $user): bool
+    {
+        return $user->hasPermission('imports.manage');
+    }
 }

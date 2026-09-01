@@ -181,7 +181,7 @@
   - Export the complete filtered and sorted product catalogue to a streaming XLSX file without pagination.
   - Preserve identifiers, commercial fields, product-group data, and a stable set of dynamic characteristic columns suitable for a later round-trip import.
   - Restrict export to `imports.manage`, expose an accessible Admin download flow, and cover the API, OpenAPI contract, container runtime, and UI states with automated tests and an independent UI Design Guard review.
-- [ ] TASK-051 Excel import
+- [x] TASK-051 Excel import
 - [ ] TASK-052 Import validation
 - [ ] TASK-053 Import error report
 - [ ] TASK-054 Bulk product editing

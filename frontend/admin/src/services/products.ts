@@ -14,6 +14,18 @@ export type Product = {
 export type ProductUnit = 'piece' | 'square_meter' | 'linear_meter' | 'package' | 'kilogram' | 'liter' | 'set'
 export type ProductSort = 'sku' | 'name' | 'created_at' | 'updated_at'
 export type SortDirection = 'asc' | 'desc'
+export type ProductImport = {
+  id: number
+  filename: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  created_rows: number
+  updated_rows: number
+  processed_rows: number
+  error_message: string | null
+  created_at: string
+  started_at: string | null
+  completed_at: string | null
+}
 export type ProductPayload = Omit<Product, 'id' | 'sku' | 'category' | 'brand' | 'attribute_values' | 'primary_image' | 'created_at' | 'updated_at'>
 export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; is_on_sale?: boolean; has_stock?: boolean; price_from?: string; price_to?: string; sort?: ProductSort; direction?: SortDirection } & PageRequest
 
@@ -39,6 +51,19 @@ export async function getProductExport(filters: Omit<ProductFilters, 'page' | 'p
   const disposition = response.headers.get('Content-Disposition') ?? ''
   const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] ?? 'products.xlsx'
   return { blob: await response.blob(), filename }
+}
+export async function uploadProductImport(file: File): Promise<ProductImport> {
+  await requestCsrfCookie()
+  const body = new FormData()
+  body.append('file', file)
+  const response = await apiFetch('/admin/products/import', { method: 'POST', body })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductImport }).data
+}
+export async function getProductImport(id: number): Promise<ProductImport> {
+  const response = await apiFetch(`/admin/product-imports/${id}`)
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductImport }).data
 }
 export async function saveProduct(id: number | null, payload: ProductPayload): Promise<Product> { await requestCsrfCookie(); const response = await apiFetch(id === null ? '/admin/products' : `/admin/products/${id}`, { method: id === null ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) return fail(response); return ((await response.json()) as { data: Product }).data }
 export async function deleteProduct(id: number): Promise<void> { await requestCsrfCookie(); const response = await apiFetch(`/admin/products/${id}`, { method: 'DELETE' }); if (!response.ok) return fail(response) }

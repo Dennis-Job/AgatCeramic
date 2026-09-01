@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { ArrowDown, ArrowUp, ArrowUpDown, Copy, Download, EyeOff, GripVertical, ImagePlus, Package, Pencil, Plus, Save, Star, Trash2, X } from '@lucide/vue'
+import { ArrowDown, ArrowUp, ArrowUpDown, Copy, Download, EyeOff, GripVertical, ImagePlus, Package, Pencil, Plus, Save, Star, Trash2, Upload, X } from '@lucide/vue'
 import AttributeValueField, { type AttributeDraftValue } from '../components/AttributeValueField.vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseDialog from '../components/BaseDialog.vue'
@@ -20,7 +20,7 @@ import { getCategoryAttributes, getProductAttributeValues, saveProductAttributeV
 import { deleteProductGroup, getAllProductGroups, ProductGroupRequestError, saveProductGroup, type ProductGroup, type ProductGroupPayload } from '../services/productGroups'
 import { deleteProductImage, getAllProductImages, updateProductImage, uploadProductImage, type ProductImage } from '../services/productImages'
 import { getProductRelations, getRelationCandidates, ProductRelationRequestError, saveProductRelations, type ProductRelationType } from '../services/productRelations'
-import { deleteProduct, getProductExport, getProducts, saveProduct, type Product, type ProductFilters, type ProductPayload, type ProductSort, type ProductUnit, type SortDirection } from '../services/products'
+import { deleteProduct, getProductExport, getProductImport, getProducts, saveProduct, uploadProductImport, type Product, type ProductFilters, type ProductPayload, type ProductSort, type ProductUnit, type SortDirection } from '../services/products'
 import { useAuthStore } from '../stores/auth'
 import { compareAlphabetically, sortByLabel } from '../utils/alphabetical'
 
@@ -34,6 +34,11 @@ const confirmError = ref('')
 const filterResultStatus = ref('')
 const exportStatus = ref('')
 const exporting = ref(false)
+const importStatus = ref('')
+const importing = ref(false)
+const importInput = ref<HTMLInputElement | null>(null)
+let importPollTimer: ReturnType<typeof setTimeout> | null = null
+let disposed = false
 const productCountUnavailable = ref(false)
 const filters = ref({ search: '', category_id: '', brand_id: '', is_active: '', is_on_sale: '' })
 const sort = ref<ProductSort>('created_at'); const direction = ref<SortDirection>('desc')
@@ -43,7 +48,7 @@ const images = ref<ProductImage[]>([]); const draggedImageId = ref<number|null>(
 const groups = ref<ProductGroup[]>([]); const selectedGroupId = ref(''); const groupErrors = ref<Record<string, string[]>>({}); const groupForm = ref<ProductGroupPayload>({ name: '', code: '', axis_attribute_ids: [], product_ids: [] }); const groupSearch=ref(''); const groupDeleting=ref(false)
 const relations = ref<RelationForm[]>([]); const relationErrors = ref<Record<number, string>>({}); const relationSearch=ref('')
 const canManage = computed(() => auth.hasPermission('catalog.manage'))
-const canExport = computed(() => auth.hasPermission('imports.manage'))
+const canManageImports = computed(() => auth.hasPermission('imports.manage'))
 const sortLabels: Record<ProductSort, string> = { sku: 'SKU', name: 'наименованию', created_at: 'дате создания', updated_at: 'дате изменения' }
 const sortStatus = computed(() => `Сортировка по ${sortLabels[sort.value]}, ${direction.value === 'asc' ? 'по возрастанию' : 'по убыванию'}.`)
 const productDateFormatter = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -110,6 +115,42 @@ async function exportFilteredProducts(){
   }catch(reason){error.value=reason instanceof Error?reason.message:'Не удалось экспортировать товары.'}
   finally{exporting.value=false}
 }
+function chooseImportFile(){
+  if(importing.value)return
+  if(importInput.value)importInput.value.value=''
+  importInput.value?.click()
+}
+async function pollProductImport(id:number){
+  if(disposed)return
+  try{
+    const result=await getProductImport(id)
+    if(disposed)return
+    if(result.status==='completed'){
+      importing.value=false
+      importStatus.value=`Импорт завершён. Создано: ${result.created_rows}, обновлено: ${result.updated_rows}.`
+      await load(1)
+      return
+    }
+    if(result.status==='failed'){
+      importing.value=false;importStatus.value=''
+      error.value=result.error_message??'Не удалось импортировать товары.'
+      return
+    }
+    importStatus.value=result.status==='processing'?'Импортируем товары…':'Файл ожидает обработки…'
+    importPollTimer=setTimeout(()=>{importPollTimer=null;void pollProductImport(id)},1500)
+  }catch(reason){importing.value=false;importStatus.value='';error.value=reason instanceof Error?reason.message:'Не удалось проверить состояние импорта.'}
+}
+async function importProducts(event:Event){
+  const input=event.target as HTMLInputElement
+  const file=input.files?.[0]
+  if(!file)return
+  importing.value=true;error.value='';importStatus.value='Загружаем XLSX-файл…'
+  try{
+    const result=await uploadProductImport(file)
+    importStatus.value='Файл загружен и ожидает обработки…'
+    await pollProductImport(result.id)
+  }catch(reason){importing.value=false;importStatus.value='';error.value=reason instanceof Error?reason.message:'Не удалось загрузить XLSX-файл.'}
+}
 function fillGroup(group:ProductGroup|null,id:number){selectedGroupId.value=group?String(group.id):'';groupForm.value=group?{name:group.name,code:group.code,axis_attribute_ids:group.axes.map(a=>a.id),product_ids:group.products.map(p=>p.id)}:{name:'',code:'',axis_attribute_ids:[],product_ids:[id]}}
 function prepareGroupDraft(product:Product,groupList:ProductGroup[]){
   const ownGroup=groupList.find(group=>group.products.some(item=>item.id===product.id))??null
@@ -165,14 +206,15 @@ watch(filters,(next)=>{
   previousFilterSearch=next.search
   filterTimer=setTimeout(()=>{filterTimer=null;void load(1)},delay)
 },{deep:true})
-onBeforeUnmount(()=>{if(filterTimer)clearTimeout(filterTimer)})
+onBeforeUnmount(()=>{disposed=true;if(filterTimer)clearTimeout(filterTimer);if(importPollTimer)clearTimeout(importPollTimer)})
 onMounted(load)
 </script>
 
 <template>
-<section class="mx-auto" :aria-busy="loading"><div class="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1></div><div class="flex flex-wrap gap-2"><button v-if="canExport" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60" :disabled="exporting" :aria-busy="exporting" @click="exportFilteredProducts"><Download :size="18" aria-hidden="true"/>{{exporting?'Экспорт…':'Экспорт в Excel'}}</button><button v-if="canManage" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" @click="open()"><Plus :size="18" aria-hidden="true"/>Добавить товар</button></div></div>
+<section class="mx-auto" :aria-busy="loading"><div class="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">Товары</h1></div><div class="flex flex-wrap gap-2"><input ref="importInput" class="sr-only" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" tabindex="-1" aria-hidden="true" @change="importProducts"><button v-if="canManageImports" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60" :disabled="importing" :aria-busy="importing" @click="chooseImportFile"><Upload :size="18" aria-hidden="true"/>{{importing?'Импорт…':'Импорт из Excel'}}</button><button v-if="canManageImports" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60" :disabled="exporting" :aria-busy="exporting" @click="exportFilteredProducts"><Download :size="18" aria-hidden="true"/>{{exporting?'Экспорт…':'Экспорт в Excel'}}</button><button v-if="canManage" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" @click="open()"><Plus :size="18" aria-hidden="true"/>Добавить товар</button></div></div>
 <p v-if="error&&!opened" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500" role="alert">{{error}}</p>
 <p v-if="exportStatus" class="mb-4 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700" role="status">{{exportStatus}}</p>
+<p v-if="importStatus" class="mb-4 rounded-lg border px-4 py-3 text-sm" :class="importing?'border-primary-200 bg-primary-50 text-primary-600':'border-success-200 bg-success-50 text-success-700'" role="status" aria-live="polite">{{importStatus}}</p>
 <form class="rounded-xl border border-gray-200 bg-white p-5 shadow-card" role="search" @submit.prevent><div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><label class="text-sm font-medium text-gray-700 xl:col-span-2">Поиск<BaseInput v-model="filters.search" class="mt-1.5" searchable placeholder="Название, SKU, артикул"/></label><label class="text-sm font-medium text-gray-700">Категория<BaseSelect v-model="filters.category_id" class="mt-1.5" :options="filterCategoryOptions" accessible-name="Категория" search-placeholder="Начните вводить название категории" searchable/></label><label class="text-sm font-medium text-gray-700">Бренд<BaseSelect v-model="filters.brand_id" class="mt-1.5" :options="filterBrandOptions" accessible-name="Бренд" search-placeholder="Начните вводить название бренда" searchable/></label></div><div class="mt-5 grid gap-4 lg:grid-cols-2"><fieldset><legend class="text-sm font-semibold text-gray-700">Активность</legend><div class="mt-2 grid gap-2 sm:grid-cols-3"><BaseRadio v-for="option in activityOptions" :key="option.value" v-model="filters.is_active" class="focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2" :value="option.value" name="product-activity-filter">{{option.label}}</BaseRadio></div></fieldset><fieldset><legend class="text-sm font-semibold text-gray-700">Распродажа</legend><div class="mt-2 grid gap-2 sm:grid-cols-3"><BaseRadio v-for="option in saleOptions" :key="option.value" v-model="filters.is_on_sale" class="focus-within:outline-none focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2" :value="option.value" name="product-sale-filter">{{option.label}}</BaseRadio></div></fieldset></div><div class="mt-4 flex flex-wrap items-center justify-between gap-2"><p data-testid="product-count" class="rounded-full px-3 py-1.5 text-sm font-semibold" :class="productCountUnavailable?'bg-error-50 text-error-500':loading?'bg-gray-100 text-gray-500':'bg-primary-50 text-primary-600'">{{productCountLabel}}</p><button type="button" class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40" :disabled="!hasActiveFilters" @click="resetFilters">Сбросить</button></div></form><p class="sr-only" role="status" aria-live="polite">{{filterResultStatus}}</p>
 <p class="sr-only" role="status" aria-live="polite">{{sortStatus}}</p>
 <div class="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">

@@ -42,6 +42,17 @@ The command prints the dispatched count and a status summary. Persistent
 values are the operational signal to investigate the configured disk before
 retrying. Completed rows are retained as cleanup history.
 
+## Product imports
+
+`POST /api/v1/admin/products/import` stores the uploaded XLSX on the private `local` disk and
+dispatches `ProcessProductImport` after the import-status row commits. The job is retry-safe because
+the catalogue write is one database transaction; a failed attempt leaves no partial product rows.
+It retries up to three times with backoff, updates `pending`/`processing`/`completed`/`failed`
+status for Admin polling, and deletes the private workbook after success or final failure.
+
+TASK-051 limits one workbook to 5000 non-empty rows and the job timeout to 80 seconds, below the
+Redis `retry_after` interval. Larger/chunked generic bulk processing belongs to TASK-055.
+
 ## Локальный запуск
 
 Запустите окружение:

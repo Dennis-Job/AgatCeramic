@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Attribute;
 use App\Models\Product;
 use App\Queries\ProductQuery;
+use App\Support\ProductWorkbookSchema;
 use Illuminate\Support\LazyCollection;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\Style;
@@ -16,14 +17,6 @@ use Throwable;
 class ProductExportService
 {
     public const CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-    private const BASE_HEADERS = [
-        'id', 'sku', 'article_number', 'barcode', 'name', 'slug', 'description',
-        'category_id', 'category_slug', 'category_name', 'brand_id', 'brand_slug', 'brand_name',
-        'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale',
-        'primary_image_url', 'product_group_id', 'product_group_code', 'product_group_name',
-        'created_at', 'updated_at',
-    ];
 
     public function __construct(private readonly ProductQuery $productQuery) {}
 
@@ -58,7 +51,7 @@ class ProductExportService
                 ->setName('Товары')
                 ->setSheetView((new SheetView)->setFreezeRow(2));
             $writer->addRow(Row::fromValues([
-                ...self::BASE_HEADERS,
+                ...ProductWorkbookSchema::BASE_HEADERS,
                 ...$attributes->map(fn (Attribute $attribute): string => 'attribute.'.$attribute->slug)->all(),
             ], (new Style)->setFontBold()));
 

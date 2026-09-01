@@ -278,6 +278,17 @@ legacy-field migration before exposing the metadata.
 - order.paid_at;
 - order.completed_at.
 
+## Import/export
+
+### product_imports
+
+TASK-051 stores durable status for queued product workbook imports. The record contains the initiating
+admin `user_id`, original filename, private disk/path, status, attempt and result counters, a bounded
+failure summary, and lifecycle timestamps. The uploaded XLSX is temporary and is deleted after
+successful processing or final queue failure; the status record remains available for polling and
+operational history. Deleting the initiating account nulls `user_id` without exposing the import to
+another employee.
+
 ## Audit
 
 ### audit_logs
