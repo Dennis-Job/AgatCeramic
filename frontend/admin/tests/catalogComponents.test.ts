@@ -191,6 +191,18 @@ describe('PaginationControls', () => {
     expect(wrapper.get('button[aria-label="Следующая страница"]').attributes()).toHaveProperty('disabled')
   })
 
+  test('can render the visible range without a second live announcement', () => {
+    const wrapper = mount(PaginationControls, {
+      props: {
+        meta: { current_page: 1, last_page: 1, per_page: 25, total: 3, from: 1, to: 3 },
+        announce: false,
+      },
+    })
+
+    expect(wrapper.text()).toContain('Показано 1–3 из 3')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+  })
+
   test('does not render for an empty collection', () => {
     const wrapper = mount(PaginationControls, {
       props: { meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } },

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { ChevronLeft, ChevronRight } from '@lucide/vue'
 import type { PaginationMeta } from '../services/pagination'
 
-const props = defineProps<{ meta: PaginationMeta; loading?: boolean }>()
+const props = withDefaults(defineProps<{ meta: PaginationMeta; loading?: boolean; announce?: boolean }>(), { announce: true })
 const emit = defineEmits<{ change: [page: number] }>()
 
 const range = computed(() => {
@@ -15,7 +15,7 @@ const range = computed(() => {
 
 <template>
   <nav v-if="meta.total > 0" class="mt-4 flex flex-wrap items-center justify-between gap-3" :aria-label="`Пагинация: страница ${meta.current_page} из ${meta.last_page}`">
-    <p class="text-sm text-gray-500" role="status" aria-live="polite">Показано {{ range }}</p>
+    <p class="text-sm text-gray-500" :role="announce ? 'status' : undefined" :aria-live="announce ? 'polite' : undefined">Показано {{ range }}</p>
     <div class="flex items-center gap-2">
       <button class="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="loading || meta.current_page <= 1" aria-label="Предыдущая страница" @click="emit('change', meta.current_page - 1)">
         <ChevronLeft :size="17" />

@@ -81,9 +81,11 @@ test('catalog route guards require an authenticated user with catalog permission
 })
 
 test('product filters apply dynamically and reset to the first page', async ({ page }) => {
-  await mockCatalogApi(page)
+  await mockCatalogApi(page, { delayPath: '/admin/products' })
   await page.goto('/products')
+  await expect(page.getByTestId('product-count')).toHaveText('Обновляем количество товаров…')
   await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('product-count')).toHaveText('Всего товаров в каталоге: 16')
 
   const categoryRequest = page.waitForRequest((request) => {
     const url = new URL(request.url())
@@ -92,6 +94,7 @@ test('product filters apply dynamically and reset to the first page', async ({ p
   await page.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
   await categoryRequest
+  await expect(page.getByTestId('product-count')).toHaveText('Найдено товаров: 16')
 
   const activityRequest = page.waitForRequest((request) => {
     const url = new URL(request.url())
@@ -104,7 +107,7 @@ test('product filters apply dynamically and reset to the first page', async ({ p
     const url = new URL(request.url())
     return url.pathname.endsWith('/admin/products') && url.searchParams.get('is_on_sale') === '1'
   })
-  await page.getByRole('radio', { name: 'На распродаже', exact: true }).locator('..').click()
+  await page.getByRole('radio', { name: 'Распродажа', exact: true }).locator('..').click()
   await saleRequest
 
   const requestPromise = page.waitForRequest((request) => {
@@ -118,8 +121,7 @@ test('product filters apply dynamically and reset to the first page', async ({ p
   expect(query.get('is_active')).toBe('1')
   expect(query.get('is_on_sale')).toBe('1')
   expect(query.has('page')).toBe(false)
-  await expect(page.getByRole('status').filter({ hasText: 'Показано' })).toBeVisible()
-  await expect(page.getByText('Поиск и фильтры применяются автоматически.')).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Найдено товаров: 16. Показано 1–1.' })).toBeAttached()
   await expect(page.getByRole('search').getByText('Остаток', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('search').getByText('Цена от', { exact: true })).toHaveCount(0)
 
@@ -132,6 +134,7 @@ test('product filters apply dynamically and reset to the first page', async ({ p
   await expect(page.getByLabel('Поиск')).toHaveValue('')
   await expect(page.getByLabel('Категория')).toContainText('Все категории')
   await expect(page.getByRole('radio', { name: 'Все' }).first()).toBeChecked()
+  await expect(page.getByTestId('product-count')).toHaveText('Всего товаров в каталоге: 16')
 
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 720 })
@@ -140,6 +143,19 @@ test('product filters apply dynamically and reset to the first page', async ({ p
     await expect(page.getByRole('group', { name: 'Активность' })).toBeVisible()
     await expect(page.getByRole('group', { name: 'Распродажа' })).toBeVisible()
   }
+
+  await page.route('**/api/v1/admin/products?*', async (route) => {
+    const query = new URL(route.request().url()).searchParams
+    if (query.get('brand_id') === '1') {
+      await route.fulfill({ status: 500, json: { error: { message: 'Не удалось обновить товары.', details: {} } } })
+      return
+    }
+    await route.fallback()
+  })
+  await page.getByLabel('Бренд').click()
+  await page.getByRole('button', { name: 'Kerama Marazzi', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Не удалось обновить товары.')
+  await expect(page.getByTestId('product-count')).toHaveText('Количество товаров недоступно')
 })
 
 test('product table sorts through the API and remains usable at supported widths', async ({ page }) => {
@@ -587,7 +603,7 @@ test('catalog exposes loading, error, and empty states', async ({ page }) => {
   const emptyPage = await page.context().newPage()
   await mockCatalogApi(emptyPage, { emptyPath: '/admin/products' })
   await emptyPage.goto('/products')
-  await expect(emptyPage.getByText('Товары не найдены.')).toBeVisible()
+  await expect(emptyPage.getByRole('cell', { name: 'Товары не найдены.' })).toBeVisible()
   await expect(emptyPage.getByRole('alert')).toHaveCount(0)
   await emptyPage.close()
 
