@@ -213,6 +213,16 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
       return
     }
 
+    if (path === '/admin/products/import' && route.request().method() === 'POST') {
+      await route.fulfill({ status: 202, json: { data: { id: 1, filename: 'products.xlsx', status: 'pending', created_rows: 0, updated_rows: 0, processed_rows: 0, error_message: null, created_at: now, started_at: null, completed_at: null } } })
+      return
+    }
+
+    if (path === '/admin/product-imports/1') {
+      await route.fulfill({ json: { data: { id: 1, filename: 'products.xlsx', status: 'completed', created_rows: 2, updated_rows: 3, processed_rows: 5, error_message: null, created_at: now, started_at: now, completed_at: now } } })
+      return
+    }
+
     if (path === '/admin/products') {
       if (route.request().method() === 'POST') {
         const payload = route.request().postDataJSON() as typeof product

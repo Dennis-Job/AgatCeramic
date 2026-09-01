@@ -27,6 +27,8 @@ class OpenApiCatalogContractTest extends TestCase
             '/admin/brands/{brand}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products' => ['get', 'post'],
             '/admin/products/export' => ['get'],
+            '/admin/products/import' => ['post'],
+            '/admin/product-imports/{productImport}' => ['get'],
             '/admin/products/{product}' => ['get', 'put', 'patch', 'delete'],
             '/admin/product-groups' => ['get', 'post'],
             '/admin/product-groups/{product_group}' => ['get', 'put', 'patch', 'delete'],
@@ -72,6 +74,15 @@ class OpenApiCatalogContractTest extends TestCase
         self::assertSame(
             ['search', 'category_id', 'brand_id', 'is_active', 'is_on_sale', 'has_stock', 'price_from', 'price_to', 'sort', 'direction'],
             array_column($productExport['parameters'], 'name'),
+        );
+        self::assertSame('multipart/form-data', array_key_first($spec['paths']['/admin/products/import']['post']['requestBody']['content']));
+        self::assertSame(
+            '#/components/schemas/ProductImportResponse',
+            $spec['paths']['/admin/products/import']['post']['responses']['202']['content']['application/json']['schema']['$ref'],
+        );
+        self::assertSame(
+            ['pending', 'processing', 'completed', 'failed'],
+            $spec['components']['schemas']['ProductImport']['properties']['status']['enum'],
         );
         self::assertContains('sku_prefix', $spec['components']['schemas']['Category']['required']);
         self::assertArrayHasKey('AttributeValue', $spec['components']['schemas']);
