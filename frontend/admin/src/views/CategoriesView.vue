@@ -20,6 +20,7 @@ import {
 import { getAllAttributes, type Attribute } from "../services/attributes";
 import { getAllAttributeGroups, type AttributeGroup } from "../services/attributeGroups";
 import { useAuthStore } from "../stores/auth";
+import { attributeTypeLabel } from "../utils/attributeTypes";
 const auth = useAuthStore();
 const categories = ref<Category[]>([]);
 const error = ref("");
@@ -438,7 +439,7 @@ onMounted(load);
           <div class="bg-gray-50 px-4 py-3"><h3 class="font-semibold text-gray-800">{{ group.name }}</h3><p class="text-xs text-gray-500">Выберите характеристики этой группы.</p></div>
           <div class="divide-y divide-gray-100">
             <div v-for="attribute in group.attributes" :key="attribute.id" class="flex flex-wrap items-center gap-2 px-4 py-3">
-              <BaseCheckbox :model-value="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[42px] flex-1 border-0" @update:model-value="setSelectedAttributeIds"><span class="min-w-0"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span></BaseCheckbox>
+              <BaseCheckbox :model-value="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[42px] flex-1 border-0" @update:model-value="setSelectedAttributeIds"><span class="min-w-0"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attributeTypeLabel(attribute.type) }}</span></span></BaseCheckbox>
               <BaseCheckbox v-if="selectedAttributeIds.includes(attribute.id)" v-model="requiredAttributeIds" :value="attribute.id" class="h-auto min-h-[42px]" :accessible-name="`Обязательная характеристика: ${attribute.name}`">Обязательная</BaseCheckbox>
             </div>
             <p v-if="!group.attributes.length" class="px-4 py-3 text-sm text-gray-500">В группе пока нет характеристик.</p>
@@ -448,7 +449,7 @@ onMounted(load);
           <div class="bg-gray-50 px-4 py-3"><h3 class="font-semibold text-gray-800">Без группы</h3><p class="text-xs text-gray-500">Характеристики, доступные для любой категории.</p></div>
           <div class="divide-y divide-gray-100">
             <div v-for="attribute in ungroupedAttributes" :key="attribute.id" class="flex flex-wrap items-center gap-2 px-4 py-3">
-              <BaseCheckbox :model-value="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[42px] flex-1 border-0" @update:model-value="setSelectedAttributeIds"><span class="min-w-0"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attribute.type }}</span></span></BaseCheckbox>
+              <BaseCheckbox :model-value="selectedAttributeIds" :value="attribute.id" class="h-auto min-h-[42px] flex-1 border-0" @update:model-value="setSelectedAttributeIds"><span class="min-w-0"><span class="block font-medium text-gray-800">{{ attribute.name }}</span><span class="block text-xs text-gray-500">/{{ attribute.slug }} · {{ attributeTypeLabel(attribute.type) }}</span></span></BaseCheckbox>
               <BaseCheckbox v-if="selectedAttributeIds.includes(attribute.id)" v-model="requiredAttributeIds" :value="attribute.id" class="h-auto min-h-[42px]" :accessible-name="`Обязательная характеристика: ${attribute.name}`">Обязательная</BaseCheckbox>
             </div>
           </div>

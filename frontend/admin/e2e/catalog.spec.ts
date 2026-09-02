@@ -369,7 +369,7 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     await dialog.getByRole('button', { name: 'Характеристики', exact: false }).click()
 
     await expect(dialog.getByText('Общие характеристики автоматически применяются ко всем товарам группы.')).toBeVisible()
-    await expect(dialog.getByLabel('Ширина, только для этой позиции', { exact: true })).toHaveValue('60.00')
+    await expect(dialog.getByLabel('Ширина (см), только для этой позиции', { exact: true })).toHaveValue('60.00')
     await expect(dialog.getByLabel('Тип поверхности и декоративной текстуры, общая для группы', { exact: true })).toHaveValue('Матовая')
     await dialog.getByRole('button', { name: 'Рисунок, общая для группы', exact: true }).click()
     const floatingOption = page.getByRole('button', { name: 'Камень', exact: true })
@@ -403,7 +403,7 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     await dialog.getByRole('button', { name: 'Характеристики', exact: false }).click()
     const dimensionsSection = dialog.getByRole('region', { name: 'Размеры' })
     const ungroupedSection = dialog.getByRole('region', { name: 'Без группы' })
-    await expect(dimensionsSection.getByLabel('Ширина', { exact: true })).toHaveValue('60.00')
+    await expect(dimensionsSection.getByLabel('Ширина (см)', { exact: true })).toHaveValue('60.00')
     await expect(ungroupedSection.getByRole('button', { name: 'Рисунок', exact: true })).toContainText('Камень')
 
     const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
@@ -438,7 +438,7 @@ test('sale flag can be set while creating a product and is shown in the product 
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
 
   const savedDialog = page.getByRole('dialog', { name: 'Распродажный керамогранит' })
-  await expect(savedDialog.getByRole('region', { name: 'Размеры' }).getByLabel('Ширина', { exact: true })).toBeVisible()
+  await expect(savedDialog.getByRole('region', { name: 'Размеры' }).getByLabel('Ширина (см)', { exact: true })).toBeVisible()
   await expect(savedDialog.getByRole('region', { name: 'Без группы' }).getByRole('button', { name: 'Рисунок', exact: true })).toBeVisible()
   await savedDialog.getByRole('button', { name: 'Проверка', exact: false }).click()
   await expect(savedDialog.getByText('Распродажа', { exact: true })).toBeVisible()
@@ -534,7 +534,7 @@ test('creating a similar product requires a different name and generates a clean
 
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
   const savedDialog = page.getByRole('dialog', { name: 'Монте Тиберио Светлый' })
-  await expect(savedDialog.getByLabel('Ширина')).toHaveValue('60.00')
+  await expect(savedDialog.getByLabel('Ширина (см)')).toHaveValue('60.00')
   await savedDialog.getByRole('button', { name: 'Варианты модели', exact: false }).click()
   await expect(savedDialog.getByRole('checkbox', { name: new RegExp(`Монте Тиберио · ${longSourceSku}$`) })).toBeChecked()
   await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · 1000001$/ })).toBeChecked()
@@ -650,6 +650,8 @@ test('categories, brands, groups, and attributes expose their dialog and selecto
   await page.getByRole('button', { name: 'Настроить характеристики категории Керамогранит' }).click()
   dialog = page.getByRole('dialog', { name: 'Характеристики: Керамогранит' })
   await expect(dialog.getByRole('heading', { name: 'Размеры', exact: true })).toBeVisible()
+  await expect(dialog.getByText('/width · Десятичное число', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('/width · decimal', { exact: true })).toHaveCount(0)
   await dialog.getByRole('button', { name: 'Закрыть окно характеристик категории' }).click()
 
   await page.goto('/brands')
