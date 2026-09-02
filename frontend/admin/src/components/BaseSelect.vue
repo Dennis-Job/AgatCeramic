@@ -12,12 +12,15 @@ const props = withDefaults(defineProps<{
   searchable?: boolean
   searchPlaceholder?: string
   clearable?: boolean
-}>(), { placeholder: 'Выберите значение', searchable: false, searchPlaceholder: 'Начните вводить для поиска', clearable: false })
+  teleportMenu?: boolean
+}>(), { placeholder: 'Выберите значение', searchable: false, searchPlaceholder: 'Начните вводить для поиска', clearable: false, teleportMenu: false })
 
 const emit = defineEmits<{ 'update:modelValue': [value: string]; change: [value: string] }>()
 const isOpen = ref(false)
 const root = ref<HTMLElement | null>(null)
 const triggerButton = ref<HTMLButtonElement | null>(null)
+const menu = ref<HTMLElement | null>(null)
+const menuStyle = ref<Record<string, string>>({})
 const search = ref('')
 const searchInput = ref<HTMLInputElement | null>(null)
 const selectedLabel = computed(() => props.options.find((option) => option.value === props.modelValue)?.label ?? props.placeholder)
@@ -31,9 +34,73 @@ const filteredOptions = computed(() => {
 
 function toggle(): void {
   isOpen.value = !isOpen.value
-  if (isOpen.value && props.searchable) {
+  if (isOpen.value) {
     search.value = ''
-    void nextTick(() => searchInput.value?.focus())
+    void nextTick(() => {
+      updateMenuPosition()
+      if (props.searchable) searchInput.value?.focus()
+      else focusInitialOption()
+    })
+  }
+}
+
+function optionButtons(): HTMLButtonElement[] {
+  return Array.from(menu.value?.querySelectorAll<HTMLButtonElement>('[data-select-option]') ?? [])
+}
+
+function focusInitialOption(): void {
+  const buttons = optionButtons()
+  const selected = buttons.find(button => button.dataset.value === props.modelValue)
+  const initial = selected ?? buttons[0]
+  initial?.focus()
+}
+
+function handleMenuKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    event.stopPropagation()
+    event.preventDefault()
+    closeAndFocus()
+    return
+  }
+
+  const buttons = optionButtons()
+  const currentIndex = buttons.indexOf(document.activeElement as HTMLButtonElement)
+  let nextIndex: number | null = null
+  if (event.key === 'ArrowDown') nextIndex = Math.min(currentIndex + 1, buttons.length - 1)
+  if (event.key === 'ArrowUp') nextIndex = Math.max(currentIndex - 1, 0)
+  if (event.key === 'Home') nextIndex = 0
+  if (event.key === 'End') nextIndex = buttons.length - 1
+  if (nextIndex === null || nextIndex < 0) return
+
+  event.preventDefault()
+  buttons[nextIndex]?.focus()
+}
+
+function handleRootEscape(event: KeyboardEvent): void {
+  if (!isOpen.value) return
+  event.stopPropagation()
+  event.preventDefault()
+  closeAndFocus()
+}
+
+function updateMenuPosition(): void {
+  if (!props.teleportMenu || !isOpen.value || !triggerButton.value) return
+
+  const rect = triggerButton.value.getBoundingClientRect()
+  const gap = 6
+  const preferredHeight = Math.min(menu.value?.scrollHeight ?? 264, 264)
+  const availableBelow = window.innerHeight - rect.bottom - gap
+  const availableAbove = rect.top - gap
+  const placeAbove = availableBelow < Math.min(preferredHeight, 160) && availableAbove > availableBelow
+  const availableHeight = Math.max(96, Math.min(264, placeAbove ? availableAbove : availableBelow))
+
+  menuStyle.value = {
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    maxHeight: `${availableHeight}px`,
+    ...(placeAbove
+      ? { bottom: `${window.innerHeight - rect.top + gap}px` }
+      : { top: `${rect.bottom + gap}px` }),
   }
 }
 
@@ -60,15 +127,22 @@ function clear(): void {
 }
 
 function closeOnOutsideClick(event: MouseEvent): void {
-  if (root.value && !root.value.contains(event.target as Node)) isOpen.value = false
+  const target = event.target as Node
+  if (root.value && !root.value.contains(target) && !menu.value?.contains(target)) isOpen.value = false
 }
 
 document.addEventListener('click', closeOnOutsideClick)
-onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick))
+window.addEventListener('resize', updateMenuPosition)
+document.addEventListener('scroll', updateMenuPosition, true)
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeOnOutsideClick)
+  window.removeEventListener('resize', updateMenuPosition)
+  document.removeEventListener('scroll', updateMenuPosition, true)
+})
 </script>
 
 <template>
-  <div ref="root" class="relative" @keydown.escape.stop.prevent="closeAndFocus">
+  <div ref="root" class="relative" @keydown.escape="handleRootEscape">
     <button
       ref="triggerButton"
       type="button"
@@ -92,7 +166,16 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
     >
       <X :size="15" aria-hidden="true" />
     </button>
-    <div v-if="isOpen" class="absolute left-0 right-0 z-40 mt-1.5 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-dropdown">
+    <Teleport to="body" :disabled="!teleportMenu">
+    <div
+      v-if="isOpen"
+      ref="menu"
+      :data-floating-select-menu="teleportMenu ? '' : undefined"
+      class="rounded-lg border border-gray-100 bg-white py-1 shadow-dropdown"
+      :class="teleportMenu ? 'fixed z-[70] overflow-x-hidden overflow-y-auto' : 'absolute left-0 right-0 z-40 mt-1.5 overflow-hidden'"
+      :style="teleportMenu ? menuStyle : undefined"
+      @keydown="handleMenuKeydown"
+    >
       <div v-if="searchable" class="border-b border-gray-100 p-2">
         <input
           ref="searchInput"
@@ -103,10 +186,12 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
           :aria-label="`Поиск: ${accessibleName}`"
         >
       </div>
-      <div class="max-h-64 overflow-y-auto">
+      <div :class="teleportMenu ? undefined : 'max-h-64 overflow-y-auto'">
       <button
         v-for="option in filteredOptions"
         :key="option.value"
+        data-select-option
+        :data-value="option.value"
         type="button"
         class="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-25"
         :class="{ 'bg-primary-50 font-semibold text-primary-600': option.value === modelValue }"
@@ -118,5 +203,6 @@ onBeforeUnmount(() => document.removeEventListener('click', closeOnOutsideClick)
       <p v-if="searchable && filteredOptions.length === 0" class="px-3 py-3 text-sm text-gray-500">Ничего не найдено</p>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>

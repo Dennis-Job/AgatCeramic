@@ -85,6 +85,7 @@ class OpenApiCatalogContractTest extends TestCase
             $spec['components']['schemas']['ProductImport']['properties']['status']['enum'],
         );
         self::assertContains('sku_prefix', $spec['components']['schemas']['Category']['required']);
+        self::assertSame('^(?:[1-9]|[1-9][1-9])$', $spec['components']['schemas']['Category']['properties']['sku_prefix']['pattern']);
         self::assertArrayHasKey('AttributeValue', $spec['components']['schemas']);
         self::assertArrayHasKey('422', $spec['paths']['/admin/attributes/{attribute}']['delete']['responses']);
         self::assertNotEmpty($spec['paths']['/admin/attributes/{attribute}']['patch']['description']);

@@ -27,7 +27,7 @@ class CategoryManagementTest extends TestCase
             'sort_order' => 20,
         ])->assertCreated()
             ->assertJsonPath('data.slug', 'ceramic-tile')
-            ->assertJsonPath('data.sku_prefix', '01')
+            ->assertJsonPath('data.sku_prefix', '1')
             ->assertJsonPath('data.is_parent', false)
             ->assertJsonPath('data.is_active', true);
 
@@ -81,7 +81,7 @@ class CategoryManagementTest extends TestCase
         $actor = $this->userWithRole('catalog-manager');
         $plumbing = Category::factory()->create(['name' => 'Сантехника', 'slug' => 'santekhnika', 'sort_order' => 10]);
         $sinksResponse = $this->actingAs($actor)->postJson('/api/v1/admin/categories', ['parent_id' => $plumbing->id, 'name' => 'Раковины', 'slug' => 'rakoviny', 'sort_order' => 10])->assertCreated();
-        $sinksResponse->assertJsonPath('data.sku_prefix', '01');
+        $sinksResponse->assertJsonPath('data.sku_prefix', '1');
         $sinks = $sinksResponse->json('data.id');
         $tubs = $this->actingAs($actor)->postJson('/api/v1/admin/categories', ['parent_id' => $plumbing->id, 'name' => 'Ванны', 'slug' => 'vanny', 'sort_order' => 20])->assertCreated()->json('data.id');
         $toilets = $this->actingAs($actor)->postJson('/api/v1/admin/categories', ['parent_id' => $plumbing->id, 'name' => 'Унитазы', 'slug' => 'unitazy', 'sort_order' => 30])->assertCreated()->json('data.id');
@@ -130,21 +130,36 @@ class CategoryManagementTest extends TestCase
         $actor = $this->userWithRole('catalog-manager');
         $firstRoot = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
             'name' => 'Tile', 'slug' => 'tile', 'is_parent' => true,
-        ])->assertCreated()->assertJsonPath('data.sku_prefix', '01')->json('data.id');
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '1')->json('data.id');
         $secondRoot = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
             'name' => 'Plumbing', 'slug' => 'plumbing', 'is_parent' => true,
-        ])->assertCreated()->assertJsonPath('data.sku_prefix', '02')->json('data.id');
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '2')->json('data.id');
         $child = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
             'parent_id' => $firstRoot, 'name' => 'Mosaic', 'slug' => 'mosaic', 'is_parent' => true,
-        ])->assertCreated()->assertJsonPath('data.sku_prefix', '01')->json('data.id');
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '1')->json('data.id');
         $grandchild = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
             'parent_id' => $child, 'name' => 'Glass mosaic', 'slug' => 'glass-mosaic',
-        ])->assertCreated()->assertJsonPath('data.sku_prefix', '01')->json('data.id');
+        ])->assertCreated()->assertJsonPath('data.sku_prefix', '1')->json('data.id');
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$child}", ['parent_id' => $secondRoot])
-            ->assertOk()->assertJsonPath('data.sku_prefix', '02');
+            ->assertOk()->assertJsonPath('data.sku_prefix', '2');
 
-        $this->assertDatabaseHas('categories', ['id' => $grandchild, 'sku_prefix' => '02']);
+        $this->assertDatabaseHas('categories', ['id' => $grandchild, 'sku_prefix' => '2']);
+    }
+
+    public function test_root_category_prefixes_skip_multiples_of_ten(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $prefixes = [];
+
+        foreach (range(1, 11) as $number) {
+            $prefixes[] = $this->actingAs($actor)->postJson('/api/v1/admin/categories', [
+                'name' => "Root {$number}",
+                'slug' => "root-{$number}",
+            ])->assertCreated()->json('data.sku_prefix');
+        }
+
+        $this->assertSame(['1', '2', '3', '4', '5', '6', '7', '8', '9', '11', '12'], $prefixes);
     }
 
     private function userWithRole(string $slug): User

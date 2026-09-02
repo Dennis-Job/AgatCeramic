@@ -155,9 +155,11 @@ sanitised, so passwords, tokens, and other sensitive values are never exposed.
 
 Phase 3.1 makes each product a standalone sellable item. Create requires `category_id`, `name`, a
 unique URL-safe `slug`, a controlled `unit`, and a non-negative `price`. The server generates the
-immutable, globally unique eight-digit SKU as `TTNNNNNN`: `TT` is the stable two-digit prefix of the
-root category inherited by its descendants, while `NNNNNN` is one global product sequence. Clients
-must not send `sku` on create or update. Existing legacy SKUs remain readable and are not rewritten.
+immutable, globally unique seven- or eight-digit SKU as `<type><NNNNNN>`: `type` is the stable
+one- or two-digit prefix of the root category inherited by its descendants, while `NNNNNN` is one
+global product sequence. Type allocation uses `1`–`9`, `11`–`19`, ..., `91`–`99`, deliberately
+skipping multiples of ten so generated identifiers never need a leading zero. Clients must not send
+`sku` on create or update. Existing SKUs remain readable and are not rewritten.
 Create also requires non-negative `stock_quantity`. Optional commercial fields are globally unique
 `article_number`, digit-only `barcode`, and `old_price` (not below current price). `brand_id`, `description`, and
 `is_active` and `is_on_sale` are optional boolean flags. Product responses include these commercial fields, category, brand, and

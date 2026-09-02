@@ -44,7 +44,7 @@ class ProductManagementTest extends TestCase
         ])->assertCreated()
             ->assertJsonPath('data.category.id', $category->id)
             ->assertJsonPath('data.brand.id', $brand->id)
-            ->assertJsonPath('data.sku', '01000001')
+            ->assertJsonPath('data.sku', '1000001')
             ->assertJsonPath('data.is_on_sale', true);
         $id = $created->json('data.id');
 

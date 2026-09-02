@@ -46,7 +46,7 @@ assignments; deleting a staff account or role removes its pivot rows.
 - name
 - slug
 - description
-- sku_prefix (server-owned two-digit root type code inherited by descendants)
+- sku_prefix (server-owned one- or two-digit root type code inherited by descendants)
 - image_id
 - is_parent
 - is_active
@@ -59,9 +59,10 @@ into an enforced managed-media relationship, and its replacement/deletion lifecy
 Catalog API does not accept or expose category image management. Category SEO is intentionally absent
 from this table; `TASK-100` (Phase 8) owns it through the separate `seo_metadata` layer.
 
-Root categories receive `sku_prefix` values from `01` through `99`; descendants inherit the same
-value. Moving a subtree to another root updates its prefix for future product creation but never
-rewrites existing product SKUs.
+Root categories receive `sku_prefix` values `1` through `99`, excluding `10`, `20`, ..., `90`;
+descendants inherit the same value. The allocation order is therefore `1`–`9`, `11`–`19`,
+`21`–`29`, and so on. Moving a subtree to another root updates its prefix for future product
+creation but never rewrites existing product SKUs.
 
 ### catalog_counters
 Concurrency-safe transactional counters used for category type prefixes and the global six-digit
@@ -132,10 +133,12 @@ Phase 3.1 makes `products` the only sellable catalogue entity. In addition to re
 `category_id`, optional `brand_id`, name, unique URL-safe slug, optional description, activation
 state, and timestamps, each product owns a globally unique SKU, optional globally unique article
 number and barcode, required controlled sale unit, current and optional old price, and stock.
-New SKUs are immutable server-generated `TTNNNNNN` strings. `TT` comes from the product category's
-root-type prefix; `NNNNNN` comes from the locked `catalog_counters.product_sku_number` row and is
-global across all category types. The counter allocation is transactional and never uses
-`MAX(products.sku) + 1`. Legacy identifiers are preserved without reformatting.
+New SKUs are immutable server-generated `<type><NNNNNN>` strings. The one- or two-digit `type`
+comes from the product category's root prefix; `NNNNNN` comes from the locked
+`catalog_counters.product_sku_number` row and is global across all category types. Generated SKUs
+therefore contain seven or eight digits and never start with zero. Counter allocation is
+transactional, skips an already occupied legacy identifier, and never uses `MAX(products.sku) + 1`.
+Previously issued identifiers are preserved without reformatting.
 The supported units remain `piece`, `square_meter`, `linear_meter`, `package`, `kilogram`, `liter`,
 and `set`. Each product owns its own attribute values and images. Categories cannot be deleted while
 referenced by products; deleting a brand clears the optional reference. Commercial columns remain
