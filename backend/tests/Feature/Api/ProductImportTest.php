@@ -55,7 +55,7 @@ class ProductImportTest extends TestCase
     {
         Storage::fake('local');
         $actor = $this->userWithPermission('imports.manage');
-        $category = Category::factory()->create(['name' => 'Плитка', 'slug' => 'tile', 'sku_prefix' => '07']);
+        $category = Category::factory()->create(['name' => 'Плитка', 'slug' => 'tile', 'sku_prefix' => '7']);
         $color = Attribute::factory()->create(['name' => 'Цвет', 'slug' => 'color', 'type' => 'select']);
         $color->options()->createMany([
             ['label' => 'Белый', 'value' => 'white', 'sort_order' => 0],
@@ -72,7 +72,7 @@ class ProductImportTest extends TestCase
         ]);
         $existing = Product::factory()->create([
             'category_id' => $category->id,
-            'sku' => '07000050',
+            'sku' => '7000050',
             'name' => 'Старое название',
             'slug' => 'existing-tile',
             'is_active' => true,
@@ -82,7 +82,7 @@ class ProductImportTest extends TestCase
         $headers = [...ProductWorkbookSchema::BASE_HEADERS, 'attribute.color', 'attribute.features'];
         $rows = [
             $this->row($headers, [
-                'id' => $existing->id, 'sku' => '07000050', 'name' => 'Новое название', 'slug' => 'existing-tile',
+                'id' => $existing->id, 'sku' => '7000050', 'name' => 'Новое название', 'slug' => 'existing-tile',
                 'category_id' => $category->id, 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 150.25,
                 'stock_quantity' => 8, 'is_active' => true, 'is_on_sale' => true, 'attribute.color' => 'gray',
             ]),
@@ -107,7 +107,7 @@ class ProductImportTest extends TestCase
         $this->assertTrue($existing->is_on_sale);
         $this->assertSame('gray', $existing->attributeValues()->where('attribute_id', $color->id)->value('value'));
         $created = Product::query()->where('slug', 'new-tile')->sole();
-        $this->assertMatchesRegularExpression('/^07\d{6}$/', $created->sku);
+        $this->assertMatchesRegularExpression('/^7\d{6}$/', $created->sku);
         $this->assertSame('0012345678901', $created->barcode);
         $this->assertTrue($created->is_active);
         $this->assertSame(['matte', 'frost'], $created->attributeValues()->where('attribute_id', $features->id)->value('value'));
@@ -117,7 +117,7 @@ class ProductImportTest extends TestCase
     {
         Storage::fake('local');
         $actor = $this->userWithPermission('imports.manage');
-        $category = Category::factory()->create(['slug' => 'tile', 'sku_prefix' => '08']);
+        $category = Category::factory()->create(['slug' => 'tile', 'sku_prefix' => '8']);
         $headers = ProductWorkbookSchema::BASE_HEADERS;
         $rows = [
             $this->row($headers, ['name' => 'Valid', 'slug' => 'valid', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false]),

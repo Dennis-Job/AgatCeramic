@@ -3928,8 +3928,8 @@
                     },
                     "sku_prefix": {
                         "type": ["string", "null"],
-                        "pattern": "^[0-9]{2}$",
-                        "description": "Server-owned root product-type prefix inherited by descendants. Null is possible only for a legacy or directly inserted category until first use."
+                        "pattern": "^(?:[1-9]|[1-9][1-9])$",
+                        "description": "Server-owned one- or two-digit root product-type prefix inherited by descendants. Multiples of ten are not allocated. Null is possible only for a legacy or directly inserted category until first use."
                     },
                     "is_parent": {
                         "type": "boolean"
@@ -4047,7 +4047,7 @@
                     },
                     "sku": {
                         "type": ["string", "null"],
-                        "description": "Server-generated immutable TTNNNNNN identifier. Null or a legacy format is possible only for a row created before automatic numbering."
+                        "description": "Server-generated immutable <type><NNNNNN> identifier with a one- or two-digit category type. Null or a legacy format is possible only for a row created before automatic numbering."
                     },
                     "article_number": {
                         "type": ["string", "null"]

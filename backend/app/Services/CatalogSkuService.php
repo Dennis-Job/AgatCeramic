@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -11,9 +12,13 @@ class CatalogSkuService
     public function generate(Category $category): string
     {
         $prefix = $category->sku_prefix ?? $this->ensurePrefix($category);
-        $number = $this->nextCounterValue('product_sku_number', 999999, 'The six-digit SKU number range is exhausted.');
 
-        return $prefix.str_pad((string) $number, 6, '0', STR_PAD_LEFT);
+        do {
+            $number = $this->nextCounterValue('product_sku_number', 999999, 'The six-digit SKU number range is exhausted.');
+            $sku = $prefix.str_pad((string) $number, 6, '0', STR_PAD_LEFT);
+        } while (Product::query()->where('sku', $sku)->exists());
+
+        return $sku;
     }
 
     public function prefixForNewCategory(?Category $parent): string
@@ -58,12 +63,13 @@ class CatalogSkuService
 
     private function nextRootPrefix(): string
     {
-        return str_pad(
-            (string) $this->nextCounterValue('category_sku_prefix', 99, 'The two-digit category type range is exhausted.'),
-            2,
-            '0',
-            STR_PAD_LEFT,
+        $ordinal = $this->nextCounterValue(
+            'category_sku_prefix',
+            90,
+            'The category type range is exhausted.',
         );
+
+        return (string) ($ordinal + intdiv($ordinal - 1, 9));
     }
 
     private function nextCounterValue(string $name, int $maximum, string $message): int

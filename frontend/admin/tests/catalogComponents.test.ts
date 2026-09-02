@@ -48,7 +48,8 @@ describe('alphabetical option ordering', () => {
     })
 
     await wrapper.get('button[aria-label="Цвет"]').trigger('click')
-    expect(wrapper.findAll('.max-h-64 button').map(button => button.text())).toEqual(['Бежевый', 'Белый', 'Лазурный'])
+    expect(Array.from(document.body.querySelectorAll('[data-floating-select-menu] [data-select-option]')).map(button => button.textContent?.trim())).toEqual(['Бежевый', 'Белый', 'Лазурный'])
+    wrapper.unmount()
   })
 })
 
@@ -94,6 +95,40 @@ describe('BaseDialog', () => {
 })
 
 describe('BaseSelect', () => {
+  test('teleports an opted-in menu outside clipping containers and keeps keyboard and outside-click handling', async () => {
+    const wrapper = mount(BaseSelect, {
+      attachTo: document.body,
+      props: {
+        modelValue: '',
+        accessibleName: 'Текстура',
+        teleportMenu: true,
+        options: [
+          { value: 'glossy', label: 'Глянцевая' },
+          { value: 'matte', label: 'Матовая' },
+        ],
+      },
+    })
+
+    await wrapper.get('button[aria-label="Текстура"]').trigger('click')
+    const menu = document.body.querySelector('.fixed.z-\\[70\\]')
+    expect(menu?.textContent).toContain('Матовая')
+    expect(wrapper.element.contains(menu)).toBe(false)
+    expect(document.activeElement?.textContent?.trim()).toBe('Глянцевая')
+
+    await (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    expect(document.activeElement?.textContent?.trim()).toBe('Матовая')
+    await (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(document.body.querySelector('.fixed.z-\\[70\\]')).toBeNull()
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Текстура')
+
+    await wrapper.get('button[aria-label="Текстура"]').trigger('click')
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(document.body.querySelector('.fixed.z-\\[70\\]')).toBeNull()
+    wrapper.unmount()
+  })
+
   test('clears a selected value only when explicitly enabled', async () => {
     const wrapper = mount(BaseSelect, {
       attachTo: document.body,

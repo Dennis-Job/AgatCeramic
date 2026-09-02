@@ -174,6 +174,10 @@
 - [x] TASK-042V Group product characteristic fields into sections
   - Render category characteristics under their characteristic-group names in the product create/edit flow.
   - Keep characteristics without a group together in a separate list and preserve validation, variation, and clear behavior.
+- [x] TASK-042Z Make generated SKU prefixes Excel-safe
+  - Allocate root-category prefixes as `1`–`9`, `11`–`19`, ..., `91`–`99`, skipping multiples of ten.
+  - Preserve already issued immutable product SKUs and image paths while safely converting existing category prefixes.
+  - Keep tests isolated from the local PostgreSQL database and cover migration, allocation, collision, import, and API contracts.
 
 ## Phase 4 — Import/export
 

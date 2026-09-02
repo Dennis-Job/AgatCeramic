@@ -33,7 +33,7 @@ class StandaloneProductManagementTest extends TestCase
         $response = $this->actingAs($actor)->postJson('/api/v1/admin/products', [
             'category_id' => $category->id, 'name' => 'White tile', 'slug' => 'white-tile',
             'unit' => 'piece', 'price' => 100, 'stock_quantity' => 4,
-        ])->assertCreated()->assertJsonPath('data.is_active', false)->assertJsonPath('data.sku', '01000001');
+        ])->assertCreated()->assertJsonPath('data.is_active', false)->assertJsonPath('data.sku', '1000001');
         $productId = $response->json('data.id');
 
         $this->actingAs($actor)->putJson("/api/v1/admin/products/{$productId}/attributes", ['attributes' => []])->assertOk();
@@ -63,12 +63,28 @@ class StandaloneProductManagementTest extends TestCase
             'stock_quantity' => 0,
         ])->assertCreated();
 
-        $create($tileChild, 'tile-one')->assertJsonPath('data.sku', '01000001');
-        $create($plumbingRoot, 'sink-one')->assertJsonPath('data.sku', '02000002');
-        $create($tileRoot, 'tile-two')->assertJsonPath('data.sku', '01000003');
+        $create($tileChild, 'tile-one')->assertJsonPath('data.sku', '1000001');
+        $create($plumbingRoot, 'sink-one')->assertJsonPath('data.sku', '2000002');
+        $create($tileRoot, 'tile-two')->assertJsonPath('data.sku', '1000003');
 
-        $this->assertDatabaseHas('categories', ['id' => $tileChild->id, 'sku_prefix' => '01']);
-        $this->assertDatabaseHas('categories', ['id' => $plumbingRoot->id, 'sku_prefix' => '02']);
+        $this->assertDatabaseHas('categories', ['id' => $tileChild->id, 'sku_prefix' => '1']);
+        $this->assertDatabaseHas('categories', ['id' => $plumbingRoot->id, 'sku_prefix' => '2']);
+    }
+
+    public function test_sku_generation_skips_an_existing_legacy_identifier(): void
+    {
+        $actor = $this->catalogManager();
+        $category = Category::factory()->create();
+        Product::factory()->create(['category_id' => $category->id, 'sku' => '1000001']);
+
+        $this->actingAs($actor)->postJson('/api/v1/admin/products', [
+            'category_id' => $category->id,
+            'name' => 'Collision-safe product',
+            'slug' => 'collision-safe-product',
+            'unit' => 'piece',
+            'price' => 10,
+            'stock_quantity' => 0,
+        ])->assertCreated()->assertJsonPath('data.sku', '1000002');
     }
 
     public function test_product_groups_validate_axes_members_and_return_axis_values(): void

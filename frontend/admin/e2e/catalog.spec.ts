@@ -361,7 +361,7 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
 for (const width of [320, 640, 768, 1024, 1280]) {
   test(`grouped product identifies product-specific and shared characteristics at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })
-    await mockCatalogApi(page, { sourceProductInGroup: true, includeSharedAttribute: true })
+    await mockCatalogApi(page, { sourceProductInGroup: true, includeSharedAttribute: true, includeOptionalSelectAttribute: true })
     await page.goto('/products')
     await page.getByRole('button', { name: 'Редактировать товар Монте Тиберио' }).click()
 
@@ -371,10 +371,24 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     await expect(dialog.getByText('Общие характеристики автоматически применяются ко всем товарам группы.')).toBeVisible()
     await expect(dialog.getByLabel('Ширина, только для этой позиции', { exact: true })).toHaveValue('60.00')
     await expect(dialog.getByLabel('Тип поверхности и декоративной текстуры, общая для группы', { exact: true })).toHaveValue('Матовая')
+    await dialog.getByRole('button', { name: 'Рисунок, общая для группы', exact: true }).click()
+    const floatingOption = page.getByRole('button', { name: 'Камень', exact: true })
+    await expect(floatingOption).toBeVisible()
+    expect(await floatingOption.evaluate((element) => {
+      const menu = element.closest('.fixed')
+      const rect = menu?.getBoundingClientRect()
+      return Boolean(menu?.parentElement === document.body && rect && rect.top >= 0 && rect.bottom <= window.innerHeight)
+    })).toBe(true)
     expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
 
-    const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+    const dialogA11y = await new AxeBuilder({ page }).include('[role="dialog"]').include('[data-floating-select-menu]').analyze()
     expect(dialogA11y.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
+    await expect(floatingOption).toBeFocused()
+    await page.keyboard.press('ArrowUp')
+    await expect(page.getByRole('button', { name: 'Дерево', exact: true })).toBeFocused()
+    await page.keyboard.press('Enter')
+    await expect(dialog.getByRole('button', { name: 'Рисунок, общая для группы', exact: true })).toContainText('Дерево')
+    await expect(dialog.getByRole('button', { name: 'Рисунок, общая для группы', exact: true })).toBeFocused()
   })
 }
 
@@ -523,7 +537,7 @@ test('creating a similar product requires a different name and generates a clean
   await expect(savedDialog.getByLabel('Ширина')).toHaveValue('60.00')
   await savedDialog.getByRole('button', { name: 'Варианты модели', exact: false }).click()
   await expect(savedDialog.getByRole('checkbox', { name: new RegExp(`Монте Тиберио · ${longSourceSku}$`) })).toBeChecked()
-  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · 01000001$/ })).toBeChecked()
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · 1000001$/ })).toBeChecked()
   const copyStatus = savedDialog.getByRole('status').filter({ hasText: 'Исходный товар' })
   await expect(copyStatus).toContainText(longSourceSku)
   await expect(savedDialog.getByLabel('Группа вариантов')).toContainText('Новая группа')
@@ -545,7 +559,7 @@ test('a similar product is prepared for the source product existing group', asyn
   await expect(savedDialog.getByLabel('Группа вариантов')).toContainText('Монте Тиберио · MONTE-TIBERIO-GROUP')
   await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио · MONTE-TIBERIO/ })).toBeChecked()
   await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Тёмный · MONTE-TIBERIO-DARK/ })).toBeChecked()
-  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · 01000001$/ })).toBeChecked()
+  await expect(savedDialog.getByRole('checkbox', { name: /Монте Тиберио Светлый · 1000001$/ })).toBeChecked()
   await expect(savedDialog.getByRole('status').filter({ hasText: 'Исходный товар' })).toContainText('подготовлен для добавления в существующую группу')
 })
 
