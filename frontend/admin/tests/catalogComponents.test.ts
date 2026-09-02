@@ -6,6 +6,23 @@ import CollectionLoadingState from '../src/components/CollectionLoadingState.vue
 import PaginationControls from '../src/components/PaginationControls.vue'
 import AttributeValueField from '../src/components/AttributeValueField.vue'
 import { sortByLabel } from '../src/utils/alphabetical'
+import { attributeTypeLabel, attributeTypeOptions } from '../src/utils/attributeTypes'
+
+describe('attribute type labels', () => {
+  test('provides Russian labels for every supported attribute type', () => {
+    expect(attributeTypeOptions.map(option => option.label)).toEqual([
+      'Строка',
+      'Многострочный текст',
+      'Целое число',
+      'Десятичное число',
+      'Да / нет',
+      'Список',
+      'Множественный список',
+      'Дата',
+    ])
+    expect(attributeTypeLabel('decimal')).toBe('Десятичное число')
+  })
+})
 
 describe('alphabetical option ordering', () => {
   test('sorts Russian labels naturally without mutating the source collection', () => {
