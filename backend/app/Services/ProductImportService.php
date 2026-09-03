@@ -12,6 +12,7 @@ use App\Support\ProductWorkbookSchema;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Reader\XLSX\Reader;
@@ -26,6 +27,75 @@ class ProductImportService
         private readonly ProductManagementService $productService,
         private readonly ProductAttributeValueManagementService $attributeValueService,
     ) {}
+
+    /** Create one category-template row. The caller owns its transaction and durable checkpoint. */
+    public function createTemplateRow(User $actor, Category $category, array $values, int $row): void
+    {
+        $name = $this->requiredString($values['name'] ?? null, $row, 'Название');
+        // Serialize imports of this category, including the duplicate-name check and SKU sequence.
+        $category = Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+        if (Product::query()->where('name', $name)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)])->exists()) {
+            $this->rowError($row, 'товар с таким наименованием уже существует.');
+        }
+        $values['slug'] = $this->nullableString($values['slug'] ?? null) ?? Str::slug($name, '-', 'ru');
+        if (Product::query()->where('slug', $values['slug'])->exists()) {
+            $this->rowError($row, 'товар с таким slug уже существует.');
+        }
+        $values['unit'] = array_flip(ProductWorkbookSchema::UNIT_LABELS)[$values['unit'] ?? ''] ?? $values['unit'] ?? null;
+        foreach (['stock_quantity' => 0, 'is_active' => false, 'is_on_sale' => false] as $field => $default) {
+            if ($this->nullableString($values[$field] ?? null) === null) {
+                $values[$field] = $default;
+            }
+        }
+        $brandName = $this->nullableString($values['brand_name'] ?? null);
+        $brand = null;
+        if ($brandName !== null) {
+            $brands = Brand::query()->where('name', $brandName)->limit(2)->get();
+            if ($brands->count() !== 1) {
+                $this->rowError($row, 'выберите существующий бренд с однозначным названием.');
+            }
+            $brand = $brands->first();
+        }
+        $attributes = $category->attributes()->with('options')->get()->keyBy('slug')->all();
+        $template = app(ProductImportTemplateService::class);
+        foreach ($attributes as $slug => $attribute) {
+            if (! in_array($attribute->type, ['select', 'multiselect'], true)) {
+                continue;
+            }
+            $cells = $attribute->type === 'select'
+                ? [$values['attribute.'.$slug] ?? null]
+                : collect($values)->filter(fn ($cell, $key) => str_starts_with($key, 'attribute.'.$slug.'.'))->values()->all();
+            $selected = [];
+            foreach ($cells as $cell) {
+                $label = $this->nullableString($cell);
+                if ($label === null) {
+                    continue;
+                }
+                $option = $attribute->options->first(fn ($option) => $template->optionLabel($attribute, $option) === $label);
+                if ($option === null) {
+                    $this->rowError($row, "значение «{$label}» характеристики «{$attribute->name}» отсутствует в текущем списке.");
+                }
+                $selected[] = $option->value;
+            }
+            $values['attribute.'.$slug] = $selected === [] ? null : ($attribute->type === 'select' ? $selected[0] : json_encode(array_values(array_unique($selected)), JSON_THROW_ON_ERROR));
+        }
+        $payload = $this->productPayload($values, $category, $brand, null, $row);
+        if ($payload['stock_quantity'] > 2147483647) {
+            $this->rowError($row, 'остаток не должен превышать 2147483647.');
+        }
+        $attributePayload = $this->attributePayload($values, $attributes, $row);
+        $activate = $payload['is_active'];
+        $payload['is_active'] = false;
+        $product = $this->productService->create($actor, $payload);
+        // SKU allocation serializes catalogue creation. Recheck after that lock to cover concurrent categories.
+        if (Product::query()->whereKeyNot($product->id)->where(fn ($query) => $query->where('name', $name)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)]))->exists()) {
+            $this->rowError($row, 'товар с таким наименованием уже существует.');
+        }
+        $this->attributeValueService->replace($actor, $product, $attributePayload);
+        if ($activate) {
+            $this->productService->update($actor, $product, ['is_active' => true]);
+        }
+    }
 
     /** @return array{created: int, updated: int, processed: int} */
     public function import(User $actor, string $path): array
@@ -423,13 +493,16 @@ class ProductImportService
      */
     private function productPayload(array $values, Category $category, ?Brand $brand, ?Product $product, int $row): array
     {
+        $labels = array_map(static fn (string $label): string => '«'.$label.'»', ProductWorkbookSchema::MANAGER_HEADERS + [
+            'slug' => 'Адрес товара', 'category_id' => 'Категория', 'brand_id' => 'Бренд',
+        ]);
         $payload = ['category_id' => $category->id, 'brand_id' => $brand?->id];
         foreach (ProductWorkbookSchema::WRITABLE_PRODUCT_FIELDS as $field) {
             $payload[$field] = match ($field) {
                 'description', 'article_number', 'barcode', 'old_price' => $this->nullableString($values[$field] ?? null),
-                'name', 'slug', 'unit', 'price' => $this->requiredString($values[$field] ?? null, $row, $field),
-                'stock_quantity' => $this->nullableInteger($values[$field] ?? null, $row, $field),
-                'is_active', 'is_on_sale' => $this->boolean($values[$field] ?? null, $row, $field),
+                'name', 'slug', 'unit', 'price' => $this->requiredString($values[$field] ?? null, $row, $labels[$field]),
+                'stock_quantity' => $this->nullableInteger($values[$field] ?? null, $row, $labels[$field]),
+                'is_active', 'is_on_sale' => $this->boolean($values[$field] ?? null, $row, $labels[$field]),
             };
         }
 
@@ -455,7 +528,10 @@ class ProductImportService
             'stock_quantity' => ['required', 'integer', 'min:0', 'max:4294967295'],
             'is_active' => ['required', 'boolean'],
             'is_on_sale' => ['required', 'boolean'],
-        ]);
+        ], [
+            'numeric' => 'Поле :attribute должно содержать число.',
+            'gte' => 'Значение поля :attribute должно быть не меньше :value.',
+        ], $labels);
         if ($validator->fails()) {
             $this->rowError($row, $validator->errors()->first());
         }
@@ -471,19 +547,20 @@ class ProductImportService
     {
         $payload = [];
         foreach ($attributes as $slug => $attribute) {
+            $label = '«'.$attribute->name.($attribute->unit ? ' ('.$attribute->unit.')' : '').'»';
             $cell = $values['attribute.'.$slug] ?? null;
             if ($cell === null || (is_string($cell) && trim($cell) === '')) {
                 continue;
             }
             $value = match ($attribute->type) {
-                'string', 'text' => $this->requiredString($cell, $row, 'attribute.'.$slug),
-                'select' => $localized ? $this->optionValue($attribute, $cell, $row) : $this->requiredString($cell, $row, 'attribute.'.$slug),
-                'integer' => $this->requiredInteger($cell, $row, 'attribute.'.$slug),
-                'decimal' => $this->decimal($cell, $row, 'attribute.'.$slug),
-                'boolean' => $this->boolean($cell, $row, 'attribute.'.$slug),
-                'multiselect' => $localized ? $this->optionValues($attribute, $cell, $row) : $this->multiselect($cell, $row, 'attribute.'.$slug),
-                'date' => $this->date($cell, $row, 'attribute.'.$slug),
-                default => $this->rowError($row, "тип характеристики {$slug} не поддерживается."),
+                'string', 'text' => $this->requiredString($cell, $row, $label),
+                'select' => $localized ? $this->optionValue($attribute, $cell, $row) : $this->requiredString($cell, $row, $label),
+                'integer' => $this->requiredInteger($cell, $row, $label),
+                'decimal' => $this->decimal($cell, $row, $label),
+                'boolean' => $this->boolean($cell, $row, $label),
+                'multiselect' => $localized ? $this->optionValues($attribute, $cell, $row) : $this->multiselect($cell, $row, $label),
+                'date' => $this->date($cell, $row, $label),
+                default => $this->rowError($row, "тип характеристики {$label} не поддерживается."),
             };
             $payload[] = ['attribute_id' => $attribute->id, 'value' => $value];
         }

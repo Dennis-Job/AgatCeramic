@@ -122,6 +122,7 @@ type ApiOptions = {
   emptyPath?: string
   errorPath?: string
   delayPath?: string
+  importErrors?: boolean
   auth?: 'allowed' | 'unauthenticated' | 'forbidden'
   sourceProductInGroup?: boolean
   includeSharedAttribute?: boolean
@@ -201,7 +202,7 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
       return
     }
 
-    if (path === '/admin/products/export') {
+    if (path === '/admin/products/export' || path === '/admin/products/import-template' || path === '/admin/product-imports/1/errors') {
       await route.fulfill({
         body: 'mock xlsx',
         headers: {
@@ -214,12 +215,12 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/products/import' && route.request().method() === 'POST') {
-      await route.fulfill({ status: 202, json: { data: { id: 1, filename: 'products.xlsx', status: 'pending', created_rows: 0, updated_rows: 0, processed_rows: 0, error_message: null, created_at: now, started_at: null, completed_at: null } } })
+      await route.fulfill({ status: 202, json: { data: { id: 1, category_id: 1, total_rows: 0, failed_rows: 0, row_errors: [], has_error_file: false, filename: 'products.xlsx', status: 'pending', created_rows: 0, updated_rows: 0, processed_rows: 0, error_message: null, created_at: now, started_at: null, completed_at: null } } })
       return
     }
 
     if (path === '/admin/product-imports/1') {
-      await route.fulfill({ json: { data: { id: 1, filename: 'products.xlsx', status: 'completed', created_rows: 2, updated_rows: 3, processed_rows: 5, error_message: null, created_at: now, started_at: now, completed_at: now } } })
+      await route.fulfill({ json: { data: { id: 1, category_id: 1, total_rows: 5, failed_rows: options.importErrors ? 1 : 0, row_errors: options.importErrors ? [{ row: 4, name: 'Керамогранит с очень длинным наименованием для проверки переноса текста в модальном окне загрузки товаров', messages: ['Товар с таким наименованием уже существует.', 'Выберите значение из списка «Поверхность».'] }] : [], has_error_file: Boolean(options.importErrors), filename: 'products.xlsx', status: 'completed', created_rows: options.importErrors ? 4 : 5, updated_rows: 0, processed_rows: 5, error_message: null, created_at: now, started_at: now, completed_at: now } } })
       return
     }
 

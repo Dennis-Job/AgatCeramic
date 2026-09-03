@@ -21,6 +21,11 @@ export type ProductImport = {
   created_rows: number
   updated_rows: number
   processed_rows: number
+  category_id: number | null
+  total_rows: number
+  failed_rows: number
+  row_errors: { row: number; name: string; messages: string[] }[]
+  has_error_file: boolean
   error_message: string | null
   created_at: string
   started_at: string | null
@@ -52,10 +57,21 @@ export async function getProductExport(filters: Omit<ProductFilters, 'page' | 'p
   const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] ?? 'products.xlsx'
   return { blob: await response.blob(), filename }
 }
-export async function uploadProductImport(file: File): Promise<ProductImport> {
+export async function getProductImportTemplate(categoryId: number): Promise<{ blob: Blob; filename: string }> {
+  const response = await apiFetch(`/admin/products/import-template?category_id=${categoryId}`)
+  if (!response.ok) return fail(response)
+  return { blob: await response.blob(), filename: `products-category-${categoryId}.xlsx` }
+}
+export async function getProductImportErrors(id: number): Promise<{ blob: Blob; filename: string }> {
+  const response = await apiFetch(`/admin/product-imports/${id}/errors`)
+  if (!response.ok) return fail(response)
+  return { blob: await response.blob(), filename: `product-import-${id}-errors.xlsx` }
+}
+export async function uploadProductImport(file: File, categoryId?: number): Promise<ProductImport> {
   await requestCsrfCookie()
   const body = new FormData()
   body.append('file', file)
+  if (categoryId !== undefined) body.append('category_id', String(categoryId))
   const response = await apiFetch('/admin/products/import', { method: 'POST', body })
   if (!response.ok) return fail(response)
   return ((await response.json()) as { data: ProductImport }).data

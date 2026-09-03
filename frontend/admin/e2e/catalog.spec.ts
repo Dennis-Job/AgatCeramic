@@ -170,7 +170,7 @@ test('product Excel export downloads the current filtered and sorted selection',
 
   const requestPromise = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/export'))
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Экспорт в Excel' }).click()
+  await page.getByRole('button', { name: 'Скачать Excel', exact: true }).click()
   const request = await requestPromise
   await expect(page.getByRole('button', { name: 'Экспорт…' })).toHaveAttribute('aria-busy', 'true')
   await page.getByRole('button', { name: 'Сбросить' }).click()
@@ -185,48 +185,6 @@ test('product Excel export downloads the current filtered and sorted selection',
   expect(query.has('page')).toBe(false)
   expect(download.suggestedFilename()).toBe('products-2026-09-01-120000.xlsx')
   await expect(page.getByRole('status').filter({ hasText: 'Отфильтрованные товары экспортированы в Excel.' })).toBeVisible()
-})
-
-test('product Excel import uploads the workbook and announces the completed result', async ({ page }) => {
-  await mockCatalogApi(page, { delayPath: '/admin/product-imports/1' })
-  await page.goto('/products')
-  await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
-
-  const uploadRequest = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/import'))
-  await page.locator('input[type="file"]').setInputFiles({
-    name: 'products.xlsx',
-    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    buffer: Buffer.from('mock xlsx'),
-  })
-  const request = await uploadRequest
-
-  expect(request.method()).toBe('POST')
-  expect(request.postDataBuffer()?.toString()).toContain('products.xlsx')
-  await expect(page.getByRole('button', { name: 'Импорт…' })).toBeDisabled()
-  await expect(page.getByRole('status').filter({ hasText: 'Файл загружен и ожидает обработки…' })).toBeVisible()
-  await expect(page.getByRole('status').filter({ hasText: 'Импорт завершён. Создано: 2, обновлено: 3.' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Импорт из Excel' })).toBeEnabled()
-  const accessibility = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
-  expect(accessibility.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
-
-  for (const width of [320, 640, 768, 1024, 1280]) {
-    await page.setViewportSize({ width, height: 720 })
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  }
-})
-
-test('product Excel import restores the action and shows an accessible upload error', async ({ page }) => {
-  await mockCatalogApi(page, { errorPath: '/admin/products/import' })
-  await page.goto('/products')
-  await page.locator('input[type="file"]').setInputFiles({
-    name: 'products.xlsx',
-    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    buffer: Buffer.from('mock xlsx'),
-  })
-
-  await expect(page.getByRole('alert')).toContainText('Тестовая ошибка каталога')
-  await expect(page.getByRole('button', { name: 'Импорт из Excel' })).toBeEnabled()
-  await expect(page.getByText('Загружаем XLSX-файл…')).toHaveCount(0)
 })
 
 test('product table sorts through the API and remains usable at supported widths', async ({ page }) => {

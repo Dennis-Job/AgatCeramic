@@ -32,7 +32,8 @@ const focusableSelector = [
 ].join(',')
 
 function focusableElements(): HTMLElement[] {
-  return panel.value ? Array.from(panel.value.querySelectorAll<HTMLElement>(focusableSelector)) : []
+  return panel.value ? Array.from(panel.value.querySelectorAll<HTMLElement>(focusableSelector))
+    .filter(element => !element.matches(':disabled') && element.tabIndex >= 0 && element.getClientRects().length > 0) : []
 }
 
 function requestClose(): void {
