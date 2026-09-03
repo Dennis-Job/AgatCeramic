@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\AdminUserStatus;
 use App\Models\ProductImport;
+use App\Services\CategoryProductImportService;
 use App\Services\ProductImportService;
 use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -49,6 +50,20 @@ class ProcessProductImport implements ShouldQueue
             throw new RuntimeException('Загруженный XLSX-файл больше не доступен.');
         }
 
+        if ($import->category_id !== null) {
+            if (! app(CategoryProductImportService::class)->process($import, $storage->path($import->path))) {
+                self::dispatch($import->id);
+
+                return;
+            }
+            DB::transaction(function () use ($import, $cleanupService): void {
+                $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
+                $cleanupService->schedule($import->disk, $import->path);
+            });
+
+            return;
+        }
+
         DB::transaction(function () use ($cleanupService, $import, $service, $storage): void {
             $result = $service->import($import->user, $storage->path($import->path));
             $import->forceFill([
@@ -56,6 +71,7 @@ class ProcessProductImport implements ShouldQueue
                 'created_rows' => $result['created'],
                 'updated_rows' => $result['updated'],
                 'processed_rows' => $result['processed'],
+                'total_rows' => $result['processed'],
                 'error_message' => null,
                 'completed_at' => now(),
             ])->save();

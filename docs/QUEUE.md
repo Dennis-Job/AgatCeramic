@@ -45,13 +45,24 @@ retrying. Completed rows are retained as cleanup history.
 ## Product imports
 
 `POST /api/v1/admin/products/import` stores the uploaded XLSX on the private `local` disk and
-dispatches `ProcessProductImport` after the import-status row commits. The job is retry-safe because
-the catalogue write is one database transaction; a failed attempt leaves no partial product rows.
-It retries up to three times with backoff, updates `pending`/`processing`/`completed`/`failed`
-status for Admin polling, and deletes the private workbook after success or final failure.
+dispatches `ProcessProductImport` after the import-status row commits. Legacy/export imports
+without `category_id` use one catalogue transaction; a failed attempt leaves no partial rows.
+Category templates use separate row transactions: each created product or recorded row error,
+its counters, and `last_processed_row` commit atomically under a lock on the import record.
+Retries skip that checkpoint, so a worker interruption cannot create duplicates or turn an
+already successful row into a duplicate-name error. At most 100 rows or 35 seconds of processing
+are handled per job, then the next chunk is queued. The 80-second job timeout remains below
+Redis `retry_after`. Each chunk retries transient failures up to three times with backoff.
 
-TASK-051 limits one workbook to 5000 non-empty rows and the job timeout to 80 seconds, below the
-Redis `retry_after` interval. Larger/chunked generic bulk processing belongs to TASK-055.
+Admin polls `pending`/`processing`/`completed`/`failed`, total, processed, created and failed rows.
+`completed` includes partial row failures; `failed` is a file/infrastructure error. Earlier
+category-template successes stay committed even after terminal infrastructure failure. Private
+source workbooks are deleted after completion/final failure. Failed row values and messages remain
+in `product_import_errors` for owner-only XLSX report generation; reports themselves are temporary
+downloads and do not require a retained private source file.
+
+TASK-051 limits one workbook to 5000 non-empty rows (category templates: rows 2–5001).
+Generic bulk processing beyond category-template imports remains TASK-055.
 
 ## Локальный запуск
 

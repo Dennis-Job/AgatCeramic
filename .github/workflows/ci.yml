@@ -100,7 +100,7 @@ jobs:
           DB_USERNAME: agatceramic
           DB_PASSWORD: ci-only-password
           DB_SSLMODE: prefer
-        run: php artisan test tests/Integration/PostgresAuditLogImmutabilityTest.php
+        run: php artisan test --configuration=phpunit.postgres.xml tests/Integration/PostgresAuditLogImmutabilityTest.php
 
       - name: Test PostgreSQL Catalog concurrency invariants
         env:
@@ -112,7 +112,7 @@ jobs:
           DB_USERNAME: agatceramic
           DB_PASSWORD: ci-only-password
           DB_SSLMODE: prefer
-        run: php artisan test tests/Integration/PostgresCatalogConcurrencyTest.php
+        run: php artisan test --configuration=phpunit.postgres.xml tests/Integration/PostgresCatalogConcurrencyTest.php
 
       - name: Verify Redis cache connection
         env:

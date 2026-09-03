@@ -15,6 +15,7 @@ class ImportProductsRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'file' => [
                 'required',
                 'file',

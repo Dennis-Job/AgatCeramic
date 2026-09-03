@@ -1976,11 +1976,26 @@
                 }
             }
         },
+        "/admin/products/import-template": {
+            "get": {
+                "operationId": "downloadProductImportTemplate",
+                "summary": "Download a category-specific product creation template",
+                "description": "Requires imports.manage. Up to 5000 products in rows 2–5001, no SKU column, optional product slug, category-only attributes. List and boolean cells have Stop validation with IDs and labels on a hidden lookup sheet. Multiselect uses separate dropdown slots.",
+                "security": [{"sanctumSession": []}],
+                "parameters": [{"name": "category_id", "in": "query", "required": true, "schema": {"type": "integer"}}],
+                "responses": {
+                    "200": {"description": "Category XLSX template", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            }
+        },
         "/admin/products/import": {
             "post": {
                 "operationId": "importProducts",
                 "summary": "Upload a product Excel import",
-                "description": "Stores an XLSX workbook privately and queues an atomic catalogue import. Requires imports.manage. Existing products are matched by id or SKU; rows without a matching identity create products with server-generated SKUs. The worker limit is 5000 non-empty rows.",
+                "description": "Requires imports.manage. With category_id, creates products from the selected category template with independent row transactions and durable progress/errors; SKU and blank slugs are generated automatically. Duplicate names/slugs and values absent from current option lists fail only that row. Without category_id, preserves atomic legacy/export create-update import compatibility. Limit: 5000 products, 10 MiB.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {
                     "required": true,
@@ -1990,7 +2005,8 @@
                                 "type": "object",
                                 "required": ["file"],
                                 "properties": {
-                                    "file": {"type": "string", "format": "binary", "description": "XLSX workbook, up to 10 MiB."}
+                                    "file": {"type": "string", "format": "binary", "description": "XLSX workbook, up to 10 MiB."},
+                                    "category_id": {"type": ["integer", "null"], "description": "Selected category for create-only template mode. Omit for legacy/export round-trip import."}
                                 }
                             }
                         }
@@ -2020,6 +2036,21 @@
                         "description": "Import status",
                         "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImportResponse"}}}
                     },
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"}
+                }
+            }
+        },
+        "/admin/product-imports/{productImport}/errors": {
+            "parameters": [{"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
+            "get": {
+                "operationId": "downloadProductImportErrors",
+                "summary": "Download only failed product rows as a reusable category template",
+                "description": "Requires imports.manage, ownership, completed/failed status and at least one failed row. The XLSX includes original failed values with current category fields and dropdown validations; correct and reupload it with category_id.",
+                "security": [{"sanctumSession": []}],
+                "responses": {
+                    "200": {"description": "Failed product rows XLSX", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}},
                     "401": {"$ref": "#/components/responses/Unauthenticated"},
                     "403": {"$ref": "#/components/responses/Forbidden"},
                     "404": {"$ref": "#/components/responses/NotFound"}
@@ -4121,12 +4152,18 @@
                 "type": "object",
                 "required": [
                     "id", "filename", "status", "created_rows", "updated_rows", "processed_rows",
-                    "error_message", "created_at", "started_at", "completed_at"
+                    "error_message", "created_at", "started_at", "completed_at",
+                    "category_id", "total_rows", "failed_rows", "row_errors", "has_error_file"
                 ],
                 "properties": {
                     "id": {"type": "integer"},
                     "filename": {"type": "string"},
-                    "status": {"type": "string", "enum": ["pending", "processing", "completed", "failed"]},
+                    "status": {"type": "string", "enum": ["pending", "processing", "completed", "failed"], "description": "completed means every row was checked, including partial/all row errors. failed means file or infrastructure failure; prior category-template successes remain committed."},
+                    "category_id": {"type": ["integer", "null"]},
+                    "total_rows": {"type": "integer", "minimum": 0},
+                    "failed_rows": {"type": "integer", "minimum": 0},
+                    "has_error_file": {"type": "boolean"},
+                    "row_errors": {"type": "array", "items": {"type": "object", "required": ["row", "name", "messages"], "properties": {"row": {"type": "integer", "minimum": 2}, "name": {"type": ["string", "null"]}, "messages": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false}},
                     "created_rows": {"type": "integer", "minimum": 0},
                     "updated_rows": {"type": "integer", "minimum": 0},
                     "processed_rows": {"type": "integer", "minimum": 0},

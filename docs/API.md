@@ -209,7 +209,34 @@ Redis queue after commit. The endpoint requires `imports.manage`, accepts only X
 10 MiB, and returns `202` with a `ProductImport` resource. Admin polls the initiating user's record
 through `GET /admin/product-imports/{productImport}`; another user receives `404` for that id.
 
-The worker processes at most 5000 non-empty rows in one database transaction. The localized format
+`GET /admin/products/import-template?category_id={id}` downloads a category-specific creation
+template (requires `imports.manage`). Its `Товары` sheet contains only the selected category's
+attributes, commercial fields, and an optional product slug. SKU is generated on the server and
+has no column; an empty slug is transliterated from the product name. `Название`, `Единица продажи`
+and `Цена` are required; empty stock defaults to zero, activity and sale to false. Existing names
+(case-insensitive in PostgreSQL) and slugs are rejected, never updated by this format.
+
+List and boolean cells have Excel Stop validation through rows 2–5001. Named ranges reference
+labels and their IDs on the hidden `Справочники` sheet. Multiselect attributes use one dropdown
+slot per currently available option; empty slots are ignored and repeated selections deduplicated.
+The `Инструкция` sheet explains the limit and filling rules. Current database options are always
+validated again on import; editing/pasting into Excel cannot create new catalogue options.
+
+To import this template, submit the selected `category_id` alongside multipart `file`. The file's
+category marker and current category headers must match. At most 5000 rows (2–5001) and 10 MiB are
+accepted. Each valid row commits independently; invalid rows retain their original values and
+named messages. The status resource adds `category_id`, `total_rows`, `failed_rows`, `row_errors`
+(`row`, `name`, `messages`), and `has_error_file`. `processed_rows` includes successful and failed
+rows; `created_rows` counts successes. `completed` means all rows were checked, including partial
+or complete row-level failure. `failed` denotes a file/infrastructure failure and can retain earlier
+successful rows. `GET /admin/product-imports/{productImport}/errors` downloads only failed rows in
+a reusable category template, with all dropdowns preserved; it requires `imports.manage`, the
+original owner, terminal status, and at least one row error. Another owner receives `404`.
+Private source files are cleaned up after completion/final failure; failed row values and messages
+remain with the import history so the report can be generated again.
+
+Without `category_id`, legacy/export round-trip compatibility is preserved: the worker processes
+at most 5000 non-empty rows in one database transaction. The localized format
 matches existing products by immutable SKU and reads product/category/brand slugs from `SEO товаров`.
 Changing a category or brand name on the main sheet resolves its unique catalogue name; ambiguous
 names are rejected. Characteristic columns resolve through `SEO характеристик` (or current catalogue
@@ -223,8 +250,7 @@ next identifier. Category and brand slugs are portable identifiers; their numeri
 when they also resolve. Writable commercial columns and every `attribute.<slug>` column replace the
 corresponding product state. Multiselect values use JSON string arrays. Blank characteristic cells
 clear values. Activation is performed only after characteristics are stored, so category-required
-values remain enforced. Any failed row rolls back the whole workbook; persistent per-row reports
-remain reserved for TASK-052/TASK-053.
+values remain enforced. In legacy mode, any failed row rolls back the whole workbook.
 
 Display/derived columns (`*_name` in legacy workbooks, `primary_image_url`, timestamps) are read-only.
 Numbered image columns and the former localized `Основное изображение` column are also read-only;
