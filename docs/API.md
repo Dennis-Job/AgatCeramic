@@ -193,6 +193,13 @@ separated by `; `, with CSV quoting for labels containing semicolons or quotes. 
 headers use their names plus an optional unit in parentheses, e.g. `Вес (кг)`, in deterministic
 group/characteristic order. Blank characteristics remain blank. Sheets include filters, a frozen
 header/first column, readable column widths and wrapped text; prices and dates have explicit formats.
+Headers on all sheets are centered horizontally and vertically.
+Image columns are appended after every characteristic as `Изображение 1`, `Изображение 2`, etc.
+Their count equals the largest gallery among the filtered products (zero for an export without
+images). Each cell contains an absolute public storage URL that opens the image directly in a
+browser. The primary image comes first, followed by gallery `sort_order` and image ID as a tie-breaker.
+Products with fewer images have blank remaining cells. URLs use the configured disk URL (`APP_URL`
+for the public disk), so local exports point to the local server.
 `SEO товаров` links SKU to product/category/brand names and slugs; `SEO характеристик` lists
 characteristic names, units and slugs. No sheet contains database IDs.
 
@@ -220,6 +227,8 @@ values remain enforced. Any failed row rolls back the whole workbook; persistent
 remain reserved for TASK-052/TASK-053.
 
 Display/derived columns (`*_name` in legacy workbooks, `primary_image_url`, timestamps) are read-only.
+Numbered image columns and the former localized `Основное изображение` column are also read-only;
+importing the workbook does not download, replace or delete gallery images.
 Localized category/brand names are editable as described above. Product-group
 columns are also informational in TASK-051: existing membership is preserved, but an import does
 not create or move groups because the exported sheet does not contain their axis definition. On

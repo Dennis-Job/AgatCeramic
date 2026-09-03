@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductAttributeValue;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ProductImportService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -80,6 +81,8 @@ class ProductExportTest extends TestCase
         $this->assertSame('Нет', $secondRow['Распродажа']);
         $this->assertSame('Квадратный метр', $secondRow['Единица продажи']);
         $this->assertSame(1200.5, $secondRow['Цена']);
+        $this->assertInstanceOf(\DateTimeInterface::class, $secondRow['Создан']);
+        $this->assertInstanceOf(\DateTimeInterface::class, $secondRow['Изменён']);
         $this->assertSame(12.5, $firstRow['Вес (кг)']);
         $this->assertSame('', $secondRow['Цвет']);
         $this->assertSame(['Товары', 'SEO товаров', 'SEO характеристик'], array_keys($sheets));
@@ -92,9 +95,45 @@ class ProductExportTest extends TestCase
         $zip->open($response->baseResponse->getFile()->getPathname());
         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
         $this->assertStringContainsString('state="frozen"', $xml);
-        $this->assertStringContainsString('<autoFilter ref="A1:V3"', $xml);
+        $this->assertStringContainsString('<autoFilter ref="A1:U3"', $xml);
         $this->assertStringNotContainsString('<f>', $xml);
         $zip->close();
+    }
+
+    public function test_export_appends_all_public_image_urls_in_gallery_order_and_import_preserves_images(): void
+    {
+        config(['filesystems.disks.public.url' => 'https://catalog.example/storage']);
+        $actor = $this->userWithPermission('imports.manage');
+        $products = collect();
+        foreach (['Gallery first', 'Gallery second', 'Gallery empty', 'Excluded'] as $index => $name) {
+            $products->push(Product::factory()->create(['name' => $name, 'sku' => '800000'.($index + 1), 'is_active' => false]));
+        }
+        foreach ([0 => [[false, 2], [true, 99], [false, 1]], 1 => [[true, 0]], 3 => [[true, 0], [false, 1], [false, 2], [false, 3]]] as $index => $images) {
+            foreach ($images as $number => [$primary, $sort]) {
+                $products[$index]->images()->create([
+                    'disk' => 'public', 'path' => 'products/'.$products[$index]->sku.'/image-'.($number + 1).'.jpg',
+                    'mime_type' => 'image/jpeg', 'size' => 100, 'is_primary' => $primary, 'sort_order' => $sort,
+                ]);
+            }
+        }
+        Attribute::factory()->create(['name' => 'Вес', 'unit' => 'кг']);
+        $response = $this->actingAs($actor)->get('/api/v1/admin/products/export?search=Gallery&sort=sku&direction=asc')->assertOk();
+        $rows = $this->readSheets($response->baseResponse)['Товары'];
+        $headers = $rows[0];
+        $this->assertSame(['Вес (кг)', 'Изображение 1', 'Изображение 2', 'Изображение 3'], array_slice($headers, -4));
+        $this->assertNotContains('Основное изображение', $headers);
+        $this->assertNotContains('Изображение 4', $headers);
+        $prefix = 'https://catalog.example/storage/products/8000001/';
+        $this->assertSame([$prefix.'image-2.jpg', $prefix.'image-3.jpg', $prefix.'image-1.jpg'], array_slice($rows[1], -3));
+        $this->assertSame(['https://catalog.example/storage/products/8000002/image-1.jpg', '', ''], array_slice($rows[2], -3));
+        $this->assertSame(['', '', ''], array_slice($rows[3], -3));
+        foreach (array_slice($rows, 1) as $row) {
+            $this->assertCount(count($headers), $row);
+        }
+        $before = $products[0]->images()->orderBy('id')->get()->toArray();
+        $result = app(ProductImportService::class)->import($actor, $response->baseResponse->getFile()->getPathname());
+        $this->assertSame(['created' => 0, 'updated' => 3, 'processed' => 3], $result);
+        $this->assertSame($before, $products[0]->images()->orderBy('id')->get()->toArray());
     }
 
     public function test_empty_export_still_contains_the_stable_header_row(): void

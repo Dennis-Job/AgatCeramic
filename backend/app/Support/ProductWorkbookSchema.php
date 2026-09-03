@@ -9,7 +9,7 @@ final class ProductWorkbookSchema
         'name' => 'Название', 'description' => 'Описание', 'category_name' => 'Категория',
         'brand_name' => 'Бренд', 'unit' => 'Единица продажи', 'price' => 'Цена',
         'old_price' => 'Старая цена', 'stock_quantity' => 'Остаток', 'is_active' => 'Активность',
-        'is_on_sale' => 'Распродажа', 'primary_image_url' => 'Основное изображение',
+        'is_on_sale' => 'Распродажа',
         'product_group_code' => 'Код группы', 'product_group_name' => 'Группа вариантов',
         'created_at' => 'Создан', 'updated_at' => 'Изменён',
     ];
