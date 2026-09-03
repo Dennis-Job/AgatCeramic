@@ -3,10 +3,22 @@
 namespace App\Queries;
 
 use App\Models\Product;
+use App\Models\ProductImage;
 use Illuminate\Database\Eloquent\Builder;
 
 class ProductQuery
 {
+    /** @param array<string, mixed> $filters */
+    public function maximumImageCount(array $filters): int
+    {
+        return (int) ProductImage::query()
+            ->whereIn('product_id', $this->filtered($filters)->reorder()->select('products.id'))
+            ->selectRaw('COUNT(*) as image_count')
+            ->groupBy('product_id')
+            ->orderByDesc('image_count')
+            ->value('image_count');
+    }
+
     /** @param array<string, mixed> $filters */
     public function filtered(array $filters): Builder
     {

@@ -230,6 +230,7 @@ class ProductImportService
     private function localizedHeaders(array $headers, array $seoAttributes): array
     {
         $baseHeaders = array_flip(ProductWorkbookSchema::MANAGER_HEADERS);
+        $baseHeaders['Основное изображение'] = 'primary_image_url';
         $attributeHeaders = [];
         if ($seoAttributes !== []) {
             foreach ($seoAttributes as $attribute) {
@@ -253,6 +254,11 @@ class ProductImportService
                 continue;
             }
             $matches = $attributeHeaders[$header] ?? [];
+            if ($matches === [] && preg_match('/^Изображение ([1-9][0-9]*)$/u', $header, $imageColumn)) {
+                $normalized[] = 'image_url.'.$imageColumn[1];
+
+                continue;
+            }
             if (count($matches) !== 1) {
                 throw ValidationException::withMessages(['file' => ["Столбец «{$header}» не найден или соответствует нескольким характеристикам. Проверьте лист SEO характеристик."]]);
             }

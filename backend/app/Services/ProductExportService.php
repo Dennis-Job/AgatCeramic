@@ -4,12 +4,16 @@ namespace App\Services;
 
 use App\Models\Attribute;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Queries\ProductQuery;
 use App\Support\ProductWorkbookSchema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\LazyCollection;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Cell\StringCell;
 use OpenSpout\Common\Entity\Row;
+use OpenSpout\Common\Entity\Style\CellAlignment;
+use OpenSpout\Common\Entity\Style\CellVerticalAlignment;
 use OpenSpout\Common\Entity\Style\Style;
 use OpenSpout\Writer\AutoFilter;
 use OpenSpout\Writer\Common\Entity\Sheet;
@@ -30,6 +34,11 @@ class ProductExportService
      */
     public function create(array $filters): array
     {
+        $imageCount = $this->productQuery->maximumImageCount($filters);
+        $imageHeaders = [];
+        for ($number = 1; $number <= $imageCount; $number++) {
+            $imageHeaders[] = 'Изображение '.$number;
+        }
         $attributes = Attribute::query()
             ->leftJoin('attribute_groups as export_groups', 'export_groups.id', '=', 'attributes.attribute_group_id')
             ->select('attributes.*')
@@ -55,12 +64,18 @@ class ProductExportService
             $headers = [
                 ...array_values(ProductWorkbookSchema::MANAGER_HEADERS),
                 ...$attributes->map(fn (Attribute $attribute): string => $attribute->name.($attribute->unit ? ' ('.$attribute->unit.')' : ''))->all(),
+                ...$imageHeaders,
             ];
+            $imageStart = count($headers) - $imageCount;
+            $imageWidths = $imageCount === 0 ? [] : array_fill($imageStart, $imageCount, 48);
             $managerSheet = $writer->getCurrentSheet();
             $this->prepareSheet($writer, $managerSheet, 'Товары', $headers);
             $managerSheet->setColumnWidth(48, 4, 5);
-            $managerSheet->setColumnWidth(26, 6, 7, 14, 16);
-            $managerSheet->setColumnWidth(22, 17, 18);
+            $managerSheet->setColumnWidth(26, 6, 7, 15);
+            $managerSheet->setColumnWidth(22, 16, 17);
+            if ($imageCount > 0) {
+                $managerSheet->setColumnWidthForRange(48, $imageStart + 1, count($headers));
+            }
             $seoSheet = $writer->addNewSheetAndMakeItCurrent();
             $this->prepareSheet($writer, $seoSheet, 'SEO товаров', [
                 'SKU', 'Название', 'URL товара (slug)', 'Категория', 'URL категории (slug)', 'Бренд', 'URL бренда (slug)',
@@ -79,7 +94,7 @@ class ProductExportService
 
             /** @var LazyCollection<int, Product> $products */
             $products = $this->productQuery->filtered($filters)
-                ->with(['category', 'brand', 'primaryImage', 'groupMembership.group', 'attributeValues'])
+                ->with(['category', 'brand', 'images' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id'), 'groupMembership.group', 'attributeValues'])
                 ->lazy(500);
 
             foreach ($products as $product) {
@@ -99,7 +114,6 @@ class ProductExportService
                     $product->stock_quantity,
                     $product->is_active ? 'Да' : 'Нет',
                     $product->is_on_sale ? 'Да' : 'Нет',
-                    $product->primaryImage?->url,
                     $product->groupMembership?->group?->code,
                     $product->groupMembership?->group?->name,
                     $product->created_at,
@@ -108,9 +122,10 @@ class ProductExportService
                         $attribute,
                         $values->get($attribute->id)?->value
                     ))->all(),
+                    ...array_pad($product->images->map(fn (ProductImage $image): string => url(Storage::disk($image->disk)->url($image->path)))->all(), $imageCount, null),
                 ], (new Style)->setShouldWrapText()->setBackgroundColor($rowNumber % 2 === 1 ? 'F2F6FC' : 'FFFFFF'), [
-                    8 => $moneyStyle, 9 => $moneyStyle, 16 => $dateStyle, 17 => $dateStyle,
-                ], [3 => 48, 4 => 48, 5 => 26, 6 => 26, 13 => 26, 15 => 26, 16 => 22, 17 => 22]));
+                    8 => $moneyStyle, 9 => $moneyStyle, 15 => $dateStyle, 16 => $dateStyle,
+                ], [3 => 48, 4 => 48, 5 => 26, 6 => 26, 14 => 26, 15 => 22, 16 => 22] + $imageWidths));
                 $writer->setCurrentSheet($seoSheet);
                 $writer->addRow($this->row([
                     (string) $product->sku, $product->name, $product->slug,
@@ -144,6 +159,7 @@ class ProductExportService
         $sheet->setName($name)->setSheetView((new SheetView)->setFreezeRow(2)->setFreezeColumn('B'));
         $sheet->setColumnWidthForRange(20, 1, count($headers));
         $writer->addRow($this->row($headers, (new Style)->setFontBold()->setFontColor('FFFFFF')
+            ->setCellAlignment(CellAlignment::CENTER)->setCellVerticalAlignment(CellVerticalAlignment::CENTER)
             ->setBackgroundColor('23456B')->setShouldWrapText())->setHeight(42));
     }
 

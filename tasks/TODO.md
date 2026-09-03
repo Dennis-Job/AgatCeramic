@@ -185,6 +185,8 @@
   - Export the complete filtered and sorted product catalogue to a streaming XLSX file without pagination.
   - Preserve SKU/barcodes, commercial fields, product-group data, and stable dynamic characteristic columns suitable for round-trip import.
   - Manager-friendly revision (2026-09-03): remove database IDs, move slugs to SEO sheets, use Russian Admin headers and unit labels, Да/Нет and option labels; retain localized and legacy import support.
+  - Header alignment follow-up completed: center header text horizontally and vertically on all export sheets.
+  - Gallery links follow-up completed: replace the empty primary-image column with trailing numbered public image URLs; size columns to the filtered gallery maximum, keep primary-first ordering and preserve galleries during import.
   - Restrict export to `imports.manage`, expose an accessible Admin download flow, and cover the API, OpenAPI contract, container runtime, and UI states with automated tests and an independent UI Design Guard review.
 - [x] TASK-051 Excel import
 - [ ] TASK-052 Import validation
