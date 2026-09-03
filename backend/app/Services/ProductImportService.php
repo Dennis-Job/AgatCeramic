@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Reader\XLSX\Reader;
+use OpenSpout\Reader\XLSX\Sheet;
 use Throwable;
 
 class ProductImportService
@@ -29,10 +30,10 @@ class ProductImportService
     /** @return array{created: int, updated: int, processed: int} */
     public function import(User $actor, string $path): array
     {
-        [$headers, $rows] = $this->read($path);
+        [$headers, $rows, $seoProducts, $localized] = $this->read($path);
         $attributes = $this->attributesFor($headers);
 
-        return DB::transaction(function () use ($actor, $headers, $rows, $attributes): array {
+        return DB::transaction(function () use ($actor, $headers, $rows, $attributes, $seoProducts, $localized): array {
             $created = 0;
             $updated = 0;
             $seenProductIds = [];
@@ -45,6 +46,9 @@ class ProductImportService
                 }
 
                 $product = $this->resolveProduct($values, $rowNumber);
+                if ($localized) {
+                    $values = $this->localizedValues($values, $seoProducts, $product, $rowNumber);
+                }
                 if ($product !== null && isset($seenProductIds[$product->id])) {
                     $this->rowError($rowNumber, "товар уже указан в строке {$seenProductIds[$product->id]}.");
                 }
@@ -55,7 +59,7 @@ class ProductImportService
                 $category = $this->resolveCategory($values, $rowNumber);
                 $brand = $this->resolveBrand($values, $rowNumber);
                 $payload = $this->productPayload($values, $category, $brand, $product, $rowNumber);
-                $attributePayload = $this->attributePayload($values, $attributes, $rowNumber);
+                $attributePayload = $this->attributePayload($values, $attributes, $rowNumber, $localized);
                 $activate = $payload['is_active'];
                 $payload['is_active'] = false;
 
@@ -81,7 +85,7 @@ class ProductImportService
         });
     }
 
-    /** @return array{list<string>, list<array{row: int, values: list<mixed>}>} */
+    /** @return array{list<string>, list<array{row: int, values: list<mixed>}>, array<string, array<string, mixed>>, bool} */
     private function read(string $path): array
     {
         $reader = new Reader;
@@ -90,12 +94,34 @@ class ProductImportService
             $reader->open($path);
             $headers = [];
             $rows = [];
+            $seoProducts = [];
+            $seoAttributes = [];
+            $firstSheet = true;
 
             foreach ($reader->getSheetIterator() as $sheet) {
+                if (! $firstSheet) {
+                    if (in_array($sheet->getName(), ['SEO товаров', 'SEO характеристик'], true)) {
+                        $seoRows = $this->readSeoSheet($sheet);
+                        if ($sheet->getName() === 'SEO товаров') {
+                            foreach ($seoRows as $seoRow) {
+                                $sku = $this->nullableString($seoRow['SKU'] ?? null);
+                                if ($sku === null || isset($seoProducts[$sku])) {
+                                    throw ValidationException::withMessages(['file' => ['На листе SEO товаров SKU должны быть заполнены и не повторяться.']]);
+                                }
+                                $seoProducts[$sku] = $seoRow;
+                            }
+                        } else {
+                            $seoAttributes = $seoRows;
+                        }
+                    }
+
+                    continue;
+                }
+                $firstSheet = false;
                 foreach ($sheet->getRowIterator() as $index => $row) {
                     $values = $row->toArray();
                     if ($index === 1) {
-                        $headers = $this->headers($values);
+                        $headers = $this->headers($values, false);
 
                         continue;
                     }
@@ -115,7 +141,6 @@ class ProductImportService
                         'values' => array_pad(array_slice($values, 0, count($headers)), count($headers), null),
                     ];
                 }
-                break;
             }
 
             if ($headers === []) {
@@ -125,7 +150,10 @@ class ProductImportService
                 throw ValidationException::withMessages(['file' => ['XLSX-файл не содержит товаров для импорта.']]);
             }
 
-            return [$headers, $rows];
+            $localized = in_array('SKU', $headers, true);
+            $headers = $localized ? $this->localizedHeaders($headers, $seoAttributes) : $this->headers($headers);
+
+            return [$headers, $rows, $seoProducts, $localized];
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (Throwable) {
@@ -142,7 +170,7 @@ class ProductImportService
     /** @param list<mixed> $values
      * @return list<string>
      */
-    private function headers(array $values): array
+    private function headers(array $values, bool $requireLegacy = true): array
     {
         $headers = array_map(static function (mixed $value): string {
             if (! is_string($value)) {
@@ -161,7 +189,7 @@ class ProductImportService
         if (count($headers) !== count(array_unique($headers))) {
             throw ValidationException::withMessages(['file' => ['Заголовки XLSX не должны повторяться.']]);
         }
-        $missing = array_values(array_diff(ProductWorkbookSchema::REQUIRED_IMPORT_HEADERS, $headers));
+        $missing = $requireLegacy ? array_values(array_diff(ProductWorkbookSchema::REQUIRED_IMPORT_HEADERS, $headers)) : [];
         if ($missing !== []) {
             throw ValidationException::withMessages([
                 'file' => ['В XLSX отсутствуют обязательные столбцы: '.implode(', ', $missing).'.'],
@@ -169,6 +197,119 @@ class ProductImportService
         }
 
         return $headers;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function readSeoSheet(Sheet $sheet): array
+    {
+        $headers = [];
+        $rows = [];
+        foreach ($sheet->getRowIterator() as $index => $row) {
+            $values = $row->toArray();
+            if ($index === 1) {
+                $headers = $this->headers($values, false);
+
+                continue;
+            }
+            if ($this->emptyRow($values)) {
+                continue;
+            }
+            if (count($rows) >= self::MAX_ROWS) {
+                throw ValidationException::withMessages(['file' => ['На листе '.$sheet->getName().' превышен лимит строк.']]);
+            }
+            $rows[] = array_combine($headers, array_pad(array_slice($values, 0, count($headers)), count($headers), null));
+        }
+
+        return $rows;
+    }
+
+    /** @param list<string> $headers
+     * @param  list<array<string, mixed>>  $seoAttributes
+     * @return list<string>
+     */
+    private function localizedHeaders(array $headers, array $seoAttributes): array
+    {
+        $baseHeaders = array_flip(ProductWorkbookSchema::MANAGER_HEADERS);
+        $attributeHeaders = [];
+        if ($seoAttributes !== []) {
+            foreach ($seoAttributes as $attribute) {
+                $name = $this->requiredString($attribute['Название'] ?? null, 1, 'Название характеристики');
+                $unit = $this->nullableString($attribute['Единица измерения'] ?? null);
+                $header = $name.($unit === null ? '' : ' ('.$unit.')');
+                $attributeHeaders[$header][] = $this->requiredString($attribute['URL характеристики (slug)'] ?? null, 1, 'URL характеристики (slug)');
+            }
+        } else {
+            foreach (Attribute::query()->get() as $attribute) {
+                $header = $attribute->name.($attribute->unit ? ' ('.$attribute->unit.')' : '');
+                $attributeHeaders[$header][] = $attribute->slug;
+            }
+        }
+
+        $normalized = [];
+        foreach ($headers as $header) {
+            if (isset($baseHeaders[$header])) {
+                $normalized[] = $baseHeaders[$header];
+
+                continue;
+            }
+            $matches = $attributeHeaders[$header] ?? [];
+            if (count($matches) !== 1) {
+                throw ValidationException::withMessages(['file' => ["Столбец «{$header}» не найден или соответствует нескольким характеристикам. Проверьте лист SEO характеристик."]]);
+            }
+            $normalized[] = 'attribute.'.$matches[0];
+        }
+        if (count($normalized) !== count(array_unique($normalized))) {
+            throw ValidationException::withMessages(['file' => ['Несколько столбцов ссылаются на одну характеристику.']]);
+        }
+        $required = ['sku', 'name', 'category_name', 'brand_name', 'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale'];
+        $missing = array_diff($required, $normalized);
+        if ($missing !== []) {
+            $labels = array_map(static fn (string $field): string => ProductWorkbookSchema::MANAGER_HEADERS[$field], $missing);
+            throw ValidationException::withMessages(['file' => ['В XLSX отсутствуют обязательные столбцы: '.implode(', ', $labels).'.']]);
+        }
+
+        return $normalized;
+    }
+
+    /** @param array<string, mixed> $values
+     * @param  array<string, array<string, mixed>>  $seoProducts
+     * @return array<string, mixed>
+     */
+    private function localizedValues(array $values, array $seoProducts, ?Product $product, int $row): array
+    {
+        $sku = $this->nullableString($values['sku'] ?? null);
+        $seo = $sku === null ? [] : ($seoProducts[$sku] ?? []);
+        if ($product === null && ($sku === null || $this->nullableString($seo['URL товара (slug)'] ?? null) === null)) {
+            $this->rowError($row, 'товар с указанным SKU не найден. Для нового товара заполните временный SKU и URL товара на соответствующей строке листа SEO товаров. SKU существующего товара нельзя изменять.');
+        }
+        $values['slug'] = $this->nullableString($seo['URL товара (slug)'] ?? null) ?? $product?->slug;
+        $units = array_flip(ProductWorkbookSchema::UNIT_LABELS);
+        $values['unit'] = $units[$this->nullableString($values['unit']) ?? ''] ?? $values['unit'];
+        $values['category_id'] = null;
+        $values['brand_id'] = null;
+        foreach (['category' => 'Категория', 'brand' => 'Бренд'] as $field => $label) {
+            $name = $this->nullableString($values[$field.'_name']);
+            if ($field === 'brand' && $name === null) {
+                $values['brand_slug'] = null;
+
+                continue;
+            }
+            $seoSlugHeader = $field === 'category' ? 'URL категории (slug)' : 'URL бренда (slug)';
+            $slug = $this->nullableString($seo[$seoSlugHeader] ?? null);
+            if ($name !== null && $name === $this->nullableString($seo[$label] ?? null) && $slug !== null) {
+                $values[$field.'_slug'] = $slug;
+
+                continue;
+            }
+            $model = $field === 'category' ? Category::class : Brand::class;
+            $matches = $name === null ? collect() : $model::query()->where('name', $name)->limit(2)->get();
+            if ($matches->count() !== 1) {
+                $this->rowError($row, "{$label} «{$name}» не найдена или название неоднозначно. Укажите точное уникальное название либо название и URL на листе SEO товаров.");
+            }
+            $values[$field.'_slug'] = $matches->first()->slug;
+        }
+
+        return $values;
     }
 
     /** @param list<mixed> $values */
@@ -210,7 +351,7 @@ class ProductImportService
     /** @param array<string, mixed> $values */
     private function resolveProduct(array $values, int $row): ?Product
     {
-        $id = $this->nullableInteger($values['id'], $row, 'id');
+        $id = $this->nullableInteger($values['id'] ?? null, $row, 'id');
         $sku = $this->nullableString($values['sku']);
         $byId = $id === null ? null : Product::query()->find($id);
         $bySku = $sku === null ? null : Product::query()->where('sku', $sku)->first();
@@ -320,7 +461,7 @@ class ProductImportService
      * @param  array<string, Attribute>  $attributes
      * @return list<array{attribute_id: int, value: mixed}>
      */
-    private function attributePayload(array $values, array $attributes, int $row): array
+    private function attributePayload(array $values, array $attributes, int $row, bool $localized = false): array
     {
         $payload = [];
         foreach ($attributes as $slug => $attribute) {
@@ -329,11 +470,12 @@ class ProductImportService
                 continue;
             }
             $value = match ($attribute->type) {
-                'string', 'text', 'select' => $this->requiredString($cell, $row, 'attribute.'.$slug),
+                'string', 'text' => $this->requiredString($cell, $row, 'attribute.'.$slug),
+                'select' => $localized ? $this->optionValue($attribute, $cell, $row) : $this->requiredString($cell, $row, 'attribute.'.$slug),
                 'integer' => $this->requiredInteger($cell, $row, 'attribute.'.$slug),
                 'decimal' => $this->decimal($cell, $row, 'attribute.'.$slug),
                 'boolean' => $this->boolean($cell, $row, 'attribute.'.$slug),
-                'multiselect' => $this->multiselect($cell, $row, 'attribute.'.$slug),
+                'multiselect' => $localized ? $this->optionValues($attribute, $cell, $row) : $this->multiselect($cell, $row, 'attribute.'.$slug),
                 'date' => $this->date($cell, $row, 'attribute.'.$slug),
                 default => $this->rowError($row, "тип характеристики {$slug} не поддерживается."),
             };
@@ -341,6 +483,25 @@ class ProductImportService
         }
 
         return $payload;
+    }
+
+    private function optionValue(Attribute $attribute, mixed $cell, int $row): string
+    {
+        $label = $this->requiredString($cell, $row, $attribute->name);
+        $matches = $attribute->options->filter(static fn ($option): bool => $option->label === $label);
+        if ($matches->count() !== 1) {
+            $this->rowError($row, "значение «{$label}» характеристики «{$attribute->name}» не найдено или неоднозначно.");
+        }
+
+        return $matches->first()->value;
+    }
+
+    /** @return list<string> */
+    private function optionValues(Attribute $attribute, mixed $cell, int $row): array
+    {
+        $text = $this->requiredString($cell, $row, $attribute->name);
+
+        return array_map(fn (?string $label): string => $this->optionValue($attribute, trim($label ?? ''), $row), str_getcsv($text, ';', '"', ''));
     }
 
     private function nullableString(mixed $value): ?string
@@ -410,13 +571,13 @@ class ProductImportService
         if (is_bool($value)) {
             return $value;
         }
-        if ($value === 1 || $value === 1.0 || $value === '1' || (is_string($value) && mb_strtolower(trim($value)) === 'true')) {
+        if ($value === 1 || $value === 1.0 || $value === '1' || (is_string($value) && in_array(mb_strtolower(trim($value)), ['true', 'да'], true))) {
             return true;
         }
-        if ($value === 0 || $value === 0.0 || $value === '0' || (is_string($value) && mb_strtolower(trim($value)) === 'false')) {
+        if ($value === 0 || $value === 0.0 || $value === '0' || (is_string($value) && in_array(mb_strtolower(trim($value)), ['false', 'нет'], true))) {
             return false;
         }
-        $this->rowError($row, "столбец {$field} должен содержать true/false или 1/0.");
+        $this->rowError($row, "столбец {$field} должен содержать Да/Нет, true/false или 1/0.");
     }
 
     /** @return list<string> */

@@ -4,6 +4,21 @@ namespace App\Support;
 
 final class ProductWorkbookSchema
 {
+    public const MANAGER_HEADERS = [
+        'sku' => 'SKU', 'article_number' => 'Артикул', 'barcode' => 'Штрихкод',
+        'name' => 'Название', 'description' => 'Описание', 'category_name' => 'Категория',
+        'brand_name' => 'Бренд', 'unit' => 'Единица продажи', 'price' => 'Цена',
+        'old_price' => 'Старая цена', 'stock_quantity' => 'Остаток', 'is_active' => 'Активность',
+        'is_on_sale' => 'Распродажа', 'primary_image_url' => 'Основное изображение',
+        'product_group_code' => 'Код группы', 'product_group_name' => 'Группа вариантов',
+        'created_at' => 'Создан', 'updated_at' => 'Изменён',
+    ];
+
+    public const UNIT_LABELS = [
+        'piece' => 'Штука', 'square_meter' => 'Квадратный метр', 'linear_meter' => 'Погонный метр',
+        'package' => 'Упаковка', 'kilogram' => 'Килограмм', 'liter' => 'Литр', 'set' => 'Комплект',
+    ];
+
     public const BASE_HEADERS = [
         'id', 'sku', 'article_number', 'barcode', 'name', 'slug', 'description',
         'category_id', 'category_slug', 'category_name', 'brand_id', 'brand_slug', 'brand_name',

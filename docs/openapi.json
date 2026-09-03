@@ -1937,7 +1937,7 @@
             "get": {
                 "operationId": "exportProducts",
                 "summary": "Export products to Excel",
-                "description": "Downloads every product matching the list filters and sort order without pagination. Requires imports.manage. Base columns use stable field names; characteristic columns use attribute.<slug>. SKU and barcode are text and multiselect values are compact JSON arrays.",
+                "description": "Downloads every product matching the list filters and sort order without pagination. Requires imports.manage. The Товары sheet uses Russian Admin labels, characteristic names with optional units in parentheses, Russian product units, Да/Нет booleans and option labels. No database IDs are included. Slugs are on SEO товаров and SEO характеристик sheets. SKU and barcode remain text; multiselect labels are semicolon-separated with CSV quoting. Includes filters, frozen headers and formatted numeric/date cells. The importer accepts both this localized workbook and legacy technical workbooks.",
                 "security": [
                     {
                         "sanctumSession": []

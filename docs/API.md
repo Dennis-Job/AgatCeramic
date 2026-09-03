@@ -185,11 +185,16 @@ filters apply directly to products; all filters can be combined.
 
 `GET /admin/products/export` downloads every product matching the same filters and sort order as
 `GET /admin/products`; pagination is deliberately not accepted. The endpoint requires
-`imports.manage` and returns a streaming XLSX attachment. Stable base columns use field names such
-as `sku`, `barcode`, `category_slug`, and `product_group_code`; every catalogue characteristic is
-exported in a deterministic `attribute.<slug>` column. SKU and barcode remain text, multiselect
-values use compact JSON arrays, and blank characteristics remain blank so the workbook can be used
-as a lossless input source for the import workflow.
+`imports.manage` and returns a streaming XLSX attachment. The first sheet, `Товары`, uses the
+Russian Admin labels and contains no database IDs or slugs. SKU, article numbers and barcodes
+remain text; prices and characteristic numbers remain numeric. Units use Russian names,
+booleans use `Да`/`Нет`, and select/multiselect values use option labels. Multiselect labels are
+separated by `; `, with CSV quoting for labels containing semicolons or quotes. Characteristic
+headers use their names plus an optional unit in parentheses, e.g. `Вес (кг)`, in deterministic
+group/characteristic order. Blank characteristics remain blank. Sheets include filters, a frozen
+header/first column, readable column widths and wrapped text; prices and dates have explicit formats.
+`SEO товаров` links SKU to product/category/brand names and slugs; `SEO характеристик` lists
+characteristic names, units and slugs. No sheet contains database IDs.
 
 `POST /admin/products/import` accepts that workbook as multipart field `file`, stores it on the
 private `local` disk, creates a persistent import-status record, and dispatches processing to the
@@ -197,7 +202,14 @@ Redis queue after commit. The endpoint requires `imports.manage`, accepts only X
 10 MiB, and returns `202` with a `ProductImport` resource. Admin polls the initiating user's record
 through `GET /admin/product-imports/{productImport}`; another user receives `404` for that id.
 
-The worker processes at most 5000 non-empty rows in one database transaction. Existing products
+The worker processes at most 5000 non-empty rows in one database transaction. The localized format
+matches existing products by immutable SKU and reads product/category/brand slugs from `SEO товаров`.
+Changing a category or brand name on the main sheet resolves its unique catalogue name; ambiguous
+names are rejected. Characteristic columns resolve through `SEO характеристик` (or current catalogue
+names/units when that sheet is absent). Option labels must resolve uniquely. Existing product slugs
+are preserved when no SEO product row is present. A new product may use a temporary nonempty SKU
+with a matching SEO row and an explicit new product slug; the server generates the actual SKU.
+Old technical workbooks remain accepted, including creation of products. In that format products
 are matched by `id` or immutable `sku`; if both resolve, they must identify the same product. A row
 without a matching product creates one and ignores the workbook SKU so the server generates the
 next identifier. Category and brand slugs are portable identifiers; their numeric ids are checked
@@ -207,7 +219,8 @@ clear values. Activation is performed only after characteristics are stored, so 
 values remain enforced. Any failed row rolls back the whole workbook; persistent per-row reports
 remain reserved for TASK-052/TASK-053.
 
-Display/derived columns (`*_name`, `primary_image_url`, timestamps) are read-only. Product-group
+Display/derived columns (`*_name` in legacy workbooks, `primary_image_url`, timestamps) are read-only.
+Localized category/brand names are editable as described above. Product-group
 columns are also informational in TASK-051: existing membership is preserved, but an import does
 not create or move groups because the exported sheet does not contain their axis definition. On
 completion or final failure the uploaded private file is deleted; the status record remains.

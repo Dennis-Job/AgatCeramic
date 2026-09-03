@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Jobs\ProcessProductImport;
 use App\Models\Attribute;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Product;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Common\Entity\Row;
+use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Writer\XLSX\Writer;
 use Tests\TestCase;
 
@@ -140,6 +142,155 @@ class ProductImportTest extends TestCase
         $this->assertDatabaseHas('storage_cleanup_tasks', ['disk' => 'local', 'path' => $import->path]);
     }
 
+    public function test_localized_export_roundtrips_manager_edits_and_seo_without_changing_sku(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create(['name' => 'Плитка', 'slug' => 'tile']);
+        $color = Attribute::factory()->create(['name' => 'Цвет', 'slug' => 'color', 'type' => 'select', 'unit' => null]);
+        $color->options()->createMany([
+            ['label' => 'Белый', 'value' => 'white'],
+            ['label' => 'Серый', 'value' => 'gray'],
+        ]);
+        $features = Attribute::factory()->create(['name' => 'Свойства', 'slug' => 'features', 'type' => 'multiselect', 'unit' => null]);
+        $features->options()->createMany([
+            ['label' => 'Матовая', 'value' => 'matte'],
+            ['label' => 'Морозостойкая', 'value' => 'frost'],
+        ]);
+        $weight = Attribute::factory()->create(['name' => 'Вес', 'slug' => 'weight', 'type' => 'decimal', 'unit' => 'кг']);
+        $available = Attribute::factory()->create(['name' => 'Под заказ', 'slug' => 'on-demand', 'type' => 'boolean', 'unit' => null]);
+        $category->attributes()->attach([$color->id, $features->id, $weight->id, $available->id]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'brand_id' => null, 'is_active' => false]);
+        foreach ([$color->id => 'white', $features->id => ['matte'], $weight->id => 12.5, $available->id => false] as $attributeId => $value) {
+            ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $attributeId, 'value' => $value]);
+        }
+        $sku = $product->sku;
+        $export = app(ProductExportService::class)->create([]);
+        $path = $this->editedExport($export['path'], [
+            'Товары' => ['Название' => 'Обновлённая плитка', 'Цена' => 77.5, 'Старая цена' => null, 'Единица продажи' => 'Квадратный метр', 'Активность' => 'Нет', 'Распродажа' => 'Да', 'Цвет' => 'Серый', 'Свойства' => 'Матовая; Морозостойкая', 'Вес (кг)' => 20.25, 'Под заказ' => 'Да'],
+            'SEO товаров' => ['URL товара (slug)' => 'updated-tile'],
+        ]);
+
+        $result = app(ProductImportService::class)->import($actor, $path);
+
+        $this->assertSame(['created' => 0, 'updated' => 1, 'processed' => 1], $result);
+        $product->refresh();
+        $this->assertSame($sku, $product->sku);
+        $this->assertSame('Обновлённая плитка', $product->name);
+        $this->assertSame('updated-tile', $product->slug);
+        $this->assertSame('square_meter', $product->unit);
+        $this->assertSame('77.50', $product->price);
+        $this->assertFalse($product->is_active);
+        $this->assertTrue($product->is_on_sale);
+        $values = $product->attributeValues()->get()->keyBy('attribute_id');
+        $this->assertSame('gray', $values[$color->id]->value);
+        $this->assertSame(['matte', 'frost'], $values[$features->id]->value);
+        $this->assertSame(20.25, $values[$weight->id]->value);
+        $this->assertTrue($values[$available->id]->value);
+    }
+
+    public function test_localized_import_applies_category_and_brand_names_edited_on_manager_sheet(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create(['name' => 'Плитка']);
+        $newCategory = Category::factory()->create(['name' => 'Мозаика']);
+        $brand = Brand::factory()->create(['name' => 'Первый бренд']);
+        $newBrand = Brand::factory()->create(['name' => 'Другой бренд']);
+        $product = Product::factory()->create(['category_id' => $category->id, 'brand_id' => $brand->id, 'is_active' => false]);
+        $export = app(ProductExportService::class)->create([]);
+        $path = $this->editedExport($export['path'], ['Товары' => ['Категория' => 'Мозаика', 'Бренд' => 'Другой бренд']]);
+
+        app(ProductImportService::class)->import($actor, $path);
+
+        $this->assertSame($newCategory->id, $product->refresh()->category_id);
+        $this->assertSame($newBrand->id, $product->brand_id);
+    }
+
+    public function test_localized_multiselect_roundtrips_labels_with_semicolons_and_quotes(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create();
+        $features = Attribute::factory()->create(['name' => 'Свойства', 'slug' => 'features', 'type' => 'multiselect', 'unit' => null]);
+        $features->options()->createMany([
+            ['label' => 'Матовая', 'value' => 'matte'],
+            ['label' => 'Фактура; "камень"', 'value' => 'stone'],
+        ]);
+        $category->attributes()->attach($features);
+        $product = Product::factory()->create(['category_id' => $category->id, 'is_active' => false]);
+        ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $features->id, 'value' => ['matte', 'stone']]);
+        $export = app(ProductExportService::class)->create([]);
+
+        try {
+            app(ProductImportService::class)->import($actor, $export['path']);
+        } finally {
+            unlink($export['path']);
+        }
+
+        $this->assertSame(['matte', 'stone'], $product->attributeValues()->where('attribute_id', $features->id)->value('value'));
+    }
+
+    public function test_localized_import_creates_a_product_with_a_matching_seo_row_and_server_generated_sku(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create(['sku_prefix' => '8']);
+        $original = Product::factory()->create(['category_id' => $category->id, 'is_active' => false]);
+        $export = app(ProductExportService::class)->create([]);
+        $path = $this->editedExport($export['path'], [
+            'Товары' => ['SKU' => 'NEW-1', 'Название' => 'Новая плитка', 'Артикул' => null, 'Штрихкод' => null],
+            'SEO товаров' => ['SKU' => 'NEW-1', 'Название' => 'Новая плитка', 'URL товара (slug)' => 'new-localized-tile'],
+        ]);
+
+        $result = app(ProductImportService::class)->import($actor, $path);
+
+        $this->assertSame(['created' => 1, 'updated' => 0, 'processed' => 1], $result);
+        $created = Product::query()->where('slug', 'new-localized-tile')->sole();
+        $this->assertSame('Новая плитка', $created->name);
+        $this->assertMatchesRegularExpression('/^8\d{6}$/', $created->sku);
+        $this->assertNotSame($original->sku, $created->sku);
+        $this->assertDatabaseHas('products', ['id' => $original->id, 'sku' => $original->sku, 'slug' => $original->slug]);
+    }
+
+    public function test_localized_import_rejects_an_unknown_sku_without_a_matching_seo_row(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $product = Product::factory()->create(['is_active' => false]);
+        $export = app(ProductExportService::class)->create([]);
+        $path = $this->editedExport($export['path'], ['Товары' => ['SKU' => 'UNKNOWN-SKU']]);
+
+        try {
+            app(ProductImportService::class)->import($actor, $path);
+            $this->fail('Changing only the SKU must not create a duplicate product.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('SKU существующего товара нельзя изменять', $exception->errors()['file'][0]);
+        }
+
+        $this->assertDatabaseCount('products', 1);
+        $this->assertSame($product->sku, $product->refresh()->sku);
+    }
+
+    public function test_localized_import_rejects_ambiguous_option_labels_and_rolls_back(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create();
+        $color = Attribute::factory()->create(['name' => 'Цвет', 'slug' => 'color', 'type' => 'select', 'unit' => null]);
+        $color->options()->createMany([
+            ['label' => 'Белый', 'value' => 'white'],
+            ['label' => 'Белый', 'value' => 'ivory'],
+        ]);
+        $category->attributes()->attach($color);
+        $product = Product::factory()->create(['category_id' => $category->id, 'is_active' => false, 'name' => 'Исходное название']);
+        ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $color->id, 'value' => 'white']);
+        $export = app(ProductExportService::class)->create([]);
+        $path = $this->editedExport($export['path'], ['Товары' => ['Название' => 'Не должно сохраниться']]);
+
+        try {
+            app(ProductImportService::class)->import($actor, $path);
+            $this->fail('Ambiguous labels must not be guessed.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('неоднозначно', $exception->errors()['file'][0]);
+        }
+        $this->assertSame('Исходное название', $product->refresh()->name);
+    }
+
     public function test_import_requires_the_dedicated_permission_and_a_valid_xlsx(): void
     {
         Storage::fake('local');
@@ -185,6 +336,43 @@ class ProductImportTest extends TestCase
             $writer->addRow(Row::fromValues($row));
         }
         $writer->close();
+
+        return $path;
+    }
+
+    /** @param array<string, array<string, mixed>> $edits */
+    private function editedExport(string $source, array $edits): string
+    {
+        $path = tempnam(storage_path('framework/testing'), 'localized-import-');
+        $reader = new Reader;
+        $writer = new Writer;
+        $reader->open($source);
+        $writer->openToFile($path);
+        $first = true;
+        foreach ($reader->getSheetIterator() as $sheet) {
+            if (! $first) {
+                $writer->addNewSheetAndMakeItCurrent();
+            }
+            $first = false;
+            $writer->getCurrentSheet()->setName($sheet->getName());
+            $headers = [];
+            foreach ($sheet->getRowIterator() as $index => $row) {
+                $values = $row->toArray();
+                if ($index === 1) {
+                    $headers = $values;
+                } else {
+                    foreach ($edits[$sheet->getName()] ?? [] as $header => $value) {
+                        $column = array_search($header, $headers, true);
+                        $this->assertNotFalse($column, 'Expected exported column '.$header);
+                        $values[$column] = $value;
+                    }
+                }
+                $writer->addRow(Row::fromValues($values));
+            }
+        }
+        $writer->close();
+        $reader->close();
+        unlink($source);
 
         return $path;
     }
