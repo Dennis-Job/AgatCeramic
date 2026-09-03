@@ -7,8 +7,12 @@ use App\Models\Product;
 use App\Queries\ProductQuery;
 use App\Support\ProductWorkbookSchema;
 use Illuminate\Support\LazyCollection;
+use OpenSpout\Common\Entity\Cell;
+use OpenSpout\Common\Entity\Cell\StringCell;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\Style;
+use OpenSpout\Writer\AutoFilter;
+use OpenSpout\Writer\Common\Entity\Sheet;
 use OpenSpout\Writer\XLSX\Entity\SheetView;
 use OpenSpout\Writer\XLSX\Writer;
 use RuntimeException;
@@ -29,6 +33,7 @@ class ProductExportService
         $attributes = Attribute::query()
             ->leftJoin('attribute_groups as export_groups', 'export_groups.id', '=', 'attributes.attribute_group_id')
             ->select('attributes.*')
+            ->with('options')
             ->orderByRaw('CASE WHEN export_groups.id IS NULL THEN 1 ELSE 0 END')
             ->orderBy('export_groups.sort_order')
             ->orderBy('export_groups.name')
@@ -47,13 +52,30 @@ class ProductExportService
 
         try {
             $writer->openToFile($path);
-            $writer->getCurrentSheet()
-                ->setName('Товары')
-                ->setSheetView((new SheetView)->setFreezeRow(2));
-            $writer->addRow(Row::fromValues([
-                ...ProductWorkbookSchema::BASE_HEADERS,
-                ...$attributes->map(fn (Attribute $attribute): string => 'attribute.'.$attribute->slug)->all(),
-            ], (new Style)->setFontBold()));
+            $headers = [
+                ...array_values(ProductWorkbookSchema::MANAGER_HEADERS),
+                ...$attributes->map(fn (Attribute $attribute): string => $attribute->name.($attribute->unit ? ' ('.$attribute->unit.')' : ''))->all(),
+            ];
+            $managerSheet = $writer->getCurrentSheet();
+            $this->prepareSheet($writer, $managerSheet, 'Товары', $headers);
+            $managerSheet->setColumnWidth(48, 4, 5);
+            $managerSheet->setColumnWidth(26, 6, 7, 14, 16);
+            $managerSheet->setColumnWidth(22, 17, 18);
+            $seoSheet = $writer->addNewSheetAndMakeItCurrent();
+            $this->prepareSheet($writer, $seoSheet, 'SEO товаров', [
+                'SKU', 'Название', 'URL товара (slug)', 'Категория', 'URL категории (slug)', 'Бренд', 'URL бренда (slug)',
+            ]);
+            $seoSheet->setColumnWidth(42, 2, 3, 5, 7);
+            $attributeSheet = $writer->addNewSheetAndMakeItCurrent();
+            $this->prepareSheet($writer, $attributeSheet, 'SEO характеристик', ['Название', 'Единица измерения', 'URL характеристики (slug)']);
+            $attributeSheet->setColumnWidth(36, 1, 3);
+            foreach ($attributes as $attribute) {
+                $writer->addRow($this->row([$attribute->name, $attribute->unit, $attribute->slug], widths: [0 => 36, 2 => 36]));
+            }
+            $attributeSheet->setAutoFilter(new AutoFilter(0, 1, 2, $attributes->count() + 1));
+            $rowNumber = 1;
+            $moneyStyle = (new Style)->setFormat('#,##0.00');
+            $dateStyle = (new Style)->setFormat('dd.mm.yyyy hh:mm');
 
             /** @var LazyCollection<int, Product> $products */
             $products = $this->productQuery->filtered($filters)
@@ -61,39 +83,44 @@ class ProductExportService
                 ->lazy(500);
 
             foreach ($products as $product) {
+                $writer->setCurrentSheet($managerSheet);
                 $values = $product->attributeValues->keyBy('attribute_id');
-                $writer->addRow(Row::fromValues([
-                    $product->id,
+                $writer->addRow($this->row([
                     (string) $product->sku,
                     $product->article_number,
                     $product->barcode === null ? null : (string) $product->barcode,
                     $product->name,
-                    $product->slug,
                     $product->description,
-                    $product->category_id,
-                    $product->category->slug,
                     $product->category->name,
-                    $product->brand_id,
-                    $product->brand?->slug,
                     $product->brand?->name,
-                    $product->unit,
+                    ProductWorkbookSchema::UNIT_LABELS[$product->unit] ?? $product->unit,
                     (float) $product->price,
                     $product->old_price === null ? null : (float) $product->old_price,
                     $product->stock_quantity,
-                    $product->is_active,
-                    $product->is_on_sale,
+                    $product->is_active ? 'Да' : 'Нет',
+                    $product->is_on_sale ? 'Да' : 'Нет',
                     $product->primaryImage?->url,
-                    $product->groupMembership?->group?->id,
                     $product->groupMembership?->group?->code,
                     $product->groupMembership?->group?->name,
-                    $product->created_at?->toAtomString(),
-                    $product->updated_at?->toAtomString(),
-                    ...$attributes->map(fn (Attribute $attribute): bool|float|int|string|null => $this->cellValue(
+                    $product->created_at,
+                    $product->updated_at,
+                    ...$attributes->map(fn (Attribute $attribute): float|int|string|null => $this->cellValue(
+                        $attribute,
                         $values->get($attribute->id)?->value
                     ))->all(),
-                ]));
+                ], (new Style)->setShouldWrapText()->setBackgroundColor($rowNumber % 2 === 1 ? 'F2F6FC' : 'FFFFFF'), [
+                    8 => $moneyStyle, 9 => $moneyStyle, 16 => $dateStyle, 17 => $dateStyle,
+                ], [3 => 48, 4 => 48, 5 => 26, 6 => 26, 13 => 26, 15 => 26, 16 => 22, 17 => 22]));
+                $writer->setCurrentSheet($seoSheet);
+                $writer->addRow($this->row([
+                    (string) $product->sku, $product->name, $product->slug,
+                    $product->category->name, $product->category->slug,
+                    $product->brand?->name, $product->brand?->slug,
+                ], widths: [1 => 42, 2 => 42, 4 => 42, 6 => 42]));
+                $rowNumber++;
             }
-
+            $managerSheet->setAutoFilter(new AutoFilter(0, 1, count($headers) - 1, $rowNumber));
+            $seoSheet->setAutoFilter(new AutoFilter(0, 1, 6, $rowNumber));
             $writer->close();
         } catch (Throwable $exception) {
             try {
@@ -111,13 +138,57 @@ class ProductExportService
         ];
     }
 
-    private function cellValue(mixed $value): bool|float|int|string|null
+    /** @param list<string> $headers */
+    private function prepareSheet(Writer $writer, Sheet $sheet, string $name, array $headers): void
     {
-        if (is_array($value)) {
-            return json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        $sheet->setName($name)->setSheetView((new SheetView)->setFreezeRow(2)->setFreezeColumn('B'));
+        $sheet->setColumnWidthForRange(20, 1, count($headers));
+        $writer->addRow($this->row($headers, (new Style)->setFontBold()->setFontColor('FFFFFF')
+            ->setBackgroundColor('23456B')->setShouldWrapText())->setHeight(42));
+    }
+
+    /**
+     * @param  list<mixed>  $values
+     * @param  array<int, Style>  $columnStyles
+     * @param  array<int, int>  $widths
+     */
+    private function row(array $values, ?Style $style = null, array $columnStyles = [], array $widths = []): Row
+    {
+        $cells = [];
+        $lines = 1;
+        foreach ($values as $index => $value) {
+            $cellStyle = $columnStyles[$index] ?? null;
+            $cells[] = is_string($value) ? new StringCell($value, $cellStyle) : Cell::fromValue($value, $cellStyle);
+            if (is_string($value)) {
+                $cellLines = 0;
+                foreach (explode("\n", $value) as $line) {
+                    $cellLines += max(1, (int) ceil(mb_strwidth($line) / (($widths[$index] ?? 20) - 4)));
+                }
+                $lines = max($lines, $cellLines);
+            }
         }
 
-        if (is_bool($value) || is_float($value) || is_int($value) || is_string($value) || $value === null) {
+        return (new Row($cells, $style ?? (new Style)->setShouldWrapText()))->setHeight(min(409, max(24, $lines * 16 + 8)));
+    }
+
+    private function cellValue(Attribute $attribute, mixed $value): float|int|string|null
+    {
+        if ($value === null) {
+            return null;
+        }
+        if (is_bool($value)) {
+            return $value ? 'Да' : 'Нет';
+        }
+        if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
+            $labels = $attribute->options->pluck('label', 'value');
+            $display = array_map(fn (mixed $option): string => $labels->get((string) $option) ?? (string) $option, is_array($value) ? $value : [$value]);
+            if ($attribute->type === 'multiselect') {
+                $display = array_map(static fn (string $label): string => strpbrk($label, ';"') === false ? $label : '"'.str_replace('"', '""', $label).'"', $display);
+            }
+
+            return implode('; ', $display);
+        }
+        if (is_float($value) || is_int($value) || is_string($value)) {
             return $value;
         }
 

@@ -183,7 +183,8 @@
 
 - [x] TASK-050 Excel product export
   - Export the complete filtered and sorted product catalogue to a streaming XLSX file without pagination.
-  - Preserve identifiers, commercial fields, product-group data, and a stable set of dynamic characteristic columns suitable for a later round-trip import.
+  - Preserve SKU/barcodes, commercial fields, product-group data, and stable dynamic characteristic columns suitable for round-trip import.
+  - Manager-friendly revision (2026-09-03): remove database IDs, move slugs to SEO sheets, use Russian Admin headers and unit labels, Да/Нет and option labels; retain localized and legacy import support.
   - Restrict export to `imports.manage`, expose an accessible Admin download flow, and cover the API, OpenAPI contract, container runtime, and UI states with automated tests and an independent UI Design Guard review.
 - [x] TASK-051 Excel import
 - [ ] TASK-052 Import validation
