@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\ProductExportController;
 use App\Http\Controllers\Api\V1\Admin\ProductGroupController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
+use App\Http\Controllers\Api\V1\Admin\ProductImageImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
@@ -49,6 +50,9 @@ Route::get('products/import-template', [ProductImportController::class, 'templat
 Route::post('products/import', [ProductImportController::class, 'store'])->name('products.import');
 Route::get('product-imports/{productImport}', [ProductImportController::class, 'show'])->name('product-imports.show');
 Route::get('product-imports/{productImport}/errors', [ProductImportController::class, 'errors'])->name('product-imports.errors');
+Route::post('product-image-imports', [ProductImageImportController::class, 'store'])->name('product-image-imports.store');
+Route::get('product-image-imports/{productImageImport}', [ProductImageImportController::class, 'show'])->name('product-image-imports.show');
+Route::get('product-image-imports/{productImageImport}/errors', [ProductImageImportController::class, 'errors'])->name('product-image-imports.errors');
 Route::apiResource('products', ProductController::class);
 Route::apiResource('product-groups', ProductGroupController::class);
 Route::get('products/{product}/attributes', [ProductAttributeValueController::class, 'index'])->name('products.attributes.index');

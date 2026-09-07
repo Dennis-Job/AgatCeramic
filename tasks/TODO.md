@@ -198,6 +198,8 @@
   - Category edit templates are prefilled with existing products, immutable SKU, category characteristics and Excel dropdowns. Valid rows update independently; a missing or cross-category SKU is rejected.
 - [x] TASK-055 Queue-based bulk operations
   - Generic/export XLSX imports now persist a validated write plan and run through resumable queue chunks. Validation errors still leave the catalogue untouched; completed rows are never repeated after a worker restart.
+- [x] TASK-056 Bulk product-image import
+  - ZIP archives map SKU directories and numbered JPG/PNG/WebP files to existing product galleries, with asynchronous per-folder processing, safe replacement and error reporting.
 
 ## Phase 5 — Cart and orders
 

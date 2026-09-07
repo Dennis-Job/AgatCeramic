@@ -101,6 +101,7 @@
 
 
 | TASK-055   | Queue-based bulk operations                                                                         | 2026-09-07 | Generic/export XLSX imports now validate the whole workbook first and persist a normalized private row plan in `product_import_items`. Valid plans are processed by Redis workers in durable chunks of at most 100 rows or 35 seconds; each row, counters and checkpoint commit together, so retried jobs skip completed rows. Preflight errors continue to leave the catalogue unchanged; write-time concurrent conflicts are retained as named row errors. Queue/API/OpenAPI documentation updated. | Backend import/category/OpenAPI: 27 passed / 423 assertions; Pint; OpenAPI JSON validation; Docker PostgreSQL migration `--pretend`; Docker queue-chunk regression; `git diff --check`. |
+| TASK-056 | Bulk product-image import | 2026-09-07 | Added a permission-gated, queued 500 MiB ZIP importer for existing SKU-addressed galleries. It validates safe one-level ZIP paths, symlinks, entry and unpacked-size limits, per-file MIME/size, filenames, duplicate ordinals and existing SKU; invalid folders do not block valid galleries. Matching ordinals replace any extension, `_1` is primary, untouched photos remain, and source/staging/replaced files use durable cleanup. Admin provides instructions, status, error list and CSV report. | Targeted backend/image regression, Pint, Admin unit/build, OpenAPI JSON validation, UI Design Guard review and `git diff --check`. |
 
 После завершения каждой задачи добавлять:
 - ID;

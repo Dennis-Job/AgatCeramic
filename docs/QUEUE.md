@@ -71,6 +71,16 @@ interrupted worker resumes only pending rows and does not repeat successful crea
 Concurrent catalogue changes after preflight are reported as a row error; managers should refresh
 the export and retry that row. Temporary source XLSX files are removed only after the final chunk.
 
+## Bulk product-image imports
+
+`POST /api/v1/admin/product-image-imports` persists a manager-uploaded ZIP privately and dispatches
+its own queue job after commit. The job validates archive structure and MIME types before applying
+each SKU gallery under that product's existing image lock. SKU galleries are isolated: one invalid
+folder records an error while valid folders continue. Product image mutations, counters and audit
+records commit per gallery; replaced public files and completed/failed source ZIPs are scheduled
+through the existing durable cleanup outbox. The status record and owner-only CSV error report remain
+available after the source ZIP is removed.
+
 ## Локальный запуск
 
 Запустите окружение:
