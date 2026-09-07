@@ -1995,7 +1995,7 @@
             "post": {
                 "operationId": "importProducts",
                 "summary": "Upload a product Excel import",
-                "description": "Requires imports.manage. With category_id, creates products from the selected category template with independent row transactions and durable progress/errors; SKU and blank slugs are generated automatically. Duplicate names/slugs and values absent from current option lists fail only that row. Without category_id, preserves atomic legacy/export create-update import compatibility. Limit: 5000 products, 10 MiB.",
+                "description": "Requires imports.manage. With category_id, creates products from the selected category template with independent row transactions and durable progress/errors; SKU and blank slugs are generated automatically. Duplicate names/slugs and values absent from current option lists fail only that row. Without category_id, validates all rows before catalogue writes, including ordered unique-value and group constraints, then atomically applies prepared create/update rows. Validation errors identify the first failing Excel row; write-time concurrency guards remain authoritative. Limit: 5000 products, 10 MiB.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {
                     "required": true,

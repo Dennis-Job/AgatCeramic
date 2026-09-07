@@ -9,11 +9,13 @@ use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
+use App\Models\ProductGroup;
 use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
+use App\Services\ProductManagementService;
 use App\Services\StorageCleanupService;
 use App\Support\ProductWorkbookSchema;
 use Database\Seeders\PermissionSeeder;
@@ -31,6 +33,133 @@ use Tests\TestCase;
 class ProductImportTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_group_constraints_are_checked_before_any_catalogue_writes(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create(['slug' => 'tile']);
+        $axis = Attribute::factory()->create(['slug' => 'size', 'type' => 'integer']);
+        $shared = Attribute::factory()->create(['slug' => 'color', 'type' => 'string']);
+        $category->attributes()->attach([$axis->id => ['is_required' => false], $shared->id => ['is_required' => true]]);
+        $group = ProductGroup::factory()->create();
+        $group->axes()->attach($axis);
+        $products = Product::factory()->count(2)->create(['category_id' => $category->id, 'brand_id' => null, 'is_active' => true]);
+        foreach ($products as $index => $product) {
+            $group->products()->attach($product);
+            ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $axis->id, 'value' => $index + 1]);
+            ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $shared->id, 'value' => 'white']);
+        }
+        $this->mock(ProductManagementService::class, function ($mock): void {
+            $mock->shouldNotReceive('create');
+            $mock->shouldNotReceive('update');
+        });
+        $headers = [...ProductWorkbookSchema::BASE_HEADERS, 'attribute.size', 'attribute.color'];
+        $base = ['name' => 'Tile', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false, 'attribute.color' => 'white'];
+        foreach ([['attribute.size' => 2], ['attribute.size' => null], ['attribute.size' => 1, 'attribute.color' => null]] as $invalid) {
+            $path = $this->workbook([$headers], [
+                $this->row($headers, $base + ['slug' => 'new-tile']),
+                $this->row($headers, array_replace($base, ['id' => $products[0]->id, 'sku' => $products[0]->sku, 'slug' => $products[0]->slug], $invalid)),
+            ]);
+            try {
+                app(ProductImportService::class)->import($actor, $path);
+                $this->fail('Group constraints must be checked before the first write.');
+            } catch (ValidationException $exception) {
+                $this->assertStringContainsString('Строка 3:', collect($exception->errors())->flatten()->first());
+            } finally {
+                unlink($path);
+            }
+        }
+    }
+
+    public function test_preflight_preserves_ordered_unique_value_handoffs(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create(['slug' => 'tile']);
+        $existing = Product::factory()->create(['category_id' => $category->id, 'slug' => 'old-slug', 'article_number' => 'old-article', 'barcode' => '12345678']);
+        $headers = ProductWorkbookSchema::BASE_HEADERS;
+        $base = ['name' => 'Tile', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false];
+        $path = $this->workbook([$headers], [
+            $this->row($headers, $base + ['id' => $existing->id, 'sku' => $existing->sku, 'slug' => 'new-slug']),
+            $this->row($headers, $base + ['slug' => 'old-slug', 'article_number' => 'old-article', 'barcode' => '12345678']),
+        ]);
+        try {
+            $this->assertSame(['created' => 1, 'updated' => 1, 'processed' => 2], app(ProductImportService::class)->import($actor, $path));
+            $this->assertSame('new-slug', $existing->fresh()->slug);
+            $this->assertDatabaseHas('products', ['slug' => 'old-slug', 'article_number' => 'old-article', 'barcode' => '12345678']);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    public function test_temporary_sku_matching_a_newly_allocated_sku_does_not_change_create_to_update(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        Category::factory()->create(['slug' => 'tile', 'sku_prefix' => '7']);
+        $headers = ProductWorkbookSchema::BASE_HEADERS;
+        $base = ['name' => 'Tile', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false];
+        $path = $this->workbook([$headers], [
+            $this->row($headers, $base + ['slug' => 'tile-one']),
+            $this->row($headers, $base + ['slug' => 'tile-two', 'sku' => '7000001']),
+        ]);
+        try {
+            $this->assertSame(['created' => 2, 'updated' => 0, 'processed' => 2], app(ProductImportService::class)->import($actor, $path));
+            $this->assertDatabaseCount('products', 2);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    public function test_preflight_rejects_invalid_later_rows_before_calling_catalogue_writers(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        Category::factory()->create(['slug' => 'tile']);
+        $this->mock(ProductManagementService::class, function ($mock): void {
+            $mock->shouldNotReceive('create');
+            $mock->shouldNotReceive('update');
+        });
+        $headers = ProductWorkbookSchema::BASE_HEADERS;
+        $base = ['name' => 'Tile', 'slug' => 'tile-one', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false];
+        foreach ([
+            ['slug' => 'tile-two', 'category_slug' => 'missing'],
+            ['slug' => 'tile-two', 'stock_quantity' => 2147483648],
+            ['slug' => 'tile-two', 'old_price' => 5],
+            ['slug' => 'tile-one'],
+        ] as $invalid) {
+            $path = $this->workbook([$headers], [$this->row($headers, $base), $this->row($headers, array_replace($base, $invalid))]);
+            try {
+                app(ProductImportService::class)->import($actor, $path);
+                $this->fail('Preflight must reject the workbook before writing its valid first row.');
+            } catch (ValidationException $exception) {
+                $this->assertStringContainsString('Строка 3:', collect($exception->errors())->flatten()->first());
+            } finally {
+                unlink($path);
+            }
+        }
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_preflight_validates_category_assignment_options_and_required_values_before_writes(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create(['slug' => 'tile']);
+        $color = Attribute::factory()->create(['slug' => 'color', 'type' => 'select']);
+        $color->options()->create(['label' => 'White', 'value' => 'white']);
+        $category->attributes()->attach($color->id, ['is_required' => true]);
+        $this->mock(ProductManagementService::class, fn ($mock) => $mock->shouldNotReceive('create'));
+        $headers = [...ProductWorkbookSchema::BASE_HEADERS, 'attribute.color'];
+        $base = ['name' => 'Tile', 'slug' => 'tile-one', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => true, 'is_on_sale' => false, 'attribute.color' => 'white'];
+        foreach (['unknown', null] as $value) {
+            $path = $this->workbook([$headers], [$this->row($headers, $base), $this->row($headers, array_replace($base, ['slug' => 'tile-two', 'attribute.color' => $value]))]);
+            try {
+                app(ProductImportService::class)->import($actor, $path);
+                $this->fail('Invalid category attributes must fail preflight.');
+            } catch (ValidationException $exception) {
+                $this->assertStringContainsString('Строка 3:', collect($exception->errors())->flatten()->first());
+            } finally {
+                unlink($path);
+            }
+        }
+    }
 
     public function test_import_manager_can_upload_a_private_xlsx_and_poll_its_status(): void
     {

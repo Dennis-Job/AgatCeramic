@@ -190,8 +190,8 @@
   - Restrict export to `imports.manage`, expose an accessible Admin download flow, and cover the API, OpenAPI contract, container runtime, and UI states with automated tests and an independent UI Design Guard review.
 - [x] TASK-051 Excel import
   - Category-template revision (2026-09-03): wide two-tab modal; category-specific XLSX with hidden option IDs, strict dropdowns through row 5001, server-generated SKU and optional product slug; durable per-row partial imports and downloadable failed rows. Images tab reserved for later work.
-- [ ] TASK-052 Import validation
-  - Category-template row validation is included in revised TASK-051; advanced generic preflight remains separate.
+- [x] TASK-052 Import validation
+  - Generic legacy/export workbooks now receive read-only preflight before catalogue writes: field/attribute/group constraints, duplicate identities and ordered unique-value checks; prepared rows preserve resolved identities. Category-template validation remains in TASK-051.
 - [ ] TASK-053 Import error report
   - Category-template named row errors and retry XLSX are included in revised TASK-051; generic import reporting remains separate.
 - [ ] TASK-054 Bulk product editing
