@@ -2023,6 +2023,33 @@
                 }
             }
         },
+        "/admin/products/price-status-template": {
+            "get": {
+                "operationId": "downloadProductPriceStatusTemplate",
+                "summary": "Download the empty price and status update template",
+                "description": "Requires imports.manage. The workbook has the three sheets Цены, Активность and Распродажа. The status sheets use Да/Нет list validation.",
+                "security": [{"sanctumSession": []}],
+                "responses": {"200": {"description": "XLSX template", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}
+            }
+        },
+        "/admin/products/price-status-import": {
+            "post": {
+                "operationId": "importProductPricesAndStatuses",
+                "summary": "Queue a price, activity and sale-status Excel update",
+                "description": "Requires imports.manage. Updates only price, old_price, is_active and is_on_sale for SKU rows in the dedicated three-sheet template. Each valid row is independent.",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string", "format": "binary", "description": "XLSX workbook, up to 10 MiB."}}}}}},
+                "responses": {"202": {"description": "Operation accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}
+            }
+        },
+        "/admin/product-price-status-imports/{productImport}": {
+            "parameters": [{"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
+            "get": {"operationId": "getProductPriceStatusImport", "summary": "Get the current user's price/status import", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Operation status", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+        },
+        "/admin/product-price-status-imports/{productImport}/errors": {
+            "parameters": [{"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
+            "get": {"operationId": "downloadProductPriceStatusImportErrors", "summary": "Download a price/status import error report", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Error report XLSX", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+        },
         "/admin/product-imports/{productImport}": {
             "parameters": [
                 {"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}
@@ -4191,7 +4218,7 @@
             "ProductImport": {
                 "type": "object",
                 "required": [
-                    "id", "filename", "status", "created_rows", "updated_rows", "processed_rows",
+                    "id", "filename", "status", "operation", "created_rows", "updated_rows", "processed_rows",
                     "error_message", "created_at", "started_at", "completed_at",
                     "category_id", "total_rows", "failed_rows", "row_errors", "has_error_file"
                 ],
@@ -4199,6 +4226,7 @@
                     "id": {"type": "integer"},
                     "filename": {"type": "string"},
                     "status": {"type": "string", "enum": ["pending", "processing", "completed", "failed"], "description": "completed means every row was checked, including partial/all row errors. failed means file or infrastructure failure; prior category-template successes remain committed."},
+                    "operation": {"type": "string", "enum": ["catalog", "price_status"]},
                     "category_id": {"type": ["integer", "null"]},
                     "total_rows": {"type": "integer", "minimum": 0},
                     "failed_rows": {"type": "integer", "minimum": 0},

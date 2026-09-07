@@ -247,6 +247,17 @@ error. Another owner receives `404`.
 Private source files are cleaned up after completion/final failure; failed row values and messages
 remain with the import history so the report can be generated again.
 
+`GET /admin/products/price-status-template` downloads a separate, otherwise empty XLSX template
+for safe commercial updates. It has exactly three sheets: `Цены` (`SKU`, required new price and
+optional old price), `Активность` (`SKU`, `Да`/`Нет`) and `Распродажа` (`SKU`, `Да`/`Нет`). The last
+two sheets use Excel list validation; any sheet may be left empty. `POST
+/admin/products/price-status-import` accepts the completed template as multipart `file` (XLSX,
+10 MiB) and processes it through the queue. It can update only `price`, `old_price`, `is_active`
+and `is_on_sale`: names, categories, stock and characteristics are never read or changed. The
+owner polls `GET /admin/product-price-status-imports/{productImport}`. Unknown or duplicate SKUs,
+invalid prices, and activation failures are row errors and do not block independent rows. A
+terminal operation with errors provides `GET /admin/product-price-status-imports/{productImport}/errors`.
+
 `POST /admin/product-image-imports` accepts a ZIP archive in multipart field `file` and requires
 `imports.manage`. The archive may be up to 500 MiB and is retained only on the private disk while
 its queue job runs. Its top-level entries must be SKU directories, for example

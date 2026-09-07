@@ -7,6 +7,7 @@ use App\Models\ProductImport;
 use App\Services\CategoryProductImportService;
 use App\Services\GenericProductImportService;
 use App\Services\ProductImportService;
+use App\Services\ProductPriceStatusImportService;
 use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -49,6 +50,24 @@ class ProcessProductImport implements ShouldQueue
         $storage = Storage::disk($import->disk);
         if (! $storage->exists($import->path)) {
             throw new RuntimeException('Загруженный XLSX-файл больше не доступен.');
+        }
+
+        if ($import->operation === 'price_status') {
+            $priceStatus = app(ProductPriceStatusImportService::class);
+            if ($import->total_rows === 0) {
+                $priceStatus->initialize($import, $storage->path($import->path));
+            }
+            if (! $priceStatus->process($import)) {
+                self::dispatch($import->id);
+
+                return;
+            }
+            DB::transaction(function () use ($import, $cleanupService): void {
+                $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
+                $cleanupService->schedule($import->disk, $import->path);
+            });
+
+            return;
         }
 
         if ($import->category_id !== null) {

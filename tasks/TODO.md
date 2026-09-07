@@ -200,6 +200,8 @@
   - Generic/export XLSX imports now persist a validated write plan and run through resumable queue chunks. Validation errors still leave the catalogue untouched; completed rows are never repeated after a worker restart.
 - [x] TASK-056 Bulk product-image import
   - ZIP archives map SKU directories and numbered JPG/PNG/WebP files to existing product galleries, with asynchronous per-folder processing, safe replacement and error reporting.
+- [x] TASK-057 Excel price and product-status updates
+  - A separate three-sheet XLSX template updates only SKU-matched prices (including optional old price), activity, and sale status. Empty sheets are allowed; queued processing preserves independent row errors and cannot alter characteristics or other catalogue fields.
 
 ## Phase 5 — Cart and orders
 

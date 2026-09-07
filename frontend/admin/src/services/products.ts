@@ -30,6 +30,29 @@ export type ProductImport = {
   created_at: string
   started_at: string | null
   completed_at: string | null
+  operation?: 'catalog' | 'price_status'
+}
+export async function getProductPriceStatusTemplate(): Promise<{ blob: Blob; filename: string }> {
+  const response = await apiFetch('/admin/products/price-status-template')
+  if (!response.ok) return fail(response)
+  return { blob: await response.blob(), filename: 'product-price-status-template.xlsx' }
+}
+export async function uploadProductPriceStatusImport(file: File): Promise<ProductImport> {
+  await requestCsrfCookie()
+  const body = new FormData(); body.append('file', file)
+  const response = await apiFetch('/admin/products/price-status-import', { method: 'POST', body })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductImport }).data
+}
+export async function getProductPriceStatusImport(id: number): Promise<ProductImport> {
+  const response = await apiFetch(`/admin/product-price-status-imports/${id}`)
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductImport }).data
+}
+export async function getProductPriceStatusImportErrors(id: number): Promise<{ blob: Blob; filename: string }> {
+  const response = await apiFetch(`/admin/product-price-status-imports/${id}/errors`)
+  if (!response.ok) return fail(response)
+  return { blob: await response.blob(), filename: `product-price-status-import-${id}-errors.xlsx` }
 }
 export type ProductPayload = Omit<Product, 'id' | 'sku' | 'category' | 'brand' | 'attribute_values' | 'primary_image' | 'created_at' | 'updated_at'>
 export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; is_on_sale?: boolean; has_stock?: boolean; price_from?: string; price_to?: string; sort?: ProductSort; direction?: SortDirection } & PageRequest
