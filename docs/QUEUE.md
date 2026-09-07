@@ -62,7 +62,14 @@ in `product_import_errors` for owner-only XLSX report generation; reports themse
 downloads and do not require a retained private source file.
 
 TASK-051 limits one workbook to 5000 non-empty rows (category templates: rows 2–5001).
-Generic bulk processing beyond category-template imports remains TASK-055.
+Generic/export imports use the same durable queue pattern. The first job validates the whole
+workbook without changing the catalogue and stores a private, normalized write plan in
+`product_import_items`. If any validation error is found, all named errors are persisted and no
+catalogue row is changed. Otherwise workers commit up to 100 prepared rows or 35 seconds per job,
+then enqueue the next chunk. Every item and its import counters/checkpoint commit together, so an
+interrupted worker resumes only pending rows and does not repeat successful creates or updates.
+Concurrent catalogue changes after preflight are reported as a row error; managers should refresh
+the export and retry that row. Temporary source XLSX files are removed only after the final chunk.
 
 ## Локальный запуск
 

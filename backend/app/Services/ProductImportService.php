@@ -101,6 +101,12 @@ class ProductImportService
             $this->rowError($row, 'остаток не должен превышать 2147483647.');
         }
         $attributePayload = $this->attributePayload($values, $attributes, $row);
+        $requiredAttributes = collect($attributes)->filter(static fn (Attribute $attribute): bool => (bool) $attribute->pivot?->is_required);
+        $missingAttributes = $requiredAttributes->whereNotIn('id', collect($attributePayload)->pluck('attribute_id'));
+        if ($missingAttributes->isNotEmpty()) {
+            $this->rowError($row, 'обязательные характеристики не заполнены: '.$missingAttributes
+                ->map(static fn (Attribute $attribute): string => '«'.$attribute->name.'»')->implode(', ').'.');
+        }
         $activate = $payload['is_active'];
         $payload['is_active'] = false;
         if ($product === null) {
@@ -171,6 +177,58 @@ class ProductImportService
         return ['total' => count($rows), 'errors' => $errors];
     }
 
+    /**
+     * Build an immutable, validated write plan for the queued generic importer.
+     * No catalogue records or SKUs are written here.
+     *
+     * @return array{total: int, errors: list<array{row: int, name: ?string, messages: list<string>, values: array<string, mixed>}>, items: list<array{row: int, name: ?string, product_id: ?int, payload: array<string, mixed>, attribute_payload: list<array{attribute_id: int, value: mixed>}>}
+     */
+    public function prepareForQueue(string $path): array
+    {
+        [$headers, $rows, $seoProducts, $localized] = $this->read($path);
+        $errors = [];
+        $prepared = $this->preflight($headers, $rows, $this->attributesFor($headers), $seoProducts, $localized, $errors);
+
+        return [
+            'total' => count($rows),
+            'errors' => $errors,
+            'items' => array_map(static fn (array $entry): array => [
+                'row' => $entry['row'],
+                'name' => $entry['name'],
+                'product_id' => $entry['product']?->id,
+                'payload' => $entry['payload'],
+                'attribute_payload' => $entry['attributePayload'],
+            ], $prepared),
+        ];
+    }
+
+    /** Apply one pre-validated queued row inside the caller's transaction. */
+    public function applyPreparedRow(User $actor, ?int $productId, array $payload, array $attributePayload): string
+    {
+        $product = $productId === null ? null : Product::query()->lockForUpdate()->findOrFail($productId);
+        $activate = $payload['is_active'];
+        $payload['is_active'] = false;
+
+        if ($product === null) {
+            $product = $this->productService->create($actor, $payload);
+            $operation = 'created';
+        } else {
+            if ($product->category_id !== $payload['category_id']) {
+                $this->productService->update($actor, $product, ['is_active' => false]);
+                $this->attributeValueService->replace($actor, $product, []);
+            }
+            $product = $this->productService->update($actor, $product, $payload);
+            $operation = 'updated';
+        }
+
+        $this->attributeValueService->replace($actor, $product, $attributePayload);
+        if ($activate) {
+            $this->productService->update($actor, $product, ['is_active' => true]);
+        }
+
+        return $operation;
+    }
+
     /** Validate the complete workbook without allocating SKUs or writing catalogue/audit rows. */
     private function preflight(array $headers, array $rows, array $attributes, array $seoProducts, bool $localized, ?array &$errors = null): array
     {
@@ -207,7 +265,13 @@ class ProductImportService
                 $candidate = new Product($payload);
                 $candidate->setRelation('category', $category);
                 $this->integrityService->assertValuesMatchCategory($candidate, $attributePayload, 'attributes', $payload['is_active']);
-                $prepared[] = compact('product', 'payload', 'attributePayload');
+                $prepared[] = [
+                    'row' => $row,
+                    'name' => $this->nullableString($values['name'] ?? null),
+                    'product' => $product,
+                    'payload' => $payload,
+                    'attributePayload' => $attributePayload,
+                ];
             } catch (ValidationException $exception) {
                 $messages = collect($exception->errors())->flatten()->filter(static fn (mixed $message): bool => is_string($message))->values()->all();
                 if ($errors === null) {

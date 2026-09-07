@@ -274,6 +274,42 @@ class ProductImportTest extends TestCase
             ->assertOk()->assertHeader('content-disposition', "attachment; filename=product-import-{$import->id}-errors.xlsx");
     }
 
+    public function test_generic_import_uses_durable_queue_items_and_resumes_after_a_chunk(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $actor = $this->userWithPermission('imports.manage');
+        Category::factory()->create(['slug' => 'tile', 'sku_prefix' => '8']);
+        $headers = ProductWorkbookSchema::BASE_HEADERS;
+        $rows = array_map(fn (int $number): array => $this->row($headers, [
+            'name' => 'Tile '.$number,
+            'slug' => 'tile-'.$number,
+            'category_slug' => 'tile',
+            'unit' => 'piece',
+            'price' => 10,
+            'stock_quantity' => 1,
+            'is_active' => false,
+            'is_on_sale' => false,
+        ]), range(1, 101));
+        $import = $this->storedImport($actor, $this->workbook([$headers], $rows));
+
+        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $import->refresh();
+        $this->assertSame('processing', $import->status);
+        $this->assertSame(100, $import->processed_rows);
+        $this->assertDatabaseCount('products', 100);
+        $this->assertDatabaseHas('product_import_items', ['product_import_id' => $import->id, 'status' => 'pending']);
+        Queue::assertPushed(ProcessProductImport::class, fn (ProcessProductImport $job): bool => $job->productImportId === $import->id);
+
+        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $import->refresh();
+        $this->assertSame('completed', $import->status);
+        $this->assertSame(101, $import->processed_rows);
+        $this->assertSame(101, $import->created_rows);
+        $this->assertDatabaseCount('products', 101);
+        $this->assertDatabaseMissing('product_import_items', ['product_import_id' => $import->id, 'status' => 'pending']);
+    }
+
     public function test_localized_export_roundtrips_manager_edits_and_seo_without_changing_sku(): void
     {
         $actor = $this->userWithPermission('imports.manage');

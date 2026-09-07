@@ -213,8 +213,11 @@ through `GET /admin/product-imports/{productImport}`; another user receives `404
 template (requires `imports.manage`). Its `Товары` sheet contains only the selected category's
 attributes, commercial fields, and an optional product slug. SKU is generated on the server and
 has no column; an empty slug is transliterated from the product name. `Название`, `Единица продажи`
-and `Цена` are required; empty stock defaults to zero, activity and sale to false. Existing names
-(case-insensitive in PostgreSQL) and slugs are rejected, never updated by this format.
+and `Цена` are required; empty stock defaults to zero, activity and sale to false. Every category
+characteristic marked required by the manager must be filled, including for an
+inactive product row. Empty required characteristics are returned as named row errors and do not
+create or update that product. Existing names (case-insensitive in PostgreSQL) and slugs are
+rejected, never updated by this format.
 
 Add `editing=1` to download a prefilled edit template for every product in the selected category.
 It has the same fields, list validations and multiselect slots as the creation template, with a
@@ -247,7 +250,10 @@ remain with the import history so the report can be generated again.
 Without `category_id`, legacy/export round-trip compatibility is preserved: the worker validates
 every non-empty row (at most 5000) before changing the catalogue. If any row is invalid, it saves
 named errors for all invalid rows, changes nothing, and offers the XLSX error report. If validation
-passes, it processes the workbook in one database transaction. The localized format
+passes, it stores a normalized private write plan and processes it through the Redis queue in
+durable chunks of up to 100 rows or 35 seconds. Each successful row and the progress checkpoint
+commit together, so a restarted worker resumes only pending rows. A write-time conflict caused by a
+concurrent catalogue change becomes a named row error; refresh the export before retrying it. The localized format
 matches existing products by immutable SKU and reads product/category/brand slugs from `SEO товаров`.
 Changing a category or brand name on the main sheet resolves its unique catalogue name; ambiguous
 names are rejected. Characteristic columns resolve through `SEO характеристик` (or current catalogue
