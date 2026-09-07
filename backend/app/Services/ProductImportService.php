@@ -26,6 +26,7 @@ class ProductImportService
     public function __construct(
         private readonly ProductManagementService $productService,
         private readonly ProductAttributeValueManagementService $attributeValueService,
+        private readonly CatalogAttributeIntegrityService $integrityService,
     ) {}
 
     /** Create one category-template row. The caller owns its transaction and durable checkpoint. */
@@ -104,32 +105,11 @@ class ProductImportService
         $attributes = $this->attributesFor($headers);
 
         return DB::transaction(function () use ($actor, $headers, $rows, $attributes, $seoProducts, $localized): array {
+            $prepared = $this->preflight($headers, $rows, $attributes, $seoProducts, $localized);
             $created = 0;
             $updated = 0;
-            $seenProductIds = [];
-
-            foreach ($rows as $entry) {
-                $rowNumber = $entry['row'];
-                $values = array_combine($headers, $entry['values']);
-                if ($values === false) {
-                    $this->rowError($rowNumber, 'структура строки не совпадает с заголовками.');
-                }
-
-                $product = $this->resolveProduct($values, $rowNumber);
-                if ($localized) {
-                    $values = $this->localizedValues($values, $seoProducts, $product, $rowNumber);
-                }
-                if ($product !== null && isset($seenProductIds[$product->id])) {
-                    $this->rowError($rowNumber, "товар уже указан в строке {$seenProductIds[$product->id]}.");
-                }
-                if ($product !== null) {
-                    $seenProductIds[$product->id] = $rowNumber;
-                }
-
-                $category = $this->resolveCategory($values, $rowNumber);
-                $brand = $this->resolveBrand($values, $rowNumber);
-                $payload = $this->productPayload($values, $category, $brand, $product, $rowNumber);
-                $attributePayload = $this->attributePayload($values, $attributes, $rowNumber, $localized);
+            foreach ($prepared as $entry) {
+                ['product' => $product, 'payload' => $payload, 'attributePayload' => $attributePayload] = $entry;
                 $activate = $payload['is_active'];
                 $payload['is_active'] = false;
 
@@ -137,7 +117,7 @@ class ProductImportService
                     $product = $this->productService->create($actor, $payload);
                     $created++;
                 } else {
-                    if ($product->category_id !== $category->id) {
+                    if ($product->category_id !== $payload['category_id']) {
                         $this->productService->update($actor, $product, ['is_active' => false]);
                         $this->attributeValueService->replace($actor, $product, []);
                     }
@@ -153,6 +133,55 @@ class ProductImportService
 
             return ['created' => $created, 'updated' => $updated, 'processed' => $created + $updated];
         });
+    }
+
+    /** Validate the complete workbook without allocating SKUs or writing catalogue/audit rows. */
+    private function preflight(array $headers, array $rows, array $attributes, array $seoProducts, bool $localized): array
+    {
+        $seen = [];
+        $prepared = [];
+        $groupValidator = new ProductImportGroupValidationService;
+        foreach ($rows as $entry) {
+            $row = $entry['row'];
+            try {
+                $values = array_combine($headers, $entry['values']);
+                $product = $this->resolveProduct($values, $row);
+                if ($localized) {
+                    $values = $this->localizedValues($values, $seoProducts, $product, $row);
+                }
+                $category = $this->resolveCategory($values, $row);
+                $brand = $this->resolveBrand($values, $row);
+                $payload = $this->productPayload($values, $category, $brand, $product, $row, array_keys($seen['product'] ?? []));
+                $attributePayload = $this->attributePayload($values, $attributes, $row, $localized);
+
+                foreach (['product' => $product?->id, 'sku' => $this->nullableString($values['sku'] ?? null),
+                    'slug' => $payload['slug'], 'article_number' => $payload['article_number'], 'barcode' => $payload['barcode']] as $field => $value) {
+                    if ($value === null) {
+                        continue;
+                    }
+                    if (isset($seen[$field][$value])) {
+                        $this->rowError($row, "значение {$field} уже указано в строке {$seen[$field][$value]}.");
+                    }
+                    $seen[$field][$value] = $row;
+                }
+
+                if ($product !== null) {
+                    $groupValidator->validate($product, $payload, $attributePayload);
+                }
+                $candidate = new Product($payload);
+                $candidate->setRelation('category', $category);
+                $this->integrityService->assertValuesMatchCategory($candidate, $attributePayload, 'attributes', $payload['is_active']);
+                $prepared[] = compact('product', 'payload', 'attributePayload');
+            } catch (ValidationException $exception) {
+                $message = collect($exception->errors())->flatten()->first();
+                if (str_starts_with($message, "Строка {$row}:")) {
+                    throw $exception;
+                }
+                $this->rowError($row, $message);
+            }
+        }
+
+        return $prepared;
     }
 
     /** @return array{list<string>, list<array{row: int, values: list<mixed>}>, array<string, array<string, mixed>>, bool} */
@@ -491,7 +520,7 @@ class ProductImportService
     /** @param array<string, mixed> $values
      * @return array<string, mixed>
      */
-    private function productPayload(array $values, Category $category, ?Brand $brand, ?Product $product, int $row): array
+    private function productPayload(array $values, Category $category, ?Brand $brand, ?Product $product, int $row, array $previousProductIds = []): array
     {
         $labels = array_map(static fn (string $label): string => '«'.$label.'»', ProductWorkbookSchema::MANAGER_HEADERS + [
             'slug' => 'Адрес товара', 'category_id' => 'Категория', 'brand_id' => 'Бренд',
@@ -509,6 +538,11 @@ class ProductImportService
         $uniqueSlug = Rule::unique('products', 'slug');
         $uniqueArticle = Rule::unique('products', 'article_number');
         $uniqueBarcode = Rule::unique('products', 'barcode');
+        // Earlier rows have replaced these products' unique values in the planned state.
+        // The preflight's seen-value maps still reject collisions with their new values.
+        foreach ([$uniqueSlug, $uniqueArticle, $uniqueBarcode] as $rule) {
+            $rule->where(fn ($query) => $query->whereNotIn('id', $previousProductIds));
+        }
         if ($product !== null) {
             $uniqueSlug->ignore($product->id);
             $uniqueArticle->ignore($product->id);
@@ -525,7 +559,7 @@ class ProductImportService
             'unit' => ['required', Rule::enum(ProductUnit::class)],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'old_price' => ['nullable', 'numeric', 'gte:price', 'max:9999999999.99'],
-            'stock_quantity' => ['required', 'integer', 'min:0', 'max:4294967295'],
+            'stock_quantity' => ['required', 'integer', 'min:0', 'max:2147483647'],
             'is_active' => ['required', 'boolean'],
             'is_on_sale' => ['required', 'boolean'],
         ], [

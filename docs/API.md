@@ -252,6 +252,17 @@ corresponding product state. Multiselect values use JSON string arrays. Blank ch
 clear values. Activation is performed only after characteristics are stored, so category-required
 values remain enforced. In legacy mode, any failed row rolls back the whole workbook.
 
+TASK-052 adds a read-only preflight inside the worker transaction before any catalogue writes or
+SKU allocation. It validates every row's product fields, category attribute assignments, types,
+options and required activation values, plus ordered group axis/shared-value constraints.
+Repeated product identities, temporary SKUs, slugs, articles and barcodes are rejected with the
+physical Excel row number. Unique values released by an earlier update may be reused by later rows.
+Stock is limited to PostgreSQL's signed integer maximum (2147483647). Prepared rows retain their
+resolved product identity, so an earlier generated SKU cannot change a later creation into an update.
+The existing status/error response retains the first validation error; no new endpoint or report is
+introduced. Transactional write-time guards remain authoritative for concurrent catalogue changes
+and SKU capacity. Category-template partial imports retain their existing workflow.
+
 Display/derived columns (`*_name` in legacy workbooks, `primary_image_url`, timestamps) are read-only.
 Numbered image columns and the former localized `Основное изображение` column are also read-only;
 importing the workbook does not download, replace or delete gallery images.
