@@ -196,7 +196,8 @@
   - Generic/round-trip imports now retain all named preflight row errors, leave the catalogue unchanged, and provide an owner-only XLSX report. Category-template retry XLSX remains unchanged.
 - [x] TASK-054 Bulk product editing
   - Category edit templates are prefilled with existing products, immutable SKU, category characteristics and Excel dropdowns. Valid rows update independently; a missing or cross-category SKU is rejected.
-- [ ] TASK-055 Queue-based bulk operations
+- [x] TASK-055 Queue-based bulk operations
+  - Generic/export XLSX imports now persist a validated write plan and run through resumable queue chunks. Validation errors still leave the catalogue untouched; completed rows are never repeated after a worker restart.
 
 ## Phase 5 — Cart and orders
 

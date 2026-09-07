@@ -55,6 +55,25 @@ class CategoryProductImportTest extends TestCase
         }
     }
 
+    public function test_category_template_rejects_required_attributes_even_for_inactive_products(): void
+    {
+        Storage::fake('local');
+        [$category, $color, $features] = $this->catalog();
+        $category->attributes()->updateExistingPivot($color->id, ['is_required' => true]);
+        $category->attributes()->updateExistingPivot($features->id, ['is_required' => true]);
+        $import = $this->storedImport($this->actor(), $category, [$this->values('Черновик без характеристик')]);
+
+        app(CategoryProductImportService::class)->process($import, Storage::disk('local')->path($import->path));
+
+        $this->assertSame(0, $import->refresh()->created_rows);
+        $this->assertSame(1, $import->failed_rows);
+        $message = $import->rowErrors()->sole()->messages[0];
+        $this->assertStringContainsString('обязательные характеристики не заполнены:', $message);
+        $this->assertStringContainsString('«Цвет»', $message);
+        $this->assertStringContainsString('«Свойства»', $message);
+        $this->assertDatabaseMissing('products', ['name' => 'Черновик без характеристик']);
+    }
+
     public function test_blank_and_populated_templates_preserve_excel_compatible_structure(): void
     {
         [$category] = $this->catalog();

@@ -19,6 +19,11 @@ class ProductImport extends Model
         return $this->hasMany(ProductImportError::class)->orderBy('row_number');
     }
 
+    public function items(): HasMany
+    {
+        return $this->hasMany(ProductImportItem::class)->orderBy('row_number');
+    }
+
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {

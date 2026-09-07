@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\AdminUserStatus;
 use App\Models\ProductImport;
 use App\Services\CategoryProductImportService;
+use App\Services\GenericProductImportService;
 use App\Services\ProductImportService;
 use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -64,41 +65,21 @@ class ProcessProductImport implements ShouldQueue
             return;
         }
 
-        $inspection = $service->inspect($storage->path($import->path));
-        if ($inspection['errors'] !== []) {
-            DB::transaction(function () use ($cleanupService, $import, $inspection): void {
-                $import->rowErrors()->delete();
-                $import->rowErrors()->createMany(array_map(static fn (array $error): array => [
-                    'row_number' => $error['row'],
-                    'name' => $error['name'],
-                    'messages' => $error['messages'],
-                    'values' => $error['values'],
-                ], $inspection['errors']));
-                $import->forceFill([
-                    'status' => 'completed',
-                    'total_rows' => $inspection['total'],
-                    'failed_rows' => count($inspection['errors']),
-                    'processed_rows' => $inspection['total'],
-                    'error_message' => null,
-                    'completed_at' => now(),
-                ])->save();
+        $generic = app(GenericProductImportService::class);
+        if ($import->total_rows === 0 && $generic->initialize($import, $storage->path($import->path))) {
+            DB::transaction(function () use ($import, $cleanupService): void {
                 $cleanupService->schedule($import->disk, $import->path);
             });
 
             return;
         }
+        if (! $generic->process($import)) {
+            self::dispatch($import->id);
 
-        DB::transaction(function () use ($cleanupService, $import, $service, $storage, $inspection): void {
-            $result = $service->import($import->user, $storage->path($import->path));
-            $import->forceFill([
-                'status' => 'completed',
-                'created_rows' => $result['created'],
-                'updated_rows' => $result['updated'],
-                'processed_rows' => $result['processed'],
-                'total_rows' => $inspection['total'],
-                'error_message' => null,
-                'completed_at' => now(),
-            ])->save();
+            return;
+        }
+        DB::transaction(function () use ($import, $cleanupService): void {
+            $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
             $cleanupService->schedule($import->disk, $import->path);
         });
     }
