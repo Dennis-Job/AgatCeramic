@@ -14,6 +14,7 @@ class ProductImportResource extends ApiResource
             'id' => $this->id,
             'filename' => $this->original_filename,
             'status' => $this->status,
+            'operation' => $this->operation,
             'category_id' => $this->category_id,
             'total_rows' => $this->total_rows,
             'failed_rows' => $this->failed_rows,

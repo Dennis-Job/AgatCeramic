@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'user_id', 'original_filename', 'disk', 'path', 'status', 'attempts', 'created_rows',
     'updated_rows', 'processed_rows', 'error_message', 'started_at', 'completed_at',
-    'category_id', 'total_rows', 'failed_rows', 'last_processed_row',
+    'category_id', 'total_rows', 'failed_rows', 'last_processed_row', 'operation',
 ])]
 class ProductImport extends Model
 {

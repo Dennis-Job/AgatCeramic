@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductGroupController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductImportController;
+use App\Http\Controllers\Api\V1\Admin\ProductPriceStatusImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,10 @@ Route::get('products/import-template', [ProductImportController::class, 'templat
 Route::post('products/import', [ProductImportController::class, 'store'])->name('products.import');
 Route::get('product-imports/{productImport}', [ProductImportController::class, 'show'])->name('product-imports.show');
 Route::get('product-imports/{productImport}/errors', [ProductImportController::class, 'errors'])->name('product-imports.errors');
+Route::get('products/price-status-template', [ProductPriceStatusImportController::class, 'template'])->name('products.price-status-template');
+Route::post('products/price-status-import', [ProductPriceStatusImportController::class, 'store'])->name('products.price-status-import');
+Route::get('product-price-status-imports/{productImport}', [ProductPriceStatusImportController::class, 'show'])->name('product-price-status-imports.show');
+Route::get('product-price-status-imports/{productImport}/errors', [ProductPriceStatusImportController::class, 'errors'])->name('product-price-status-imports.errors');
 Route::post('product-image-imports', [ProductImageImportController::class, 'store'])->name('product-image-imports.store');
 Route::get('product-image-imports/{productImageImport}', [ProductImageImportController::class, 'show'])->name('product-image-imports.show');
 Route::get('product-image-imports/{productImageImport}/errors', [ProductImageImportController::class, 'errors'])->name('product-image-imports.errors');
