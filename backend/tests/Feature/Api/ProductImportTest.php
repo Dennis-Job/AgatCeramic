@@ -244,7 +244,7 @@ class ProductImportTest extends TestCase
         $this->assertSame(['matte', 'frost'], $created->attributeValues()->where('attribute_id', $features->id)->value('value'));
     }
 
-    public function test_invalid_row_rolls_back_the_whole_import_and_can_be_marked_failed(): void
+    public function test_generic_import_reports_every_invalid_row_without_changing_the_catalogue(): void
     {
         Storage::fake('local');
         $actor = $this->userWithPermission('imports.manage');
@@ -253,22 +253,25 @@ class ProductImportTest extends TestCase
         $rows = [
             $this->row($headers, ['name' => 'Valid', 'slug' => 'valid', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false]),
             $this->row($headers, ['name' => 'Invalid', 'slug' => 'invalid', 'category_slug' => 'missing', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false]),
+            $this->row($headers, ['name' => 'Invalid price', 'slug' => 'invalid-price', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => -1, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false]),
         ];
         $import = $this->storedImport($actor, $this->workbook([$headers], $rows));
-        $job = new ProcessProductImport($import->id);
-
-        try {
-            $job->handle(app(ProductImportService::class), app(StorageCleanupService::class));
-            $this->fail('The invalid workbook should fail.');
-        } catch (ValidationException $exception) {
-            $job->failed($exception);
-        }
+        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
 
         $this->assertDatabaseMissing('products', ['slug' => 'valid']);
         $import->refresh();
-        $this->assertSame('failed', $import->status);
-        $this->assertStringContainsString('Строка 3', $import->error_message);
+        $this->assertSame('completed', $import->status);
+        $this->assertSame(3, $import->total_rows);
+        $this->assertSame(2, $import->failed_rows);
+        $this->assertSame(3, $import->processed_rows);
+        $this->assertNull($import->error_message);
+        $this->assertSame(['Invalid', 'Invalid price'], $import->rowErrors()->pluck('name')->all());
+        $this->assertStringContainsString('категория', $import->rowErrors()->first()->messages[0]);
         $this->assertDatabaseHas('storage_cleanup_tasks', ['disk' => 'local', 'path' => $import->path]);
+        $this->actingAs($actor)->getJson("/api/v1/admin/product-imports/{$import->id}")
+            ->assertOk()->assertJsonPath('data.has_error_file', true)->assertJsonCount(2, 'data.row_errors');
+        $this->actingAs($actor)->get("/api/v1/admin/product-imports/{$import->id}/errors")
+            ->assertOk()->assertHeader('content-disposition', "attachment; filename=product-import-{$import->id}-errors.xlsx");
     }
 
     public function test_localized_export_roundtrips_manager_edits_and_seo_without_changing_sku(): void

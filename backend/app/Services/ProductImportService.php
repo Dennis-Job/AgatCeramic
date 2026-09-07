@@ -29,17 +29,33 @@ class ProductImportService
         private readonly CatalogAttributeIntegrityService $integrityService,
     ) {}
 
-    /** Create one category-template row. The caller owns its transaction and durable checkpoint. */
-    public function createTemplateRow(User $actor, Category $category, array $values, int $row): void
+    /** Create or update one category-template row. The caller owns its transaction and durable checkpoint. */
+    public function createTemplateRow(User $actor, Category $category, array $values, int $row, bool $editing = false): string
     {
         $name = $this->requiredString($values['name'] ?? null, $row, 'Название');
         // Serialize imports of this category, including the duplicate-name check and SKU sequence.
         $category = Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
-        if (Product::query()->where('name', $name)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)])->exists()) {
+        $product = null;
+        if ($editing) {
+            $sku = $this->requiredString($values['sku'] ?? null, $row, 'SKU');
+            $product = Product::query()->where('sku', $sku)->lockForUpdate()->first();
+            if ($product === null || $product->category_id !== $category->id) {
+                $this->rowError($row, 'SKU не относится к товару выбранной категории. Скачайте актуальный шаблон и не изменяйте SKU.');
+            }
+        }
+        $sameName = Product::query()->where(fn ($query) => $query->where('name', $name)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)]));
+        if ($product !== null) {
+            $sameName->whereKeyNot($product->id);
+        }
+        if ($sameName->exists()) {
             $this->rowError($row, 'товар с таким наименованием уже существует.');
         }
-        $values['slug'] = $this->nullableString($values['slug'] ?? null) ?? Str::slug($name, '-', 'ru');
-        if (Product::query()->where('slug', $values['slug'])->exists()) {
+        $values['slug'] = $this->nullableString($values['slug'] ?? null) ?? ($product?->slug ?? Str::slug($name, '-', 'ru'));
+        $sameSlug = Product::query()->where('slug', $values['slug']);
+        if ($product !== null) {
+            $sameSlug->whereKeyNot($product->id);
+        }
+        if ($sameSlug->exists()) {
             $this->rowError($row, 'товар с таким slug уже существует.');
         }
         $values['unit'] = array_flip(ProductWorkbookSchema::UNIT_LABELS)[$values['unit'] ?? ''] ?? $values['unit'] ?? null;
@@ -80,22 +96,28 @@ class ProductImportService
             }
             $values['attribute.'.$slug] = $selected === [] ? null : ($attribute->type === 'select' ? $selected[0] : json_encode(array_values(array_unique($selected)), JSON_THROW_ON_ERROR));
         }
-        $payload = $this->productPayload($values, $category, $brand, null, $row);
+        $payload = $this->productPayload($values, $category, $brand, $product, $row);
         if ($payload['stock_quantity'] > 2147483647) {
             $this->rowError($row, 'остаток не должен превышать 2147483647.');
         }
         $attributePayload = $this->attributePayload($values, $attributes, $row);
         $activate = $payload['is_active'];
         $payload['is_active'] = false;
-        $product = $this->productService->create($actor, $payload);
-        // SKU allocation serializes catalogue creation. Recheck after that lock to cover concurrent categories.
-        if (Product::query()->whereKeyNot($product->id)->where(fn ($query) => $query->where('name', $name)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)]))->exists()) {
-            $this->rowError($row, 'товар с таким наименованием уже существует.');
+        if ($product === null) {
+            $product = $this->productService->create($actor, $payload);
+            // SKU allocation serializes catalogue creation. Recheck after that lock to cover concurrent categories.
+            if (Product::query()->whereKeyNot($product->id)->where(fn ($query) => $query->where('name', $name)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)]))->exists()) {
+                $this->rowError($row, 'товар с таким наименованием уже существует.');
+            }
+        } else {
+            $product = $this->productService->update($actor, $product, $payload);
         }
         $this->attributeValueService->replace($actor, $product, $attributePayload);
         if ($activate) {
             $this->productService->update($actor, $product, ['is_active' => true]);
         }
+
+        return $editing ? 'updated' : 'created';
     }
 
     /** @return array{created: int, updated: int, processed: int} */
@@ -135,8 +157,22 @@ class ProductImportService
         });
     }
 
+    /**
+     * Validate every product row without changing the catalogue.
+     *
+     * @return array{total: int, errors: list<array{row: int, name: ?string, messages: list<string>, values: array<string, mixed>}>}
+     */
+    public function inspect(string $path): array
+    {
+        [$headers, $rows, $seoProducts, $localized] = $this->read($path);
+        $errors = [];
+        $this->preflight($headers, $rows, $this->attributesFor($headers), $seoProducts, $localized, $errors);
+
+        return ['total' => count($rows), 'errors' => $errors];
+    }
+
     /** Validate the complete workbook without allocating SKUs or writing catalogue/audit rows. */
-    private function preflight(array $headers, array $rows, array $attributes, array $seoProducts, bool $localized): array
+    private function preflight(array $headers, array $rows, array $attributes, array $seoProducts, bool $localized, ?array &$errors = null): array
     {
         $seen = [];
         $prepared = [];
@@ -173,11 +209,20 @@ class ProductImportService
                 $this->integrityService->assertValuesMatchCategory($candidate, $attributePayload, 'attributes', $payload['is_active']);
                 $prepared[] = compact('product', 'payload', 'attributePayload');
             } catch (ValidationException $exception) {
-                $message = collect($exception->errors())->flatten()->first();
-                if (str_starts_with($message, "Строка {$row}:")) {
-                    throw $exception;
+                $messages = collect($exception->errors())->flatten()->filter(static fn (mixed $message): bool => is_string($message))->values()->all();
+                if ($errors === null) {
+                    $message = $messages[0] ?? 'Строка содержит недопустимое значение.';
+                    if (str_starts_with($message, "Строка {$row}:")) {
+                        throw $exception;
+                    }
+                    $this->rowError($row, $message);
                 }
-                $this->rowError($row, $message);
+                $errors[] = [
+                    'row' => $row,
+                    'name' => $this->nullableString($values['name'] ?? null),
+                    'messages' => array_map(fn (string $message): string => preg_replace('/^Строка '.preg_quote((string) $row, '/').':\\s*/u', '', $message) ?? $message, $messages),
+                    'values' => $values,
+                ];
             }
         }
 

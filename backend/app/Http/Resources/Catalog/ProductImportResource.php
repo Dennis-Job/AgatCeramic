@@ -22,7 +22,7 @@ class ProductImportResource extends ApiResource
                 'name' => $error->name,
                 'messages' => $error->messages,
             ])->all(),
-            'has_error_file' => $this->category_id !== null && $this->failed_rows > 0 && in_array($this->status, ['completed', 'failed'], true),
+            'has_error_file' => $this->failed_rows > 0 && in_array($this->status, ['completed', 'failed'], true),
             'created_rows' => $this->created_rows,
             'updated_rows' => $this->updated_rows,
             'processed_rows' => $this->processed_rows,

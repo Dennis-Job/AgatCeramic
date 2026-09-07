@@ -1979,10 +1979,10 @@
         "/admin/products/import-template": {
             "get": {
                 "operationId": "downloadProductImportTemplate",
-                "summary": "Download a category-specific product creation template",
-                "description": "Requires imports.manage. Up to 5000 products in rows 2–5001, no SKU column, optional product slug, category-only attributes. List and boolean cells have Stop validation with IDs and labels on a hidden lookup sheet. Multiselect uses separate dropdown slots.",
+                "summary": "Download a category-specific product creation or edit template",
+                "description": "Requires imports.manage. By default, this is a creation template with no SKU column and an optional product slug. With editing=1 it is prefilled with the selected category's products and starts with immutable SKU, which identifies each product for independent updates. Both modes use category-only attributes, Stop-validated list/boolean cells, hidden IDs and separate multiselect slots. Up to 5000 products in rows 2–5001.",
                 "security": [{"sanctumSession": []}],
-                "parameters": [{"name": "category_id", "in": "query", "required": true, "schema": {"type": "integer"}}],
+                "parameters": [{"name": "category_id", "in": "query", "required": true, "schema": {"type": "integer"}}, {"name": "editing", "in": "query", "required": false, "schema": {"type": "boolean", "default": false}, "description": "Return the prefilled SKU-based edit template instead of the empty creation template."}],
                 "responses": {
                     "200": {"description": "Category XLSX template", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}},
                     "401": {"$ref": "#/components/responses/Unauthenticated"},
@@ -1995,7 +1995,7 @@
             "post": {
                 "operationId": "importProducts",
                 "summary": "Upload a product Excel import",
-                "description": "Requires imports.manage. With category_id, creates products from the selected category template with independent row transactions and durable progress/errors; SKU and blank slugs are generated automatically. Duplicate names/slugs and values absent from current option lists fail only that row. Without category_id, validates all rows before catalogue writes, including ordered unique-value and group constraints, then atomically applies prepared create/update rows. Validation errors identify the first failing Excel row; write-time concurrency guards remain authoritative. Limit: 5000 products, 10 MiB.",
+                "description": "Requires imports.manage. With category_id, creation templates create products with server-generated SKU, while SKU-based edit templates update only matching products in the selected category; both use independent row transactions and durable progress/errors. Duplicate names/slugs, invalid SKU and values absent from current option lists fail only that row. Without category_id, validates all rows before catalogue writes, including ordered unique-value and group constraints. Any validation errors are retained as named row errors and no catalogue rows are changed; otherwise prepared create/update rows apply atomically. Write-time concurrency guards remain authoritative. Limit: 5000 products, 10 MiB.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {
                     "required": true,
@@ -2046,8 +2046,8 @@
             "parameters": [{"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
             "get": {
                 "operationId": "downloadProductImportErrors",
-                "summary": "Download only failed product rows as a reusable category template",
-                "description": "Requires imports.manage, ownership, completed/failed status and at least one failed row. The XLSX includes original failed values with current category fields and dropdown validations; correct and reupload it with category_id.",
+                "summary": "Download a product-import error report",
+                "description": "Requires imports.manage, ownership, completed/failed status and at least one failed row. Category-template imports receive only failed rows in a reusable template with current dropdown validations. Generic/export imports receive an XLSX report with every invalid Excel row, product name and messages; correct the original export and upload it again.",
                 "security": [{"sanctumSession": []}],
                 "responses": {
                     "200": {"description": "Failed product rows XLSX", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}},
@@ -4162,7 +4162,7 @@
                     "category_id": {"type": ["integer", "null"]},
                     "total_rows": {"type": "integer", "minimum": 0},
                     "failed_rows": {"type": "integer", "minimum": 0},
-                    "has_error_file": {"type": "boolean"},
+                    "has_error_file": {"type": "boolean", "description": "True when a terminal import has row-level errors. Category templates produce retry workbooks; generic imports produce an XLSX error report."},
                     "row_errors": {"type": "array", "items": {"type": "object", "required": ["row", "name", "messages"], "properties": {"row": {"type": "integer", "minimum": 2}, "name": {"type": ["string", "null"]}, "messages": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false}},
                     "created_rows": {"type": "integer", "minimum": 0},
                     "updated_rows": {"type": "integer", "minimum": 0},
