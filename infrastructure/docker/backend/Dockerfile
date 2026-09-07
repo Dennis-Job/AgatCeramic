@@ -10,4 +10,6 @@ RUN apt-get update \
 
 COPY --from=composer:2.8 /usr/bin/composer /usr/local/bin/composer
 
+COPY infrastructure/docker/backend/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 WORKDIR /var/www/backend

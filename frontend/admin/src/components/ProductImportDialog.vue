@@ -5,6 +5,7 @@ import BaseDialog from './BaseDialog.vue'
 import BaseSelect from './BaseSelect.vue'
 import { getCategories, type Category } from '../services/categories'
 import { getProductImport, getProductImportErrors, getProductImportTemplate, uploadProductImport, type ProductImport } from '../services/products'
+import { getProductImageImport, getProductImageImportErrors, uploadProductImageImport, type ProductImageImport } from '../services/productImageImports'
 import { compareAlphabetically } from '../utils/alphabetical'
 
 const props = defineProps<{ open: boolean }>()
@@ -24,11 +25,24 @@ const error = ref('')
 const notice = ref('')
 const pollingError = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
+const imageFile = ref<File | null>(null)
+const imageInput = ref<HTMLInputElement | null>(null)
+const imageResult = ref<ProductImageImport | null>(null)
+const imageUploading = ref(false)
+const imageDownloading = ref(false)
+const imageError = ref('')
+const imagePollingError = ref(false)
+let imageTimer: ReturnType<typeof setTimeout> | undefined
 let disposed = false
 const busy = computed(() => uploading.value || result.value?.status === 'pending' || result.value?.status === 'processing')
 const finished = computed(() => result.value?.status === 'completed' || result.value?.status === 'failed')
+const imageBusy = computed(() => imageUploading.value || imageResult.value?.status === 'pending' || imageResult.value?.status === 'processing')
+const imageFinished = computed(() => imageResult.value?.status === 'completed' || imageResult.value?.status === 'failed')
 const successful = computed(() => (result.value?.created_rows ?? 0) + (result.value?.updated_rows ?? 0))
 const progress = computed(() => result.value?.total_rows ? Math.min(100, Math.round(result.value.processed_rows / result.value.total_rows * 100)) : undefined)
+const imageProgress = computed(() => imageResult.value?.total_folders
+  ? Math.min(100, Math.round(imageResult.value.processed_folders / imageResult.value.total_folders * 100))
+  : undefined)
 function flatten(nodes: Category[], depth = 0): { value: string; label: string }[] {
   return [...nodes].sort((a, b) => compareAlphabetically(a.name, b.name)).flatMap(item => [
     { value: String(item.id), label: `${'— '.repeat(depth)}${item.name}${item.is_active ? '' : ' (скрыта)'}` },
@@ -70,6 +84,14 @@ watch(importMode, () => {
   if (input.value) input.value.value = ''
   error.value = ''; notice.value = ''
   if (finished.value) result.value = null
+})
+watch(tab, activeTab => {
+  if (activeTab === 'images') {
+    error.value = ''
+    notice.value = ''
+  } else {
+    imageError.value = ''
+  }
 })
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
@@ -120,13 +142,55 @@ async function upload() {
   } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить XLSX-файл.' }
   finally { uploading.value = false }
 }
+function selectImageFile(event: Event) {
+  const target = event.target as HTMLInputElement
+  imageFile.value = target.files?.[0] ?? null
+  target.value = ''
+  imageError.value = ''
+  if (imageFinished.value) imageResult.value = null
+}
+async function pollImageImport(id: number) {
+  if (disposed) return
+  imagePollingError.value = false
+  try {
+    const current = await getProductImageImport(id)
+    if (disposed) return
+    imageResult.value = current
+    if (current.status === 'completed' || current.status === 'failed') { emit('completed'); return }
+    imageTimer = setTimeout(() => { void pollImageImport(id) }, 1500)
+  } catch { if (!disposed) imagePollingError.value = true }
+}
+async function uploadImageImport() {
+  if (!imageFile.value || imageBusy.value) return
+  imageError.value = ''
+  const isZip = imageFile.value.name.toLowerCase().endsWith('.zip') || imageFile.value.type === 'application/zip'
+  if (!isZip || imageFile.value.size > 500 * 1024 * 1024) {
+    imageError.value = 'Прикрепите ZIP-архив размером не более 500 МБ.'
+    return
+  }
+  imageUploading.value = true
+  imageResult.value = null
+  try {
+    imageResult.value = await uploadProductImageImport(imageFile.value)
+    void pollImageImport(imageResult.value.id)
+  } catch (reason) { imageError.value = reason instanceof Error ? reason.message : 'Не удалось загрузить ZIP-архив.' }
+  finally { imageUploading.value = false }
+}
+async function downloadImageErrors() {
+  if (!imageResult.value || imageDownloading.value) return
+  imageDownloading.value = true
+  imageError.value = ''
+  try { saveDownload(await getProductImageImportErrors(imageResult.value.id)) }
+  catch (reason) { imageError.value = reason instanceof Error ? reason.message : 'Не удалось скачать отчёт с ошибками.' }
+  finally { imageDownloading.value = false }
+}
 function changeTab(event: KeyboardEvent) {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
   event.preventDefault()
   tab.value = event.key === 'Home' ? 'products' : event.key === 'End' ? 'images' : tab.value === 'products' ? 'images' : 'products'
   void nextTick(() => document.getElementById(`import-tab-${tab.value}`)?.focus())
 }
-onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer) })
+onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (imageTimer) clearTimeout(imageTimer) })
 </script>
 
 <template>
@@ -134,7 +198,7 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer) })
     <header class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7">
       <div class="min-w-0">
         <h2 id="product-import-title" class="text-xl font-bold text-gray-900">Массовая загрузка</h2>
-        <p id="product-import-description" class="mt-1 text-sm text-gray-500">Добавление и массовое редактирование товаров из Excel</p>
+        <p id="product-import-description" class="mt-1 text-sm text-gray-500">{{ tab === 'products' ? 'Добавление и массовое редактирование товаров из Excel' : 'Массовая загрузка изображений товаров из ZIP-архива' }}</p>
       </div>
       <button type="button" class="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Закрыть массовую загрузку" @click="emit('close')"><X :size="20" aria-hidden="true" /></button>
     </header>
@@ -191,10 +255,73 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer) })
           </template>
         </div>
       </div>
-      <div v-show="tab === 'images'" id="import-panel-images" role="tabpanel" aria-labelledby="import-tab-images" class="py-16 text-center">
-        <ImagePlus :size="36" class="mx-auto text-gray-400" aria-hidden="true" />
-        <h3 class="mt-4 text-lg font-semibold text-gray-900">Загрузка изображений</h3>
-        <p class="mt-2 text-sm text-gray-500">Массовая загрузка изображений появится позже.</p>
+      <div v-show="tab === 'images'" id="import-panel-images" role="tabpanel" aria-labelledby="import-tab-images" class="space-y-5 py-5 sm:py-6">
+        <section class="rounded-xl border border-gray-200 p-4 sm:p-5" aria-labelledby="image-import-preparation-title">
+          <div class="flex items-start gap-3">
+            <ImagePlus :size="24" class="mt-0.5 shrink-0 text-primary-500" aria-hidden="true" />
+            <div class="min-w-0">
+              <h3 id="image-import-preparation-title" class="text-base font-semibold text-gray-900">Подготовьте ZIP-архив</h3>
+              <p class="mt-1 text-sm leading-6 text-gray-600">Для каждого уже созданного товара создайте папку с его SKU. Внутри назовите файлы по схеме <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-700">SKU_номер.расширение</code>.</p>
+            </div>
+          </div>
+          <div class="mt-4 overflow-x-auto rounded-lg border border-gray-200 bg-gray-25 p-3 text-sm text-gray-700" tabindex="0" aria-label="Пример структуры ZIP-архива">
+            <pre class="min-w-max font-mono leading-6">images.zip
+└── 6000011/
+    ├── 6000011_1.jpg
+    ├── 6000011_2.webp
+    └── 6000011_3.png</pre>
+          </div>
+          <ul class="mt-4 space-y-2 text-sm leading-6 text-gray-600">
+            <li>Поддерживаются JPG, PNG и WebP; ZIP — до 500 МБ.</li>
+            <li>Имя папки и начало имени каждого файла должны совпадать со SKU товара.</li>
+            <li>Фото с номером <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-700">_1</code> станет обложкой. При том же номере новое фото заменит старое, а отсутствующие в архиве фото сохранятся.</li>
+          </ul>
+        </section>
+
+        <form class="rounded-xl border border-gray-200 p-4 sm:p-5" @submit.prevent="uploadImageImport">
+          <h3 class="text-base font-semibold text-gray-900">Загрузите архив</h3>
+          <p id="image-import-file-help" class="mt-1 text-sm text-gray-500">Обработка выполняется в фоне. Ошибка одной папки не помешает импортировать остальные товары.</p>
+          <div class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <div class="min-w-0">
+              <p id="image-import-file-label" class="mb-1.5 text-sm font-medium text-gray-700">ZIP-архив с изображениями</p>
+              <input id="image-import-file" ref="imageInput" type="file" accept=".zip,application/zip" class="hidden" :disabled="imageBusy" @change="selectImageFile">
+              <button type="button" :disabled="imageBusy" aria-labelledby="image-import-file-label image-import-file-selection" aria-describedby="image-import-file-help" class="flex w-full min-w-0 items-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm text-gray-600 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50" @click="imageInput?.click()">
+                <Upload :size="18" class="shrink-0" aria-hidden="true" />
+                <span id="image-import-file-selection" class="min-w-0 break-all">{{ imageFile?.name ?? 'Выбрать ZIP-архив' }}</span>
+              </button>
+            </div>
+            <button type="submit" :disabled="imageBusy || !imageFile" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><Upload :size="18" aria-hidden="true" />{{ imageBusy ? 'Загрузка…' : 'Загрузить архив' }}</button>
+          </div>
+        </form>
+
+        <p v-if="imageError" role="alert" class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-500">{{ imageError }}</p>
+
+        <section class="min-h-32 rounded-xl border p-4 sm:p-5" :class="imageFinished ? imageResult?.failed_folders || imageResult?.status === 'failed' ? 'border-warning-200 bg-warning-50' : 'border-success-200 bg-success-50' : 'border-gray-200 bg-gray-25'" aria-labelledby="image-import-result-title">
+          <template v-if="imageFinished && imageResult">
+            <div role="status" aria-live="polite">
+              <h3 id="image-import-result-title" class="flex items-center gap-2 font-semibold text-gray-900"><CheckCircle2 v-if="!imageResult.failed_folders && imageResult.status === 'completed'" :size="20" class="shrink-0 text-success-700" aria-hidden="true" />{{ imageResult.status === 'failed' ? 'Загрузка не завершена' : imageResult.failed_folders ? 'Загрузка завершена с ошибками' : 'Загрузка завершена' }}</h3>
+              <dl class="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div><dt class="text-gray-500">Папок обработано</dt><dd class="mt-1 font-semibold text-gray-900">{{ imageResult.processed_folders }} из {{ imageResult.total_folders }}</dd></div>
+                <div><dt class="text-gray-500">Добавлено фото</dt><dd class="mt-1 font-semibold text-gray-900">{{ imageResult.created_images }}</dd></div>
+                <div><dt class="text-gray-500">Заменено фото</dt><dd class="mt-1 font-semibold text-gray-900">{{ imageResult.replaced_images }}</dd></div>
+                <div><dt class="text-gray-500">Папок с ошибками</dt><dd class="mt-1 font-semibold text-gray-900">{{ imageResult.failed_folders }}</dd></div>
+              </dl>
+              <p v-if="imageResult.error_message" class="mt-3 break-words text-sm text-error-500">{{ imageResult.error_message }}</p>
+            </div>
+            <ul v-if="imageResult.errors?.length" class="mt-4 max-h-64 space-y-3 overflow-y-auto" aria-label="Ошибки импорта изображений" tabindex="0">
+              <li v-for="entry in imageResult.errors" :key="`${entry.sku}-${entry.entry}`" class="break-words rounded-lg border border-warning-200 bg-white p-3 text-sm"><p class="font-semibold text-gray-900">{{ entry.sku || 'Без названия папки' }}<span v-if="entry.entry" class="font-normal text-gray-500"> · {{ entry.entry }}</span></p><p v-for="message in entry.messages" :key="message" class="mt-1 text-gray-700">{{ message }}</p></li>
+            </ul>
+            <button v-if="imageResult.has_error_file" type="button" :disabled="imageDownloading" class="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50" @click="downloadImageErrors"><Download :size="18" class="shrink-0" aria-hidden="true" />{{ imageDownloading ? 'Скачиваем…' : 'Скачать отчёт с ошибками' }}</button>
+          </template>
+          <template v-else>
+            <h3 id="image-import-result-title" class="text-base font-semibold text-gray-900">Статус импорта</h3>
+            <p role="status" aria-live="polite" class="mt-2 text-sm text-gray-700">{{ imageUploading ? 'Загружаем ZIP-архив…' : imageResult?.status === 'pending' ? 'Архив ожидает обработки…' : imageResult?.status === 'processing' ? imageResult.total_folders ? `Обработано ${imageResult.processed_folders} из ${imageResult.total_folders} папок` : 'Проверяем архив и импортируем изображения…' : 'Выберите подготовленный ZIP-архив, чтобы начать импорт.' }}</p>
+            <progress v-if="imageBusy" class="mt-4 h-2 w-full accent-primary-500" aria-label="Обработка изображений" :value="imageProgress" max="100" />
+            <div v-else class="mt-4 h-2 rounded-full bg-gray-200" aria-hidden="true" />
+            <p v-if="imageBusy" class="mt-3 text-xs text-gray-500">Можно закрыть окно — обработка продолжится. Откройте «Загрузить массово», чтобы посмотреть результат.</p>
+            <p v-if="imagePollingError && imageResult" class="mt-3 text-sm text-error-500" role="alert">Не удалось получить статус. Обработка на сервере продолжается. <button type="button" class="rounded font-semibold underline focus-visible:ring-2 focus-visible:ring-primary-500" @click="pollImageImport(imageResult.id)">Обновить статус</button></p>
+          </template>
+        </section>
       </div>
     </div>
   </BaseDialog>

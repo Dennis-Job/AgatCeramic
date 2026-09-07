@@ -2057,6 +2057,34 @@
                 }
             }
         },
+        "/admin/product-image-imports": {
+            "post": {
+                "operationId": "importProductImages",
+                "summary": "Upload a ZIP archive of product images",
+                "description": "Requires imports.manage. Accepts one ZIP archive up to 500 MiB. Each image is JPG, PNG or WebP up to 10 MiB in SKU/SKU_ordinal.extension. Processing is queued; invalid SKU folders are reported without blocking valid folders.",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string", "format": "binary", "description": "ZIP archive, up to 500 MiB."}}}}}},
+                "responses": {"202": {"description": "Image import accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImageImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}
+            }
+        },
+        "/admin/product-image-imports/{productImageImport}": {
+            "parameters": [{"name": "productImageImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
+            "get": {
+                "operationId": "getProductImageImport",
+                "summary": "Get the current user's product-image import status",
+                "security": [{"sanctumSession": []}],
+                "responses": {"200": {"description": "Image import status", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImageImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}
+            }
+        },
+        "/admin/product-image-imports/{productImageImport}/errors": {
+            "parameters": [{"name": "productImageImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
+            "get": {
+                "operationId": "downloadProductImageImportErrors",
+                "summary": "Download a product-image import error report",
+                "security": [{"sanctumSession": []}],
+                "responses": {"200": {"description": "CSV error report", "content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}
+            }
+        },
         "/admin/products/{product}": {
             "parameters": [
                 {
@@ -4148,6 +4176,18 @@
                 },
                 "additionalProperties": false
             },
+            "ProductImageImport": {
+                "type": "object",
+                "required": ["id", "filename", "status", "total_folders", "processed_folders", "created_images", "replaced_images", "failed_folders", "errors", "has_error_file", "error_message", "created_at", "started_at", "completed_at"],
+                "properties": {
+                    "id": {"type": "integer"}, "filename": {"type": "string"}, "status": {"type": "string", "enum": ["pending", "processing", "completed", "failed"]},
+                    "total_folders": {"type": "integer", "minimum": 0}, "processed_folders": {"type": "integer", "minimum": 0}, "created_images": {"type": "integer", "minimum": 0}, "replaced_images": {"type": "integer", "minimum": 0}, "failed_folders": {"type": "integer", "minimum": 0},
+                    "errors": {"type": "array", "items": {"type": "object", "required": ["sku", "entry", "messages"], "properties": {"sku": {"type": ["string", "null"]}, "entry": {"type": ["string", "null"]}, "messages": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false}},
+                    "has_error_file": {"type": "boolean"}, "error_message": {"type": ["string", "null"]}, "created_at": {"type": ["string", "null"], "format": "date-time"}, "started_at": {"type": ["string", "null"], "format": "date-time"}, "completed_at": {"type": ["string", "null"], "format": "date-time"}
+                },
+                "additionalProperties": false
+            },
+            "ProductImageImportResponse": {"type": "object", "required": ["data"], "properties": {"data": {"$ref": "#/components/schemas/ProductImageImport"}}, "additionalProperties": false},
             "ProductImport": {
                 "type": "object",
                 "required": [

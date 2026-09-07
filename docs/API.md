@@ -247,6 +247,23 @@ error. Another owner receives `404`.
 Private source files are cleaned up after completion/final failure; failed row values and messages
 remain with the import history so the report can be generated again.
 
+`POST /admin/product-image-imports` accepts a ZIP archive in multipart field `file` and requires
+`imports.manage`. The archive may be up to 500 MiB and is retained only on the private disk while
+its queue job runs. Its top-level entries must be SKU directories, for example
+`6000011/6000011_1.jpg`; only JPG, PNG and WebP images up to 10 MiB each are accepted. The directory SKU must match
+every contained filename, image numbers must be positive and unique per SKU, and nested paths,
+unsafe paths and unsupported files are rejected. The worker validates the real MIME type, limits
+archive entries and uncompressed size, and records a folder-level error for an unknown SKU or an
+invalid gallery without blocking other valid folders.
+
+The initiating manager polls `GET /admin/product-image-imports/{productImageImport}`. The status
+includes folder progress, created/replaced image counts, folder errors and a terminal error-report
+flag. `GET /admin/product-image-imports/{productImageImport}/errors` downloads the owner-only CSV
+report after a terminal operation with folder errors. A same-numbered image replaces the previous
+one even if its extension changes; image `_1` becomes primary. Files not named in the archive stay
+in the gallery. Replaced storage files and the private source ZIP are cleaned up through the durable
+storage-cleanup queue.
+
 Without `category_id`, legacy/export round-trip compatibility is preserved: the worker validates
 every non-empty row (at most 5000) before changing the catalogue. If any row is invalid, it saves
 named errors for all invalid rows, changes nothing, and offers the XLSX error report. If validation
