@@ -59,7 +59,10 @@ class ProductPriceStatusImportService
             $writer->close();
             $this->addBooleanValidation($path);
         } catch (Throwable $exception) {
-            try { $writer->close(); } catch (Throwable) {}
+            try {
+                $writer->close();
+            } catch (Throwable) {
+            }
             @unlink($path);
             throw $exception;
         }
@@ -90,6 +93,7 @@ class ProductPriceStatusImportService
                     'messages' => array_map(fn (string $message) => "Лист «{$entry['sheet']}», строка {$entry['row']}: {$message}", $messages),
                     'values' => $entry,
                 ]);
+
                 continue;
             }
             ProductImportItem::query()->create([
@@ -143,7 +147,9 @@ class ProductPriceStatusImportService
     public function createErrorReport(ProductImport $import): array
     {
         $path = tempnam(storage_path('app'), 'price-status-errors-');
-        if ($path === false) throw new RuntimeException('Не удалось создать отчёт об ошибках.');
+        if ($path === false) {
+            throw new RuntimeException('Не удалось создать отчёт об ошибках.');
+        }
         $writer = new Writer;
         try {
             $writer->openToFile($path);
@@ -155,10 +161,14 @@ class ProductPriceStatusImportService
             }
             $writer->close();
         } catch (Throwable $exception) {
-            try { $writer->close(); } catch (Throwable) {}
+            try {
+                $writer->close();
+            } catch (Throwable) {
+            }
             @unlink($path);
             throw $exception;
         }
+
         return ['path' => $path, 'name' => "product-price-status-import-{$import->id}-errors.xlsx"];
     }
 
@@ -174,16 +184,25 @@ class ProductPriceStatusImportService
             $reader->open($path);
             foreach ($reader->getSheetIterator() as $sheet) {
                 $name = $sheet->getName();
-                if (! array_key_exists($name, self::HEADERS)) continue;
+                if (! array_key_exists($name, self::HEADERS)) {
+                    continue;
+                }
                 $seenSheets[$name] = true;
                 foreach ($sheet->getRowIterator() as $rowNumber => $row) {
                     $values = array_map(fn ($value) => $value instanceof DateTimeInterface ? $value->format('Y-m-d') : $value, $row->toArray());
                     if ($rowNumber === 1) {
-                        if ($values !== self::HEADERS[$name]) throw ValidationException::withMessages(['file' => ["Лист «{$name}»: не изменяйте заголовки шаблона."]]);
+                        if ($values !== self::HEADERS[$name]) {
+                            throw ValidationException::withMessages(['file' => ["Лист «{$name}»: не изменяйте заголовки шаблона."]]);
+                        }
+
                         continue;
                     }
-                    if (collect($values)->every(fn ($value) => $value === null || trim((string) $value) === '')) continue;
-                    if ($rowNumber > self::MAX_ROWS_PER_SHEET + 1) throw ValidationException::withMessages(['file' => ["Лист «{$name}» поддерживает максимум ".self::MAX_ROWS_PER_SHEET.' строк.']]);
+                    if (collect($values)->every(fn ($value) => $value === null || trim((string) $value) === '')) {
+                        continue;
+                    }
+                    if ($rowNumber > self::MAX_ROWS_PER_SHEET + 1) {
+                        throw ValidationException::withMessages(['file' => ["Лист «{$name}» поддерживает максимум ".self::MAX_ROWS_PER_SHEET.' строк.']]);
+                    }
                     $sku = trim((string) ($values[0] ?? ''));
                     $updates = match ($name) {
                         'Цены' => ['price' => $values[1] ?? null, 'old_price' => $this->nullable($values[2] ?? null)],
@@ -193,11 +212,23 @@ class ProductPriceStatusImportService
                     $entries[] = ['sheet' => $name, 'row' => $rowNumber, 'sku' => $sku, 'updates' => $updates, 'values' => $values];
                 }
             }
-            if (count($seenSheets) !== 3) throw ValidationException::withMessages(['file' => ['Файл должен содержать листы «Цены», «Активность» и «Распродажа» из шаблона.']]);
-            if ($entries === []) throw ValidationException::withMessages(['file' => ['Заполните хотя бы одну строку на любом листе.']]);
-        } catch (ValidationException $exception) { throw $exception;
-        } catch (Throwable) { throw ValidationException::withMessages(['file' => ['Не удалось прочитать XLSX-файл. Проверьте, что он не повреждён.']]);
-        } finally { try { $reader->close(); } catch (Throwable) {} }
+            if (count($seenSheets) !== 3) {
+                throw ValidationException::withMessages(['file' => ['Файл должен содержать листы «Цены», «Активность» и «Распродажа» из шаблона.']]);
+            }
+            if ($entries === []) {
+                throw ValidationException::withMessages(['file' => ['Заполните хотя бы одну строку на любом листе.']]);
+            }
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable) {
+            throw ValidationException::withMessages(['file' => ['Не удалось прочитать XLSX-файл. Проверьте, что он не повреждён.']]);
+        } finally {
+            try {
+                $reader->close();
+            } catch (Throwable) {
+            }
+        }
+
         return $entries;
     }
 
@@ -205,41 +236,79 @@ class ProductPriceStatusImportService
     private function validate(array &$seen, array &$entry): array
     {
         $messages = [];
-        if ($entry['sku'] === '') $messages[] = 'Укажите SKU.';
-        if (isset($seen[$entry['sheet']][$entry['sku']])) $messages[] = 'SKU повторяется на этом листе.';
+        if ($entry['sku'] === '') {
+            $messages[] = 'Укажите SKU.';
+        }
+        if (isset($seen[$entry['sheet']][$entry['sku']])) {
+            $messages[] = 'SKU повторяется на этом листе.';
+        }
         $seen[$entry['sheet']][$entry['sku']] = true;
         if ($entry['sheet'] === 'Цены') {
             foreach (['price' => 'Цена', 'old_price' => 'Старая цена'] as $field => $label) {
                 $value = $entry['updates'][$field];
-                if ($field === 'old_price' && $value === null) continue;
-                if (! is_numeric($value) || (float) $value < 0 || (float) $value > 9999999999.99) $messages[] = "{$label}: укажите сумму от 0 до 9 999 999 999,99.";
+                if ($field === 'old_price' && $value === null) {
+                    continue;
+                }
+                if (! is_numeric($value) || (float) $value < 0 || (float) $value > 9999999999.99) {
+                    $messages[] = "{$label}: укажите сумму от 0 до 9 999 999 999,99.";
+                }
             }
-            if (is_numeric($entry['updates']['price']) && $entry['updates']['old_price'] !== null && is_numeric($entry['updates']['old_price']) && (float) $entry['updates']['old_price'] < (float) $entry['updates']['price']) $messages[] = 'Старая цена не может быть меньше актуальной.';
+            if (is_numeric($entry['updates']['price']) && $entry['updates']['old_price'] !== null && is_numeric($entry['updates']['old_price']) && (float) $entry['updates']['old_price'] < (float) $entry['updates']['price']) {
+                $messages[] = 'Старая цена не может быть меньше актуальной.';
+            }
         } else {
             $field = $entry['sheet'] === 'Активность' ? 'is_active' : 'is_on_sale';
             $boolean = $this->boolean($entry['updates'][$field]);
-            if ($boolean === null) $messages[] = 'Выберите «Да» или «Нет».'; else $entry['updates'][$field] = $boolean;
+            if ($boolean === null) {
+                $messages[] = 'Выберите «Да» или «Нет».';
+            } else {
+                $entry['updates'][$field] = $boolean;
+            }
         }
+
         return $messages;
     }
 
-    private function nullable(mixed $value): mixed { return $value === null || trim((string) $value) === '' ? null : $value; }
-    private function boolean(mixed $value): ?bool { $value = mb_strtolower(trim((string) $value)); return in_array($value, ['да', '1'], true) ? true : (in_array($value, ['нет', '0'], true) ? false : null); }
-    private function row(array $values, ?Style $style = null): Row { return new Row(array_map(fn ($value) => is_string($value) ? new StringCell($value, null) : Cell::fromValue($value), $values), $style); }
-    private function headerStyle(): Style { return (new Style)->setFontBold()->setFontColor('FFFFFF')->setCellAlignment(CellAlignment::CENTER)->setCellVerticalAlignment(CellVerticalAlignment::CENTER)->setBackgroundColor('23456B')->setShouldWrapText(); }
+    private function nullable(mixed $value): mixed
+    {
+        return $value === null || trim((string) $value) === '' ? null : $value;
+    }
+
+    private function boolean(mixed $value): ?bool
+    {
+        $value = mb_strtolower(trim((string) $value));
+
+        return in_array($value, ['да', '1'], true) ? true : (in_array($value, ['нет', '0'], true) ? false : null);
+    }
+
+    private function row(array $values, ?Style $style = null): Row
+    {
+        return new Row(array_map(fn ($value) => is_string($value) ? new StringCell($value, null) : Cell::fromValue($value), $values), $style);
+    }
+
+    private function headerStyle(): Style
+    {
+        return (new Style)->setFontBold()->setFontColor('FFFFFF')->setCellAlignment(CellAlignment::CENTER)->setCellVerticalAlignment(CellVerticalAlignment::CENTER)->setBackgroundColor('23456B')->setShouldWrapText();
+    }
 
     private function addBooleanValidation(string $path): void
     {
         $zip = new ZipArchive;
-        if ($zip->open($path) !== true) throw new RuntimeException('Не удалось открыть шаблон Excel.');
+        if ($zip->open($path) !== true) {
+            throw new RuntimeException('Не удалось открыть шаблон Excel.');
+        }
         try {
             foreach ([2, 3] as $sheetNumber) {
                 $xml = new DOMDocument;
                 $xml->loadXML($zip->getFromName("xl/worksheets/sheet{$sheetNumber}.xml"), LIBXML_NONET);
-                $validations = $xml->createElement('dataValidations'); $validations->setAttribute('count', '1');
+                $validations = $xml->createElement('dataValidations');
+                $validations->setAttribute('count', '1');
                 $validation = $xml->createElement('dataValidation');
-                foreach (['type' => 'list', 'allowBlank' => '1', 'showErrorMessage' => '1', 'showInputMessage' => '1', 'sqref' => 'B2:B5001'] as $key => $value) $validation->setAttribute($key, $value);
-                $validation->appendChild($xml->createElement('formula1', '"Да,Нет"')); $validations->appendChild($validation);
+                foreach (['type' => 'list', 'allowBlank' => '1', 'showErrorMessage' => '1', 'showInputMessage' => '1', 'sqref' => 'B2:B5001'] as $key => $value) {
+                    $validation->setAttribute($key, $value);
+                }
+                $validation->appendChild($xml->createElement('formula1', '"Да,Нет"'));
+                $validations->appendChild($validation);
                 // SpreadsheetML requires dataValidations before trailing elements such as
                 // pageMargins and legacyDrawing. Appending it after OpenSpout's legacyDrawing
                 // makes Excel repair the workbook on open.
@@ -253,6 +322,8 @@ class ProductPriceStatusImportService
                 $xml->documentElement->insertBefore($validations, $before);
                 $zip->addFromString("xl/worksheets/sheet{$sheetNumber}.xml", $xml->saveXML());
             }
-        } finally { $zip->close(); }
+        } finally {
+            $zip->close();
+        }
     }
 }
