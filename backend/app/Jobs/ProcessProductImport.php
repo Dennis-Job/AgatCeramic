@@ -64,14 +64,38 @@ class ProcessProductImport implements ShouldQueue
             return;
         }
 
-        DB::transaction(function () use ($cleanupService, $import, $service, $storage): void {
+        $inspection = $service->inspect($storage->path($import->path));
+        if ($inspection['errors'] !== []) {
+            DB::transaction(function () use ($cleanupService, $import, $inspection): void {
+                $import->rowErrors()->delete();
+                $import->rowErrors()->createMany(array_map(static fn (array $error): array => [
+                    'row_number' => $error['row'],
+                    'name' => $error['name'],
+                    'messages' => $error['messages'],
+                    'values' => $error['values'],
+                ], $inspection['errors']));
+                $import->forceFill([
+                    'status' => 'completed',
+                    'total_rows' => $inspection['total'],
+                    'failed_rows' => count($inspection['errors']),
+                    'processed_rows' => $inspection['total'],
+                    'error_message' => null,
+                    'completed_at' => now(),
+                ])->save();
+                $cleanupService->schedule($import->disk, $import->path);
+            });
+
+            return;
+        }
+
+        DB::transaction(function () use ($cleanupService, $import, $service, $storage, $inspection): void {
             $result = $service->import($import->user, $storage->path($import->path));
             $import->forceFill([
                 'status' => 'completed',
                 'created_rows' => $result['created'],
                 'updated_rows' => $result['updated'],
                 'processed_rows' => $result['processed'],
-                'total_rows' => $result['processed'],
+                'total_rows' => $inspection['total'],
                 'error_message' => null,
                 'completed_at' => now(),
             ])->save();

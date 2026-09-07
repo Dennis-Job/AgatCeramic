@@ -7,6 +7,7 @@ use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Product;
+use App\Models\ProductAttributeValue;
 use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\User;
@@ -184,6 +185,44 @@ class CategoryProductImportTest extends TestCase
         unlink($errorPath);
     }
 
+    public function test_category_edit_template_contains_sku_and_updates_only_matching_category_products(): void
+    {
+        Storage::fake('local');
+        [$category, $color, $features, $boolean] = $this->catalog();
+        $otherCategory = Category::factory()->create(['sku_prefix' => '8']);
+        $product = Product::factory()->create(['category_id' => $category->id, 'name' => 'Исходная плитка', 'unit' => 'piece', 'price' => 25, 'is_active' => false]);
+        ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $color->id, 'value' => 'white']);
+        ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $features->id, 'value' => ['matte', 'stone']]);
+        ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $boolean->id, 'value' => true]);
+        $template = app(ProductImportTemplateService::class);
+        $rows = $template->editingRows($category);
+        $this->assertSame($product->sku, $rows[0]['sku']);
+        $this->assertSame('Белый', $rows[0]['attribute.color']);
+        $this->assertSame('Матовая', $rows[0]['attribute.features.1']);
+        $this->assertSame('Фактура; "камень"', $rows[0]['attribute.features.2']);
+        $this->assertSame('Да', $rows[0]['attribute.rectified']);
+        $this->assertArrayHasKey('sku', $template->headers($category, true));
+
+        $updated = array_replace($rows[0], ['name' => 'Обновлённая плитка', 'price' => 99, 'attribute.color' => 'Серый', 'attribute.features.1' => 'Фактура; "камень"', 'attribute.features.2' => null]);
+        $import = $this->storedImport($this->actor(), $category, [$updated], true);
+        app(CategoryProductImportService::class)->process($import, Storage::disk('local')->path($import->path));
+
+        $product->refresh();
+        $this->assertSame($product->sku, $rows[0]['sku']);
+        $this->assertSame('Обновлённая плитка', $product->name);
+        $this->assertSame('99.00', $product->price);
+        $this->assertSame('gray', $product->attributeValues()->where('attribute_id', $color->id)->value('value'));
+        $this->assertSame(['stone'], $product->attributeValues()->where('attribute_id', $features->id)->value('value'));
+        $this->assertSame(1, $import->refresh()->updated_rows);
+        $this->assertSame(0, $import->created_rows);
+
+        $wrongSku = array_replace($updated, ['sku' => Product::factory()->create(['category_id' => $otherCategory->id])->sku]);
+        $invalidImport = $this->storedImport($this->actor(), $category, [$wrongSku], true);
+        app(CategoryProductImportService::class)->process($invalidImport, Storage::disk('local')->path($invalidImport->path));
+        $this->assertSame(1, $invalidImport->refresh()->failed_rows);
+        $this->assertStringContainsString('выбранной категории', $invalidImport->rowErrors()->sole()->messages[0]);
+    }
+
     public function test_checkpoint_resumes_after_interruption_and_chunks_large_workbooks_without_duplicates(): void
     {
         Storage::fake('local');
@@ -298,9 +337,9 @@ class CategoryProductImportTest extends TestCase
         return ['name' => $name, 'unit' => 'Штука', 'price' => 25];
     }
 
-    private function storedImport(User $actor, Category $category, array $rows): ProductImport
+    private function storedImport(User $actor, Category $category, array $rows, bool $editing = false): ProductImport
     {
-        $file = app(ProductImportTemplateService::class)->create($category, $rows);
+        $file = app(ProductImportTemplateService::class)->create($category, $rows, $editing);
         $path = 'product-imports/'.basename($file['path']).'.xlsx';
         Storage::disk('local')->put($path, file_get_contents($file['path']));
         unlink($file['path']);

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Product;
 use App\Support\ProductWorkbookSchema;
 use DateTimeInterface;
 use DOMDocument;
@@ -32,10 +33,12 @@ class ProductImportTemplateService
         'stock_quantity' => 'Остаток', 'is_active' => 'Активность', 'is_on_sale' => 'Распродажа',
     ];
 
+    public const EDIT_HEADERS = ['sku' => 'SKU'];
+
     /** @return array<string, string> */
-    public function headers(Category $category): array
+    public function headers(Category $category, bool $editing = false): array
     {
-        $headers = self::BASE_HEADERS;
+        $headers = $editing ? self::EDIT_HEADERS + self::BASE_HEADERS : self::BASE_HEADERS;
         $attributes = $category->attributes()->with('options')->get();
         foreach ($attributes as $attribute) {
             $label = $attribute->name.($attribute->unit ? ' ('.$attribute->unit.')' : '');
@@ -58,6 +61,47 @@ class ProductImportTemplateService
         return $headers;
     }
 
+    /** @return list<array<string, mixed>> */
+    public function editingRows(Category $category): array
+    {
+        $attributes = $category->attributes()->with('options')->get()->keyBy('id');
+
+        return Product::query()->where('category_id', $category->id)->with(['brand', 'attributeValues'])->orderBy('sku')->get()
+            ->map(function (Product $product) use ($attributes): array {
+                $row = [
+                    'sku' => $product->sku, 'name' => $product->name, 'slug' => $product->slug,
+                    'article_number' => $product->article_number, 'barcode' => $product->barcode,
+                    'description' => $product->description, 'brand_name' => $product->brand?->name,
+                    'unit' => ProductWorkbookSchema::UNIT_LABELS[(string) $product->unit] ?? (string) $product->unit,
+                    'price' => $product->price, 'old_price' => $product->old_price,
+                    'stock_quantity' => $product->stock_quantity, 'is_active' => $product->is_active ? 'Да' : 'Нет',
+                    'is_on_sale' => $product->is_on_sale ? 'Да' : 'Нет',
+                ];
+                foreach ($product->attributeValues as $value) {
+                    $attribute = $attributes->get($value->attribute_id);
+                    if ($attribute === null) {
+                        continue;
+                    }
+                    $key = 'attribute.'.$attribute->slug;
+                    if ($attribute->type === 'boolean') {
+                        $row[$key] = $value->value ? 'Да' : 'Нет';
+                    } elseif ($attribute->type === 'select') {
+                        $option = $attribute->options->firstWhere('value', $value->value);
+                        $row[$key] = $option === null ? null : $this->optionLabel($attribute, $option);
+                    } elseif ($attribute->type === 'multiselect') {
+                        foreach ((array) $value->value as $index => $optionValue) {
+                            $option = $attribute->options->firstWhere('value', $optionValue);
+                            $row[$key.'.'.($index + 1)] = $option === null ? null : $this->optionLabel($attribute, $option);
+                        }
+                    } else {
+                        $row[$key] = $value->value;
+                    }
+                }
+
+                return $row;
+            })->all();
+    }
+
     public function optionLabel(Attribute $attribute, mixed $option): string
     {
         return $attribute->options->where('label', $option->label)->count() > 1
@@ -67,9 +111,9 @@ class ProductImportTemplateService
     /** @param iterable<array<string, mixed>> $rows
      * @return array{path: string, name: string}
      */
-    public function create(Category $category, iterable $rows = []): array
+    public function create(Category $category, iterable $rows = [], bool $editing = false): array
     {
-        $headers = $this->headers($category);
+        $headers = $this->headers($category, $editing);
         $lists = [
             'brand_name' => Brand::query()->orderBy('name')->get()->map(fn ($brand) => [$brand->name, $brand->id])->all(),
             'unit' => collect(ProductWorkbookSchema::UNIT_LABELS)->map(fn ($label, $value) => [$label, $value])->values()->all(),
@@ -144,11 +188,11 @@ class ProductImportTemplateService
                 'Категория: '.$category->name.'. Максимум '.ProductImportService::MAX_ROWS.' товаров (строки 2–5001).',
                 'Обязательные поля отмечены *. Остаток по умолчанию 0, Активность и Распродажа — Нет.',
                 'Характеристики со звёздочкой обязательны для активного товара. Неактивный товар можно сохранить с неполными характеристиками.',
-                'SKU создаётся автоматически. Slug необязателен и автоматически формируется из названия.',
+                $editing ? 'SKU определяет редактируемый товар. Не меняйте SKU и не добавляйте новые строки: товары обновляются только в выбранной категории.' : 'SKU создаётся автоматически. Slug необязателен и автоматически формируется из названия.',
                 'Значения списков выбирайте в ячейках. Новые значения создаются только на сайте при наличии прав.',
                 'Множественный выбор: по одному значению в каждом пронумерованном столбце характеристики. Ненужные столбцы оставьте пустыми.',
                 'Все значения списков проверяются повторно на сервере. Скрытый лист содержит справочники и ID.',
-                'Не меняйте заголовки и категорию. Каждый товар создаётся отдельно; ошибки не отменяют другие строки.',
+                'Не меняйте заголовки и категорию. Каждый товар обрабатывается отдельно; ошибки не отменяют другие строки.',
                 'При ошибке скачайте файл ошибочных строк, исправьте его и загрузите повторно.',
             ] as $instruction) {
                 $writer->addRow($this->row([$instruction], (new Style)->setShouldWrapText())->setHeight(32));
@@ -164,13 +208,15 @@ class ProductImportTemplateService
             throw $exception;
         }
 
-        return ['path' => $path, 'name' => 'products-'.$category->slug.'-template.xlsx'];
+        return ['path' => $path, 'name' => 'products-'.$category->slug.($editing ? '-edit' : '-template').'.xlsx'];
     }
 
     /** @return list<array{row: int, values: array<string, mixed>}> */
     public function read(Category $category, string $path): array
     {
         $headers = $this->headers($category);
+        $editingHeaders = $this->headers($category, true);
+        $editing = false;
         $readerOptions = new ReaderOptions;
         $readerOptions->SHOULD_PRESERVE_EMPTY_ROWS = true;
         $reader = new Reader($readerOptions);
@@ -196,7 +242,10 @@ class ProductImportTemplateService
                 foreach ($sheet->getRowIterator() as $index => $row) {
                     $values = array_map(fn ($value) => $value instanceof DateTimeInterface ? $value->format('Y-m-d') : $value, $row->toArray());
                     if ($index === 1) {
-                        if ($values !== array_values($headers)) {
+                        if ($values === array_values($editingHeaders)) {
+                            $headers = $editingHeaders;
+                            $editing = true;
+                        } elseif ($values !== array_values($headers)) {
                             throw ValidationException::withMessages(['file' => ['Столбцы не соответствуют выбранной категории. Скачайте актуальный шаблон; не изменяйте заголовки.']]);
                         }
 
@@ -211,7 +260,7 @@ class ProductImportTemplateService
                     if (count($values) > count($headers)) {
                         throw ValidationException::withMessages(['file' => ["Строка {$index}: значения выходят за пределы шаблона."]]);
                     }
-                    $entries[] = ['row' => $index, 'values' => array_combine(array_keys($headers), array_pad($values, count($headers), null))];
+                    $entries[] = ['row' => $index, 'editing' => $editing, 'values' => array_combine(array_keys($headers), array_pad($values, count($headers), null))];
                 }
             }
             if (! $matchesCategory || ! $hasProducts) {

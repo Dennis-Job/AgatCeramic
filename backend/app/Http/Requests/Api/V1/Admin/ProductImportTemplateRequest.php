@@ -13,6 +13,9 @@ class ProductImportTemplateRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['category_id' => ['required', 'integer', 'exists:categories,id']];
+        return [
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'editing' => ['nullable', 'boolean'],
+        ];
     }
 }

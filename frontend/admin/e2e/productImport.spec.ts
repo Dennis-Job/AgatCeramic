@@ -67,6 +67,28 @@ test('product Excel import errors are downloadable and modal is accessible at su
   await expect(page.getByRole('button', { name: 'Загрузить массово', exact: true })).toBeFocused()
 })
 
+test('category edit template includes SKU and uses the category import flow', async ({ page }) => {
+  await mockCatalogApi(page, { importErrors: true })
+  const dialog = await openImport(page)
+  await dialog.getByLabel('Редактировать товары').check()
+  await expect(dialog.getByText('SKU определяет редактируемый товар', { exact: false })).toBeVisible()
+  const templateRequest = page.waitForRequest(request => request.url().includes('/products/import-template?category_id=1&editing=1'))
+  const download = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Скачать шаблон Excel' }).click()
+  await templateRequest
+  expect((await download).suggestedFilename()).toBe('products-category-1-edit.xlsx')
+  await dialog.locator('input[type="file"][aria-label="Заполненный шаблон"]').setInputFiles({
+    name: 'catalogue.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from('mock xlsx'),
+  })
+  const requestPromise = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/import'))
+  await dialog.getByRole('button', { name: 'Загрузить', exact: true }).click()
+  expect((await requestPromise).postDataBuffer()?.toString()).toContain('name="category_id"\r\n\r\n1')
+  await expect(dialog.getByText('Успешно: 4. С ошибками: 1.')).toBeVisible()
+  const errorsDownload = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Скачать Excel с ошибками' }).click()
+  await errorsDownload
+})
+
 test('product Excel import shows upload failure and allows retry', async ({ page }) => {
   await mockCatalogApi(page, { errorPath: '/admin/products/import' })
   const dialog = await openImport(page)

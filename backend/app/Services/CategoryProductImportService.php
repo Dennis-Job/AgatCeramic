@@ -38,8 +38,8 @@ class CategoryProductImportService
                     return;
                 }
                 try {
-                    DB::transaction(fn () => $this->importService->createTemplateRow($import->user, $category, $entry['values'], $entry['row']));
-                    $locked->created_rows++;
+                    $operation = DB::transaction(fn () => $this->importService->createTemplateRow($import->user, $category, $entry['values'], $entry['row'], $entry['editing']));
+                    $operation === 'updated' ? $locked->updated_rows++ : $locked->created_rows++;
                 } catch (ValidationException|UniqueConstraintViolationException $exception) {
                     $locked->rowErrors()->create([
                         'row_number' => $entry['row'],

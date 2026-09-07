@@ -57,10 +57,10 @@ export async function getProductExport(filters: Omit<ProductFilters, 'page' | 'p
   const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] ?? 'products.xlsx'
   return { blob: await response.blob(), filename }
 }
-export async function getProductImportTemplate(categoryId: number): Promise<{ blob: Blob; filename: string }> {
-  const response = await apiFetch(`/admin/products/import-template?category_id=${categoryId}`)
+export async function getProductImportTemplate(categoryId: number, editing = false): Promise<{ blob: Blob; filename: string }> {
+  const response = await apiFetch(`/admin/products/import-template?category_id=${categoryId}${editing ? '&editing=1' : ''}`)
   if (!response.ok) return fail(response)
-  return { blob: await response.blob(), filename: `products-category-${categoryId}.xlsx` }
+  return { blob: await response.blob(), filename: `products-category-${categoryId}${editing ? '-edit' : ''}.xlsx` }
 }
 export async function getProductImportErrors(id: number): Promise<{ blob: Blob; filename: string }> {
   const response = await apiFetch(`/admin/product-imports/${id}/errors`)

@@ -10,6 +10,7 @@ import { compareAlphabetically } from '../utils/alphabetical'
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; completed: [] }>()
 const tab = ref<'products' | 'images'>('products')
+const importMode = ref<'template' | 'edit'>('template')
 const categories = ref<Category[]>([])
 const categoryId = ref('')
 const categoriesLoading = ref(false)
@@ -41,7 +42,9 @@ const statusText = computed(() => {
   if (result.value?.status === 'processing') return result.value.total_rows
     ? `Обработано ${result.value.processed_rows} из ${result.value.total_rows} товаров`
     : 'Проверяем файл и импортируем товары…'
-  return 'Выберите категорию, скачайте и заполните шаблон, затем загрузите файл.'
+  return importMode.value === 'template'
+    ? 'Выберите категорию, скачайте и заполните шаблон, затем загрузите файл.'
+    : 'Выберите категорию, скачайте заполненный шаблон и загрузите отредактированный XLSX-файл.'
 })
 async function loadCategories() {
   categoriesLoading.value = true
@@ -62,6 +65,12 @@ watch(categoryId, () => {
   if (input.value) input.value.value = ''
   error.value = ''; notice.value = ''
 })
+watch(importMode, () => {
+  file.value = null
+  if (input.value) input.value.value = ''
+  error.value = ''; notice.value = ''
+  if (finished.value) result.value = null
+})
 function selectFile(event: Event) {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
   error.value = ''; notice.value = ''
@@ -78,8 +87,12 @@ async function downloadTemplate(errorsOnly = false) {
   if (downloading.value) return
   downloading.value = true; error.value = ''; notice.value = ''
   try {
-    saveDownload(errorsOnly && result.value ? await getProductImportErrors(result.value.id) : await getProductImportTemplate(Number(categoryId.value)))
-    notice.value = errorsOnly ? 'Файл с ошибочными товарами скачан. Исправьте ошибки и загрузите его повторно.' : 'Шаблон Excel скачан. Заполните его и прикрепите ниже.'
+    saveDownload(errorsOnly && result.value ? await getProductImportErrors(result.value.id) : await getProductImportTemplate(Number(categoryId.value), importMode.value === 'edit'))
+    notice.value = errorsOnly
+      ? result.value?.category_id === null
+        ? 'Отчёт с ошибками скачан. Исправьте указанные строки в шаблоне редактирования и загрузите его повторно.'
+        : 'Файл с ошибочными товарами скачан. Исправьте ошибки и загрузите его повторно.'
+      : 'Шаблон Excel скачан. Заполните его и прикрепите ниже.'
   } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось скачать файл.' }
   finally { downloading.value = false }
 }
@@ -121,7 +134,7 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer) })
     <header class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7">
       <div class="min-w-0">
         <h2 id="product-import-title" class="text-xl font-bold text-gray-900">Массовая загрузка</h2>
-        <p id="product-import-description" class="mt-1 text-sm text-gray-500">Добавление товаров из шаблона Excel</p>
+        <p id="product-import-description" class="mt-1 text-sm text-gray-500">Добавление и массовое редактирование товаров из Excel</p>
       </div>
       <button type="button" class="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Закрыть массовую загрузку" @click="emit('close')"><X :size="20" aria-hidden="true" /></button>
     </header>
@@ -130,9 +143,14 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer) })
         <button v-for="item in [{ id: 'products', label: 'Загрузка товаров' }, { id: 'images', label: 'Загрузка изображений' }]" :id="`import-tab-${item.id}`" :key="item.id" type="button" role="tab" :aria-selected="tab === item.id" :aria-controls="`import-panel-${item.id}`" :tabindex="tab === item.id ? 0 : -1" class="border-b-2 px-2 py-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500" :class="tab === item.id ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'" @click="tab = item.id as typeof tab">{{ item.label }}</button>
       </div>
       <div v-show="tab === 'products'" id="import-panel-products" role="tabpanel" aria-labelledby="import-tab-products" class="space-y-5 py-5 sm:py-6">
+        <fieldset :disabled="busy || downloading" class="grid gap-3 rounded-xl border border-gray-200 p-4 sm:grid-cols-2 sm:p-5">
+          <legend class="px-1 text-base font-semibold text-gray-900">1. Выберите сценарий</legend>
+          <label class="flex cursor-pointer gap-3 rounded-lg border p-3 text-sm" :class="importMode === 'template' ? 'border-primary-500 bg-primary-50' : 'border-gray-200'"><input v-model="importMode" type="radio" value="template" class="mt-0.5 accent-primary-500" /><span><span class="block font-semibold text-gray-900">Добавить товары</span><span class="mt-1 block text-gray-600">Создайте товары по шаблону выбранной категории.</span></span></label>
+          <label class="flex cursor-pointer gap-3 rounded-lg border p-3 text-sm" :class="importMode === 'edit' ? 'border-primary-500 bg-primary-50' : 'border-gray-200'"><input v-model="importMode" type="radio" value="edit" class="mt-0.5 accent-primary-500" /><span><span class="block font-semibold text-gray-900">Редактировать товары</span><span class="mt-1 block text-gray-600">Скачайте товары категории с SKU и списками характеристик.</span></span></label>
+        </fieldset>
         <div>
-          <h3 class="text-base font-semibold text-gray-900">1. Подготовьте шаблон</h3>
-          <p class="mt-1 text-sm text-gray-500">До 5 000 товаров в одном файле. Шаблон содержит характеристики выбранной категории.</p>
+          <h3 class="text-base font-semibold text-gray-900">2. Подготовьте шаблон</h3>
+          <p class="mt-1 text-sm text-gray-500">{{ importMode === 'template' ? 'До 5 000 товаров в одном файле. Шаблон содержит характеристики выбранной категории.' : 'Файл содержит все товары выбранной категории, их SKU и характеристики. SKU определяет редактируемый товар.' }}</p>
           <p v-if="categoriesLoading" class="mt-3 text-sm text-gray-500" role="status">Загружаем категории…</p>
           <div v-else-if="categoryError" class="mt-3 text-sm text-error-500" role="alert">{{ categoryError }} <button type="button" class="rounded font-semibold underline focus-visible:ring-2 focus-visible:ring-primary-500" @click="loadCategories">Повторить</button></div>
           <p v-else-if="!categoryOptions.length" class="mt-3 text-sm text-gray-500">Категорий пока нет. Сначала создайте категорию в каталоге.</p>
@@ -140,10 +158,10 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer) })
             <div class="min-w-0"><p class="mb-1.5 text-sm font-medium text-gray-700">Категория товаров</p><BaseSelect v-model="categoryId" :options="categoryOptions" accessible-name="Категория товаров для загрузки" placeholder="Выберите категорию" searchable /></div>
             <button type="button" :disabled="!categoryId" class="inline-flex items-center justify-center gap-2 self-end rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50" @click="downloadTemplate()"><Download :size="18" class="shrink-0" aria-hidden="true" />{{ downloading ? 'Скачиваем…' : 'Скачать шаблон Excel' }}</button>
           </fieldset>
-          <p class="mt-3 text-sm leading-6 text-gray-500">SKU присваивается автоматически. Slug можно оставить пустым — он создастся из наименования. Значения списков выбирайте в ячейках Excel; новые значения добавляются на сайте с соответствующими правами.</p>
+          <p class="mt-3 text-sm leading-6 text-gray-500">{{ importMode === 'template' ? 'SKU присваивается автоматически. Slug можно оставить пустым — он создастся из наименования.' : 'Не изменяйте SKU и не добавляйте строки: редактируются только товары выбранной категории.' }} Значения списков выбирайте в ячейках Excel; новые значения добавляются на сайте с соответствующими правами.</p>
         </div>
         <form class="rounded-xl border border-gray-200 p-4 sm:p-5" @submit.prevent="upload">
-          <h3 class="text-base font-semibold text-gray-900">2. Загрузите заполненный файл</h3>
+          <h3 class="text-base font-semibold text-gray-900">3. Загрузите заполненный файл</h3>
           <p id="product-import-file-help" class="mt-1 text-sm text-gray-500">XLSX, до 10 МБ. Корректные товары сохранятся, строки с ошибками можно будет исправить и загрузить повторно.</p>
           <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
             <div class="min-w-0"><p id="product-import-file-label" class="mb-1.5 text-sm font-medium text-gray-700">Заполненный шаблон</p><input id="product-import-file" ref="input" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Заполненный шаблон" tabindex="-1" :disabled="busy || !categoryId" class="hidden" @change="selectFile"><button type="button" :disabled="busy || !categoryId" aria-labelledby="product-import-file-label product-import-file-selection" aria-describedby="product-import-file-help" class="flex w-full min-w-0 items-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm text-gray-600 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50" @click="input?.click()"><Upload :size="18" class="shrink-0" aria-hidden="true" /><span id="product-import-file-selection" class="min-w-0 break-all">{{ file?.name ?? 'Выбрать файл XLSX' }}</span></button></div>

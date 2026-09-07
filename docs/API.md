@@ -216,6 +216,13 @@ has no column; an empty slug is transliterated from the product name. `Назв�
 and `Цена` are required; empty stock defaults to zero, activity and sale to false. Existing names
 (case-insensitive in PostgreSQL) and slugs are rejected, never updated by this format.
 
+Add `editing=1` to download a prefilled edit template for every product in the selected category.
+It has the same fields, list validations and multiselect slots as the creation template, with a
+leading `SKU` column. SKU identifies the existing product, is never changed, and must still belong
+to the selected category on upload. Each valid row updates its matched product independently;
+unknown or cross-category SKU values are reported as row errors. Creating new products or adding
+rows is deliberately not supported in this mode.
+
 List and boolean cells have Excel Stop validation through rows 2–5001. Named ranges reference
 labels and their IDs on the hidden `Справочники` sheet. Multiselect attributes use one dropdown
 slot per currently available option; empty slots are ignored and repeated selections deduplicated.
@@ -229,14 +236,18 @@ named messages. The status resource adds `category_id`, `total_rows`, `failed_ro
 (`row`, `name`, `messages`), and `has_error_file`. `processed_rows` includes successful and failed
 rows; `created_rows` counts successes. `completed` means all rows were checked, including partial
 or complete row-level failure. `failed` denotes a file/infrastructure failure and can retain earlier
-successful rows. `GET /admin/product-imports/{productImport}/errors` downloads only failed rows in
-a reusable category template, with all dropdowns preserved; it requires `imports.manage`, the
-original owner, terminal status, and at least one row error. Another owner receives `404`.
+successful rows. `GET /admin/product-imports/{productImport}/errors` provides a reusable template
+with only failed rows for category imports. For generic imports it provides an XLSX report listing
+every invalid Excel row, product name and messages; correct the original export and upload it
+again. It requires `imports.manage`, the original owner, terminal status, and at least one row
+error. Another owner receives `404`.
 Private source files are cleaned up after completion/final failure; failed row values and messages
 remain with the import history so the report can be generated again.
 
-Without `category_id`, legacy/export round-trip compatibility is preserved: the worker processes
-at most 5000 non-empty rows in one database transaction. The localized format
+Without `category_id`, legacy/export round-trip compatibility is preserved: the worker validates
+every non-empty row (at most 5000) before changing the catalogue. If any row is invalid, it saves
+named errors for all invalid rows, changes nothing, and offers the XLSX error report. If validation
+passes, it processes the workbook in one database transaction. The localized format
 matches existing products by immutable SKU and reads product/category/brand slugs from `SEO товаров`.
 Changing a category or brand name on the main sheet resolves its unique catalogue name; ambiguous
 names are rejected. Characteristic columns resolve through `SEO характеристик` (or current catalogue
@@ -259,9 +270,9 @@ Repeated product identities, temporary SKUs, slugs, articles and barcodes are re
 physical Excel row number. Unique values released by an earlier update may be reused by later rows.
 Stock is limited to PostgreSQL's signed integer maximum (2147483647). Prepared rows retain their
 resolved product identity, so an earlier generated SKU cannot change a later creation into an update.
-The existing status/error response retains the first validation error; no new endpoint or report is
-introduced. Transactional write-time guards remain authoritative for concurrent catalogue changes
-and SKU capacity. Category-template partial imports retain their existing workflow.
+The status response retains every validation error and makes the report available to the import
+owner. Transactional write-time guards remain authoritative for concurrent catalogue changes and
+SKU capacity. Category-template partial imports retain their existing workflow.
 
 Display/derived columns (`*_name` in legacy workbooks, `primary_image_url`, timestamps) are read-only.
 Numbered image columns and the former localized `Основное изображение` column are also read-only;
