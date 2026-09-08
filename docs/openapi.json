@@ -1432,6 +1432,90 @@
                 }
             }
         },
+        "/admin/order-statuses": {
+            "get": {
+                "operationId": "listOrderStatuses",
+                "summary": "List active order statuses",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Active order status catalogue",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderStatusCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                }
+            }
+        },
+        "/admin/orders/{order}/status": {
+            "patch": {
+                "operationId": "updateOrderStatus",
+                "summary": "Change an order status",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOrderStatusRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order status updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
         "/admin/brands": {
             "get": {
                 "operationId": "listBrands",
@@ -3684,7 +3768,7 @@
                 "required": ["order_number", "status", "payment_status", "total_amount", "items", "created_at"],
                 "properties": {
                     "order_number": {"type": "string", "pattern": "^AC-\\d{8}-[A-F0-9]{10}$"},
-                    "status": {"type": "string", "const": "new"},
+                    "status": {"type": "string", "maxLength": 50},
                     "payment_status": {"type": "string", "const": "not_paid"},
                     "total_amount": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$"},
                     "items": {"type": "array", "minItems": 1, "items": {"$ref": "#/components/schemas/OrderItem"}},
@@ -3697,6 +3781,33 @@
                 "required": ["data"],
                 "properties": {
                     "data": {"$ref": "#/components/schemas/Order"}
+                },
+                "additionalProperties": false
+            },
+            "OrderStatus": {
+                "type": "object",
+                "required": ["code", "name", "sort_order", "is_terminal"],
+                "properties": {
+                    "code": {"type": "string", "maxLength": 50},
+                    "name": {"type": "string", "maxLength": 255},
+                    "sort_order": {"type": "integer", "minimum": 0},
+                    "is_terminal": {"type": "boolean"}
+                },
+                "additionalProperties": false
+            },
+            "OrderStatusCollection": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/OrderStatus"}}
+                },
+                "additionalProperties": false
+            },
+            "UpdateOrderStatusRequest": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                    "status": {"type": "string", "maxLength": 50}
                 },
                 "additionalProperties": false
             },

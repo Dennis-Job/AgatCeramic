@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Models\Order;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -42,6 +43,7 @@ class AuditLogService
             $entity instanceof User => ['name' => $entity->name, 'email' => $entity->email],
             $entity instanceof Role => ['name' => $entity->name, 'slug' => $entity->slug],
             $entity instanceof Permission => ['name' => $entity->name, 'code' => $entity->code],
+            $entity instanceof Order => ['order_number' => $entity->order_number],
             default => null,
         };
     }

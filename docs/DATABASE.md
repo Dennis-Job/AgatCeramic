@@ -214,7 +214,15 @@ independent of `product_relations`.
 Заказ хранит уникальный непредсказуемый `order_number`, контакты и адрес клиента, необязательный
 комментарий, начальные `status`/`payment_status`, серверный `total_amount`, а также `created_at`,
 `paid_at` и `completed_at`. Контакты являются PII и не возвращаются в ответе на создание заказа.
-TASK-065/066 определят управляемый workflow статусов и оплат.
+`status` — код из серверного каталога `order_statuses`; деактивация статуса не изменяет уже созданные
+заказы, но запрещает новые переходы к нему. Workflow оплаты остаётся TASK-066.
+
+### order_statuses
+Управляемый каталог статусов заказа: стабильный уникальный `code`, русское `name`, уникальный
+`sort_order`, флаги `is_active`, `is_terminal` и `sets_completed_at`. Базовые записи создаются миграцией:
+`new`, `processing`, `awaiting_clarification`, `confirmed`, `awaiting_payment`, `paid`, `picking`,
+`shipped`, `completed`, `cancelled`. Коды `completed` и `cancelled` терминальны; только `completed`
+устанавливает дату завершения.
 
 ### order_items
 Immutable snapshot: nullable `product_id` (`nullOnDelete` сохраняет историю при удалении товара),
@@ -222,6 +230,7 @@ Immutable snapshot: nullable `product_id` (`nullOnDelete` сохраняет и�
 меняются после checkout и не читаются повторно из каталога.
 
 ### order_status_history
+История отдельных переходов (`from_status`, `to_status`, actor и timestamp) будет добавлена в TASK-068.
 
 ### order_comments
 
