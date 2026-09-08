@@ -258,6 +258,21 @@ owner polls `GET /admin/product-price-status-imports/{productImport}`. Unknown o
 invalid prices, and activation failures are row errors and do not block independent rows. A
 terminal operation with errors provides `GET /admin/product-price-status-imports/{productImport}/errors`.
 
+`GET /admin/products/group-import-template` exports the current variation groups to a dedicated XLSX
+workbook. Its `Группы` sheet has an explicit action (`Не изменять`, `Создать`, `Изменить`, or
+`Расформировать`), a workbook key, original and target group codes, a name, and up to 20 scalar
+attribute axes represented as human-readable names. Its `Состав` sheet maps that key to SKU rows, and
+the `Инструкция` sheet explains the supported actions and every required field for managers. The
+The axis columns expose names through an Excel dropdown backed by a hidden technical column, while
+the importer resolves each selected name to its current attribute ID.
+`POST /admin/products/group-import` accepts the edited workbook as multipart `file` (up to 10 MiB),
+requires both `imports.manage` and `catalog.manage`, and runs in the queue. `Изменить` replaces the
+complete membership and axes; a product can move between groups in one workbook. Groups are never
+removed by omission: `Расформировать` is required. The entire workbook is validated and applied
+atomically, so a conflict leaves no partial group changes. The initiating user polls
+`GET /admin/product-group-imports/{productImport}` and may download terminal row errors from
+`GET /admin/product-group-imports/{productImport}/errors`.
+
 `POST /admin/product-image-imports` accepts a ZIP archive in multipart field `file` and requires
 `imports.manage`. The archive may be up to 500 MiB and is retained only on the private disk while
 its queue job runs. Its top-level entries must be SKU directories, for example

@@ -57,6 +57,52 @@ class ProductGroupManagementService
         );
     }
 
+    /**
+     * Applies a connected set of workbook changes in one transaction.  Existing
+     * memberships are detached before compositions are replaced so a SKU can
+     * move between groups in the same workbook without ever being persisted in
+     * two groups.
+     *
+     * @param  list<array{action: string, group_id?: int|null, code?: string, name?: string, axis_attribute_ids?: list<int>, product_ids?: list<int>}>  $changes
+     */
+    public function applyBulk(User $actor, array $changes): void
+    {
+        DB::transaction(function () use ($actor, $changes): void {
+            $existingIds = collect($changes)->pluck('group_id')->filter()->map(fn ($id): int => (int) $id)->unique()->sort()->values()->all();
+            $groups = ProductGroup::query()->whereIn('id', $existingIds)->lockForUpdate()->get()->keyBy('id');
+            if ($groups->count() !== count($existingIds)) {
+                throw ValidationException::withMessages(['groups' => ['Группа вариантов была удалена до обработки файла.']]);
+            }
+
+            // Detaching only the groups covered by this atomic component leaves
+            // memberships of unrelated groups visible to replaceComposition.
+            if ($existingIds !== []) {
+                ProductGroupMember::query()->whereIn('product_group_id', $existingIds)->delete();
+            }
+
+            foreach ($changes as $change) {
+                $action = $change['action'];
+                if ($action === 'disband') {
+                    $group = $groups[(int) $change['group_id']];
+                    $this->auditLogService->record($actor, 'product-group.deleted', $group);
+                    $group->delete();
+
+                    continue;
+                }
+
+                $group = isset($change['group_id']) && $change['group_id'] !== null
+                    ? $groups[(int) $change['group_id']]
+                    : ProductGroup::query()->create(['name' => $change['name'], 'code' => $change['code']]);
+
+                if (isset($change['group_id']) && $change['group_id'] !== null) {
+                    $group->fill(['name' => $change['name'], 'code' => $change['code']])->save();
+                }
+                $this->replaceComposition($group, $change['axis_attribute_ids'], $change['product_ids']);
+                $this->auditLogService->record($actor, isset($change['group_id']) && $change['group_id'] !== null ? 'product-group.updated' : 'product-group.created', $group);
+            }
+        });
+    }
+
     private function replaceComposition(ProductGroup $group, array $axisIds, array $productIds): void
     {
         $products = Product::query()->whereKey($productIds)->orderBy('id')->lockForUpdate()

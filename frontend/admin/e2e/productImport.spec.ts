@@ -112,3 +112,27 @@ test('product Excel import retains job on polling failure and refreshes status',
   await dialog.getByRole('button', { name: 'Обновить статус' }).click()
   await expect(dialog.getByText('Успешно: 5. С ошибками: 0.')).toBeVisible()
 })
+
+test('variation-group Excel import downloads, uploads and reports its accessible result', async ({ page }, testInfo) => {
+  await mockCatalogApi(page, { importErrors: true })
+  await page.goto('/products')
+  await page.getByRole('button', { name: 'Группы вариантов', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Группы вариантов из Excel' })
+  const templateRequest = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/group-import-template'))
+  const download = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Скачать Excel с группами' }).click()
+  await templateRequest
+  expect((await download).suggestedFilename()).toBe('product-groups-template.xlsx')
+  await dialog.locator('input[type="file"]').setInputFiles({ name: 'groups.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from('mock xlsx') })
+  const uploadRequest = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/group-import'))
+  await dialog.getByRole('button', { name: 'Запустить обработку' }).click()
+  expect((await uploadRequest).method()).toBe('POST')
+  await expect(dialog.getByText('Обработано групп: 2 из 2. Изменено: 1. Ошибок: 1.')).toBeVisible()
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 800 })
+    expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true)
+    await dialog.screenshot({ path: testInfo.outputPath(`group-import-${width}.png`) })
+  }
+  const accessibility = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+  expect(accessibility.violations.filter(v => ['serious', 'critical'].includes(v.impact ?? ''))).toEqual([])
+})

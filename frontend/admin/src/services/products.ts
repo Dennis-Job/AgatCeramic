@@ -30,7 +30,7 @@ export type ProductImport = {
   created_at: string
   started_at: string | null
   completed_at: string | null
-  operation?: 'catalog' | 'price_status'
+  operation?: 'catalog' | 'price_status' | 'group'
 }
 export async function getProductPriceStatusTemplate(): Promise<{ blob: Blob; filename: string }> {
   const response = await apiFetch('/admin/products/price-status-template')
@@ -53,6 +53,28 @@ export async function getProductPriceStatusImportErrors(id: number): Promise<{ b
   const response = await apiFetch(`/admin/product-price-status-imports/${id}/errors`)
   if (!response.ok) return fail(response)
   return { blob: await response.blob(), filename: `product-price-status-import-${id}-errors.xlsx` }
+}
+export async function getProductGroupImportTemplate(): Promise<{ blob: Blob; filename: string }> {
+  const response = await apiFetch('/admin/products/group-import-template')
+  if (!response.ok) return fail(response)
+  return { blob: await response.blob(), filename: 'product-groups-template.xlsx' }
+}
+export async function uploadProductGroupImport(file: File): Promise<ProductImport> {
+  await requestCsrfCookie()
+  const body = new FormData(); body.append('file', file)
+  const response = await apiFetch('/admin/products/group-import', { method: 'POST', body })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductImport }).data
+}
+export async function getProductGroupImport(id: number): Promise<ProductImport> {
+  const response = await apiFetch(`/admin/product-group-imports/${id}`)
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductImport }).data
+}
+export async function getProductGroupImportErrors(id: number): Promise<{ blob: Blob; filename: string }> {
+  const response = await apiFetch(`/admin/product-group-imports/${id}/errors`)
+  if (!response.ok) return fail(response)
+  return { blob: await response.blob(), filename: `product-group-import-${id}-errors.xlsx` }
 }
 export type ProductPayload = Omit<Product, 'id' | 'sku' | 'category' | 'brand' | 'attribute_values' | 'primary_image' | 'created_at' | 'updated_at'>
 export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; is_on_sale?: boolean; has_stock?: boolean; price_from?: string; price_to?: string; sort?: ProductSort; direction?: SortDirection } & PageRequest

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductAttributeValueController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\ProductExportController;
 use App\Http\Controllers\Api\V1\Admin\ProductGroupController;
+use App\Http\Controllers\Api\V1\Admin\ProductGroupImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageController;
 use App\Http\Controllers\Api\V1\Admin\ProductImageImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductImportController;
@@ -55,6 +56,10 @@ Route::get('products/price-status-template', [ProductPriceStatusImportController
 Route::post('products/price-status-import', [ProductPriceStatusImportController::class, 'store'])->name('products.price-status-import');
 Route::get('product-price-status-imports/{productImport}', [ProductPriceStatusImportController::class, 'show'])->name('product-price-status-imports.show');
 Route::get('product-price-status-imports/{productImport}/errors', [ProductPriceStatusImportController::class, 'errors'])->name('product-price-status-imports.errors');
+Route::get('products/group-import-template', [ProductGroupImportController::class, 'template'])->name('products.group-import-template');
+Route::post('products/group-import', [ProductGroupImportController::class, 'store'])->name('products.group-import');
+Route::get('product-group-imports/{productImport}', [ProductGroupImportController::class, 'show'])->name('product-group-imports.show');
+Route::get('product-group-imports/{productImport}/errors', [ProductGroupImportController::class, 'errors'])->name('product-group-imports.errors');
 Route::post('product-image-imports', [ProductImageImportController::class, 'store'])->name('product-image-imports.store');
 Route::get('product-image-imports/{productImageImport}', [ProductImageImportController::class, 'show'])->name('product-image-imports.show');
 Route::get('product-image-imports/{productImageImport}/errors', [ProductImageImportController::class, 'errors'])->name('product-image-imports.errors');

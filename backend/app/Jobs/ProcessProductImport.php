@@ -6,6 +6,7 @@ use App\Enums\AdminUserStatus;
 use App\Models\ProductImport;
 use App\Services\CategoryProductImportService;
 use App\Services\GenericProductImportService;
+use App\Services\ProductGroupImportService;
 use App\Services\ProductImportService;
 use App\Services\ProductPriceStatusImportService;
 use App\Services\StorageCleanupService;
@@ -44,7 +45,7 @@ class ProcessProductImport implements ShouldQueue
             'started_at' => $import->started_at ?? now(),
         ])->save();
 
-        if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $import->user->hasPermission('imports.manage')) {
+        if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $import->user->hasPermission('imports.manage') || ($import->operation === 'group' && ! $import->user->hasPermission('catalog.manage'))) {
             throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
         }
         $storage = Storage::disk($import->disk);
@@ -58,6 +59,24 @@ class ProcessProductImport implements ShouldQueue
                 $priceStatus->initialize($import, $storage->path($import->path));
             }
             if (! $priceStatus->process($import)) {
+                self::dispatch($import->id);
+
+                return;
+            }
+            DB::transaction(function () use ($import, $cleanupService): void {
+                $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
+                $cleanupService->schedule($import->disk, $import->path);
+            });
+
+            return;
+        }
+
+        if ($import->operation === 'group') {
+            $groupImport = app(ProductGroupImportService::class);
+            if ($import->total_rows === 0) {
+                $groupImport->initialize($import, $storage->path($import->path));
+            }
+            if (! $groupImport->process($import)) {
                 self::dispatch($import->id);
 
                 return;
