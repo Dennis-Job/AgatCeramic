@@ -230,7 +230,7 @@
   - Server-managed status catalogue, permission-protected transitions, terminal-state protection and sanitized audit records are implemented.
 - [x] TASK-066 Payment status
 - [x] TASK-067 Manual payment registration
-- [ ] TASK-068 Order history
+- [x] TASK-068 Order history
 - [ ] TASK-069 Order comments
 - [ ] TASK-070 Email confirmation
 
