@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\ListOrderStatusHistoryRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateOrderPaymentRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateOrderStatusRequest;
 use App\Http\Resources\OrderResource;
+use App\Http\Resources\OrderStatusHistoryResource;
 use App\Http\Resources\OrderStatusResource;
 use App\Http\Resources\PaymentRegistrationResource;
 use App\Models\Order;
@@ -35,6 +37,19 @@ class OrderController extends Controller
         Gate::authorize('update', $order);
 
         return new OrderResource($this->statusManagementService->update($request->user(), $order, $request->validated('status')));
+    }
+
+    public function statusHistory(ListOrderStatusHistoryRequest $request, Order $order): AnonymousResourceCollection
+    {
+        Gate::authorize('view', $order);
+
+        return OrderStatusHistoryResource::collection(
+            $order->statusHistory()
+                ->orderBy('occurred_at')
+                ->orderBy('id')
+                ->paginate($request->integer('per_page', 25))
+                ->withQueryString(),
+        );
     }
 
     public function updatePayment(UpdateOrderPaymentRequest $request, Order $order): PaymentRegistrationResource

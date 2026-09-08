@@ -1571,6 +1571,61 @@
                 }
             }
         },
+        "/admin/orders/{order}/status-history": {
+            "get": {
+                "operationId": "listOrderStatusHistory",
+                "summary": "List an order status history",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 25
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chronological status history",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OrderStatusHistoryCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
         "/admin/brands": {
             "get": {
                 "operationId": "listBrands",
@@ -3874,6 +3929,35 @@
                     "is_terminal": {"type": "boolean"}
                 },
                 "additionalProperties": false
+            },
+            "OrderStatusHistory": {
+                "type": "object",
+                "required": ["id", "from_status", "to_status", "actor", "occurred_at"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "from_status": {"type": "string", "maxLength": 50},
+                    "to_status": {"type": "string", "maxLength": 50},
+                    "actor": {
+                        "type": ["object", "null"],
+                        "required": ["id", "name"],
+                        "properties": {
+                            "id": {"type": ["integer", "null"]},
+                            "name": {"type": "string"}
+                        },
+                        "additionalProperties": false
+                    },
+                    "occurred_at": {"type": "string", "format": "date-time"}
+                },
+                "additionalProperties": false
+            },
+            "OrderStatusHistoryCollection": {
+                "type": "object",
+                "required": ["data", "links", "meta"],
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/OrderStatusHistory"}},
+                    "links": {"type": "object"},
+                    "meta": {"type": "object"}
+                }
             },
             "OrderStatusCollection": {
                 "type": "object",

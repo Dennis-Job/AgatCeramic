@@ -12,6 +12,7 @@ class OrderStatusManagementService
 {
     public function __construct(
         private readonly AuditLogService $auditLogService,
+        private readonly OrderStatusHistoryService $statusHistoryService,
     ) {}
 
     public function update(User $actor, Order $order, string $targetCode): Order
@@ -46,6 +47,7 @@ class OrderStatusManagementService
                 'status' => $targetStatus->code,
                 'completed_at' => $targetStatus->sets_completed_at ? now() : null,
             ]);
+            $this->statusHistoryService->record($actor, $order, $previousStatus, $targetStatus->code);
             $this->auditLogService->record($actor, 'order.status-changed', $order, [
                 'from_status' => $previousStatus,
                 'to_status' => $targetStatus->code,

@@ -75,6 +75,11 @@ class OpenApiDocumentationTest extends TestCase
             'registerOrderPayment',
             $specification['paths']['/admin/orders/{order}/payment']['patch']['operationId'],
         );
+        $this->assertSame(
+            'listOrderStatusHistory',
+            $specification['paths']['/admin/orders/{order}/status-history']['get']['operationId'],
+        );
+        $this->assertArrayHasKey('OrderStatusHistory', $specification['components']['schemas']);
         $this->assertArrayHasKey('PaymentRegistration', $specification['components']['schemas']);
         $this->assertArrayHasKey('OrderStatus', $specification['components']['schemas']);
         $this->assertArrayHasKey('/admin/categories/{category}/attributes', $specification['paths']);
