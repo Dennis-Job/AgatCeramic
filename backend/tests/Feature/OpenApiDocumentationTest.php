@@ -46,6 +46,15 @@ class OpenApiDocumentationTest extends TestCase
             $specification['paths']['/cart/items/{item}']['delete']['operationId'],
         );
         $this->assertArrayHasKey('CartItem', $specification['components']['schemas']);
+        $this->assertSame(
+            'createGuestOrder',
+            $specification['paths']['/orders']['post']['operationId'],
+        );
+        $this->assertSame(
+            '#/components/schemas/OrderResponse',
+            $specification['paths']['/orders']['post']['responses']['201']['content']['application/json']['schema']['$ref'],
+        );
+        $this->assertArrayHasKey('OrderItem', $specification['components']['schemas']);
         $this->assertArrayHasKey('/admin/categories/{category}/attributes', $specification['paths']);
         $this->assertSame(
             'replaceCategoryAttributes',

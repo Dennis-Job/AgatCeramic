@@ -211,27 +211,15 @@ independent of `product_relations`.
 сохраняется: checkout в Phase 5 читает и фиксирует актуальную цену в `order_items`.
 
 ### orders
-- order_number
-- customer_name
-- customer_phone
-- customer_email
-- delivery_address
-- customer_comment
-- status
-- payment_status
-- total_amount
-- created_at
-- paid_at
-- completed_at
+Заказ хранит уникальный непредсказуемый `order_number`, контакты и адрес клиента, необязательный
+комментарий, начальные `status`/`payment_status`, серверный `total_amount`, а также `created_at`,
+`paid_at` и `completed_at`. Контакты являются PII и не возвращаются в ответе на создание заказа.
+TASK-065/066 определят управляемый workflow статусов и оплат.
 
 ### order_items
-Должны хранить snapshot:
-- product/variant reference;
-- product name snapshot;
-- SKU snapshot;
-- price snapshot;
-- quantity;
-- line total.
+Immutable snapshot: nullable `product_id` (`nullOnDelete` сохраняет историю при удалении товара),
+`product_name`, `product_sku`, `unit_price`, `quantity` и `line_total`. Коммерческие значения не
+меняются после checkout и не читаются повторно из каталога.
 
 ### order_status_history
 
