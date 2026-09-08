@@ -2050,6 +2050,20 @@
             "parameters": [{"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
             "get": {"operationId": "downloadProductPriceStatusImportErrors", "summary": "Download a price/status import error report", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Error report XLSX", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}}
         },
+        "/admin/products/group-import-template": {
+            "get": {"operationId": "downloadProductGroupImportTemplate", "summary": "Download the current variation groups as an XLSX template", "description": "Requires imports.manage and catalog.manage. The workbook has Группы and Состав sheets with an explicit action for every change.", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Variation-group XLSX template", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
+        },
+        "/admin/products/group-import": {
+            "post": {"operationId": "importProductGroups", "summary": "Queue a variation-group XLSX operation", "description": "Requires imports.manage and catalog.manage. Supports explicit create, full update, code rename, disband and SKU moves. The workbook is validated and applied atomically.", "security": [{"sanctumSession": []}], "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string", "format": "binary", "description": "XLSX workbook, up to 10 MiB."}}}}}}, "responses": {"202": {"description": "Operation accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}}
+        },
+        "/admin/product-group-imports/{productImport}": {
+            "parameters": [{"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
+            "get": {"operationId": "getProductGroupImport", "summary": "Get the current user's variation-group import", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Operation status", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+        },
+        "/admin/product-group-imports/{productImport}/errors": {
+            "parameters": [{"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}],
+            "get": {"operationId": "downloadProductGroupImportErrors", "summary": "Download a variation-group import error report", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Error report XLSX", "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+        },
         "/admin/product-imports/{productImport}": {
             "parameters": [
                 {"name": "productImport", "in": "path", "required": true, "schema": {"type": "integer"}}
@@ -4226,7 +4240,7 @@
                     "id": {"type": "integer"},
                     "filename": {"type": "string"},
                     "status": {"type": "string", "enum": ["pending", "processing", "completed", "failed"], "description": "completed means every row was checked, including partial/all row errors. failed means file or infrastructure failure; prior category-template successes remain committed."},
-                    "operation": {"type": "string", "enum": ["catalog", "price_status"]},
+                    "operation": {"type": "string", "enum": ["catalog", "price_status", "group"]},
                     "category_id": {"type": ["integer", "null"]},
                     "total_rows": {"type": "integer", "minimum": 0},
                     "failed_rows": {"type": "integer", "minimum": 0},

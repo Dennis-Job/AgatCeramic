@@ -202,6 +202,8 @@
   - ZIP archives map SKU directories and numbered JPG/PNG/WebP files to existing product galleries, with asynchronous per-folder processing, safe replacement and error reporting.
 - [x] TASK-057 Excel price and product-status updates
   - A separate three-sheet XLSX template updates only SKU-matched prices (including optional old price), activity, and sale status. Empty sheets are allowed; queued processing preserves independent row errors and cannot alter characteristics or other catalogue fields.
+- [x] TASK-058 Excel variation-group management
+  - A dedicated two-sheet XLSX export/import manages variation-group creation, full composition replacement, code renaming, explicit disbanding and SKU moves between groups. The queued operation validates and applies the complete workbook atomically, without changing product fields or characteristics.
 
 ## Phase 5 — Cart and orders
 
