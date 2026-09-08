@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatus;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -59,7 +60,7 @@ class OrderCreationService
             ...$attributes,
             'order_number' => $this->orderNumberService->generate(),
             'status' => 'new',
-            'payment_status' => 'not_paid',
+            'payment_status' => PaymentStatus::NotPaid,
             'total_amount' => $this->amountCalculator->sum(array_column($snapshots, 'line_total')),
         ]);
         $order->items()->createMany($snapshots);

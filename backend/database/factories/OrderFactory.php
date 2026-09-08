@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentStatus;
 use App\Models\Order;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,7 +22,7 @@ class OrderFactory extends Factory
             'delivery_address' => fake()->address(),
             'customer_comment' => null,
             'status' => 'new',
-            'payment_status' => 'not_paid',
+            'payment_status' => PaymentStatus::NotPaid,
             'total_amount' => '1000.00',
         ];
     }

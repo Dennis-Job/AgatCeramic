@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Enums\PaymentStatus;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -57,6 +58,7 @@ class OrderCreationTest extends TestCase
 
         $firstProduct->update(['name' => 'Новое название', 'price' => '1.00']);
         $order = Order::query()->where('order_number', $number)->with('items')->sole();
+        $this->assertSame(PaymentStatus::NotPaid, $order->payment_status);
         $this->assertSame('Белый мрамор', $order->items->firstWhere('product_id', $firstProduct->id)->product_name);
         $this->assertSame('1250.00', $order->items->firstWhere('product_id', $firstProduct->id)->unit_price);
     }
