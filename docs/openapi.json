@@ -1261,6 +1261,129 @@
                 }
             }
         },
+        "/cart/items": {
+            "post": {
+                "operationId": "addGuestCartItem",
+                "summary": "Add a product to a guest cart",
+                "parameters": [
+                    {
+                        "name": "X-Cart-Token",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreCartItemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Existing item quantity increased",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CartItemResponse"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Cart item created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CartItemResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
+        "/cart/items/{item}": {
+            "parameters": [
+                {
+                    "name": "item",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                },
+                {
+                    "name": "X-Cart-Token",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                    }
+                }
+            ],
+            "patch": {
+                "operationId": "updateGuestCartItem",
+                "summary": "Set a guest cart item quantity",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCartItemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cart item updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CartItemResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "removeGuestCartItem",
+                "summary": "Remove an item from a guest cart",
+                "responses": {
+                    "204": {
+                        "description": "Cart item removed"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
         "/admin/brands": {
             "get": {
                 "operationId": "listBrands",
@@ -3362,6 +3485,7 @@
                 "type": "object",
                 "required": [
                     "identifier",
+                    "items",
                     "created_at",
                     "updated_at"
                 ],
@@ -3369,6 +3493,12 @@
                     "identifier": {
                         "type": "string",
                         "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CartItem"
+                        }
                     },
                     "created_at": {
                         "type": "string",
@@ -3378,6 +3508,88 @@
                         "type": "string",
                         "format": "date-time"
                     }
+                },
+                "additionalProperties": false
+            },
+            "CartItem": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "product_id",
+                    "quantity",
+                    "unit_price",
+                    "line_total",
+                    "product",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9999
+                    },
+                    "unit_price": {
+                        "type": ["string", "null"],
+                        "pattern": "^[0-9]+\\.[0-9]{2}$"
+                    },
+                    "line_total": {
+                        "type": ["string", "null"],
+                        "pattern": "^[0-9]+\\.[0-9]{2}$"
+                    },
+                    "product": {
+                        "type": "object",
+                        "required": ["name", "slug", "sku", "unit", "primary_image_url"],
+                        "properties": {
+                            "name": {"type": "string"},
+                            "slug": {"type": "string"},
+                            "sku": {"type": ["string", "null"]},
+                            "unit": {"type": ["string", "null"]},
+                            "primary_image_url": {"type": ["string", "null"], "format": "uri-reference"}
+                        },
+                        "additionalProperties": false
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CartItemResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/CartItem"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "StoreCartItemRequest": {
+                "type": "object",
+                "required": ["product_id", "quantity"],
+                "properties": {
+                    "product_id": {"type": "integer", "minimum": 1},
+                    "quantity": {"type": "integer", "minimum": 1, "maximum": 9999}
+                },
+                "additionalProperties": false
+            },
+            "UpdateCartItemRequest": {
+                "type": "object",
+                "required": ["quantity"],
+                "properties": {
+                    "quantity": {"type": "integer", "minimum": 1, "maximum": 9999}
                 },
                 "additionalProperties": false
             },

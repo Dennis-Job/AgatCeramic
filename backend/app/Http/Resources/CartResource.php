@@ -11,6 +11,7 @@ class CartResource extends ApiResource
     {
         return [
             'identifier' => $this->token,
+            'items' => CartItemResource::collection($this->whenLoaded('items')),
             'created_at' => $this->created_at?->toAtomString(),
             'updated_at' => $this->updated_at?->toAtomString(),
         ];

@@ -218,7 +218,8 @@
 
 - [x] TASK-060 Guest cart
   - A public `GET /cart` creates a server-issued 256-bit guest-cart identifier when absent, or resolves the existing cart from `X-Cart-Token`; unknown and malformed tokens are rejected without creating a cart.
-- [ ] TASK-061 Add/update/remove cart items
+- [x] TASK-061 Add/update/remove cart items
+  - Guest carts expose their current items and support scoped add, exact-quantity update, and remove operations. One product occupies one cart row; writes enforce active sellable products, stock, and an item limit of 9999, while checkout will revalidate current commercial data.
 - [ ] TASK-062 Create order
 - [ ] TASK-063 Order number
 - [ ] TASK-064 Order items snapshots
