@@ -74,35 +74,44 @@ class ProductPriceStatusImportService
     public function initialize(ProductImport $import, string $path): void
     {
         $entries = $this->read($path);
-        $seen = [];
-        $sequence = 0;
-        foreach ($entries as $entry) {
-            $sequence++;
-            $messages = $this->validate($seen, $entry);
-            $product = null;
-            if ($messages === []) {
-                $product = Product::query()->where('sku', $entry['sku'])->first();
-                if ($product === null) {
-                    $messages[] = 'Товар с указанным SKU не найден.';
+        DB::transaction(function () use ($import, $entries): void {
+            $import = ProductImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
+            if ($import->total_rows !== 0) {
+                return;
+            }
+            $seen = [];
+            $sequence = 0;
+            $failed = 0;
+            foreach ($entries as $entry) {
+                $sequence++;
+                $messages = $this->validate($seen, $entry);
+                $product = null;
+                if ($messages === []) {
+                    $product = Product::query()->where('sku', $entry['sku'])->first();
+                    if ($product === null) {
+                        $messages[] = 'Товар с указанным SKU не найден.';
+                    }
                 }
-            }
-            if ($messages !== []) {
-                $import->rowErrors()->create([
-                    'row_number' => $sequence,
-                    'name' => $entry['sku'] ?: null,
-                    'messages' => array_map(fn (string $message) => "Лист «{$entry['sheet']}», строка {$entry['row']}: {$message}", $messages),
-                    'values' => $entry,
-                ]);
+                if ($messages !== []) {
+                    $import->rowErrors()->create([
+                        'row_number' => $sequence,
+                        'name' => $entry['sku'] ?: null,
+                        'messages' => array_map(fn (string $message) => "Лист «{$entry['sheet']}», строка {$entry['row']}: {$message}", $messages),
+                        'values' => $entry,
+                    ]);
+                    $failed++;
 
-                continue;
+                    continue;
+                }
+                ProductImportItem::query()->create([
+                    'product_import_id' => $import->id, 'product_id' => $product->id, 'row_number' => $sequence,
+                    'name' => $entry['sku'], 'payload' => ['updates' => $entry['updates'], 'sheet' => $entry['sheet'], 'source_row' => $entry['row']],
+                    'attribute_payload' => [], 'status' => 'pending',
+                ]);
             }
-            ProductImportItem::query()->create([
-                'product_import_id' => $import->id, 'product_id' => $product->id, 'row_number' => $sequence,
-                'name' => $entry['sku'], 'payload' => ['updates' => $entry['updates'], 'sheet' => $entry['sheet'], 'source_row' => $entry['row']],
-                'attribute_payload' => [], 'status' => 'pending',
-            ]);
-        }
-        $import->forceFill(['total_rows' => count($entries), 'failed_rows' => $import->rowErrors()->count(), 'processed_rows' => $import->rowErrors()->count()])->save();
+            $import->forceFill(['total_rows' => count($entries), 'failed_rows' => $failed, 'processed_rows' => $failed])->save();
+        });
+        $import->refresh();
     }
 
     /** Process one bounded queue chunk. */

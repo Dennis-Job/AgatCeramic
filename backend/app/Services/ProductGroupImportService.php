@@ -114,23 +114,30 @@ class ProductGroupImportService
                 throw $exception;
             }
         }
-        foreach ($errors as $index => $error) {
-            $import->rowErrors()->create([
-                // Product import errors have a per-import unique row number; keep
-                // the workbook sheet/real row in values for a useful report.
-                'row_number' => 100000 + $index,
-                'name' => $error['name'],
-                'messages' => array_map(fn ($message) => "Лист «{$error['sheet']}», строка {$error['row']}: {$message}", $error['messages']),
-                'values' => $error,
-            ]);
-        }
-        $import->forceFill(['total_rows' => count($workbook['groups']), 'failed_rows' => count($errors), 'processed_rows' => count($errors)])->save();
-        if ($errors === [] && $changes !== []) {
-            ProductImportItem::query()->create([
-                'product_import_id' => $import->id, 'row_number' => 1, 'name' => 'Группы вариантов',
-                'payload' => ['changes' => $changes], 'attribute_payload' => [], 'status' => 'pending',
-            ]);
-        }
+        DB::transaction(function () use ($import, $workbook, $errors, $changes): void {
+            $import = ProductImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
+            if ($import->total_rows !== 0) {
+                return;
+            }
+            foreach ($errors as $index => $error) {
+                $import->rowErrors()->create([
+                    // Product import errors have a per-import unique row number; keep
+                    // the workbook sheet/real row in values for a useful report.
+                    'row_number' => 100000 + $index,
+                    'name' => $error['name'],
+                    'messages' => array_map(fn ($message) => "Лист «{$error['sheet']}», строка {$error['row']}: {$message}", $error['messages']),
+                    'values' => $error,
+                ]);
+            }
+            if ($errors === [] && $changes !== []) {
+                ProductImportItem::query()->create([
+                    'product_import_id' => $import->id, 'row_number' => 1, 'name' => 'Группы вариантов',
+                    'payload' => ['changes' => $changes], 'attribute_payload' => [], 'status' => 'pending',
+                ]);
+            }
+            $import->forceFill(['total_rows' => count($workbook['groups']), 'failed_rows' => count($errors), 'processed_rows' => count($errors)])->save();
+        });
+        $import->refresh();
     }
 
     public function process(ProductImport $import): bool
@@ -215,6 +222,8 @@ class ProductGroupImportService
 
                         continue;
                     }
+                    // Ignore hidden drop-down source cells after the declared columns.
+                    $values = array_slice($values, 0, count($headers));
                     if ($values === [] || collect($values)->every(fn ($v) => $v === '')) {
                         continue;
                     }

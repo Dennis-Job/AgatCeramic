@@ -23,7 +23,7 @@ class ProductImageImportService
 
     public function __construct(private readonly AuditLogService $audit, private readonly StorageCleanupService $cleanup) {}
 
-    public function process(ProductImageImport $import): void
+    public function process(ProductImageImport $import): bool
     {
         $archivePath = Storage::disk($import->disk)->path($import->path);
         $zip = new ZipArchive;
@@ -33,9 +33,16 @@ class ProductImageImportService
         try {
             $groups = $this->inspect($zip);
             $import->forceFill(['total_folders' => count($groups)])->save();
-            foreach ($groups as $sku => $entries) {
+            $completed = array_fill_keys($import->processed_skus ?? [], true);
+            $pending = array_filter($groups, fn (array $entries, string $sku): bool => ! isset($completed[$sku]), ARRAY_FILTER_USE_BOTH);
+            // A bounded batch keeps every queue attempt below its timeout. The SKU
+            // checkpoint is committed with its gallery update, so a retry resumes.
+            $pending = array_slice($pending, 0, 20, true);
+            foreach ($pending as $sku => $entries) {
                 $this->processSku($import, $zip, $sku, $entries);
             }
+
+            return count($completed) + count($pending) >= count($groups);
         } finally {
             $zip->close();
         }
@@ -163,7 +170,7 @@ class ProductImageImportService
             DB::transaction(function () use ($import, $product, $sku, $ordinals, $staged, &$created, &$replaced, &$written, &$backups): void {
                 $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
                 $existing = $product->images()->get()->keyBy(function (ProductImage $image) use ($sku): int {
-                    return preg_match('/^'.preg_quote($sku, '/').'_(\\d+)\\.[^.]+$/', basename($image->path), $m) ? (int) $m[1] : -$image->id;
+                    return preg_match('/^'.preg_quote($sku, '/').'_(\\d+)(?:-i\\d+)?\\.[^.]+$/', basename($image->path), $m) ? (int) $m[1] : -$image->id;
                 });
                 if (isset($ordinals[1])) {
                     $product->images()->where('is_primary', true)->update(['is_primary' => false]);
@@ -175,7 +182,7 @@ class ProductImageImportService
                     }
                     $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($data);
                     $extension = self::MIME_TYPES[$mime] ?? throw new RuntimeException('Недопустимое изображение.');
-                    $path = "product-images/{$product->id}/{$sku}_{$ordinal}.{$extension}";
+                    $path = "product-images/{$product->id}/{$sku}_{$ordinal}-i{$import->id}.{$extension}";
                     $old = $existing->get($ordinal);
                     if ($old !== null && Storage::disk($old->disk)->exists($old->path)) {
                         $backups[$old->path] = [
@@ -201,12 +208,16 @@ class ProductImageImportService
                 }
                 if (isset($ordinals[1])) {
                     $product->images()
-                        ->where('path', "product-images/{$product->id}/{$sku}_1.{$ordinals[1]['extension']}")
+                        ->where('path', "product-images/{$product->id}/{$sku}_1-i{$import->id}.{$ordinals[1]['extension']}")
                         ->update(['is_primary' => true]);
                 }
                 $import->increment('processed_folders');
                 $import->increment('created_images', $created);
                 $import->increment('replaced_images', $replaced);
+                $processed = $import->processed_skus ?? [];
+                if (! in_array($sku, $processed, true)) {
+                    $import->forceFill(['processed_skus' => [...$processed, $sku]])->save();
+                }
                 $this->audit->record($import->user, 'product.image-imported', $product, ['import_id' => $import->id, 'created' => $created, 'replaced' => $replaced]);
             });
             foreach ($staged as $path) {
@@ -231,8 +242,15 @@ class ProductImageImportService
     /** @param list<string> $messages */
     private function failSku(ProductImageImport $import, string $sku, ?string $entry, array $messages): void
     {
-        ProductImageImportError::query()->create(['product_image_import_id' => $import->id, 'sku' => mb_substr($sku, 0, 255), 'entry' => $entry, 'messages' => $messages]);
-        $import->increment('failed_folders');
-        $import->increment('processed_folders');
+        DB::transaction(function () use ($import, $sku, $entry, $messages): void {
+            $import = ProductImageImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
+            if (in_array($sku, $import->processed_skus ?? [], true)) {
+                return;
+            }
+            ProductImageImportError::query()->create(['product_image_import_id' => $import->id, 'sku' => mb_substr($sku, 0, 255), 'entry' => $entry, 'messages' => $messages]);
+            $import->increment('failed_folders');
+            $import->increment('processed_folders');
+            $import->forceFill(['processed_skus' => [...($import->processed_skus ?? []), $sku]])->save();
+        });
     }
 }

@@ -88,6 +88,29 @@ class ProductGroupImportTest extends TestCase
         $this->assertSame('completed', $import->fresh()->status);
     }
 
+    public function test_generated_template_ignores_hidden_axis_dropdown_rows_when_reimported(): void
+    {
+        Storage::fake('local');
+        $actor = $this->actor(['imports.manage', 'catalog.manage']);
+        ProductGroup::factory()->create(['code' => 'EXISTING']);
+        Attribute::factory()->count(3)->sequence(
+            ['name' => 'Высота', 'type' => 'integer'],
+            ['name' => 'Цвет', 'type' => 'string'],
+            ['name' => 'Ширина', 'type' => 'integer'],
+        )->create();
+        $file = app(ProductGroupImportService::class)->createTemplate();
+        $path = 'product-group-imports/generated.xlsx';
+        Storage::disk('local')->put($path, file_get_contents($file['path']));
+        @unlink($file['path']);
+        $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'generated.xlsx', 'disk' => 'local', 'path' => $path, 'status' => 'pending', 'operation' => 'group']);
+
+        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+
+        $this->assertSame('completed', $import->fresh()->status);
+        $this->assertSame(1, $import->fresh()->total_rows);
+        $this->assertSame(0, $import->fresh()->failed_rows);
+    }
+
     public function test_upload_queues_group_operation(): void
     {
         Storage::fake('local');

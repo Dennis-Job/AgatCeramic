@@ -18,7 +18,7 @@ class ProcessProductImageImport implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 300;
+    public int $timeout = 80;
 
     public array $backoff = [30, 120];
 
@@ -37,7 +37,11 @@ class ProcessProductImageImport implements ShouldQueue
         if (! Storage::disk($import->disk)->exists($import->path)) {
             throw new RuntimeException('Загруженный ZIP-файл больше не доступен.');
         }
-        $service->process($import);
+        if (! $service->process($import)) {
+            self::dispatch($import->id);
+
+            return;
+        }
         $import->forceFill(['status' => 'completed', 'completed_at' => now(), 'error_message' => null])->save();
         $cleanup->schedule($import->disk, $import->path);
     }
