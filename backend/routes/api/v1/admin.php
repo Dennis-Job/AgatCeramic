@@ -42,6 +42,8 @@ Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'sho
 Route::get('order-statuses', [OrderController::class, 'statuses'])->name('order-statuses.index');
 Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status.update');
 Route::get('orders/{order}/status-history', [OrderController::class, 'statusHistory'])->name('orders.status-history.index');
+Route::get('orders/{order}/comments', [OrderController::class, 'comments'])->name('orders.comments.index');
+Route::post('orders/{order}/comments', [OrderController::class, 'storeComment'])->name('orders.comments.store');
 Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment.update');
 Route::get('categories/tree', [CategoryController::class, 'tree'])->name('categories.tree');
 Route::get('categories/{category}/attributes', [CategoryAttributeController::class, 'index'])->name('categories.attributes.index');

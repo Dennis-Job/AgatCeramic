@@ -26,4 +26,9 @@ class OrderPolicy
     {
         return $user->hasPermission('payments.manage');
     }
+
+    public function createComment(User $user, Order $order): bool
+    {
+        return $user->hasPermission('orders.manage');
+    }
 }

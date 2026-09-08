@@ -1626,6 +1626,43 @@
                 }
             }
         },
+        "/admin/orders/{order}/comments": {
+            "get": {
+                "operationId": "listOrderComments",
+                "summary": "List internal order comments",
+                "security": [{"sanctumSession": []}],
+                "parameters": [
+                    {"name": "order", "in": "path", "required": true, "schema": {"type": "integer"}},
+                    {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 25}}
+                ],
+                "responses": {
+                    "200": {"description": "Chronological comment page", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrderCommentCollection"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            },
+            "post": {
+                "operationId": "createOrderComment",
+                "summary": "Add an immutable internal order comment",
+                "security": [{"sanctumSession": []}],
+                "parameters": [
+                    {"name": "order", "in": "path", "required": true, "schema": {"type": "integer"}}
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StoreOrderCommentRequest"}}}
+                },
+                "responses": {
+                    "201": {"description": "Comment created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrderCommentResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "404": {"$ref": "#/components/responses/NotFound"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            }
+        },
         "/admin/brands": {
             "get": {
                 "operationId": "listBrands",
@@ -3959,6 +3996,42 @@
                     "meta": {"type": "object"}
                 }
             },
+            "OrderComment": {
+                "type": "object",
+                "required": ["id", "body", "author", "created_at"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "body": {"type": "string", "maxLength": 5000},
+                    "author": {
+                        "type": ["object", "null"],
+                        "required": ["id", "name"],
+                        "properties": {
+                            "id": {"type": ["integer", "null"]},
+                            "name": {"type": "string"}
+                        },
+                        "additionalProperties": false
+                    },
+                    "created_at": {"type": "string", "format": "date-time"}
+                },
+                "additionalProperties": false
+            },
+            "OrderCommentCollection": {
+                "type": "object",
+                "required": ["data", "links", "meta"],
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/OrderComment"}},
+                    "links": {"type": "object"},
+                    "meta": {"type": "object"}
+                }
+            },
+            "OrderCommentResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {"$ref": "#/components/schemas/OrderComment"}
+                },
+                "additionalProperties": false
+            },
             "OrderStatusCollection": {
                 "type": "object",
                 "required": ["data"],
@@ -3984,6 +4057,14 @@
                     "payment_method": {"type": "string", "maxLength": 100},
                     "payment_reference": {"type": "string", "maxLength": 255},
                     "paid_at": {"type": "string", "format": "date-time"}
+                },
+                "additionalProperties": false
+            },
+            "StoreOrderCommentRequest": {
+                "type": "object",
+                "required": ["body"],
+                "properties": {
+                    "body": {"type": "string", "minLength": 1, "maxLength": 5000}
                 },
                 "additionalProperties": false
             },
