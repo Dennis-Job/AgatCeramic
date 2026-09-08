@@ -41,6 +41,7 @@ Route::apiResource('permissions', PermissionController::class)->only(['index', '
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
 Route::get('order-statuses', [OrderController::class, 'statuses'])->name('order-statuses.index');
 Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status.update');
+Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment.update');
 Route::get('categories/tree', [CategoryController::class, 'tree'])->name('categories.tree');
 Route::get('categories/{category}/attributes', [CategoryAttributeController::class, 'index'])->name('categories.attributes.index');
 Route::put('categories/{category}/attributes', [CategoryAttributeController::class, 'replace'])->name('categories.attributes.replace');

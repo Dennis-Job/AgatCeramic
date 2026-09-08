@@ -21,4 +21,9 @@ class OrderPolicy
     {
         return $user->hasPermission('orders.manage');
     }
+
+    public function managePayment(User $user, Order $order): bool
+    {
+        return $user->hasPermission('payments.manage');
+    }
 }
