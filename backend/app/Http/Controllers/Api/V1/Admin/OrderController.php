@@ -4,23 +4,30 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\ListOrderCommentsRequest;
 use App\Http\Requests\Api\V1\Admin\ListOrderStatusHistoryRequest;
+use App\Http\Requests\Api\V1\Admin\StoreOrderCommentRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateOrderPaymentRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateOrderStatusRequest;
+use App\Http\Resources\OrderCommentResource;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\OrderStatusHistoryResource;
 use App\Http\Resources\OrderStatusResource;
 use App\Http\Resources\PaymentRegistrationResource;
 use App\Models\Order;
 use App\Models\OrderStatus;
+use App\Services\OrderCommentService;
 use App\Services\OrderPaymentManagementService;
 use App\Services\OrderStatusManagementService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
 {
     public function __construct(
+        private readonly OrderCommentService $commentService,
         private readonly OrderPaymentManagementService $paymentManagementService,
         private readonly OrderStatusManagementService $statusManagementService,
     ) {}
@@ -50,6 +57,30 @@ class OrderController extends Controller
                 ->paginate($request->integer('per_page', 25))
                 ->withQueryString(),
         );
+    }
+
+    public function comments(ListOrderCommentsRequest $request, Order $order): AnonymousResourceCollection
+    {
+        Gate::authorize('view', $order);
+
+        return OrderCommentResource::collection(
+            $order->comments()
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->paginate($request->integer('per_page', 25))
+                ->withQueryString(),
+        );
+    }
+
+    public function storeComment(StoreOrderCommentRequest $request, Order $order): JsonResponse
+    {
+        Gate::authorize('createComment', $order);
+
+        return (new OrderCommentResource($this->commentService->add(
+            $request->user(),
+            $order,
+            $request->validated('body'),
+        )))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function updatePayment(UpdateOrderPaymentRequest $request, Order $order): PaymentRegistrationResource

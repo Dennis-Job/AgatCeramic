@@ -28,6 +28,12 @@ class Order extends Model
         return $this->hasMany(OrderStatusHistory::class);
     }
 
+    /** @return HasMany<OrderComment, $this> */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(OrderComment::class);
+    }
+
     /** @return BelongsTo<OrderStatus, $this> */
     public function statusDefinition(): BelongsTo
     {
