@@ -6,6 +6,7 @@ use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['order_number', 'customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment', 'status', 'payment_status', 'total_amount', 'paid_at', 'completed_at'])]
@@ -18,6 +19,12 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /** @return BelongsTo<OrderStatus, $this> */
+    public function statusDefinition(): BelongsTo
+    {
+        return $this->belongsTo(OrderStatus::class, 'status', 'code');
     }
 
     /** @return array<string, string> */

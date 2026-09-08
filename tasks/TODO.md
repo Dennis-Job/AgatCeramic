@@ -226,7 +226,8 @@
   - Orders receive a database-unique, non-sequential `AC-YYYYMMDD-XXXXXXXXXX` number with a 40-bit cryptographic random suffix.
 - [x] TASK-064 Order items snapshots
   - Checkout persists immutable product name, SKU, price, quantity, and line-total snapshots; product references become null on later catalogue deletion without losing order history.
-- [ ] TASK-065 Order statuses
+- [x] TASK-065 Order statuses
+  - Server-managed status catalogue, permission-protected transitions, terminal-state protection and sanitized audit records are implemented.
 - [ ] TASK-066 Payment status
 - [ ] TASK-067 Manual payment registration
 - [ ] TASK-068 Order history
