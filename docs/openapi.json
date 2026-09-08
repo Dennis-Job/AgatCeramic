@@ -1224,6 +1224,43 @@
                 }
             }
         },
+        "/cart": {
+            "get": {
+                "operationId": "resolveGuestCart",
+                "summary": "Create or retrieve a guest cart",
+                "description": "Without X-Cart-Token, creates a cart and returns its identifier. Store the returned identifier client-side and send it only as X-Cart-Token on later cart requests. An unknown token is not treated as a request to create a cart.",
+                "parameters": [
+                    {
+                        "name": "X-Cart-Token",
+                        "in": "header",
+                        "required": false,
+                        "description": "64-character lowercase hexadecimal bearer identifier returned by an earlier GET /cart.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Guest cart",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CartResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
         "/admin/brands": {
             "get": {
                 "operationId": "listBrands",
@@ -3317,6 +3354,41 @@
                     },
                     "is_on_sale": {
                         "type": "boolean"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "Cart": {
+                "type": "object",
+                "required": [
+                    "identifier",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "identifier": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CartResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/Cart"
                     }
                 },
                 "additionalProperties": false

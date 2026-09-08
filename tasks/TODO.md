@@ -216,7 +216,8 @@
 
 ## Phase 5 — Cart and orders
 
-- [ ] TASK-060 Guest cart
+- [x] TASK-060 Guest cart
+  - A public `GET /cart` creates a server-issued 256-bit guest-cart identifier when absent, or resolves the existing cart from `X-Cart-Token`; unknown and malformed tokens are rejected without creating a cart.
 - [ ] TASK-061 Add/update/remove cart items
 - [ ] TASK-062 Create order
 - [ ] TASK-063 Order number
