@@ -1,8 +1,9 @@
 FROM php:8.3-cli-bookworm
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends $PHPIZE_DEPS git libpq-dev libzip-dev unzip \
-    && docker-php-ext-install pdo_pgsql zip \
+    && apt-get install --yes --no-install-recommends $PHPIZE_DEPS git libjpeg62-turbo-dev libpng-dev libpq-dev libwebp-dev libzip-dev unzip \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install gd pdo_pgsql zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apt-get purge --yes --auto-remove $PHPIZE_DEPS \

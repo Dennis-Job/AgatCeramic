@@ -181,6 +181,15 @@
 
 ## Phase 4 — Import/export
 
+Приёмка 2026-09-08: реализация TASK-050–058 завершена по прежним записям, но проверка выявила дефекты. До перехода к Phase 5 закрыть [результаты аудита](../docs/audits/phase-4-2026-09-08.md):
+
+- [x] Исправить чтение скрытого справочника в шаблоне групп вариантов.
+- [x] Защитить актуальные изображения от отложенного удаления старых файлов.
+- [x] Добавить устойчивое продолжение ZIP-импорта и согласовать таймауты очереди.
+- [x] Сделать подготовку заданий импорта цен и групп атомарной.
+- [x] Показывать причину ошибки импорта цен и обеспечить доступность формы на малых экранах.
+- [x] Исправить отсутствие GD в тестовом контейнере и повторить проверки, включая сквозной импорт в изолированном окружении.
+
 - [x] TASK-050 Excel product export
   - Export the complete filtered and sorted product catalogue to a streaming XLSX file without pagination.
   - Preserve SKU/barcodes, commercial fields, product-group data, and stable dynamic characteristic columns suitable for round-trip import.
