@@ -1516,6 +1516,61 @@
                 }
             }
         },
+        "/admin/orders/{order}/payment": {
+            "patch": {
+                "operationId": "registerOrderPayment",
+                "summary": "Register or replace a manual order payment",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "order",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOrderPaymentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment registration updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentRegistrationResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
         "/admin/brands": {
             "get": {
                 "operationId": "listBrands",
@@ -3788,6 +3843,27 @@
                 "type": "string",
                 "enum": ["not_paid", "pending", "paid", "refunded", "partially_paid"]
             },
+            "PaymentRegistration": {
+                "type": "object",
+                "required": ["order_number", "payment_status", "payment_amount", "payment_method", "payment_reference", "paid_at"],
+                "properties": {
+                    "order_number": {"type": "string", "pattern": "^AC-\\d{8}-[A-F0-9]{10}$"},
+                    "payment_status": {"$ref": "#/components/schemas/PaymentStatus"},
+                    "payment_amount": {"type": ["string", "null"], "pattern": "^[0-9]+\\.[0-9]{2}$"},
+                    "payment_method": {"type": ["string", "null"], "maxLength": 100},
+                    "payment_reference": {"type": ["string", "null"], "maxLength": 255},
+                    "paid_at": {"type": ["string", "null"], "format": "date-time"}
+                },
+                "additionalProperties": false
+            },
+            "PaymentRegistrationResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {"$ref": "#/components/schemas/PaymentRegistration"}
+                },
+                "additionalProperties": false
+            },
             "OrderStatus": {
                 "type": "object",
                 "required": ["code", "name", "sort_order", "is_terminal"],
@@ -3812,6 +3888,18 @@
                 "required": ["status"],
                 "properties": {
                     "status": {"type": "string", "maxLength": 50}
+                },
+                "additionalProperties": false
+            },
+            "UpdateOrderPaymentRequest": {
+                "type": "object",
+                "required": ["payment_status"],
+                "properties": {
+                    "payment_status": {"$ref": "#/components/schemas/PaymentStatus"},
+                    "payment_amount": {"type": "string", "pattern": "^\\d{1,18}(?:\\.\\d{1,2})?$"},
+                    "payment_method": {"type": "string", "maxLength": 100},
+                    "payment_reference": {"type": "string", "maxLength": 255},
+                    "paid_at": {"type": "string", "format": "date-time"}
                 },
                 "additionalProperties": false
             },
