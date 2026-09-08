@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,6 +32,7 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'payment_status' => PaymentStatus::class,
             'total_amount' => 'decimal:2',
             'paid_at' => 'datetime',
             'completed_at' => 'datetime',

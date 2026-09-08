@@ -56,6 +56,14 @@ class OpenApiDocumentationTest extends TestCase
         );
         $this->assertArrayHasKey('OrderItem', $specification['components']['schemas']);
         $this->assertSame(
+            ['not_paid', 'pending', 'paid', 'refunded', 'partially_paid'],
+            $specification['components']['schemas']['PaymentStatus']['enum'],
+        );
+        $this->assertSame(
+            '#/components/schemas/PaymentStatus',
+            $specification['components']['schemas']['Order']['properties']['payment_status']['$ref'],
+        );
+        $this->assertSame(
             'listOrderStatuses',
             $specification['paths']['/admin/order-statuses']['get']['operationId'],
         );
