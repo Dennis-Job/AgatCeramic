@@ -6,6 +6,7 @@ use App\Jobs\ProcessProductImport;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\ImportDispatchTask;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
@@ -174,6 +175,11 @@ class ProductImportTest extends TestCase
 
         $import = ProductImport::query()->findOrFail($response->json('data.id'));
         Storage::disk('local')->assertExists($import->path);
+        $this->assertDatabaseHas('import_dispatch_tasks', [
+            'import_type' => ImportDispatchTask::TYPE_PRODUCT,
+            'import_id' => $import->id,
+            'status' => 'dispatched',
+        ]);
         Queue::assertPushed(ProcessProductImport::class, fn (ProcessProductImport $job): bool => $job->productImportId === $import->id);
 
         $this->actingAs($actor)->getJson("/api/v1/admin/product-imports/{$import->id}")

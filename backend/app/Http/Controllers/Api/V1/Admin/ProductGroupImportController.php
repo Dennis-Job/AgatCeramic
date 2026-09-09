@@ -5,18 +5,15 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\StoreProductGroupImportRequest;
 use App\Http\Resources\Catalog\ProductImportResource;
-use App\Jobs\ProcessProductImport;
 use App\Models\Product;
 use App\Models\ProductImport;
+use App\Services\ImportSubmissionService;
 use App\Services\ProductExportService;
 use App\Services\ProductGroupImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Throwable;
 
 class ProductGroupImportController extends Controller
 {
@@ -34,24 +31,15 @@ class ProductGroupImportController extends Controller
         return response()->download($file['path'], $file['name'], ['Content-Type' => ProductExportService::CONTENT_TYPE])->deleteFileAfterSend();
     }
 
-    public function store(StoreProductGroupImportRequest $request): JsonResponse
+    public function store(StoreProductGroupImportRequest $request, ImportSubmissionService $submissionService): JsonResponse
     {
         $this->authorize();
-        $file = $request->file('file');
-        $path = $file->store('product-group-imports', 'local');
-        if ($path === false) {
-            throw new RuntimeException('Не удалось сохранить XLSX-файл для импорта.');
-        }
-        try {
-            $import = ProductImport::query()->create([
-                'user_id' => $request->user()->id, 'original_filename' => mb_substr(basename($file->getClientOriginalName()), 0, 255),
-                'disk' => 'local', 'path' => $path, 'status' => 'pending', 'operation' => 'group',
-            ]);
-            ProcessProductImport::dispatch($import->id);
-        } catch (Throwable $exception) {
-            Storage::disk('local')->delete($path);
-            throw $exception;
-        }
+        $import = $submissionService->submitProductWorkbook(
+            $this->authenticatedAdmin($request),
+            $request->file('file'),
+            'product-group-imports',
+            operation: 'group',
+        );
 
         return (new ProductImportResource($import))->response()->setStatusCode(202);
     }

@@ -18,12 +18,6 @@
   - Duplicated import controller lifecycle is deliberately assigned to A009/A013, where its
     transaction, retry and storage guarantees can be changed as one operation.
 
-- [ ] TASK-A009 Нормализовать business services и module boundaries
-  - Audit completed: [`docs/SERVICE_BOUNDARIES_AUDIT.md`](../docs/SERVICE_BOUNDARIES_AUDIT.md).
-  - Catalog/order/contact/auth/audit transactions are preserved; import submission and async
-    orchestration remain duplicated and require one explicit lifecycle/outbox application service.
-  - Checkout idempotency has no public contract yet and requires a documented API/OpenAPI decision;
-    task remains active until both findings are resolved with A013 safeguards.
 
 - [ ] TASK-A010 Проверить модели, БД и целостность данных
   - Audit completed: [`docs/MODEL_DATABASE_AUDIT.md`](../docs/MODEL_DATABASE_AUDIT.md).

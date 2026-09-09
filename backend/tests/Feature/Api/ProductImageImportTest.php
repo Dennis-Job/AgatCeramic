@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Jobs\DeleteStoredFile;
 use App\Jobs\ProcessProductImageImport;
+use App\Models\ImportDispatchTask;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -36,6 +37,11 @@ class ProductImageImportTest extends TestCase
         $response->assertAccepted();
         Queue::assertPushed(ProcessProductImageImport::class);
         $import = ProductImageImport::query()->findOrFail($response->json('data.id'));
+        $this->assertDatabaseHas('import_dispatch_tasks', [
+            'import_type' => ImportDispatchTask::TYPE_PRODUCT_IMAGE,
+            'import_id' => $import->id,
+            'status' => 'dispatched',
+        ]);
         app(ProductImageImportService::class)->process($import->load('user'));
         $this->assertDatabaseHas('product_images', ['product_id' => $product->id, 'path' => "product-images/{$product->id}/6000011_1-i{$import->id}.png", 'is_primary' => true]);
         $this->assertDatabaseHas('product_images', ['product_id' => $product->id, 'path' => "product-images/{$product->id}/6000011_2-i{$import->id}.png"]);

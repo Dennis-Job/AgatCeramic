@@ -5,12 +5,14 @@ namespace App\Services;
 use App\Enums\PaymentStatus;
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\CheckoutIdempotencyKey;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class OrderCreationService
 {
@@ -21,11 +23,14 @@ class OrderCreationService
     ) {}
 
     /** @param array<string, mixed> $attributes */
-    public function create(Cart $cart, array $attributes): Order
+    public function create(Cart $cart, array $attributes, string $idempotencyKey): OrderCreationResult
     {
+        $keyHash = hash_hmac('sha256', $idempotencyKey, (string) config('app.key'));
+        $requestHash = hash_hmac('sha256', json_encode($this->sorted($attributes), JSON_THROW_ON_ERROR), (string) config('app.key'));
+
         for ($attempt = 0; $attempt < 3; $attempt++) {
             try {
-                return DB::transaction(fn (): Order => $this->createInTransaction($cart, $attributes));
+                return DB::transaction(fn (): OrderCreationResult => $this->createInTransaction($cart, $attributes, $keyHash, $requestHash));
             } catch (QueryException $exception) {
                 if ($attempt === 2) {
                     throw $exception;
@@ -37,8 +42,29 @@ class OrderCreationService
     }
 
     /** @param array<string, mixed> $attributes */
-    private function createInTransaction(Cart $cart, array $attributes): Order
+    private function createInTransaction(Cart $cart, array $attributes, string $keyHash, string $requestHash): OrderCreationResult
     {
+        $idempotency = CheckoutIdempotencyKey::query()->where('key_hash', $keyHash)->lockForUpdate()->first();
+        if ($idempotency !== null) {
+            if ($idempotency->expires_at->isPast()) {
+                $idempotency->forceFill([
+                    'request_hash' => $requestHash,
+                    'order_id' => null,
+                    'expires_at' => now()->addDay(),
+                ])->save();
+            } elseif (! hash_equals($idempotency->request_hash, $requestHash)) {
+                throw new ConflictHttpException('Idempotency-Key уже использовался с другими данными заказа.');
+            } elseif ($idempotency->order_id !== null) {
+                return new OrderCreationResult($idempotency->order()->with('items')->firstOrFail(), true);
+            }
+        } else {
+            $idempotency = CheckoutIdempotencyKey::query()->create([
+                'key_hash' => $keyHash,
+                'request_hash' => $requestHash,
+                'expires_at' => now()->addDay(),
+            ]);
+        }
+
         $cart = Cart::query()->whereKey($cart->id)->lockForUpdate()->firstOrFail();
         $items = CartItem::query()
             ->where('cart_id', $cart->id)
@@ -67,8 +93,10 @@ class OrderCreationService
         $order->items()->createMany($snapshots);
         $cart->items()->delete();
         $this->confirmationService->queue($order);
+        $idempotency->order()->associate($order);
+        $idempotency->save();
 
-        return $order->load('items');
+        return new OrderCreationResult($order->load('items'), false);
     }
 
     /**
@@ -95,5 +123,19 @@ class OrderCreationService
                 'line_total' => $this->amountCalculator->multiply($product->price, $item->quantity),
             ];
         })->all();
+    }
+
+    /** @param array<string, mixed> $attributes @return array<string, mixed> */
+    private function sorted(array $attributes): array
+    {
+        ksort($attributes);
+
+        foreach ($attributes as $key => $value) {
+            if (is_array($value)) {
+                $attributes[$key] = $this->sorted($value);
+            }
+        }
+
+        return $attributes;
     }
 }

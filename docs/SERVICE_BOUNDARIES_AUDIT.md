@@ -53,10 +53,24 @@ Browser/network retry after a successful response loss can therefore create a se
 Adding a key requires an API schema/OpenAPI change and an explicit retention/privacy decision, so
 it is not made during this audit.
 
-## Decision and closure condition
+## Implemented import lifecycle
 
-No production code or public contract was changed in this audit. The service layer cannot be
-declared normalized until the import lifecycle becomes one explicit application service/outbox
-flow and a decision is recorded for checkout idempotency. The implementation must keep existing
-transaction locks, source-file ownership, audit behaviour, retry/backoff and row-level resume
-semantics; its tests belong to A013/A015 as well as the service refactor.
+The four submission controllers now delegate source-file storage, metadata persistence and
+post-commit scheduling to `ImportSubmissionService`. `ImportDispatchService` persists one durable
+dispatch task per import before queue dispatch; `imports:retry-dispatch` is scheduled every five
+minutes and retries pending or stale dispatched tasks. `ImportLifecycleService` owns permission
+revalidation, terminal transition, source cleanup outbox scheduling and resumable continuation for
+both XLSX and ZIP imports. The two queue adapters retain their existing three-attempt, 80-second
+and 30/120-second retry policy.
+
+This preserves source ownership, row-level checkpoints and transaction boundaries. Targeted import
+tests cover the submission outbox and the existing completion/resume scenarios.
+
+## Checkout idempotency decision and implementation
+
+The approved retention period is 24 hours. `POST /orders` now requires `Idempotency-Key`; the
+database stores only HMACs of the key and normalized request plus the order reference, never a raw
+key or duplicate customer payload. The same key and request replay the original order, while a key
+reused with different request data returns `409`. The hourly prune command deletes expired records.
+The breaking public-contract change is versioned as OpenAPI v1.1 with its rollout plan in
+[`OPENAPI_MIGRATION_PLAN.md`](OPENAPI_MIGRATION_PLAN.md).

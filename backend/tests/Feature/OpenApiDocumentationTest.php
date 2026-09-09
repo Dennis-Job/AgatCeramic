@@ -54,6 +54,11 @@ class OpenApiDocumentationTest extends TestCase
             '#/components/schemas/OrderResponse',
             $specification['paths']['/orders']['post']['responses']['201']['content']['application/json']['schema']['$ref'],
         );
+        $this->assertSame(
+            'Idempotency-Key',
+            $specification['paths']['/orders']['post']['parameters'][1]['name'],
+        );
+        $this->assertTrue($specification['paths']['/orders']['post']['parameters'][1]['required']);
         $this->assertArrayHasKey('OrderItem', $specification['components']['schemas']);
         $this->assertSame(
             ['not_paid', 'pending', 'paid', 'refunded', 'partially_paid'],
