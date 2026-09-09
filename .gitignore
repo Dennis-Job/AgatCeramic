@@ -32,6 +32,7 @@ frontend/client/.output/
 
 # Tooling and editor files
 coverage/
+.tmp/
 .idea/
 .vscode/
 *.log

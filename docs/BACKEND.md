@@ -1,17 +1,9 @@
 # Backend
 
-Laravel используется только как API и единое бизнес-ядро для Admin и Client.
+Laravel является API-only business core для Admin и будущего Client. Канонические правила
+архитектуры находятся в [`ARCHITECTURE.md`](ARCHITECTURE.md), HTTP contract — в
+[`openapi.json`](openapi.json) и [`API.md`](API.md), data model — в [`DATABASE.md`](DATABASE.md),
+а setup/operations — в [`OPERATIONS.md`](OPERATIONS.md).
 
-## Правила
-
-- Не использовать Blade UI.
-- Не использовать серверный рендеринг storefront.
-- Соблюдать REST, SOLID и CRUD.
-- Использовать API Resources, validation, authorization и tests.
-- Поддерживать OpenAPI-документацию.
-
-## Инициализация
-
-Laravel-приложение инициализировано в `backend/` в рамках TASK-002.
-
-Версия фреймворка выбирается и фиксируется в `backend/composer.json`; прикладные зависимости добавляются только в соответствующих задачах.
+Этот файл сохраняется только как короткая точка входа для backend-разработки и не дублирует
+перечисленные источники.
