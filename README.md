@@ -66,13 +66,6 @@ Nuxt Client — публичный интернет-магазин.
 
 ## Документация
 
-Сначала изучать:
-1. `AGENTS.md`
-2. `docs/REQUIREMENTS.md`
-3. `docs/ARCHITECTURE.md`
-4. `docs/DATABASE.md`
-5. `docs/API.md`
-6. `docs/openapi.json`
-7. `docs/QUEUE.md`
-8. `docs/DECISIONS.md`
-9. `tasks/TODO.md`
+Карта источников и правила их изменения: [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md).
+Перед изменением модуля прочитайте `AGENTS.md`, соответствующие канонические документы и
+актуальную запись в [`tasks/TODO.md`](tasks/TODO.md).
