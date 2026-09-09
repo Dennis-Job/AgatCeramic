@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\CallbackRequestController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
+use App\Http\Controllers\Api\V1\EmailRequestController;
 use App\Http\Controllers\Api\V1\OrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,3 +24,6 @@ Route::post('orders', [OrderController::class, 'store'])->middleware('throttle:o
 Route::post('callback-requests', [CallbackRequestController::class, 'store'])
     ->middleware('throttle:callback-request')
     ->name('callback-requests.store');
+Route::post('email-requests', [EmailRequestController::class, 'store'])
+    ->middleware('throttle:email-request')
+    ->name('email-requests.store');

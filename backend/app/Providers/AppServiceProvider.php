@@ -71,6 +71,7 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('order-create', static fn (Request $request): Limit => Limit::perMinute(5)->by($request->ip()));
         RateLimiter::for('callback-request', static fn (Request $request): Limit => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('email-request', static fn (Request $request): Limit => Limit::perMinute(5)->by($request->ip()));
 
         ResetPassword::createUrlUsing(static function (User $user, string $token): string {
             return rtrim((string) config('admin.url'), '/').'/reset-password?'.http_build_query([
