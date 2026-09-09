@@ -28,7 +28,7 @@ class AttributeController extends Controller
     {
         Gate::authorize('create', Attribute::class);
 
-        return (new AttributeResource($this->managementService->create($request->user(), $request->validated())))
+        return (new AttributeResource($this->managementService->create($this->authenticatedAdmin($request), $request->validated())))
             ->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
@@ -43,13 +43,13 @@ class AttributeController extends Controller
     {
         Gate::authorize('update', $attribute);
 
-        return new AttributeResource($this->managementService->update($request->user(), $attribute, $request->validated()));
+        return new AttributeResource($this->managementService->update($this->authenticatedAdmin($request), $attribute, $request->validated()));
     }
 
     public function destroy(Request $request, Attribute $attribute): Response
     {
         Gate::authorize('delete', $attribute);
-        $this->managementService->delete($request->user(), $attribute);
+        $this->managementService->delete($this->authenticatedAdmin($request), $attribute);
 
         return response()->noContent();
     }

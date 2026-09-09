@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ContactRequest;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<ContactRequest> */
 class ContactRequestResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         return [

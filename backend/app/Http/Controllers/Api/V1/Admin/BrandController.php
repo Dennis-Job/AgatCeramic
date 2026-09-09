@@ -28,7 +28,7 @@ class BrandController extends Controller
     {
         Gate::authorize('create', Brand::class);
 
-        return (new BrandResource($this->managementService->create($request->user(), $request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new BrandResource($this->managementService->create($this->authenticatedAdmin($request), $request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function show(Brand $brand): BrandResource
@@ -42,13 +42,13 @@ class BrandController extends Controller
     {
         Gate::authorize('update', $brand);
 
-        return new BrandResource($this->managementService->update($request->user(), $brand, $request->validated()));
+        return new BrandResource($this->managementService->update($this->authenticatedAdmin($request), $brand, $request->validated()));
     }
 
     public function destroy(Brand $brand): Response
     {
         Gate::authorize('delete', $brand);
-        $this->managementService->delete(request()->user(), $brand);
+        $this->managementService->delete($this->authenticatedAdmin(request()), $brand);
 
         return response()->noContent();
     }

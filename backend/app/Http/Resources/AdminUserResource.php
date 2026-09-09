@@ -2,13 +2,16 @@
 
 namespace App\Http\Resources;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<User> */
 class AdminUserResource extends ApiResource
 {
     /**
      * @return array<string, mixed>
      */
+    #[\Override]
     public function toArray(Request $request): array
     {
         return [

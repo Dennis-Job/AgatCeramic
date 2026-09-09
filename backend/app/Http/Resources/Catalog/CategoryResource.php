@@ -3,11 +3,14 @@
 namespace App\Http\Resources\Catalog;
 
 use App\Http\Resources\ApiResource;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<Category> */
 class CategoryResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         return [

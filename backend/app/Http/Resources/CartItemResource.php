@@ -2,12 +2,15 @@
 
 namespace App\Http\Resources;
 
+use App\Models\CartItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+/** @extends ApiResource<CartItem> */
 class CartItemResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         $product = $this->product;
