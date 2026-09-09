@@ -1,411 +1,75 @@
 # TODO
 
-## Phase 0 — Project foundation
-
-- [x] TASK-001 Initialize Git repository and project structure
-- [x] TASK-002 Initialize Laravel API-only backend
-- [x] TASK-003 Initialize Vue Admin
-- [x] TASK-004 Initialize Nuxt Client
-- [x] TASK-005 Configure Docker development environment
-- [x] TASK-006 Configure environment variables and secrets
-- [x] TASK-007 Configure CI checks
-
-## Phase 1 — Backend foundation
-
-- [x] TASK-010 PostgreSQL connection
-- [x] TASK-011 Redis
-- [x] TASK-012 API v1 routing
-- [x] TASK-013 API error format
-- [x] TASK-014 API Resources convention
-- [x] TASK-015 logging and PII masking
-- [x] TASK-016 queue and scheduler
-- [x] TASK-017 OpenAPI documentation
-
-## Phase 2 — Admin authentication
-
-- [x] TASK-020 Admin users
-- [x] TASK-021 Authentication
-- [x] TASK-022 Roles
-- [x] TASK-023 Permissions
-- [x] TASK-024 Policies
-- [x] TASK-025 Audit log
-- [x] TASK-026 Employee management API and page
-- [x] TASK-027 Roles and permission assignments API and page
-- [x] TASK-028 Permission catalogue API and page
-- [x] TASK-029 Audit log API and page
-
-## Phase 2.1 — Access control hardening
-
-- [x] TASK-029A Admin password reset API and page
-- [x] TASK-029B Audit entity snapshots and retention policy
-- [x] TASK-029C Database-level audit log immutability
-
-## Phase 3 — Catalog
-
-- [x] TASK-030 Categories
-- [x] TASK-031 Category tree
-- [x] TASK-032 Attribute groups
-- [x] TASK-033 Attributes
-- [x] TASK-034 Category attributes
-- [x] TASK-035 Brands
-- [x] TASK-036 Products
-- [x] TASK-037 Product variants
-- [x] TASK-038 Product attributes
-- [x] TASK-039 Product images
-- [x] TASK-040 Related products
-- [x] TASK-041 Product search/filtering
-
-## Phase 3 — Catalog follow-ups
-
-- [x] TASK-041A Complete the Catalog OpenAPI contract and reconcile API documentation
-- [x] TASK-041B Require options when changing an attribute to select/multiselect
-- [x] TASK-041C Remove product image files when deleting a product
-- [x] TASK-041D Enforce a single primary product image under concurrent uploads
-
-## Phase 3 — Catalog hardening follow-ups
-
-- [x] TASK-041E Make product deletion and image uploads race-safe, including cleanup of every cascaded storage file
-- [x] TASK-041F Enforce the no-reverse-product-relations invariant under concurrent replacements
-- [x] TASK-041G Make category-tree acyclicity and parent eligibility race-safe under concurrent updates
-- [x] TASK-041H Add pagination handling to the Admin Catalog UI for all paginated catalog collections and selectors
-- [x] TASK-041I Complete the human Catalog API guide for category, brand, attribute, and image-management behavior
-- [x] TASK-041J Reconcile or remove unused standalone Catalog Admin views
-
-## Phase 3 — Catalog audit remediation
-
-- [x] TASK-041K Preserve product and variant attribute-value integrity when product categories or category attribute assignments change
-  - Reject or transactionally reconcile stale values when moving a product to another category.
-  - Reject or transactionally reconcile affected product and variant values when detaching a category attribute.
-  - Enforce required attributes after category changes and cover the selected policy in API documentation and tests.
-- [x] TASK-041L Make attribute type and option changes safe for existing product and variant values
-  - Detect values that would become invalid when changing an attribute type or replacing/removing options.
-  - Define and implement an explicit conflict, migration, or cleanup policy without silently preserving invalid values.
-  - Cover product and variant values, audit events, OpenAPI behavior, and regression tests.
-- [x] TASK-041M Complete the attribute model required by the Catalog specification
-  - Reconcile `string`, `text`, `integer`, `decimal`, `boolean`, `select`, `multiselect`, and `date`; normalize colors to `select` options whose codes may be HEX values.
-  - Add product-page visibility control and typed backend/Admin validation and editing.
-  - Update migrations, API Resources, OpenAPI, the human API guide, and tests.
-- [x] TASK-041N Add catalog identifiers and units required for products and variants
-  - Define product-versus-variant ownership for article numbers, barcodes, and units of measure.
-  - Add database constraints, CRUD/search behavior, Admin fields, OpenAPI documentation, and tests.
-- [x] TASK-041O Trace deferred Catalog media and SEO requirements to their delivery phases
-  - Explicitly map category images and brand logos/documents to the Media Library work in Phase 7.
-  - Explicitly map category and brand SEO fields to Phase 8 and reconcile placeholder database fields with the documented plan.
-  - Update requirements/task documentation so no Catalog requirement is left without an owner.
-- [x] TASK-041P Make Admin Catalog pagination resistant to stale requests and last-page deletions
-  - Prevent out-of-order responses from replacing newer page state and disable or guard navigation while appropriate.
-  - Clamp or reload the previous valid page after deleting the final item on a page.
-  - Cover products, brands, attributes, and attribute groups with automated tests.
-- [x] TASK-041Q Bring Catalog dialogs and image ordering into compliance with the UI Design Review standard
-  - Add dialog semantics, accessible names, focus management, focus restoration, Escape/backdrop behavior, and keyboard-safe destructive confirmations.
-  - Add accessible names to icon-only actions and a keyboard-operable alternative for product image reordering with announced state changes.
-  - Complete authenticated responsive QA at the required breakpoints and obtain an independent UI Design Guard review.
-- [x] TASK-041R Add automated Admin Catalog component and end-to-end coverage
-  - Introduce the minimal frontend test tooling needed for pagination, filters, integrated product tabs, selectors, error/loading/empty states, and accessibility regressions.
-  - Exercise the authenticated `/products`, `/categories`, `/brands`, `/attribute-groups`, and `/attributes` flows.
-- [x] TASK-041S Add real PostgreSQL concurrency regression tests for Catalog invariants
-  - Exercise competing transactions for primary images, product deletion versus image uploads, reverse relations, and category-tree mutations.
-  - Run these tests against PostgreSQL in CI rather than relying on sequential SQLite coverage.
-- [x] TASK-041T Make product image storage cleanup durable and retryable
-  - Handle storage deletion failures without silently leaving orphaned files or skipping remaining disks/files.
-  - Add an idempotent retry/outbox/queue cleanup mechanism with operational visibility and tests.
-- [x] TASK-041U Stabilize shared backend test factories used by the Catalog suite
-  - Prevent `RoleFactory` from generating names that collide with seeded system roles.
-  - Add a regression check proving repeated full-suite runs remain deterministic.
-
-## Phase 3.1 — Standalone products and variation groups
-
-- [x] TASK-042A Define standalone sellable product model
-  - Make every product an independently sellable catalogue item that owns its SKU, article number, barcode, unit, price, old price, stock, attributes, and images.
-  - Keep SKU, article number, and barcode globally unique.
-  - Remove nested variants from the active domain model while retaining legacy storage until migration verification and cleanup are complete.
-- [x] TASK-042B Make category attribute requirements assignment-specific
-  - Move requiredness from the global attribute definition to each category-to-attribute assignment.
-  - Treat required values as an activation gate: drafts may remain incomplete, but an active product must contain every required value assigned by its category.
-  - Keep one product-owned attribute-value set and allow only scalar attributes as group axes; exclude `text` and `multiselect`.
-- [x] TASK-042C Add product variation groups
-  - Add standalone product groups with a unique code, display name, two or more member products, and one or more differentiating axis attributes.
-  - Require members to share category and brand, have equal non-axis attributes, and have a unique tuple of scalar axis values; exclude `text` and `multiselect` axes.
-  - Allow a product in at most one group; replace axes and members atomically, and delete a group without deleting its products.
-- [x] TASK-042D Rebuild Product Admin API
-  - Move commercial fields into top-level product create, update, resource, search, filtering, and validation contracts.
-  - Add `/admin/product-groups` CRUD with `name`, `code`, `axis_attribute_ids`, and `product_ids`; remove nested product-variant routes from the supported API.
-  - Return group summaries and axis values with products, allow incomplete inactive drafts, and reject incomplete activation.
-- [x] TASK-042E Migrate legacy products and variants safely
-  - Provide idempotent dry-run and apply modes that expand every legacy nested variant into a standalone product without losing identifiers, commercial data, attributes, images, or audit traceability.
-  - Compose names from model and offer, slugs from model slug and SKU, overlay variant attributes over shared values, and infer groups only for complete unique axis tuples.
-  - Copy the shared gallery into independent storage paths for every additional product, report visual review needs and conflicts, and keep zero-variant models inactive for manual completion.
-  - Keep legacy tables read-only until reconciliation reports are accepted, then schedule their separately verified cleanup.
-- [x] TASK-042F Rebuild product creation/editing flow
-  - Replace the tab sequence with a single standalone-product workflow covering main data, commercial identifiers, category characteristics, activation validation, and that product's own images.
-  - Make ownership and validation states explicit and prevent incomplete drafts from being activated.
-  - Save each step independently and provide “Create similar product” without copying SKU, identifiers, or images by default.
-- [x] TASK-042G Add variation-group management to Admin
-  - Add group creation and editing for compatible products, axis selection, duplicate-tuple detection, and clear explanations of incompatibilities.
-  - Show group membership and differentiating values without presenting groups as nested sellable variants.
-  - Use server-side product search with thumbnail, name, SKU, and axis values; support adding, removing, and opening standalone members.
-- [x] TASK-042H Restore/separate related-product management
-  - Keep related and recommended products independent from variation groups and restore a reliable dedicated management flow.
-  - Make outgoing and incoming relation state understandable and preserve concurrency-safe relation invariants.
-  - Exclude self, duplicates, and forbidden reverse pairs from a server-side picker and surface success plus row-specific validation errors.
-- [x] TASK-042I Complete contracts/regression coverage/UI review
-  - Reconcile Requirements, Database, Decisions, API, and OpenAPI documentation with the standalone-product model and migration lifecycle.
-  - Cover API, migration, activation, grouping, relation, Admin component, and end-to-end regressions; complete responsive/accessibility QA and obtain an independent UI Design Guard review.
-  - Reconcile entity and file counts after migration and verify the Admin flow at 320/640/768/1024/1280 px with keyboard and focus checks.
-- [x] TASK-042L Automate product image filenames and Alt text
-  - Name new uploads from the current product SKU and a stable per-product ordinal, populate matching Alt text automatically, and remove manual Alt fields from Admin.
-- [x] TASK-042M Redesign the product review step
-  - Place the product summary above related-product management and bring every review-step action into the Admin button system.
-- [x] TASK-042R Generate immutable eight-digit product SKUs
-  - Assign stable two-digit type prefixes to root categories and inherit them through their subtrees.
-  - Generate the remaining six digits from one concurrency-safe global counter and prohibit client-authored SKU changes.
-  - Replace manual SKU entry in Admin with an accessible read-only generated state and update contracts and tests.
-- [x] TASK-042S Sort product editor dropdown values alphabetically
-  - Sort category siblings, brands, sale units, variation groups, relation choices, and attribute choice values using Russian locale-aware ordering.
-  - Keep contextual service options such as “Без бренда” and “Новая группа” at the top.
-  - Cover the ordering rules with Admin unit and end-to-end tests and complete the required UI Design Guard review.
-- [x] TASK-042T Synchronize shared attributes in product groups
-  - Apply non-axis characteristic changes atomically to every product in a variation group while keeping axis values product-specific.
-  - Allow characteristics added to an existing category to be filled without dismantling its product groups, preserve active-product completeness, and return Russian group-validation messages.
-  - Clarify the behavior in Admin and cover propagation, removal, rollback, API contracts, and responsive/accessibility review.
-- [x] TASK-042U Allow optional select characteristics to be cleared
-  - Add an accessible clear action to optional select characteristics in the product editor while keeping required choices protected.
-  - Persist a cleared characteristic as an omitted value and cover responsive, accessibility, focus, and payload behavior.
-- [x] TASK-042V Group product characteristic fields into sections
-  - Render category characteristics under their characteristic-group names in the product create/edit flow.
-  - Keep characteristics without a group together in a separate list and preserve validation, variation, and clear behavior.
-- [x] TASK-042Z Make generated SKU prefixes Excel-safe
-  - Allocate root-category prefixes as `1`–`9`, `11`–`19`, ..., `91`–`99`, skipping multiples of ten.
-  - Preserve already issued immutable product SKUs and image paths while safely converting existing category prefixes.
-  - Keep tests isolated from the local PostgreSQL database and cover migration, allocation, collision, import, and API contracts.
-
-## Phase 4 — Import/export
-
-Приёмка 2026-09-08: реализация TASK-050–058 завершена по прежним записям, но проверка выявила дефекты. До перехода к Phase 5 закрыть [результаты аудита](../docs/audits/phase-4-2026-09-08.md):
-
-- [x] Исправить чтение скрытого справочника в шаблоне групп вариантов.
-- [x] Защитить актуальные изображения от отложенного удаления старых файлов.
-- [x] Добавить устойчивое продолжение ZIP-импорта и согласовать таймауты очереди.
-- [x] Сделать подготовку заданий импорта цен и групп атомарной.
-- [x] Показывать причину ошибки импорта цен и обеспечить доступность формы на малых экранах.
-- [x] Исправить отсутствие GD в тестовом контейнере и повторить проверки, включая сквозной импорт в изолированном окружении.
-
-- [x] TASK-050 Excel product export
-  - Export the complete filtered and sorted product catalogue to a streaming XLSX file without pagination.
-  - Preserve SKU/barcodes, commercial fields, product-group data, and stable dynamic characteristic columns suitable for round-trip import.
-  - Manager-friendly revision (2026-09-03): remove database IDs, move slugs to SEO sheets, use Russian Admin headers and unit labels, Да/Нет and option labels; retain localized and legacy import support.
-  - Header alignment follow-up completed: center header text horizontally and vertically on all export sheets.
-  - Gallery links follow-up completed: replace the empty primary-image column with trailing numbered public image URLs; size columns to the filtered gallery maximum, keep primary-first ordering and preserve galleries during import.
-  - Restrict export to `imports.manage`, expose an accessible Admin download flow, and cover the API, OpenAPI contract, container runtime, and UI states with automated tests and an independent UI Design Guard review.
-- [x] TASK-051 Excel import
-  - Category-template revision (2026-09-03): wide two-tab modal; category-specific XLSX with hidden option IDs, strict dropdowns through row 5001, server-generated SKU and optional product slug; durable per-row partial imports and downloadable failed rows. Images tab reserved for later work.
-- [x] TASK-052 Import validation
-  - Generic legacy/export workbooks now receive read-only preflight before catalogue writes: field/attribute/group constraints, duplicate identities and ordered unique-value checks; prepared rows preserve resolved identities. Category-template validation remains in TASK-051.
-- [x] TASK-053 Import error report
-  - Generic/round-trip imports now retain all named preflight row errors, leave the catalogue unchanged, and provide an owner-only XLSX report. Category-template retry XLSX remains unchanged.
-- [x] TASK-054 Bulk product editing
-  - Category edit templates are prefilled with existing products, immutable SKU, category characteristics and Excel dropdowns. Valid rows update independently; a missing or cross-category SKU is rejected.
-- [x] TASK-055 Queue-based bulk operations
-  - Generic/export XLSX imports now persist a validated write plan and run through resumable queue chunks. Validation errors still leave the catalogue untouched; completed rows are never repeated after a worker restart.
-- [x] TASK-056 Bulk product-image import
-  - ZIP archives map SKU directories and numbered JPG/PNG/WebP files to existing product galleries, with asynchronous per-folder processing, safe replacement and error reporting.
-- [x] TASK-057 Excel price and product-status updates
-  - A separate three-sheet XLSX template updates only SKU-matched prices (including optional old price), activity, and sale status. Empty sheets are allowed; queued processing preserves independent row errors and cannot alter characteristics or other catalogue fields.
-- [x] TASK-058 Excel variation-group management
-  - A dedicated two-sheet XLSX export/import manages variation-group creation, full composition replacement, code renaming, explicit disbanding and SKU moves between groups. The queued operation validates and applies the complete workbook atomically, without changing product fields or characteristics.
-
-## Phase 5 — Cart and orders
-
-- [x] TASK-060 Guest cart
-  - A public `GET /cart` creates a server-issued 256-bit guest-cart identifier when absent, or resolves the existing cart from `X-Cart-Token`; unknown and malformed tokens are rejected without creating a cart.
-- [x] TASK-061 Add/update/remove cart items
-  - Guest carts expose their current items and support scoped add, exact-quantity update, and remove operations. One product occupies one cart row; writes enforce active sellable products, stock, and an item limit of 9999, while checkout will revalidate current commercial data.
-- [x] TASK-062 Create order
-  - `POST /orders` validates guest contact data and a cart token, revalidates cart availability and price under locks, atomically creates the order and clears the source cart; client-authored totals, items, number, and statuses are prohibited.
-- [x] TASK-063 Order number
-  - Orders receive a database-unique, non-sequential `AC-YYYYMMDD-XXXXXXXXXX` number with a 40-bit cryptographic random suffix.
-- [x] TASK-064 Order items snapshots
-  - Checkout persists immutable product name, SKU, price, quantity, and line-total snapshots; product references become null on later catalogue deletion without losing order history.
-- [x] TASK-065 Order statuses
-  - Server-managed status catalogue, permission-protected transitions, terminal-state protection and sanitized audit records are implemented.
-- [x] TASK-066 Payment status
-- [x] TASK-067 Manual payment registration
-- [x] TASK-068 Order history
-- [x] TASK-069 Order comments
-- [x] TASK-070 Email confirmation
-
-## Phase 6 — Contacts
-
-- [x] TASK-080 Callback requests
-- [x] TASK-081 Email requests
-- [x] TASK-082 Partner requests
-- [x] TASK-083 Assignment to manager
-- [x] TASK-084 Contact workflow
+Здесь находится только актуальный roadmap. Текущая задача — в `IN_PROGRESS.md`,
+завершённые результаты — в `DONE.md`; подробная история воспроизводима из Git, ADR,
+canonical documentation и audit reports.
 
 ## Interim Audit Phases 0–6
 
-Выполнять задачи последовательно до начала Phase 7. Рефакторинг не должен менять подтверждённое
-поведение API без отдельного решения, миграционного плана и синхронного обновления OpenAPI.
-
-- [x] TASK-A001 Зафиксировать исходное состояние и карту реализации Phases 0–6
-  - Сопоставить каждую завершённую задачу с кодом, миграциями, маршрутами, permissions, тестами,
-    OpenAPI и экраном Admin/будущего Client; не считать отметку `[x]` доказательством приёмки.
-  - Зафиксировать версии зависимостей, состояние БД/очередей/storage и результаты полного набора
-    проверок, не изменяя рабочие данные.
-  - Составить единый реестр подтверждённых функций, дефектов, технического долга и намеренно
-    отложенных возможностей с владельцем в Phase 7–11.
-
-- [x] TASK-A002 Провести повторную приёмку Phases 0–6
-  - Проверить foundation, auth/RBAC/audit, Catalog, import/export, cart/orders и contacts по
-    требованиям, реальному коду и сквозным сценариям.
-  - Для каждого расхождения создать адресный follow-up в этом блоке или вернуть исходную задачу в
-    работу; не исправлять несвязанные дефекты внутри аудита.
-  - Результат аудита хранить как один компактный актуальный отчёт вместо набора повторяющихся
-    отчётов по датам.
-
-- [x] TASK-A003 Утвердить информационную архитектуру и единый стиль документации
-  - Сделать русский основным языком проектной документации; имена API, кода, технологий и
-    общепринятые технические термины оставлять без искусственного перевода.
-  - Назначить один канонический документ для каждой темы: обзор, требования, архитектура, данные,
-    API/OpenAPI, окружение/эксплуатация, решения и roadmap; остальные документы только ссылаются на
-    него и не копируют содержание.
-  - Зафиксировать шаблоны для задач, ADR, эксплуатационных инструкций и результатов аудита.
-
-- [ ] TASK-A004 Переписать документацию текущего состояния и roadmap
-  - Кратко и однозначно описать фактически реализованное в Phases 0–6, принятые архитектурные
-    решения, ограничения и эксплуатационные требования.
-  - Отдельно перечислить ещё не реализованные возможности Phases 7–11 и все ранее заложенные
-    зависимости: Media, SEO, Analytics, Client и Production.
-  - Удалить устаревшие формулировки, смешение времён и языков, дублирование и журнальные подробности,
-    не нужные для следующей задачи; проверить все внутренние ссылки.
-
-- [ ] TASK-A005 Сжать и нормализовать реестр задач
-  - Оставить в `tasks/TODO.md` только актуальный roadmap и критерии будущих работ, в
-    `tasks/IN_PROGRESS.md` — только текущую задачу, а в `tasks/DONE.md` — компактный индекс
-    завершённого с проверяемыми итогами.
-  - Перенести полезную подробную историю в один архивный формат либо удалить её, если она полностью
-    воспроизводится из Git и не содержит уникальных решений/инструкций восстановления.
-  - Устранить повторение одной и той же информации между `tasks/`, `docs/` и README-файлами.
-
-- [ ] TASK-A006 Очистить audit-артефакты и служебный мусор репозитория
-  - Инвентаризировать `docs/audits/`, `.tmp/`, временные XLSX/ZIP/CSV, скриншоты, отчёты тестов,
-    логи, дампы и локальные артефакты; до удаления разделить их на обязательные доказательства,
-    recovery-материалы и воспроизводимый мусор.
-  - Удалить только устаревшие и неиспользуемые файлы, перенести сохраняемое в понятные постоянные
-    места и дополнить `.gitignore`, чтобы мусор не накапливался снова.
-  - Проверить, что документация, тесты, restore-процедуры и CI не ссылаются на удалённые файлы.
+Переход к Phase 7 запрещён до завершения этого блока. Refactoring не меняет подтверждённый
+API behaviour без migration plan и синхронного обновления OpenAPI.
 
 - [ ] TASK-A007 Ввести измеримый baseline качества Laravel backend
-  - Проверить структуру `backend/app`, namespaces, PSR-4, типизацию, зависимости и соответствие
-    Laravel conventions; зафиксировать нарушения по модулям и приоритету.
-  - Добавить или настроить статический анализ (предпочтительно Larastan/PHPStan) на максимально
-    строгом реально поддерживаемом уровне, сохраняя Pint, Composer validation/audit и PHPUnit.
-  - Зафиксировать воспроизводимые команды локальной и CI-проверки без baseline, скрывающего новые
-    ошибки.
+  - Проверить structure, namespaces, typing, dependencies и Laravel conventions.
+  - Настроить strict supported Larastan/PHPStan без baseline, скрывающего новые errors.
 
 - [ ] TASK-A008 Нормализовать HTTP/API-слой Laravel
-  - Сделать контроллеры тонкими, вынести validation/authorization в Form Requests и Policies,
-    унифицировать API Resources, пагинацию, фильтры, сортировку, статусы и формат ошибок.
-  - Проверить route model binding, именование маршрутов, вложенность ресурсов, HTTP verbs и status
-    codes на соответствие Laravel, REST и CRUD.
-  - Удалить мёртвые endpoints/classes и прямые Eloquent/SQL-операции из контроллеров, если они
-    принадлежат query/application layer.
+  - Проверить thin controllers, Form Requests, Policies, Resources, pagination, filtering,
+    sorting, status codes и error format.
+  - Исправлять подтверждённые отклонения только с OpenAPI update.
 
-- [ ] TASK-A009 Перестроить application/domain services по DRY и SOLID
-  - Найти дублирование в Catalog/import/export, orders, contacts, auth/audit и storage cleanup;
-    выделять общие компоненты только при совпадающих правилах, не создавая слои ради слоёв.
-  - Разделить слишком крупные сервисы на понятные use cases, validators, queries и infrastructure
-    adapters; определить явные транзакционные границы и идемпотентность.
-  - Сохранить одно бизнес-ядро Laravel для Admin и Client: интерфейсы доставки не должны дублировать
-    бизнес-правила или обращаться к БД в обход application layer.
+- [ ] TASK-A009 Нормализовать business services и module boundaries
+  - Устранить duplication в Catalog/import/export, orders, contacts, auth/audit и storage cleanup.
+  - Зафиксировать transaction boundaries, idempotency и common application services.
 
 - [ ] TASK-A010 Проверить модели, БД и целостность данных
-  - Пересмотреть Eloquent relationships/casts/scopes, mass assignment, factories/seeders, индексы,
-    foreign keys, unique/check constraints, блокировки и конкурентные инварианты.
-  - Проверить жизненный цикл legacy product-variant tables и placeholder media fields; удалить их
-    только отдельной безопасной миграцией после подтверждённой сверки данных и требований Phase 7.
-  - Для каждой корректирующей миграции предусмотреть PostgreSQL-проверку, rollback/forward policy и
-    отсутствие разрушения существующих данных.
+  - Проверить relations, casts, fillable, factories, indexes, foreign keys, constraints и locks.
+  - Legacy product-variant tables удалять только отдельной verified migration после reconciliation.
 
 - [ ] TASK-A011 Подтвердить API-only архитектуру и границы Admin/Client
-  - Убедиться, что Laravel не содержит пользовательских Blade/HTML flows, а `web` middleware,
-    session/cookie и Sanctum применяются только там, где требуются first-party Admin SPA.
-  - Разделить публичные и административные contracts, permissions и rate limits, сохранив общие
-    use cases и доменную модель.
-  - Проверить, что Phase 10 сможет использовать существующие Catalog/cart/order/contact capabilities
-    без копирования бизнес-логики в Nuxt.
+  - Проверить отсутствие user-facing Blade flows, public/Admin separation и Phase 10 reuse.
 
 - [ ] TASK-A012 Усилить безопасность, аудит и обработку персональных данных
-  - Повторно проверить auth/session/password reset, RBAC/least privilege, mass-assignment protection,
-    rate limits, upload/import boundaries, queue payloads, secrets и ownership checks.
-  - Проверить маскирование PII в логах, audit trail, exceptions и jobs, а также retention/deletion,
-    backup и доступ к данным в пределах ранее принятых требований 152-ФЗ.
-  - Закрыть найденные high/critical проблемы до функционального рефакторинга зависимых модулей.
+  - Проверить auth, RBAC, rate limits, uploads/imports, queue payloads, secrets, PII masking,
+    retention, backups и data access.
+  - Закрыть high/critical findings до зависимых functional refactorings.
 
 - [ ] TASK-A013 Проверить надёжность очередей, импортов и файлового хранилища
-  - Свести общий lifecycle async operations: prepare, dispatch, progress, retry, terminal state,
-    ownership, error report и cleanup; убрать расхождения между типами импорта там, где правила общие.
-  - Проверить retry/backoff/timeout, транзакции, after-commit dispatch, идемпотентность, безопасную
-    работу с ZIP/XLSX и восстановление после остановки worker.
-  - Подтвердить отсутствие потерянных/осиротевших файлов и наличие операционной видимости для
-    неуспешных cleanup/jobs.
+  - Свести lifecycle async operations, retry/backoff/timeout, after-commit dispatch, ownership,
+    error reports и cleanup.
 
 - [ ] TASK-A014 Привести OpenAPI и human-readable API guide к фактическому контракту
-  - Автоматически сопоставить все Laravel routes Phases 0–6 с `docs/openapi.json`, включая security,
-    parameters, request/response schemas, ошибки, пагинацию и примеры.
-  - Сделать OpenAPI каноническим машинным контрактом, а `docs/API.md` — коротким руководством по
-    сценариям и нетривиальным правилам без повторения каждой schema.
-  - Добавить CI-проверки валидности, route coverage и обнаружения несовместимого contract drift.
+  - Автоматически сопоставить Laravel routes Phases 0–6 с `docs/openapi.json`, включая security,
+    schemas, errors, pagination и examples.
+  - Добавить CI route-coverage и incompatible-contract-drift gates.
 
 - [ ] TASK-A015 Перестроить тестовую пирамиду и CI quality gates
-  - Удалить placeholder/дублирующие тесты, разделить unit/feature/integration/contract/e2e и закрыть
-    негативные, permission, transaction, concurrency и PostgreSQL-specific сценарии.
-  - Проверить детерминированность factories/seeders, изоляцию test DB от локальных данных и
-    повторный полный прогон без зависимости от порядка тестов.
-  - Сделать обязательными Pint, static analysis, Composer audit, OpenAPI checks, backend suite и
-    релевантные PostgreSQL/Redis/queue проверки; устранить flaky-тесты, а не скрывать их retry.
-  - Сделать полный Admin E2E прогон устойчивым к остановке временного Vite server и обеспечить
-    Docker development runtime всеми dev dependencies, нужными для unit/build/e2e.
-  - Описать и автоматизировать безопасный локальный запуск PostgreSQL integration suite только
-    против provisioned CI-only `agatceramic_test`, не ослабляя database safety guard.
+  - Разделить unit/feature/integration/contract/e2e, закрыть negative/permission/concurrency cases
+    и исключить flaky tests.
+  - Сделать Admin E2E устойчивым к temporary Vite server и снабдить Compose Admin dev dependencies.
+  - Автоматизировать safe local PostgreSQL integration run только против CI-only `agatceramic_test`.
 
-- [ ] TASK-A016 Составить и закрыть матрицу покрытия Backend API → Admin UI
-  - Для каждого административного endpoint/permission указать экран, доступные действия и состояния
-    loading/empty/error/forbidden; отдельно пометить backend-only функции, намеренно ожидающие Phase 7–10.
-  - Проверить навигацию и route guards по фактическим permissions; менеджер не должен видеть пустую
-    ссылку либо терять доступ к разрешённой операции из-за чужого permission.
-  - Создать адресные follow-up задачи для каждого подтверждённого разрыва до финальной приёмки.
+- [ ] TASK-A016 Составить и закрыть матрицу Backend API → Admin UI
+  - Для каждого Admin endpoint/permission указать screen, actions и loading/empty/error/forbidden states.
+  - Пометить backend-only features, намеренно ожидающие Phase 7–10, и создать адресные follow-ups.
 
 - [ ] TASK-A017 Нормализовать Admin UI-kit перед расширением панели
-  - Инвентаризировать tokens и shared-компоненты для кнопок, полей, selects, dialogs, таблиц,
-    пагинации, badges, alerts, skeleton/loading/empty/error и destructive confirmations.
-  - Заменить локальные копии паттернов общими доступными компонентами, документировать варианты и
-    состояния, сохранив визуальную основу TailAdmin Vue и требования `docs/UI_DESIGN_REVIEW.md`.
-  - Проверить keyboard/focus, screen readers, контраст и responsive 320/640/768/1024/1280 px;
-    подтвердить компонентными тестами и независимым UI Design Guard review.
+  - Инвентаризировать shared tokens/components и привести buttons, fields, dialogs, tables,
+    pagination, states и destructive confirmations к одному accessible pattern.
+  - Проверить keyboard/focus, screen readers, contrast и 320/640/768/1024/1280 px; получить UI Guard review.
 
-- [ ] TASK-A018 Реализовать полноценное рабочее место менеджера по заказам
-  - Дополнить Admin API отсутствующими list/show contracts с серверными search/filter/sort/pagination,
-    не раскрывая PII без `orders.view`; текущий backend предоставляет действия над заказом, но не
-    предоставляет менеджеру полный список/карточку.
-  - Заменить `/orders` placeholder на список и карточку заказа: snapshots, сумма, контакты/доставка,
-    status transition/history, manual payment и internal comments с permission-aware actions.
-  - Покрыть OpenAPI, feature/component/e2e, PII/accessibility/responsive сценарии и UI Guard review.
+- [ ] TASK-A018 Реализовать рабочее место менеджера по заказам
+  - Добавить permission-safe order list/show API и заменить `/orders` placeholder на list/detail,
+    snapshots, contacts/delivery, transitions/history, payments и comments.
 
-- [ ] TASK-A019 Реализовать полноценное рабочее место менеджера по обращениям
-  - Добавить в Admin навигацию и экраны списка/карточки callback, email и partner requests с
-    search/filter/pagination, ответственным, status/history и internal comments.
-  - При необходимости дополнить API безопасным списком допустимых исполнителей, не требующим от
-    менеджера избыточного `admin-users.view`; все действия ограничить `contacts.view/manage`.
-  - Покрыть OpenAPI, feature/component/e2e, PII/accessibility/responsive сценарии и UI Guard review.
+- [ ] TASK-A019 Реализовать рабочее место менеджера по обращениям
+  - Добавить contacts navigation и list/detail для callback, email и partner requests с filters,
+    assignment, statuses, history и comments under `contacts.view/manage`.
 
 - [ ] TASK-A020 Провести финальную регрессию Interim Audit и разрешить переход к Phase 7
-  - Повторить полный backend/Admin/compose CI, PostgreSQL concurrency, Redis/queue, import/export,
-    OpenAPI contract и ключевые сквозные сценарии Phases 0–6 на чистом окружении.
-  - Подтвердить отсутствие незадокументированных API→Admin разрывов, high/critical findings,
-    устаревших ссылок, временных файлов и нераспределённых требований.
-  - Обновить компактный current-state/roadmap, перенести TASK-A001–A020 в завершённые и только после
-    этого начать Phase 7.
+  - Повторить clean-environment backend/Admin/Compose, PostgreSQL concurrency, Redis/queue,
+    import/export, OpenAPI и key end-to-end scenarios.
+  - Подтвердить отсутствие undocumented gaps, high/critical findings, stale links и temporary files.
 
 ## Phase 7 — Content
 
@@ -416,30 +80,20 @@
 - [ ] TASK-094 Stores
 - [ ] TASK-095 Working hours
 - [ ] TASK-096 Media library
-  - Deliver category images and brand logos through managed media references, replacing the
-    Catalog-phase `categories.image_id` and `brands.logo_id` placeholders with enforced media
-    relationships and lifecycle rules.
-  - Deliver reusable brand/catalog documents and file attachments through the same media layer;
-    define their attachment association, cardinality, role/order, and lifecycle without overloading
-    the singular brand `logo_id` or adding unmanaged file paths/a Catalog-owned upload subsystem.
-  - Before adding foreign keys, define and execute a safe policy for every pre-existing non-null
-    placeholder value (map, backfill, null, or reject), including explicit on-delete behavior.
+  - Deliver category images, brand logos and documents through managed media references; reconcile
+    every pre-existing non-null placeholder before adding foreign keys.
 
 ## Phase 8 — SEO
 
 - [ ] TASK-100 SEO metadata
-  - Create the separate managed SEO layer required for products, categories, and brands, including
-    title, meta description, OG title, OG description, and a managed-media OG image reference; do
-    not duplicate those values in Catalog tables.
-  - Define the entity relationship, permissions, validation, API/Admin CRUD, and migration policy
-    for any legacy SEO fields before they can be exposed; current Catalog tables have no SEO
-    placeholder columns.
-- [ ] TASK-101 Canonical for products, categories, brands, and other indexable entities
-- [ ] TASK-102 Sitemap generation for indexable catalog entities and content
-- [ ] TASK-103 Robots metadata/directives and robots.txt behavior
-- [ ] TASK-104 Redirects, including redirects required by catalog slug changes
-- [ ] TASK-105 Structured data for products, categories, brands, and other supported entities
-- [ ] TASK-106 SEO AI draft generation for the managed SEO workflow
+  - Create a separate managed SEO layer for products, categories and brands; do not duplicate values
+    in Catalog tables.
+- [ ] TASK-101 Canonical for indexable entities
+- [ ] TASK-102 Sitemap generation
+- [ ] TASK-103 Robots metadata/directives and robots.txt
+- [ ] TASK-104 Redirects, including Catalog slug changes
+- [ ] TASK-105 Structured data
+- [ ] TASK-106 SEO AI draft generation
 
 ## Phase 9 — Analytics
 
