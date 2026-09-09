@@ -236,7 +236,7 @@
 
 ## Phase 6 — Contacts
 
-- [ ] TASK-080 Callback requests
+- [x] TASK-080 Callback requests
 - [ ] TASK-081 Email requests
 - [ ] TASK-082 Partner requests
 - [ ] TASK-083 Assignment to manager

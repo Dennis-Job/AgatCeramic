@@ -252,7 +252,11 @@ Append-only история фактических переходов стату�
 ## Contacts
 
 ### contact_requests
-Обратные звонки и email requests.
+Обратные звонки и email requests. TASK-080 создаёт начальный общий контур: `type`, nullable
+`name`/`phone`/`email`/`message`, server-assigned `source` и timestamps. Для публичного обратного
+звонка сохраняются только `type=callback`, нормализованные имя и телефон, а `source=website`;
+клиент не может передать тип или источник. Статус, ответственный, комментарии и история обработки
+добавляются последующими задачами Phase 6.
 
 ### contact_request_comments
 

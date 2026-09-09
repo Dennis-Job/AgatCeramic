@@ -1432,6 +1432,33 @@
                 }
             }
         },
+        "/callback-requests": {
+            "post": {
+                "operationId": "createCallbackRequest",
+                "summary": "Request a callback from the website",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreCallbackRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Callback request accepted. No contact data is returned."
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    }
+                }
+            }
+        },
         "/admin/order-statuses": {
             "get": {
                 "operationId": "listOrderStatuses",
@@ -3894,6 +3921,15 @@
                     "delivery_address": {"type": "string", "maxLength": 1000},
                     "customer_comment": {"type": ["string", "null"], "maxLength": 2000},
                     "website": {"not": {}}
+                },
+                "additionalProperties": false
+            },
+            "StoreCallbackRequest": {
+                "type": "object",
+                "required": ["phone"],
+                "properties": {
+                    "name": {"type": ["string", "null"], "maxLength": 255},
+                    "phone": {"type": "string", "pattern": "^\\+?[0-9()\\s-]{10,30}$"}
                 },
                 "additionalProperties": false
             },

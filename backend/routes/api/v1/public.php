@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CallbackRequestController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
 use App\Http\Controllers\Api\V1\OrderController;
@@ -19,3 +20,6 @@ Route::post('cart/items', [CartItemController::class, 'store'])->name('cart.item
 Route::patch('cart/items/{item}', [CartItemController::class, 'update'])->name('cart.items.update');
 Route::delete('cart/items/{item}', [CartItemController::class, 'destroy'])->name('cart.items.destroy');
 Route::post('orders', [OrderController::class, 'store'])->middleware('throttle:order-create')->name('orders.store');
+Route::post('callback-requests', [CallbackRequestController::class, 'store'])
+    ->middleware('throttle:callback-request')
+    ->name('callback-requests.store');
