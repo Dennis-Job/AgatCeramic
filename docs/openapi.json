@@ -1459,6 +1459,33 @@
                 }
             }
         },
+        "/email-requests": {
+            "post": {
+                "operationId": "createEmailRequest",
+                "summary": "Request a reply by email from the website",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreEmailRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Email request accepted. No contact data is returned."
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    }
+                }
+            }
+        },
         "/admin/order-statuses": {
             "get": {
                 "operationId": "listOrderStatuses",
@@ -3930,6 +3957,16 @@
                 "properties": {
                     "name": {"type": ["string", "null"], "maxLength": 255},
                     "phone": {"type": "string", "pattern": "^\\+?[0-9()\\s-]{10,30}$"}
+                },
+                "additionalProperties": false
+            },
+            "StoreEmailRequest": {
+                "type": "object",
+                "required": ["email", "message"],
+                "properties": {
+                    "name": {"type": ["string", "null"], "maxLength": 255},
+                    "email": {"type": "string", "format": "email", "maxLength": 255},
+                    "message": {"type": "string", "minLength": 1, "maxLength": 2000}
                 },
                 "additionalProperties": false
             },
