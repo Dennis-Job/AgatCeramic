@@ -124,20 +124,22 @@ class ProcessProductImport implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        $import = ProductImport::query()->find($this->productImportId);
-        if ($import === null || $import->status === 'completed') {
-            return;
-        }
-
         $message = $exception instanceof ValidationException
             ? collect($exception->errors())->flatten()->first()
             : null;
         $message = is_string($message) && $message !== '' ? $message : 'Не удалось обработать XLSX-файл.';
-        $import->forceFill([
-            'status' => 'failed',
-            'error_message' => mb_substr($message, 0, 2000),
-            'completed_at' => now(),
-        ])->save();
-        app(StorageCleanupService::class)->schedule($import->disk, $import->path);
+        DB::transaction(function () use ($message): void {
+            $import = ProductImport::query()->whereKey($this->productImportId)->lockForUpdate()->first();
+            if ($import === null || $import->status === 'completed') {
+                return;
+            }
+
+            $import->forceFill([
+                'status' => 'failed',
+                'error_message' => mb_substr($message, 0, 2000),
+                'completed_at' => now(),
+            ])->save();
+            app(StorageCleanupService::class)->schedule($import->disk, $import->path);
+        });
     }
 }

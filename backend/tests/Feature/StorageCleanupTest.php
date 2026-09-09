@@ -12,6 +12,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
@@ -109,6 +110,31 @@ class StorageCleanupTest extends TestCase
         $this->assertSame('completed', $task->status);
         $this->assertSame(1, $task->attempts);
         $this->assertNotNull($task->completed_at);
+    }
+
+    public function test_retry_command_recovers_a_stale_processing_cleanup_task_without_duplicating_a_fresh_one(): void
+    {
+        $stale = StorageCleanupTask::query()->create([
+            'disk' => 'public',
+            'path' => 'product-images/1/stale.jpg',
+            'status' => 'processing',
+            'last_attempted_at' => now()->subMinutes(11),
+            'dispatched_at' => now()->subMinutes(11),
+        ]);
+        StorageCleanupTask::query()->create([
+            'disk' => 'public',
+            'path' => 'product-images/1/in-flight.jpg',
+            'status' => 'processing',
+            'last_attempted_at' => now()->subMinutes(9),
+            'dispatched_at' => now()->subMinutes(9),
+        ]);
+
+        Queue::fake();
+
+        $this->assertSame(0, Artisan::call('storage-cleanup:retry', ['--limit' => 10]));
+
+        Queue::assertPushed(DeleteStoredFile::class, 1);
+        Queue::assertPushed(DeleteStoredFile::class, fn (DeleteStoredFile $queued): bool => $queued->cleanupTaskId === $stale->id);
     }
 
     private function userWithRole(string $slug): User

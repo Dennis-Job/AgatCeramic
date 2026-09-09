@@ -17,6 +17,10 @@ operational/recovery rules — в [`docs/`](../docs/).
 | Interim Audit | TASK-A001–A004 | Baseline, repeat acceptance, documentation architecture и current-state map. |
 | Registry | TASK-A005 | Active registry normalized: TODO contains only unfinished roadmap, IN_PROGRESS only current work, and this index retains completed scopes. |
 | Artifact hygiene | TASK-A006 | Removed obsolete audit archive, empty `.tmp/` and generated Playwright output; recovery materials retained separately. |
+| Interim Audit | TASK-A011 | Laravel API-only and Admin/Client boundaries confirmed; see [`API_ONLY_BOUNDARIES_AUDIT.md`](../docs/API_ONLY_BOUNDARIES_AUDIT.md). |
+| Interim Audit | TASK-A012 | Security, audit and PII controls reviewed; no high/critical Phase 0–6 application finding. See [`SECURITY_PII_AUDIT.md`](../docs/SECURITY_PII_AUDIT.md). |
+| Interim Audit | TASK-A013 | Queues, imports and durable storage cleanup reviewed; stale processing recovery and terminal cleanup atomicity added. See [`ASYNC_STORAGE_AUDIT.md`](../docs/ASYNC_STORAGE_AUDIT.md). |
+| Interim Audit | TASK-A014 | OpenAPI and API guide reconciled with all 111 Phase 0–6 HTTP operations; route coverage and versioned compatibility gates added. See [`OPENAPI_CONTRACT_AUDIT.md`](../docs/OPENAPI_CONTRACT_AUDIT.md). |
 
 ## Проверки последней приёмки
 

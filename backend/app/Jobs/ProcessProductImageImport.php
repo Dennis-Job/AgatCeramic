@@ -8,6 +8,7 @@ use App\Services\ProductImageImportService;
 use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
@@ -20,6 +21,7 @@ class ProcessProductImageImport implements ShouldQueue
 
     public int $timeout = 80;
 
+    /** @var list<int> */
     public array $backoff = [30, 120];
 
     public function __construct(public readonly int $productImageImportId) {}
@@ -42,17 +44,27 @@ class ProcessProductImageImport implements ShouldQueue
 
             return;
         }
-        $import->forceFill(['status' => 'completed', 'completed_at' => now(), 'error_message' => null])->save();
-        $cleanup->schedule($import->disk, $import->path);
+        DB::transaction(function () use ($import, $cleanup): void {
+            $import = ProductImageImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
+            if ($import->status === 'completed') {
+                return;
+            }
+
+            $import->forceFill(['status' => 'completed', 'completed_at' => now(), 'error_message' => null])->save();
+            $cleanup->schedule($import->disk, $import->path);
+        });
     }
 
     public function failed(?Throwable $exception): void
     {
-        $import = ProductImageImport::query()->find($this->productImageImportId);
-        if ($import === null || $import->status === 'completed') {
-            return;
-        }
-        $import->forceFill(['status' => 'failed', 'error_message' => mb_substr($exception?->getMessage() ?: 'Не удалось обработать ZIP-архив.', 0, 2000), 'completed_at' => now()])->save();
-        app(StorageCleanupService::class)->schedule($import->disk, $import->path);
+        DB::transaction(function () use ($exception): void {
+            $import = ProductImageImport::query()->whereKey($this->productImageImportId)->lockForUpdate()->first();
+            if ($import === null || $import->status === 'completed') {
+                return;
+            }
+
+            $import->forceFill(['status' => 'failed', 'error_message' => mb_substr($exception?->getMessage() ?: 'Не удалось обработать ZIP-архив.', 0, 2000), 'completed_at' => now()])->save();
+            app(StorageCleanupService::class)->schedule($import->disk, $import->path);
+        });
     }
 }

@@ -7,6 +7,12 @@
 маршрута необходимо одновременно обновить соответствующую OpenAPI-операцию;
 запланированные маршруты в этом документе не являются доступными операциями API.
 
+В CI выполняются два независимых gate: Laravel route registry должен в точности
+совпадать с OpenAPI по пути и HTTP-методу, а изменение опубликованной операции,
+security, ответа, обязательности body или обязательных/enum полей схемы требует
+повышения `info.version` и migration plan. Это предотвращает недокументированный
+route drift и не позволяет выдать breaking change за патч-обновление контракта.
+
 ## Базовый путь
 
 `/api/v1`
@@ -20,20 +26,6 @@
 соответствующих задач аутентификации и политик доступа.
 
 ## Публичный API
-
-### Каталог
-
-`GET /categories`
-
-`GET /categories/{slug}`
-
-`GET /products`
-
-`GET /products/{slug}`
-
-`GET /brands`
-
-`GET /brands/{slug}`
 
 ### Корзина
 
@@ -79,11 +71,23 @@ IP ограничены пятью в минуту. Сервер в одной �
 адреса, но включает номер, статусы, серверный итог и snapshots позиций. Пустая либо устаревшая корзина
 возвращает `422` и сохраняется без изменений.
 
-### Контент
+### Обращения
 
-`GET /pages/{slug}`
+`POST /callback-requests`
 
-`GET /site-settings/public`
+Принимает обязательный `phone` и необязательное `name`; создаёт обращение типа
+`callback` и возвращает пустой `201`. Номер телефона не возвращается в ответе.
+
+`POST /email-requests`
+
+Принимает обязательные `email` и `message`, а также необязательное `name`; создаёт
+обращение типа `email` и возвращает пустой `201`.
+
+`POST /partner-requests`
+
+Принимает `name`, `phone`, `email` и `message`; создаёт партнёрское обращение и
+возвращает пустой `201`. Все три публичные формы имеют собственные rate limits;
+ошибки валидации возвращаются как `422`, превышение лимита — как `429`.
 
 ## Admin authentication
 
@@ -665,8 +669,22 @@ checkout.
 
 ### Обращения
 
-Операции создания, просмотра, изменения и удаления, а также процесс обработки
-статусов.
+`GET /admin/contact-statuses` возвращает серверный каталог статусов. Список и
+деталь обращений доступны через `GET /admin/contact-requests` и
+`GET /admin/contact-requests/{contactRequest}` при `contacts.view`. Список
+поддерживает `search`, `type`, `status`, `assignee_id`, `unassigned` и `per_page`.
+
+`PATCH /admin/contact-requests/{contactRequest}/assignee` требует
+`contacts.manage`; тело содержит `assignee_id` (nullable для снятия назначения).
+`PATCH /admin/contact-requests/{contactRequest}/status` требует тот же доступ и
+принимает серверный код статуса. Фактические переходы доступны через
+`GET /admin/contact-requests/{contactRequest}/status-history`.
+
+Внутренние комментарии доступны через
+`GET|POST /admin/contact-requests/{contactRequest}/comments`; просмотр требует
+`contacts.view`, добавление — `contacts.manage`. Текст `body` обязателен, не пуст
+и ограничен 5000 символами. Списки history и comments пагинируются параметром
+`per_page` (1–100); PII не дублируется в audit metadata.
 
 ### Контент
 

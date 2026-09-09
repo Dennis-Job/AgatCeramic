@@ -38,6 +38,8 @@ time, and use Laravel's normal retry/`failed_jobs` handling.
 
 The scheduler runs `storage-cleanup:retry` every five minutes. It redispatches
 eligible pending/failed records and recovers tasks left behind by queue outages.
+It also recovers a `processing` task whose last attempt is older than ten minutes;
+newer processing work is left untouched to avoid duplicate live dispatch.
 Operators can inspect and trigger a bounded batch manually:
 
 ```powershell
