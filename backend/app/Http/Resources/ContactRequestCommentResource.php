@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ContactRequestComment;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<ContactRequestComment> */
 class ContactRequestCommentResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         $author = $this->author_snapshot ?? [];

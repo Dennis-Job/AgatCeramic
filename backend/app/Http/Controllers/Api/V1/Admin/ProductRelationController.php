@@ -45,7 +45,7 @@ class ProductRelationController extends Controller
     {
         Gate::authorize('update', $product);
 
-        $updatedProduct = $this->managementService->replace($request->user(), $product, $request->validated('relations'));
+        $updatedProduct = $this->managementService->replace($this->authenticatedAdmin($request), $product, $request->validated('relations'));
 
         return ProductRelationResource::collection(
             $updatedProduct->outgoingRelations()->with('relatedProduct')->orderBy('sort_order')->orderBy('type')->get(),

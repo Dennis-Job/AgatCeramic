@@ -28,7 +28,7 @@ class AttributeGroupController extends Controller
     {
         Gate::authorize('create', AttributeGroup::class);
 
-        return (new AttributeGroupResource($this->managementService->create($request->user(), $request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new AttributeGroupResource($this->managementService->create($this->authenticatedAdmin($request), $request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function show(AttributeGroup $attributeGroup): AttributeGroupResource
@@ -42,13 +42,13 @@ class AttributeGroupController extends Controller
     {
         Gate::authorize('update', $attributeGroup);
 
-        return new AttributeGroupResource($this->managementService->update($request->user(), $attributeGroup, $request->validated()));
+        return new AttributeGroupResource($this->managementService->update($this->authenticatedAdmin($request), $attributeGroup, $request->validated()));
     }
 
     public function destroy(AttributeGroup $attributeGroup): Response
     {
         Gate::authorize('delete', $attributeGroup);
-        $this->managementService->delete(request()->user(), $attributeGroup);
+        $this->managementService->delete($this->authenticatedAdmin(request()), $attributeGroup);
 
         return response()->noContent();
     }

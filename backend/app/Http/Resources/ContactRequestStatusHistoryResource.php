@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ContactRequestStatusHistory;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<ContactRequestStatusHistory> */
 class ContactRequestStatusHistoryResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         $actor = $this->actor_snapshot ?? [];

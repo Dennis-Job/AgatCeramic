@@ -39,7 +39,7 @@ class ProductController extends Controller
     {
         Gate::authorize('create', Product::class);
 
-        $product = $this->managementService->create($request->user(), $request->validated());
+        $product = $this->managementService->create($this->authenticatedAdmin($request), $request->validated());
 
         return (new ProductResource($product->load(['category', 'brand', 'primaryImage', 'groupMembership.group'])))->response()->setStatusCode(Response::HTTP_CREATED);
     }
@@ -55,13 +55,13 @@ class ProductController extends Controller
     {
         Gate::authorize('update', $product);
 
-        return new ProductResource($this->managementService->update($request->user(), $product, $request->validated())->load(['category', 'brand', 'primaryImage', 'groupMembership.group']));
+        return new ProductResource($this->managementService->update($this->authenticatedAdmin($request), $product, $request->validated())->load(['category', 'brand', 'primaryImage', 'groupMembership.group']));
     }
 
     public function destroy(Product $product): Response
     {
         Gate::authorize('delete', $product);
-        $this->managementService->delete(request()->user(), $product);
+        $this->managementService->delete($this->authenticatedAdmin(request()), $product);
 
         return response()->noContent();
     }

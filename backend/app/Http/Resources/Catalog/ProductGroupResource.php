@@ -3,10 +3,13 @@
 namespace App\Http\Resources\Catalog;
 
 use App\Http\Resources\ApiResource;
+use App\Models\ProductGroup;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<ProductGroup> */
 class ProductGroupResource extends ApiResource
 {
+    #[\Override]
     public function toArray(Request $request): array
     {
         return [

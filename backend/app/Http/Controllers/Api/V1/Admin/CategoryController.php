@@ -35,7 +35,7 @@ class CategoryController extends Controller
     {
         Gate::authorize('create', Category::class);
 
-        return (new CategoryResource($this->managementService->create($request->user(), $request->validated())))
+        return (new CategoryResource($this->managementService->create($this->authenticatedAdmin($request), $request->validated())))
             ->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
@@ -50,13 +50,13 @@ class CategoryController extends Controller
     {
         Gate::authorize('update', $category);
 
-        return new CategoryResource($this->managementService->update($request->user(), $category, $request->validated()));
+        return new CategoryResource($this->managementService->update($this->authenticatedAdmin($request), $category, $request->validated()));
     }
 
     public function destroy(Category $category): Response
     {
         Gate::authorize('delete', $category);
-        $this->managementService->delete(request()->user(), $category);
+        $this->managementService->delete($this->authenticatedAdmin(request()), $category);
 
         return response()->noContent();
     }

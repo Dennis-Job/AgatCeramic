@@ -47,7 +47,7 @@ class AdminUserController extends Controller
     {
         Gate::authorize('create', User::class);
 
-        return (new AdminUserResource($this->managementService->create($request->user(), $request->validated())))
+        return (new AdminUserResource($this->managementService->create($this->authenticatedAdmin($request), $request->validated())))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
     }
@@ -64,9 +64,10 @@ class AdminUserController extends Controller
         Gate::authorize('update', $user);
 
         $attributes = $request->validated();
-        $updatedUser = $this->managementService->update($request->user(), $user, $attributes);
+        $admin = $this->authenticatedAdmin($request);
+        $updatedUser = $this->managementService->update($admin, $user, $attributes);
 
-        if (array_key_exists('password', $attributes) && $request->user()->is($user)) {
+        if (array_key_exists('password', $attributes) && $admin->is($user)) {
             Auth::guard('web')->logout();
             if ($request->hasSession()) {
                 $request->session()->invalidate();
@@ -80,7 +81,7 @@ class AdminUserController extends Controller
     public function destroy(User $user): Response
     {
         Gate::authorize('delete', $user);
-        $this->managementService->delete(request()->user(), $user);
+        $this->managementService->delete($this->authenticatedAdmin(request()), $user);
 
         return response()->noContent();
     }

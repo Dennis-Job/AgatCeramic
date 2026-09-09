@@ -3,12 +3,15 @@
 namespace App\Http\Resources\Catalog;
 
 use App\Http\Resources\ApiResource;
+use App\Models\ProductImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+/** @extends ApiResource<ProductImage> */
 class ProductImageResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         return [

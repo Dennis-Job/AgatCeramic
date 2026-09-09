@@ -2,12 +2,15 @@
 
 namespace App\Http\Resources;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<AuditLog> */
 class AuditLogResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         return [

@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Models\OrderComment;
 use Illuminate\Http\Request;
 
+/** @extends ApiResource<OrderComment> */
 class OrderCommentResource extends ApiResource
 {
     /** @return array<string, mixed> */
+    #[\Override]
     public function toArray(Request $request): array
     {
         $author = $this->author_snapshot ?? [];
