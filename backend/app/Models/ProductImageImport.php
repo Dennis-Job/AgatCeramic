@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['user_id', 'original_filename', 'disk', 'path', 'status', 'attempts', 'total_folders', 'processed_folders', 'created_images', 'replaced_images', 'failed_folders', 'processed_skus', 'error_message', 'started_at', 'completed_at'])]
 class ProductImageImport extends Model
 {
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

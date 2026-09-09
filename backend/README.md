@@ -17,6 +17,7 @@ Run the checks:
 ```powershell
 composer test
 vendor/bin/pint --test
+composer analyse
 ```
 
 PostgreSQL is the default application database. Set the `DB_*` values in `backend/.env`; when Laravel runs through Docker Compose, those values are supplied by the root `.env` and the database host is `postgres`.

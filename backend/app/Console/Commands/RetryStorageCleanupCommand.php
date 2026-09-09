@@ -16,7 +16,13 @@ class RetryStorageCleanupCommand extends Command
     {
         $limit = max(1, min(1000, (int) $this->option('limit')));
         $tasks = StorageCleanupTask::query()
-            ->whereIn('status', ['pending', 'failed'])
+            ->where(function ($query): void {
+                $query->whereIn('status', ['pending', 'failed'])
+                    ->orWhere(function ($query): void {
+                        $query->where('status', 'processing')
+                            ->where('last_attempted_at', '<=', now()->subMinutes(10));
+                    });
+            })
             ->where(fn ($query) => $query->whereNull('next_attempt_at')->orWhere('next_attempt_at', '<=', now()))
             ->where(fn ($query) => $query->whereNull('dispatched_at')->orWhere('dispatched_at', '<=', now()->subMinutes(10)))
             ->orderBy('id')

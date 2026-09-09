@@ -396,6 +396,18 @@
                     }
                 }
             },
+            "put": {
+                "operationId": "replaceAdminUser",
+                "summary": "Replace an administrative user",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateAdminUserRequest"}}}},
+                "responses": {
+                    "200": {"description": "Replaced user", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AdminUserResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            },
             "delete": {
                 "operationId": "deleteAdminUser",
                 "summary": "Delete an administrative user",
@@ -539,6 +551,18 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationFailed"
                     }
+                }
+            },
+            "put": {
+                "operationId": "replaceRole",
+                "summary": "Replace role and permission assignments",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateRoleRequest"}}}},
+                "responses": {
+                    "200": {"description": "Replaced role", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RoleResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
                 }
             },
             "delete": {
@@ -694,7 +718,14 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated audit records"
+                        "description": "Paginated audit records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuditLogCollection"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"
@@ -729,7 +760,14 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Audit record"
+                        "description": "Audit record",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuditLogResponse"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"
@@ -738,7 +776,7 @@
                         "$ref": "#/components/responses/Forbidden"
                     },
                     "404": {
-                        "$ref": "#/components/responses/BadRequest"
+                        "$ref": "#/components/responses/NotFound"
                     }
                 }
             }
@@ -3368,6 +3406,59 @@
                         "format": "password",
                         "minLength": 12
                     }
+                },
+                "additionalProperties": false
+            },
+            "AuditLog": {
+                "type": "object",
+                "required": ["id", "action", "actor", "entity", "metadata", "details", "occurred_at"],
+                "properties": {
+                    "id": {"type": "integer", "example": 42},
+                    "action": {"type": "string", "example": "product.updated"},
+                    "actor": {
+                        "type": ["object", "null"],
+                        "required": ["id", "name"],
+                        "properties": {"id": {"type": ["integer", "null"]}, "name": {"type": "string"}},
+                        "additionalProperties": false
+                    },
+                    "entity": {
+                        "type": ["object", "null"],
+                        "required": ["type", "id", "name", "email"],
+                        "properties": {
+                            "type": {"type": "string"},
+                            "id": {"type": ["integer", "null"]},
+                            "name": {"type": ["string", "null"]},
+                            "email": {"type": ["string", "null"], "format": "email"}
+                        },
+                        "additionalProperties": false
+                    },
+                    "metadata": {"type": ["object", "null"], "additionalProperties": true},
+                    "details": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["label", "value"],
+                            "properties": {"label": {"type": "string"}, "value": {"type": "string"}},
+                            "additionalProperties": false
+                        }
+                    },
+                    "occurred_at": {"type": ["string", "null"], "format": "date-time", "example": "2026-09-09T12:00:00.000000Z"}
+                },
+                "additionalProperties": false
+            },
+            "AuditLogResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {"data": {"$ref": "#/components/schemas/AuditLog"}},
+                "additionalProperties": false
+            },
+            "AuditLogCollection": {
+                "type": "object",
+                "required": ["data", "links", "meta"],
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/AuditLog"}},
+                    "links": {"type": "object"},
+                    "meta": {"type": "object"}
                 },
                 "additionalProperties": false
             },

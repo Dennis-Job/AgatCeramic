@@ -9,40 +9,6 @@ canonical documentation и audit reports.
 Переход к Phase 7 запрещён до завершения этого блока. Refactoring не меняет подтверждённый
 API behaviour без migration plan и синхронного обновления OpenAPI.
 
-- [ ] TASK-A007 Ввести измеримый baseline качества Laravel backend
-  - Проверить structure, namespaces, typing, dependencies и Laravel conventions.
-  - Настроить strict supported Larastan/PHPStan без baseline, скрывающего новые errors.
-
-- [ ] TASK-A008 Нормализовать HTTP/API-слой Laravel
-  - Проверить thin controllers, Form Requests, Policies, Resources, pagination, filtering,
-    sorting, status codes и error format.
-  - Исправлять подтверждённые отклонения только с OpenAPI update.
-
-- [ ] TASK-A009 Нормализовать business services и module boundaries
-  - Устранить duplication в Catalog/import/export, orders, contacts, auth/audit и storage cleanup.
-  - Зафиксировать transaction boundaries, idempotency и common application services.
-
-- [ ] TASK-A010 Проверить модели, БД и целостность данных
-  - Проверить relations, casts, fillable, factories, indexes, foreign keys, constraints и locks.
-  - Legacy product-variant tables удалять только отдельной verified migration после reconciliation.
-
-- [ ] TASK-A011 Подтвердить API-only архитектуру и границы Admin/Client
-  - Проверить отсутствие user-facing Blade flows, public/Admin separation и Phase 10 reuse.
-
-- [ ] TASK-A012 Усилить безопасность, аудит и обработку персональных данных
-  - Проверить auth, RBAC, rate limits, uploads/imports, queue payloads, secrets, PII masking,
-    retention, backups и data access.
-  - Закрыть high/critical findings до зависимых functional refactorings.
-
-- [ ] TASK-A013 Проверить надёжность очередей, импортов и файлового хранилища
-  - Свести lifecycle async operations, retry/backoff/timeout, after-commit dispatch, ownership,
-    error reports и cleanup.
-
-- [ ] TASK-A014 Привести OpenAPI и human-readable API guide к фактическому контракту
-  - Автоматически сопоставить Laravel routes Phases 0–6 с `docs/openapi.json`, включая security,
-    schemas, errors, pagination и examples.
-  - Добавить CI route-coverage и incompatible-contract-drift gates.
-
 - [ ] TASK-A015 Перестроить тестовую пирамиду и CI quality gates
   - Разделить unit/feature/integration/contract/e2e, закрыть negative/permission/concurrency cases
     и исключить flaky tests.

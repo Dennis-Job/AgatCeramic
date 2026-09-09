@@ -45,6 +45,8 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -75,6 +77,16 @@ jobs:
 
       - name: Audit PHP dependencies
         run: composer audit --locked
+
+      - name: Guard against incompatible OpenAPI drift
+        working-directory: .
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:docs/openapi.json"; then
+            git show "$BASE_SHA:docs/openapi.json" > "$RUNNER_TEMP/openapi-base.json"
+            php backend/scripts/assert-openapi-compatible.php "$RUNNER_TEMP/openapi-base.json" docs/openapi.json
+          fi
 
       - name: Check PHP formatting
         run: vendor/bin/pint --test
