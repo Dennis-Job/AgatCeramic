@@ -1513,6 +1513,73 @@
                 }
             }
         },
+        "/admin/contact-requests/{contactRequest}/assignee": {
+            "patch": {
+                "operationId": "assignContactRequest",
+                "summary": "Assign or unassign the responsible contact manager",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "contactRequest",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssignContactRequestRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "Responsible employee updated."
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
+        "/admin/contact-statuses": {
+            "get": {"operationId": "listContactStatuses", "summary": "List server-managed contact statuses", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Contact statuses", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactStatusCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
+        },
+        "/admin/contact-requests": {
+            "get": {"operationId": "listContactRequests", "summary": "List contact requests", "security": [{"sanctumSession": []}], "parameters": [{"name": "search", "in": "query", "schema": {"type": "string"}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["callback", "email", "partner"]}}, {"name": "status", "in": "query", "schema": {"$ref": "#/components/schemas/ContactRequestStatus"}}, {"name": "assignee_id", "in": "query", "schema": {"type": "integer"}}, {"name": "unassigned", "in": "query", "schema": {"type": "boolean"}}, {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}}], "responses": {"200": {"description": "Contact requests", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
+        },
+        "/admin/contact-requests/{contactRequest}": {
+            "get": {"operationId": "getContactRequest", "summary": "Get a contact request", "security": [{"sanctumSession": []}], "parameters": [{"$ref": "#/components/parameters/ContactRequestId"}], "responses": {"200": {"description": "Contact request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+        },
+        "/admin/contact-requests/{contactRequest}/status": {
+            "patch": {"operationId": "updateContactRequestStatus", "summary": "Transition a contact request", "security": [{"sanctumSession": []}], "parameters": [{"$ref": "#/components/parameters/ContactRequestId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/UpdateContactRequestStatusRequest"}}}}, "responses": {"200": {"description": "Updated contact request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}}
+        },
+        "/admin/contact-requests/{contactRequest}/status-history": {
+            "get": {"operationId": "listContactRequestStatusHistory", "summary": "List contact status history", "security": [{"sanctumSession": []}], "parameters": [{"$ref": "#/components/parameters/ContactRequestId"}, {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}}], "responses": {"200": {"description": "Status history", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestStatusHistoryCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+        },
+        "/admin/contact-requests/{contactRequest}/comments": {
+            "get": {"operationId": "listContactRequestComments", "summary": "List internal contact comments", "security": [{"sanctumSession": []}], "parameters": [{"$ref": "#/components/parameters/ContactRequestId"}, {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}}], "responses": {"200": {"description": "Comments", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCommentCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}},
+            "post": {"operationId": "createContactRequestComment", "summary": "Add an internal contact comment", "security": [{"sanctumSession": []}], "parameters": [{"$ref": "#/components/parameters/ContactRequestId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StoreContactRequestCommentRequest"}}}}, "responses": {"201": {"description": "Comment created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCommentResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}}
+        },
         "/admin/order-statuses": {
             "get": {
                 "operationId": "listOrderStatuses",
@@ -4008,6 +4075,27 @@
                 },
                 "additionalProperties": false
             },
+            "AssignContactRequestRequest": {
+                "type": "object",
+                "required": ["assignee_id"],
+                "properties": {
+                    "assignee_id": {"type": ["integer", "null"], "minimum": 1}
+                },
+                "additionalProperties": false
+            },
+            "ContactRequestStatus": {"type": "string", "enum": ["new", "processing", "awaiting_client", "completed", "rejected"]},
+            "ContactStatus": {"type": "object", "required": ["code", "name", "is_terminal"], "properties": {"code": {"$ref": "#/components/schemas/ContactRequestStatus"}, "name": {"type": "string"}, "is_terminal": {"type": "boolean"}}, "additionalProperties": false},
+            "ContactStatusCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactStatus"}}}, "additionalProperties": false},
+            "ContactRequest": {"type": "object", "required": ["id", "type", "contact", "message", "source", "status", "assigned_at", "completed_at", "created_at"], "properties": {"id": {"type": "integer"}, "type": {"type": "string", "enum": ["callback", "email", "partner"]}, "contact": {"type": "object", "required": ["name", "phone", "email"], "properties": {"name": {"type": ["string", "null"]}, "phone": {"type": ["string", "null"]}, "email": {"type": ["string", "null"], "format": "email"}}, "additionalProperties": false}, "message": {"type": ["string", "null"]}, "source": {"type": "string"}, "status": {"$ref": "#/components/schemas/ContactRequestStatus"}, "assignee": {"type": ["object", "null"], "required": ["id", "name"], "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}, "additionalProperties": false}, "assigned_at": {"type": ["string", "null"], "format": "date-time"}, "completed_at": {"type": ["string", "null"], "format": "date-time"}, "created_at": {"type": ["string", "null"], "format": "date-time"}}, "additionalProperties": false},
+            "ContactRequestResponse": {"type": "object", "required": ["data"], "properties": {"data": {"$ref": "#/components/schemas/ContactRequest"}}, "additionalProperties": false},
+            "ContactRequestCollection": {"type": "object", "required": ["data", "links", "meta"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactRequest"}}, "links": {"type": "object"}, "meta": {"type": "object"}}, "additionalProperties": false},
+            "UpdateContactRequestStatusRequest": {"type": "object", "required": ["status"], "properties": {"status": {"$ref": "#/components/schemas/ContactRequestStatus"}}, "additionalProperties": false},
+            "StoreContactRequestCommentRequest": {"type": "object", "required": ["body"], "properties": {"body": {"type": "string", "minLength": 1, "maxLength": 5000}}, "additionalProperties": false},
+            "ContactRequestComment": {"type": "object", "required": ["id", "body", "author", "created_at"], "properties": {"id": {"type": "integer"}, "body": {"type": "string"}, "author": {"type": ["object", "null"], "required": ["id", "name"], "properties": {"id": {"type": ["integer", "null"]}, "name": {"type": "string"}}, "additionalProperties": false}, "created_at": {"type": "string", "format": "date-time"}}, "additionalProperties": false},
+            "ContactRequestCommentResponse": {"type": "object", "required": ["data"], "properties": {"data": {"$ref": "#/components/schemas/ContactRequestComment"}}, "additionalProperties": false},
+            "ContactRequestCommentCollection": {"type": "object", "required": ["data", "links", "meta"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactRequestComment"}}, "links": {"type": "object"}, "meta": {"type": "object"}}, "additionalProperties": false},
+            "ContactRequestStatusHistory": {"type": "object", "required": ["id", "from_status", "to_status", "actor", "occurred_at"], "properties": {"id": {"type": "integer"}, "from_status": {"$ref": "#/components/schemas/ContactRequestStatus"}, "to_status": {"$ref": "#/components/schemas/ContactRequestStatus"}, "actor": {"type": ["object", "null"], "required": ["id", "name"], "properties": {"id": {"type": ["integer", "null"]}, "name": {"type": "string"}}, "additionalProperties": false}, "occurred_at": {"type": "string", "format": "date-time"}}, "additionalProperties": false},
+            "ContactRequestStatusHistoryCollection": {"type": "object", "required": ["data", "links", "meta"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactRequestStatusHistory"}}, "links": {"type": "object"}, "meta": {"type": "object"}}, "additionalProperties": false},
             "OrderItem": {
                 "type": "object",
                 "required": ["product_id", "product_name", "product_sku", "unit_price", "quantity", "line_total"],
@@ -5664,6 +5752,9 @@
                 },
                 "additionalProperties": false
             }
+        },
+        "parameters": {
+            "ContactRequestId": {"name": "contactRequest", "in": "path", "required": true, "schema": {"type": "integer"}}
         },
         "responses": {
             "Unauthenticated": {

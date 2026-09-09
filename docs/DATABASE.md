@@ -257,10 +257,17 @@ Append-only история фактических переходов стату�
 звонка сохраняются только `type=callback`, нормализованные имя и телефон; для email-запроса —
 `type=email`, нормализованные имя, email и сообщение; для партнёрского обращения — `type=partner`
 и все четыре поля контакта. Во всех случаях `source=website`; клиент не может передать тип или
-источник. Статус, ответственный, комментарии и история обработки добавляются последующими задачами
-Phase 6.
+источник. TASK-084 добавляет server-managed `status` (по умолчанию `new`) и `completed_at`;
+terminal-статусы не допускают дальнейших переходов.
+TASK-083 добавляет nullable `assignee_id` с `nullOnDelete` и `assigned_at`; назначаться
+может только активный сотрудник с правом `contacts.manage`. Назначение или снятие назначения пишет
+аудит без PII и не изменяет состояние будущего workflow.
 
 ### contact_request_comments
+Неизменяемые внутренние комментарии: `contact_request_id`, nullable `author_id` с `nullOnDelete`,
+`author_snapshot`, `body` и `created_at`. Индекс `(contact_request_id, created_at, id)` поддерживает
+хронологическое постраничное чтение. История переходов хранится отдельно в
+`contact_request_status_histories` с начальным/целевым статусом, снимком автора и `occurred_at`.
 
 ## Content
 
