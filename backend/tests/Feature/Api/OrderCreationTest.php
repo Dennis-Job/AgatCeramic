@@ -24,6 +24,7 @@ class OrderCreationTest extends TestCase
 
         $firstProduct->update(['price' => '1250.00']);
         $response = $this->withHeader('X-Cart-Token', $cart->token)
+            ->withHeader('Idempotency-Key', 'order-create-immutable-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertCreated()
             ->assertJsonPath('data.status', 'new')
@@ -67,6 +68,7 @@ class OrderCreationTest extends TestCase
     {
         $emptyCart = Cart::factory()->create();
         $this->withHeader('X-Cart-Token', $emptyCart->token)
+            ->withHeader('Idempotency-Key', 'order-create-empty-cart-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertUnprocessable()
             ->assertJsonPath('error.details.cart.0', 'Корзина пуста.');
@@ -77,6 +79,7 @@ class OrderCreationTest extends TestCase
         $product->update(['stock_quantity' => 1]);
 
         $this->withHeader('X-Cart-Token', $cart->token)
+            ->withHeader('Idempotency-Key', 'order-create-unavailable-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertUnprocessable()
             ->assertJsonPath('error.details.cart.0', 'Корзина содержит недоступный товар или недостаточное количество.');
@@ -92,6 +95,7 @@ class OrderCreationTest extends TestCase
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
 
         $this->withHeader('X-Cart-Token', $cart->token)
+            ->withHeader('Idempotency-Key', 'order-create-validation-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload([
                 'customer_phone' => '123',
                 'website' => 'https://spam.example',
@@ -103,6 +107,41 @@ class OrderCreationTest extends TestCase
 
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('cart_items', 1);
+    }
+
+    public function test_checkout_replays_the_original_order_for_the_same_idempotency_key(): void
+    {
+        $cart = Cart::factory()->create();
+        $product = Product::factory()->create(['price' => '100.00', 'stock_quantity' => 2]);
+        CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
+        $key = 'order-create-replay-test-0001';
+
+        $first = $this->withHeader('X-Cart-Token', $cart->token)
+            ->withHeader('Idempotency-Key', $key)
+            ->postJson('/api/v1/orders', $this->checkoutPayload())
+            ->assertCreated();
+        $second = $this->withHeader('X-Cart-Token', $cart->token)
+            ->withHeader('Idempotency-Key', $key)
+            ->postJson('/api/v1/orders', $this->checkoutPayload())
+            ->assertOk()
+            ->assertHeader('Idempotent-Replayed', 'true');
+
+        $this->assertSame($first->json('data.order_number'), $second->json('data.order_number'));
+        $this->assertDatabaseCount('orders', 1);
+    }
+
+    public function test_checkout_rejects_reusing_an_idempotency_key_with_different_data(): void
+    {
+        $cart = Cart::factory()->create();
+        $product = Product::factory()->create(['stock_quantity' => 2]);
+        CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
+        $key = 'order-create-conflict-test-001';
+
+        $this->withHeader('X-Cart-Token', $cart->token)->withHeader('Idempotency-Key', $key)
+            ->postJson('/api/v1/orders', $this->checkoutPayload())->assertCreated();
+        $this->withHeader('X-Cart-Token', $cart->token)->withHeader('Idempotency-Key', $key)
+            ->postJson('/api/v1/orders', $this->checkoutPayload(['delivery_address' => 'Другой адрес']))
+            ->assertConflict();
     }
 
     /** @param array<string, mixed> $overrides @return array<string, mixed> */

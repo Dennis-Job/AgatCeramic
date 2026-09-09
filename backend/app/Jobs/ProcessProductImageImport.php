@@ -2,15 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Enums\AdminUserStatus;
-use App\Models\ProductImageImport;
+use App\Services\ImportLifecycleService;
 use App\Services\ProductImageImportService;
 use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 use Throwable;
 
 class ProcessProductImageImport implements ShouldQueue
@@ -26,45 +22,24 @@ class ProcessProductImageImport implements ShouldQueue
 
     public function __construct(public readonly int $productImageImportId) {}
 
-    public function handle(ProductImageImportService $service, StorageCleanupService $cleanup): void
+    public function handle(ProductImageImportService $service, StorageCleanupService $cleanup, ?ImportLifecycleService $lifecycle = null): void
     {
-        $import = ProductImageImport::query()->with('user')->find($this->productImageImportId);
-        if ($import === null || $import->status === 'completed') {
+        $lifecycle ??= app(ImportLifecycleService::class);
+        $import = $lifecycle->startProductImageImport($this->productImageImportId);
+        if ($import === null) {
             return;
         }
-        $import->forceFill(['status' => 'processing', 'attempts' => $import->attempts + 1, 'error_message' => null, 'started_at' => $import->started_at ?? now()])->save();
-        if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $import->user->hasPermission('imports.manage')) {
-            throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
-        }
-        if (! Storage::disk($import->disk)->exists($import->path)) {
-            throw new RuntimeException('Загруженный ZIP-файл больше не доступен.');
-        }
-        if (! $service->process($import)) {
-            self::dispatch($import->id);
 
-            return;
-        }
-        DB::transaction(function () use ($import, $cleanup): void {
-            $import = ProductImageImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
-            if ($import->status === 'completed') {
-                return;
-            }
-
-            $import->forceFill(['status' => 'completed', 'completed_at' => now(), 'error_message' => null])->save();
-            $cleanup->schedule($import->disk, $import->path);
-        });
+        $service->process($import)
+            ? $lifecycle->completeProductImageImport($import)
+            : $lifecycle->continueProductImageImport($import);
     }
 
     public function failed(?Throwable $exception): void
     {
-        DB::transaction(function () use ($exception): void {
-            $import = ProductImageImport::query()->whereKey($this->productImageImportId)->lockForUpdate()->first();
-            if ($import === null || $import->status === 'completed') {
-                return;
-            }
-
-            $import->forceFill(['status' => 'failed', 'error_message' => mb_substr($exception?->getMessage() ?: 'Не удалось обработать ZIP-архив.', 0, 2000), 'completed_at' => now()])->save();
-            app(StorageCleanupService::class)->schedule($import->disk, $import->path);
-        });
+        app(ImportLifecycleService::class)->failProductImageImport(
+            $this->productImageImportId,
+            $exception?->getMessage() ?: 'Не удалось обработать ZIP-архив.',
+        );
     }
 }

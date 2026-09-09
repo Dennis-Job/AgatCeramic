@@ -19,11 +19,14 @@ class OrderController extends Controller
 
     public function store(StoreOrderRequest $request): JsonResponse
     {
-        $order = $this->orderCreationService->create(
+        $result = $this->orderCreationService->create(
             $this->guestCartService->resolve($request->cartToken()),
-            $request->safe()->except('cart_token', 'website'),
+            $request->safe()->except('cart_token', 'website', 'idempotency_key'),
+            $request->idempotencyKey(),
         );
 
-        return (new OrderResource($order))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new OrderResource($result->order))->response()
+            ->setStatusCode($result->replayed ? Response::HTTP_OK : Response::HTTP_CREATED)
+            ->header('Idempotent-Replayed', $result->replayed ? 'true' : 'false');
     }
 }

@@ -23,6 +23,7 @@ class OrderConfirmationTest extends TestCase
         $cart = $this->cartWithProduct();
 
         $response = $this->withHeader('X-Cart-Token', $cart->token)
+            ->withHeader('Idempotency-Key', 'order-confirmation-email-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertCreated();
 
@@ -32,6 +33,7 @@ class OrderConfirmationTest extends TestCase
         Queue::fake();
         $cartWithoutEmail = $this->cartWithProduct();
         $this->withHeader('X-Cart-Token', $cartWithoutEmail->token)
+            ->withHeader('Idempotency-Key', 'order-confirmation-no-email-001')
             ->postJson('/api/v1/orders', $this->checkoutPayload(['customer_email' => null]))
             ->assertCreated();
 

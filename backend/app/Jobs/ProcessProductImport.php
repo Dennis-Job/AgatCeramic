@@ -2,20 +2,17 @@
 
 namespace App\Jobs;
 
-use App\Enums\AdminUserStatus;
-use App\Models\ProductImport;
 use App\Services\CategoryProductImportService;
 use App\Services\GenericProductImportService;
+use App\Services\ImportLifecycleService;
 use App\Services\ProductGroupImportService;
 use App\Services\ProductImportService;
 use App\Services\ProductPriceStatusImportService;
 use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
 use Throwable;
 
 class ProcessProductImport implements ShouldQueue
@@ -31,95 +28,66 @@ class ProcessProductImport implements ShouldQueue
 
     public function __construct(public readonly int $productImportId) {}
 
-    public function handle(ProductImportService $service, StorageCleanupService $cleanupService): void
-    {
-        $import = ProductImport::query()->with('user')->find($this->productImportId);
-        if ($import === null || $import->status === 'completed') {
+    public function handle(
+        ProductImportService $service,
+        StorageCleanupService $cleanupService,
+        ?ImportLifecycleService $lifecycle = null,
+        ?GenericProductImportService $generic = null,
+        ?CategoryProductImportService $categoryImport = null,
+        ?ProductGroupImportService $groupImport = null,
+        ?ProductPriceStatusImportService $priceStatusImport = null,
+    ): void {
+        // Optional arguments keep direct legacy test invocations compatible; queued execution injects all services.
+        $lifecycle ??= app(ImportLifecycleService::class);
+        $generic ??= app(GenericProductImportService::class);
+        $categoryImport ??= app(CategoryProductImportService::class);
+        $groupImport ??= app(ProductGroupImportService::class);
+        $priceStatusImport ??= app(ProductPriceStatusImportService::class);
+
+        $import = $lifecycle->startProductImport($this->productImportId);
+        if ($import === null) {
             return;
         }
-
-        $import->forceFill([
-            'status' => 'processing',
-            'attempts' => $import->attempts + 1,
-            'error_message' => null,
-            'started_at' => $import->started_at ?? now(),
-        ])->save();
-
-        if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $import->user->hasPermission('imports.manage') || ($import->operation === 'group' && ! $import->user->hasPermission('catalog.manage'))) {
-            throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
-        }
-        $storage = Storage::disk($import->disk);
-        if (! $storage->exists($import->path)) {
-            throw new RuntimeException('Загруженный XLSX-файл больше не доступен.');
-        }
+        $path = Storage::disk($import->disk)->path($import->path);
 
         if ($import->operation === 'price_status') {
-            $priceStatus = app(ProductPriceStatusImportService::class);
             if ($import->total_rows === 0) {
-                $priceStatus->initialize($import, $storage->path($import->path));
+                $priceStatusImport->initialize($import, $path);
             }
-            if (! $priceStatus->process($import)) {
-                self::dispatch($import->id);
-
-                return;
-            }
-            DB::transaction(function () use ($import, $cleanupService): void {
-                $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
-                $cleanupService->schedule($import->disk, $import->path);
-            });
+            $priceStatusImport->process($import)
+                ? $lifecycle->completeProductImport($import)
+                : $lifecycle->continueProductImport($import);
 
             return;
         }
 
         if ($import->operation === 'group') {
-            $groupImport = app(ProductGroupImportService::class);
             if ($import->total_rows === 0) {
-                $groupImport->initialize($import, $storage->path($import->path));
+                $groupImport->initialize($import, $path);
             }
-            if (! $groupImport->process($import)) {
-                self::dispatch($import->id);
-
-                return;
-            }
-            DB::transaction(function () use ($import, $cleanupService): void {
-                $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
-                $cleanupService->schedule($import->disk, $import->path);
-            });
+            $groupImport->process($import)
+                ? $lifecycle->completeProductImport($import)
+                : $lifecycle->continueProductImport($import);
 
             return;
         }
 
         if ($import->category_id !== null) {
-            if (! app(CategoryProductImportService::class)->process($import, $storage->path($import->path))) {
-                self::dispatch($import->id);
-
-                return;
-            }
-            DB::transaction(function () use ($import, $cleanupService): void {
-                $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
-                $cleanupService->schedule($import->disk, $import->path);
-            });
+            $categoryImport->process($import, $path)
+                ? $lifecycle->completeProductImport($import)
+                : $lifecycle->continueProductImport($import);
 
             return;
         }
 
-        $generic = app(GenericProductImportService::class);
-        if ($import->total_rows === 0 && $generic->initialize($import, $storage->path($import->path))) {
-            DB::transaction(function () use ($import, $cleanupService): void {
-                $cleanupService->schedule($import->disk, $import->path);
-            });
+        if ($import->total_rows === 0 && $generic->initialize($import, $path)) {
+            $lifecycle->completeProductImport($import);
 
             return;
         }
-        if (! $generic->process($import)) {
-            self::dispatch($import->id);
-
-            return;
-        }
-        DB::transaction(function () use ($import, $cleanupService): void {
-            $import->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
-            $cleanupService->schedule($import->disk, $import->path);
-        });
+        $generic->process($import)
+            ? $lifecycle->completeProductImport($import)
+            : $lifecycle->continueProductImport($import);
     }
 
     public function failed(?Throwable $exception): void
@@ -128,18 +96,7 @@ class ProcessProductImport implements ShouldQueue
             ? collect($exception->errors())->flatten()->first()
             : null;
         $message = is_string($message) && $message !== '' ? $message : 'Не удалось обработать XLSX-файл.';
-        DB::transaction(function () use ($message): void {
-            $import = ProductImport::query()->whereKey($this->productImportId)->lockForUpdate()->first();
-            if ($import === null || $import->status === 'completed') {
-                return;
-            }
 
-            $import->forceFill([
-                'status' => 'failed',
-                'error_message' => mb_substr($message, 0, 2000),
-                'completed_at' => now(),
-            ])->save();
-            app(StorageCleanupService::class)->schedule($import->disk, $import->path);
-        });
+        app(ImportLifecycleService::class)->failProductImport($this->productImportId, $message);
     }
 }

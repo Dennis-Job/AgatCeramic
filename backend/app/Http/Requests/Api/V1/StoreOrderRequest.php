@@ -20,6 +20,7 @@ class StoreOrderRequest extends CartTokenRequest
             'order_number' => ['prohibited'],
             'status' => ['prohibited'],
             'payment_status' => ['prohibited'],
+            'idempotency_key' => ['required', 'string', 'min:16', 'max:255'],
         ];
     }
 
@@ -27,11 +28,18 @@ class StoreOrderRequest extends CartTokenRequest
     {
         parent::prepareForValidation();
 
+        $this->merge(['idempotency_key' => $this->header('Idempotency-Key')]);
+
         foreach (['customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment'] as $field) {
             if ($this->has($field)) {
                 $value = trim((string) $this->input($field));
                 $this->merge([$field => $value === '' ? null : $value]);
             }
         }
+    }
+
+    public function idempotencyKey(): string
+    {
+        return $this->validated('idempotency_key');
     }
 }
