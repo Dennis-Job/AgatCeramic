@@ -16,6 +16,7 @@ class OrderCreationService
 {
     public function __construct(
         private readonly OrderAmountCalculator $amountCalculator,
+        private readonly OrderConfirmationService $confirmationService,
         private readonly OrderNumberService $orderNumberService,
     ) {}
 
@@ -65,6 +66,7 @@ class OrderCreationService
         ]);
         $order->items()->createMany($snapshots);
         $cart->items()->delete();
+        $this->confirmationService->queue($order);
 
         return $order->load('items');
     }
