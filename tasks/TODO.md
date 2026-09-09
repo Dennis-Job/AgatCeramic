@@ -232,7 +232,7 @@
 - [x] TASK-067 Manual payment registration
 - [x] TASK-068 Order history
 - [x] TASK-069 Order comments
-- [ ] TASK-070 Email confirmation
+- [x] TASK-070 Email confirmation
 
 ## Phase 6 — Contacts
 
