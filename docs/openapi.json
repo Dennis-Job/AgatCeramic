@@ -1486,6 +1486,33 @@
                 }
             }
         },
+        "/partner-requests": {
+            "post": {
+                "operationId": "createPartnerRequest",
+                "summary": "Submit a partnership request from the website",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorePartnerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Partner request accepted. No contact data is returned."
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    }
+                }
+            }
+        },
         "/admin/order-statuses": {
             "get": {
                 "operationId": "listOrderStatuses",
@@ -3965,6 +3992,17 @@
                 "required": ["email", "message"],
                 "properties": {
                     "name": {"type": ["string", "null"], "maxLength": 255},
+                    "email": {"type": "string", "format": "email", "maxLength": 255},
+                    "message": {"type": "string", "minLength": 1, "maxLength": 2000}
+                },
+                "additionalProperties": false
+            },
+            "StorePartnerRequest": {
+                "type": "object",
+                "required": ["name", "phone", "email", "message"],
+                "properties": {
+                    "name": {"type": "string", "minLength": 1, "maxLength": 255},
+                    "phone": {"type": "string", "pattern": "^\\+?[0-9()\\s-]{10,30}$"},
                     "email": {"type": "string", "format": "email", "maxLength": 255},
                     "message": {"type": "string", "minLength": 1, "maxLength": 2000}
                 },

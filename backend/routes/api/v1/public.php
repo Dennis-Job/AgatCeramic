@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
 use App\Http\Controllers\Api\V1\EmailRequestController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\PartnerRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,3 +28,6 @@ Route::post('callback-requests', [CallbackRequestController::class, 'store'])
 Route::post('email-requests', [EmailRequestController::class, 'store'])
     ->middleware('throttle:email-request')
     ->name('email-requests.store');
+Route::post('partner-requests', [PartnerRequestController::class, 'store'])
+    ->middleware('throttle:partner-request')
+    ->name('partner-requests.store');
