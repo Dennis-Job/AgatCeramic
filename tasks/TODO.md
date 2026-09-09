@@ -239,8 +239,8 @@
 - [x] TASK-080 Callback requests
 - [x] TASK-081 Email requests
 - [x] TASK-082 Partner requests
-- [ ] TASK-083 Assignment to manager
-- [ ] TASK-084 Contact workflow
+- [x] TASK-083 Assignment to manager
+- [x] TASK-084 Contact workflow
 
 ## Phase 7 — Content
 

@@ -20,6 +20,10 @@ class ContactRequestFactory extends Factory
             'email' => null,
             'message' => null,
             'source' => 'website',
+            'status' => 'new',
+            'assignee_id' => null,
+            'assigned_at' => null,
+            'completed_at' => null,
         ];
     }
 }

@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\BrandController;
 use App\Http\Controllers\Api\V1\Admin\CategoryAttributeController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
+use App\Http\Controllers\Api\V1\Admin\ContactAssignmentController;
+use App\Http\Controllers\Api\V1\Admin\ContactRequestController;
 use App\Http\Controllers\Api\V1\Admin\OrderController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\ProductAttributeValueController;
@@ -39,6 +41,19 @@ Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('r
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('permissions', PermissionController::class)->only(['index', 'show']);
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+Route::patch('contact-requests/{contactRequest}/assignee', [ContactAssignmentController::class, 'update'])
+    ->name('contact-requests.assignee.update');
+Route::get('contact-statuses', [ContactRequestController::class, 'statuses'])->name('contact-statuses.index');
+Route::get('contact-requests', [ContactRequestController::class, 'index'])->name('contact-requests.index');
+Route::get('contact-requests/{contactRequest}', [ContactRequestController::class, 'show'])->name('contact-requests.show');
+Route::patch('contact-requests/{contactRequest}/status', [ContactRequestController::class, 'updateStatus'])
+    ->name('contact-requests.status.update');
+Route::get('contact-requests/{contactRequest}/status-history', [ContactRequestController::class, 'statusHistory'])
+    ->name('contact-requests.status-history.index');
+Route::get('contact-requests/{contactRequest}/comments', [ContactRequestController::class, 'comments'])
+    ->name('contact-requests.comments.index');
+Route::post('contact-requests/{contactRequest}/comments', [ContactRequestController::class, 'storeComment'])
+    ->name('contact-requests.comments.store');
 Route::get('order-statuses', [OrderController::class, 'statuses'])->name('order-statuses.index');
 Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status.update');
 Route::get('orders/{order}/status-history', [OrderController::class, 'statusHistory'])->name('orders.status-history.index');
