@@ -35,6 +35,7 @@ class ContactRequest extends Model
     }
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return [

@@ -12,6 +12,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\AdminUserManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -28,16 +29,16 @@ class AdminUserController extends Controller
 
         $users = User::query()
             ->with('roles')
-            ->when($filters['search'] ?? null, static function ($query, string $search): void {
+            ->when($request->string('search')->trim()->toString(), static function ($query, string $search): void {
                 $pattern = '%'.mb_strtolower($search).'%';
                 $query->where(static function ($query) use ($pattern): void {
                     $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
                         ->orWhereRaw('LOWER(email) LIKE ?', [$pattern]);
                 });
             })
-            ->when($filters['status'] ?? null, static fn ($query, string $status) => $query->where('status', $status))
+            ->when($request->string('status')->trim()->toString(), static fn ($query, string $status) => $query->where('status', $status))
             ->orderBy('name')
-            ->paginate($filters['per_page'] ?? 20)
+            ->paginate($request->integer('per_page', 20))
             ->withQueryString();
 
         return AdminUserResource::collection($users);
@@ -78,10 +79,10 @@ class AdminUserController extends Controller
         return new AdminUserResource($updatedUser);
     }
 
-    public function destroy(User $user): Response
+    public function destroy(Request $request, User $user): Response
     {
         Gate::authorize('delete', $user);
-        $this->managementService->delete($this->authenticatedAdmin(request()), $user);
+        $this->managementService->delete($this->authenticatedAdmin($request), $user);
 
         return response()->noContent();
     }

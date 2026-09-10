@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['product_group_id', 'product_id'])]
 class ProductGroupMember extends Model
 {
+    /** @return BelongsTo<ProductGroup, $this> */
     public function group(): BelongsTo
     {
         return $this->belongsTo(ProductGroup::class, 'product_group_id');
     }
 
+    /** @return BelongsTo<Product, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

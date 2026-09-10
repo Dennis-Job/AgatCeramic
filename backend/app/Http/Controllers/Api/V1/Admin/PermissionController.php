@@ -17,7 +17,7 @@ class PermissionController extends Controller
 
         $query = Permission::query()->with('roles')->orderBy('code');
 
-        if ($module = $request->validated('module')) {
+        if ($module = $request->string('module')->trim()->toString()) {
             $query->where('code', 'like', $module.'.%');
         }
 

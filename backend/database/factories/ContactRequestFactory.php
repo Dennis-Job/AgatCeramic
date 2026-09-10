@@ -11,6 +11,7 @@ class ContactRequestFactory extends Factory
     protected $model = ContactRequest::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         return [

@@ -34,6 +34,12 @@ PostgreSQL integration-тесты запускаются с `--configuration=php
 только отдельная база `agatceramic_test` при `CI=true`. Не запускать `migrate:fresh`, `db:wipe`
 или интеграционные проверки против локальной базы `agatceramic`.
 
+Для локального прогона используется только
+[`backend/scripts/run-postgres-integration.ps1`](../backend/scripts/run-postgres-integration.ps1):
+он требует явный destructive-флаг, жёстко задаёт `agatceramic_test`, проверяет `pdo_pgsql` и
+запускает миграции и PostgreSQL-only suites с `CI=true`. Пароль передаётся параметром процесса и
+не сохраняется в репозитории.
+
 Разбор инцидента и проверка восстановления: [DATABASE_RECOVERY_2026-09-03.md](DATABASE_RECOVERY_2026-09-03.md).
 
-Admin E2E запускает реальную SPA с детерминированными browser-level mock-ответами API. Это проверяет маршрутизацию, восстановление административной сессии, каталоговые представления и интерактивные компоненты без зависимости от общей тестовой базы данных. Axe scan блокирует serious/critical семантические accessibility-регрессии на списках и открытых диалогах; правило `color-contrast` исключено, поскольку палитра контролируется отдельным визуальным регламентом `UI_DESIGN_REVIEW.md`. Backend API-контракт отдельно защищён Laravel-тестами и OpenAPI.
+Admin E2E запускает production-сборку SPA через Vite preview с детерминированными browser-level mock-ответами API. Это исключает race с временным Vite dev server и проверяет маршрутизацию, восстановление административной сессии, каталоговые представления и интерактивные компоненты без зависимости от общей тестовой базы данных. Axe scan блокирует serious/critical семантические accessibility-регрессии на списках и открытых диалогах; правило `color-contrast` исключено, поскольку палитра контролируется отдельным визуальным регламентом `UI_DESIGN_REVIEW.md`. Backend API-контракт отдельно защищён Laravel-тестами и OpenAPI.

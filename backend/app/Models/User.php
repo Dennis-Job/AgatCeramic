@@ -23,6 +23,7 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -39,12 +40,5 @@ class User extends Authenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles')->withTimestamps();
-    }
-
-    public function hasPermission(string $code): bool
-    {
-        return $this->roles()
-            ->whereHas('permissions', static fn ($query) => $query->where('code', $code))
-            ->exists();
     }
 }

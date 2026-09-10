@@ -1,6 +1,6 @@
 # Interim Audit — HTTP/API layer (TASK-A008)
 
-Audit date: 2026-09-09.
+Audit date: 2026-09-10.
 
 ## Evidence
 
@@ -19,24 +19,18 @@ queries in controllers are allowed by the architecture; they contain no business
 
 ## Confirmed findings
 
-### A008-1 — controller type boundary is not strict
+### A008-1 — controller type boundary normalized
 
-`php vendor/bin/phpstan analyse app/Http --memory-limit=1G` reports 546 file errors. The HTTP
-portion is predominantly attributable to the following real boundary defects:
+Protected actions now obtain `App\Models\User` only through the base controller's runtime-checked
+`authenticatedAdmin()` boundary. Upload endpoints similarly use a single-file accessor after Form
+Request validation. Scalar and structured Form Request inputs are converted at the controller
+boundary (including pagination, enum, identifiers and bulk replacements) before entering
+services. `php vendor/bin/phpstan analyse app/Http/Controllers --memory-limit=1G` now passes with
+zero errors.
 
-- `Request::user()` is inferred as nullable and is passed directly to services requiring
-  `App\Models\User`;
-- validated query/body input remains `mixed` when passed as pagination, enum, identifier and
-  shaped collection values;
-- several list controllers type their `when()` callback input more narrowly than the request
-  value inferred by Laravel;
-- upload calls use `Request::file()` as though it were always one `UploadedFile`, despite its
-  framework return union.
-
-Runtime middleware and validation currently protect the public contract, but these boundaries
-need explicit typed accessors/DTOs or an authenticated-admin request abstraction before the
-strict gate can be green. This work stays in A008 and does not require an OpenAPI change as long
-as accepted wire values and response bodies do not change.
+The full project strict gate remains owned by TASK-A007: remaining work in Resources, Form Request
+override annotations and model declarations is tracked with the quality/model audits rather than
+being hidden by ignores. No public wire value or response body changed.
 
 ### A008-2 — four import controllers are not thin
 
@@ -49,8 +43,6 @@ A008 would violate the scope separation.
 
 ## Decision
 
-No public API behaviour or OpenAPI operation was changed during this audit: there is therefore no
-contract edit to make. A008 remains active until typed request/authenticated-user boundaries are
-implemented and its relevant feature/permission/error tests pass. The shared import lifecycle
-finding is recorded as a prerequisite for A009/A013 rather than silently fixing it in the HTTP
-layer.
+No public API behaviour or OpenAPI operation changed, so no contract edit is required. Targeted
+feature/permission/error coverage passes (89 tests, 692 assertions). The shared import lifecycle
+finding remains assigned to A009/A013 rather than being duplicated in the HTTP layer.

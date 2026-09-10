@@ -42,4 +42,16 @@ class StoreOrderRequest extends CartTokenRequest
     {
         return $this->validated('idempotency_key');
     }
+
+    /** @return array<string, mixed> */
+    public function orderAttributes(): array
+    {
+        return [
+            'customer_name' => $this->string('customer_name')->toString(),
+            'customer_phone' => $this->string('customer_phone')->toString(),
+            'customer_email' => $this->string('customer_email')->toString() ?: null,
+            'delivery_address' => $this->string('delivery_address')->toString(),
+            'customer_comment' => $this->string('customer_comment')->toString() ?: null,
+        ];
+    }
 }

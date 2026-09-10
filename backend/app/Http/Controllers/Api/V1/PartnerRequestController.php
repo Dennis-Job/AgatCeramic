@@ -14,7 +14,7 @@ class PartnerRequestController extends Controller
 
     public function store(StorePartnerRequest $request): Response
     {
-        $this->partnerRequestService->create($request->safe()->only(['name', 'phone', 'email', 'message']));
+        $this->partnerRequestService->create($request->payload());
 
         return response()->noContent(HttpResponse::HTTP_CREATED);
     }

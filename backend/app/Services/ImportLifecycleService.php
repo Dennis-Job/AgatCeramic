@@ -13,6 +13,7 @@ class ImportLifecycleService
 {
     public function __construct(
         private readonly ImportDispatchService $dispatchService,
+        private readonly PermissionChecker $permissionChecker,
         private readonly StorageCleanupService $cleanupService,
     ) {}
 
@@ -23,7 +24,7 @@ class ImportLifecycleService
             if ($import === null || in_array($import->status, ['completed', 'failed'], true)) {
                 return null;
             }
-            if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $import->user->hasPermission('imports.manage') || ($import->operation === 'group' && ! $import->user->hasPermission('catalog.manage'))) {
+            if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $this->permissionChecker->allows($import->user, 'imports.manage') || ($import->operation === 'group' && ! $this->permissionChecker->allows($import->user, 'catalog.manage'))) {
                 throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
             }
             if (! Storage::disk($import->disk)->exists($import->path)) {
@@ -48,7 +49,7 @@ class ImportLifecycleService
             if ($import === null || in_array($import->status, ['completed', 'failed'], true)) {
                 return null;
             }
-            if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $import->user->hasPermission('imports.manage')) {
+            if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $this->permissionChecker->allows($import->user, 'imports.manage')) {
                 throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
             }
             if (! Storage::disk($import->disk)->exists($import->path)) {

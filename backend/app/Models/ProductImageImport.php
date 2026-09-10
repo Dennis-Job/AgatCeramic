@@ -16,11 +16,13 @@ class ProductImageImport extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<ProductImageImportError, $this> */
     public function errors(): HasMany
     {
         return $this->hasMany(ProductImageImportError::class)->orderBy('id');
     }
 
+    #[\Override]
     protected function casts(): array
     {
         return ['attempts' => 'integer', 'total_folders' => 'integer', 'processed_folders' => 'integer', 'created_images' => 'integer', 'replaced_images' => 'integer', 'failed_folders' => 'integer', 'processed_skus' => 'array', 'started_at' => 'datetime', 'completed_at' => 'datetime'];

@@ -13,6 +13,7 @@ class OrderItemFactory extends Factory
     protected $model = OrderItem::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         $product = Product::factory();

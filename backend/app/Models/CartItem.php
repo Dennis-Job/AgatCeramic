@@ -22,6 +22,7 @@ class CartItem extends Model
     }
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return ['quantity' => 'integer'];

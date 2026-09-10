@@ -29,9 +29,8 @@ class ContactRequestController extends Controller
     public function index(ListContactRequestsRequest $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', ContactRequest::class);
-        $filters = $request->validated();
         $contacts = ContactRequest::query()->with('assignee:id,name')->latest()
-            ->when($filters['search'] ?? null, function ($query, string $search): void {
+            ->when($request->string('search')->trim()->toString(), function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', '%'.$search.'%')
                         ->orWhere('phone', 'like', '%'.$search.'%')
@@ -39,11 +38,11 @@ class ContactRequestController extends Controller
                         ->orWhere('message', 'like', '%'.$search.'%');
                 });
             })
-            ->when($filters['type'] ?? null, fn ($query, string $type) => $query->where('type', $type))
-            ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
-            ->when($filters['assignee_id'] ?? null, fn ($query, int $assigneeId) => $query->where('assignee_id', $assigneeId))
+            ->when($request->string('type')->trim()->toString(), fn ($query, string $type) => $query->where('type', $type))
+            ->when($request->string('status')->trim()->toString(), fn ($query, string $status) => $query->where('status', $status))
+            ->when($request->integer('assignee_id') ?: null, fn ($query, int $assigneeId) => $query->where('assignee_id', $assigneeId))
             ->when($request->boolean('unassigned'), fn ($query) => $query->whereNull('assignee_id'))
-            ->paginate($filters['per_page'] ?? 25)->withQueryString();
+            ->paginate($request->integer('per_page', 25))->withQueryString();
 
         return ContactRequestResource::collection($contacts);
     }
@@ -71,9 +70,9 @@ class ContactRequestController extends Controller
         Gate::authorize('update', $contactRequest);
 
         return new ContactRequestResource($this->statusManagementService->update(
-            $request->user(),
+            $this->authenticatedAdmin($request),
             $contactRequest,
-            $request->enum('status', ContactRequestStatus::class),
+            $request->enum('status', ContactRequestStatus::class) ?? throw new \LogicException('Validated contact status is missing.'),
         )->load('assignee:id,name'));
     }
 
@@ -102,7 +101,7 @@ class ContactRequestController extends Controller
         Gate::authorize('createComment', $contactRequest);
 
         return (new ContactRequestCommentResource($this->commentService->add(
-            $request->user(), $contactRequest, $request->validated('body'),
+            $this->authenticatedAdmin($request), $contactRequest, $request->string('body')->toString(),
         )))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 }

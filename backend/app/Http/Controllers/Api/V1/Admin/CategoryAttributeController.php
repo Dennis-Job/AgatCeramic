@@ -27,7 +27,7 @@ class CategoryAttributeController extends Controller
         Gate::authorize('update', $category);
 
         return AttributeResource::collection(
-            $this->managementService->replace($this->authenticatedAdmin($request), $category, $request->validated('attributes'))
+            $this->managementService->replace($this->authenticatedAdmin($request), $category, $request->attributes())
                 ->attributes,
         );
     }
@@ -43,6 +43,6 @@ class CategoryAttributeController extends Controller
     {
         Gate::authorize('update', $category);
 
-        return AttributeGroupResource::collection($this->managementService->replaceGroups($this->authenticatedAdmin($request), $category, $request->validated('attribute_groups'))->attributeGroups);
+        return AttributeGroupResource::collection($this->managementService->replaceGroups($this->authenticatedAdmin($request), $category, $request->attributeGroups())->attributeGroups);
     }
 }

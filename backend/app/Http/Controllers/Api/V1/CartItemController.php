@@ -24,8 +24,8 @@ class CartItemController extends Controller
     {
         $result = $this->managementService->add(
             $this->guestCartService->resolve($request->cartToken()),
-            $request->validated('product_id'),
-            $request->validated('quantity'),
+            $request->integer('product_id'),
+            $request->integer('quantity'),
         );
 
         return (new CartItemResource($result['item']))->response()->setStatusCode(
@@ -38,7 +38,7 @@ class CartItemController extends Controller
         return new CartItemResource($this->managementService->update(
             $this->guestCartService->resolve($request->cartToken()),
             $item,
-            $request->validated('quantity'),
+            $request->integer('quantity'),
         ));
     }
 

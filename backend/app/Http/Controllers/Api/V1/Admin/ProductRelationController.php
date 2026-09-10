@@ -26,26 +26,25 @@ class ProductRelationController extends Controller
     public function candidates(ListProductRelationCandidatesRequest $request, Product $product): mixed
     {
         Gate::authorize('view', $product);
-        $filters = $request->validated();
         $excludedIds = $product->outgoingRelations()->pluck('related_product_id')
             ->merge(ProductRelation::query()->where('related_product_id', $product->id)->pluck('product_id'))
             ->push($product->id)->unique();
         $query = Product::query()->with(['category', 'brand', 'primaryImage'])->whereNotIn('id', $excludedIds);
-        if ($search = $filters['search'] ?? null) {
+        if ($search = $request->string('search')->trim()->toString()) {
             $pattern = '%'.mb_strtolower($search).'%';
             $query->where(fn ($query) => $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
                 ->orWhereRaw('LOWER(slug) LIKE ?', [$pattern])
                 ->orWhereRaw('LOWER(sku) LIKE ?', [$pattern]));
         }
 
-        return ProductResource::collection($query->orderBy('name')->limit($filters['limit'] ?? 20)->get());
+        return ProductResource::collection($query->orderBy('name')->limit($request->integer('limit', 20))->get());
     }
 
     public function replace(ReplaceProductRelationsRequest $request, Product $product): mixed
     {
         Gate::authorize('update', $product);
 
-        $updatedProduct = $this->managementService->replace($this->authenticatedAdmin($request), $product, $request->validated('relations'));
+        $updatedProduct = $this->managementService->replace($this->authenticatedAdmin($request), $product, $request->relations());
 
         return ProductRelationResource::collection(
             $updatedProduct->outgoingRelations()->with('relatedProduct')->orderBy('sort_order')->orderBy('type')->get(),

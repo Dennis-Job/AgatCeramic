@@ -5,6 +5,7 @@ namespace Tests\Feature\Models;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\PermissionChecker;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,8 +24,9 @@ class PermissionTest extends TestCase
         $user->roles()->attach($role);
         $role->permissions()->attach($permission);
 
-        $this->assertTrue($user->hasPermission('orders.view'));
-        $this->assertFalse($user->hasPermission('orders.manage'));
+        $checker = app(PermissionChecker::class);
+        $this->assertTrue($checker->allows($user, 'orders.view'));
+        $this->assertFalse($checker->allows($user, 'orders.manage'));
     }
 
     public function test_baseline_permission_matrix_is_seeded_idempotently(): void

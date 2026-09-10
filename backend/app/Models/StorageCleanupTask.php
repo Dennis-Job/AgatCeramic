@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class StorageCleanupTask extends Model
 {
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return [

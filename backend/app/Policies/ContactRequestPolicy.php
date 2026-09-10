@@ -5,11 +5,11 @@ namespace App\Policies;
 use App\Models\ContactRequest;
 use App\Models\User;
 
-class ContactRequestPolicy
+class ContactRequestPolicy extends AuthorizesPermissions
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('contacts.view');
+        return $this->allows($user, 'contacts.view');
     }
 
     public function view(User $user, ContactRequest $contactRequest): bool
@@ -19,12 +19,12 @@ class ContactRequestPolicy
 
     public function assign(User $user, ContactRequest $contactRequest): bool
     {
-        return $user->hasPermission('contacts.manage');
+        return $this->allows($user, 'contacts.manage');
     }
 
     public function update(User $user, ContactRequest $contactRequest): bool
     {
-        return $user->hasPermission('contacts.manage');
+        return $this->allows($user, 'contacts.manage');
     }
 
     public function createComment(User $user, ContactRequest $contactRequest): bool

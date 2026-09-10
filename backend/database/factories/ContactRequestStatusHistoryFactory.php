@@ -13,6 +13,7 @@ class ContactRequestStatusHistoryFactory extends Factory
     protected $model = ContactRequestStatusHistory::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         return [

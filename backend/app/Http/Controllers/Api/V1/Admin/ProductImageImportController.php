@@ -20,7 +20,7 @@ class ProductImageImportController extends Controller
         Gate::authorize('import', Product::class);
         $import = $submissionService->submitProductImageArchive(
             $this->authenticatedAdmin($request),
-            $request->file('file'),
+            $this->uploadedFile($request, 'file'),
         );
 
         return (new ProductImageImportResource($import->load('errors')))->response()->setStatusCode(202);
@@ -29,7 +29,7 @@ class ProductImageImportController extends Controller
     public function show(Request $request, ProductImageImport $productImageImport): ProductImageImportResource
     {
         Gate::authorize('import', Product::class);
-        abort_unless($productImageImport->user_id === $request->user()->id, 404);
+        abort_unless($productImageImport->user_id === $this->authenticatedAdmin($request)->id, 404);
 
         return new ProductImageImportResource($productImageImport->load('errors'));
     }
@@ -37,13 +37,17 @@ class ProductImageImportController extends Controller
     public function errors(Request $request, ProductImageImport $productImageImport): StreamedResponse
     {
         Gate::authorize('import', Product::class);
-        abort_unless($productImageImport->user_id === $request->user()->id && $productImageImport->failed_folders > 0, 404);
+        abort_unless($productImageImport->user_id === $this->authenticatedAdmin($request)->id && $productImageImport->failed_folders > 0, 404);
 
         return response()->streamDownload(function () use ($productImageImport): void {
             $out = fopen('php://output', 'wb');
+            if ($out === false) {
+                throw new \RuntimeException('Cannot open CSV output stream.');
+            }
             fputcsv($out, ['SKU', 'Файл', 'Ошибки']);
             foreach ($productImageImport->errors as $error) {
-                fputcsv($out, [$error->sku, $error->entry, implode('; ', $error->messages ?? [])]);
+                $messages = array_values(array_filter($error->messages ?? [], 'is_string'));
+                fputcsv($out, [$error->sku, $error->entry, implode('; ', $messages)]);
             }
             fclose($out);
         }, "product-image-import-{$productImageImport->id}-errors.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);

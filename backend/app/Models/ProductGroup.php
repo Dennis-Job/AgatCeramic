@@ -15,16 +15,19 @@ class ProductGroup extends Model
     /** @use HasFactory<ProductGroupFactory> */
     use HasFactory;
 
+    /** @return BelongsToMany<Attribute, $this> */
     public function axes(): BelongsToMany
     {
         return $this->belongsToMany(Attribute::class, 'product_group_axes')->withPivot('sort_order')->orderByPivot('sort_order');
     }
 
+    /** @return HasMany<ProductGroupMember, $this> */
     public function memberships(): HasMany
     {
         return $this->hasMany(ProductGroupMember::class);
     }
 
+    /** @return BelongsToMany<Product, $this> */
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'product_group_members')->withTimestamps();

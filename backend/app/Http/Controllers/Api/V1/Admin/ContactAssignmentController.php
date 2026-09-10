@@ -17,7 +17,7 @@ class ContactAssignmentController extends Controller
     {
         Gate::authorize('assign', $contactRequest);
 
-        $this->contactAssignmentService->assign($request->user(), $contactRequest, $request->validated('assignee_id'));
+        $this->contactAssignmentService->assign($this->authenticatedAdmin($request), $contactRequest, $request->integer('assignee_id'));
 
         return response()->noContent();
     }

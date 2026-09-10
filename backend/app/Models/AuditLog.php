@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 #[Fillable(['actor_id', 'actor_snapshot', 'action', 'entity_type', 'entity_id', 'entity_snapshot', 'metadata', 'occurred_at'])]
+/** @property array<string, mixed>|null $metadata */
 class AuditLog extends Model
 {
     public const CREATED_AT = null;
@@ -15,8 +16,9 @@ class AuditLog extends Model
     public const UPDATED_AT = null;
 
     /**
-     * @return array<string, string>
+     * @return array{actor_snapshot: 'array', entity_snapshot: 'array', metadata: 'array', occurred_at: 'datetime'}
      */
+    #[\Override]
     protected function casts(): array
     {
         return [

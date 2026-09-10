@@ -13,6 +13,7 @@ class ProductVariantFactory extends Factory
     protected $model = ProductVariant::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         $price = fake()->randomFloat(2, 100, 100000);
@@ -23,7 +24,7 @@ class ProductVariantFactory extends Factory
             'sku' => fake()->unique()->bothify('SKU-########'),
             'article_number' => fake()->boolean(70) ? fake()->unique()->bothify('ART-########') : null,
             'barcode' => fake()->boolean(70) ? fake()->unique()->ean13() : null,
-            'unit' => fake()->randomElement(ProductUnit::cases())->value,
+            'unit' => ProductUnit::cases()[fake()->numberBetween(0, 6)]->value,
             'price' => $price,
             'old_price' => fake()->boolean(30) ? $price + fake()->randomFloat(2, 1, 1000) : null,
             'stock_quantity' => fake()->numberBetween(0, 500),

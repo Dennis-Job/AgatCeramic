@@ -11,6 +11,7 @@ class OrderStatusFactory extends Factory
     protected $model = OrderStatus::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         return [

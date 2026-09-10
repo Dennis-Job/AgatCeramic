@@ -14,6 +14,7 @@ class RoleFactory extends Factory
     /**
      * @return array{name: string, slug: string, description: string}
      */
+    #[\Override]
     public function definition(): array
     {
         $identifier = (string) Str::uuid();

@@ -25,7 +25,7 @@ class ProductAttributeValueController extends Controller
         Gate::authorize('update', $product);
 
         return ProductAttributeValueResource::collection(
-            $this->managementService->replace($this->authenticatedAdmin($request), $product, $request->validated('attributes'))->attributeValues,
+            $this->managementService->replace($this->authenticatedAdmin($request), $product, $request->attributes())->attributeValues,
         );
     }
 }

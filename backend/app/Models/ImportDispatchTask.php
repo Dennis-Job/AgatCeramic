@@ -13,6 +13,7 @@ class ImportDispatchTask extends Model
     public const TYPE_PRODUCT_IMAGE = 'product_image';
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return [

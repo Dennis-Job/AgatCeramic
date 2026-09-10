@@ -5,11 +5,11 @@ namespace App\Policies;
 use App\Models\AttributeGroup;
 use App\Models\User;
 
-class AttributeGroupPolicy
+class AttributeGroupPolicy extends AuthorizesPermissions
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function view(User $user, AttributeGroup $group): bool
@@ -19,16 +19,16 @@ class AttributeGroupPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function update(User $user, AttributeGroup $group): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function delete(User $user, AttributeGroup $group): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 }

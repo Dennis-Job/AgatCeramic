@@ -29,6 +29,7 @@ class ContactRequestComment extends Model
     }
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return ['author_snapshot' => 'array', 'created_at' => 'datetime'];

@@ -14,7 +14,7 @@ class EmailRequestController extends Controller
 
     public function store(StoreEmailRequest $request): Response
     {
-        $this->emailRequestService->create($request->safe()->only(['name', 'email', 'message']));
+        $this->emailRequestService->create($request->payload());
 
         return response()->noContent(HttpResponse::HTTP_CREATED);
     }

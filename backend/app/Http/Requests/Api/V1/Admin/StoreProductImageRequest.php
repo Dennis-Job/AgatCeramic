@@ -20,4 +20,18 @@ class StoreProductImageRequest extends FormRequest
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:4294967295'],
         ];
     }
+
+    /** @return array<string, mixed> */
+    public function imageAttributes(): array
+    {
+        $attributes = [];
+        if ($this->has('is_primary')) {
+            $attributes['is_primary'] = $this->boolean('is_primary');
+        }
+        if ($this->has('sort_order')) {
+            $attributes['sort_order'] = $this->integer('sort_order');
+        }
+
+        return $attributes;
+    }
 }

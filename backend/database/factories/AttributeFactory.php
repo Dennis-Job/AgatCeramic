@@ -12,9 +12,10 @@ class AttributeFactory extends Factory
     protected $model = Attribute::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
-        $name = fake()->unique()->words(2, true);
+        $name = fake()->unique()->sentence(2);
 
         return ['name' => $name, 'slug' => Str::slug($name), 'type' => 'string', 'unit' => null, 'is_filterable' => false, 'is_required' => false, 'is_visible_on_product_page' => true, 'sort_order' => fake()->numberBetween(0, 100)];
     }

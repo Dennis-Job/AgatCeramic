@@ -14,6 +14,7 @@ class Brand extends Model
     use HasFactory;
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];

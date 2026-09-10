@@ -21,7 +21,7 @@ class OrderController extends Controller
     {
         $result = $this->orderCreationService->create(
             $this->guestCartService->resolve($request->cartToken()),
-            $request->safe()->except('cart_token', 'website', 'idempotency_key'),
+            $request->orderAttributes(),
             $request->idempotencyKey(),
         );
 

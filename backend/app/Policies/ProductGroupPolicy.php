@@ -5,11 +5,11 @@ namespace App\Policies;
 use App\Models\ProductGroup;
 use App\Models\User;
 
-class ProductGroupPolicy
+class ProductGroupPolicy extends AuthorizesPermissions
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function view(User $user, ProductGroup $group): bool

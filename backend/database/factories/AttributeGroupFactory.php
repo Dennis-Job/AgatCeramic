@@ -12,9 +12,10 @@ class AttributeGroupFactory extends Factory
     protected $model = AttributeGroup::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
-        $name = fake()->unique()->words(2, true);
+        $name = fake()->unique()->sentence(2);
 
         return ['name' => $name, 'slug' => Str::slug($name), 'description' => fake()->optional()->sentence(), 'sort_order' => fake()->numberBetween(0, 100)];
     }

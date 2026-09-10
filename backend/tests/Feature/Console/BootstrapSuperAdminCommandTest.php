@@ -3,6 +3,7 @@
 namespace Tests\Feature\Console;
 
 use App\Models\User;
+use App\Services\PermissionChecker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -23,7 +24,7 @@ class BootstrapSuperAdminCommandTest extends TestCase
 
         $this->assertTrue(Hash::check('correct-horse-battery-staple', $user->password));
         $this->assertTrue($user->roles()->where('slug', 'super-admin')->exists());
-        $this->assertTrue($user->hasPermission('audit-log.view'));
+        $this->assertTrue(app(PermissionChecker::class)->allows($user, 'audit-log.view'));
         $this->assertDatabaseHas('audit_logs', [
             'actor_id' => null,
             'action' => 'admin.bootstrap',
