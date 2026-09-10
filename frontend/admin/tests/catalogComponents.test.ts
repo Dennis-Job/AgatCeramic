@@ -5,6 +5,8 @@ import BaseDialog from '../src/components/BaseDialog.vue'
 import CollectionLoadingState from '../src/components/CollectionLoadingState.vue'
 import PaginationControls from '../src/components/PaginationControls.vue'
 import AttributeValueField from '../src/components/AttributeValueField.vue'
+import BaseAlert from '../src/components/BaseAlert.vue'
+import BaseConfirmDialog from '../src/components/BaseConfirmDialog.vue'
 import { sortByLabel } from '../src/utils/alphabetical'
 import { attributeTypeLabel, attributeTypeOptions } from '../src/utils/attributeTypes'
 
@@ -81,6 +83,26 @@ describe('CollectionLoadingState', () => {
     expect(status.classes()).not.toContain('sr-only')
     expect(status.attributes('aria-live')).toBe('polite')
     expect(status.get('svg').attributes('aria-hidden')).toBe('true')
+  })
+})
+
+describe('shared feedback and destructive confirmation', () => {
+  test('announces errors as alerts', () => {
+    const wrapper = mount(BaseAlert, { slots: { default: 'Не удалось сохранить изменения.' } })
+
+    expect(wrapper.get('[role="alert"]').text()).toBe('Не удалось сохранить изменения.')
+    expect(wrapper.get('[role="alert"]').attributes('aria-live')).toBe('assertive')
+  })
+
+  test('uses the shared dialog controls for destructive confirmation', async () => {
+    const wrapper = mount(BaseConfirmDialog, {
+      props: { open: true, title: 'Удалить запись?', description: 'Отменить нельзя.' },
+    })
+
+    await wrapper.get('button.bg-error-500').trigger('click')
+    expect(wrapper.emitted('confirm')).toEqual([[]])
+    await wrapper.get('button.text-gray-600').trigger('click')
+    expect(wrapper.emitted('close')).toEqual([[]])
   })
 })
 

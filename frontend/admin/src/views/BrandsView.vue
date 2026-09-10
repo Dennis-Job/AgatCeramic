@@ -5,6 +5,7 @@ import BaseCheckbox from '../components/BaseCheckbox.vue'
 import BaseDialog from '../components/BaseDialog.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import BaseTextarea from '../components/BaseTextarea.vue'
 import CollectionLoadingState from '../components/CollectionLoadingState.vue'
 import PaginationControls from '../components/PaginationControls.vue'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
@@ -101,7 +102,7 @@ onMounted(load)
           <label class="text-sm font-medium text-gray-700">Название<BaseInput :model-value="form.name" class="mt-1.5" data-autofocus required @update:model-value="updateName" /></label>
           <label class="text-sm font-medium text-gray-700">Технический код (slug)<BaseInput :model-value="form.slug" class="mt-1.5" pattern="[a-z0-9]+(-[a-z0-9]+)*" required @update:model-value="(value) => { form.slug = value; manuallyEditedSlug = true }" /></label>
           <label class="text-sm font-medium text-gray-700">Страна происхождения<BaseSelect v-model="selectedCountryCode" class="mt-1.5" :options="COUNTRY_OPTIONS" placeholder="Не выбрана" accessible-name="Страна происхождения" searchable /></label>
-          <label class="text-sm font-medium text-gray-700 sm:col-span-2">Описание<textarea v-model="form.description" class="mt-1.5 min-h-24 w-full rounded-lg border border-gray-300 p-3 font-normal outline-none focus:border-primary-500" /></label>
+          <label class="text-sm font-medium text-gray-700 sm:col-span-2">Описание<BaseTextarea v-model="form.description" class="mt-1.5 min-h-24 font-normal" /></label>
           <BaseCheckbox :checked="form.is_active" mode="boolean" class="sm:col-span-2" @update:checked="form.is_active = $event">Бренд активен и доступен на витрине</BaseCheckbox>
         </div>
         <div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60" :disabled="isSaving" @click="opened = false">Отмена</button><button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-60" :disabled="isSaving">{{ isSaving ? 'Сохранение…' : 'Сохранить' }}</button></div>

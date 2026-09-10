@@ -5,6 +5,7 @@ import BaseCheckbox from "../components/BaseCheckbox.vue";
 import BaseDialog from "../components/BaseDialog.vue";
 import BaseInput from "../components/BaseInput.vue";
 import BaseSelect from "../components/BaseSelect.vue";
+import BaseTextarea from "../components/BaseTextarea.vue";
 import CollectionLoadingState from "../components/CollectionLoadingState.vue";
 import {
   deleteCategory,
@@ -510,9 +511,9 @@ onMounted(load);
             /></label>
           </div>
           <label class="text-sm font-medium text-gray-700"
-            >Описание<textarea
+            >Описание<BaseTextarea
               v-model="form.description"
-              class="mt-1.5 min-h-24 w-full rounded-lg border border-gray-300 p-3 font-normal outline-none focus:border-primary-500"
+              class="mt-1.5 min-h-24 font-normal"
             /></label
           ><label class="text-sm font-medium text-gray-700"
             >Родительская категория<BaseSelect

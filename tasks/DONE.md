@@ -26,6 +26,8 @@ operational/recovery rules — в [`docs/`](../docs/).
 | Interim Audit | TASK-A013 | Queues, imports and durable storage cleanup reviewed; stale processing recovery and terminal cleanup atomicity added. See [`ASYNC_STORAGE_AUDIT.md`](../docs/ASYNC_STORAGE_AUDIT.md). |
 | Interim Audit | TASK-A014 | OpenAPI and API guide reconciled with all 111 Phase 0–6 HTTP operations; route coverage and versioned compatibility gates added. See [`OPENAPI_CONTRACT_AUDIT.md`](../docs/OPENAPI_CONTRACT_AUDIT.md). |
 | Interim Audit | TASK-A015 | CI separates SQLite, PostgreSQL integration, contract and Admin unit/E2E checks; Admin E2E uses production preview and the local PostgreSQL runner is restricted to `agatceramic_test`. See [`CI.md`](../docs/CI.md). |
+| Interim Audit | TASK-A016 | Backend API → Admin UI matrix is complete. Catalog, access-control, authentication and audit operations are mapped; orders and contacts have explicit high-priority follow-ups (`TASK-A018`, `TASK-A019`), while Phase 7–9 domains remain intentionally deferred. See [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
+| Interim Audit | TASK-A017 | Admin UI-kit states and destructive confirmations are normalized with accessible shared feedback components; keyboard, responsive and E2E checks passed, and the final independent UI Guard review found no blocking issue. See [`ADMIN_UI_KIT_AUDIT.md`](../docs/ADMIN_UI_KIT_AUDIT.md). |
 
 ## Проверки последней приёмки
 
