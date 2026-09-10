@@ -15,7 +15,10 @@ return new class extends Migration
 
         // `number` was the pre-TASK-041M name for an unrestricted decimal value.
         // Its validator also accepted JSON strings, so normalize those before making decimal strict.
-        $legacyNumberIds = DB::table('attributes')->where('type', 'number')->pluck('id')->all();
+        $legacyNumberIds = DB::table('attributes')->where('type', 'number')->pluck('id')
+            ->filter(static fn (mixed $id): bool => is_int($id))
+            ->values()
+            ->all();
         $this->normalizeLegacyNumericStrings('product_attribute_values', $legacyNumberIds);
         $this->normalizeLegacyNumericStrings('product_variant_attribute_values', $legacyNumberIds);
         DB::table('attributes')->whereIn('id', $legacyNumberIds)->update(['type' => 'decimal']);

@@ -31,9 +31,14 @@ class BootstrapSuperAdminCommand extends Command
             return self::FAILURE;
         }
 
-        $name = trim((string) $this->option('name'));
-        $email = trim((string) ($this->option('email') ?: $this->ask('Email')));
-        $password = (string) ($this->option('password') ?: $this->secret('Password'));
+        $nameOption = $this->option('name');
+        $emailOption = $this->option('email');
+        $passwordOption = $this->option('password');
+        $name = is_string($nameOption) ? trim($nameOption) : '';
+        $emailInput = $emailOption ?: $this->ask('Email');
+        $passwordInput = $passwordOption ?: $this->secret('Password');
+        $email = is_string($emailInput) ? trim($emailInput) : '';
+        $password = is_string($passwordInput) ? $passwordInput : '';
 
         $validator = validator(
             ['name' => $name, 'email' => $email, 'password' => $password],

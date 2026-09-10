@@ -27,12 +27,27 @@ class ReplaceProductRelationsRequest extends FormRequest
         ];
     }
 
+    /** @return list<\Closure(Validator): void> */
     public function after(): array
     {
         return [function (Validator $validator): void {
             /** @var Product $product */
             $product = $this->route('product');
-            $relatedIds = collect($this->input('relations', []))->pluck('related_product_id')->map(static fn (mixed $id): int => (int) $id);
+            $relatedIds = [];
+            foreach ($this->array('relations') as $relation) {
+                if (! is_array($relation) || ! array_key_exists('related_product_id', $relation)) {
+                    continue;
+                }
+                $id = $relation['related_product_id'];
+                if (is_int($id)) {
+                    $relatedIds[] = $id;
+                } elseif (is_string($id)) {
+                    $filteredId = filter_var($id, FILTER_VALIDATE_INT);
+                    if (is_int($filteredId)) {
+                        $relatedIds[] = $filteredId;
+                    }
+                }
+            }
 
             foreach ($relatedIds as $index => $relatedId) {
                 if ($relatedId === $product->id) {

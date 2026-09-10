@@ -8,7 +8,6 @@ use App\Models\Product;
 use App\Models\ProductAttributeValue;
 use App\Models\ProductVariantAttributeValue;
 use App\Models\User;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
@@ -24,7 +23,8 @@ class AttributeManagementService
     public function create(User $actor, array $attributes): Attribute
     {
         return DB::transaction(function () use ($actor, $attributes): Attribute {
-            $options = Arr::pull($attributes, 'options', []);
+            $options = $this->options($attributes['options'] ?? []);
+            unset($attributes['options']);
             $attribute = Attribute::query()->create($attributes);
             $this->replaceOptions($attribute, $options);
             $this->auditLogService->record($actor, 'attribute.created', $attribute);
@@ -40,13 +40,17 @@ class AttributeManagementService
             $attribute = $this->lockForDefinitionMutation($attribute);
 
             $hasOptions = array_key_exists('options', $attributes);
-            $options = Arr::pull($attributes, 'options', []);
+            $options = $this->options($attributes['options'] ?? []);
+            unset($attributes['options']);
             $typeBefore = $attribute->type;
             $isVisibleOnProductPageBefore = $attribute->is_visible_on_product_page;
             $optionValuesBefore = $attribute->options()->pluck('value')->all();
             $typeAfter = $attributes['type'] ?? $typeBefore;
+            if (! is_string($typeAfter)) {
+                throw ValidationException::withMessages(['type' => ['The attribute type must be a string.']]);
+            }
             $optionValuesAfter = in_array($typeAfter, ['select', 'multiselect'], true)
-                ? ($hasOptions ? array_column($options, 'value') : $optionValuesBefore)
+                ? ($hasOptions ? array_map(static fn (array $option): string => $option['value'], $options) : $this->stringValues($optionValuesBefore))
                 : [];
 
             if ($typeAfter !== $typeBefore || $hasOptions) {
@@ -159,5 +163,44 @@ class AttributeManagementService
         return ProductAttributeValue::query()->where('attribute_id', $attribute->id)->exists()
             || (Schema::hasTable('product_variant_attribute_values')
                 && ProductVariantAttributeValue::query()->where('attribute_id', $attribute->id)->exists());
+    }
+
+    /** @return list<array{value: string, label: string, sort_order?: int}> */
+    private function options(mixed $options): array
+    {
+        if (! is_array($options) || ! array_is_list($options)) {
+            throw ValidationException::withMessages(['options' => ['Options must be a list.']]);
+        }
+
+        $normalized = [];
+        foreach ($options as $option) {
+            if (! is_array($option) || ! is_string($option['value'] ?? null) || ! is_string($option['label'] ?? null)
+                || (isset($option['sort_order']) && ! is_int($option['sort_order']))) {
+                throw ValidationException::withMessages(['options' => ['Each option must have string value and label.']]);
+            }
+            $normalized[] = [
+                'value' => $option['value'],
+                'label' => $option['label'],
+                ...isset($option['sort_order']) ? ['sort_order' => $option['sort_order']] : [],
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<mixed>  $values
+     * @return list<string>
+     */
+    private function stringValues(array $values): array
+    {
+        $strings = [];
+        foreach ($values as $value) {
+            if (is_string($value)) {
+                $strings[] = $value;
+            }
+        }
+
+        return $strings;
     }
 }

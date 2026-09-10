@@ -17,10 +17,11 @@ class StoreContactRequestCommentRequest extends FormRequest
         return ['body' => ['required', 'string', 'max:5000']];
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         if ($this->has('body')) {
-            $body = trim((string) $this->input('body'));
+            $body = trim($this->string('body')->toString());
             $this->merge(['body' => $body === '' ? null : $body]);
         }
     }

@@ -18,7 +18,9 @@ class EnsureActiveAdmin
     {
         $user = $request->user()?->fresh();
 
-        if ($user?->status !== AdminUserStatus::Active) {
+        $status = $user?->getRawOriginal('status');
+
+        if (! is_string($status) || $status !== AdminUserStatus::Active->value) {
             abort(Response::HTTP_FORBIDDEN);
         }
 

@@ -91,6 +91,9 @@ jobs:
       - name: Check PHP formatting
         run: vendor/bin/pint --test
 
+      - name: Run Laravel static analysis
+        run: composer analyse
+
       - name: Verify PostgreSQL migrations
         env:
           DB_CONNECTION: pgsql

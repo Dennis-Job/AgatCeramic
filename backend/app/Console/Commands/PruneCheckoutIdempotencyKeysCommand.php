@@ -14,7 +14,7 @@ class PruneCheckoutIdempotencyKeysCommand extends Command
     public function handle(): int
     {
         $deleted = CheckoutIdempotencyKey::query()->where('expires_at', '<=', now())->delete();
-        $this->info("Deleted {$deleted} expired checkout idempotency key(s).");
+        $this->info('Deleted '.(is_int($deleted) ? $deleted : 0).' expired checkout idempotency key(s).');
 
         return self::SUCCESS;
     }

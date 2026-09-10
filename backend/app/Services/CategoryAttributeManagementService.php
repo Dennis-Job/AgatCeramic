@@ -29,7 +29,7 @@ class CategoryAttributeManagementService
             $attributeIdsToLock = $category->attributes()->pluck('attributes.id')->merge(array_keys($assignments))->unique()->sort()->values();
             Attribute::query()->whereIn('id', $attributeIdsToLock->all())->orderBy('id')->lockForUpdate()->get();
 
-            $this->integrityService->assertCategoryAssignmentsCanBeReplaced($category, array_keys($assignments));
+            $this->integrityService->assertCategoryAssignmentsCanBeReplaced($category, $this->attributeIds($attributes));
 
             $category->attributes()->sync($assignments);
             $this->auditLogService->record($actor, 'category.attributes-updated', $category, [
@@ -38,6 +38,37 @@ class CategoryAttributeManagementService
 
             return $category->load(['attributes.options']);
         });
+    }
+
+    /**
+     * @param  array<int, array{id: int, sort_order?: int, is_required?: bool}>  $attributes
+     * @return array<int, int>
+     */
+    private function attributeIds(array $attributes): array
+    {
+        $ids = [];
+        foreach ($attributes as $attribute) {
+            $ids[] = $attribute['id'];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $values
+     * @return array<int, int>
+     */
+    private function integerIds(array $values): array
+    {
+        $ids = [];
+        foreach ($values as $value) {
+            if (! is_int($value)) {
+                throw new \LogicException('Expected an integer attribute identifier.');
+            }
+            $ids[] = $value;
+        }
+
+        return $ids;
     }
 
     /** @param array<int, array{id: int, sort_order?: int}> $groups */
@@ -52,7 +83,7 @@ class CategoryAttributeManagementService
                 ->when($assignments !== [], fn ($query) => $query->whereNotIn('attribute_group_id', array_keys($assignments)))
                 ->when($assignments === [], fn ($query) => $query)
                 ->pluck('id');
-            $remainingAttributeIds = $category->attributes()->whereNotIn('attributes.id', $removedAttributeIds)->pluck('attributes.id')->all();
+            $remainingAttributeIds = $this->integerIds($category->attributes()->whereNotIn('attributes.id', $removedAttributeIds)->pluck('attributes.id')->all());
             Attribute::query()->whereIn('id', $removedAttributeIds)->orderBy('id')->lockForUpdate()->get();
 
             $this->integrityService->assertCategoryAssignmentsCanBeReplaced($category, $remainingAttributeIds, 'attribute_groups');

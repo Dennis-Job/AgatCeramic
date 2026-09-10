@@ -14,6 +14,18 @@ class CartItemResource extends ApiResource
     public function toArray(Request $request): array
     {
         $product = $this->product;
+        if ($product === null) {
+            return [
+                'id' => $this->id,
+                'product_id' => $this->product_id,
+                'quantity' => $this->quantity,
+                'unit_price' => null,
+                'line_total' => null,
+                'product' => null,
+                'created_at' => $this->created_at?->toAtomString(),
+                'updated_at' => $this->updated_at?->toAtomString(),
+            ];
+        }
         $primaryImage = $product->primaryImage;
 
         return [
@@ -34,8 +46,11 @@ class CartItemResource extends ApiResource
         ];
     }
 
-    private function lineTotal(string $price, int $quantity): string
+    private function lineTotal(string|float $price, int $quantity): string
     {
+        if (is_float($price)) {
+            $price = number_format($price, 2, '.', '');
+        }
         [$whole, $fraction] = array_pad(explode('.', $price, 2), 2, '00');
         $minorUnits = ((int) $whole * 100) + (int) str_pad($fraction, 2, '0');
         $total = $minorUnits * $quantity;

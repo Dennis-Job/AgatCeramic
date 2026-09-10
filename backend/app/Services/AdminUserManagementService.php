@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\AdminUserStatus;
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -17,11 +16,12 @@ class AdminUserManagementService
     public function create(User $actor, array $attributes): User
     {
         return DB::transaction(function () use ($actor, $attributes): User {
-            $roleIds = Arr::pull($attributes, 'role_ids');
+            $roleIds = $this->roleIds($attributes['role_ids'] ?? []);
+            unset($attributes['role_ids']);
             $user = User::query()->create($attributes);
             $user->roles()->sync($roleIds);
             $this->auditLogService->record($actor, 'admin-user.created', $user, [
-                'status' => $user->status->value,
+                'status' => $user->status,
                 'role_ids' => $roleIds,
             ]);
 
@@ -37,7 +37,8 @@ class AdminUserManagementService
 
         return DB::transaction(function () use ($actor, $user, $attributes): User {
             $passwordChanged = array_key_exists('password', $attributes);
-            $roleIds = Arr::pull($attributes, 'role_ids');
+            $roleIds = array_key_exists('role_ids', $attributes) ? $this->roleIds($attributes['role_ids']) : null;
+            unset($attributes['role_ids']);
             $user->fill($attributes)->save();
 
             if ($passwordChanged) {
@@ -49,7 +50,7 @@ class AdminUserManagementService
             }
 
             $this->auditLogService->record($actor, 'admin-user.updated', $user, [
-                'status' => $user->status->value,
+                'status' => $user->status,
                 'role_ids' => $user->roles()->pluck('roles.id')->all(),
             ]);
 
@@ -67,7 +68,7 @@ class AdminUserManagementService
 
         DB::transaction(function () use ($actor, $user): void {
             $this->auditLogService->record($actor, 'admin-user.deleted', $user, [
-                'status' => $user->status->value,
+                'status' => $user->status,
                 'role_ids' => $user->roles()->pluck('roles.id')->all(),
             ]);
             $user->delete();
@@ -86,12 +87,12 @@ class AdminUserManagementService
     private function ensureActiveSuperAdminRemains(User $user, array $attributes): void
     {
         $superAdminRole = Role::query()->where('slug', 'super-admin')->first();
-        if ($superAdminRole === null || $user->status !== AdminUserStatus::Active || ! $user->roles()->whereKey($superAdminRole->id)->exists()) {
+        if ($superAdminRole === null || $user->getRawOriginal('status') !== AdminUserStatus::Active->value || ! $user->roles()->whereKey($superAdminRole->id)->exists()) {
             return;
         }
 
-        $willRemainActiveSuperAdmin = ($attributes['status'] ?? $user->status->value) === AdminUserStatus::Active->value
-            && (! array_key_exists('role_ids', $attributes) || in_array($superAdminRole->id, $attributes['role_ids'], true));
+        $willRemainActiveSuperAdmin = ($attributes['status'] ?? $user->getRawOriginal('status')) === AdminUserStatus::Active->value
+            && (! array_key_exists('role_ids', $attributes) || in_array($superAdminRole->id, $this->roleIds($attributes['role_ids']), true));
 
         if ($willRemainActiveSuperAdmin) {
             return;
@@ -105,5 +106,23 @@ class AdminUserManagementService
         if ($activeSuperAdmins <= 1) {
             throw ValidationException::withMessages(['role_ids' => ['В системе должен остаться хотя бы один активный Супер Администратор.']]);
         }
+    }
+
+    /** @return list<int> */
+    private function roleIds(mixed $roleIds): array
+    {
+        if (! is_array($roleIds) || ! array_is_list($roleIds) || ! collect($roleIds)->every(static fn (mixed $roleId): bool => is_int($roleId))) {
+            throw ValidationException::withMessages(['role_ids' => ['Role identifiers must be an integer list.']]);
+        }
+
+        $normalized = [];
+        foreach ($roleIds as $roleId) {
+            if (! is_int($roleId)) {
+                throw ValidationException::withMessages(['role_ids' => ['Role identifiers must be integers.']]);
+            }
+            $normalized[] = $roleId;
+        }
+
+        return $normalized;
     }
 }

@@ -27,7 +27,7 @@ class AdminAuthenticationService
             ->first();
 
         if ($user === null
-            || $user->status !== AdminUserStatus::Active
+            || $user->getRawOriginal('status') !== AdminUserStatus::Active->value
             || ! Hash::check($request->string('password')->toString(), $user->password)) {
             throw new AuthenticationException;
         }
@@ -55,7 +55,7 @@ class AdminAuthenticationService
         $email = $request->string('email')->lower()->toString();
         $user = User::query()->where('email', $email)->first();
 
-        if ($user === null || $user->status !== AdminUserStatus::Active) {
+        if ($user === null || $user->getRawOriginal('status') !== AdminUserStatus::Active->value) {
             return;
         }
 
@@ -67,7 +67,7 @@ class AdminAuthenticationService
         $email = $request->string('email')->lower()->toString();
         $user = User::query()->where('email', $email)->first();
 
-        if ($user === null || $user->status !== AdminUserStatus::Active) {
+        if ($user === null || $user->getRawOriginal('status') !== AdminUserStatus::Active->value) {
             $this->throwInvalidPasswordReset();
         }
 

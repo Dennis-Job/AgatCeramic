@@ -46,8 +46,8 @@ class OrderConfirmationMail extends Mailable
         );
     }
 
-    private function escape(string $value): string
+    private function escape(string|float $value): string
     {
-        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }

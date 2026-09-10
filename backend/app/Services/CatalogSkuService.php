@@ -37,7 +37,9 @@ class CatalogSkuService
         $pending = [$category->id];
         while ($pending !== []) {
             DB::table('categories')->whereIn('id', $pending)->update(['sku_prefix' => $prefix]);
-            $pending = DB::table('categories')->whereIn('parent_id', $pending)->pluck('id')->map(fn ($id): int => (int) $id)->all();
+            $pending = DB::table('categories')->whereIn('parent_id', $pending)->pluck('id')
+                ->filter(static fn (mixed $id): bool => is_int($id))
+                ->values()->all();
         }
         $category->sku_prefix = $prefix;
     }
@@ -75,12 +77,12 @@ class CatalogSkuService
     private function nextCounterValue(string $name, int $maximum, string $message): int
     {
         $counter = DB::table('catalog_counters')->where('name', $name)->lockForUpdate()->first();
-        if ($counter === null || $counter->next_value > $maximum) {
+        if ($counter === null || ! is_int($counter->next_value) || $counter->next_value > $maximum) {
             throw ValidationException::withMessages(['category_id' => [$message]]);
         }
 
         DB::table('catalog_counters')->where('name', $name)->update(['next_value' => $counter->next_value + 1]);
 
-        return (int) $counter->next_value;
+        return $counter->next_value;
     }
 }

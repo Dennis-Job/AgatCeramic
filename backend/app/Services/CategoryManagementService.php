@@ -19,7 +19,7 @@ class CategoryManagementService
     public function create(User $actor, array $attributes): Category
     {
         return DB::transaction(function () use ($actor, $attributes): Category {
-            $parentId = $attributes['parent_id'] ?? null;
+            $parentId = $this->parentId($attributes['parent_id'] ?? null);
             $parent = $this->lockParent($parentId);
             $this->ensureParentCanBeAssigned(null, $parentId, $parent);
             $category = new Category($attributes);
@@ -47,7 +47,7 @@ class CategoryManagementService
                 $parent = $attributes['parent_id'] === null
                     ? null
                     : $categories?->firstWhere('id', $attributes['parent_id']);
-                $this->ensureParentCanBeAssigned($category, $attributes['parent_id'], $parent, $categories);
+                $this->ensureParentCanBeAssigned($category, $this->parentId($attributes['parent_id']), $parent, $categories);
             }
             if (($attributes['is_parent'] ?? true) === false && $category->children()->exists()) {
                 throw ValidationException::withMessages(['is_parent' => ['A category with children must remain a parent category.']]);
@@ -76,7 +76,10 @@ class CategoryManagementService
     {
         $categories = Category::query()->orderBy('sort_order')->orderBy('name')->get();
         $byParent = $categories->groupBy('parent_id');
-        $attach = function (Category $category) use (&$attach, $byParent): Category {
+        $attach = function (mixed $category) use (&$attach, $byParent): Category {
+            if (! $category instanceof Category) {
+                throw new \LogicException('Category tree contains an invalid record.');
+            }
             $category->setRelation('children', $byParent->get($category->id, collect())->map($attach)->values());
 
             return $category;
@@ -92,6 +95,15 @@ class CategoryManagementService
         }
 
         return Category::query()->whereKey($parentId)->lockForUpdate()->first();
+    }
+
+    private function parentId(mixed $parentId): ?int
+    {
+        if ($parentId !== null && ! is_int($parentId)) {
+            throw ValidationException::withMessages(['parent_id' => ['The parent category identifier must be an integer.']]);
+        }
+
+        return $parentId;
     }
 
     /** @param Collection<int, Category>|null $categories */

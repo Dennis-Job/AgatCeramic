@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -15,10 +14,11 @@ class RoleManagementService
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): Role
     {
-        $this->ensureActorCanAssignPermissions($actor, $attributes['permission_ids']);
+        $this->ensureActorCanAssignPermissions($actor, $this->permissionIds($attributes['permission_ids'] ?? []));
 
         return DB::transaction(function () use ($actor, $attributes): Role {
-            $permissionIds = Arr::pull($attributes, 'permission_ids');
+            $permissionIds = $this->permissionIds($attributes['permission_ids'] ?? []);
+            unset($attributes['permission_ids']);
             $role = Role::query()->create($attributes);
             $role->permissions()->sync($permissionIds);
             $this->auditLogService->record($actor, 'role.created', $role, ['permission_ids' => $permissionIds]);
@@ -32,11 +32,12 @@ class RoleManagementService
     {
         $this->ensureSystemRoleIdentityIsUnchanged($role, $attributes);
         if (array_key_exists('permission_ids', $attributes)) {
-            $this->ensureActorCanAssignPermissions($actor, $attributes['permission_ids']);
+            $this->ensureActorCanAssignPermissions($actor, $this->permissionIds($attributes['permission_ids']));
         }
 
         return DB::transaction(function () use ($actor, $role, $attributes): Role {
-            $permissionIds = Arr::pull($attributes, 'permission_ids');
+            $permissionIds = array_key_exists('permission_ids', $attributes) ? $this->permissionIds($attributes['permission_ids']) : null;
+            unset($attributes['permission_ids']);
             $role->fill($attributes)->save();
             if ($permissionIds !== null) {
                 $role->permissions()->sync($permissionIds);
@@ -70,6 +71,8 @@ class RoleManagementService
             ->get()
             ->flatMap(fn (Role $role) => $role->permissions->pluck('id'))
             ->unique()
+            ->filter(static fn (mixed $permissionId): bool => is_int($permissionId))
+            ->values()
             ->all();
 
         if (array_diff($permissionIds, $actorPermissionIds) !== []) {
@@ -83,5 +86,23 @@ class RoleManagementService
         if ($role->is_system && (array_key_exists('name', $attributes) || array_key_exists('slug', $attributes))) {
             throw ValidationException::withMessages(['role' => ['System role name and slug cannot be changed.']]);
         }
+    }
+
+    /** @return list<int> */
+    private function permissionIds(mixed $permissionIds): array
+    {
+        if (! is_array($permissionIds) || ! array_is_list($permissionIds) || ! collect($permissionIds)->every(static fn (mixed $id): bool => is_int($id))) {
+            throw ValidationException::withMessages(['permission_ids' => ['Permission identifiers must be an integer list.']]);
+        }
+
+        $normalized = [];
+        foreach ($permissionIds as $permissionId) {
+            if (! is_int($permissionId)) {
+                throw ValidationException::withMessages(['permission_ids' => ['Permission identifiers must be integers.']]);
+            }
+            $normalized[] = $permissionId;
+        }
+
+        return $normalized;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\ProductUnit;
 use App\Models\Attribute;
+use App\Models\AttributeOption;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -19,6 +20,13 @@ use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Reader\XLSX\Sheet;
 use Throwable;
 
+/**
+ * @phpstan-type ProductPayload array{category_id: int, brand_id: ?int, name: string, slug: string, description: ?string, article_number: ?string, barcode: ?string, unit: string, price: string, old_price: ?string, stock_quantity: int, is_active: bool, is_on_sale: bool}
+ * @phpstan-type AttributePayload list<array{attribute_id: int, value: mixed}>
+ * @phpstan-type ImportRow array{row: int, values: list<mixed>}
+ * @phpstan-type PreparedRow array{row: int, name: ?string, product: ?Product, payload: ProductPayload, attributePayload: AttributePayload}
+ * @phpstan-type InspectionError array{row: int, name: ?string, messages: list<string>, values: array<string, mixed>}
+ */
 class ProductImportService
 {
     public const MAX_ROWS = 5000;
@@ -29,7 +37,11 @@ class ProductImportService
         private readonly CatalogAttributeIntegrityService $integrityService,
     ) {}
 
-    /** Create or update one category-template row. The caller owns its transaction and durable checkpoint. */
+    /**
+     * Create or update one category-template row. The caller owns its transaction and durable checkpoint.
+     *
+     * @param  array<string, mixed>  $values
+     */
     public function createTemplateRow(User $actor, Category $category, array $values, int $row, bool $editing = false): string
     {
         $name = $this->requiredString($values['name'] ?? null, $row, 'Название');
@@ -50,7 +62,7 @@ class ProductImportService
         if ($sameName->exists()) {
             $this->rowError($row, 'товар с таким наименованием уже существует.');
         }
-        $values['slug'] = $this->nullableString($values['slug'] ?? null) ?? ($product?->slug ?? Str::slug($name, '-', 'ru'));
+        $values['slug'] = $this->nullableString($values['slug'] ?? null) ?? ($product === null ? Str::slug($name, '-', 'ru') : $product->slug);
         $sameSlug = Product::query()->where('slug', $values['slug']);
         if ($product !== null) {
             $sameSlug->whereKeyNot($product->id);
@@ -58,7 +70,8 @@ class ProductImportService
         if ($sameSlug->exists()) {
             $this->rowError($row, 'товар с таким slug уже существует.');
         }
-        $values['unit'] = array_flip(ProductWorkbookSchema::UNIT_LABELS)[$values['unit'] ?? ''] ?? $values['unit'] ?? null;
+        $unit = $this->nullableString($values['unit'] ?? null);
+        $values['unit'] = $unit === null ? null : (array_flip(ProductWorkbookSchema::UNIT_LABELS)[$unit] ?? $unit);
         foreach (['stock_quantity' => 0, 'is_active' => false, 'is_on_sale' => false] as $field => $default) {
             if ($this->nullableString($values[$field] ?? null) === null) {
                 $values[$field] = $default;
@@ -73,7 +86,8 @@ class ProductImportService
             }
             $brand = $brands->first();
         }
-        $attributes = $category->attributes()->with('options')->get()->keyBy('slug')->all();
+        $attributes = $category->attributes()->with('options')->get()
+            ->mapWithKeys(static fn (Attribute $attribute): array => [$attribute->slug => $attribute])->all();
         $template = app(ProductImportTemplateService::class);
         foreach ($attributes as $slug => $attribute) {
             if (! in_array($attribute->type, ['select', 'multiselect'], true)) {
@@ -81,7 +95,7 @@ class ProductImportService
             }
             $cells = $attribute->type === 'select'
                 ? [$values['attribute.'.$slug] ?? null]
-                : collect($values)->filter(fn ($cell, $key) => str_starts_with($key, 'attribute.'.$slug.'.'))->values()->all();
+                : collect($values)->filter(fn (mixed $cell, string $key): bool => str_starts_with($key, 'attribute.'.$slug.'.'))->values()->all();
             $selected = [];
             foreach ($cells as $cell) {
                 $label = $this->nullableString($cell);
@@ -101,8 +115,9 @@ class ProductImportService
             $this->rowError($row, 'остаток не должен превышать 2147483647.');
         }
         $attributePayload = $this->attributePayload($values, $attributes, $row);
-        $requiredAttributes = collect($attributes)->filter(static fn (Attribute $attribute): bool => (bool) $attribute->pivot?->is_required);
-        $missingAttributes = $requiredAttributes->whereNotIn('id', collect($attributePayload)->pluck('attribute_id'));
+        $requiredAttributeIds = $category->attributes()->wherePivot('is_required', true)->pluck('attributes.id')->all();
+        $missingAttributes = collect($attributes)->whereIn('id', $requiredAttributeIds)
+            ->whereNotIn('id', collect($attributePayload)->pluck('attribute_id'));
         if ($missingAttributes->isNotEmpty()) {
             $this->rowError($row, 'обязательные характеристики не заполнены: '.$missingAttributes
                 ->map(static fn (Attribute $attribute): string => '«'.$attribute->name.'»')->implode(', ').'.');
@@ -166,7 +181,7 @@ class ProductImportService
     /**
      * Validate every product row without changing the catalogue.
      *
-     * @return array{total: int, errors: list<array{row: int, name: ?string, messages: list<string>, values: array<string, mixed>}>}
+     * @return array{total: int, errors: list<InspectionError>}
      */
     public function inspect(string $path): array
     {
@@ -174,14 +189,14 @@ class ProductImportService
         $errors = [];
         $this->preflight($headers, $rows, $this->attributesFor($headers), $seoProducts, $localized, $errors);
 
-        return ['total' => count($rows), 'errors' => $errors];
+        return ['total' => count($rows), 'errors' => $errors ?? []];
     }
 
     /**
      * Build an immutable, validated write plan for the queued generic importer.
      * No catalogue records or SKUs are written here.
      *
-     * @return array{total: int, errors: list<array{row: int, name: ?string, messages: list<string>, values: array<string, mixed>}>, items: list<array{row: int, name: ?string, product_id: ?int, payload: array<string, mixed>, attribute_payload: list<array{attribute_id: int, value: mixed>}>}
+     * @return array{total: int, errors: list<InspectionError>, items: list<array{row: int, name: ?string, product_id: ?int, payload: ProductPayload, attribute_payload: AttributePayload}>}
      */
     public function prepareForQueue(string $path): array
     {
@@ -191,7 +206,7 @@ class ProductImportService
 
         return [
             'total' => count($rows),
-            'errors' => $errors,
+            'errors' => $errors ?? [],
             'items' => array_map(static fn (array $entry): array => [
                 'row' => $entry['row'],
                 'name' => $entry['name'],
@@ -202,7 +217,12 @@ class ProductImportService
         ];
     }
 
-    /** Apply one pre-validated queued row inside the caller's transaction. */
+    /**
+     * Apply one pre-validated queued row inside the caller's transaction.
+     *
+     * @param  ProductPayload  $payload
+     * @param  AttributePayload  $attributePayload
+     */
     public function applyPreparedRow(User $actor, ?int $productId, array $payload, array $attributePayload): string
     {
         $product = $productId === null ? null : Product::query()->lockForUpdate()->findOrFail($productId);
@@ -229,23 +249,35 @@ class ProductImportService
         return $operation;
     }
 
-    /** Validate the complete workbook without allocating SKUs or writing catalogue/audit rows. */
+    /**
+     * Validate the complete workbook without allocating SKUs or writing catalogue/audit rows.
+     *
+     * @param  list<string>  $headers
+     * @param  list<ImportRow>  $rows
+     * @param  array<string, Attribute>  $attributes
+     * @param  array<string, array<string, mixed>>  $seoProducts
+     * @param  null|list<InspectionError>  $errors
+     *
+     * @param-out null|list<InspectionError> $errors
+     *
+     * @return list<PreparedRow>
+     */
     private function preflight(array $headers, array $rows, array $attributes, array $seoProducts, bool $localized, ?array &$errors = null): array
     {
-        $seen = [];
+        $seen = ['product' => [], 'sku' => [], 'slug' => [], 'article_number' => [], 'barcode' => []];
         $prepared = [];
         $groupValidator = new ProductImportGroupValidationService;
         foreach ($rows as $entry) {
             $row = $entry['row'];
             try {
-                $values = array_combine($headers, $entry['values']);
+                $values = $this->rowValues($headers, $entry['values']);
                 $product = $this->resolveProduct($values, $row);
                 if ($localized) {
                     $values = $this->localizedValues($values, $seoProducts, $product, $row);
                 }
                 $category = $this->resolveCategory($values, $row);
                 $brand = $this->resolveBrand($values, $row);
-                $payload = $this->productPayload($values, $category, $brand, $product, $row, array_keys($seen['product'] ?? []));
+                $payload = $this->productPayload($values, $category, $brand, $product, $row, array_keys($seen['product']));
                 $attributePayload = $this->attributePayload($values, $attributes, $row, $localized);
 
                 foreach (['product' => $product?->id, 'sku' => $this->nullableString($values['sku'] ?? null),
@@ -273,7 +305,7 @@ class ProductImportService
                     'attributePayload' => $attributePayload,
                 ];
             } catch (ValidationException $exception) {
-                $messages = collect($exception->errors())->flatten()->filter(static fn (mixed $message): bool => is_string($message))->values()->all();
+                $messages = $this->validationMessages($exception);
                 if ($errors === null) {
                     $message = $messages[0] ?? 'Строка содержит недопустимое значение.';
                     if (str_starts_with($message, "Строка {$row}:")) {
@@ -293,7 +325,37 @@ class ProductImportService
         return $prepared;
     }
 
-    /** @return array{list<string>, list<array{row: int, values: list<mixed>}>, array<string, array<string, mixed>>, bool} */
+    /**
+     * @param  list<string>  $headers
+     * @param  list<mixed>  $cells
+     * @return array<string, mixed>
+     */
+    private function rowValues(array $headers, array $cells): array
+    {
+        $values = array_combine($headers, $cells);
+
+        return $values;
+    }
+
+    /** @return list<string> */
+    private function validationMessages(ValidationException $exception): array
+    {
+        $messages = [];
+        foreach ($exception->errors() as $fieldMessages) {
+            if (! is_array($fieldMessages)) {
+                continue;
+            }
+            foreach ($fieldMessages as $message) {
+                if (is_string($message)) {
+                    $messages[] = $message;
+                }
+            }
+        }
+
+        return $messages;
+    }
+
+    /** @return array{list<string>, list<ImportRow>, array<string, array<string, mixed>>, bool} */
     private function read(string $path): array
     {
         $reader = new Reader;
@@ -327,6 +389,9 @@ class ProductImportService
                 }
                 $firstSheet = false;
                 foreach ($sheet->getRowIterator() as $index => $row) {
+                    if (! is_int($index)) {
+                        continue;
+                    }
                     $values = $row->toArray();
                     if ($index === 1) {
                         $headers = $this->headers($values, false);
@@ -498,7 +563,8 @@ class ProductImportService
         }
         $values['slug'] = $this->nullableString($seo['URL товара (slug)'] ?? null) ?? $product?->slug;
         $units = array_flip(ProductWorkbookSchema::UNIT_LABELS);
-        $values['unit'] = $units[$this->nullableString($values['unit']) ?? ''] ?? $values['unit'];
+        $unit = $this->nullableString($values['unit'] ?? null);
+        $values['unit'] = $unit === null ? null : ($units[$unit] ?? $unit);
         $values['category_id'] = null;
         $values['brand_id'] = null;
         foreach (['category' => 'Категория', 'brand' => 'Бренд'] as $field => $label) {
@@ -520,7 +586,11 @@ class ProductImportService
             if ($matches->count() !== 1) {
                 $this->rowError($row, "{$label} «{$name}» не найдена или название неоднозначно. Укажите точное уникальное название либо название и URL на листе SEO товаров.");
             }
-            $values[$field.'_slug'] = $matches->first()->slug;
+            $match = $matches->first();
+            if (! $match instanceof Category && ! $match instanceof Brand) {
+                $this->rowError($row, "{$label} «{$name}» не найдена или название неоднозначно.");
+            }
+            $values[$field.'_slug'] = $match->slug;
         }
 
         return $values;
@@ -551,8 +621,9 @@ class ProductImportService
             throw ValidationException::withMessages(['file' => ['Столбец характеристики должен иметь формат attribute.<slug>.']]);
         }
 
-        $attributes = Attribute::query()->with('options')->whereIn('slug', $slugs)->get()->keyBy('slug');
-        $missing = $slugs->diff($attributes->keys());
+        $attributes = Attribute::query()->with('options')->whereIn('slug', $slugs)->get()
+            ->mapWithKeys(static fn (Attribute $attribute): array => [$attribute->slug => $attribute]);
+        $missing = $slugs->diff(array_keys($attributes->all()));
         if ($missing->isNotEmpty()) {
             throw ValidationException::withMessages([
                 'file' => ['Неизвестные характеристики: '.$missing->implode(', ').'.'],
@@ -627,31 +698,38 @@ class ProductImportService
     }
 
     /** @param array<string, mixed> $values
-     * @return array<string, mixed>
+     * @param  list<int|string>  $previousProductIds
+     * @return ProductPayload
      */
     private function productPayload(array $values, Category $category, ?Brand $brand, ?Product $product, int $row, array $previousProductIds = []): array
     {
         $labels = array_map(static fn (string $label): string => '«'.$label.'»', ProductWorkbookSchema::MANAGER_HEADERS + [
             'slug' => 'Адрес товара', 'category_id' => 'Категория', 'brand_id' => 'Бренд',
         ]);
-        $payload = ['category_id' => $category->id, 'brand_id' => $brand?->id];
-        foreach (ProductWorkbookSchema::WRITABLE_PRODUCT_FIELDS as $field) {
-            $payload[$field] = match ($field) {
-                'description', 'article_number', 'barcode', 'old_price' => $this->nullableString($values[$field] ?? null),
-                'name', 'slug', 'unit', 'price' => $this->requiredString($values[$field] ?? null, $row, $labels[$field]),
-                'stock_quantity' => $this->nullableInteger($values[$field] ?? null, $row, $labels[$field]),
-                'is_active', 'is_on_sale' => $this->boolean($values[$field] ?? null, $row, $labels[$field]),
-            };
-        }
+        $payload = [
+            'category_id' => $category->id,
+            'brand_id' => $brand?->id,
+            'name' => $this->requiredString($values['name'] ?? null, $row, $labels['name']),
+            'slug' => $this->requiredString($values['slug'] ?? null, $row, $labels['slug']),
+            'description' => $this->nullableString($values['description'] ?? null),
+            'article_number' => $this->nullableString($values['article_number'] ?? null),
+            'barcode' => $this->nullableString($values['barcode'] ?? null),
+            'unit' => $this->requiredString($values['unit'] ?? null, $row, $labels['unit']),
+            'price' => $this->requiredString($values['price'] ?? null, $row, $labels['price']),
+            'old_price' => $this->nullableString($values['old_price'] ?? null),
+            'stock_quantity' => $this->requiredInteger($values['stock_quantity'] ?? null, $row, $labels['stock_quantity']),
+            'is_active' => $this->boolean($values['is_active'] ?? null, $row, $labels['is_active']),
+            'is_on_sale' => $this->boolean($values['is_on_sale'] ?? null, $row, $labels['is_on_sale']),
+        ];
 
         $uniqueSlug = Rule::unique('products', 'slug');
         $uniqueArticle = Rule::unique('products', 'article_number');
         $uniqueBarcode = Rule::unique('products', 'barcode');
         // Earlier rows have replaced these products' unique values in the planned state.
         // The preflight's seen-value maps still reject collisions with their new values.
-        foreach ([$uniqueSlug, $uniqueArticle, $uniqueBarcode] as $rule) {
-            $rule->where(fn ($query) => $query->whereNotIn('id', $previousProductIds));
-        }
+        $uniqueSlug->whereNotIn('id', $previousProductIds);
+        $uniqueArticle->whereNotIn('id', $previousProductIds);
+        $uniqueBarcode->whereNotIn('id', $previousProductIds);
         if ($product !== null) {
             $uniqueSlug->ignore($product->id);
             $uniqueArticle->ignore($product->id);
@@ -679,7 +757,7 @@ class ProductImportService
             $this->rowError($row, $validator->errors()->first());
         }
 
-        return $validator->validated();
+        return $payload;
     }
 
     /** @param array<string, mixed> $values
@@ -719,7 +797,12 @@ class ProductImportService
             $this->rowError($row, "значение «{$label}» характеристики «{$attribute->name}» не найдено или неоднозначно.");
         }
 
-        return $matches->first()->value;
+        $option = $matches->first();
+        if (! $option instanceof AttributeOption) {
+            $this->rowError($row, "значение «{$label}» характеристики «{$attribute->name}» не найдено или неоднозначно.");
+        }
+
+        return $option->value;
     }
 
     /** @return list<string> */
@@ -821,7 +904,15 @@ class ProductImportService
             $this->rowError($row, "столбец {$field} должен содержать JSON-массив строк.");
         }
 
-        return $decoded;
+        $values = [];
+        foreach ($decoded as $item) {
+            if (! is_string($item)) {
+                $this->rowError($row, "столбец {$field} должен содержать JSON-массив строк.");
+            }
+            $values[] = $item;
+        }
+
+        return $values;
     }
 
     private function date(mixed $value, int $row, string $field): string

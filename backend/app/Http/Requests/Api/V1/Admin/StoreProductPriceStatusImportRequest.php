@@ -18,6 +18,7 @@ class StoreProductPriceStatusImportRequest extends FormRequest
     }
 
     /** @return array<string, string> */
+    #[\Override]
     public function messages(): array
     {
         return ['file.required' => 'Выберите XLSX-файл.', 'file.mimes' => 'Поддерживаются только XLSX-файлы.', 'file.mimetypes' => 'Содержимое файла не соответствует формату XLSX.', 'file.max' => 'Размер XLSX-файла не должен превышать 10 МБ.'];

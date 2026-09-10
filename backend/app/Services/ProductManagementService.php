@@ -57,7 +57,7 @@ class ProductManagementService
                     ]);
                 }
 
-                $targetCategory = $categories->get((int) $attributes['category_id']);
+                $targetCategory = $categories->get($this->categoryId($attributes['category_id']));
                 if ($targetCategory === null) {
                     throw ValidationException::withMessages([
                         'category_id' => ['The selected category is no longer available.'],
@@ -86,8 +86,9 @@ class ProductManagementService
         DB::transaction(function () use ($actor, $product): void {
             $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $membership = $product->groupMembership()->with('group')->first();
-            if ($membership !== null && $membership->group->products()->count() <= 2) {
-                $membership->group->delete();
+            $group = $membership?->group()->first();
+            if ($group !== null && $group->products()->count() <= 2) {
+                $group->delete();
             }
             $images = $product->images()->get(['disk', 'path'])->all();
             $this->auditLogService->record($actor, 'product.deleted', $product);
@@ -97,5 +98,14 @@ class ProductManagementService
             $product->delete();
 
         });
+    }
+
+    private function categoryId(mixed $value): int
+    {
+        if (! is_int($value)) {
+            throw new \LogicException('Validated category identifier is invalid.');
+        }
+
+        return $value;
     }
 }

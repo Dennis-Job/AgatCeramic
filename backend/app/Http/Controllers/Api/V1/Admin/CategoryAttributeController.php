@@ -27,7 +27,7 @@ class CategoryAttributeController extends Controller
         Gate::authorize('update', $category);
 
         return AttributeResource::collection(
-            $this->managementService->replace($this->authenticatedAdmin($request), $category, $request->attributes())
+            $this->managementService->replace($this->authenticatedAdmin($request), $category, $request->categoryAttributes())
                 ->attributes,
         );
     }

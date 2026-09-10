@@ -34,6 +34,7 @@ class StoreProductRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         if (! $this->has('is_active')) {
@@ -44,7 +45,7 @@ class StoreProductRequest extends FormRequest
         }
         foreach (['article_number', 'barcode'] as $field) {
             if ($this->has($field)) {
-                $value = trim((string) $this->input($field));
+                $value = trim($this->string($field)->toString());
                 $this->merge([$field => $value === '' ? null : $value]);
             }
         }

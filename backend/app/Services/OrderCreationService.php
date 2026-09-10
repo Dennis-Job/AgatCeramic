@@ -8,12 +8,14 @@ use App\Models\CartItem;
 use App\Models\CheckoutIdempotencyKey;
 use App\Models\Order;
 use App\Models\Product;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
+/** @phpstan-type OrderItemSnapshot array<string, mixed>&array{product_id: int, product_name: string, product_sku: ?string, unit_price: float, quantity: int, line_total: string} */
 class OrderCreationService
 {
     public function __construct(
@@ -25,8 +27,8 @@ class OrderCreationService
     /** @param array<string, mixed> $attributes */
     public function create(Cart $cart, array $attributes, string $idempotencyKey): OrderCreationResult
     {
-        $keyHash = hash_hmac('sha256', $idempotencyKey, (string) config('app.key'));
-        $requestHash = hash_hmac('sha256', json_encode($this->sorted($attributes), JSON_THROW_ON_ERROR), (string) config('app.key'));
+        $keyHash = hash_hmac('sha256', $idempotencyKey, $this->applicationKey());
+        $requestHash = hash_hmac('sha256', json_encode($this->sorted($attributes), JSON_THROW_ON_ERROR), $this->applicationKey());
 
         for ($attempt = 0; $attempt < 3; $attempt++) {
             try {
@@ -46,7 +48,7 @@ class OrderCreationService
     {
         $idempotency = CheckoutIdempotencyKey::query()->where('key_hash', $keyHash)->lockForUpdate()->first();
         if ($idempotency !== null) {
-            if ($idempotency->expires_at->isPast()) {
+            if (now()->greaterThan(Carbon::parse($idempotency->expires_at))) {
                 $idempotency->forceFill([
                     'request_hash' => $requestHash,
                     'order_id' => null,
@@ -88,7 +90,7 @@ class OrderCreationService
             'order_number' => $this->orderNumberService->generate(),
             'status' => 'new',
             'payment_status' => PaymentStatus::NotPaid,
-            'total_amount' => $this->amountCalculator->sum(array_column($snapshots, 'line_total')),
+            'total_amount' => $this->amountCalculator->sum($this->lineTotals($snapshots)),
         ]);
         $order->items()->createMany($snapshots);
         $cart->items()->delete();
@@ -100,13 +102,13 @@ class OrderCreationService
     }
 
     /**
-     * @param  Collection<int, CartItem>  $items
-     * @param  Collection<int, Product>  $products
-     * @return list<array<string, int|string>>
+     * @param  EloquentCollection<int, CartItem>  $items
+     * @param  EloquentCollection<int|string, Product>  $products
+     * @return list<OrderItemSnapshot>
      */
-    private function snapshots(Collection $items, Collection $products): array
+    private function snapshots(EloquentCollection $items, EloquentCollection $products): array
     {
-        return $items->map(function (CartItem $item) use ($products): array {
+        return array_values($items->map(function (CartItem $item) use ($products): array {
             $product = $products->get($item->product_id);
             if ($product === null || ! $product->is_active || $product->price === null || $product->stock_quantity === null || $product->stock_quantity < $item->quantity) {
                 throw ValidationException::withMessages([
@@ -120,12 +122,29 @@ class OrderCreationService
                 'product_sku' => $product->sku,
                 'unit_price' => $product->price,
                 'quantity' => $item->quantity,
-                'line_total' => $this->amountCalculator->multiply($product->price, $item->quantity),
+                'line_total' => $this->amountCalculator->multiply(number_format($product->price, 2, '.', ''), $item->quantity),
             ];
-        })->all();
+        })->all());
     }
 
-    /** @param array<string, mixed> $attributes @return array<string, mixed> */
+    /**
+     * @param  list<OrderItemSnapshot>  $snapshots
+     * @return list<string>
+     */
+    private function lineTotals(array $snapshots): array
+    {
+        $amounts = [];
+        foreach ($snapshots as $snapshot) {
+            $amounts[] = $snapshot['line_total'];
+        }
+
+        return $amounts;
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $attributes
+     * @return array<array-key, mixed>
+     */
     private function sorted(array $attributes): array
     {
         ksort($attributes);
@@ -137,5 +156,15 @@ class OrderCreationService
         }
 
         return $attributes;
+    }
+
+    private function applicationKey(): string
+    {
+        $key = config('app.key');
+        if (! is_string($key) || $key === '') {
+            throw new \LogicException('Application key is not configured.');
+        }
+
+        return $key;
     }
 }

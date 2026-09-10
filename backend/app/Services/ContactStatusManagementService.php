@@ -16,7 +16,11 @@ class ContactStatusManagementService
     {
         return DB::transaction(function () use ($actor, $contactRequest, $targetStatus): ContactRequest {
             $contactRequest = ContactRequest::query()->whereKey($contactRequest->id)->lockForUpdate()->firstOrFail();
-            $currentStatus = $contactRequest->status;
+            $status = $contactRequest->getRawOriginal('status');
+            if (! is_string($status)) {
+                throw new \LogicException('Contact request has an invalid status.');
+            }
+            $currentStatus = ContactRequestStatus::from($status);
 
             if ($currentStatus === $targetStatus) {
                 return $contactRequest;
@@ -35,7 +39,7 @@ class ContactStatusManagementService
             }
 
             $contactRequest->update([
-                'status' => $targetStatus,
+                'status' => $targetStatus->value,
                 'completed_at' => $targetStatus->isTerminal() ? now() : null,
             ]);
             $contactRequest->statusHistory()->create([

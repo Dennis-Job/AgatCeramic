@@ -36,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
+    #[\Override]
     public function register(): void
     {
         //
@@ -61,13 +62,15 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', static fn (Request $request): Limit => Limit::perMinute(60)->by($request->ip()));
 
         RateLimiter::for('login', static function (Request $request): Limit {
-            $identity = strtolower($request->input('email', '')).'|'.$request->ip();
+            $email = $request->input('email', '');
+            $identity = strtolower(is_string($email) ? $email : '').'|'.$request->ip();
 
             return Limit::perMinute(5)->by(hash('sha256', $identity));
         });
 
         RateLimiter::for('password-reset', static function (Request $request): Limit {
-            $identity = strtolower($request->input('email', '')).'|'.$request->ip();
+            $email = $request->input('email', '');
+            $identity = strtolower(is_string($email) ? $email : '').'|'.$request->ip();
 
             return Limit::perMinute(5)->by(hash('sha256', $identity));
         });
@@ -77,8 +80,14 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('email-request', static fn (Request $request): Limit => Limit::perMinute(5)->by($request->ip()));
         RateLimiter::for('partner-request', static fn (Request $request): Limit => Limit::perMinute(5)->by($request->ip()));
 
-        ResetPassword::createUrlUsing(static function (User $user, string $token): string {
-            return rtrim((string) config('admin.url'), '/').'/reset-password?'.http_build_query([
+        ResetPassword::createUrlUsing(static function (mixed $user, string $token): string {
+            $adminUrl = config('admin.url');
+
+            if (! $user instanceof User || ! is_string($adminUrl)) {
+                throw new \LogicException('Password reset URL configuration is invalid.');
+            }
+
+            return rtrim($adminUrl, '/').'/reset-password?'.http_build_query([
                 'token' => $token,
                 'email' => $user->getEmailForPasswordReset(),
             ]);

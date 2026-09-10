@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Admin;
 
 use App\Enums\ProductUnit;
+use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -35,24 +36,43 @@ class UpdateProductRequest extends FormRequest
         ];
     }
 
+    /** @return list<\Closure(Validator): void> */
     public function after(): array
     {
         return [function (Validator $validator): void {
-            $price = $this->input('price', $this->route('product')->price);
-            $oldPrice = $this->input('old_price', $this->route('product')->old_price);
-            if ($oldPrice !== null && (float) $oldPrice < (float) $price) {
+            $product = $this->route('product');
+            if (! $product instanceof Product) {
+                return;
+            }
+            $price = $this->numericValue($this->input('price')) ?? $product->price;
+            $oldPrice = $this->has('old_price') ? $this->numericValue($this->input('old_price')) : $product->old_price;
+            if ($oldPrice !== null && $oldPrice < $price) {
                 $validator->errors()->add('old_price', 'The old price must be greater than or equal to the price.');
             }
         }];
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         foreach (['article_number', 'barcode'] as $field) {
             if ($this->has($field)) {
-                $value = trim((string) $this->input($field));
+                $value = trim($this->string($field)->toString());
                 $this->merge([$field => $value === '' ? null : $value]);
             }
         }
+    }
+
+    private function numericValue(mixed $value): ?float
+    {
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        if (! is_string($value) || ! is_numeric($value)) {
+            return null;
+        }
+
+        return (float) $value;
     }
 }

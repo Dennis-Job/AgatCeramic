@@ -74,7 +74,7 @@ class AuditLogService
     private function sanitizeValue(mixed $value): mixed
     {
         if (is_array($value)) {
-            return $this->sanitizeMetadata($value);
+            return $this->sanitizeMetadata($this->stringKeyedArray($value));
         }
 
         if ($value instanceof DateTimeInterface) {
@@ -89,5 +89,19 @@ class AuditLogService
         }
 
         return is_scalar($value) || $value === null ? $value : '[redacted]';
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $values): array
+    {
+        $result = [];
+        foreach ($values as $key => $value) {
+            $result[(string) $key] = $value;
+        }
+
+        return $result;
     }
 }

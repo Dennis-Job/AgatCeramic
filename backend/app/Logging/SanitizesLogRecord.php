@@ -62,9 +62,7 @@ final class SanitizesLogRecord
             ];
         }
 
-        return [
-            'object' => $value::class,
-        ];
+        return ['object' => is_object($value) ? $value::class : get_debug_type($value)];
     }
 
     private function sanitizeString(string $value): string

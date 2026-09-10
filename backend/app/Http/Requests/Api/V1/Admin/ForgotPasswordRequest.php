@@ -11,9 +11,10 @@ class ForgotPasswordRequest extends FormRequest
         return true;
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
-        $this->merge(['email' => strtolower((string) $this->input('email'))]);
+        $this->merge(['email' => strtolower($this->string('email')->toString())]);
     }
 
     /** @return array<string, list<string>> */

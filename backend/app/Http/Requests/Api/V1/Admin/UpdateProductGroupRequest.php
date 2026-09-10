@@ -12,6 +12,7 @@ class UpdateProductGroupRequest extends FormRequest
         return true;
     }
 
+    /** @return array<string, list<mixed>> */
     public function rules(): array
     {
         return [
@@ -22,5 +23,25 @@ class UpdateProductGroupRequest extends FormRequest
             'product_ids' => ['sometimes', 'required', 'array', 'min:2', 'max:500'],
             'product_ids.*' => ['required', 'integer', 'distinct', 'exists:products,id'],
         ];
+    }
+
+    /** @return array{name?: string, code?: string, axis_attribute_ids?: list<int>, product_ids?: list<int>} */
+    public function payload(): array
+    {
+        $payload = [];
+        if ($this->has('name')) {
+            $payload['name'] = $this->string('name')->toString();
+        }
+        if ($this->has('code')) {
+            $payload['code'] = $this->string('code')->toString();
+        }
+        if ($this->has('axis_attribute_ids')) {
+            $payload['axis_attribute_ids'] = array_map(fn (int $index): int => $this->integer("axis_attribute_ids.{$index}"), array_keys($this->array('axis_attribute_ids')));
+        }
+        if ($this->has('product_ids')) {
+            $payload['product_ids'] = array_map(fn (int $index): int => $this->integer("product_ids.{$index}"), array_keys($this->array('product_ids')));
+        }
+
+        return $payload;
     }
 }

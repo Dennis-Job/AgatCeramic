@@ -21,9 +21,10 @@ class CartTokenRequest extends FormRequest
 
     public function cartToken(): string
     {
-        return $this->validated('cart_token');
+        return $this->string('cart_token')->toString();
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         $this->merge([

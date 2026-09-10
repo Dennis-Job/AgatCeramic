@@ -47,7 +47,9 @@ class MigrateStandaloneProducts extends Command
 
                 continue;
             }
-            $variants = $product->variants->whereNull('standalone_product_id')->values();
+            $variants = $product->variants
+                ->whereNull('standalone_product_id')
+                ->values();
             [$canGroup, $axisIds, $reason] = $this->inferAxes($variants->all());
             $this->line("Product {$product->id}: {$variants->count()} offers; ".($canGroup ? 'group axes '.implode(',', $axisIds) : "no group ({$reason})"));
             if (! $apply) {
@@ -109,7 +111,11 @@ class MigrateStandaloneProducts extends Command
                             ['code' => 'legacy-'.$product->id],
                             ['name' => $product->name],
                         );
-                        $group->axes()->sync(collect($axisIds)->mapWithKeys(fn (int $id, int $i): array => [$id => ['sort_order' => $i]])->all());
+                        $axisSortOrders = [];
+                        foreach ($axisIds as $position => $axisId) {
+                            $axisSortOrders[$axisId] = ['sort_order' => $position];
+                        }
+                        $group->axes()->sync($axisSortOrders);
                         $group->products()->sync($memberIds);
                     }
                 });
@@ -131,33 +137,51 @@ class MigrateStandaloneProducts extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * @param  array<int, ProductVariant>  $variants
+     * @return array{bool, array<int, int>, string}
+     */
     private function inferAxes(array $variants): array
     {
         if (count($variants) < 2) {
             return [false, [], 'fewer than two variants'];
         }
-        $axisIds = collect($variants)->flatMap(fn (ProductVariant $variant) => $variant->attributeValues->pluck('attribute_id'))->unique()->sort()->values();
+        $axisIds = collect($variants)
+            ->flatMap(fn (ProductVariant $variant) => $variant->attributeValues->pluck('attribute_id'))
+            ->filter(static fn (mixed $attributeId): bool => is_int($attributeId))
+            ->unique()
+            ->sort()
+            ->values();
         if ($axisIds->isEmpty()) {
             return [false, [], 'no distinguishing attributes'];
         }
-        $axes = Attribute::query()->whereKey($axisIds)->get();
+        $axisIdList = $axisIds->all();
+        $axes = Attribute::query()->whereKey($axisIdList)->get();
         if ($axes->count() !== $axisIds->count() || $axes->contains(fn (Attribute $axis) => in_array($axis->type, ['text', 'multiselect'], true))) {
-            return [false, $axisIds->all(), 'unsupported or missing axis'];
+            return [false, $axisIdList, 'unsupported or missing axis'];
         }
         $tuples = [];
         foreach ($variants as $variant) {
             $values = $variant->attributeValues->keyBy('attribute_id');
             if ($axisIds->contains(fn (int $id) => ! $values->has($id))) {
-                return [false, $axisIds->all(), 'incomplete axis values'];
+                return [false, $axisIdList, 'incomplete axis values'];
             }
-            $tuple = json_encode($axisIds->map(fn (int $id) => $values[$id]->value)->all(), JSON_THROW_ON_ERROR);
+            $tupleValues = [];
+            foreach ($axisIds as $id) {
+                $value = $values->get($id);
+                if ($value === null) {
+                    return [false, $axisIdList, 'incomplete axis values'];
+                }
+                $tupleValues[] = $value->value;
+            }
+            $tuple = json_encode($tupleValues, JSON_THROW_ON_ERROR);
             if (isset($tuples[$tuple])) {
-                return [false, $axisIds->all(), 'duplicate axis tuple'];
+                return [false, $axisIdList, 'duplicate axis tuple'];
             }
             $tuples[$tuple] = true;
         }
 
-        return [true, $axisIds->all(), ''];
+        return [true, $axisIdList, ''];
     }
 
     private function cloneImages(Product $source, Product $target): void

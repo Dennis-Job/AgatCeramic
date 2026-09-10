@@ -6,7 +6,6 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -41,7 +40,7 @@ class ProductImageManagementService
                 }
 
                 $image = $product->images()->create([
-                    ...Arr::except($attributes, ['alt', 'is_primary']),
+                    ...$this->imageAttributes($attributes, true),
                     'disk' => 'public',
                     'path' => $path,
                     'mime_type' => $file->getMimeType(),
@@ -63,9 +62,13 @@ class ProductImageManagementService
 
     private function nextOrdinal(Product $product): int
     {
+        if (! is_string($product->sku)) {
+            throw new RuntimeException('A product image requires a SKU.');
+        }
         $pattern = '/^'.preg_quote($product->sku, '/').'_(\d+)\.[^.]+$/';
         $ordinal = $product->images()
             ->pluck('path')
+            ->filter(static fn (mixed $path): bool => is_string($path))
             ->map(function (string $path) use ($pattern): int {
                 return preg_match($pattern, basename($path), $matches) === 1 ? (int) $matches[1] : 0;
             })
@@ -103,14 +106,14 @@ class ProductImageManagementService
                 $isPrimary = true;
             } elseif ($image->is_primary) {
                 $replacement = $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first();
-                $image->fill([...Arr::except($attributes, ['is_primary']), 'is_primary' => false])->save();
+                $image->fill([...$this->imageAttributes($attributes), 'is_primary' => false])->save();
                 $replacement?->update(['is_primary' => true]);
                 $this->auditLogService->record($actor, 'product.image-updated', $image);
 
                 return $image;
             }
 
-            $image->fill([...Arr::except($attributes, ['is_primary']), 'is_primary' => $isPrimary])->save();
+            $image->fill([...$this->imageAttributes($attributes), 'is_primary' => $isPrimary])->save();
             $this->auditLogService->record($actor, 'product.image-updated', $image);
 
             return $image;
@@ -133,5 +136,20 @@ class ProductImageManagementService
             return $image;
         });
 
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function imageAttributes(array $attributes, bool $excludeAlt = false): array
+    {
+        unset($attributes['is_primary']);
+
+        if ($excludeAlt) {
+            unset($attributes['alt']);
+        }
+
+        return $attributes;
     }
 }

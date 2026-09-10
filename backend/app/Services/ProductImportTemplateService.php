@@ -3,12 +3,15 @@
 namespace App\Services;
 
 use App\Models\Attribute;
+use App\Models\AttributeOption;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Support\ProductWorkbookSchema;
 use DateTimeInterface;
 use DOMDocument;
+use DOMElement;
+use DOMNode;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Cell\StringCell;
@@ -45,7 +48,7 @@ class ProductImportTemplateService
             if ($attributes->where('name', $attribute->name)->count() > 1 || in_array($label, self::BASE_HEADERS, true)) {
                 $label .= ' [#'.$attribute->id.']';
             }
-            if ($attribute->pivot->is_required) {
+            if (data_get($attribute, 'pivot.is_required')) {
                 $label .= ' *';
             }
             $count = $attribute->type === 'multiselect' ? max(1, $attribute->options->count()) : 1;
@@ -66,7 +69,7 @@ class ProductImportTemplateService
     {
         $attributes = $category->attributes()->with('options')->get()->keyBy('id');
 
-        return Product::query()->where('category_id', $category->id)->with(['brand', 'attributeValues'])->orderBy('sku')->get()
+        return array_values(Product::query()->where('category_id', $category->id)->with(['brand', 'attributeValues'])->orderBy('sku')->get()
             ->map(function (Product $product) use ($attributes): array {
                 $row = [
                     'sku' => $product->sku, 'name' => $product->name, 'slug' => $product->slug,
@@ -99,10 +102,10 @@ class ProductImportTemplateService
                 }
 
                 return $row;
-            })->all();
+            })->all());
     }
 
-    public function optionLabel(Attribute $attribute, mixed $option): string
+    public function optionLabel(Attribute $attribute, AttributeOption $option): string
     {
         return $attribute->options->where('label', $option->label)->count() > 1
             ? $option->label.' [#'.$option->id.']' : $option->label;
@@ -232,7 +235,7 @@ class ProductImportTemplateService
                             continue;
                         }
                         $values = $row->toArray();
-                        $matchesCategory = ($values[0] ?? null) === 'AGAT_CATEGORY_TEMPLATE_V1' && (int) ($values[1] ?? 0) === $category->id;
+                        $matchesCategory = ($values[0] ?? null) === 'AGAT_CATEGORY_TEMPLATE_V1' && $this->integerValue($values[1] ?? 0) === $category->id;
                     }
                 }
                 if ($sheet->getName() !== 'Товары') {
@@ -254,7 +257,7 @@ class ProductImportTemplateService
                     if (collect($values)->every(fn ($value) => $value === null || $value === '')) {
                         continue;
                     }
-                    if (count($entries) >= ProductImportService::MAX_ROWS || $index > ProductImportService::MAX_ROWS + 1) {
+                    if (! is_int($index) || count($entries) >= ProductImportService::MAX_ROWS || $index > ProductImportService::MAX_ROWS + 1) {
                         throw ValidationException::withMessages(['file' => ['Шаблон поддерживает максимум '.ProductImportService::MAX_ROWS.' товаров в строках 2–5001.']]);
                     }
                     if (count($values) > count($headers)) {
@@ -286,9 +289,24 @@ class ProductImportTemplateService
         return $entries;
     }
 
+    /** @param list<mixed> $values */
     private function row(array $values, ?Style $style = null): Row
     {
-        return new Row(array_map(fn ($value) => is_string($value) ? new StringCell($value, null) : Cell::fromValue($value), $values), $style);
+        return new Row(array_map(fn (mixed $value): Cell => is_string($value) ? new StringCell($value, null) : Cell::fromValue($this->cellScalar($value)), $values), $style);
+    }
+
+    private function cellScalar(mixed $value): bool|DateTimeInterface|\DateInterval|float|int|string|null
+    {
+        if (is_bool($value) || $value instanceof DateTimeInterface || $value instanceof \DateInterval || is_float($value) || is_int($value) || is_string($value) || $value === null) {
+            return $value;
+        }
+
+        return is_object($value) && method_exists($value, '__toString') ? (string) $value : '';
+    }
+
+    private function integerValue(mixed $value): int
+    {
+        return is_int($value) ? $value : (is_numeric($value) ? (int) $value : 0);
     }
 
     private function column(int $number): string
@@ -304,6 +322,11 @@ class ProductImportTemplateService
     }
 
     /** OpenSpout streams cells; this adds standard OOXML list validation without materializing 5000 empty rows. */
+    /**
+     * @param  array<string, string>  $headers
+     * @param  array<string, array<int, array{0: mixed, 1: mixed}>>  $lists
+     * @param  array<string, int>  $listIndexes
+     */
     private function addValidation(string $path, array $headers, array $lists, array $listIndexes): void
     {
         $zip = new ZipArchive;
@@ -312,14 +335,29 @@ class ProductImportTemplateService
         }
         try {
             $workbook = new DOMDocument;
-            $workbook->loadXML($zip->getFromName('xl/workbook.xml'), LIBXML_NONET);
+            $workbookSource = $zip->getFromName('xl/workbook.xml');
+            $sheetSource = $zip->getFromName('xl/worksheets/sheet1.xml');
+            $stylesSource = $zip->getFromName('xl/styles.xml');
+            if (! is_string($workbookSource) || ! $workbook->loadXML($workbookSource, LIBXML_NONET) || $workbook->documentElement === null) {
+                throw new RuntimeException('Не удалось прочитать структуру шаблона Excel.');
+            }
+            $workbookRoot = $workbook->documentElement;
             $sheets = $workbook->getElementsByTagName('sheet');
-            $sheets->item(1)->setAttribute('state', 'hidden');
+            $lookupSheet = $sheets->item(1);
+            if (! $lookupSheet instanceof DOMElement) {
+                throw new RuntimeException('Не удалось прочитать лист справочников шаблона Excel.');
+            }
+            $lookupSheet->setAttribute('state', 'hidden');
             $definedNames = $workbook->createElement('definedNames');
             $sheet = new DOMDocument;
-            $sheet->loadXML($zip->getFromName('xl/worksheets/sheet1.xml'), LIBXML_NONET);
+            if (! is_string($sheetSource) || ! $sheet->loadXML($sheetSource, LIBXML_NONET) || $sheet->documentElement === null) {
+                throw new RuntimeException('Не удалось прочитать лист товаров шаблона Excel.');
+            }
+            $sheetRoot = $sheet->documentElement;
             $styles = new DOMDocument;
-            $styles->loadXML($zip->getFromName('xl/styles.xml'), LIBXML_NONET);
+            if (! is_string($stylesSource) || ! $styles->loadXML($stylesSource, LIBXML_NONET)) {
+                throw new RuntimeException('Не удалось прочитать стили шаблона Excel.');
+            }
             // Normalize OpenSpout styles to the SpreadsheetML schema used by Excel.
             foreach ($styles->getElementsByTagName('fgColor') as $color) {
                 if (strlen($color->getAttribute('rgb')) === 6) {
@@ -337,8 +375,18 @@ class ProductImportTemplateService
                 }
             }
             $cellFormats = $styles->getElementsByTagName('cellXfs')->item(0);
+            if (! $cellFormats instanceof DOMElement) {
+                throw new RuntimeException('Не удалось прочитать форматы ячеек шаблона Excel.');
+            }
             $textStyleIndex = $cellFormats->getElementsByTagName('xf')->length;
-            $textFormat = $cellFormats->getElementsByTagName('xf')->item(0)->cloneNode(true);
+            $baseFormat = $cellFormats->getElementsByTagName('xf')->item(0);
+            if (! $baseFormat instanceof DOMNode) {
+                throw new RuntimeException('Не удалось прочитать текстовый формат шаблона Excel.');
+            }
+            $textFormat = $baseFormat->cloneNode(true);
+            if (! $textFormat instanceof DOMElement) {
+                throw new RuntimeException('Не удалось скопировать текстовый формат шаблона Excel.');
+            }
             $textFormat->setAttribute('numFmtId', '49'); // Built-in Excel text format (@).
             $textFormat->setAttribute('applyNumberFormat', '1');
             $cellFormats->appendChild($textFormat);
@@ -353,13 +401,17 @@ class ProductImportTemplateService
                     }
                     if ($minimum < $target) {
                         $before = $columnStyle->cloneNode(true);
-                        $before->setAttribute('max', (string) ($target - 1));
-                        $columnStyle->parentNode->insertBefore($before, $columnStyle);
+                        if ($before instanceof DOMElement && $columnStyle->parentNode !== null) {
+                            $before->setAttribute('max', (string) ($target - 1));
+                            $columnStyle->parentNode->insertBefore($before, $columnStyle);
+                        }
                     }
                     if ($maximum > $target) {
                         $after = $columnStyle->cloneNode(true);
-                        $after->setAttribute('min', (string) ($target + 1));
-                        $columnStyle->parentNode->insertBefore($after, $columnStyle->nextSibling);
+                        if ($after instanceof DOMElement && $columnStyle->parentNode !== null) {
+                            $after->setAttribute('min', (string) ($target + 1));
+                            $columnStyle->parentNode->insertBefore($after, $columnStyle->nextSibling);
+                        }
                     }
                     $columnStyle->setAttribute('min', (string) $target);
                     $columnStyle->setAttribute('max', (string) $target);
@@ -386,20 +438,26 @@ class ProductImportTemplateService
                 $validations->appendChild($validation);
                 $index++;
             }
-            $workbook->documentElement->appendChild($definedNames);
+            $workbookRoot->appendChild($definedNames);
             // Every trailing worksheet element must follow dataValidations, including
             // the legacyDrawing emitted by OpenSpout even on sheets without comments.
             $before = null;
-            foreach ($sheet->documentElement->childNodes as $child) {
+            foreach ($sheetRoot->childNodes as $child) {
                 if (in_array($child->localName, ['hyperlinks', 'printOptions', 'pageMargins', 'pageSetup', 'headerFooter', 'rowBreaks', 'colBreaks', 'customProperties', 'cellWatches', 'ignoredErrors', 'smartTags', 'drawing', 'legacyDrawing', 'legacyDrawingHF', 'picture', 'oleObjects', 'controls', 'webPublishItems', 'tableParts', 'extLst'], true)) {
                     $before = $child;
                     break;
                 }
             }
-            $sheet->documentElement->insertBefore($validations, $before);
-            $zip->addFromString('xl/workbook.xml', $workbook->saveXML());
-            $zip->addFromString('xl/worksheets/sheet1.xml', $sheet->saveXML());
-            $zip->addFromString('xl/styles.xml', $styles->saveXML());
+            $sheetRoot->insertBefore($validations, $before);
+            $workbookXml = $workbook->saveXML();
+            $sheetXml = $sheet->saveXML();
+            $stylesXml = $styles->saveXML();
+            if (! is_string($workbookXml) || ! is_string($sheetXml) || ! is_string($stylesXml)) {
+                throw new RuntimeException('Не удалось сохранить структуру шаблона Excel.');
+            }
+            $zip->addFromString('xl/workbook.xml', $workbookXml);
+            $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+            $zip->addFromString('xl/styles.xml', $stylesXml);
         } finally {
             $zip->close();
         }

@@ -28,7 +28,7 @@ class ProductGroupController extends Controller
     {
         Gate::authorize('create', ProductGroup::class);
 
-        return (new ProductGroupResource($this->service->create($this->authenticatedAdmin($request), $request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new ProductGroupResource($this->service->create($this->authenticatedAdmin($request), $request->payload())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function show(ProductGroup $productGroup): ProductGroupResource
@@ -42,7 +42,7 @@ class ProductGroupController extends Controller
     {
         Gate::authorize('update', $productGroup);
 
-        return new ProductGroupResource($this->service->update($this->authenticatedAdmin($request), $productGroup, $request->validated()));
+        return new ProductGroupResource($this->service->update($this->authenticatedAdmin($request), $productGroup, $request->payload()));
     }
 
     public function destroy(ProductGroup $productGroup): Response

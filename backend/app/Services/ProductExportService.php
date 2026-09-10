@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Queries\ProductQuery;
 use App\Support\ProductWorkbookSchema;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\LazyCollection;
 use OpenSpout\Common\Entity\Cell;
@@ -74,7 +75,7 @@ class ProductExportService
             $managerSheet->setColumnWidth(26, 6, 7, 15);
             $managerSheet->setColumnWidth(22, 16, 17);
             if ($imageCount > 0) {
-                $managerSheet->setColumnWidthForRange(48, $imageStart + 1, count($headers));
+                $managerSheet->setColumnWidthForRange(48, max(1, $imageStart + 1), max(1, count($headers)));
             }
             $seoSheet = $writer->addNewSheetAndMakeItCurrent();
             $this->prepareSheet($writer, $seoSheet, 'SEO товаров', [
@@ -94,7 +95,7 @@ class ProductExportService
 
             /** @var LazyCollection<int, Product> $products */
             $products = $this->productQuery->filtered($filters)
-                ->with(['category', 'brand', 'images' => fn ($query) => $query->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id'), 'groupMembership.group', 'attributeValues'])
+                ->with(['category', 'brand', 'images' => fn (Relation $query): Relation => $query->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id'), 'groupMembership.group', 'attributeValues'])
                 ->lazy(500);
 
             foreach ($products as $product) {
@@ -106,7 +107,7 @@ class ProductExportService
                     $product->barcode === null ? null : (string) $product->barcode,
                     $product->name,
                     $product->description,
-                    $product->category->name,
+                    $product->category?->name,
                     $product->brand?->name,
                     ProductWorkbookSchema::UNIT_LABELS[$product->unit] ?? $product->unit,
                     (float) $product->price,
@@ -129,7 +130,7 @@ class ProductExportService
                 $writer->setCurrentSheet($seoSheet);
                 $writer->addRow($this->row([
                     (string) $product->sku, $product->name, $product->slug,
-                    $product->category->name, $product->category->slug,
+                    $product->category?->name, $product->category?->slug,
                     $product->brand?->name, $product->brand?->slug,
                 ], widths: [1 => 42, 2 => 42, 4 => 42, 6 => 42]));
                 $rowNumber++;
@@ -157,7 +158,7 @@ class ProductExportService
     private function prepareSheet(Writer $writer, Sheet $sheet, string $name, array $headers): void
     {
         $sheet->setName($name)->setSheetView((new SheetView)->setFreezeRow(2)->setFreezeColumn('B'));
-        $sheet->setColumnWidthForRange(20, 1, count($headers));
+        $sheet->setColumnWidthForRange(20, 1, max(1, count($headers)));
         $writer->addRow($this->row($headers, (new Style)->setFontBold()->setFontColor('FFFFFF')
             ->setCellAlignment(CellAlignment::CENTER)->setCellVerticalAlignment(CellVerticalAlignment::CENTER)
             ->setBackgroundColor('23456B')->setShouldWrapText())->setHeight(42));
@@ -174,7 +175,7 @@ class ProductExportService
         $lines = 1;
         foreach ($values as $index => $value) {
             $cellStyle = $columnStyles[$index] ?? null;
-            $cells[] = is_string($value) ? new StringCell($value, $cellStyle) : Cell::fromValue($value, $cellStyle);
+            $cells[] = is_string($value) ? new StringCell($value, $cellStyle) : Cell::fromValue($this->cellScalar($value), $cellStyle);
             if (is_string($value)) {
                 $cellLines = 0;
                 foreach (explode("\n", $value) as $line) {
@@ -197,7 +198,13 @@ class ProductExportService
         }
         if ($attribute->type === 'select' || $attribute->type === 'multiselect') {
             $labels = $attribute->options->pluck('label', 'value');
-            $display = array_map(fn (mixed $option): string => $labels->get((string) $option) ?? (string) $option, is_array($value) ? $value : [$value]);
+            $display = array_map(function (mixed $option) use ($labels): string {
+                $fallback = $this->stringValue($option);
+
+                $label = $labels->get($fallback);
+
+                return is_string($label) ? $label : $fallback;
+            }, is_array($value) ? $value : [$value]);
             if ($attribute->type === 'multiselect') {
                 $display = array_map(static fn (string $label): string => strpbrk($label, ';"') === false ? $label : '"'.str_replace('"', '""', $label).'"', $display);
             }
@@ -208,6 +215,24 @@ class ProductExportService
             return $value;
         }
 
-        return (string) $value;
+        return $this->stringValue($value);
+    }
+
+    private function stringValue(mixed $value): string
+    {
+        if (is_string($value) || is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return is_object($value) && method_exists($value, '__toString') ? (string) $value : '';
+    }
+
+    private function cellScalar(mixed $value): bool|\DateInterval|\DateTimeInterface|float|int|string|null
+    {
+        if (is_bool($value) || $value instanceof \DateInterval || $value instanceof \DateTimeInterface || is_float($value) || is_int($value) || is_string($value) || $value === null) {
+            return $value;
+        }
+
+        return is_object($value) && method_exists($value, '__toString') ? (string) $value : '';
     }
 }

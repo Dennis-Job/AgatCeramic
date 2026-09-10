@@ -27,17 +27,24 @@ class ReplaceProductAttributeValuesRequest extends FormRequest
         ];
     }
 
+    /** @return list<\Closure(Validator): void> */
     public function after(): array
     {
         return [function (Validator $validator): void {
             /** @var Product $product */
             $product = $this->route('product');
-            $this->validateCategoryAttributeValues($validator, $product, $this->input('attributes', []), 'attributes', $product->is_active);
+            $values = [];
+            foreach ($this->array('attributes') as $value) {
+                if (is_array($value) && array_key_exists('attribute_id', $value) && array_key_exists('value', $value)) {
+                    $values[] = ['attribute_id' => $value['attribute_id'], 'value' => $value['value']];
+                }
+            }
+            $this->validateCategoryAttributeValues($validator, $product, $values, 'attributes', $product->is_active);
         }];
     }
 
     /** @return array<int, array{attribute_id: int, value: mixed}> */
-    public function attributes(): array
+    public function productAttributeValues(): array
     {
         $attributes = [];
         foreach (array_keys($this->array('attributes')) as $index) {

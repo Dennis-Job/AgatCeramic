@@ -13,10 +13,11 @@ class UpdateCurrentAdminProfileRequest extends FormRequest
         return true;
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         if ($this->has('email')) {
-            $this->merge(['email' => strtolower((string) $this->input('email'))]);
+            $this->merge(['email' => strtolower($this->string('email')->toString())]);
         }
     }
 
