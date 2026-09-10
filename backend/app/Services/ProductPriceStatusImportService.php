@@ -96,7 +96,7 @@ class ProductPriceStatusImportService
                     $import->rowErrors()->create([
                         'row_number' => $sequence,
                         'name' => $entry['sku'] ?: null,
-                        'messages' => array_map(fn (string $message) => "Лист «{$entry['sheet']}», строка {$entry['row']}: {$message}", $messages),
+                        'messages' => array_map(fn (mixed $message): string => 'Лист «'.$this->stringValue($entry['sheet']).'», строка '.$this->stringValue($entry['row']).': '.$this->stringValue($message), $messages),
                         'values' => $entry,
                     ]);
                     $failed++;
@@ -127,21 +127,26 @@ class ProductPriceStatusImportService
                 if ($locked->status !== 'pending') {
                     return;
                 }
-                $operation = $locked->payload;
+                $rawOperation = $locked->getAttribute('payload');
+                $operation = is_array($rawOperation) ? $rawOperation : [];
                 try {
                     $product = Product::query()->find($locked->product_id);
                     if ($product === null) {
                         throw ValidationException::withMessages(['sku' => ['Товар был удалён до обработки строки.']]);
                     }
-                    app(ProductManagementService::class)->update($import->user, $product, $operation['updates']);
+                    $actor = $import->user;
+                    if ($actor === null || ! isset($operation['updates']) || ! is_array($operation['updates'])) {
+                        throw ValidationException::withMessages(['sku' => ['Не удалось обработать данные импорта.']]);
+                    }
+                    app(ProductManagementService::class)->update($actor, $product, $this->stringKeyed($operation['updates']));
                     $locked->forceFill(['status' => 'completed'])->save();
                     $import->increment('updated_rows');
                 } catch (ValidationException $exception) {
                     $locked->forceFill(['status' => 'failed'])->save();
                     $import->rowErrors()->create([
                         'row_number' => $locked->row_number, 'name' => $locked->name,
-                        'messages' => array_map(fn (mixed $message) => "Лист «{$operation['sheet']}», строка {$operation['source_row']}: {$message}", collect($exception->errors())->flatten()->all()),
-                        'values' => ['sheet' => $operation['sheet'], 'row' => $operation['source_row'], 'sku' => $locked->name, 'updates' => $operation['updates']],
+                        'messages' => array_map(fn (mixed $message): string => 'Лист «'.$this->stringValue($operation['sheet'] ?? '—').'», строка '.$this->stringValue($operation['source_row'] ?? '—').': '.$this->stringValue($message), collect($exception->errors())->flatten()->all()),
+                        'values' => ['sheet' => $operation['sheet'] ?? '—', 'row' => $operation['source_row'] ?? '—', 'sku' => $locked->name, 'updates' => $operation['updates'] ?? []],
                     ]);
                     $import->increment('failed_rows');
                 }
@@ -166,7 +171,8 @@ class ProductPriceStatusImportService
             $writer->addRow($this->row(['Лист', 'Строка', 'SKU', 'Изменения', 'Ошибки'], $this->headerStyle()));
             foreach ($import->rowErrors()->get() as $error) {
                 $values = $error->values ?? [];
-                $writer->addRow($this->row([$values['sheet'] ?? '—', $values['row'] ?? '—', $values['sku'] ?? $error->name, json_encode($values['updates'] ?? [], JSON_UNESCAPED_UNICODE), implode('; ', $error->messages ?? [])]));
+                $messages = $error->messages;
+                $writer->addRow($this->row([$values['sheet'] ?? '—', $values['row'] ?? '—', $values['sku'] ?? $error->name, json_encode($values['updates'] ?? [], JSON_UNESCAPED_UNICODE), implode('; ', array_map($this->stringValue(...), $messages))]));
             }
             $writer->close();
         } catch (Throwable $exception) {
@@ -206,13 +212,13 @@ class ProductPriceStatusImportService
 
                         continue;
                     }
-                    if (collect($values)->every(fn ($value) => $value === null || trim((string) $value) === '')) {
+                    if (collect($values)->every(fn (mixed $value): bool => $value === null || trim($this->stringValue($value)) === '')) {
                         continue;
                     }
-                    if ($rowNumber > self::MAX_ROWS_PER_SHEET + 1) {
+                    if (! is_int($rowNumber) || $rowNumber > self::MAX_ROWS_PER_SHEET + 1) {
                         throw ValidationException::withMessages(['file' => ["Лист «{$name}» поддерживает максимум ".self::MAX_ROWS_PER_SHEET.' строк.']]);
                     }
-                    $sku = trim((string) ($values[0] ?? ''));
+                    $sku = trim($this->stringValue($values[0] ?? ''));
                     $updates = match ($name) {
                         'Цены' => ['price' => $values[1] ?? null, 'old_price' => $this->nullable($values[2] ?? null)],
                         'Активность' => ['is_active' => $values[1] ?? null],
@@ -241,7 +247,11 @@ class ProductPriceStatusImportService
         return $entries;
     }
 
-    /** @param array<string, array<string, true>> $seen @param array{sheet: string, row: int, sku: string, updates: array<string,mixed>} $entry @return list<string> */
+    /**
+     * @param  array<string, array<string, true>>  $seen
+     * @param  array{sheet: string, row: int, sku: string, updates: array<string,mixed>, values: list<mixed>}  $entry
+     * @return list<string>
+     */
     private function validate(array &$seen, array &$entry): array
     {
         $messages = [];
@@ -280,19 +290,54 @@ class ProductPriceStatusImportService
 
     private function nullable(mixed $value): mixed
     {
-        return $value === null || trim((string) $value) === '' ? null : $value;
+        return $value === null || trim($this->stringValue($value)) === '' ? null : $value;
     }
 
     private function boolean(mixed $value): ?bool
     {
-        $value = mb_strtolower(trim((string) $value));
+        $value = mb_strtolower(trim($this->stringValue($value)));
 
         return in_array($value, ['да', '1'], true) ? true : (in_array($value, ['нет', '0'], true) ? false : null);
     }
 
+    /** @param list<mixed> $values */
     private function row(array $values, ?Style $style = null): Row
     {
-        return new Row(array_map(fn ($value) => is_string($value) ? new StringCell($value, null) : Cell::fromValue($value), $values), $style);
+        return new Row(array_map(fn (mixed $value): Cell => is_string($value) ? new StringCell($value, null) : Cell::fromValue($this->cellScalar($value)), $values), $style);
+    }
+
+    private function stringValue(mixed $value): string
+    {
+        if (is_string($value) || is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return is_object($value) && method_exists($value, '__toString') ? (string) $value : '';
+    }
+
+    /**
+     * @param  array<mixed, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function stringKeyed(array $values): array
+    {
+        $result = [];
+        foreach ($values as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    private function cellScalar(mixed $value): bool|DateTimeInterface|\DateInterval|float|int|string|null
+    {
+        if (is_bool($value) || $value instanceof DateTimeInterface || $value instanceof \DateInterval || is_float($value) || is_int($value) || is_string($value) || $value === null) {
+            return $value;
+        }
+
+        return $this->stringValue($value);
     }
 
     private function headerStyle(): Style
@@ -309,7 +354,10 @@ class ProductPriceStatusImportService
         try {
             foreach ([2, 3] as $sheetNumber) {
                 $xml = new DOMDocument;
-                $xml->loadXML($zip->getFromName("xl/worksheets/sheet{$sheetNumber}.xml"), LIBXML_NONET);
+                $source = $zip->getFromName("xl/worksheets/sheet{$sheetNumber}.xml");
+                if (! is_string($source) || ! $xml->loadXML($source, LIBXML_NONET) || $xml->documentElement === null) {
+                    throw new RuntimeException('Не удалось прочитать структуру шаблона Excel.');
+                }
                 $validations = $xml->createElement('dataValidations');
                 $validations->setAttribute('count', '1');
                 $validation = $xml->createElement('dataValidation');
@@ -329,7 +377,11 @@ class ProductPriceStatusImportService
                     }
                 }
                 $xml->documentElement->insertBefore($validations, $before);
-                $zip->addFromString("xl/worksheets/sheet{$sheetNumber}.xml", $xml->saveXML());
+                $contents = $xml->saveXML();
+                if (! is_string($contents)) {
+                    throw new RuntimeException('Не удалось сохранить структуру шаблона Excel.');
+                }
+                $zip->addFromString("xl/worksheets/sheet{$sheetNumber}.xml", $contents);
             }
         } finally {
             $zip->close();

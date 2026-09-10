@@ -8,6 +8,10 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @phpstan-import-type ProductPayload from ProductImportService
+ * @phpstan-import-type AttributePayload from ProductImportService
+ */
 class GenericProductImportService
 {
     private const CHUNK_SIZE = 100;
@@ -69,7 +73,7 @@ class GenericProductImportService
                     return;
                 }
                 try {
-                    $operation = $this->importService->applyPreparedRow($locked->user()->firstOrFail(), $item->product_id, $item->payload, $item->attribute_payload);
+                    $operation = $this->importService->applyPreparedRow($locked->user()->firstOrFail(), $item->product_id, $this->itemPayload($item), $this->itemAttributePayload($item));
                     $operation === 'created' ? $locked->created_rows++ : $locked->updated_rows++;
                     $item->status = 'completed';
                     $item->save();
@@ -92,5 +96,139 @@ class GenericProductImportService
         }
 
         return ! ProductImportItem::query()->where('product_import_id', $import->id)->where('status', 'pending')->exists();
+    }
+
+    /** @return ProductPayload */
+    private function itemPayload(ProductImportItem $item): array
+    {
+        $payload = $this->jsonObject($item->getRawOriginal('payload'));
+
+        return [
+            'category_id' => $this->requiredInt($payload, 'category_id'),
+            'brand_id' => $this->nullableInt($payload, 'brand_id'),
+            'name' => $this->requiredString($payload, 'name'),
+            'slug' => $this->requiredString($payload, 'slug'),
+            'description' => $this->nullableString($payload, 'description'),
+            'article_number' => $this->nullableString($payload, 'article_number'),
+            'barcode' => $this->nullableString($payload, 'barcode'),
+            'unit' => $this->requiredString($payload, 'unit'),
+            'price' => $this->requiredString($payload, 'price'),
+            'old_price' => $this->nullableString($payload, 'old_price'),
+            'stock_quantity' => $this->requiredInt($payload, 'stock_quantity'),
+            'is_active' => $this->requiredBool($payload, 'is_active'),
+            'is_on_sale' => $this->requiredBool($payload, 'is_on_sale'),
+        ];
+    }
+
+    /** @return AttributePayload */
+    private function itemAttributePayload(ProductImportItem $item): array
+    {
+        $payload = json_decode($this->rawJson($item->getRawOriginal('attribute_payload')), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($payload) || ! array_is_list($payload)) {
+            throw new \LogicException('Durable import attribute payload is invalid.');
+        }
+
+        $attributes = [];
+        foreach ($payload as $attribute) {
+            if (! is_array($attribute)) {
+                throw new \LogicException('Durable import attribute payload is invalid.');
+            }
+            $attribute = $this->stringKeyedArray($attribute);
+            $attributes[] = ['attribute_id' => $this->requiredInt($attribute, 'attribute_id'), 'value' => $attribute['value'] ?? null];
+        }
+
+        return $attributes;
+    }
+
+    /** @return array<string, mixed> */
+    private function jsonObject(mixed $json): array
+    {
+        $value = json_decode($this->rawJson($json), true, 512, JSON_THROW_ON_ERROR);
+        if (! is_array($value) || array_is_list($value)) {
+            throw new \LogicException('Durable import payload is invalid.');
+        }
+
+        return $this->stringKeyedArray($value);
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $value
+     * @return array<string, mixed>
+     */
+    private function stringKeyedArray(array $value): array
+    {
+        $result = [];
+        foreach ($value as $key => $item) {
+            if (! is_string($key)) {
+                throw new \LogicException('Durable import payload has invalid keys.');
+            }
+            $result[$key] = $item;
+        }
+
+        return $result;
+    }
+
+    private function rawJson(mixed $value): string
+    {
+        if (! is_string($value)) {
+            throw new \LogicException('Durable import payload storage is invalid.');
+        }
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function requiredInt(array $payload, string $field): int
+    {
+        $value = $payload[$field] ?? null;
+        if (! is_int($value)) {
+            throw new \LogicException("Durable import field {$field} is invalid.");
+        }
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function nullableInt(array $payload, string $field): ?int
+    {
+        $value = $payload[$field] ?? null;
+        if ($value !== null && ! is_int($value)) {
+            throw new \LogicException("Durable import field {$field} is invalid.");
+        }
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function requiredString(array $payload, string $field): string
+    {
+        $value = $payload[$field] ?? null;
+        if (! is_string($value)) {
+            throw new \LogicException("Durable import field {$field} is invalid.");
+        }
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function nullableString(array $payload, string $field): ?string
+    {
+        $value = $payload[$field] ?? null;
+        if ($value !== null && ! is_string($value)) {
+            throw new \LogicException("Durable import field {$field} is invalid.");
+        }
+
+        return $value;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function requiredBool(array $payload, string $field): bool
+    {
+        $value = $payload[$field] ?? null;
+        if (! is_bool($value)) {
+            throw new \LogicException("Durable import field {$field} is invalid.");
+        }
+
+        return $value;
     }
 }

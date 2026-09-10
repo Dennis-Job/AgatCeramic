@@ -4,12 +4,13 @@ namespace App\Http\Resources;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 
 /** @extends ApiResource<AuditLog> */
 class AuditLogResource extends ApiResource
 {
-    /** @return array<string, mixed> */
+    /** @return array<string, mixed>|array{} */
     #[\Override]
     public function toArray(Request $request): array
     {
@@ -25,16 +26,16 @@ class AuditLogResource extends ApiResource
             ] : null,
             'metadata' => $this->metadata,
             'details' => $this->details(),
-            'occurred_at' => $this->occurred_at?->toISOString(),
+            'occurred_at' => $this->dateValue($this->occurred_at),
         ];
     }
 
     /** @return array{id: int|null, name: string}|null */
     private function actorSnapshot(): ?array
     {
-        $snapshot = $this->actor_snapshot ?? [];
+        $snapshot = $this->actor_snapshot;
 
-        if (isset($snapshot['name'])) {
+        if (is_array($snapshot) && isset($snapshot['name']) && is_string($snapshot['name'])) {
             return ['id' => $this->actor_id, 'name' => $snapshot['name']];
         }
 
@@ -47,47 +48,69 @@ class AuditLogResource extends ApiResource
     /** @return array<string, mixed> */
     private function entitySnapshot(): array
     {
-        $snapshot = $this->entity_snapshot ?? [];
+        $snapshot = $this->entity_snapshot;
 
-        if ($snapshot !== []) {
-            return $snapshot;
+        if (is_array($snapshot)) {
+            $normalized = [];
+            foreach ($snapshot as $key => $value) {
+                if (is_string($key)) {
+                    $normalized[$key] = $value;
+                }
+            }
+            if ($normalized !== []) {
+                return $normalized;
+            }
         }
 
-        return $this->relationLoaded('entity') && $this->entity instanceof User
-            ? ['name' => $this->entity->name, 'email' => $this->entity->email]
+        $entity = $this->entity;
+
+        return $this->relationLoaded('entity') && $entity instanceof User
+            ? ['name' => $entity->getAttribute('name'), 'email' => $entity->getAttribute('email')]
             : [];
     }
 
     /** @return list<array{label: string, value: string}> */
     private function details(): array
     {
-        $metadata = $this->metadata ?? [];
+        $metadata = is_array($this->metadata) ? $this->metadata : [];
         $details = [];
 
         if (array_key_exists('status', $metadata)) {
             $details[] = ['label' => 'Статус', 'value' => $metadata['status'] === 'active' ? 'Активен' : 'Заблокирован'];
         }
 
-        if ($roles = $this->getAttribute('audit_role_names')) {
-            $details[] = ['label' => 'Роли', 'value' => implode(', ', $roles)];
+        $roles = $this->getAttribute('audit_role_names');
+        if (is_array($roles) && $roles !== []) {
+            $details[] = ['label' => 'Роли', 'value' => implode(', ', array_map($this->stringValue(...), $roles))];
         }
 
-        if ($permissions = $this->getAttribute('audit_permission_names')) {
-            $details[] = ['label' => 'Права', 'value' => implode(', ', $permissions)];
+        $permissions = $this->getAttribute('audit_permission_names');
+        if (is_array($permissions) && $permissions !== []) {
+            $details[] = ['label' => 'Права', 'value' => implode(', ', array_map($this->stringValue(...), $permissions))];
         }
 
         if (array_key_exists('slug', $metadata)) {
-            $details[] = ['label' => 'Технический код', 'value' => (string) $metadata['slug']];
+            $details[] = ['label' => 'Технический код', 'value' => $this->stringValue($metadata['slug'])];
         }
 
         if (array_key_exists('affected_records', $metadata)) {
-            $details[] = ['label' => 'Затронуто записей', 'value' => (string) $metadata['affected_records']];
+            $details[] = ['label' => 'Затронуто записей', 'value' => $this->stringValue($metadata['affected_records'])];
         }
 
         if (array_key_exists('ip', $metadata)) {
-            $details[] = ['label' => 'IP-адрес', 'value' => (string) $metadata['ip']];
+            $details[] = ['label' => 'IP-адрес', 'value' => $this->stringValue($metadata['ip'])];
         }
 
         return $details;
+    }
+
+    private function dateValue(mixed $value): mixed
+    {
+        return $value instanceof CarbonInterface ? $value->toISOString() : $value;
+    }
+
+    private function stringValue(mixed $value): string
+    {
+        return is_string($value) ? $value : (is_int($value) || is_float($value) || is_bool($value) ? (string) $value : '');
     }
 }

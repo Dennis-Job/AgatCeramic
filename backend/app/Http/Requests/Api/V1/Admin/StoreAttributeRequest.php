@@ -36,6 +36,7 @@ class StoreAttributeRequest extends FormRequest
         ];
     }
 
+    /** @return list<\Closure(Validator): void> */
     public function after(): array
     {
         return [fn (Validator $validator) => $this->validateOptionsForType($validator)];

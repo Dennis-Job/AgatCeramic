@@ -2,15 +2,20 @@
 
 namespace App\Http\Requests\Api\V1\Admin\Concerns;
 
+use App\Models\Attribute;
 use Illuminate\Validation\Validator;
 
 trait ValidatesAttributeOptions
 {
     protected function validateOptionsForType(Validator $validator): void
     {
-        $type = $this->input('type', $this->route('attribute')?->type);
+        $type = $this->string('type')->toString();
+        $attribute = $this->route('attribute');
+        if ($type === '' && $attribute instanceof Attribute) {
+            $type = $attribute->type;
+        }
 
-        if ($type === null) {
+        if ($type === '') {
             return;
         }
 

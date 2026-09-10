@@ -29,7 +29,7 @@ class ProductImportErrorReportService
                 $writer->addRow(Row::fromValues([
                     $error->row_number,
                     $error->name ?: 'Без наименования',
-                    implode("\n", $error->messages),
+                    implode("\n", array_filter($error->messages, static fn (mixed $message): bool => is_string($message))),
                 ]));
             }
             $writer->close();

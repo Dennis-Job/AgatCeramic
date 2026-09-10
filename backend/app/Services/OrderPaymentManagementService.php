@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+/** @phpstan-type PaymentAttributes array{payment_status: PaymentStatus, payment_amount: ?string, payment_method: ?string, payment_reference: ?string, paid_at: mixed} */
 class OrderPaymentManagementService
 {
     public function __construct(
@@ -29,7 +30,7 @@ class OrderPaymentManagementService
 
             $order->save();
             $this->auditLogService->record($actor, 'order.payment-registered', $order, [
-                'from_payment_status' => $previousStatus->value,
+                'from_payment_status' => $previousStatus,
                 'to_payment_status' => $paymentStatus->value,
                 'payment_amount' => $payment['payment_amount'],
             ]);
@@ -38,7 +39,10 @@ class OrderPaymentManagementService
         });
     }
 
-    /** @param array<string, mixed> $attributes @return array<string, mixed> */
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return PaymentAttributes
+     */
     private function paymentAttributes(Order $order, PaymentStatus $paymentStatus, array $attributes): array
     {
         if (in_array($paymentStatus, [PaymentStatus::NotPaid, PaymentStatus::Pending], true)) {
@@ -51,8 +55,8 @@ class OrderPaymentManagementService
             ];
         }
 
-        $amount = $this->normaliseAmount((string) $attributes['payment_amount']);
-        $total = $this->normaliseAmount((string) $order->total_amount);
+        $amount = $this->normaliseAmount($this->requiredString($attributes, 'payment_amount'));
+        $total = $this->normaliseAmount($this->requiredString(['total_amount' => $order->total_amount], 'total_amount'));
         $comparison = $this->compareAmounts($amount, $total);
         $isPositive = $this->compareAmounts($amount, '0.00') > 0;
 
@@ -60,7 +64,6 @@ class OrderPaymentManagementService
             PaymentStatus::Paid => $comparison === 0,
             PaymentStatus::PartiallyPaid => $isPositive && $comparison < 0,
             PaymentStatus::Refunded => $isPositive && $comparison <= 0,
-            default => false,
         };
 
         if (! $isValidAmount) {
@@ -69,7 +72,6 @@ class OrderPaymentManagementService
                     PaymentStatus::Paid => 'Сумма полной оплаты должна совпадать с итоговой суммой заказа.',
                     PaymentStatus::PartiallyPaid => 'Сумма частичной оплаты должна быть больше нуля и меньше итоговой суммы заказа.',
                     PaymentStatus::Refunded => 'Сумма возвращённого платежа должна быть больше нуля и не превышать итоговую сумму заказа.',
-                    default => 'Сумма платежа должна быть больше нуля.',
                 }],
             ]);
         }
@@ -77,8 +79,8 @@ class OrderPaymentManagementService
         return [
             'payment_status' => $paymentStatus,
             'payment_amount' => $amount,
-            'payment_method' => $attributes['payment_method'],
-            'payment_reference' => $attributes['payment_reference'] ?? null,
+            'payment_method' => $this->requiredString($attributes, 'payment_method'),
+            'payment_reference' => $this->nullableString($attributes['payment_reference'] ?? null),
             'paid_at' => $attributes['paid_at'],
         ];
     }
@@ -98,5 +100,28 @@ class OrderPaymentManagementService
         return strlen($leftWhole) <=> strlen($rightWhole)
             ?: strcmp($leftWhole, $rightWhole)
             ?: strcmp($leftFraction, $rightFraction);
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function requiredString(array $attributes, string $field): string
+    {
+        $value = $attributes[$field] ?? null;
+        if (! is_string($value) || $value === '') {
+            throw new \LogicException("Validated payment field {$field} is missing.");
+        }
+
+        return $value;
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+        if (! is_string($value)) {
+            throw new \LogicException('Validated optional payment field is invalid.');
+        }
+
+        return $value;
     }
 }

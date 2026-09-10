@@ -33,7 +33,9 @@ class ProductImageImportService
         try {
             $groups = $this->inspect($zip);
             $import->forceFill(['total_folders' => count($groups)])->save();
-            $completed = array_fill_keys($import->processed_skus ?? [], true);
+            $rawProcessedSkus = $import->getAttribute('processed_skus');
+            $processedSkus = is_array($rawProcessedSkus) ? $rawProcessedSkus : [];
+            $completed = array_fill_keys(array_filter($processedSkus, 'is_string'), true);
             $pending = array_filter($groups, fn (array $entries, string $sku): bool => ! isset($completed[$sku]), ARRAY_FILTER_USE_BOTH);
             // A bounded batch keeps every queue attempt below its timeout. The SKU
             // checkpoint is committed with its gallery update, so a retry resumes.
@@ -75,6 +77,7 @@ class ProductImageImportService
             $attributes = 0;
             if ($zip->getExternalAttributesIndex($i, $operationsSystem, $attributes)
                 && $operationsSystem === ZipArchive::OPSYS_UNIX
+                && is_int($attributes)
                 && (($attributes >> 16) & 0170000) === 0120000) {
                 throw new RuntimeException('Архив не может содержать символические ссылки.');
             }
@@ -147,6 +150,9 @@ class ProductImageImportService
 
             return;
         }
+        if ($product === null) {
+            return;
+        }
         $created = 0;
         $replaced = 0;
         $written = [];
@@ -214,7 +220,8 @@ class ProductImageImportService
                 $import->increment('processed_folders');
                 $import->increment('created_images', $created);
                 $import->increment('replaced_images', $replaced);
-                $processed = $import->processed_skus ?? [];
+                $rawProcessed = $import->getAttribute('processed_skus');
+                $processed = is_array($rawProcessed) ? $rawProcessed : [];
                 if (! in_array($sku, $processed, true)) {
                     $import->forceFill(['processed_skus' => [...$processed, $sku]])->save();
                 }
@@ -225,7 +232,9 @@ class ProductImageImportService
             }
         } catch (\Throwable $exception) {
             foreach ($backups as $path => $backup) {
-                Storage::disk($backup['disk'])->put($path, $backup['contents']);
+                if (is_string($backup['contents'])) {
+                    Storage::disk($backup['disk'])->put($path, $backup['contents']);
+                }
             }
             foreach ($written as $path) {
                 if (! isset($backups[$path])) {
@@ -244,13 +253,15 @@ class ProductImageImportService
     {
         DB::transaction(function () use ($import, $sku, $entry, $messages): void {
             $import = ProductImageImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
-            if (in_array($sku, $import->processed_skus ?? [], true)) {
+            $rawProcessed = $import->getAttribute('processed_skus');
+            $processed = is_array($rawProcessed) ? $rawProcessed : [];
+            if (in_array($sku, $processed, true)) {
                 return;
             }
             ProductImageImportError::query()->create(['product_image_import_id' => $import->id, 'sku' => mb_substr($sku, 0, 255), 'entry' => $entry, 'messages' => $messages]);
             $import->increment('failed_folders');
             $import->increment('processed_folders');
-            $import->forceFill(['processed_skus' => [...($import->processed_skus ?? []), $sku]])->save();
+            $import->forceFill(['processed_skus' => [...$processed, $sku]])->save();
         });
     }
 }

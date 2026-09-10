@@ -10,10 +10,17 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @phpstan-type CompositionPayload array{name: string, code: string, axis_attribute_ids: list<int>, product_ids: list<int>}
+ * @phpstan-type BulkChange array{action: 'disband', group_id: int}|array{action: 'create'|'update', group_id: int|null, code: string, name: string, axis_attribute_ids: list<int>, product_ids: list<int>}
+ */
 class ProductGroupManagementService
 {
     public function __construct(private readonly AuditLogService $auditLogService) {}
 
+    /**
+     * @param  CompositionPayload  $payload
+     */
     public function create(User $actor, array $payload): ProductGroup
     {
         return DB::transaction(function () use ($actor, $payload): ProductGroup {
@@ -25,12 +32,15 @@ class ProductGroupManagementService
         });
     }
 
+    /**
+     * @param  array{name?: string, code?: string, axis_attribute_ids?: list<int>, product_ids?: list<int>}  $payload
+     */
     public function update(User $actor, ProductGroup $group, array $payload): ProductGroup
     {
         return DB::transaction(function () use ($actor, $group, $payload): ProductGroup {
             $group = ProductGroup::query()->whereKey($group->id)->lockForUpdate()->firstOrFail();
-            $axisIds = $payload['axis_attribute_ids'] ?? $group->axes()->pluck('attributes.id')->all();
-            $productIds = $payload['product_ids'] ?? $group->products()->pluck('products.id')->all();
+            $axisIds = $payload['axis_attribute_ids'] ?? $this->integerIds($group->axes()->pluck('attributes.id')->all());
+            $productIds = $payload['product_ids'] ?? $this->integerIds($group->products()->pluck('products.id')->all());
             $group->fill(array_intersect_key($payload, array_flip(['name', 'code'])))->save();
             $this->replaceComposition($group, $axisIds, $productIds);
             $this->auditLogService->record($actor, 'product-group.updated', $group);
@@ -52,8 +62,8 @@ class ProductGroupManagementService
     {
         $this->replaceComposition(
             $group,
-            $group->axes()->pluck('attributes.id')->all(),
-            $group->products()->pluck('products.id')->all(),
+            $this->integerIds($group->axes()->pluck('attributes.id')->all()),
+            $this->integerIds($group->products()->pluck('products.id')->all()),
         );
     }
 
@@ -63,12 +73,12 @@ class ProductGroupManagementService
      * move between groups in the same workbook without ever being persisted in
      * two groups.
      *
-     * @param  list<array{action: string, group_id?: int|null, code?: string, name?: string, axis_attribute_ids?: list<int>, product_ids?: list<int>}>  $changes
+     * @param  list<BulkChange>  $changes
      */
     public function applyBulk(User $actor, array $changes): void
     {
         DB::transaction(function () use ($actor, $changes): void {
-            $existingIds = collect($changes)->pluck('group_id')->filter()->map(fn ($id): int => (int) $id)->unique()->sort()->values()->all();
+            $existingIds = collect($changes)->pluck('group_id')->filter(static fn (mixed $id): bool => is_int($id))->unique()->sort()->values()->all();
             $groups = ProductGroup::query()->whereIn('id', $existingIds)->lockForUpdate()->get()->keyBy('id');
             if ($groups->count() !== count($existingIds)) {
                 throw ValidationException::withMessages(['groups' => ['Группа вариантов была удалена до обработки файла.']]);
@@ -81,28 +91,38 @@ class ProductGroupManagementService
             }
 
             foreach ($changes as $change) {
-                $action = $change['action'];
-                if ($action === 'disband') {
-                    $group = $groups[(int) $change['group_id']];
+                if ($change['action'] === 'disband') {
+                    $group = $groups->get($change['group_id']);
+                    if (! $group instanceof ProductGroup) {
+                        throw ValidationException::withMessages(['groups' => ['Группа вариантов была удалена до обработки файла.']]);
+                    }
                     $this->auditLogService->record($actor, 'product-group.deleted', $group);
                     $group->delete();
 
                     continue;
                 }
 
-                $group = isset($change['group_id']) && $change['group_id'] !== null
-                    ? $groups[(int) $change['group_id']]
+                $group = $change['group_id'] !== null
+                    ? $groups->get($change['group_id'])
                     : ProductGroup::query()->create(['name' => $change['name'], 'code' => $change['code']]);
 
-                if (isset($change['group_id']) && $change['group_id'] !== null) {
+                if (! $group instanceof ProductGroup) {
+                    throw ValidationException::withMessages(['groups' => ['Группа вариантов была удалена до обработки файла.']]);
+                }
+
+                if ($change['group_id'] !== null) {
                     $group->fill(['name' => $change['name'], 'code' => $change['code']])->save();
                 }
                 $this->replaceComposition($group, $change['axis_attribute_ids'], $change['product_ids']);
-                $this->auditLogService->record($actor, isset($change['group_id']) && $change['group_id'] !== null ? 'product-group.updated' : 'product-group.created', $group);
+                $this->auditLogService->record($actor, $change['group_id'] !== null ? 'product-group.updated' : 'product-group.created', $group);
             }
         });
     }
 
+    /**
+     * @param  list<int>  $axisIds
+     * @param  list<int>  $productIds
+     */
     private function replaceComposition(ProductGroup $group, array $axisIds, array $productIds): void
     {
         $products = Product::query()->whereKey($productIds)->orderBy('id')->lockForUpdate()
@@ -111,7 +131,7 @@ class ProductGroupManagementService
             throw ValidationException::withMessages(['product_ids' => ['В группе вариантов должно быть не менее двух доступных товаров.']]);
         }
 
-        $first = $products->first();
+        $first = $products->firstOrFail();
         if ($products->contains(fn (Product $product): bool => $product->category_id !== $first->category_id || $product->brand_id !== $first->brand_id)) {
             throw ValidationException::withMessages(['product_ids' => ['Все товары группы должны относиться к одной категории и одному бренду.']]);
         }
@@ -126,34 +146,44 @@ class ProductGroupManagementService
         if ($axes->count() !== count($axisIds) || $axes->contains(fn (Attribute $attribute): bool => in_array($attribute->type, ['text', 'multiselect'], true))) {
             throw ValidationException::withMessages(['axis_attribute_ids' => ['Осями могут быть только существующие скалярные характеристики; текст и множественный выбор не поддерживаются.']]);
         }
-        $categoryAttributes = $first->category->attributes()->get(['attributes.id', 'attributes.name']);
-        $categoryAttributeIds = $categoryAttributes->pluck('id');
-        if (collect($axisIds)->diff($categoryAttributeIds)->isNotEmpty()) {
+        $category = $first->category;
+        if ($category === null) {
+            throw ValidationException::withMessages(['product_ids' => ['Не удалось определить категорию товаров группы.']]);
+        }
+        $categoryAttributes = $category->attributes()->get(['attributes.id', 'attributes.name']);
+        $categoryAttributeIds = $this->integerIds($categoryAttributes->pluck('id')->all());
+        if (array_diff($axisIds, $categoryAttributeIds) !== []) {
             throw ValidationException::withMessages(['axis_attribute_ids' => ['Каждая ось должна быть назначена категории товаров.']]);
         }
 
-        $valuesByProduct = $products->mapWithKeys(fn (Product $product): array => [
-            $product->id => $product->attributeValues->mapWithKeys(fn ($value): array => [$value->attribute_id => $value->value]),
-        ]);
+        $valuesByProduct = [];
+        foreach ($products as $product) {
+            $values = [];
+            foreach ($product->attributeValues as $value) {
+                $values[$value->attribute_id] = $value->value;
+            }
+            $valuesByProduct[$product->id] = $values;
+        }
         $tuples = [];
         foreach ($products as $product) {
             $values = $valuesByProduct[$product->id];
-            if (collect($axisIds)->contains(fn (int $id): bool => ! $values->has($id))) {
+            if (array_diff($axisIds, array_keys($values)) !== []) {
                 throw ValidationException::withMessages(['product_ids' => ["У товара {$product->id} не заполнено значение одной или нескольких осей группы."]]);
             }
-            $tuple = json_encode(collect($axisIds)->map(fn (int $id) => $values[$id])->all(), JSON_THROW_ON_ERROR);
+            $tuple = json_encode(array_map(fn (int $id): mixed => $values[$id], $axisIds), JSON_THROW_ON_ERROR);
             if (isset($tuples[$tuple])) {
                 throw ValidationException::withMessages(['product_ids' => ['Каждый товар должен иметь уникальное сочетание значений осей группы.']]);
             }
             $tuples[$tuple] = true;
         }
 
-        $nonAxisIds = $categoryAttributeIds->diff($axisIds);
+        $nonAxisIds = array_values(array_diff($categoryAttributeIds, $axisIds));
         foreach ($nonAxisIds as $attributeId) {
-            $expected = $this->canonical($valuesByProduct[$first->id]->get($attributeId));
+            $expected = $this->canonical($valuesByProduct[$first->id][$attributeId] ?? null);
             foreach ($products->skip(1) as $product) {
-                if ($this->canonical($valuesByProduct[$product->id]->get($attributeId)) !== $expected) {
-                    $attributeName = $categoryAttributes->firstWhere('id', $attributeId)?->name ?? "ID {$attributeId}";
+                if ($this->canonical($valuesByProduct[$product->id][$attributeId] ?? null) !== $expected) {
+                    $attribute = $categoryAttributes->firstWhere('id', $attributeId);
+                    $attributeName = $attribute instanceof Attribute ? $attribute->name : "ID {$attributeId}";
                     throw ValidationException::withMessages([
                         'product_ids' => ["Значение общей характеристики «{$attributeName}» должно совпадать у всех товаров группы."],
                     ]);
@@ -168,6 +198,22 @@ class ProductGroupManagementService
     private function canonical(mixed $value): string
     {
         return json_encode($value, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * @param  iterable<mixed>  $values
+     * @return list<int>
+     */
+    private function integerIds(iterable $values): array
+    {
+        $ids = [];
+        foreach ($values as $value) {
+            if (is_int($value)) {
+                $ids[] = $value;
+            }
+        }
+
+        return $ids;
     }
 
     public function load(ProductGroup $group): ProductGroup

@@ -11,6 +11,7 @@ class ReplaceCategoryAttributeGroupsRequest extends FormRequest
         return true;
     }
 
+    /** @return array<string, list<mixed>> */
     public function rules(): array
     {
         return ['attribute_groups' => ['present', 'array', 'max:100'], 'attribute_groups.*.id' => ['required', 'integer', 'distinct', 'exists:attribute_groups,id'], 'attribute_groups.*.sort_order' => ['sometimes', 'integer', 'min:0']];

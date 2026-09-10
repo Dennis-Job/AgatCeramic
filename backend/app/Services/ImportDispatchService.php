@@ -89,7 +89,6 @@ class ImportDispatchService
 
     private function continue(string $type, int $importId): void
     {
-        /** @var ImportDispatchTask $task */
         $task = ImportDispatchTask::query()
             ->where('import_type', $type)
             ->where('import_id', $importId)

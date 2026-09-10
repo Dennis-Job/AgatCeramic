@@ -30,7 +30,7 @@ class ProductAttributeValueManagementService
             }
             $product->setRelation('category', $category);
 
-            $attributeIds = collect($attributes)->pluck('attribute_id')->map(static fn (mixed $id): int => (int) $id);
+            $attributeIds = collect(array_column($attributes, 'attribute_id'));
             $this->integrityService->assertValuesMatchCategory($product, $attributes, 'attributes', $product->is_active);
             $product->attributeValues()->whereNotIn('attribute_id', $attributeIds)->delete();
 
@@ -42,15 +42,13 @@ class ProductAttributeValueManagementService
             }
 
             if ($group !== null) {
-                $axisIds = $group->axes()->pluck('attributes.id')->map(static fn (mixed $id): int => (int) $id);
-                $sharedAttributeIds = $category->attributes()->pluck('attributes.id')
-                    ->map(static fn (mixed $id): int => (int) $id)
+                $axisIds = collect($this->integerIds($group->axes()->pluck('attributes.id')->all()));
+                $sharedAttributeIds = collect($this->integerIds($category->attributes()->pluck('attributes.id')->all()))
                     ->diff($axisIds);
                 $sharedValues = collect($attributes)
-                    ->filter(fn (array $attribute): bool => $sharedAttributeIds->contains((int) $attribute['attribute_id']));
-                $submittedSharedIds = $sharedValues->pluck('attribute_id')->map(static fn (mixed $id): int => (int) $id);
-                $requiredSharedIds = $category->attributes()->wherePivot('is_required', true)->pluck('attributes.id')
-                    ->map(static fn (mixed $id): int => (int) $id)
+                    ->filter(fn (array $attribute): bool => $sharedAttributeIds->contains($attribute['attribute_id']));
+                $submittedSharedIds = collect($this->integerIds($sharedValues->pluck('attribute_id')->all()));
+                $requiredSharedIds = collect($this->integerIds($category->attributes()->wherePivot('is_required', true)->pluck('attributes.id')->all()))
                     ->diff($axisIds);
 
                 if ($groupProducts->contains(fn (Product $member): bool => $member->is_active)
@@ -116,12 +114,38 @@ class ProductAttributeValueManagementService
         }
 
         $currentGroupId = ProductGroupMember::query()->where('product_id', $lockedProduct->id)->value('product_group_id');
-        if ((int) $currentGroupId !== $group->id) {
+        if ($this->integerId($currentGroupId) !== $group->id) {
             throw ValidationException::withMessages([
                 'attributes' => ['Состав группы вариантов был изменён параллельно. Повторите запрос.'],
             ]);
         }
 
         return [$lockedProduct, $group, $products];
+    }
+
+    private function integerId(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+        if (is_string($value) && ctype_digit($value)) {
+            return (int) $value;
+        }
+
+        throw new \LogicException('Expected an integer database identifier.');
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $values
+     * @return list<int>
+     */
+    private function integerIds(array $values): array
+    {
+        $ids = [];
+        foreach ($values as $value) {
+            $ids[] = $this->integerId($value);
+        }
+
+        return $ids;
     }
 }

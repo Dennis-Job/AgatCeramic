@@ -3,14 +3,26 @@
 namespace App\Services;
 
 use App\Models\Product;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Validation\ValidationException;
 
 /** Read-only, ordered group state for one workbook preflight. Instantiate for each import. */
 class ProductImportGroupValidationService
 {
+    /**
+     * @var array<int, array{
+     *     axes: array<int|string, int>,
+     *     shared: list<int>,
+     *     required_shared: list<int>,
+     *     members: array<int, array{is_active: bool, values: array<int, mixed>}>
+     * }>
+     */
     private array $groups = [];
 
-    /** @param list<array{attribute_id: int, value: mixed}> $attributePayload */
+    /**
+     * @param  array{category_id: int|null, brand_id: int|null, is_active: bool}  $payload
+     * @param  list<array{attribute_id: int, value: mixed}>  $attributePayload
+     */
     public function validate(Product $product, array $payload, array $attributePayload): void
     {
         $membership = $product->groupMembership()->with('group')->first();
@@ -29,20 +41,29 @@ class ProductImportGroupValidationService
         $groupId = $membership->product_group_id;
         if (! isset($this->groups[$groupId])) {
             $group = $membership->group;
-            $axisIds = $group->axes()->pluck('attributes.id')->map(static fn ($id): int => (int) $id)->all();
+            if ($group === null || $product->category === null) {
+                throw ValidationException::withMessages([
+                    'product_group' => ['Не удалось определить группу вариантов или категорию товара.'],
+                ]);
+            }
+            $axisIds = $group->axes()->pluck('attributes.id')->filter(static fn (mixed $id): bool => is_int($id))->all();
             $categoryAttributes = $product->category->attributes()->get();
             $members = [];
             foreach ($group->products()->with('attributeValues')->get() as $member) {
                 $members[$member->id] = [
                     'is_active' => $member->is_active,
-                    'values' => $member->attributeValues->pluck('value', 'attribute_id')->all(),
+                    'values' => $member->attributeValues->pluck('value', 'attribute_id')->mapWithKeys(static fn (mixed $value, mixed $attributeId): array => [(int) $attributeId => $value])->all(),
                 ];
             }
             $this->groups[$groupId] = [
                 'axes' => $axisIds,
-                'shared' => array_values(array_diff($categoryAttributes->pluck('id')->all(), $axisIds)),
+                'shared' => array_values(array_diff($categoryAttributes->pluck('id')->filter(static fn (mixed $id): bool => is_int($id))->all(), $axisIds)),
                 'required_shared' => array_values(array_diff(
-                    $categoryAttributes->filter(static fn ($attribute): bool => (bool) $attribute->pivot->is_required)->pluck('id')->all(),
+                    $categoryAttributes->filter(static function ($attribute): bool {
+                        $pivot = $attribute->getRelation('pivot');
+
+                        return $pivot instanceof Pivot && (bool) $pivot->getAttribute('is_required');
+                    })->pluck('id')->filter(static fn (mixed $id): bool => is_int($id))->all(),
                     $axisIds,
                 )),
                 'members' => $members,
@@ -50,7 +71,7 @@ class ProductImportGroupValidationService
         }
 
         $state = $this->groups[$groupId];
-        $values = collect($attributePayload)->pluck('value', 'attribute_id')->all();
+        $values = collect($attributePayload)->mapWithKeys(static fn (array $attribute): array => [$attribute['attribute_id'] => $attribute['value']])->all();
         // Application deactivates this row before replacing attributes; previous rows retain their final state.
         $state['members'][$product->id] = ['is_active' => false, 'values' => $values];
         if (collect($state['members'])->contains(static fn (array $member): bool => $member['is_active'])

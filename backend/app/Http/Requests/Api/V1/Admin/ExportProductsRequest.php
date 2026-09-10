@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api\V1\Admin;
 class ExportProductsRequest extends ListProductsRequest
 {
     /** @return array<string, list<mixed>> */
+    #[\Override]
     public function rules(): array
     {
         return [

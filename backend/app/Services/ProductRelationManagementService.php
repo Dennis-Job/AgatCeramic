@@ -16,7 +16,7 @@ class ProductRelationManagementService
     public function replace(User $actor, Product $product, array $relations): Product
     {
         return DB::transaction(function () use ($actor, $product, $relations): Product {
-            $relatedProductIds = collect($relations)->pluck('related_product_id')->map(static fn (mixed $id): int => (int) $id);
+            $relatedProductIds = collect(array_column($relations, 'related_product_id'));
             $productIds = $relatedProductIds->concat([$product->id])->unique()->sort()->values();
             $lockedProducts = Product::query()->whereKey($productIds)->orderBy('id')->lockForUpdate()->get();
 

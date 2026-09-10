@@ -27,11 +27,12 @@ class StoreCallbackRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         foreach (['name', 'phone'] as $field) {
             if ($this->has($field)) {
-                $value = trim((string) $this->input($field));
+                $value = trim($this->string($field)->toString());
                 $this->merge([$field => $value === '' ? null : $value]);
             }
         }

@@ -4,6 +4,7 @@ namespace App\Http\Resources\Catalog;
 
 use App\Http\Resources\ApiResource;
 use App\Models\ProductImport;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 
 /** @extends ApiResource<ProductImport> */
@@ -31,9 +32,14 @@ class ProductImportResource extends ApiResource
             'updated_rows' => $this->updated_rows,
             'processed_rows' => $this->processed_rows,
             'error_message' => $this->error_message,
-            'created_at' => $this->created_at?->toAtomString(),
-            'started_at' => $this->started_at?->toAtomString(),
-            'completed_at' => $this->completed_at?->toAtomString(),
+            'created_at' => $this->dateValue($this->created_at),
+            'started_at' => $this->dateValue($this->started_at),
+            'completed_at' => $this->dateValue($this->completed_at),
         ];
+    }
+
+    private function dateValue(mixed $value): mixed
+    {
+        return $value instanceof CarbonInterface ? $value->toAtomString() : $value;
     }
 }

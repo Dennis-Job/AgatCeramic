@@ -9,6 +9,7 @@ use App\Models\ProductImport;
 use App\Models\ProductImportItem;
 use DateTimeInterface;
 use DOMDocument;
+use DOMElement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Common\Entity\Cell;
@@ -25,7 +26,13 @@ use RuntimeException;
 use Throwable;
 use ZipArchive;
 
-/** Dedicated workbook importer; it only changes variation-group membership and axes. */
+/**
+ * @phpstan-type GroupRow array{row: int, action: string, key: string, source: string, code: string, name: string, axes: list<string>}
+ * @phpstan-type MemberRow array{sku: string, row: int}
+ * @phpstan-type ImportError array{sheet: string, row: int|string, name: string|null, messages: list<string>, values: array<int|string, mixed>}
+ * @phpstan-type GroupChange array{action: 'disband', group_id: int}|array{action: 'create'|'update', group_id: int|null, code: string, name: string, axis_attribute_ids: list<int>, product_ids: list<int>}
+ * Dedicated workbook importer; it only changes variation-group membership and axes.
+ */
 class ProductGroupImportService
 {
     public const MAX_ROWS = 5000;
@@ -58,7 +65,7 @@ class ProductGroupImportService
                 $groupsSheet->setColumnWidth($column <= 5 ? 24 : 18, $column);
             }
             ProductGroup::query()->with(['axes', 'products'])->orderBy('code')->get()->each(function (ProductGroup $group) use ($writer, $axisChoices): void {
-                $axes = $group->axes->map(fn (Attribute $attribute): string => $axisChoices[$attribute->id] ?? $attribute->name)->all();
+                $axes = $group->axes->map(fn (Attribute $attribute): string => $axisChoices[(int) $attribute->id] ?? (string) $attribute->name)->all();
                 $writer->addRow($this->row(['Не изменять', $group->code, $group->code, $group->code, $group->name, ...$axes]));
             });
             $members = $writer->addNewSheetAndMakeItCurrent();
@@ -100,7 +107,11 @@ class ProductGroupImportService
         if ($errors === [] && $changes !== []) {
             try {
                 DB::beginTransaction();
-                app(ProductGroupManagementService::class)->applyBulk($import->user, $changes);
+                $actor = $import->user;
+                if ($actor === null) {
+                    throw new RuntimeException('Не удалось определить автора импорта.');
+                }
+                app(ProductGroupManagementService::class)->applyBulk($actor, $changes);
                 DB::rollBack();
             } catch (ValidationException $exception) {
                 if (DB::transactionLevel() > 0) {
@@ -123,9 +134,9 @@ class ProductGroupImportService
                 $import->rowErrors()->create([
                     // Product import errors have a per-import unique row number; keep
                     // the workbook sheet/real row in values for a useful report.
-                    'row_number' => 100000 + $index,
+                    'row_number' => 100000 + (int) $index,
                     'name' => $error['name'],
-                    'messages' => array_map(fn ($message) => "Лист «{$error['sheet']}», строка {$error['row']}: {$message}", $error['messages']),
+                    'messages' => array_map(fn (mixed $message): string => "Лист «{$error['sheet']}», строка {$error['row']}: ".(is_string($message) ? $message : ''), $error['messages']),
                     'values' => $error,
                 ]);
             }
@@ -152,8 +163,12 @@ class ProductGroupImportService
                 return;
             }
             try {
-                $changes = $item->payload['changes'];
-                app(ProductGroupManagementService::class)->applyBulk($import->user, $changes);
+                $changes = $this->itemChanges($item);
+                $actor = $import->user;
+                if ($actor === null) {
+                    throw new RuntimeException('Не удалось определить автора импорта.');
+                }
+                app(ProductGroupManagementService::class)->applyBulk($actor, $changes);
                 $item->forceFill(['status' => 'completed'])->save();
                 $import->increment('created_rows', collect($changes)->where('action', 'create')->count());
                 $import->increment('updated_rows', collect($changes)->whereIn('action', ['update', 'disband'])->count());
@@ -181,8 +196,9 @@ class ProductGroupImportService
             $writer->getCurrentSheet()->setName('Ошибки');
             $writer->addRow($this->row(['Лист', 'Строка', 'Группа / SKU', 'Ошибки'], $this->headerStyle()));
             foreach ($import->rowErrors()->get() as $error) {
-                $v = $error->values ?? [];
-                $writer->addRow($this->row([$v['sheet'] ?? '—', $v['row'] ?? '—', $v['name'] ?? $error->name ?? '—', implode('; ', $error->messages ?? [])]));
+                $v = $error->values;
+                $messages = $error->messages;
+                $writer->addRow($this->row([$this->cellValue($v['sheet'] ?? null), $this->cellValue($v['row'] ?? null), $this->cellValue($v['name'] ?? $error->name), implode('; ', array_values(array_filter($messages, 'is_string')))]));
             }
             $writer->close();
         } catch (Throwable $exception) {
@@ -196,7 +212,7 @@ class ProductGroupImportService
         return ['path' => $path, 'name' => "product-group-import-{$import->id}-errors.xlsx"];
     }
 
-    /** @return array{groups: list<array<string,mixed>>, members: array<string,list<array{sku:string,row:int}>>, errors:list<array<string,mixed>>} */
+    /** @return array{groups: list<GroupRow>, members: array<string,list<MemberRow>>, errors:list<ImportError>} */
     private function read(string $path): array
     {
         $reader = new Reader(new ReaderOptions);
@@ -213,9 +229,13 @@ class ProductGroupImportService
                 }
                 $seen[$sheetName] = true;
                 foreach ($sheet->getRowIterator() as $number => $row) {
-                    $values = array_map(fn ($v) => $v instanceof DateTimeInterface ? $v->format('Y-m-d') : trim((string) $v), $row->toArray());
+                    if (! is_int($number)) {
+                        continue;
+                    }
+                    $rowNumber = $number;
+                    $values = array_map(fn (mixed $value): string => $this->cellValue($value), $row->toArray());
                     $headers = $sheetName === 'Группы' ? self::GROUP_HEADERS : self::MEMBERS_HEADERS;
-                    if ($number === 1) {
+                    if ($rowNumber === 1) {
                         if ($values !== $headers) {
                             throw ValidationException::withMessages(['file' => ["Лист «{$sheetName}»: не изменяйте заголовки шаблона."]]);
                         }
@@ -227,18 +247,18 @@ class ProductGroupImportService
                     if ($values === [] || collect($values)->every(fn ($v) => $v === '')) {
                         continue;
                     }
-                    if ($number > self::MAX_ROWS + 1) {
+                    if ($rowNumber > self::MAX_ROWS + 1) {
                         throw ValidationException::withMessages(['file' => ["Лист «{$sheetName}» поддерживает максимум ".self::MAX_ROWS.' строк.']]);
                     }
                     if ($sheetName === 'Группы') {
-                        $groups[] = ['row' => $number, 'action' => $values[0] ?? '', 'key' => $values[1] ?? '', 'source' => $values[2] ?? '', 'code' => $values[3] ?? '', 'name' => $values[4] ?? '', 'axes' => array_values(array_filter(array_slice($values, 5, 20), fn ($v) => $v !== ''))];
+                        $groups[] = ['row' => $rowNumber, 'action' => $values[0], 'key' => $values[1], 'source' => $values[2], 'code' => $values[3], 'name' => $values[4], 'axes' => array_values(array_filter(array_slice($values, 5, 20), fn (string $value): bool => $value !== ''))];
                     } else {
-                        $key = $values[0] ?? '';
+                        $key = $values[0];
                         $sku = $values[1] ?? '';
                         if ($key === '' || $sku === '') {
-                            $errors[] = ['sheet' => 'Состав', 'row' => $number, 'name' => $key ?: $sku ?: null, 'messages' => ['Укажите ключ группы и SKU.'], 'values' => $values];
+                            $errors[] = ['sheet' => 'Состав', 'row' => $rowNumber, 'name' => $key ?: $sku ?: null, 'messages' => ['Укажите ключ группы и SKU.'], 'values' => $values];
                         } else {
-                            $members[$key][] = ['sku' => $sku, 'row' => $number];
+                            $members[$key][] = ['sku' => $sku, 'row' => $rowNumber];
                         }
                     }
                 }
@@ -263,7 +283,12 @@ class ProductGroupImportService
         return compact('groups', 'members', 'errors');
     }
 
-    /** @param list<array<string,mixed>> $groups @param array<string,list<array{sku:string,row:int}>> $members @param list<array<string,mixed>> $errors @return list<array<string,mixed>> */
+    /**
+     * @param  list<GroupRow>  $groups
+     * @param  array<string, list<MemberRow>>  $members
+     * @param  list<ImportError>  $errors
+     * @return list<GroupChange>
+     */
     private function buildChanges(array $groups, array $members, array &$errors): array
     {
         $changes = [];
@@ -357,7 +382,14 @@ class ProductGroupImportService
 
                 continue;
             }
-            $changes[] = ['action' => $action, 'group_id' => $group?->id, 'code' => $row['code'], 'name' => $row['name'], 'axis_attribute_ids' => $axisIds, 'product_ids' => collect($skus)->map(fn ($sku) => $products[$sku]->id)->all()];
+            $changes[] = ['action' => $action, 'group_id' => $group?->id, 'code' => $row['code'], 'name' => $row['name'], 'axis_attribute_ids' => $axisIds, 'product_ids' => array_values(collect($skus)->map(function (string $sku) use ($products): int {
+                $product = $products->get($sku);
+                if (! $product instanceof Product) {
+                    throw new RuntimeException('Не удалось определить товар для группы вариантов.');
+                }
+
+                return $product->id;
+            })->all())];
         }
         // A SKU may appear in only one intended final composition.
         $seenProducts = [];
@@ -373,12 +405,79 @@ class ProductGroupImportService
         return $changes;
     }
 
-    /** @return array<string,mixed> */
+    /**
+     * @param  GroupRow  $row
+     * @return ImportError
+     */
     private function groupError(array $row, string $message): array
     {
         return ['sheet' => 'Группы', 'row' => $row['row'], 'name' => $row['key'] ?: null, 'messages' => [$message], 'values' => $row];
     }
 
+    private function cellValue(mixed $value): string
+    {
+        if ($value instanceof DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+        if (is_string($value)) {
+            return trim($value);
+        }
+        if (is_int($value) || is_float($value) || is_bool($value)) {
+            return trim((string) $value);
+        }
+
+        return '';
+    }
+
+    /** @return list<GroupChange> */
+    private function itemChanges(ProductImportItem $item): array
+    {
+        $payload = $item->getAttribute('payload');
+        if (! is_array($payload) || ! isset($payload['changes']) || ! is_array($payload['changes'])) {
+            return [];
+        }
+
+        $changes = [];
+        foreach ($payload['changes'] as $change) {
+            if (! is_array($change) || ! isset($change['action']) || ! is_string($change['action'])) {
+                continue;
+            }
+            $groupId = $change['group_id'] ?? null;
+            if ($change['action'] === 'disband' && is_int($groupId)) {
+                $changes[] = ['action' => 'disband', 'group_id' => $groupId];
+
+                continue;
+            }
+            $code = $change['code'] ?? null;
+            $name = $change['name'] ?? null;
+            $axisIds = $this->integerList($change['axis_attribute_ids'] ?? null);
+            $productIds = $this->integerList($change['product_ids'] ?? null);
+            if (($change['action'] === 'create' || $change['action'] === 'update') && (is_int($groupId) || $groupId === null) && is_string($code) && is_string($name) && $axisIds !== null && $productIds !== null) {
+                $changes[] = ['action' => $change['action'], 'group_id' => $groupId, 'code' => $code, 'name' => $name, 'axis_attribute_ids' => $axisIds, 'product_ids' => $productIds];
+            }
+        }
+
+        return $changes;
+    }
+
+    /** @return list<int>|null */
+    private function integerList(mixed $value): ?array
+    {
+        if (! is_array($value) || ! array_is_list($value)) {
+            return null;
+        }
+        $ids = [];
+        foreach ($value as $id) {
+            if (! is_int($id)) {
+                return null;
+            }
+            $ids[] = $id;
+        }
+
+        return $ids;
+    }
+
+    /** @param list<bool|DateTimeInterface|float|int|string|null> $values */
     private function row(array $values, ?Style $style = null): Row
     {
         return new Row(array_map(fn ($v) => is_string($v) ? new StringCell($v, null) : Cell::fromValue($v), $values), $style);
@@ -413,19 +512,23 @@ class ProductGroupImportService
         return (new Style)->setCellVerticalAlignment(CellVerticalAlignment::TOP)->setShouldWrapText();
     }
 
-    /** @param iterable<Attribute> $attributes @return array<int, string> */
+    /**
+     * @param  iterable<Attribute>  $attributes
+     * @return array<int, string>
+     */
     private function axisChoices(iterable $attributes): array
     {
         $items = is_array($attributes) ? $attributes : iterator_to_array($attributes);
         $counts = [];
         foreach ($items as $attribute) {
-            $key = mb_strtolower(trim($attribute->name));
+            $key = mb_strtolower(trim((string) $attribute->name));
             $counts[$key] = ($counts[$key] ?? 0) + 1;
         }
         $choices = [];
         foreach ($items as $attribute) {
-            $key = mb_strtolower(trim($attribute->name));
-            $choices[$attribute->id] = $counts[$key] > 1 ? "{$attribute->name} (ID {$attribute->id})" : $attribute->name;
+            $key = mb_strtolower(trim((string) $attribute->name));
+            $name = (string) $attribute->name;
+            $choices[(int) $attribute->id] = $counts[$key] > 1 ? "{$name} (ID {$attribute->id})" : $name;
         }
 
         return $choices;
@@ -458,16 +561,24 @@ class ProductGroupImportService
             }
             $axisValidation->appendChild($xml->createElement('formula1', '$Z$2:$Z$'.max(2, count($availableAxes) + 1)));
             $validations->appendChild($axisValidation);
+            $root = $xml->documentElement;
+            if ($root === null) {
+                throw new RuntimeException('Не удалось подготовить шаблон Excel.');
+            }
             $before = null;
-            foreach ($xml->documentElement->childNodes as $child) {
+            foreach ($root->childNodes as $child) {
                 if (in_array($child->localName, ['hyperlinks', 'printOptions', 'pageMargins', 'pageSetup', 'headerFooter', 'rowBreaks', 'colBreaks', 'drawing', 'legacyDrawing', 'legacyDrawingHF', 'picture', 'oleObjects', 'controls', 'tableParts', 'extLst'], true)) {
                     $before = $child;
                     break;
                 }
             }
-            $xml->documentElement->insertBefore($validations, $before);
+            $root->insertBefore($validations, $before);
             $this->addAxisHelperCells($xml, $availableAxes);
-            $zip->addFromString('xl/worksheets/sheet1.xml', $xml->saveXML());
+            $serialized = $xml->saveXML();
+            if ($serialized === false) {
+                throw new RuntimeException('Не удалось подготовить шаблон Excel.');
+            }
+            $zip->addFromString('xl/worksheets/sheet1.xml', $serialized);
             $this->normalizeStylesForExcel($zip);
         } finally {
             $zip->close();
@@ -483,8 +594,11 @@ class ProductGroupImportService
         }
         $rows = [];
         foreach ($sheetData->childNodes as $row) {
-            if ($row->localName === 'row') {
-                $rows[(int) $row->getAttribute('r')] = $row;
+            if ($row instanceof DOMElement && $row->localName === 'row') {
+                $reference = $row->getAttribute('r');
+                if (ctype_digit($reference)) {
+                    $rows[(int) $reference] = $row;
+                }
             }
         }
         foreach ($availableAxes as $index => $axis) {
@@ -542,6 +656,10 @@ class ProductGroupImportService
                 }
             }
         }
-        $zip->addFromString('xl/styles.xml', $xml->saveXML());
+        $serialized = $xml->saveXML();
+        if ($serialized === false) {
+            throw new RuntimeException('Не удалось подготовить стили шаблона Excel.');
+        }
+        $zip->addFromString('xl/styles.xml', $serialized);
     }
 }

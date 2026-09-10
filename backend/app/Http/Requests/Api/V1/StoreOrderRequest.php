@@ -5,6 +5,7 @@ namespace App\Http\Requests\Api\V1;
 class StoreOrderRequest extends CartTokenRequest
 {
     /** @return array<string, list<mixed>> */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -24,6 +25,7 @@ class StoreOrderRequest extends CartTokenRequest
         ];
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         parent::prepareForValidation();
@@ -32,7 +34,7 @@ class StoreOrderRequest extends CartTokenRequest
 
         foreach (['customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment'] as $field) {
             if ($this->has($field)) {
-                $value = trim((string) $this->input($field));
+                $value = trim($this->string($field)->toString());
                 $this->merge([$field => $value === '' ? null : $value]);
             }
         }
@@ -40,7 +42,7 @@ class StoreOrderRequest extends CartTokenRequest
 
     public function idempotencyKey(): string
     {
-        return $this->validated('idempotency_key');
+        return $this->string('idempotency_key')->toString();
     }
 
     /** @return array<string, mixed> */

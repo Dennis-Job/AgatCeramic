@@ -24,7 +24,7 @@ class ImportLifecycleService
             if ($import === null || in_array($import->status, ['completed', 'failed'], true)) {
                 return null;
             }
-            if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $this->permissionChecker->allows($import->user, 'imports.manage') || ($import->operation === 'group' && ! $this->permissionChecker->allows($import->user, 'catalog.manage'))) {
+            if ($import->user === null || $import->user->getRawOriginal('status') !== AdminUserStatus::Active->value || ! $this->permissionChecker->allows($import->user, 'imports.manage') || ($import->operation === 'group' && ! $this->permissionChecker->allows($import->user, 'catalog.manage'))) {
                 throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
             }
             if (! Storage::disk($import->disk)->exists($import->path)) {
@@ -49,7 +49,7 @@ class ImportLifecycleService
             if ($import === null || in_array($import->status, ['completed', 'failed'], true)) {
                 return null;
             }
-            if ($import->user === null || $import->user->status !== AdminUserStatus::Active || ! $this->permissionChecker->allows($import->user, 'imports.manage')) {
+            if ($import->user === null || $import->user->getRawOriginal('status') !== AdminUserStatus::Active->value || ! $this->permissionChecker->allows($import->user, 'imports.manage')) {
                 throw new RuntimeException('Инициатор импорта больше не имеет доступа к операции.');
             }
             if (! Storage::disk($import->disk)->exists($import->path)) {

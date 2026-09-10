@@ -18,7 +18,7 @@ class AttributeValueValidator
             'select' => is_string($value) && in_array($value, $optionValues, true),
             'multiselect' => is_array($value) && $value !== [] && count($value) <= 500
                 && collect($value)->every(static fn (mixed $option): bool => is_string($option))
-                && count($value) === count(array_unique($value))
+                && count($value) === count(array_unique(array_filter($value, static fn (mixed $option): bool => is_string($option))))
                 && collect($value)->every(static fn (string $option): bool => in_array($option, $optionValues, true)),
             'date' => is_string($value) && $this->isIsoDate($value),
             default => false,

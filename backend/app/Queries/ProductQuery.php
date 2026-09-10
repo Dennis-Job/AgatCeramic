@@ -11,20 +11,26 @@ class ProductQuery
     /** @param array<string, mixed> $filters */
     public function maximumImageCount(array $filters): int
     {
-        return (int) ProductImage::query()
+        $maximumImageCount = ProductImage::query()
             ->whereIn('product_id', $this->filtered($filters)->reorder()->select('products.id'))
             ->selectRaw('COUNT(*) as image_count')
             ->groupBy('product_id')
             ->orderByDesc('image_count')
             ->value('image_count');
+
+        return is_int($maximumImageCount) ? $maximumImageCount : 0;
     }
 
-    /** @param array<string, mixed> $filters */
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Product>
+     */
     public function filtered(array $filters): Builder
     {
         $query = Product::query();
 
-        if ($search = $filters['search'] ?? null) {
+        $search = $filters['search'] ?? null;
+        if (is_string($search) && $search !== '') {
             $pattern = '%'.mb_strtolower($search).'%';
             $query->where(function (Builder $query) use ($pattern): void {
                 $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
@@ -55,8 +61,11 @@ class ProductQuery
             $query->where('price', '<=', $filters['price_to']);
         }
 
+        $sort = $filters['sort'] ?? 'created_at';
+        $direction = $filters['direction'] ?? 'desc';
+
         return $query
-            ->orderBy($filters['sort'] ?? 'created_at', $filters['direction'] ?? 'desc')
+            ->orderBy(is_string($sort) ? $sort : 'created_at', $direction === 'asc' ? 'asc' : 'desc')
             ->orderByDesc('id');
     }
 }

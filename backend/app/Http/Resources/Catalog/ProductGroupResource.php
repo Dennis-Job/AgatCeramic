@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 /** @extends ApiResource<ProductGroup> */
 class ProductGroupResource extends ApiResource
 {
+    /** @return array<string, mixed> */
     #[\Override]
     public function toArray(Request $request): array
     {

@@ -23,7 +23,7 @@ class ReplaceCategoryAttributesRequest extends FormRequest
     }
 
     /** @return array<int, array{id: int, sort_order?: int, is_required?: bool}> */
-    public function attributes(): array
+    public function categoryAttributes(): array
     {
         $attributes = [];
         foreach (array_keys($this->array('attributes')) as $index) {
