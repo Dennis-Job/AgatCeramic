@@ -35,4 +35,18 @@ class ReplaceProductAttributeValuesRequest extends FormRequest
             $this->validateCategoryAttributeValues($validator, $product, $this->input('attributes', []), 'attributes', $product->is_active);
         }];
     }
+
+    /** @return array<int, array{attribute_id: int, value: mixed}> */
+    public function attributes(): array
+    {
+        $attributes = [];
+        foreach (array_keys($this->array('attributes')) as $index) {
+            $attributes[] = [
+                'attribute_id' => $this->integer("attributes.{$index}.attribute_id"),
+                'value' => $this->input("attributes.{$index}.value"),
+            ];
+        }
+
+        return $attributes;
+    }
 }

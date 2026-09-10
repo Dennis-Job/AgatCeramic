@@ -43,10 +43,12 @@ and currently used for active importer revalidation, but the architecture prohib
 in models. Relocating it affects authorization/queue behaviour and should be designed with TASK-A009
 and A012 rather than moved mechanically during this audit.
 
-## Decision and closure condition
+## Resolution
 
-No migration, model schema or legacy table was changed. TASK-A010 remains active until model/factory
-static declarations are corrected, the authorization helper boundary is decided, and clean
-PostgreSQL migration/integrity verification succeeds against `agatceramic_test`. Legacy
-`product_variants` and `product_variant_attribute_values` stay read-only until the separately
-authorised, reconciled finalization migration.
+Model casts and factory definitions now declare `#[Override]`; missing relation generics and Faker
+type ambiguity were corrected. `User::hasPermission()` was removed: policies and services use the
+dedicated `PermissionChecker`, retaining importer permission revalidation inside the locked lifecycle
+transaction. On 2026-09-10, `migrate:fresh` and the PostgreSQL audit-log/catalog-concurrency suite
+passed against the isolated `agatceramic_test` database (9 tests, 43 assertions). Legacy
+`product_variants` and `product_variant_attribute_values` remain read-only until their separately
+authorised finalization migration.

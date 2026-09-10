@@ -36,7 +36,7 @@ class ProductGroupImportController extends Controller
         $this->authorize();
         $import = $submissionService->submitProductWorkbook(
             $this->authenticatedAdmin($request),
-            $request->file('file'),
+            $this->uploadedFile($request, 'file'),
             'product-group-imports',
             operation: 'group',
         );
@@ -47,7 +47,7 @@ class ProductGroupImportController extends Controller
     public function show(Request $request, ProductImport $productImport): ProductImportResource
     {
         $this->authorize();
-        abort_unless($productImport->operation === 'group' && $productImport->user_id === $request->user()->id, 404);
+        abort_unless($productImport->operation === 'group' && $productImport->user_id === $this->authenticatedAdmin($request)->id, 404);
 
         return new ProductImportResource($productImport);
     }
@@ -55,7 +55,7 @@ class ProductGroupImportController extends Controller
     public function errors(Request $request, ProductImport $productImport, ProductGroupImportService $service): BinaryFileResponse
     {
         $this->authorize();
-        abort_unless($productImport->operation === 'group' && $productImport->user_id === $request->user()->id && $productImport->failed_rows > 0 && in_array($productImport->status, ['completed', 'failed'], true), 404);
+        abort_unless($productImport->operation === 'group' && $productImport->user_id === $this->authenticatedAdmin($request)->id && $productImport->failed_rows > 0 && in_array($productImport->status, ['completed', 'failed'], true), 404);
         $file = $service->createErrorReport($productImport);
 
         return response()->download($file['path'], $file['name'], ['Content-Type' => ProductExportService::CONTENT_TYPE])->deleteFileAfterSend();

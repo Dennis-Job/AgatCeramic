@@ -9,12 +9,6 @@ canonical documentation и audit reports.
 Переход к Phase 7 запрещён до завершения этого блока. Refactoring не меняет подтверждённый
 API behaviour без migration plan и синхронного обновления OpenAPI.
 
-- [ ] TASK-A015 Перестроить тестовую пирамиду и CI quality gates
-  - Разделить unit/feature/integration/contract/e2e, закрыть negative/permission/concurrency cases
-    и исключить flaky tests.
-  - Сделать Admin E2E устойчивым к temporary Vite server и снабдить Compose Admin dev dependencies.
-  - Автоматизировать safe local PostgreSQL integration run только против CI-only `agatceramic_test`.
-
 - [ ] TASK-A016 Составить и закрыть матрицу Backend API → Admin UI
   - Для каждого Admin endpoint/permission указать screen, actions и loading/empty/error/forbidden states.
   - Пометить backend-only features, намеренно ожидающие Phase 7–10, и создать адресные follow-ups.

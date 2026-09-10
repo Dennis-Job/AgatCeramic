@@ -13,6 +13,7 @@ class AttributeOptionFactory extends Factory
     protected $model = AttributeOption::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         $label = fake()->unique()->word();

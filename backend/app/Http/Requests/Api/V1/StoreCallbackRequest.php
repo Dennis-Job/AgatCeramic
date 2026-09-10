@@ -36,4 +36,13 @@ class StoreCallbackRequest extends FormRequest
             }
         }
     }
+
+    /** @return array{name?: string|null, phone: string} */
+    public function payload(): array
+    {
+        return [
+            'name' => $this->string('name')->toString() ?: null,
+            'phone' => $this->string('phone')->toString(),
+        ];
+    }
 }

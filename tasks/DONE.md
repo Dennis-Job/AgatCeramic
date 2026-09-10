@@ -17,11 +17,14 @@ operational/recovery rules — в [`docs/`](../docs/).
 | Interim Audit | TASK-A001–A004 | Baseline, repeat acceptance, documentation architecture и current-state map. |
 | Registry | TASK-A005 | Active registry normalized: TODO contains only unfinished roadmap, IN_PROGRESS only current work, and this index retains completed scopes. |
 | Artifact hygiene | TASK-A006 | Removed obsolete audit archive, empty `.tmp/` and generated Playwright output; recovery materials retained separately. |
+| Interim Audit | TASK-A008 | HTTP controller boundaries now supply typed authenticated administrators, uploaded files and validated scalar/structured inputs to application services. Controller PHPStan passes with zero errors; no API contract changed. See [`HTTP_API_AUDIT.md`](../docs/HTTP_API_AUDIT.md). |
 | Interim Audit | TASK-A009 | Import submission, durable dispatch/retry and XLSX/ZIP lifecycle are centralized; checkout has a 24-hour HMAC-only idempotency contract. See [`SERVICE_BOUNDARIES_AUDIT.md`](../docs/SERVICE_BOUNDARIES_AUDIT.md) and [`OPENAPI_MIGRATION_PLAN.md`](../docs/OPENAPI_MIGRATION_PLAN.md). |
+| Interim Audit | TASK-A010 | Model/factory declarations and relation generics are strict-clean; authorization queries live in `PermissionChecker`; PostgreSQL migrations and integrity/concurrency suites passed on `agatceramic_test`. See [`MODEL_DATABASE_AUDIT.md`](../docs/MODEL_DATABASE_AUDIT.md). |
 | Interim Audit | TASK-A011 | Laravel API-only and Admin/Client boundaries confirmed; see [`API_ONLY_BOUNDARIES_AUDIT.md`](../docs/API_ONLY_BOUNDARIES_AUDIT.md). |
 | Interim Audit | TASK-A012 | Security, audit and PII controls reviewed; no high/critical Phase 0–6 application finding. See [`SECURITY_PII_AUDIT.md`](../docs/SECURITY_PII_AUDIT.md). |
 | Interim Audit | TASK-A013 | Queues, imports and durable storage cleanup reviewed; stale processing recovery and terminal cleanup atomicity added. See [`ASYNC_STORAGE_AUDIT.md`](../docs/ASYNC_STORAGE_AUDIT.md). |
 | Interim Audit | TASK-A014 | OpenAPI and API guide reconciled with all 111 Phase 0–6 HTTP operations; route coverage and versioned compatibility gates added. See [`OPENAPI_CONTRACT_AUDIT.md`](../docs/OPENAPI_CONTRACT_AUDIT.md). |
+| Interim Audit | TASK-A015 | CI separates SQLite, PostgreSQL integration, contract and Admin unit/E2E checks; Admin E2E uses production preview and the local PostgreSQL runner is restricted to `agatceramic_test`. See [`CI.md`](../docs/CI.md). |
 
 ## Проверки последней приёмки
 

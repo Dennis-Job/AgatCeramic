@@ -33,17 +33,29 @@ class ProductImportController extends Controller
     public function errors(Request $request, ProductImport $productImport, ProductImportTemplateService $service, ProductImportErrorReportService $errorReportService): BinaryFileResponse
     {
         Gate::authorize('import', Product::class);
-        abort_unless($productImport->user_id === $request->user()->id, 404);
+        abort_unless($productImport->user_id === $this->authenticatedAdmin($request)->id, 404);
         abort_unless(in_array($productImport->status, ['completed', 'failed'], true) && $productImport->failed_rows > 0, 404);
+        $rowErrors = $productImport->rowErrors()->get();
+        $rows = [];
+        foreach ($rowErrors as $rowError) {
+            $row = [];
+            foreach ($rowError->values as $key => $value) {
+                if (is_string($key)) {
+                    $row[$key] = $value;
+                }
+            }
+            $rows[] = $row;
+        }
+        $firstRowError = $rowErrors->first();
         $file = $productImport->category_id === null
             ? $errorReportService->create($productImport)
             : $service->create(
                 Category::query()->findOrFail($productImport->category_id),
-                $productImport->rowErrors()->get()->pluck('values'),
-                $productImport->rowErrors()->first()?->values !== null && array_key_exists('sku', $productImport->rowErrors()->first()->values),
+                $rows,
+                $firstRowError?->values !== null && array_key_exists('sku', $firstRowError->values),
             );
 
-        return response()->download($file['path'], $file['name'] ?? 'product-import-'.$productImport->id.'-errors.xlsx', ['Content-Type' => ProductExportService::CONTENT_TYPE])->deleteFileAfterSend();
+        return response()->download($file['path'], $file['name'], ['Content-Type' => ProductExportService::CONTENT_TYPE])->deleteFileAfterSend();
     }
 
     public function store(ImportProductsRequest $request, ImportSubmissionService $submissionService): JsonResponse
@@ -52,9 +64,9 @@ class ProductImportController extends Controller
 
         $import = $submissionService->submitProductWorkbook(
             $this->authenticatedAdmin($request),
-            $request->file('file'),
+            $this->uploadedFile($request, 'file'),
             'product-imports',
-            $request->validated('category_id'),
+            $request->integer('category_id') ?: null,
         );
 
         return (new ProductImportResource($import))->response()->setStatusCode(202);
@@ -63,7 +75,7 @@ class ProductImportController extends Controller
     public function show(Request $request, ProductImport $productImport): ProductImportResource
     {
         Gate::authorize('import', Product::class);
-        abort_unless($productImport->user_id === $request->user()->id, 404);
+        abort_unless($productImport->user_id === $this->authenticatedAdmin($request)->id, 404);
 
         return new ProductImportResource($productImport);
     }

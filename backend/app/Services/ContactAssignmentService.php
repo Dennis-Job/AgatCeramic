@@ -10,7 +10,10 @@ use Illuminate\Validation\ValidationException;
 
 class ContactAssignmentService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly PermissionChecker $permissionChecker,
+    ) {}
 
     public function assign(User $actor, ContactRequest $contactRequest, ?int $assigneeId): ContactRequest
     {
@@ -24,7 +27,7 @@ class ContactAssignmentService
             if ($assigneeId !== null) {
                 $assignee = User::query()->whereKey($assigneeId)->where('status', AdminUserStatus::Active->value)->first();
 
-                if ($assignee === null || ! $assignee->hasPermission('contacts.manage')) {
+                if ($assignee === null || ! $this->permissionChecker->allows($assignee, 'contacts.manage')) {
                     throw ValidationException::withMessages([
                         'assignee_id' => ['Ответственным можно назначить только активного сотрудника с правом управления обращениями.'],
                     ]);

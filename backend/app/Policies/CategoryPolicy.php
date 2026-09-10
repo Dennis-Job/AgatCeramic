@@ -5,11 +5,11 @@ namespace App\Policies;
 use App\Models\Category;
 use App\Models\User;
 
-class CategoryPolicy
+class CategoryPolicy extends AuthorizesPermissions
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function view(User $user, Category $category): bool
@@ -19,16 +19,16 @@ class CategoryPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function update(User $user, Category $category): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function delete(User $user, Category $category): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 }

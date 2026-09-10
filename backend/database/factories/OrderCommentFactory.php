@@ -13,6 +13,7 @@ class OrderCommentFactory extends Factory
     protected $model = OrderComment::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         return [

@@ -14,11 +14,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class ProductImport extends Model
 {
+    /** @return HasMany<ProductImportError, $this> */
     public function rowErrors(): HasMany
     {
         return $this->hasMany(ProductImportError::class)->orderBy('row_number');
     }
 
+    /** @return HasMany<ProductImportItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(ProductImportItem::class)->orderBy('row_number');
@@ -31,6 +33,7 @@ class ProductImport extends Model
     }
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return [

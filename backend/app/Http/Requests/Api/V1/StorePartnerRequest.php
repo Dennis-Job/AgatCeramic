@@ -36,4 +36,15 @@ class StorePartnerRequest extends FormRequest
             }
         }
     }
+
+    /** @return array{name: string, phone: string, email: string, message: string} */
+    public function payload(): array
+    {
+        return [
+            'name' => $this->string('name')->toString(),
+            'phone' => $this->string('phone')->toString(),
+            'email' => $this->string('email')->toString(),
+            'message' => $this->string('message')->toString(),
+        ];
+    }
 }

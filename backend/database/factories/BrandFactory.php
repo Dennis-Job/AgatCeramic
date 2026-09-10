@@ -12,6 +12,7 @@ class BrandFactory extends Factory
     protected $model = Brand::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         $name = fake()->unique()->company();

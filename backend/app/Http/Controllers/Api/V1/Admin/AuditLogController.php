@@ -18,33 +18,32 @@ class AuditLogController extends Controller
     {
         Gate::authorize('viewAny', AuditLog::class);
 
-        $filters = $request->validated();
         $query = AuditLog::query()->with(['actor:id,name', 'entity'])->latest('occurred_at');
 
-        if ($search = $filters['search'] ?? null) {
+        if ($search = $request->string('search')->trim()->toString()) {
             $query->where(function ($query) use ($search): void {
                 $query->where('action', 'like', '%'.$search.'%')
                     ->orWhereHas('actor', fn ($actor) => $actor->where('name', 'like', '%'.$search.'%'));
             });
         }
 
-        if ($action = $filters['action'] ?? null) {
+        if ($action = $request->string('action')->trim()->toString()) {
             $query->where('action', $action);
         }
 
-        if ($actorId = $filters['actor_id'] ?? null) {
+        if ($actorId = $request->integer('actor_id')) {
             $query->where('actor_id', $actorId);
         }
 
-        if ($dateFrom = $filters['date_from'] ?? null) {
+        if ($dateFrom = $request->string('date_from')->toString()) {
             $query->where('occurred_at', '>=', $dateFrom.' 00:00:00');
         }
 
-        if ($dateTo = $filters['date_to'] ?? null) {
+        if ($dateTo = $request->string('date_to')->toString()) {
             $query->where('occurred_at', '<=', $dateTo.' 23:59:59');
         }
 
-        $logs = $query->paginate($filters['per_page'] ?? 25)->withQueryString();
+        $logs = $query->paginate($request->integer('per_page', 25))->withQueryString();
         $this->resolveMetadataReferences($logs->getCollection());
 
         return AuditLogResource::collection($logs);
@@ -63,17 +62,62 @@ class AuditLogController extends Controller
     /** @param Collection<int, AuditLog> $logs */
     private function resolveMetadataReferences(Collection $logs): void
     {
-        $roleIds = $logs->flatMap(fn (AuditLog $log): array => $log->metadata['role_ids'] ?? [])->unique()->values();
-        $permissionIds = $logs->flatMap(fn (AuditLog $log): array => $log->metadata['permission_ids'] ?? [])->unique()->values();
+        $roleIds = [];
+        $permissionIds = [];
+
+        foreach ($logs as $log) {
+            $metadata = $log->metadata;
+            if (! is_array($metadata)) {
+                continue;
+            }
+
+            $metadataRoleIds = $metadata['role_ids'] ?? [];
+            if (is_array($metadataRoleIds)) {
+                foreach ($metadataRoleIds as $id) {
+                    if (is_int($id)) {
+                        $roleIds[] = $id;
+                    }
+                }
+            }
+            $metadataPermissionIds = $metadata['permission_ids'] ?? [];
+            if (is_array($metadataPermissionIds)) {
+                foreach ($metadataPermissionIds as $id) {
+                    if (is_int($id)) {
+                        $permissionIds[] = $id;
+                    }
+                }
+            }
+        }
+
+        $roleIds = array_values(array_unique($roleIds));
+        $permissionIds = array_values(array_unique($permissionIds));
         $roles = Role::query()->whereKey($roleIds)->pluck('name', 'id');
         $permissions = Permission::query()->whereKey($permissionIds)->pluck('name', 'id');
 
         $logs->each(function (AuditLog $log) use ($roles, $permissions): void {
-            $metadata = $log->metadata ?? [];
-            $log->setAttribute('audit_role_names', collect($metadata['role_ids'] ?? [])
-                ->map(fn (int $id): string => $roles->get($id, "Роль #{$id}"))->all());
-            $log->setAttribute('audit_permission_names', collect($metadata['permission_ids'] ?? [])
-                ->map(fn (int $id): string => $permissions->get($id, "Право #{$id}"))->all());
+            $metadata = is_array($log->metadata) ? $log->metadata : [];
+            $roleNames = [];
+            $metadataRoleIds = $metadata['role_ids'] ?? [];
+            if (is_array($metadataRoleIds)) {
+                foreach ($metadataRoleIds as $id) {
+                    if (is_int($id)) {
+                        $name = $roles->get($id);
+                        $roleNames[] = is_string($name) ? $name : "Роль #{$id}";
+                    }
+                }
+            }
+            $permissionNames = [];
+            $metadataPermissionIds = $metadata['permission_ids'] ?? [];
+            if (is_array($metadataPermissionIds)) {
+                foreach ($metadataPermissionIds as $id) {
+                    if (is_int($id)) {
+                        $name = $permissions->get($id);
+                        $permissionNames[] = is_string($name) ? $name : "Право #{$id}";
+                    }
+                }
+            }
+            $log->setAttribute('audit_role_names', $roleNames);
+            $log->setAttribute('audit_permission_names', $permissionNames);
         });
     }
 }

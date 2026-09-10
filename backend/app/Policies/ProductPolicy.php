@@ -5,11 +5,11 @@ namespace App\Policies;
 use App\Models\Product;
 use App\Models\User;
 
-class ProductPolicy
+class ProductPolicy extends AuthorizesPermissions
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function view(User $user, Product $product): bool
@@ -19,26 +19,26 @@ class ProductPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function update(User $user, Product $product): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function delete(User $user, Product $product): bool
     {
-        return $user->hasPermission('catalog.manage');
+        return $this->allows($user, 'catalog.manage');
     }
 
     public function export(User $user): bool
     {
-        return $user->hasPermission('imports.manage');
+        return $this->allows($user, 'imports.manage');
     }
 
     public function import(User $user): bool
     {
-        return $user->hasPermission('imports.manage');
+        return $this->allows($user, 'imports.manage');
     }
 }

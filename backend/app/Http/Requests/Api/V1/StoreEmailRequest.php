@@ -36,4 +36,14 @@ class StoreEmailRequest extends FormRequest
             }
         }
     }
+
+    /** @return array{name?: string|null, email: string, message: string} */
+    public function payload(): array
+    {
+        return [
+            'name' => $this->string('name')->toString() ?: null,
+            'email' => $this->string('email')->toString(),
+            'message' => $this->string('message')->toString(),
+        ];
+    }
 }

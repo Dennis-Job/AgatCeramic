@@ -15,6 +15,7 @@ class ProductFactory extends Factory
     protected $model = Product::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         $name = fake()->unique()->sentence(3);
@@ -28,7 +29,7 @@ class ProductFactory extends Factory
             'sku' => fake()->unique()->bothify('SKU-########'),
             'article_number' => fake()->boolean(70) ? fake()->unique()->bothify('ART-########') : null,
             'barcode' => fake()->boolean(70) ? fake()->unique()->ean13() : null,
-            'unit' => fake()->randomElement(ProductUnit::cases())->value,
+            'unit' => ProductUnit::cases()[fake()->numberBetween(0, 6)]->value,
             'price' => fake()->randomFloat(2, 100, 100000),
             'old_price' => null,
             'stock_quantity' => fake()->numberBetween(0, 500),

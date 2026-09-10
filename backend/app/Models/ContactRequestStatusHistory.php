@@ -31,6 +31,7 @@ class ContactRequestStatusHistory extends Model
     }
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return ['actor_snapshot' => 'array', 'occurred_at' => 'datetime'];

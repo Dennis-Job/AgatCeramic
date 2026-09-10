@@ -24,6 +24,7 @@ class ProductRelation extends Model
     }
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return ['sort_order' => 'integer'];

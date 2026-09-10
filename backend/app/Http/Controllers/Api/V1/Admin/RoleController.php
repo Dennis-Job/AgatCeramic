@@ -11,6 +11,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Services\RoleManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,7 +31,7 @@ class RoleController extends Controller
     {
         Gate::authorize('create', Role::class);
 
-        return (new RoleResource($this->managementService->create($request->user(), $request->validated())))
+        return (new RoleResource($this->managementService->create($this->authenticatedAdmin($request), $request->validated())))
             ->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
@@ -45,13 +46,13 @@ class RoleController extends Controller
     {
         Gate::authorize('update', $role);
 
-        return new RoleResource($this->managementService->update($request->user(), $role, $request->validated()));
+        return new RoleResource($this->managementService->update($this->authenticatedAdmin($request), $role, $request->validated()));
     }
 
-    public function destroy(Role $role): Response
+    public function destroy(Request $request, Role $role): Response
     {
         Gate::authorize('delete', $role);
-        $this->managementService->delete(request()->user(), $role);
+        $this->managementService->delete($this->authenticatedAdmin($request), $role);
 
         return response()->noContent();
     }

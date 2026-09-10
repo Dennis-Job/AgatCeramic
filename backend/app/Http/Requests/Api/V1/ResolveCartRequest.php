@@ -25,4 +25,9 @@ class ResolveCartRequest extends FormRequest
             'cart_token' => $this->header('X-Cart-Token'),
         ]);
     }
+
+    public function cartToken(): ?string
+    {
+        return $this->string('cart_token')->toString() ?: null;
+    }
 }

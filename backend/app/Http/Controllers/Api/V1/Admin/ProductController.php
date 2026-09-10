@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Queries\ProductQuery;
 use App\Services\ProductManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,12 +27,11 @@ class ProductController extends Controller
     {
         Gate::authorize('viewAny', Product::class);
 
-        $filters = $request->validated();
-        $query = $this->productQuery->filtered($filters)
+        $query = $this->productQuery->filtered($request->validated())
             ->with(['category', 'brand', 'primaryImage', 'groupMembership.group']);
 
         return ProductResource::collection(
-            $query->paginate($filters['per_page'] ?? 25)->withQueryString()
+            $query->paginate($request->integer('per_page', 25))->withQueryString()
         );
     }
 
@@ -58,10 +58,10 @@ class ProductController extends Controller
         return new ProductResource($this->managementService->update($this->authenticatedAdmin($request), $product, $request->validated())->load(['category', 'brand', 'primaryImage', 'groupMembership.group']));
     }
 
-    public function destroy(Product $product): Response
+    public function destroy(Request $request, Product $product): Response
     {
         Gate::authorize('delete', $product);
-        $this->managementService->delete($this->authenticatedAdmin(request()), $product);
+        $this->managementService->delete($this->authenticatedAdmin($request), $product);
 
         return response()->noContent();
     }

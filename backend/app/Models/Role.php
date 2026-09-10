@@ -14,6 +14,7 @@ class Role extends Model
     /** @use HasFactory<RoleFactory> */
     use HasFactory;
 
+    #[\Override]
     protected function casts(): array
     {
         return ['is_system' => 'boolean'];

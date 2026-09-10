@@ -14,7 +14,7 @@ class CallbackRequestController extends Controller
 
     public function store(StoreCallbackRequest $request): Response
     {
-        $this->callbackRequestService->create($request->safe()->only(['name', 'phone']));
+        $this->callbackRequestService->create($request->payload());
 
         return response()->noContent(HttpResponse::HTTP_CREATED);
     }

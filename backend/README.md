@@ -27,6 +27,17 @@ CI additionally runs all migrations and dedicated integration tests against Post
 PostgreSQL-only Catalog suite uses independent processes/connections to exercise real competing
 transactions for image, relation, product-deletion, and category-tree invariants.
 
+To run that destructive integration suite locally, use only the isolated `agatceramic_test`
+database and explicitly acknowledge the reset:
+
+```powershell
+.\scripts\run-postgres-integration.ps1 -IUnderstandThisDestroysCiTestDatabase -Password '<test-db-password>'
+```
+
+The command refuses another database name, requires `pdo_pgsql`, clears cached configuration and
+runs `migrate:fresh` only before the PostgreSQL-only tests. Never point it at the local application
+database or production.
+
 Redis is configured as the default cache store. The application API is versioned under
 `/api/v1`; public and administrative route declarations live in
 `routes/api/v1/public.php` and `routes/api/v1/admin.php` respectively. The version

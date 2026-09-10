@@ -5,11 +5,11 @@ namespace App\Policies;
 use App\Models\Order;
 use App\Models\User;
 
-class OrderPolicy
+class OrderPolicy extends AuthorizesPermissions
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('orders.view');
+        return $this->allows($user, 'orders.view');
     }
 
     public function view(User $user, Order $order): bool
@@ -19,16 +19,16 @@ class OrderPolicy
 
     public function update(User $user, Order $order): bool
     {
-        return $user->hasPermission('orders.manage');
+        return $this->allows($user, 'orders.manage');
     }
 
     public function managePayment(User $user, Order $order): bool
     {
-        return $user->hasPermission('payments.manage');
+        return $this->allows($user, 'payments.manage');
     }
 
     public function createComment(User $user, Order $order): bool
     {
-        return $user->hasPermission('orders.manage');
+        return $this->allows($user, 'orders.manage');
     }
 }

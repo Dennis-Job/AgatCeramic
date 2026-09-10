@@ -51,4 +51,22 @@ class ReplaceProductRelationsRequest extends FormRequest
             }
         }];
     }
+
+    /** @return array<int, array{related_product_id: int, type: string, sort_order?: int}> */
+    public function relations(): array
+    {
+        $relations = [];
+        foreach (array_keys($this->array('relations')) as $index) {
+            $relation = [
+                'related_product_id' => $this->integer("relations.{$index}.related_product_id"),
+                'type' => $this->string("relations.{$index}.type")->toString(),
+            ];
+            if ($this->has("relations.{$index}.sort_order")) {
+                $relation['sort_order'] = $this->integer("relations.{$index}.sort_order");
+            }
+            $relations[] = $relation;
+        }
+
+        return $relations;
+    }
 }

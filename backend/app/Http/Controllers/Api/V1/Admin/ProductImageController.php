@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\ProductImageManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,7 +29,7 @@ class ProductImageController extends Controller
     public function store(StoreProductImageRequest $request, Product $product): JsonResponse
     {
         Gate::authorize('update', $product);
-        $image = $this->managementService->create($request->user(), $product, $request->file('image'), $request->safe()->except('image'));
+        $image = $this->managementService->create($this->authenticatedAdmin($request), $product, $this->uploadedFile($request, 'image'), $request->imageAttributes());
 
         return (new ProductImageResource($image))->response()->setStatusCode(Response::HTTP_CREATED);
     }
@@ -38,14 +39,14 @@ class ProductImageController extends Controller
         Gate::authorize('update', $product);
         $this->ensureBelongsToProduct($product, $image);
 
-        return new ProductImageResource($this->managementService->update($request->user(), $product, $image, $request->validated()));
+        return new ProductImageResource($this->managementService->update($this->authenticatedAdmin($request), $product, $image, $request->validated()));
     }
 
-    public function destroy(Product $product, ProductImage $image): Response
+    public function destroy(Request $request, Product $product, ProductImage $image): Response
     {
         Gate::authorize('delete', $product);
         $this->ensureBelongsToProduct($product, $image);
-        $this->managementService->delete(request()->user(), $product, $image);
+        $this->managementService->delete($this->authenticatedAdmin($request), $product, $image);
 
         return response()->noContent();
     }

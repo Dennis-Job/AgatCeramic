@@ -13,10 +13,11 @@ class PermissionFactory extends Factory
     /**
      * @return array{name: string, code: string, description: string}
      */
+    #[\Override]
     public function definition(): array
     {
         $module = fake()->unique()->slug(1);
-        $action = fake()->randomElement(['view', 'create', 'update', 'delete', 'manage']);
+        $action = ['view', 'create', 'update', 'delete', 'manage'][fake()->numberBetween(0, 4)];
 
         return [
             'name' => ucfirst($module).' '.ucfirst($action),

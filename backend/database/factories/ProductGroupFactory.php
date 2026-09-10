@@ -10,6 +10,7 @@ class ProductGroupFactory extends Factory
 {
     protected $model = ProductGroup::class;
 
+    #[\Override]
     public function definition(): array
     {
         return ['name' => fake()->words(3, true), 'code' => fake()->unique()->bothify('GROUP-########')];

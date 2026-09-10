@@ -16,6 +16,7 @@ class ProductImage extends Model
     }
 
     /** @return array<string, string> */
+    #[\Override]
     protected function casts(): array
     {
         return ['size' => 'integer', 'is_primary' => 'boolean', 'sort_order' => 'integer'];

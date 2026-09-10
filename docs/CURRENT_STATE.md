@@ -28,8 +28,6 @@
 | --- | --- | --- |
 | High | Admin не имеет order list/detail: `/orders` остаётся placeholder. | `TASK-A018` |
 | High | Admin не имеет contacts navigation и manager workspace. | `TASK-A019` |
-| Medium | Admin E2E нестабилен из-за временного Vite server; Compose Admin не содержит dev dependencies для unit/build/e2e. | `TASK-A015` |
-| Medium | Нет документированного безопасного локального запуска PostgreSQL integration suite против CI-only test DB. | `TASK-A015` |
 | Medium | OpenAPI compatibility gate requires a reviewed `info.version` bump and migration plan for breaking contract changes. | Ongoing API governance |
 | Medium | Larastan/PHPStan strict gate обнаружил более 1,000 type errors и пока не может быть включён как blocking CI check без baseline/ignore rules. | `TASK-A007` with A008–A010 |
 | Medium | HTTP API audit confirms typed authenticated-user/request boundaries remain incomplete; four import controllers also duplicate async file lifecycle. | `TASK-A008`, `TASK-A009` |

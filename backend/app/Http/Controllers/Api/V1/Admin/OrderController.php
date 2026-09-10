@@ -43,7 +43,7 @@ class OrderController extends Controller
     {
         Gate::authorize('update', $order);
 
-        return new OrderResource($this->statusManagementService->update($request->user(), $order, $request->validated('status')));
+        return new OrderResource($this->statusManagementService->update($this->authenticatedAdmin($request), $order, $request->string('status')->toString()));
     }
 
     public function statusHistory(ListOrderStatusHistoryRequest $request, Order $order): AnonymousResourceCollection
@@ -77,9 +77,9 @@ class OrderController extends Controller
         Gate::authorize('createComment', $order);
 
         return (new OrderCommentResource($this->commentService->add(
-            $request->user(),
+            $this->authenticatedAdmin($request),
             $order,
-            $request->validated('body'),
+            $request->string('body')->toString(),
         )))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
@@ -88,9 +88,9 @@ class OrderController extends Controller
         Gate::authorize('managePayment', $order);
 
         return new PaymentRegistrationResource($this->paymentManagementService->register(
-            $request->user(),
+            $this->authenticatedAdmin($request),
             $order,
-            $request->enum('payment_status', PaymentStatus::class),
+            $request->enum('payment_status', PaymentStatus::class) ?? throw new \LogicException('Validated payment status is missing.'),
             $request->validated(),
         ));
     }

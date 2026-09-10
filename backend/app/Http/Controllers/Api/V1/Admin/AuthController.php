@@ -41,13 +41,13 @@ class AuthController extends Controller
 
     public function me(Request $request): AdminUserResource
     {
-        return new AdminUserResource($request->user()->load('roles.permissions'));
+        return new AdminUserResource($this->authenticatedAdmin($request)->load('roles.permissions'));
     }
 
     public function updateProfile(UpdateCurrentAdminProfileRequest $request): AdminUserResource
     {
         $attributes = $request->validated();
-        $user = $this->authenticationService->updateProfile($request->user(), $attributes);
+        $user = $this->authenticationService->updateProfile($this->authenticatedAdmin($request), $attributes);
 
         if (array_key_exists('password', $attributes)) {
             Auth::guard('web')->logout();

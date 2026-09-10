@@ -13,6 +13,7 @@ class ContactRequestCommentFactory extends Factory
     protected $model = ContactRequestComment::class;
 
     /** @return array<string, mixed> */
+    #[\Override]
     public function definition(): array
     {
         return [

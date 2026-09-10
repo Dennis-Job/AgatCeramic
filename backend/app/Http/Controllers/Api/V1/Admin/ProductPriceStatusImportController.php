@@ -30,7 +30,7 @@ class ProductPriceStatusImportController extends Controller
         Gate::authorize('import', Product::class);
         $import = $submissionService->submitProductWorkbook(
             $this->authenticatedAdmin($request),
-            $request->file('file'),
+            $this->uploadedFile($request, 'file'),
             'product-price-status-imports',
             operation: 'price_status',
         );
@@ -41,7 +41,7 @@ class ProductPriceStatusImportController extends Controller
     public function show(Request $request, ProductImport $productImport): ProductImportResource
     {
         Gate::authorize('import', Product::class);
-        abort_unless($productImport->operation === 'price_status' && $productImport->user_id === $request->user()->id, 404);
+        abort_unless($productImport->operation === 'price_status' && $productImport->user_id === $this->authenticatedAdmin($request)->id, 404);
 
         return new ProductImportResource($productImport);
     }
@@ -49,7 +49,7 @@ class ProductPriceStatusImportController extends Controller
     public function errors(Request $request, ProductImport $productImport, ProductPriceStatusImportService $service): BinaryFileResponse
     {
         Gate::authorize('import', Product::class);
-        abort_unless($productImport->operation === 'price_status' && $productImport->user_id === $request->user()->id && $productImport->failed_rows > 0 && in_array($productImport->status, ['completed', 'failed'], true), 404);
+        abort_unless($productImport->operation === 'price_status' && $productImport->user_id === $this->authenticatedAdmin($request)->id && $productImport->failed_rows > 0 && in_array($productImport->status, ['completed', 'failed'], true), 404);
         $file = $service->createErrorReport($productImport);
 
         return response()->download($file['path'], $file['name'], ['Content-Type' => ProductExportService::CONTENT_TYPE])->deleteFileAfterSend();
