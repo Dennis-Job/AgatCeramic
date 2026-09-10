@@ -3,12 +3,16 @@ import { computed, onMounted, ref } from 'vue'
 import { KeyRound } from '@lucide/vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import BaseAlert from '../components/BaseAlert.vue'
+import BaseEmptyState from '../components/BaseEmptyState.vue'
+import CollectionLoadingState from '../components/CollectionLoadingState.vue'
 import { getPermissionCatalogue, type CataloguePermission } from '../services/permissions'
 
 const permissions = ref<CataloguePermission[]>([])
 const selectedModule = ref('')
 const search = ref('')
 const error = ref('')
+const loading = ref(false)
 
 const moduleNames: Record<string, string> = {
   'admin-users': 'Сотрудники',
@@ -45,11 +49,14 @@ const filteredPermissions = computed(() => {
 })
 
 async function load(): Promise<void> {
+  loading.value = true
   error.value = ''
   try {
     permissions.value = await getPermissionCatalogue()
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить каталог прав.'
+  } finally {
+    loading.value = false
   }
 }
 
@@ -57,14 +64,14 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
+  <section class="mx-auto admin-page" :aria-busy="loading">
     <div class="mb-7">
       <p class="text-sm font-medium text-gray-500">Управление доступом</p>
       <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Права</h1>
       <p class="mt-2 text-sm text-gray-500">Каталог системных прав и ролей, которым они назначены.</p>
     </div>
 
-    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
+    <BaseAlert v-if="error" class="mb-4">{{ error }}</BaseAlert>
 
     <div class="rounded-xl border border-gray-200 bg-white shadow-card">
       <div class="grid gap-3 border-b border-gray-100 p-4 admin-permissions-filter-grid">
@@ -72,7 +79,9 @@ onMounted(load)
         <BaseSelect v-model="selectedModule" :options="moduleOptions" accessible-name="Модуль прав" />
       </div>
 
-      <div class="divide-y divide-gray-100">
+      <CollectionLoadingState v-if="loading" label="Загрузка каталога прав…" />
+      <BaseEmptyState v-else-if="!error && permissions.length === 0" label="Каталог прав пока пуст." />
+      <div v-else class="divide-y divide-gray-100">
         <article v-for="permission in filteredPermissions" :key="permission.id" class="flex gap-3 p-4 sm:p-5">
           <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"><KeyRound :size="19" /></span>
           <div class="min-w-0 flex-1">
@@ -90,7 +99,7 @@ onMounted(load)
             </div>
           </div>
         </article>
-        <p v-if="!filteredPermissions.length" class="p-8 text-center text-sm text-gray-500">Права не найдены.</p>
+        <BaseEmptyState v-if="!filteredPermissions.length" label="По выбранным условиям права не найдены." />
       </div>
     </div>
   </section>

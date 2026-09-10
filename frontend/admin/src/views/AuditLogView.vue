@@ -4,6 +4,7 @@ import { ScrollText } from '@lucide/vue'
 import BaseDatePicker from '../components/BaseDatePicker.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
+import BaseAlert from '../components/BaseAlert.vue'
 import { getAuditLogs, type AuditLog, type AuditLogFilters } from '../services/audit-logs'
 
 const logs = ref<AuditLog[]>([])
@@ -79,7 +80,7 @@ onMounted(load)
       <p class="mt-2 text-sm text-gray-500">История важных действий в административной панели.</p>
     </div>
 
-    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500">{{ error }}</p>
+    <BaseAlert v-if="error" class="mb-4">{{ error }}</BaseAlert>
 
     <div class="rounded-xl border border-gray-200 bg-white shadow-card">
       <div class="grid gap-3 border-b border-gray-100 p-4 md:grid-cols-2 admin-audit-log-filter-grid">
@@ -95,8 +96,8 @@ onMounted(load)
         <table class="w-full admin-table-audit-log text-left text-sm">
           <thead class="bg-gray-25 text-xs font-medium text-gray-500"><tr><th class="px-6 py-3">Действие</th><th class="px-6 py-3">Сотрудник</th><th class="px-6 py-3">Объект</th><th class="px-6 py-3">Время</th><th class="px-6 py-3">Детали</th></tr></thead>
           <tbody>
-            <tr v-if="loading"><td colspan="5" class="px-6 py-8 text-gray-500">Загрузка…</td></tr>
-            <tr v-else-if="!logs.length"><td colspan="5" class="px-6 py-8 text-gray-500">Записи не найдены.</td></tr>
+            <tr v-if="loading"><td colspan="5" class="px-6 py-8 text-gray-500" role="status" aria-live="polite">Загрузка…</td></tr>
+            <tr v-else-if="!logs.length"><td colspan="5" class="px-6 py-8 text-gray-500" role="status" aria-live="polite">Записи не найдены.</td></tr>
             <tr v-for="log in logs" :key="log.id" class="border-t border-gray-100 text-gray-600">
               <td class="px-6 py-4"><span class="admin-badge inline-flex items-center gap-2 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600"><ScrollText :size="14" />{{ actionName(log.action) }}</span><p class="mt-1 text-xs text-gray-400">{{ log.action }}</p></td>
               <td class="px-6 py-4 font-medium text-gray-700">{{ log.actor?.name ?? 'Система' }}</td>

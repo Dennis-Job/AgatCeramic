@@ -9,15 +9,6 @@ canonical documentation и audit reports.
 Переход к Phase 7 запрещён до завершения этого блока. Refactoring не меняет подтверждённый
 API behaviour без migration plan и синхронного обновления OpenAPI.
 
-- [ ] TASK-A016 Составить и закрыть матрицу Backend API → Admin UI
-  - Для каждого Admin endpoint/permission указать screen, actions и loading/empty/error/forbidden states.
-  - Пометить backend-only features, намеренно ожидающие Phase 7–10, и создать адресные follow-ups.
-
-- [ ] TASK-A017 Нормализовать Admin UI-kit перед расширением панели
-  - Инвентаризировать shared tokens/components и привести buttons, fields, dialogs, tables,
-    pagination, states и destructive confirmations к одному accessible pattern.
-  - Проверить keyboard/focus, screen readers, contrast и 320/640/768/1024/1280 px; получить UI Guard review.
-
 - [ ] TASK-A018 Реализовать рабочее место менеджера по заказам
   - Добавить permission-safe order list/show API и заменить `/orders` placeholder на list/detail,
     snapshots, contacts/delivery, transitions/history, payments и comments.

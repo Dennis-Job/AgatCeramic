@@ -14,6 +14,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
 const root = ref<HTMLElement | null>(null)
+const input = ref<HTMLInputElement | null>(null)
 const isOpen = ref(false)
 const currentMonth = ref(dateFromIso(props.modelValue) ?? new Date())
 const typedValue = ref(formatDate(dateFromIso(props.modelValue)))
@@ -72,12 +73,14 @@ function select(date: Date): void {
   emit('update:modelValue', toIso(date))
   typedValue.value = formatDate(date)
   isOpen.value = false
+  input.value?.focus()
 }
 
 function clear(): void {
   emit('update:modelValue', '')
   typedValue.value = ''
   isOpen.value = false
+  input.value?.focus()
 }
 
 function formatTypedDate(value: string): string {
@@ -126,7 +129,11 @@ function handleOutsideClick(event: MouseEvent): void {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape') isOpen.value = false
+  if (event.key === 'Escape' && isOpen.value) {
+    event.preventDefault()
+    isOpen.value = false
+    input.value?.focus()
+  }
 }
 
 watch(() => props.modelValue, (value) => {
@@ -150,13 +157,13 @@ onBeforeUnmount(() => {
   <div ref="root" class="relative">
     <div class="flex h-11 items-center rounded-lg border border-gray-300 bg-white px-3 shadow-theme-xs transition focus-within:border-primary-500 focus-within:ring-3 focus-within:ring-primary-500/10">
       <CalendarDays :size="18" class="shrink-0 text-gray-400" aria-hidden="true" />
-      <input :value="typedValue" type="text" inputmode="numeric" maxlength="10" class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-400" :placeholder="placeholder" :aria-label="accessibleName" :aria-expanded="isOpen" aria-haspopup="dialog" @focus="open" @input="updateTypedValue" @keydown.enter.prevent="confirmTypedValue" @blur="normalizeTypedValue" />
+      <input ref="input" :value="typedValue" type="text" inputmode="numeric" maxlength="10" class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-400" :placeholder="placeholder" :aria-label="accessibleName" :aria-expanded="isOpen" aria-haspopup="dialog" @focus="open" @input="updateTypedValue" @keydown.enter.prevent="confirmTypedValue" @blur="normalizeTypedValue" />
       <button v-if="modelValue" type="button" class="rounded p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600" aria-label="Очистить дату" @click="clear">
         <X :size="16" aria-hidden="true" />
       </button>
     </div>
 
-    <div v-if="isOpen" class="absolute z-30 mt-2 w-80 rounded-xl border border-gray-200 bg-white p-3 shadow-dropdown" role="dialog" :aria-label="`${accessibleName}: выбор даты`">
+    <div v-if="isOpen" class="absolute z-30 mt-2 w-80 rounded-xl border border-gray-200 bg-white p-3 shadow-dropdown" role="dialog" aria-modal="false" :aria-label="`${accessibleName}: выбор даты`">
       <div class="mb-3 flex items-center justify-between px-1">
         <button type="button" class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700" aria-label="Предыдущий месяц" @click="changeMonth(-1)"><ChevronLeft :size="18" aria-hidden="true" /></button>
         <p class="capitalize text-sm font-semibold text-gray-800">{{ monthLabel }}</p>
