@@ -63,21 +63,37 @@ class ContactAssignmentTest extends TestCase
 
     public function test_contact_manager_can_list_only_active_eligible_assignees(): void
     {
-        $manager = $this->userWithRole('order-manager');
-        $this->userWithRole('order-manager');
+        $manager = $this->userWithRole('order-manager', 'Bravo Manager');
+        $eligible = $this->userWithRole('order-manager', 'Alpha Manager');
         $blocked = $this->userWithRole('order-manager');
         $blocked->update(['status' => AdminUserStatus::Blocked]);
 
-        $this->actingAs($manager)->getJson('/api/v1/admin/contact-assignees')
+        $response = $this->actingAs($manager)->getJson('/api/v1/admin/contact-assignees')
             ->assertOk()
-            ->assertJsonPath('data.0.id', $manager->id)
+            ->assertJsonCount(2, 'data')
             ->assertJsonMissing(['id' => $blocked->id]);
+
+        $actualIds = collect($response->json('data'))->pluck('id')->sort()->values()->all();
+
+        $this->assertSame([$manager->id, $eligible->id], $actualIds);
     }
 
-    private function userWithRole(string $slug): User
+    public function test_contact_assignee_catalogue_is_sorted_by_name(): void
+    {
+        $manager = $this->userWithRole('order-manager', 'Bravo Manager');
+        $this->userWithRole('order-manager', 'Alpha Manager');
+
+        $response = $this->actingAs($manager)->getJson('/api/v1/admin/contact-assignees')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        $this->assertSame(['Alpha Manager', 'Bravo Manager'], collect($response->json('data'))->pluck('name')->all());
+    }
+
+    private function userWithRole(string $slug, ?string $name = null): User
     {
         $this->seed([RoleSeeder::class, PermissionSeeder::class]);
-        $user = User::factory()->create();
+        $user = User::factory()->create($name === null ? [] : ['name' => $name]);
         $user->roles()->attach(Role::query()->where('slug', $slug)->sole());
 
         return $user;

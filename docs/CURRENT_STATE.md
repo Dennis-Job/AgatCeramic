@@ -1,7 +1,8 @@
 # Текущее состояние проекта
 
-Состояние зафиксировано по итогам `TASK-A001` и `TASK-A002` (2026-09-09).
-Краткий результат последней приёмки приведён в [`../tasks/DONE.md`](../tasks/DONE.md).
+Состояние зафиксировано по итогам `TASK-A001`–`TASK-A022` (2026-09-11).
+Последняя финальная приёмка **принята**; evidence приведены в
+[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md).
 
 ## Реализовано
 
@@ -27,12 +28,8 @@
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
 | Medium | OpenAPI compatibility gate requires a reviewed `info.version` bump and migration plan for breaking contract changes. | Ongoing API governance |
-| Medium | HTTP API audit confirms typed authenticated-user/request boundaries remain incomplete; four import controllers also duplicate async file lifecycle. | `TASK-A008`, `TASK-A009` |
-| Medium | Import submission/job orchestration has no single lifecycle boundary; checkout has concurrency safety but no explicit idempotency key contract. | `TASK-A009` |
-| Medium | Model/factory strict declarations need completion; local PHP lacks `pdo_pgsql`, so PostgreSQL migration/integrity verification remains pending CI-only test DB execution. | `TASK-A010`, `TASK-A015` |
 
-Interim Audit не разрешает переход к Phase 7 до закрытия этих high-priority functional gaps и
-quality gates.
+Interim Audit завершён; переход к Phase 7 разрешён.
 
 ## Отложено по roadmap
 
@@ -46,6 +43,8 @@ quality gates.
 
 ## Проверки baseline
 
-`php artisan test --compact`: 226 tests, 1608 assertions; Pint, Composer validation/audit,
-OpenAPI JSON, Admin unit tests (25), Admin/Client builds прошли. Полный Admin E2E запуск
-зафиксировал 47 passed и 4 environment failures; это не считается принятым quality gate.
+На 2026-09-11 прошли Composer validation/audit, Pint, Larastan, PostgreSQL migration/concurrency
+(9 tests, 43 assertions), Redis/queue, OpenAPI JSON, Admin unit tests (27), Admin build и Client
+typecheck/build. После TASK-A021 два последовательных полных backend suite прошли; после TASK-A022
+clean-install local Admin E2E/axe run passed (58 tests). TASK-A020 принят; подробности — в
+[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md).
