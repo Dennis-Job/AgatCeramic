@@ -150,10 +150,22 @@ API behaviour без migration plan и синхронного обновлени
   - Добавить contacts navigation и list/detail для callback, email и partner requests с filters,
     assignment, statuses, history и comments under `contacts.view/manage`.
 
-- [ ] TASK-A020 Провести финальную регрессию Interim Audit и разрешить переход к Phase 7
+- [x] TASK-A020 Провести финальную регрессию Interim Audit и разрешить переход к Phase 7
   - Повторить clean-environment backend/Admin/Compose, PostgreSQL concurrency, Redis/queue,
     import/export, OpenAPI и key end-to-end scenarios.
   - Подтвердить отсутствие undocumented gaps, high/critical findings, stale links и temporary files.
+  - Заблокирована результатами `TASK-A021` и `TASK-A022`; evidence и условия повторной приёмки —
+    в [`docs/INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md).
+
+- [x] TASK-A021 Стабилизировать проверку каталога ответственных обращений
+  - Устранить недетерминированное ожидание порядка в `ContactAssignmentTest`: проверять состав,
+    eligibility и контракт сортировки отдельно, не меняя поведение API без обновления OpenAPI.
+  - Повторить полный backend suite дважды.
+
+- [x] TASK-A022 Обеспечить запуск Admin Playwright E2E в локальном Compose
+  - Добавить в образ/команду необходимые зависимости Chromium либо выделить поддерживаемый
+    тестовый runner; production/dev Admin workflow не должен терять работоспособность.
+  - Подтвердить clean-install, полный E2E и axe scan в Compose без environment failures.
 
 ## Phase 7 — Content
 

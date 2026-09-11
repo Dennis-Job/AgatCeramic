@@ -116,6 +116,24 @@ services:
     ports:
       - "${ADMIN_PORT:-5173}:5173"
 
+  admin-e2e:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/node/Dockerfile
+    profiles: ["test"]
+    working_dir: /app
+    command: >-
+      sh -c "npm ci
+      && npm exec playwright install chromium
+      && npm run test:e2e"
+    environment:
+      CI: "true"
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      - ./frontend/admin:/app
+      - admin_e2e_node_modules:/app/node_modules
+      - admin_playwright_browsers:/ms-playwright
+
   client:
     build:
       context: .
@@ -163,6 +181,8 @@ services:
 volumes:
   backend_vendor:
   admin_node_modules:
+  admin_e2e_node_modules:
+  admin_playwright_browsers:
   client_node_modules:
   postgres_data:
   redis_data:

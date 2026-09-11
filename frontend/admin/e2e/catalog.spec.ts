@@ -33,7 +33,7 @@ for (const route of catalogRoutes) {
 
     for (const width of [320, 640, 768, 1024, 1280]) {
       await page.setViewportSize({ width, height: 720 })
-      await page.goto(route.path)
+      await page.goto(route.path, { waitUntil: 'commit' })
 
       const status = page.getByRole('status').filter({ hasText: route.loadingLabel })
       await expect(status).toBeVisible()

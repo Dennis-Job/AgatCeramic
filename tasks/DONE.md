@@ -30,6 +30,9 @@ operational/recovery rules — в [`docs/`](../docs/).
 | Interim Audit | TASK-A017 | Admin UI-kit states and destructive confirmations are normalized with accessible shared feedback components; keyboard, responsive and E2E checks passed, and the final independent UI Guard review found no blocking issue. See [`ADMIN_UI_KIT_AUDIT.md`](../docs/ADMIN_UI_KIT_AUDIT.md). |
 | Interim Audit | TASK-A018 | Permission-safe order list/show API and the `/orders` manager workspace are implemented with protected customer/delivery snapshots, status/payment workflows, history and comments. See [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
 | Interim Audit | TASK-A019 | Contacts navigation and manager workspace are implemented with filtered list/detail, safe assignee catalogue, status workflow, history and comments. See [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
+| Interim Audit | TASK-A020 | Final Phase 0–6 regression accepted: two full backend suites (236 tests / 3,371 assertions each), PostgreSQL concurrency, Redis/queue, Compose, OpenAPI, Client and isolated Admin E2E/axe (58 tests) passed; Phase 7 is authorised. See [`INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md). |
+| Interim Audit | TASK-A021 | Contact-assignee catalogue checks separately validate the eligible active-user set and name-sort order; two consecutive full backend suites pass. |
+| Interim Audit | TASK-A022 | Isolated `admin-e2e` Compose profile installs Chromium and runs clean production Playwright/axe checks without changing the Admin dev service; 58 tests pass. |
 
 ## Проверки последней приёмки
 
