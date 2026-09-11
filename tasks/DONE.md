@@ -4,35 +4,35 @@
 долгосрочные решения находятся в [`docs/DECISIONS.md`](../docs/DECISIONS.md),
 operational/recovery rules — в [`docs/`](../docs/).
 
-| Scope | Завершённые задачи | Проверяемый итог |
+| Этап | Завершённые задачи | Проверяемый итог |
 | --- | --- | --- |
-| Phase 0 | TASK-001–007 | Монорепозиторий, Laravel API-only, Vue Admin, Nuxt Client skeleton, Docker, environment templates и CI. |
-| Phase 1 | TASK-010–017 | PostgreSQL/Redis, `/api/v1`, errors/resources, PII-safe logging, queue/scheduler и OpenAPI. |
-| Phase 2–2.1 | TASK-020–029C | Admin auth, password reset, RBAC, policies, audit snapshots/retention и PostgreSQL immutability. |
-| Phase 3 | TASK-030–041U | Catalog CRUD, typed attributes, images/relations/search, API/Admin hardening, durable cleanup и concurrency coverage. |
-| Phase 3.1 | TASK-042A–042Z | Standalone products, product groups, generated SKU, legacy migration lifecycle и Admin product workflow. |
-| Phase 4 | TASK-050–058 | XLSX export/import, preflight/errors, resumable queue, ZIP images, price/status и group workbooks. |
-| Phase 5 | TASK-060–070 | Guest cart, locked checkout, order snapshots/number/status/payment/history/comments и email confirmation. |
-| Phase 6 | TASK-080–084 | Public contact requests и protected assignment/workflow API. |
-| Interim Audit | TASK-A001–A004 | Baseline, repeat acceptance, documentation architecture и current-state map. |
-| Registry | TASK-A005 | Active registry normalized: TODO contains only unfinished roadmap, IN_PROGRESS only current work, and this index retains completed scopes. |
-| Artifact hygiene | TASK-A006 | Removed obsolete audit archive, empty `.tmp/` and generated Playwright output; recovery materials retained separately. |
-| Interim Audit | TASK-A007 | Larastan/PHPStan level 8 passes without baseline or suppressions (333 files, 0 errors) and is a blocking backend CI step. See [`QUALITY_BASELINE.md`](../docs/QUALITY_BASELINE.md). |
-| Interim Audit | TASK-A008 | HTTP controller boundaries now supply typed authenticated administrators, uploaded files and validated scalar/structured inputs to application services. Controller PHPStan passes with zero errors; no API contract changed. See [`HTTP_API_AUDIT.md`](../docs/HTTP_API_AUDIT.md). |
-| Interim Audit | TASK-A009 | Import submission, durable dispatch/retry and XLSX/ZIP lifecycle are centralized; checkout has a 24-hour HMAC-only idempotency contract. See [`SERVICE_BOUNDARIES_AUDIT.md`](../docs/SERVICE_BOUNDARIES_AUDIT.md) and [`OPENAPI_MIGRATION_PLAN.md`](../docs/OPENAPI_MIGRATION_PLAN.md). |
-| Interim Audit | TASK-A010 | Model/factory declarations and relation generics are strict-clean; authorization queries live in `PermissionChecker`; PostgreSQL migrations and integrity/concurrency suites passed on `agatceramic_test`. See [`MODEL_DATABASE_AUDIT.md`](../docs/MODEL_DATABASE_AUDIT.md). |
-| Interim Audit | TASK-A011 | Laravel API-only and Admin/Client boundaries confirmed; see [`API_ONLY_BOUNDARIES_AUDIT.md`](../docs/API_ONLY_BOUNDARIES_AUDIT.md). |
-| Interim Audit | TASK-A012 | Security, audit and PII controls reviewed; no high/critical Phase 0–6 application finding. See [`SECURITY_PII_AUDIT.md`](../docs/SECURITY_PII_AUDIT.md). |
-| Interim Audit | TASK-A013 | Queues, imports and durable storage cleanup reviewed; stale processing recovery and terminal cleanup atomicity added. See [`ASYNC_STORAGE_AUDIT.md`](../docs/ASYNC_STORAGE_AUDIT.md). |
-| Interim Audit | TASK-A014 | OpenAPI and API guide reconciled with all 111 Phase 0–6 HTTP operations; route coverage and versioned compatibility gates added. See [`OPENAPI_CONTRACT_AUDIT.md`](../docs/OPENAPI_CONTRACT_AUDIT.md). |
-| Interim Audit | TASK-A015 | CI separates SQLite, PostgreSQL integration, contract and Admin unit/E2E checks; Admin E2E uses production preview and the local PostgreSQL runner is restricted to `agatceramic_test`. See [`CI.md`](../docs/CI.md). |
-| Interim Audit | TASK-A016 | Backend API → Admin UI matrix is complete. Catalog, access-control, authentication and audit operations are mapped; orders and contacts have explicit high-priority follow-ups (`TASK-A018`, `TASK-A019`), while Phase 7–9 domains remain intentionally deferred. See [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
-| Interim Audit | TASK-A017 | Admin UI-kit states and destructive confirmations are normalized with accessible shared feedback components; keyboard, responsive and E2E checks passed, and the final independent UI Guard review found no blocking issue. See [`ADMIN_UI_KIT_AUDIT.md`](../docs/ADMIN_UI_KIT_AUDIT.md). |
-| Interim Audit | TASK-A018 | Permission-safe order list/show API and the `/orders` manager workspace are implemented with protected customer/delivery snapshots, status/payment workflows, history and comments. See [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
-| Interim Audit | TASK-A019 | Contacts navigation and manager workspace are implemented with filtered list/detail, safe assignee catalogue, status workflow, history and comments. See [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
-| Interim Audit | TASK-A020 | Final Phase 0–6 regression accepted: two full backend suites (236 tests / 3,371 assertions each), PostgreSQL concurrency, Redis/queue, Compose, OpenAPI, Client and isolated Admin E2E/axe (58 tests) passed; Phase 7 is authorised. See [`INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md). |
-| Interim Audit | TASK-A021 | Contact-assignee catalogue checks separately validate the eligible active-user set and name-sort order; two consecutive full backend suites pass. |
-| Interim Audit | TASK-A022 | Isolated `admin-e2e` Compose profile installs Chromium and runs clean production Playwright/axe checks without changing the Admin dev service; 58 tests pass. |
+| Фаза 0 | TASK-001–007 | Монорепозиторий, API Laravel, каркасы админки и магазина, Docker, шаблоны окружения и CI. |
+| Фаза 1 | TASK-010–017 | PostgreSQL, Redis, API `/api/v1`, единые ошибки и ресурсы, безопасное логирование, очереди, планировщик и OpenAPI. |
+| Фазы 2–2.1 | TASK-020–029C | Вход в админку, сброс пароля, роли и права, политики, аудит и неизменяемость журналов PostgreSQL. |
+| Фаза 3 | TASK-030–041U | Каталог: CRUD, типизированные характеристики, изображения, связи, поиск, защита API и очистка данных. |
+| Фаза 3.1 | TASK-042A–042Z | Обычные и групповые товары, генерация SKU, миграция устаревших данных и сценарии админки. |
+| Фаза 4 | TASK-050–058 | Импорт и экспорт XLSX, предварительная проверка и ошибки, возобновляемые очереди, ZIP-изображения, цены, статусы и групповые файлы. |
+| Фаза 5 | TASK-060–070 | Гостевая корзина, защищённое оформление заказа, снимки данных, номер, статусы, оплата, история, комментарии и письмо-подтверждение. |
+| Фаза 6 | TASK-080–084 | Публичные обращения и защищённые API назначения и обработки. |
+| Промежуточный аудит | TASK-A001–A004 | Исходное состояние и повторная приёмка зафиксированы; документация и карта проекта приведены к единой структуре. |
+| Реестр задач | TASK-A005 | В TODO остались только невыполненные задачи, в IN_PROGRESS — текущая работа, здесь — завершённые этапы. |
+| Чистота артефактов | TASK-A006 | Удалены устаревший архив аудита, пустой `.tmp/` и результаты Playwright; материалы восстановления сохранены отдельно. |
+| Промежуточный аудит | TASK-A007 | Larastan/PHPStan уровня 8 проходит без baseline и подавлений: 333 файла, 0 ошибок. Проверка обязательна в CI. См. [`QUALITY_BASELINE.md`](../docs/QUALITY_BASELINE.md). |
+| Промежуточный аудит | TASK-A008 | Контроллеры передают в сервисы типизированные и проверенные данные; PHPStan контроллеров проходит без ошибок, API не изменён. См. [`HTTP_API_AUDIT.md`](../docs/HTTP_API_AUDIT.md). |
+| Промежуточный аудит | TASK-A009 | Импорт, повторные попытки и жизненный цикл XLSX/ZIP централизованы; оформление заказа идемпотентно в течение 24 часов по HMAC. См. [`SERVICE_BOUNDARIES_AUDIT.md`](../docs/SERVICE_BOUNDARIES_AUDIT.md) и [`OPENAPI_MIGRATION_PLAN.md`](../docs/OPENAPI_MIGRATION_PLAN.md). |
+| Промежуточный аудит | TASK-A010 | Модели и фабрики проходят строгую проверку; запросы прав вынесены в `PermissionChecker`; миграции и проверки PostgreSQL пройдены. См. [`MODEL_DATABASE_AUDIT.md`](../docs/MODEL_DATABASE_AUDIT.md). |
+| Промежуточный аудит | TASK-A011 | Подтверждены API-only архитектура Laravel и границы админки и магазина. См. [`API_ONLY_BOUNDARIES_AUDIT.md`](../docs/API_ONLY_BOUNDARIES_AUDIT.md). |
+| Промежуточный аудит | TASK-A012 | Проверены безопасность, аудит и защита ПДн; критичных проблем в фазах 0–6 не выявлено. См. [`SECURITY_PII_AUDIT.md`](../docs/SECURITY_PII_AUDIT.md). |
+| Промежуточный аудит | TASK-A013 | Проверены очереди, импорты и очистка хранилища; добавлены восстановление зависших операций и атомарная финальная очистка. См. [`ASYNC_STORAGE_AUDIT.md`](../docs/ASYNC_STORAGE_AUDIT.md). |
+| Промежуточный аудит | TASK-A014 | OpenAPI и API-руководство сверены со 111 HTTP-операциями фаз 0–6; добавлены проверки маршрутов и совместимости версий. См. [`OPENAPI_CONTRACT_AUDIT.md`](../docs/OPENAPI_CONTRACT_AUDIT.md). |
+| Промежуточный аудит | TASK-A015 | CI разделяет проверки SQLite, PostgreSQL, контрактов и админки; E2E запускаются на production preview, тестовая БД ограничена `agatceramic_test`. См. [`CI.md`](../docs/CI.md). |
+| Промежуточный аудит | TASK-A016 | Матрица API и экранов админки составлена; для заказов и обращений выполнены задачи `TASK-A018` и `TASK-A019`, фазы 7–9 отложены осознанно. См. [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
+| Промежуточный аудит | TASK-A017 | Состояния UI и опасные действия унифицированы; проверки клавиатуры, адаптивности и E2E пройдены, UI-ревью не выявило блокирующих замечаний. См. [`ADMIN_UI_KIT_AUDIT.md`](../docs/ADMIN_UI_KIT_AUDIT.md). |
+| Промежуточный аудит | TASK-A018 | Реализованы API и рабочее место заказов: защищённые снимки данных, статусы, оплата, история и комментарии. См. [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
+| Промежуточный аудит | TASK-A019 | Реализованы навигация и рабочее место обращений: фильтры, назначение, статусы, история и комментарии. См. [`ADMIN_API_UI_MATRIX.md`](../docs/ADMIN_API_UI_MATRIX.md). |
+| Промежуточный аудит | TASK-A020 | Финальная регрессия фаз 0–6 пройдена: два backend-прогона по 236 тестов и 3 371 проверке, PostgreSQL, Redis, очереди, Compose, OpenAPI, клиент и 58 E2E/axe тестов админки; переход к фазе 7 разрешён. См. [`INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md). |
+| Промежуточный аудит | TASK-A021 | Проверки назначаемых сотрудников отдельно подтверждают состав, доступность и сортировку; два полных backend-прогона пройдены. |
+| Промежуточный аудит | TASK-A022 | Изолированный профиль `admin-e2e` устанавливает Chromium и выполняет 58 production E2E/axe тестов без изменения dev-сервиса админки. |
 
 ## Проверки последней приёмки
 
