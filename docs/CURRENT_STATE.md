@@ -26,8 +26,6 @@
 
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
-| High | Admin не имеет order list/detail: `/orders` остаётся placeholder. | `TASK-A018` |
-| High | Admin не имеет contacts navigation и manager workspace. | `TASK-A019` |
 | Medium | OpenAPI compatibility gate requires a reviewed `info.version` bump and migration plan for breaking contract changes. | Ongoing API governance |
 | Medium | HTTP API audit confirms typed authenticated-user/request boundaries remain incomplete; four import controllers also duplicate async file lifecycle. | `TASK-A008`, `TASK-A009` |
 | Medium | Import submission/job orchestration has no single lifecycle boundary; checkout has concurrency safety but no explicit idempotency key contract. | `TASK-A009` |

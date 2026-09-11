@@ -627,6 +627,15 @@ POST /api/v1/admin/attributes
 
 ### Заказы
 
+`GET /admin/orders` и `GET /admin/orders/{order}`
+
+Требуют `orders.view` и составляют рабочее место менеджера заказов. Список
+пагинируется (`per_page` от 1 до 100, по умолчанию 25) и поддерживает `search`
+по номеру, имени, телефону или email, а также `status` и `payment_status`.
+Деталь и список возвращают защищённый admin-only snapshot: клиентские контакты,
+адрес доставки, комментарий, товары, статусы и реквизиты оплаты. Эти поля
+недоступны публичному `POST /orders` response.
+
 `GET /admin/order-statuses`
 
 Требует `orders.view`. Возвращает упорядоченный серверный каталог активных статусов (`code`, русское
@@ -681,6 +690,8 @@ checkout.
 
 `PATCH /admin/contact-requests/{contactRequest}/assignee` требует
 `contacts.manage`; тело содержит `assignee_id` (nullable для снятия назначения).
+`GET /admin/contact-assignees` с тем же permission возвращает минимальный список
+активных сотрудников, которых сервер разрешает назначать ответственными.
 `PATCH /admin/contact-requests/{contactRequest}/status` требует тот же доступ и
 принимает серверный код статуса. Фактические переходы доступны через
 `GET /admin/contact-requests/{contactRequest}/status-history`.

@@ -72,6 +72,9 @@ class OpenApiDocumentationTest extends TestCase
             'listOrderStatuses',
             $specification['paths']['/admin/order-statuses']['get']['operationId'],
         );
+        $this->assertSame('listOrders', $specification['paths']['/admin/orders']['get']['operationId']);
+        $this->assertSame('getOrder', $specification['paths']['/admin/orders/{order}']['get']['operationId']);
+        $this->assertArrayHasKey('AdminOrder', $specification['components']['schemas']);
         $this->assertSame(
             'updateOrderStatus',
             $specification['paths']['/admin/orders/{order}/status']['patch']['operationId'],
@@ -94,6 +97,7 @@ class OpenApiDocumentationTest extends TestCase
             $specification['paths']['/admin/orders/{order}/comments']['post']['operationId'],
         );
         $this->assertArrayHasKey('OrderComment', $specification['components']['schemas']);
+        $this->assertSame('listContactAssignees', $specification['paths']['/admin/contact-assignees']['get']['operationId']);
         $this->assertArrayHasKey('PaymentRegistration', $specification['components']['schemas']);
         $this->assertArrayHasKey('OrderStatus', $specification['components']['schemas']);
         $this->assertArrayHasKey('/admin/categories/{category}/attributes', $specification['paths']);

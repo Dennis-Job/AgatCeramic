@@ -280,6 +280,12 @@ button[class*='text-error-500']:not([class*='bg-']):not(:disabled):hover {
   max-width: 1440px;
 }
 
+/* Workspace grids may contain intentionally scrollable tables. */
+.admin-page > .grid,
+.admin-page > .grid > * {
+  min-width: 0;
+}
+
 .admin-sidebar {
   width: 290px;
 }

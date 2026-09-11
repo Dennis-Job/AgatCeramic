@@ -61,6 +61,19 @@ class ContactAssignmentTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_contact_manager_can_list_only_active_eligible_assignees(): void
+    {
+        $manager = $this->userWithRole('order-manager');
+        $this->userWithRole('order-manager');
+        $blocked = $this->userWithRole('order-manager');
+        $blocked->update(['status' => AdminUserStatus::Blocked]);
+
+        $this->actingAs($manager)->getJson('/api/v1/admin/contact-assignees')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $manager->id)
+            ->assertJsonMissing(['id' => $blocked->id]);
+    }
+
     private function userWithRole(string $slug): User
     {
         $this->seed([RoleSeeder::class, PermissionSeeder::class]);
