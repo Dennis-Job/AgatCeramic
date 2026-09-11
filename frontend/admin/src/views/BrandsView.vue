@@ -2,12 +2,18 @@
 import { computed, onMounted, ref } from 'vue'
 import { BadgeCheck, Pencil, Plus, Trash2, X } from '@lucide/vue'
 import BaseCheckbox from '../components/BaseCheckbox.vue'
-import BaseDialog from '../components/BaseDialog.vue'
 import BaseInput from '../components/BaseInput.vue'
 import BaseSelect from '../components/BaseSelect.vue'
 import BaseTextarea from '../components/BaseTextarea.vue'
-import CollectionLoadingState from '../components/CollectionLoadingState.vue'
-import PaginationControls from '../components/PaginationControls.vue'
+import UiAlert from '../components/ui/UiAlert.vue'
+import UiBadge from '../components/ui/UiBadge.vue'
+import UiButton from '../components/ui/UiButton.vue'
+import UiDialog from '../components/ui/UiDialog.vue'
+import UiEmptyState from '../components/ui/UiEmptyState.vue'
+import UiLoadingState from '../components/ui/UiLoadingState.vue'
+import UiPagination from '../components/ui/UiPagination.vue'
+import ConfirmDialog from '../components/shared/ConfirmDialog.vue'
+import PageHeader from '../components/shared/PageHeader.vue'
 import { usePaginatedCollection } from '../composables/usePaginatedCollection'
 import { COUNTRY_OPTIONS, countryName } from '../constants/countries'
 import { deleteBrand, getBrands, saveBrand, type Brand, type BrandPayload } from '../services/brands'
@@ -78,24 +84,23 @@ onMounted(load)
 
 <template>
   <section class="mx-auto admin-page" :aria-busy="loading">
-    <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
-      <div><p class="text-sm font-medium text-gray-500">Каталог</p><h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Бренды</h1></div>
-      <button v-if="canManage" class="inline-flex items-center gap-2 rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-600" @click="open()"><Plus :size="18" />Добавить бренд</button>
-    </div>
-    <p v-if="error" class="mb-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500" role="alert">{{ error }}</p>
+    <PageHeader class="mb-7" eyebrow="Каталог" title="Бренды">
+      <template #actions><UiButton v-if="canManage" @click="open()"><Plus :size="18" aria-hidden="true" />Добавить бренд</UiButton></template>
+    </PageHeader>
+    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert>
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-card">
-      <CollectionLoadingState v-if="loading" label="Загрузка брендов…" />
+      <UiLoadingState v-if="loading" label="Загрузка брендов…" />
       <div v-else-if="brands.length" class="divide-y divide-gray-100">
         <article v-for="brand in brands" :key="brand.id" class="flex items-center gap-4 p-4 sm:p-5">
           <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"><BadgeCheck :size="20" /></span>
-          <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 class="truncate font-semibold text-gray-800">{{ brand.name }}</h2><span class="admin-badge rounded-full px-2 py-1 text-xs font-medium" :class="brand.is_active ? 'bg-success-50 text-success-500' : 'bg-gray-100 text-gray-500'">{{ brand.is_active ? 'Активен' : 'Скрыт' }}</span></div><p class="mt-1 truncate text-sm text-gray-500">/{{ brand.slug }}<template v-if="brand.country_code"> · {{ countryName(brand.country_code) }}</template></p><p v-if="brand.description" class="mt-1 truncate text-sm text-gray-500">{{ brand.description }}</p></div>
+          <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 class="truncate font-semibold text-gray-800">{{ brand.name }}</h2><UiBadge :tone="brand.is_active ? 'success' : 'neutral'">{{ brand.is_active ? 'Активен' : 'Скрыт' }}</UiBadge></div><p class="mt-1 truncate text-sm text-gray-500">/{{ brand.slug }}<template v-if="brand.country_code"> · {{ countryName(brand.country_code) }}</template></p><p v-if="brand.description" class="mt-1 truncate text-sm text-gray-500">{{ brand.description }}</p></div>
           <div v-if="canManage" class="flex gap-1"><button class="rounded-lg p-2 text-gray-500 hover:bg-primary-50 hover:text-primary-600" :aria-label="`Изменить бренд ${brand.name}`" @click="open(brand)"><Pencil :size="17" /></button><button class="rounded-lg p-2 text-gray-500 hover:bg-error-50 hover:text-error-500" :aria-label="`Удалить бренд ${brand.name}`" @click="deleting = brand"><Trash2 :size="17" /></button></div>
         </article>
       </div>
-      <div v-else class="px-5 py-14 text-center text-sm text-gray-500">Брендов пока нет.</div>
+      <UiEmptyState v-else label="Брендов пока нет." />
     </div>
-    <PaginationControls v-if="pagination" :meta="pagination" :loading="loading" @change="load" />
-    <BaseDialog :open="opened" labelledby="brand-dialog-title" describedby="brand-dialog-description" :close-disabled="isSaving" panel-class="w-full max-w-2xl" @close="opened = false">
+    <UiPagination v-if="pagination" :meta="pagination" :loading="loading" @change="load" />
+    <UiDialog :open="opened" labelledby="brand-dialog-title" describedby="brand-dialog-description" :close-disabled="isSaving" panel-class="w-full max-w-2xl" @close="opened = false">
       <form class="max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl" @submit.prevent="save">
         <div class="flex items-start justify-between"><div><h2 id="brand-dialog-title" class="text-lg font-bold text-gray-900">{{ title }}</h2><p id="brand-dialog-description" class="mt-1 text-sm text-gray-500">Укажите сведения о бренде для каталога.</p></div><button type="button" class="rounded-lg p-1 text-gray-500 hover:bg-gray-50 disabled:opacity-60" aria-label="Закрыть окно бренда" :disabled="isSaving" @click="opened = false"><X :size="20" /></button></div>
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
@@ -107,7 +112,7 @@ onMounted(load)
         </div>
         <div class="mt-6 flex justify-end gap-3"><button type="button" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60" :disabled="isSaving" @click="opened = false">Отмена</button><button class="rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-60" :disabled="isSaving">{{ isSaving ? 'Сохранение…' : 'Сохранить' }}</button></div>
       </form>
-    </BaseDialog>
-    <BaseDialog :open="Boolean(deleting)" labelledby="delete-brand-title" describedby="delete-brand-description" :close-disabled="isDeleting" overlay-class="z-[60] grid place-items-center p-4" panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" @close="deleting = null"><template v-if="deleting"><h2 id="delete-brand-title" class="text-lg font-bold text-gray-900">Удалить бренд?</h2><p id="delete-brand-description" class="mt-3 text-sm text-gray-500">Бренд «{{ deleting.name }}» будет удалён. Это действие нельзя отменить.</p><div class="mt-6 flex justify-end gap-3"><button class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50" type="button" :disabled="isDeleting" @click="deleting = null">Отмена</button><button class="rounded-lg bg-error-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-error-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="isDeleting" @click="remove">{{ isDeleting ? 'Удаление…' : 'Удалить' }}</button></div></template></BaseDialog>
+    </UiDialog>
+    <ConfirmDialog :open="Boolean(deleting)" title="Удалить бренд?" :description="`Бренд «${deleting?.name ?? ''}» будет удалён. Это действие нельзя отменить.`" :busy="isDeleting" @close="deleting = null" @confirm="remove" />
   </section>
 </template>

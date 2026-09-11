@@ -1,0 +1,31 @@
+:root {
+  --admin-font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  --admin-font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --admin-color-primary: #465fff;
+  --admin-color-primary-hover: #3641f5;
+  --admin-color-surface: #ffffff;
+  --admin-color-page: #f7f9fc;
+  --admin-color-text: #101828;
+  --admin-color-text-muted: #667085;
+  --admin-color-border: #d0d5dd;
+  --admin-color-danger: #f04438;
+  --admin-color-success: #039855;
+  --admin-spacing-1: 0.25rem;
+  --admin-spacing-2: 0.5rem;
+  --admin-spacing-3: 0.75rem;
+  --admin-spacing-4: 1rem;
+  --admin-spacing-5: 1.25rem;
+  --admin-spacing-6: 1.5rem;
+  --admin-radius-sm: 0.375rem;
+  --admin-radius-md: 0.5rem;
+  --admin-radius-lg: 0.75rem;
+  --admin-control-height-sm: 2rem;
+  --admin-control-height-md: 2.625rem;
+  --admin-control-height-lg: 3rem;
+  --admin-border-default: 1px solid var(--admin-color-border);
+  --admin-shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
+  --admin-shadow-input: 0 1px 2px rgb(16 24 40 / 0.05);
+  --admin-shadow-dialog: 0 8px 24px rgb(16 24 40 / 0.08);
+  --admin-transition-control: 150ms ease;
+  --admin-focus-ring: 0 0 0 4px rgb(236 243 255);
+}

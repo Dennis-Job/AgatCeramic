@@ -176,7 +176,7 @@ API behaviour без migration plan и синхронного обновлени
 ответственность. Перед закрытием каждой задачи обязательны build, unit/E2E/axe в релевантном
 объёме, проверка 320/640/768/1024/1280 px и независимый UI Design Guard review.
 
-- [ ] TASK-A023 Зафиксировать baseline Admin и правила миграции
+- [x] TASK-A023 Зафиксировать baseline Admin и правила миграции
   - Зафиксировать скриншоты и smoke/axe-проверки `/login`, `/forgot-password`, `/reset-password`,
     `/`, `/profile`, `/products`, `/categories`, `/brands`, `/attribute-groups`, `/attributes`,
     `/employees`, `/roles`, `/permissions`, `/audit-log`, `/orders`, `/contacts`, `/content` и
@@ -188,7 +188,7 @@ API behaviour без migration plan и синхронного обновлени
   - Не перемещать код в этой задаче; результат — воспроизводимый baseline, который не позволит
     принять визуальный или accessibility-regression за «чистый рефакторинг».
 
-- [ ] TASK-A024 Сформировать стабильный UI-kit и design tokens
+- [x] TASK-A024 Сформировать стабильный UI-kit и design tokens
   - Ввести явные слои `styles/`, `components/ui/` и `components/shared/`, сохранив переходные
     adapters для существующих `Base*` компонентов до перевода всех потребителей.
   - Централизовать tokens цветов, типографики, spacing, radius, control heights, borders, shadows,
@@ -198,7 +198,7 @@ API behaviour без migration plan и синхронного обновлени
     `UiTextarea`, `UiCheckbox`, `UiRadio`, `UiDialog`, `UiAlert`, `UiBadge`, `UiCard`, `UiTable`,
     `UiField`, `UiLoadingState`, `UiEmptyState`, `UiPagination` и `ConfirmDialog`.
 
-- [ ] TASK-A025 Выделить application shell и auth shell
+- [x] TASK-A025 Выделить application shell и auth shell
   - Разделить текущий `AppLayout` на `AdminLayout` и компоненты header/sidebar; создать
     `AuthLayout` для login/forgot-password/reset-password без копирования каркаса и стилей.
   - Вынести общие page header, уведомления, user menu и responsive-navigation в shared/layout
@@ -206,14 +206,14 @@ API behaviour без migration plan и синхронного обновлени
   - Проверить sidebar, header, диалоги и таблицы на 320/640/768/1024/1280 px, включая отсутствие
     непреднамеренного горизонтального overflow.
 
-- [ ] TASK-A026 Нормализовать общие UI-паттерны страниц
+- [x] TASK-A026 Нормализовать общие UI-паттерны страниц
   - Заменить локальные копии заголовков, action bars, filters, alerts, status badges, table shells,
     loading/empty/error blocks, пагинации и подтверждений удаления на shared/UI-компоненты.
   - Единообразно реализовать label/help/error у полей, `role=status`/`role=alert`, visible focus,
     disabled/loading/success/empty состояния и длинный русский контент.
   - Не переносить доменные правила в UI-kit и не создавать одноразовые wrapper-компоненты.
 
-- [ ] TASK-A027 Рефакторинг feature `products`
+- [x] TASK-A027 Рефакторинг feature `products`
   - Превратить `ProductsView.vue` в тонкую route-level композицию; выделить
     `features/products/{components,composables,services,types,validation}`.
   - Разделить редактор на `ProductEditor`, `ProductMainSection`, `ProductAttributesSection`,
