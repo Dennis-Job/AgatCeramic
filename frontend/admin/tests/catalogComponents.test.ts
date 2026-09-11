@@ -7,6 +7,8 @@ import PaginationControls from '../src/components/PaginationControls.vue'
 import AttributeValueField from '../src/components/AttributeValueField.vue'
 import BaseAlert from '../src/components/BaseAlert.vue'
 import BaseConfirmDialog from '../src/components/BaseConfirmDialog.vue'
+import PageHeader from '../src/components/shared/PageHeader.vue'
+import UiTable from '../src/components/ui/UiTable.vue'
 import { sortByLabel } from '../src/utils/alphabetical'
 import { attributeTypeLabel, attributeTypeOptions } from '../src/utils/attributeTypes'
 
@@ -83,6 +85,31 @@ describe('CollectionLoadingState', () => {
     expect(status.classes()).not.toContain('sr-only')
     expect(status.attributes('aria-live')).toBe('polite')
     expect(status.get('svg').attributes('aria-hidden')).toBe('true')
+  })
+})
+
+describe('shared page patterns', () => {
+  test('keeps an eyebrow and actions together in the reusable page header', () => {
+    const wrapper = mount(PageHeader, {
+      props: { eyebrow: 'Каталог', title: 'Длинное название раздела', description: 'Описание раздела.' },
+      slots: { actions: '<button type="button">Добавить</button>' },
+    })
+
+    expect(wrapper.get('h1').text()).toBe('Длинное название раздела')
+    expect(wrapper.text()).toContain('Каталог')
+    expect(wrapper.get('button').text()).toBe('Добавить')
+  })
+
+  test('provides a labelled, scrollable table shell with an optional minimum width', () => {
+    const wrapper = mount(UiTable, {
+      props: { label: 'Список сотрудников', minWidth: 'min-w-[680px]', tableClass: 'admin-table-employees' },
+      slots: { default: '<tbody><tr><td>Иван</td></tr></tbody>' },
+    })
+
+    expect(wrapper.get('table').attributes('aria-label')).toBe('Список сотрудников')
+    expect(wrapper.get('table').classes()).toContain('min-w-[680px]')
+    expect(wrapper.get('table').classes()).toContain('admin-table-employees')
+    expect(wrapper.text()).toContain('Иван')
   })
 })
 
@@ -255,6 +282,7 @@ describe('PaginationControls', () => {
     })
 
     expect(wrapper.get('nav').attributes('aria-label')).toBe('Пагинация: страница 2 из 3')
+    expect(wrapper.get('[aria-label="Текущая страница 2 из 3"]').text()).toBe('2 / 3')
     expect(wrapper.get('[role="status"]').text()).toBe('Показано 16–30 из 31')
     await wrapper.get('button[aria-label="Предыдущая страница"]').trigger('click')
     await wrapper.get('button[aria-label="Следующая страница"]').trigger('click')

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import AppLayout from './layouts/AppLayout.vue'
+import AdminLayout from './layouts/AdminLayout.vue'
+import AuthLayout from './layouts/AuthLayout.vue'
 </script>
 
 <template>
   <RouterView v-slot="{ Component, route }">
-    <AppLayout v-if="route.meta.requiresAuth">
+    <AdminLayout v-if="route.meta.requiresAuth">
       <component :is="Component" />
-    </AppLayout>
+    </AdminLayout>
+    <AuthLayout v-else-if="route.meta.guestOnly">
+      <component :is="Component" />
+    </AuthLayout>
     <component :is="Component" v-else />
   </RouterView>
 </template>

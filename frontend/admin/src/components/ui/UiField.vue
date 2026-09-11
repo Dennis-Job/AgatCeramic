@@ -1,0 +1,2 @@
+<script setup lang="ts">defineProps<{ label: string; help?: string; error?: string; required?: boolean }>()</script>
+<template><label class="block text-sm font-medium text-gray-700"><span>{{ label }}<span v-if="required" aria-hidden="true"> *</span></span><slot/><span v-if="help && !error" class="mt-1 block text-xs font-normal text-gray-500">{{ help }}</span><span v-if="error" class="mt-1 block text-xs font-normal text-error-600" role="alert">{{ error }}</span></label></template>

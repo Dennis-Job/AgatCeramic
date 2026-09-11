@@ -1,0 +1,133 @@
+<script setup lang="ts">
+// Source-of-truth dialog primitive. BaseDialog is retained as a compatibility adapter.
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+const props = withDefaults(defineProps<{
+  open: boolean
+  labelledby: string
+  describedby?: string
+  closeDisabled?: boolean
+  suspended?: boolean
+  overlayClass?: string
+  panelClass?: string
+}>(), {
+  describedby: undefined,
+  closeDisabled: false,
+  suspended: false,
+  overlayClass: 'z-50 grid place-items-center p-4',
+  panelClass: '',
+})
+
+const emit = defineEmits<{ close: [] }>()
+const panel = ref<HTMLElement | null>(null)
+let opener: HTMLElement | null = null
+let backdropPointerId: number | null = null
+
+const focusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',')
+
+function focusableElements(): HTMLElement[] {
+  const roots = [panel.value, ...Array.from(document.querySelectorAll<HTMLElement>('[data-floating-select-menu]'))].filter((element): element is HTMLElement => element !== null)
+  return roots.flatMap(root => Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)))
+    .filter(element => !element.matches(':disabled') && element.tabIndex >= 0 && element.getClientRects().length > 0)
+}
+
+function requestClose(): void {
+  if (!props.closeDisabled && !props.suspended) emit('close')
+}
+
+function handleBackdropPointerDown(event: PointerEvent): void {
+  backdropPointerId = event.target === event.currentTarget && event.button === 0 ? event.pointerId : null
+}
+
+function handleBackdropPointerUp(event: PointerEvent): void {
+  const shouldClose = backdropPointerId === event.pointerId && event.target === event.currentTarget
+  backdropPointerId = null
+  if (shouldClose) requestClose()
+}
+
+function resetBackdropPointer(): void {
+  backdropPointerId = null
+}
+
+function handleKeydown(event: KeyboardEvent): void {
+  if (!props.open) return
+  if (props.suspended) return
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    requestClose()
+    return
+  }
+  if (event.key !== 'Tab') return
+  const elements = focusableElements()
+  if (!elements.length) {
+    event.preventDefault()
+    panel.value?.focus()
+    return
+  }
+  const first = elements[0]
+  const last = elements[elements.length - 1]
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+watch(() => props.open, async (open) => {
+  if (open) {
+    opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    await nextTick()
+    const initial = panel.value?.querySelector<HTMLElement>('[data-autofocus]') ?? focusableElements()[0] ?? panel.value
+    initial?.focus()
+  } else if (opener) {
+    await nextTick()
+    if (opener.isConnected) opener.focus()
+    opener = null
+  }
+}, { flush: 'post' })
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown, true)
+  if (opener?.isConnected) opener.focus()
+})
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown, true)
+})
+</script>
+
+<template>
+  <div
+    v-if="open"
+    class="fixed inset-0 bg-gray-900/50"
+    :class="overlayClass"
+    :aria-hidden="suspended ? 'true' : undefined"
+    :inert="suspended ? true : undefined"
+    @pointerdown="handleBackdropPointerDown"
+    @pointerup="handleBackdropPointerUp"
+    @pointercancel="resetBackdropPointer"
+    @keydown="handleKeydown"
+  >
+    <section
+      ref="panel"
+      class="admin-dialog-content"
+      :class="panelClass"
+      :role="suspended ? undefined : 'dialog'"
+      :aria-modal="suspended ? undefined : 'true'"
+      :aria-labelledby="suspended ? undefined : labelledby"
+      :aria-describedby="suspended ? undefined : describedby"
+      tabindex="-1"
+    >
+      <slot />
+    </section>
+  </div>
+</template>
