@@ -39,6 +39,6 @@ coverage/
 *.local
 
 # Local database backups (may contain credentials or personal data)
-/backup.sql
-/backups/*.dump
-/backups/*.dump.sha256
+# /backup.sql
+# /backups/*.dump
+# /backups/*.dump.sha256
