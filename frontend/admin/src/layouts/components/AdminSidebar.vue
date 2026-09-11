@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { BadgeCheck, FolderTree, Layers3, ListFilter } from '@lucide/vue'
-import { Package, FileText, KeyRound, LayoutDashboard, MessageSquareMore, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
+import { Package, FileText, KeyRound, LayoutDashboard, MessageSquareMore, PanelsTopLeft, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
 import { useAuthStore } from '../../stores/auth'
 
 const props = defineProps<{ isOpen: boolean }>()
@@ -32,6 +32,9 @@ const employeeNavigation = [
 const siteManagementNavigation = [
   { label: 'Контент', to: '/content', icon: FileText },
   { label: 'Настройки', to: '/settings', icon: Settings },
+]
+const developmentNavigation = [
+  { label: 'UI-kit · временно', to: '/ui-kit', icon: PanelsTopLeft },
 ]
 
 const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
@@ -109,5 +112,7 @@ onBeforeUnmount(() => { if (opener?.isConnected) opener.focus() })
     <template v-if="visibleEmployeeNavigation.length"><p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400">Управление сотрудниками</p><nav class="space-y-1" aria-label="Управление сотрудниками"><RouterLink v-for="item in visibleEmployeeNavigation" :key="item.to" :to="item.to" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-25" active-class="!bg-primary-50 !text-primary-600" @click="close"><component :is="item.icon" :size="19" :stroke-width="1.8" aria-hidden="true" />{{ item.label }}</RouterLink></nav></template>
     <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400">Управление сайтом</p>
     <nav class="space-y-1" aria-label="Управление сайтом"><RouterLink v-for="item in siteManagementNavigation" :key="item.to" :to="item.to" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-25" active-class="!bg-primary-50 !text-primary-600" @click="close"><component :is="item.icon" :size="19" :stroke-width="1.8" aria-hidden="true" />{{ item.label }}</RouterLink></nav>
+    <p class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400">Разработка</p>
+    <nav class="space-y-1" aria-label="Разработка"><RouterLink v-for="item in developmentNavigation" :key="item.to" :to="item.to" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-25" active-class="!bg-primary-50 !text-primary-600" @click="close"><component :is="item.icon" :size="19" :stroke-width="1.8" aria-hidden="true" />{{ item.label }}</RouterLink></nav>
   </aside>
 </template>
