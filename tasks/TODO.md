@@ -167,6 +167,85 @@ API behaviour без migration plan и синхронного обновлени
     тестовый runner; production/dev Admin workflow не должен терять работоспособность.
   - Подтвердить clean-install, полный E2E и axe scan в Compose без environment failures.
 
+## Admin frontend refactoring — prerequisite for Phase 7
+
+Переход к Phase 7 запрещён до завершения этого блока. Цель — привести существующий
+`frontend/admin/` к архитектуре из `frontend/admin/AGENTS.md`, не меняя подтверждённое
+поведение API, permissions и пользовательские сценарии. Каждая задача выполняется отдельным
+инкрементом: сначала сохраняются и проверяются текущие сценарии, затем переносится одна
+ответственность. Перед закрытием каждой задачи обязательны build, unit/E2E/axe в релевантном
+объёме, проверка 320/640/768/1024/1280 px и независимый UI Design Guard review.
+
+- [ ] TASK-A023 Зафиксировать baseline Admin и правила миграции
+  - Зафиксировать скриншоты и smoke/axe-проверки `/login`, `/forgot-password`, `/reset-password`,
+    `/`, `/profile`, `/products`, `/categories`, `/brands`, `/attribute-groups`, `/attributes`,
+    `/employees`, `/roles`, `/permissions`, `/audit-log`, `/orders`, `/contacts`, `/content` и
+    `/settings`; включить loading, empty, error, forbidden и destructive-dialog состояния там,
+    где они доступны.
+  - Создать карту каждого текущего `view`, компонента, composable, store и service: назначение,
+    владельца feature и целевой слой. Отдельно зафиксировать сохранённые публичные props/events
+    Base-компонентов для безопасной постепенной миграции.
+  - Не перемещать код в этой задаче; результат — воспроизводимый baseline, который не позволит
+    принять визуальный или accessibility-regression за «чистый рефакторинг».
+
+- [ ] TASK-A024 Сформировать стабильный UI-kit и design tokens
+  - Ввести явные слои `styles/`, `components/ui/` и `components/shared/`, сохранив переходные
+    adapters для существующих `Base*` компонентов до перевода всех потребителей.
+  - Централизовать tokens цветов, типографики, spacing, radius, control heights, borders, shadows,
+    transitions и focus ring; удалить зависимость глобального поведения кнопок от селекторов
+    `class*` в `style.css`.
+  - Реализовать и задокументировать варианты/состояния `UiButton`, `UiInput`, `UiSelect`,
+    `UiTextarea`, `UiCheckbox`, `UiRadio`, `UiDialog`, `UiAlert`, `UiBadge`, `UiCard`, `UiTable`,
+    `UiField`, `UiLoadingState`, `UiEmptyState`, `UiPagination` и `ConfirmDialog`.
+
+- [ ] TASK-A025 Выделить application shell и auth shell
+  - Разделить текущий `AppLayout` на `AdminLayout` и компоненты header/sidebar; создать
+    `AuthLayout` для login/forgot-password/reset-password без копирования каркаса и стилей.
+  - Вынести общие page header, уведомления, user menu и responsive-navigation в shared/layout
+    слой; сохранить route guards, focus management и keyboard-навигацию.
+  - Проверить sidebar, header, диалоги и таблицы на 320/640/768/1024/1280 px, включая отсутствие
+    непреднамеренного горизонтального overflow.
+
+- [ ] TASK-A026 Нормализовать общие UI-паттерны страниц
+  - Заменить локальные копии заголовков, action bars, filters, alerts, status badges, table shells,
+    loading/empty/error blocks, пагинации и подтверждений удаления на shared/UI-компоненты.
+  - Единообразно реализовать label/help/error у полей, `role=status`/`role=alert`, visible focus,
+    disabled/loading/success/empty состояния и длинный русский контент.
+  - Не переносить доменные правила в UI-kit и не создавать одноразовые wrapper-компоненты.
+
+- [ ] TASK-A027 Рефакторинг feature `products`
+  - Превратить `ProductsView.vue` в тонкую route-level композицию; выделить
+    `features/products/{components,composables,services,types,validation}`.
+  - Разделить редактор на `ProductEditor`, `ProductMainSection`, `ProductAttributesSection`,
+    `ProductImagesSection`, `ProductVariantsSection`, `ProductRelationsSection` и
+    `ProductReviewSection`; состояние, submit и validation перенести в composables/schema.
+  - Устранить горизонтальную прокрутку/обрезание stepper в редакторе на 320 px, сохранив
+    доступность шагов, текущий порядок операций, импорт/экспорт и API-contract.
+
+- [ ] TASK-A028 Рефакторинг feature `catalog`
+  - Последовательно выделить feature-модули categories, brands, attribute-groups и attributes;
+    разложить крупные формы и dialogs на логические доменные секции.
+  - Вынести DTO/types и validation из Vue-файлов; сохранить services как единственный путь к API,
+    не создавая raw HTTP в компонентах.
+  - Привести list/detail/form состояния и responsive-представление таблиц к общему паттерну.
+
+- [ ] TASK-A029 Рефакторинг feature `access`, `sales` и `contacts`
+  - Перевести profile, employees, roles, permissions, audit-log, orders и contacts на тонкие pages
+    и feature-level компоненты/composables; Pinia оставить только для действительно глобального
+    состояния.
+  - Убрать дублирование фильтров, форм, статусов и destructive flows, не изменяя permissions,
+    данные заказов, ПДн и audit semantics.
+  - Для узких list/detail экранов определить явную responsive-стратегию вместо случайного
+    горизонтального скролла.
+
+- [ ] TASK-A030 Финальная приёмка Admin frontend refactoring
+  - Удалить временные compatibility adapters только после перевода всех потребителей; проверить,
+    что `views` не содержат raw HTTP, доменных DTO, крупных форм или копий UI primitives.
+  - Выполнить полный build, unit, production E2E и axe suite, visual QA обязательных маршрутов и
+    independent UI Design Guard review; устранить все blocking findings.
+  - Обновить `frontend/admin/AGENTS.md`, `docs/UI_DESIGN_REVIEW.md` и актуальную документацию
+    только при изменении фактических правил/контрактов; после этого разрешить Phase 7 — Content.
+
 ## Phase 7 — Content
 
 - [ ] TASK-090 Site settings
