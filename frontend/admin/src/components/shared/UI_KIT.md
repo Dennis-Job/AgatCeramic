@@ -17,3 +17,8 @@
 
 Все визуальные константы берутся из `src/styles/tokens.css`; Tailwind theme в
 `styles/index.css` отображает эти значения для legacy utility classes.
+
+Временная живая витрина доступна авторизованному пользователю по `/ui-kit` и через
+sidebar → «Разработка» → «UI-kit · временно». Она собрана в
+`components/shared/UiKitShowcase.vue`; при удалении витрины нужно удалить также
+маршрут и sidebar-пункт.

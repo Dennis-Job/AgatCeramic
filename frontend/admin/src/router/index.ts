@@ -17,6 +17,7 @@ import ProfileView from '../views/ProfileView.vue'
 import ProductsView from '../views/ProductsView.vue'
 import OrdersView from '../views/OrdersView.vue'
 import ContactsView from '../views/ContactsView.vue'
+import UiKitView from '../views/UiKitView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -37,6 +38,7 @@ const router = createRouter({
     { path: '/audit-log', name: 'audit-log', component: AuditLogView, meta: { requiresAuth: true, requiredPermission: 'audit-log.view', title: 'Журнал аудита' } },
     { path: '/orders', name: 'orders', component: OrdersView, meta: { requiresAuth: true, requiredPermission: 'orders.view', title: 'Заказы' } },
     { path: '/contacts', name: 'contacts', component: ContactsView, meta: { requiresAuth: true, requiredPermission: 'contacts.view', title: 'Обращения' } },
+    { path: '/ui-kit', name: 'ui-kit', component: UiKitView, meta: { requiresAuth: true, title: 'UI-kit' } },
     { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true, title: 'Контент' } },
     { path: '/settings', name: 'settings', component: PlaceholderView, props: { title: 'Настройки' }, meta: { requiresAuth: true, title: 'Настройки' } },
   ],
