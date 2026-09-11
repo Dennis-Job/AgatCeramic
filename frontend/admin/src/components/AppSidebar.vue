@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { BadgeCheck, FolderTree, Layers3, ListFilter } from '@lucide/vue'
-import { Package, FileText, KeyRound, LayoutDashboard, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
+import { Package, FileText, KeyRound, LayoutDashboard, MessageSquareMore, ScrollText, Settings, ShieldCheck, ShoppingCart, UsersRound, X } from '@lucide/vue'
 import { useAuthStore } from '../stores/auth'
 defineProps<{ isOpen: boolean }>()
 defineEmits<{ close: [] }>()
@@ -18,7 +18,8 @@ const productManagementNavigation = [
 
 const primaryNavigation = [
   { label: 'Обзор', to: '/', icon: LayoutDashboard },
-  { label: 'Заказы', to: '/orders', icon: ShoppingCart },
+  { label: 'Заказы', to: '/orders', icon: ShoppingCart, requiredPermission: 'orders.view' },
+  { label: 'Обращения', to: '/contacts', icon: MessageSquareMore, requiredPermission: 'contacts.view' },
 ]
 
 const employeeNavigation = [
@@ -34,7 +35,7 @@ const siteManagementNavigation = [
 ]
 
 const visibleEmployeeNavigation = computed(() => employeeNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
-const visiblePrimaryNavigation = computed(() => primaryNavigation)
+const visiblePrimaryNavigation = computed(() => primaryNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
 const visibleProductManagementNavigation = computed(() => productManagementNavigation.filter((item) => !item.requiredPermission || auth.hasPermission(item.requiredPermission)))
 </script>
 

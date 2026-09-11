@@ -22,6 +22,11 @@ class ContactRequestPolicy extends AuthorizesPermissions
         return $this->allows($user, 'contacts.manage');
     }
 
+    public function viewAssignees(User $user): bool
+    {
+        return $this->allows($user, 'contacts.manage');
+    }
+
     public function update(User $user, ContactRequest $contactRequest): bool
     {
         return $this->allows($user, 'contacts.manage');

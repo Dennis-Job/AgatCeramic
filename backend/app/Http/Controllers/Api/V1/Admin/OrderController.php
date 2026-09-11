@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\ListOrderCommentsRequest;
+use App\Http\Requests\Api\V1\Admin\ListOrdersRequest;
 use App\Http\Requests\Api\V1\Admin\ListOrderStatusHistoryRequest;
 use App\Http\Requests\Api\V1\Admin\StoreOrderCommentRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateOrderPaymentRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateOrderStatusRequest;
+use App\Http\Resources\AdminOrderResource;
 use App\Http\Resources\OrderCommentResource;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\OrderStatusHistoryResource;
@@ -31,6 +33,36 @@ class OrderController extends Controller
         private readonly OrderPaymentManagementService $paymentManagementService,
         private readonly OrderStatusManagementService $statusManagementService,
     ) {}
+
+    public function index(ListOrdersRequest $request): AnonymousResourceCollection
+    {
+        Gate::authorize('viewAny', Order::class);
+
+        $orders = Order::query()
+            ->with('items')
+            ->latest()
+            ->when($request->string('search')->trim()->toString(), function ($query, string $search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query->where('order_number', 'like', '%'.$search.'%')
+                        ->orWhere('customer_name', 'like', '%'.$search.'%')
+                        ->orWhere('customer_phone', 'like', '%'.$search.'%')
+                        ->orWhere('customer_email', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($request->string('status')->trim()->toString(), fn ($query, string $status) => $query->where('status', $status))
+            ->when($request->enum('payment_status', PaymentStatus::class), fn ($query, PaymentStatus $paymentStatus) => $query->where('payment_status', $paymentStatus->value))
+            ->paginate($request->integer('per_page', 25))
+            ->withQueryString();
+
+        return AdminOrderResource::collection($orders);
+    }
+
+    public function show(Order $order): AdminOrderResource
+    {
+        Gate::authorize('view', $order);
+
+        return new AdminOrderResource($order->load('items'));
+    }
 
     public function statuses(): AnonymousResourceCollection
     {

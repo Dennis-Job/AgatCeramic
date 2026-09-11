@@ -43,6 +43,7 @@ Route::apiResource('permissions', PermissionController::class)->only(['index', '
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
 Route::patch('contact-requests/{contactRequest}/assignee', [ContactAssignmentController::class, 'update'])
     ->name('contact-requests.assignee.update');
+Route::get('contact-assignees', [ContactAssignmentController::class, 'candidates'])->name('contact-assignees.index');
 Route::get('contact-statuses', [ContactRequestController::class, 'statuses'])->name('contact-statuses.index');
 Route::get('contact-requests', [ContactRequestController::class, 'index'])->name('contact-requests.index');
 Route::get('contact-requests/{contactRequest}', [ContactRequestController::class, 'show'])->name('contact-requests.show');
@@ -55,6 +56,8 @@ Route::get('contact-requests/{contactRequest}/comments', [ContactRequestControll
 Route::post('contact-requests/{contactRequest}/comments', [ContactRequestController::class, 'storeComment'])
     ->name('contact-requests.comments.store');
 Route::get('order-statuses', [OrderController::class, 'statuses'])->name('order-statuses.index');
+Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status.update');
 Route::get('orders/{order}/status-history', [OrderController::class, 'statusHistory'])->name('orders.status-history.index');
 Route::get('orders/{order}/comments', [OrderController::class, 'comments'])->name('orders.comments.index');

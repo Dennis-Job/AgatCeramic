@@ -15,6 +15,8 @@ import AttributeGroupsView from '../views/AttributeGroupsView.vue'
 import AttributesView from '../views/AttributesView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import ProductsView from '../views/ProductsView.vue'
+import OrdersView from '../views/OrdersView.vue'
+import ContactsView from '../views/ContactsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -33,7 +35,8 @@ const router = createRouter({
     { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view', title: 'Роли' } },
     { path: '/permissions', name: 'permissions', component: PermissionsView, meta: { requiresAuth: true, requiredPermission: 'permissions.view', title: 'Права доступа' } },
     { path: '/audit-log', name: 'audit-log', component: AuditLogView, meta: { requiresAuth: true, requiredPermission: 'audit-log.view', title: 'Журнал аудита' } },
-    { path: '/orders', name: 'orders', component: PlaceholderView, props: { title: 'Заказы' }, meta: { requiresAuth: true, title: 'Заказы' } },
+    { path: '/orders', name: 'orders', component: OrdersView, meta: { requiresAuth: true, requiredPermission: 'orders.view', title: 'Заказы' } },
+    { path: '/contacts', name: 'contacts', component: ContactsView, meta: { requiresAuth: true, requiredPermission: 'contacts.view', title: 'Обращения' } },
     { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true, title: 'Контент' } },
     { path: '/settings', name: 'settings', component: PlaceholderView, props: { title: 'Настройки' }, meta: { requiresAuth: true, title: 'Настройки' } },
   ],
