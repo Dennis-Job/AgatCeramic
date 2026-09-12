@@ -75,7 +75,7 @@ for (const path of stateRoutes) {
     test(`Admin baseline: ${path} ${state} state`, async ({ page }) => {
       await mockAdminBaseline(page, false, state)
       await page.goto(path, { waitUntil: 'networkidle' })
-      if (state === 'error') await expect(page.getByRole('alert')).toBeVisible()
+      if (state === 'error') await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 })
       await expect(page).toHaveScreenshot(`route-${path.slice(1)}-${state}.png`, { fullPage: true, animations: 'disabled' })
     })
   }

@@ -1,4 +1,4 @@
-import type { AttributeType } from '../services/attributes'
+import type { AttributeType } from '../features/attributes/types/attribute.types'
 
 export const attributeTypeOptions: Array<{ value: AttributeType; label: string }> = [
   { value: 'string', label: 'Строка' },

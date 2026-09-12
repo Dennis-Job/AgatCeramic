@@ -1,8 +1,9 @@
 # Текущее состояние проекта
 
-Состояние зафиксировано по итогам `TASK-A001`–`TASK-A022` (2026-09-11).
-Последняя финальная приёмка **принята**; evidence приведены в
-[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md).
+Состояние зафиксировано по итогам `TASK-A001`–`TASK-A030` (2026-09-12).
+Промежуточная и финальная приёмка Admin frontend refactoring **приняты**; evidence приведены в
+[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
+[`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
 
 ## Реализовано
 
@@ -14,6 +15,7 @@
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
 | Cart and orders | Public guest cart, locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
+| Admin frontend | Thin route views, feature-owned components/composables/services/types, source-of-truth UI-kit/shared components и разделённый application shell. Временные compatibility adapters удалены. |
 
 ## Принятые границы
 
@@ -29,7 +31,7 @@
 | --- | --- | --- |
 | Medium | OpenAPI compatibility gate requires a reviewed `info.version` bump and migration plan for breaking contract changes. | Ongoing API governance |
 
-Interim Audit завершён; переход к Phase 7 разрешён.
+Interim Audit и обязательный Admin frontend refactoring завершены; переход к Phase 7 разрешён.
 
 ## Отложено по roadmap
 
@@ -46,5 +48,8 @@ Interim Audit завершён; переход к Phase 7 разрешён.
 На 2026-09-11 прошли Composer validation/audit, Pint, Larastan, PostgreSQL migration/concurrency
 (9 tests, 43 assertions), Redis/queue, OpenAPI JSON, Admin unit tests (27), Admin build и Client
 typecheck/build. После TASK-A021 два последовательных полных backend suite прошли; после TASK-A022
-clean-install local Admin E2E/axe run passed (58 tests). TASK-A020 принят; подробности — в
-[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md).
+clean-install local Admin E2E/axe run passed (58 tests). На 2026-09-12 финальная приёмка Admin
+подтвердила build, 30 unit-тестов и 136 production E2E/visual/axe/responsive тестов локально и в Linux Compose; independent
+UI Design Guard не оставил blocking findings. TASK-A020 и TASK-A030 приняты; подробности — в
+[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
+[`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).

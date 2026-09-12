@@ -6,6 +6,11 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
+  expect: {
+    // Browser rasterization differs slightly between local macOS and Linux CI.
+    // Keep visual regression checks strict while tolerating subpixel antialiasing.
+    toHaveScreenshot: { maxDiffPixels: 30 },
+  },
   use: {
     baseURL: 'http://127.0.0.1:4173',
     screenshot: 'only-on-failure',
