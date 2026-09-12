@@ -2,6 +2,10 @@
 
 Audit date: 2026-09-11. Result: **accepted**; the transition to Phase 7 is authorised.
 
+Status note (2026-09-12): this verdict remains the historical result for the Phase 0–6 interim
+scope, but a later Admin refactoring audit reopened `TASK-A030`. Phase 7 is currently blocked until
+`TASK-A031`–`TASK-A035` and the repeated `TASK-A030` acceptance are complete.
+
 ## Scope and evidence
 
 - Clean Compose configuration validates successfully; backend, queue, scheduler, PostgreSQL,
@@ -34,7 +38,8 @@ Audit date: 2026-09-11. Result: **accepted**; the transition to Phase 7 is autho
 | A020-01 | Resolved | `ContactAssignmentTest` now checks the eligible active-user set independently from the name-sort contract. The controller and API behavior are unchanged; two consecutive full backend suites pass. | `backend/tests/Feature/Api/ContactAssignmentTest.php` | TASK-A021 |
 | A020-02 | Resolved | The profile-based `admin-e2e` runner has Chromium system libraries, installs the matching browser in an isolated volume and completes the clean production Playwright/axe suite (58 tests). The Admin dev service and its dependency volume remain separate. | `infrastructure/docker/node/Dockerfile`; `compose.yaml` | TASK-A022 |
 
-## Verdict
+## Historical verdict
 
-Phase 7 is **authorised**. No undocumented gap, high/critical application security finding,
-stale internal link or tracked temporary artifact was confirmed in the Phase 0–6 scope.
+At the time of this audit, Phase 7 was **authorised**. No undocumented gap, high/critical
+application security finding, stale internal link or tracked temporary artifact was confirmed in
+the Phase 0–6 scope. The current blocking status is recorded in the note above.
