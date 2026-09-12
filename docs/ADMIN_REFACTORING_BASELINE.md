@@ -1,8 +1,27 @@
 # Baseline Admin перед рефакторингом
 
-Статус: зафиксирован в `TASK-A023` 2026-09-11. Этот документ является
-контрактом сохранения поведения для `TASK-A024`–`TASK-A036`. Он не меняет
+Статус: зафиксирован в `TASK-A023` 2026-09-11. Этот документ являлся
+контрактом сохранения поведения для `TASK-A024`–`TASK-A030`. Он не меняет
 публичный API, permissions или пользовательские сценарии.
+
+Финализация: `TASK-A030` завершила миграцию. Документ ниже сохраняется как
+исторический baseline и объясняет исходные пути/контракты. Актуальные правила
+находятся в `frontend/admin/AGENTS.md` и
+`frontend/admin/src/components/shared/UI_KIT.md`; переходные `Base*`, layout,
+state/pagination и domain-service re-export adapters удалены после перевода всех
+потребителей на source-of-truth слои.
+
+## Результат финальной приёмки TASK-A030
+
+На 2026-09-12 подтверждены Admin production build, 30 unit-тестов и 136
+production E2E/visual/axe/responsive тестов локально и в Linux Compose. Проверены обязательные маршруты,
+loading/empty/error состояния, destructive dialog и ширины 320, 640, 768, 1024
+и 1280 px. Независимый UI Design Guard не оставил blocking findings.
+
+Route views не содержат raw HTTP, доменных DTO, крупных форм или копий UI
+primitives. Временные `Base*`, layout, state/pagination и service re-export
+adapters удалены после миграции consumers. API, permissions, backend и OpenAPI
+в рамках финализации не изменялись. Phase 7 разрешена.
 
 ## Воспроизводимая visual и accessibility-проверка
 
@@ -118,7 +137,7 @@ primitives, and are migrated only with their feature.
    layout, tokens or adapters change. Complete the independent UI Design Guard
    review required by `UI_DESIGN_REVIEW.md`.
 
-## Explicitly deferred
+## Исторически отложено в TASK-A023
 
 No `pages/`, `features/`, `components/ui/`, `components/shared/` or `styles/`
 directory is created by this task. The target names above are a dependency map,

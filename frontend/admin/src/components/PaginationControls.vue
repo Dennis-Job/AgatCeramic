@@ -1,2 +1,0 @@
-<script setup lang="ts">import UiPagination from './ui/UiPagination.vue'; import type { PaginationMeta } from '../services/pagination'; withDefaults(defineProps<{ meta: PaginationMeta; loading?: boolean; announce?: boolean }>(), { announce: true }); defineEmits<{ change: [page: number] }>()</script>
-<template><UiPagination :meta="meta" :loading="loading" :announce="announce" @change="$emit('change', $event)" /></template>

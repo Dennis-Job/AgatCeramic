@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Shared destructive action flow. BaseConfirmDialog is retained as a compatibility adapter.
+// Shared destructive action flow.
 import UiDialog from '../ui/UiDialog.vue'
 import UiAlert from '../ui/UiAlert.vue'
 import UiButton from '../ui/UiButton.vue'
@@ -38,5 +38,4 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
     </div>
   </UiDialog>
 </template>
-
 
