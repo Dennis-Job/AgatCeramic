@@ -4,24 +4,27 @@
 контрактом сохранения поведения для `TASK-A024`–`TASK-A030`. Он не меняет
 публичный API, permissions или пользовательские сценарии.
 
-Финализация: `TASK-A030` завершила миграцию. Документ ниже сохраняется как
-исторический baseline и объясняет исходные пути/контракты. Актуальные правила
-находятся в `frontend/admin/AGENTS.md` и
-`frontend/admin/src/components/shared/UI_KIT.md`; переходные `Base*`, layout,
-state/pagination и domain-service re-export adapters удалены после перевода всех
-потребителей на source-of-truth слои.
+Повторный аудит 2026-09-12 отозвал финальную приёмку `TASK-A030`: выявлены blocking findings по
+mobile sidebar, цветовому контрасту/design tokens, завершённости products/auth migration и
+устойчивости acceptance suite. Исправления вынесены в `TASK-A031`–`TASK-A035`; после них
+`TASK-A030` проходит повторную приёмку. Переход к Phase 7 заблокирован.
 
-## Результат финальной приёмки TASK-A030
+Документ ниже сохраняется как исторический baseline и объясняет исходные пути/контракты.
+Актуальные правила находятся в `frontend/admin/AGENTS.md` и
+`frontend/admin/src/components/shared/UI_KIT.md`; переходные `Base*`, layout, state/pagination и
+domain-service re-export adapters удалены после перевода consumers на source-of-truth слои.
 
-На 2026-09-12 подтверждены Admin production build, 30 unit-тестов и 136
+## Исторический результат первой приёмки TASK-A030
+
+На 2026-09-12 первоначально были зафиксированы Admin production build, 30 unit-тестов и 136
 production E2E/visual/axe/responsive тестов локально и в Linux Compose. Проверены обязательные маршруты,
 loading/empty/error состояния, destructive dialog и ширины 320, 640, 768, 1024
-и 1280 px. Независимый UI Design Guard не оставил blocking findings.
+и 1280 px. Повторный аудит показал, что этот набор evidence был недостаточен для финальной приёмки.
 
 Route views не содержат raw HTTP, доменных DTO, крупных форм или копий UI
 primitives. Временные `Base*`, layout, state/pagination и service re-export
 adapters удалены после миграции consumers. API, permissions, backend и OpenAPI
-в рамках финализации не изменялись. Phase 7 разрешена.
+в рамках первой приёмки не изменялись. Phase 7 остаётся заблокирована до повторной приёмки.
 
 ## Воспроизводимая visual и accessibility-проверка
 
