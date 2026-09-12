@@ -169,12 +169,12 @@ API behaviour без migration plan и синхронного обновлени
 
 ## Admin frontend refactoring — prerequisite for Phase 7
 
-Блок завершён; по результатам `TASK-A030` переход к Phase 7 разрешён. Целью блока было привести существующий
-`frontend/admin/` к архитектуре из `frontend/admin/AGENTS.md`, не меняя подтверждённое
-поведение API, permissions и пользовательские сценарии. Каждая задача выполняется отдельным
-инкрементом: сначала сохраняются и проверяются текущие сценарии, затем переносится одна
-ответственность. Перед закрытием каждой задачи обязательны build, unit/E2E/axe в релевантном
-объёме, проверка 320/640/768/1024/1280 px и независимый UI Design Guard review.
+Блок повторно открыт после независимого аудита 2026-09-12. Переход к Phase 7 заблокирован до
+завершения `TASK-A031`–`TASK-A035` и повторной приёмки `TASK-A030`. Цель блока — привести
+существующий `frontend/admin/` к архитектуре из `frontend/admin/AGENTS.md`, не меняя
+подтверждённое поведение API, permissions и пользовательские сценарии. Каждая задача выполняется
+отдельным инкрементом. Перед закрытием каждой задачи обязательны build, unit/E2E/axe в
+релевантном объёме, проверка 320/640/768/1024/1280 px и независимый UI Design Guard review.
 
 - [x] TASK-A023 Зафиксировать baseline Admin и правила миграции
   - Зафиксировать скриншоты и smoke/axe-проверки `/login`, `/forgot-password`, `/reset-password`,
@@ -238,7 +238,51 @@ API behaviour без migration plan и синхронного обновлени
   - Для узких list/detail экранов определить явную responsive-стратегию вместо случайного
     горизонтального скролла.
 
-- [x] TASK-A030 Финальная приёмка Admin frontend refactoring
+- [ ] TASK-A031 Исправить mobile sidebar и контроль ошибок рендера
+  - Исключить закрытый mobile sidebar из accessibility tree и Tab-порядка вне desktop; сохранить
+    открытие, focus trap, Escape, backdrop, возврат фокуса и desktop-навигацию.
+  - Восстановить видимую и доступную иконку удаления; добавить проверки unresolved Vue components,
+    browser console errors и `pageerror`, чтобы такие дефекты не проходили E2E незамеченными.
+  - Проверить sidebar на 320/640/768/1024/1280 px, выполнить build, unit, релевантные E2E/axe,
+    responsive visual QA и независимый UI Design Guard review.
+
+- [ ] TASK-A032 Довести design tokens и цветовой контраст до принятого стандарта
+  - Исправить все выявленные WCAG AA contrast failures, включая secondary/muted text, links,
+    controls и состояния disabled/hover/focus, без ухудшения визуальной иерархии.
+  - Сделать `tokens.css` фактическим source of truth для цветов, spacing, radius, control heights,
+    borders, shadows, transitions и focus ring; `@theme` должен ссылаться на tokens, а не дублировать
+    необоснованные raw values.
+  - Удалить необоснованные исключения `color-contrast` из full-page Axe scan; выполнить visual QA
+    обязательных маршрутов на всех контрольных ширинах и независимый UI Design Guard review.
+
+- [ ] TASK-A033 Завершить products migration на UI-kit и feature-owned types
+  - Заменить повторяющиеся raw buttons, page headers, alerts, badges, table/empty/loading states,
+    fields, radios и destructive dialogs внутри `products` на UI/shared primitives; native elements
+    оставить только там, где это оправдано платформой, например file input и progress.
+  - Перенести `AttributeDraftValue` и остальные domain/DTO-типы из Vue/service файлов в
+    `features/products/types`; composables не должны зависеть от Vue-компонентов.
+  - Сохранить API-contract, permissions, импорт/экспорт и порядок операций; расширить unit/E2E/axe,
+    проверить 320/640/768/1024/1280 px и пройти независимый UI Design Guard review.
+
+- [ ] TASK-A034 Устранить дублирование auth shell
+  - Вынести общий auth card, branding, title, description и layout из login, forgot-password и
+    reset-password в `AuthLayout` либо один shared auth-компонент без параллельных реализаций.
+  - Оставить page-specific формы и workflows во views; сохранить guards, autofocus, autocomplete,
+    keyboard navigation, API-contract и состояния loading/success/error.
+  - Выполнить build, unit, auth E2E/axe и visual QA трёх маршрутов на всех контрольных ширинах,
+    затем получить независимый UI Design Guard review.
+
+- [ ] TASK-A035 Стабилизировать acceptance suite и актуализировать evidence
+  - Заменить timer-based loading fixtures на управляемые deferred fixtures и подтвердить
+    стабильность повторными параллельными запусками без flaky failures.
+  - Добавить воспроизводимое forbidden-state coverage; зафиксировать историческое отклонение
+    `TASK-A023`, не переписывая Git-историю.
+  - Исправить устаревшие пути/команды в `docs/UI_DESIGN_REVIEW.md`, включить `/contacts` в
+    обязательный маршрутный набор и синхронизировать связанную документацию.
+  - Дважды подряд выполнить полный локальный Admin suite и один раз Linux Compose suite.
+
+- [ ] TASK-A030 Повторная финальная приёмка Admin frontend refactoring
+  - Заблокирована до завершения `TASK-A031`–`TASK-A035`.
   - Удалить временные compatibility adapters только после перевода всех потребителей; проверить,
     что `views` не содержат raw HTTP, доменных DTO, крупных форм или копий UI primitives.
   - Выполнить полный build, unit, production E2E и axe suite, visual QA обязательных маршрутов и
