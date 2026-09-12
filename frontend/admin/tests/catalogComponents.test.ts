@@ -1,12 +1,12 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, test } from 'vitest'
-import BaseSelect from '../src/components/BaseSelect.vue'
-import BaseDialog from '../src/components/BaseDialog.vue'
-import CollectionLoadingState from '../src/components/CollectionLoadingState.vue'
-import PaginationControls from '../src/components/PaginationControls.vue'
-import AttributeValueField from '../src/components/AttributeValueField.vue'
-import BaseAlert from '../src/components/BaseAlert.vue'
-import BaseConfirmDialog from '../src/components/BaseConfirmDialog.vue'
+import UiSelect from '../src/components/ui/UiSelect.vue'
+import UiDialog from '../src/components/ui/UiDialog.vue'
+import UiLoadingState from '../src/components/ui/UiLoadingState.vue'
+import UiPagination from '../src/components/ui/UiPagination.vue'
+import AttributeValueField from '../src/features/products/components/AttributeValueField.vue'
+import UiAlert from '../src/components/ui/UiAlert.vue'
+import ConfirmDialog from '../src/components/shared/ConfirmDialog.vue'
 import PageHeader from '../src/components/shared/PageHeader.vue'
 import UiTable from '../src/components/ui/UiTable.vue'
 import { sortByLabel } from '../src/utils/alphabetical'
@@ -74,9 +74,9 @@ describe('alphabetical option ordering', () => {
   })
 })
 
-describe('CollectionLoadingState', () => {
+describe('UiLoadingState', () => {
   test('shows a visible, accessible loading message', () => {
-    const wrapper = mount(CollectionLoadingState, {
+    const wrapper = mount(UiLoadingState, {
       props: { label: 'Загрузка товаров…' },
     })
 
@@ -115,14 +115,14 @@ describe('shared page patterns', () => {
 
 describe('shared feedback and destructive confirmation', () => {
   test('announces errors as alerts', () => {
-    const wrapper = mount(BaseAlert, { slots: { default: 'Не удалось сохранить изменения.' } })
+    const wrapper = mount(UiAlert, { slots: { default: 'Не удалось сохранить изменения.' } })
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Не удалось сохранить изменения.')
     expect(wrapper.get('[role="alert"]').attributes('aria-live')).toBe('assertive')
   })
 
   test('uses the shared dialog controls for destructive confirmation', async () => {
-    const wrapper = mount(BaseConfirmDialog, {
+    const wrapper = mount(ConfirmDialog, {
       props: { open: true, title: 'Удалить запись?', description: 'Отменить нельзя.' },
     })
 
@@ -133,9 +133,9 @@ describe('shared feedback and destructive confirmation', () => {
   })
 })
 
-describe('BaseDialog', () => {
+describe('UiDialog', () => {
   test('does not close when a text-selection drag starts inside the panel and ends on the backdrop', async () => {
-    const wrapper = mount(BaseDialog, {
+    const wrapper = mount(UiDialog, {
       props: { open: true, labelledby: 'dialog-title' },
       slots: { default: '<h2 id="dialog-title">Редактирование</h2><input value="Текст для выделения">' },
     })
@@ -147,7 +147,7 @@ describe('BaseDialog', () => {
   })
 
   test('closes only after a complete primary-pointer action on the backdrop', async () => {
-    const wrapper = mount(BaseDialog, {
+    const wrapper = mount(UiDialog, {
       props: { open: true, labelledby: 'dialog-title' },
       slots: { default: '<h2 id="dialog-title">Подтверждение</h2>' },
     })
@@ -160,9 +160,30 @@ describe('BaseDialog', () => {
   })
 })
 
-describe('BaseSelect', () => {
+describe('UiSelect', () => {
+  test('exposes the current selection to assistive technology while closed', async () => {
+    const wrapper = mount(UiSelect, {
+      props: {
+        modelValue: 'new',
+        accessibleName: 'Статус заказа',
+        options: [
+          { value: 'new', label: 'Новый' },
+          { value: 'processing', label: 'В обработке' },
+        ],
+      },
+    })
+
+    const trigger = wrapper.get('button[aria-label="Статус заказа"]')
+    const descriptionId = trigger.attributes('aria-describedby')
+    expect(descriptionId).toBeTruthy()
+    expect(wrapper.get(`#${descriptionId}`).text()).toBe('Текущее значение: Новый')
+
+    await wrapper.setProps({ modelValue: 'processing' })
+    expect(wrapper.get(`#${descriptionId}`).text()).toBe('Текущее значение: В обработке')
+  })
+
   test('teleports an opted-in menu outside clipping containers and keeps keyboard and outside-click handling', async () => {
-    const wrapper = mount(BaseSelect, {
+    const wrapper = mount(UiSelect, {
       attachTo: document.body,
       props: {
         modelValue: '',
@@ -196,7 +217,7 @@ describe('BaseSelect', () => {
   })
 
   test('clears a selected value only when explicitly enabled', async () => {
-    const wrapper = mount(BaseSelect, {
+    const wrapper = mount(UiSelect, {
       attachTo: document.body,
       props: {
         modelValue: 'matte',
@@ -217,7 +238,7 @@ describe('BaseSelect', () => {
   })
 
   test('filters options and emits the selected value with accessible names', async () => {
-    const wrapper = mount(BaseSelect, {
+    const wrapper = mount(UiSelect, {
       attachTo: document.body,
       props: {
         modelValue: '',
@@ -253,7 +274,7 @@ describe('BaseSelect', () => {
   })
 
   test('closes with Escape and reports an empty search result', async () => {
-    const wrapper = mount(BaseSelect, {
+    const wrapper = mount(UiSelect, {
       attachTo: document.body,
       props: {
         modelValue: '',
@@ -273,9 +294,9 @@ describe('BaseSelect', () => {
   })
 })
 
-describe('PaginationControls', () => {
+describe('UiPagination', () => {
   test('announces the range, changes pages, and guards unavailable navigation', async () => {
-    const wrapper = mount(PaginationControls, {
+    const wrapper = mount(UiPagination, {
       props: {
         meta: { current_page: 2, last_page: 3, per_page: 15, total: 31, from: 16, to: 30 },
       },
@@ -294,7 +315,7 @@ describe('PaginationControls', () => {
   })
 
   test('can render the visible range without a second live announcement', () => {
-    const wrapper = mount(PaginationControls, {
+    const wrapper = mount(UiPagination, {
       props: {
         meta: { current_page: 1, last_page: 1, per_page: 25, total: 3, from: 1, to: 3 },
         announce: false,
@@ -306,7 +327,7 @@ describe('PaginationControls', () => {
   })
 
   test('does not render for an empty collection', () => {
-    const wrapper = mount(PaginationControls, {
+    const wrapper = mount(UiPagination, {
       props: { meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } },
     })
     expect(wrapper.find('nav').exists()).toBe(false)

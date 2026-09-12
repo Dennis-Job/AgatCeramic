@@ -1,9 +1,7 @@
-import { apiFetch, requestCsrfCookie } from './auth'
-import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from './pagination'
-
-export type AttributeGroup = { id: number; name: string; slug: string; description: string | null; sort_order: number; created_at: string; updated_at: string }
-export type AttributeGroupPayload = Omit<AttributeGroup, 'id' | 'created_at' | 'updated_at'>
-
+import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from '../../../services/pagination'
+import type { AttributeGroup, AttributeGroupPayload } from '../types/attributeGroup.types'
+export type { AttributeGroup, AttributeGroupPayload } from '../types/attributeGroup.types'
 async function fail(response: Response): Promise<never> { const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }; throw new Error(Object.values(body.error?.details ?? {}).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.') }
 export async function getAttributeGroups(request: PageRequest = {}): Promise<PaginatedResponse<AttributeGroup>> { const query = new URLSearchParams(); withPage(query, request); const response = await apiFetch(`/admin/attribute-groups${query.size ? `?${query}` : ''}`); if (!response.ok) return fail(response); return (await response.json()) as PaginatedResponse<AttributeGroup> }
 export async function getAllAttributeGroups(): Promise<AttributeGroup[]> { return loadAllPages(getAttributeGroups) }
