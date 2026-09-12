@@ -1,7 +1,8 @@
 # Текущее состояние проекта
 
-Состояние зафиксировано по итогам `TASK-A001`–`TASK-A030` (2026-09-12).
-Промежуточная и финальная приёмка Admin frontend refactoring **приняты**; evidence приведены в
+Состояние зафиксировано по итогам `TASK-A001`–`TASK-A029` и повторного аудита `TASK-A030`
+(2026-09-12). Промежуточная приёмка Admin frontend refactoring сохранена, но финальная приёмка
+повторно открыта; evidence приведены в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
 
@@ -15,7 +16,7 @@
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
 | Cart and orders | Public guest cart, locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
-| Admin frontend | Thin route views, feature-owned components/composables/services/types, source-of-truth UI-kit/shared components и разделённый application shell. Временные compatibility adapters удалены. |
+| Admin frontend | Route views и feature-слои в основном выделены, временные compatibility adapters удалены. Повторный аудит выявил обязательные follow-ups по mobile sidebar, контрасту/tokens, products/auth migration и acceptance suite. |
 
 ## Принятые границы
 
@@ -30,8 +31,9 @@
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
 | Medium | OpenAPI compatibility gate requires a reviewed `info.version` bump and migration plan for breaking contract changes. | Ongoing API governance |
+| High | Финальная приёмка Admin frontend refactoring заблокирована до исправления findings повторного аудита. | `TASK-A031`–`TASK-A035`, затем `TASK-A030` |
 
-Interim Audit и обязательный Admin frontend refactoring завершены; переход к Phase 7 разрешён.
+Interim Audit завершён. Переход к Phase 7 заблокирован до повторной приёмки `TASK-A030`.
 
 ## Отложено по roadmap
 
@@ -48,8 +50,9 @@ Interim Audit и обязательный Admin frontend refactoring завер�
 На 2026-09-11 прошли Composer validation/audit, Pint, Larastan, PostgreSQL migration/concurrency
 (9 tests, 43 assertions), Redis/queue, OpenAPI JSON, Admin unit tests (27), Admin build и Client
 typecheck/build. После TASK-A021 два последовательных полных backend suite прошли; после TASK-A022
-clean-install local Admin E2E/axe run passed (58 tests). На 2026-09-12 финальная приёмка Admin
-подтвердила build, 30 unit-тестов и 136 production E2E/visual/axe/responsive тестов локально и в Linux Compose; independent
-UI Design Guard не оставил blocking findings. TASK-A020 и TASK-A030 приняты; подробности — в
+clean-install local Admin E2E/axe run passed (58 tests). Исторический запуск 2026-09-12 также
+показал build, 30 unit-тестов и 136 production E2E/visual/axe/responsive тестов локально и в Linux
+Compose, но повторный аудит обнаружил blocking findings и недостаточную устойчивость части
+evidence. `TASK-A020` принят; `TASK-A030` повторно открыт. Подробности — в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
