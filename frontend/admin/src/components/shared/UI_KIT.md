@@ -1,14 +1,14 @@
 # UI-kit Admin
 
 `components/ui` содержит примитивы без знания доменов. `components/shared` —
-повторно используемые композиции, не привязанные к feature. В этой миграции
-`Base*` остаются совместимыми публичными входами для действующих экранов;
-новый код должен импортировать `Ui*` и shared-компоненты.
+повторно используемые композиции, не привязанные к feature. После финальной
+приёмки TASK-A030 все переходные `Base*` и shared-state adapters удалены:
+код импортирует `Ui*` и shared-компоненты напрямую.
 
 | Компонент | Варианты / состояния |
 | --- | --- |
-| `UiButton` | `primary`, `secondary`, `danger`, `ghost`; `sm/md/lg`, disabled, loading |
-| `UiInput`, `UiSelect`, `UiTextarea` | default, focus, disabled, error через `UiField`; select: search, clear, keyboard |
+| `UiButton` | `primary`, `secondary`, `danger`, `ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading |
+| `UiInput`, `UiSelect`, `UiTextarea`, `UiDatePicker` | default, focus, disabled, error через `UiField`; select: search, clear, keyboard; date: input, calendar, Escape/focus return |
 | `UiCheckbox`, `UiRadio` | selected, keyboard focus, disabled через native control |
 | `UiDialog`, `ConfirmDialog` | open/close, Escape, backdrop, focus trap/return, busy |
 | `UiAlert`, `UiBadge`, `UiCard`, `UiTable` | semantic tone / surface / responsive table shell |
@@ -16,7 +16,7 @@
 | `UiLoadingState`, `UiEmptyState`, `UiPagination` | status announcement; pagination disabled/loading |
 
 Все визуальные константы берутся из `src/styles/tokens.css`; Tailwind theme в
-`styles/index.css` отображает эти значения для legacy utility classes.
+`styles/index.css` отображает эти значения для общих utility classes.
 
 Временная живая витрина доступна авторизованному пользователю по `/ui-kit` и через
 sidebar → «Разработка» → «UI-kit · временно». Она собрана в

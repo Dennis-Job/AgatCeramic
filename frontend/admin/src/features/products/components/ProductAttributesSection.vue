@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AttributeValueField from '../../../components/AttributeValueField.vue'
+import AttributeValueField from './AttributeValueField.vue'
 import { useProductEditorContext } from '../composables/useProductEditorContext'
 const { selectedGroupId, attributeSections, requiredIds, groupForm, attributeValues, attributeLabel, form, attributes, saveAttributes } = useProductEditorContext()
 </script>

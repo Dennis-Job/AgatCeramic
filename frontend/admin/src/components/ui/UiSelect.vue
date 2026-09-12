@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Source-of-truth select primitive. BaseSelect is retained as a compatibility adapter.
+// Source-of-truth select primitive.
 import { computed, nextTick, onBeforeUnmount, ref, useId } from 'vue'
 import { Check, ChevronDown, X } from '@lucide/vue'
 
@@ -26,6 +26,7 @@ const menuStyle = ref<Record<string, string>>({})
 const search = ref('')
 const searchInput = ref<HTMLInputElement | null>(null)
 const menuId = useId()
+const selectedDescriptionId = useId()
 const selectedLabel = computed(() => props.options.find((option) => option.value === props.modelValue)?.label ?? props.placeholder)
 const filteredOptions = computed(() => {
   const query = search.value.trim().toLocaleLowerCase('ru')
@@ -147,14 +148,15 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="root" class="relative" @keydown.escape="handleRootEscape">
+    <span :id="selectedDescriptionId" class="sr-only">Текущее значение: {{ selectedLabel }}</span>
     <button
       ref="triggerButton"
       type="button"
       class="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-50"
       :aria-expanded="isOpen"
-      aria-haspopup="listbox"
       :aria-controls="isOpen ? menuId : undefined"
       :aria-label="accessibleName"
+      :aria-describedby="selectedDescriptionId"
       :disabled="disabled"
       @click="toggle"
     >
@@ -182,7 +184,8 @@ onBeforeUnmount(() => {
       class="rounded-lg border border-gray-100 bg-white py-1 shadow-dropdown"
       :class="teleportMenu ? 'fixed z-[70] overflow-x-hidden overflow-y-auto' : 'absolute left-0 right-0 z-40 mt-1.5 overflow-hidden'"
       :style="teleportMenu ? menuStyle : undefined"
-      role="listbox"
+      role="group"
+      :aria-label="`${accessibleName}: варианты`"
       @keydown="handleMenuKeydown"
     >
       <div v-if="searchable" class="border-b border-gray-100 p-2">
@@ -202,8 +205,7 @@ onBeforeUnmount(() => {
         data-select-option
         :data-value="option.value"
         type="button"
-        role="option"
-        :aria-selected="option.value === modelValue"
+        :aria-pressed="option.value === modelValue"
         class="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-25"
         :class="{ 'bg-primary-50 font-semibold text-primary-600': option.value === modelValue }"
         @click="select(option.value)"
@@ -217,4 +219,3 @@ onBeforeUnmount(() => {
     </Teleport>
   </div>
 </template>
-

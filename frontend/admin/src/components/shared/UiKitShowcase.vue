@@ -59,7 +59,7 @@ function confirmAction(): void {
     <PageHeader
       eyebrow="Разработка"
       title="UI-kit"
-      description="Временная живая витрина компонентов Admin. Используйте эти компоненты в новых экранах вместо локальной разметки и Base-адаптеров."
+      description="Временная живая витрина компонентов Admin. Используйте эти компоненты в новых экранах вместо локальных копий UI primitives."
     />
 
     <UiAlert tone="info" live="polite">
@@ -76,6 +76,7 @@ function confirmAction(): void {
           <UiButton variant="secondary">Вторичная</UiButton>
           <UiButton variant="danger">Опасное действие</UiButton>
           <UiButton variant="ghost">Прозрачная</UiButton>
+          <UiButton variant="danger-ghost">Удалить</UiButton>
           <UiButton :loading="isButtonLoading" @click="showLoadingState">Загрузка</UiButton>
           <UiButton disabled>Недоступна</UiButton>
         </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Source-of-truth dialog primitive. BaseDialog is retained as a compatibility adapter.
+// Source-of-truth dialog primitive.
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = withDefaults(defineProps<{

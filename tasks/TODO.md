@@ -6,7 +6,7 @@ canonical documentation и audit reports.
 
 ## Interim Audit Phases 0–6
 
-Переход к Phase 7 запрещён до завершения этого блока. Refactoring не меняет подтверждённый
+Блок завершён; по результатам `TASK-A020`–`TASK-A022` переход к следующему prerequisite был разрешён. Refactoring не меняет подтверждённый
 API behaviour без migration plan и синхронного обновления OpenAPI.
 
 - [x] TASK-A001 Зафиксировать исходное состояние и карту реализации Phases 0–6
@@ -169,7 +169,7 @@ API behaviour без migration plan и синхронного обновлени
 
 ## Admin frontend refactoring — prerequisite for Phase 7
 
-Переход к Phase 7 запрещён до завершения этого блока. Цель — привести существующий
+Блок завершён; по результатам `TASK-A030` переход к Phase 7 разрешён. Целью блока было привести существующий
 `frontend/admin/` к архитектуре из `frontend/admin/AGENTS.md`, не меняя подтверждённое
 поведение API, permissions и пользовательские сценарии. Каждая задача выполняется отдельным
 инкрементом: сначала сохраняются и проверяются текущие сценарии, затем переносится одна
@@ -222,14 +222,14 @@ API behaviour без migration plan и синхронного обновлени
   - Устранить горизонтальную прокрутку/обрезание stepper в редакторе на 320 px, сохранив
     доступность шагов, текущий порядок операций, импорт/экспорт и API-contract.
 
-- [ ] TASK-A028 Рефакторинг feature `catalog`
+- [x] TASK-A028 Рефакторинг feature `catalog`
   - Последовательно выделить feature-модули categories, brands, attribute-groups и attributes;
     разложить крупные формы и dialogs на логические доменные секции.
   - Вынести DTO/types и validation из Vue-файлов; сохранить services как единственный путь к API,
     не создавая raw HTTP в компонентах.
   - Привести list/detail/form состояния и responsive-представление таблиц к общему паттерну.
 
-- [ ] TASK-A029 Рефакторинг feature `access`, `sales` и `contacts`
+- [x] TASK-A029 Рефакторинг feature `access`, `sales` и `contacts`
   - Перевести profile, employees, roles, permissions, audit-log, orders и contacts на тонкие pages
     и feature-level компоненты/composables; Pinia оставить только для действительно глобального
     состояния.
@@ -238,7 +238,7 @@ API behaviour без migration plan и синхронного обновлени
   - Для узких list/detail экранов определить явную responsive-стратегию вместо случайного
     горизонтального скролла.
 
-- [ ] TASK-A030 Финальная приёмка Admin frontend refactoring
+- [x] TASK-A030 Финальная приёмка Admin frontend refactoring
   - Удалить временные compatibility adapters только после перевода всех потребителей; проверить,
     что `views` не содержат raw HTTP, доменных DTO, крупных форм или копий UI primitives.
   - Выполнить полный build, unit, production E2E и axe suite, visual QA обязательных маршрутов и

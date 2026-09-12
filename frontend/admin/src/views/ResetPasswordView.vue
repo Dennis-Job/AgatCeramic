@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import BaseInput from '../components/BaseInput.vue'
+import UiAlert from '../components/ui/UiAlert.vue'
+import UiButton from '../components/ui/UiButton.vue'
+import UiInput from '../components/ui/UiInput.vue'
 import { resetPassword } from '../services/auth'
 
 const route = useRoute()
@@ -36,11 +38,11 @@ async function submit(): Promise<void> {
       <p class="text-sm font-semibold text-primary-500">AgatCeramic</p>
       <h1 class="mt-3 text-2xl font-bold text-gray-900">Задайте новый пароль</h1>
       <p class="mt-2 text-sm text-gray-500">Используйте надёжный пароль длиной не менее 12 символов.</p>
-      <p v-if="error" class="mt-5 rounded-lg bg-error-50 px-3 py-2 text-sm text-error-500" role="alert">{{ error }}</p>
-      <label class="mt-6 block text-sm font-medium text-gray-700">Email<BaseInput v-model="email" class="mt-1.5 w-full" type="email" autocomplete="email" required /></label>
-      <label class="mt-4 block text-sm font-medium text-gray-700">Новый пароль<BaseInput v-model="password" class="mt-1.5 w-full" type="password" autocomplete="new-password" minlength="12" required /></label>
-      <label class="mt-4 block text-sm font-medium text-gray-700">Подтверждение пароля<BaseInput v-model="passwordConfirmation" class="mt-1.5 w-full" type="password" autocomplete="new-password" minlength="12" required /></label>
-      <button class="mt-6 w-full rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="isSubmitting">{{ isSubmitting ? 'Сброс пароля…' : 'Сбросить пароль' }}</button>
+      <UiAlert v-if="error" class="mt-5">{{ error }}</UiAlert>
+      <label class="mt-6 block text-sm font-medium text-gray-700">Email<UiInput v-model="email" class="mt-1.5 w-full" type="email" autocomplete="email" required /></label>
+      <label class="mt-4 block text-sm font-medium text-gray-700">Новый пароль<UiInput v-model="password" class="mt-1.5 w-full" type="password" autocomplete="new-password" minlength="12" required /></label>
+      <label class="mt-4 block text-sm font-medium text-gray-700">Подтверждение пароля<UiInput v-model="passwordConfirmation" class="mt-1.5 w-full" type="password" autocomplete="new-password" minlength="12" required /></label>
+      <UiButton class="mt-6 w-full" type="submit" :loading="isSubmitting" :disabled="isSubmitting">{{ isSubmitting ? 'Сброс пароля…' : 'Сбросить пароль' }}</UiButton>
       <RouterLink class="mt-5 block text-center text-sm font-semibold text-primary-600 hover:text-primary-700" :to="{ name: 'login' }">Вернуться ко входу</RouterLink>
   </form>
 </template>
