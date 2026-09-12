@@ -114,7 +114,7 @@ test('product filters apply dynamically and reset to the first page', async ({ p
     const url = new URL(request.url())
     return url.pathname.endsWith('/admin/products') && url.searchParams.get('search') === 'монте'
   })
-  await page.getByLabel('Поиск').fill('монте')
+  await page.getByRole('search').getByLabel('Поиск').fill('монте')
   const request = await requestPromise
   const query = new URL(request.url()).searchParams
   expect(query.get('category_id')).toBe('1')
@@ -131,7 +131,7 @@ test('product filters apply dynamically and reset to the first page', async ({ p
   })
   await page.getByRole('button', { name: 'Сбросить' }).click()
   await resetRequest
-  await expect(page.getByLabel('Поиск')).toHaveValue('')
+  await expect(page.getByRole('search').getByLabel('Поиск')).toHaveValue('')
   await expect(page.getByLabel('Категория')).toContainText('Все категории')
   await expect(page.getByRole('radio', { name: 'Все' }).first()).toBeChecked()
   await expect(page.getByTestId('product-count')).toHaveText('Всего товаров в каталоге: 16')
@@ -166,7 +166,7 @@ test('product Excel export downloads the current filtered and sorted selection',
   await page.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
   await page.getByRole('radio', { name: 'Активные', exact: true }).locator('..').click()
-  await page.getByLabel('Поиск').fill('монте')
+  await page.getByRole('search').getByLabel('Поиск').fill('монте')
 
   const requestPromise = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/export'))
   const downloadPromise = page.waitForEvent('download')

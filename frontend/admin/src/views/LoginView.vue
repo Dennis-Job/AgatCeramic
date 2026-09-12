@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaseInput from '../components/BaseInput.vue'
 import { useRoute, useRouter } from 'vue-router'
+import UiAlert from '../components/ui/UiAlert.vue'
+import UiButton from '../components/ui/UiButton.vue'
+import UiInput from '../components/ui/UiInput.vue'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
@@ -33,20 +35,20 @@ async function submit(): Promise<void> {
       <h1 class="mt-3 text-2xl font-bold text-gray-900">Вход в админ-панель</h1>
       <p class="mt-2 text-sm text-gray-500">Используйте учётную запись сотрудника.</p>
 
-      <p v-if="error" class="mt-5 rounded-lg bg-error-50 px-3 py-2 text-sm text-error-500" role="alert">{{ error }}</p>
-      <p v-if="route.query.password_reset === '1' || route.query.password_changed === '1'" class="mt-5 rounded-lg bg-success-50 px-3 py-2 text-sm text-success-700" role="status">Пароль изменён. Теперь войдите с новым паролем.</p>
+      <UiAlert v-if="error" class="mt-5">{{ error }}</UiAlert>
+      <UiAlert v-if="route.query.password_reset === '1' || route.query.password_changed === '1'" class="mt-5" tone="success" live="polite">Пароль изменён. Теперь войдите с новым паролем.</UiAlert>
 
       <label class="mt-6 block text-sm font-medium text-gray-700">
         Email
-        <BaseInput v-model="email" class="mt-1.5 w-full" type="email" autocomplete="username" required />
+        <UiInput v-model="email" class="mt-1.5 w-full" type="email" autocomplete="username" required />
       </label>
       <label class="mt-4 block text-sm font-medium text-gray-700">
         Пароль
-        <BaseInput v-model="password" class="mt-1.5 w-full" type="password" autocomplete="current-password" required />
+        <UiInput v-model="password" class="mt-1.5 w-full" type="password" autocomplete="current-password" required />
       </label>
       <RouterLink class="mt-3 inline-block text-sm font-semibold text-primary-600 hover:text-primary-700" :to="{ name: 'forgot-password' }">Забыли пароль?</RouterLink>
-      <button class="mt-6 w-full rounded-lg bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" type="submit" :disabled="isSubmitting">
+      <UiButton class="mt-6 w-full" type="submit" :loading="isSubmitting" :disabled="isSubmitting">
         {{ isSubmitting ? 'Выполняется вход…' : 'Войти' }}
-      </button>
+      </UiButton>
   </form>
 </template>
