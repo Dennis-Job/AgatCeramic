@@ -15,7 +15,7 @@ defineEmits<{ select: [order: Order] }>()
   <template v-else>
     <div class="divide-y divide-gray-100 md:hidden xl:block">
       <article v-for="order in orders" :key="order.id" :class="selectedId === order.id ? 'bg-primary-50' : ''" class="p-4">
-        <button type="button" class="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50" :aria-label="`Открыть заказ ${order.order_number}`" :aria-current="selectedId === order.id ? 'true' : undefined" @click="$emit('select', order)">
+        <button type="button" class="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" :aria-label="`Открыть заказ ${order.order_number}`" :aria-current="selectedId === order.id ? 'true' : undefined" @click="$emit('select', order)">
           <div class="flex flex-wrap items-start justify-between gap-2"><div><span class="block break-all font-semibold text-gray-800">{{ order.order_number }}</span><span class="mt-1 block text-xs text-gray-500">{{ date(order.created_at) }}</span></div><strong class="text-gray-700">{{ amount(order.total_amount) }}</strong></div>
           <div class="mt-3 flex flex-wrap gap-2"><UiBadge tone="primary">{{ statusName(order.status) }}</UiBadge><UiBadge tone="neutral">{{ paymentName(order.payment_status) }}</UiBadge></div>
           <p class="mt-3 break-words text-sm font-medium text-gray-700">{{ order.customer.name }}</p><p class="break-all text-xs text-gray-500">{{ order.customer.phone }}</p>

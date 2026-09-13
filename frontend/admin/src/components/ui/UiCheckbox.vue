@@ -1,2 +1,34 @@
-<script setup lang="ts">import { computed } from 'vue'; import { Check } from '@lucide/vue'; const props = defineProps<{ modelValue?: Array<number | string>; value?: number | string; checked?: boolean; mode?: 'boolean'; accessibleName?: string; disabled?: boolean }>(); const emit = defineEmits<{ 'update:modelValue': [value: Array<number | string>]; 'update:checked': [value: boolean] }>(); const booleanMode = computed(() => props.mode === 'boolean'); const selected = computed(() => booleanMode.value ? props.checked : props.modelValue?.includes(props.value as number | string)); function toggle() { if (props.disabled) return; if (booleanMode.value) { emit('update:checked', !props.checked); return }; const values = props.modelValue ?? []; const value = props.value as number | string; emit('update:modelValue', values.includes(value) ? values.filter(item => item !== value) : [...values, value]) }</script>
-<template><label class="flex min-h-[42px] cursor-pointer items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-600 transition hover:border-primary-200 hover:bg-primary-25 focus-within:border-primary-500 focus-within:ring-4 focus-within:ring-primary-50" :class="{ 'border-primary-500 bg-primary-50 text-primary-600': selected, 'cursor-not-allowed opacity-60': disabled }"><input class="sr-only" type="checkbox" :checked="selected" :disabled="disabled" :aria-label="accessibleName" @change="toggle"><span class="grid h-5 w-5 shrink-0 place-items-center rounded-md border transition" :class="selected ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-400 bg-white text-transparent'"><Check :size="14" :stroke-width="3"/></span><span class="min-w-0 break-words [overflow-wrap:anywhere]"><slot/></span></label></template>
+<script setup lang="ts">
+import { computed } from 'vue'
+import { Check } from '@lucide/vue'
+
+const props = defineProps<{ modelValue?: Array<number | string>; value?: number | string; checked?: boolean; mode?: 'boolean'; accessibleName?: string; disabled?: boolean }>()
+const emit = defineEmits<{ 'update:modelValue': [value: Array<number | string>]; 'update:checked': [value: boolean] }>()
+const booleanMode = computed(() => props.mode === 'boolean')
+const selected = computed(() => booleanMode.value ? props.checked : props.modelValue?.includes(props.value as number | string))
+const labelClasses = computed(() => props.disabled
+  ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-200 hover:bg-gray-50'
+  : selected.value ? 'border-primary-500 bg-primary-50 text-primary-600' : '')
+const indicatorClasses = computed(() => props.disabled
+  ? selected.value ? 'border-gray-400 bg-gray-100 text-gray-600' : 'border-gray-300 bg-gray-100 text-transparent'
+  : selected.value ? 'border-primary-500 bg-primary-500 text-white' : 'border-gray-400 bg-white text-transparent')
+
+function toggle() {
+  if (props.disabled) return
+  if (booleanMode.value) {
+    emit('update:checked', !props.checked)
+    return
+  }
+  const values = props.modelValue ?? []
+  const value = props.value as number | string
+  emit('update:modelValue', values.includes(value) ? values.filter(item => item !== value) : [...values, value])
+}
+</script>
+
+<template>
+  <label class="flex min-h-[var(--admin-control-height-md)] cursor-pointer items-center gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-600 transition hover:border-primary-200 hover:bg-primary-25 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2" :class="labelClasses">
+    <input class="sr-only" type="checkbox" :checked="selected" :disabled="disabled" :aria-label="accessibleName" @change="toggle">
+    <span class="grid h-5 w-5 shrink-0 place-items-center rounded-md border transition" :class="indicatorClasses"><Check :size="14" :stroke-width="3" /></span>
+    <span class="min-w-0 break-words [overflow-wrap:anywhere]"><slot /></span>
+  </label>
+</template>

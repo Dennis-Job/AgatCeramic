@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="root" class="relative">
-    <div class="flex h-11 items-center rounded-lg border border-gray-300 bg-white px-3 shadow-theme-xs transition focus-within:border-primary-500 focus-within:ring-3 focus-within:ring-primary-500/10">
+    <div class="flex h-11 items-center rounded-lg border border-gray-300 bg-white px-3 shadow-theme-xs transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2">
       <CalendarDays :size="18" class="shrink-0 text-gray-400" aria-hidden="true" />
       <input ref="input" :value="typedValue" type="text" inputmode="numeric" maxlength="10" class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-400" :placeholder="placeholder" :aria-label="accessibleName" @focus="open" @input="updateTypedValue" @keydown.enter.prevent="confirmTypedValue" @blur="normalizeTypedValue" />
       <button v-if="modelValue" type="button" class="rounded p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600" aria-label="Очистить дату" @click="clear">

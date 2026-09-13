@@ -1,9 +1,5 @@
 import { apiFetch, requestCsrfCookie } from '../../../services/auth'
-import type { Product } from './products'
-
-export type ProductRelationType = 'related' | 'recommended'
-export type ProductRelation = { id: number; product_id: number; related_product_id: number; type: ProductRelationType; sort_order: number; related_product: Product; created_at: string; updated_at: string }
-export type ProductRelationPayload = { relations: Array<{ related_product_id: number; type: ProductRelationType; sort_order: number }> }
+import type { Product, ProductRelation, ProductRelationPayload } from '../types/product.types'
 export class ProductRelationRequestError extends Error { readonly details: Record<string, string[]>; constructor(message: string, details: Record<string, string[]>) { super(message); this.details = details } }
 async function fail(response: Response): Promise<never> { const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }; const details = body.error?.details ?? {}; throw new ProductRelationRequestError(Object.values(details).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.', details) }
 export async function getProductRelations(productId: number): Promise<ProductRelation[]> { const response = await apiFetch(`/admin/products/${productId}/relations`); if (!response.ok) return fail(response); return ((await response.json()) as { data: ProductRelation[] }).data }
