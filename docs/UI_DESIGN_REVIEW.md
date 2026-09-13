@@ -12,7 +12,7 @@
 
 Для любых изменений интерфейса в `frontend/admin/` перед началом работы обязательно прочитать:
 
-- `frontend/admin/AGENTS.md`
+- [`frontend/admin/AGENTS.md`](../frontend/admin/AGENTS.md)
 
 Файл `frontend/admin/AGENTS.md` является главным источником архитектурных правил Admin-приложения и определяет:
 
@@ -26,7 +26,8 @@
 - правила рефакторинга перегруженных Vue-компонентов;
 - требования SOLID и clean code для Admin frontend.
 
-`UI_DESIGN_REVIEW.md` не дублирует архитектурные правила из `frontend/admin/AGENTS.md`.
+`UI_DESIGN_REVIEW.md` не дублирует архитектурные правила из
+[`frontend/admin/AGENTS.md`](../frontend/admin/AGENTS.md).
 
 Если между этим документом и `frontend/admin/AGENTS.md` возникает расхождение в вопросах архитектуры, структуры компонентов, UI-kit или design tokens, для кода внутри `frontend/admin/` приоритет имеет `frontend/admin/AGENTS.md`.
 
@@ -58,7 +59,12 @@ UI Design Guard должен проверять:
 
 При обнаружении архитектурного нарушения UI Design Guard должен ссылаться на соответствующее правило из `frontend/admin/AGENTS.md`.
 
-Не дублировать перечисленные паттерны в представлениях. Если появляется новый повторно используемый паттерн, сначала создать обобщённый компонент, выдержанный в существующих токенах. Не добавлять произвольные цвета, шрифты, тени, радиусы и размеры вне `style.css` без отдельного обоснованного изменения дизайн-системы.
+Не дублировать перечисленные паттерны в представлениях. Если появляется новый повторно используемый
+паттерн, сначала создать обобщённый компонент, выдержанный в существующих токенах. Не добавлять
+произвольные цвета, шрифты, тени, радиусы и размеры в обход
+[`frontend/admin/src/styles/tokens.css`](../frontend/admin/src/styles/tokens.css) и правил
+[`UI_KIT.md`](../frontend/admin/src/components/shared/UI_KIT.md) без отдельного обоснованного изменения
+дизайн-системы.
 
 ## Client: развитие дизайн-системы
 
@@ -76,10 +82,27 @@ UI Design Guard должен проверять:
 6. Контент: проверить длинные русские строки и реальные данные.
 7. Проверка: выполнить релевантную сборку и визуально открыть затронутые маршруты. При изменении токенов, layout или shared-компонентов перепроверить все маршруты из следующего списка.
 
+Полный воспроизводимый Admin-прогон выполняется из корня репозитория:
+
+```sh
+cd frontend/admin
+npm run build
+npm run test:unit
+npm run test:e2e
+```
+
+Linux Compose-проверка выполняется из корня репозитория:
+
+```sh
+docker compose --profile test run --rm admin-e2e
+```
+
 ## Маршруты для визуальной QA
 
-Admin: `/login`, `/forgot-password`, `/reset-password`, `/`, `/profile`, `/products`, `/categories`, `/brands`, `/attribute-groups`, `/attributes`, `/employees`, `/roles`, `/permissions`, `/audit-log`, `/orders`, `/content`, `/settings`.
+Admin: `/login`, `/forgot-password`, `/reset-password`, `/`, `/profile`, `/products`, `/categories`, `/brands`, `/attribute-groups`, `/attributes`, `/employees`, `/roles`, `/permissions`, `/audit-log`, `/orders`, `/contacts`, `/content`, `/settings`.
 
 Client: `/` и все изменённые или новые маршруты.
 
-Локальные адреса для ручной проверки: admin — `http://localhost:5173`, client — `http://localhost:3000`.
+Для ручной проверки запустить `npm run dev -- --host 127.0.0.1 --port 5173` из
+`frontend/admin/` либо `npm run dev -- --host 127.0.0.1 --port 3000` из `frontend/client/`.
+Локальные адреса: Admin — `http://127.0.0.1:5173`, Client — `http://127.0.0.1:3000`.

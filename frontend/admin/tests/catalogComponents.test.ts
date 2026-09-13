@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { mount } from '@vue/test-utils'
 import { describe, expect, test } from 'vitest'
 import UiSelect from '../src/components/ui/UiSelect.vue'
@@ -11,6 +12,46 @@ import PageHeader from '../src/components/shared/PageHeader.vue'
 import UiTable from '../src/components/ui/UiTable.vue'
 import { sortByLabel } from '../src/utils/alphabetical'
 import { attributeTypeLabel, attributeTypeOptions } from '../src/utils/attributeTypes'
+
+const readSource = (relativePath: string) => readFileSync(new URL(relativePath, import.meta.url), 'utf8')
+
+describe('products feature boundaries', () => {
+  test('keeps product domain types in the feature types module', () => {
+    const editorComposable = readSource('../src/features/products/composables/useProductEditor.ts')
+    const contextComposable = readSource('../src/features/products/composables/useProductEditorContext.ts')
+    const productService = readSource('../src/features/products/services/products.ts')
+    const productTypes = readSource('../src/features/products/types/product.types.ts')
+
+    expect(editorComposable).not.toMatch(/from\s+['"][^'"]+\.vue['"]/) // composables must not import components
+    expect(contextComposable).not.toMatch(/from\s+['"][^'"]+\.vue['"]/) // context stays feature-layer only
+    expect(productService).not.toMatch(/export\s+(?:interface|type)\s+Product/)
+    expect(productTypes).toMatch(/export\s+type\s+AttributeDraftValue/)
+    expect(productTypes).toMatch(/export\s+type\s+Product\s*=/)
+  })
+
+  test('uses UI-kit controls throughout product components', () => {
+    const componentNames = [
+      'ProductEditor.vue',
+      'ProductEditorSteps.vue',
+      'ProductMainSection.vue',
+      'ProductAttributesSection.vue',
+      'ProductImagesSection.vue',
+      'ProductVariantsSection.vue',
+      'ProductRelationsSection.vue',
+      'ProductReviewSection.vue',
+      'ProductImportDialog.vue',
+      'ProductGroupImportDialog.vue',
+      'ProductPriceStatusImportDialog.vue',
+    ]
+
+    for (const componentName of componentNames) {
+      const source = readSource(`../src/features/products/components/${componentName}`)
+      expect(source, componentName).not.toMatch(/<(?:button|select|textarea|table)\b/)
+      const inputs = source.match(/<input\b[^>]*>/g) ?? []
+      expect(inputs.every(input => /type="file"/.test(input)), componentName).toBe(true)
+    }
+  })
+})
 
 describe('attribute type labels', () => {
   test('provides Russian labels for every supported attribute type', () => {
@@ -107,6 +148,10 @@ describe('shared page patterns', () => {
     })
 
     expect(wrapper.get('table').attributes('aria-label')).toBe('Список сотрудников')
+    expect(wrapper.get('[role="region"]').attributes('aria-label')).toBe('Список сотрудников')
+    expect(wrapper.get('[role="region"]').classes()).toContain('[contain:paint]')
+    expect(wrapper.get('[role="region"]').classes()).toContain('focus-visible:ring-2')
+    expect(wrapper.get('[role="region"]').classes()).toContain('focus-visible:ring-inset')
     expect(wrapper.get('table').classes()).toContain('min-w-[680px]')
     expect(wrapper.get('table').classes()).toContain('admin-table-employees')
     expect(wrapper.text()).toContain('Иван')

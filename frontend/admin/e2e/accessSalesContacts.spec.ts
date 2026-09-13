@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from './fixtures'
+import { createDeferredApiRequests, type DeferredApiRequests } from './deferredApi'
 
 const timestamp = '2026-09-11T10:00:00.000Z'
 const permissions = ['admin-users.view', 'admin-users.manage', 'roles.view', 'roles.manage', 'permissions.view', 'audit-log.view', 'orders.view', 'orders.manage', 'payments.manage', 'contacts.view', 'contacts.manage']
@@ -9,16 +10,15 @@ const contact = { id: 1, type: 'callback', contact: { name: 'Иван Петро
 const order = { id: 1, order_number: 'AC-20260911-A029', customer: { name: 'Иван Петров', phone: '+79990000000', email: 'ivan@example.test' }, delivery_address: 'Москва', customer_comment: null, status: 'new', payment_status: 'not_paid', payment_amount: null, payment_method: null, payment_reference: null, total_amount: '1990.00', items: [], paid_at: null, completed_at: null, created_at: timestamp }
 const pageOf = <T>(items: T[]) => ({ data: items, meta: { current_page: 1, last_page: 1, per_page: 25, total: items.length, from: items.length ? 1 : null, to: items.length || null } })
 
-type MockOptions = { grantedPermissions?: string[]; failingPaths?: string[]; delayedPaths?: string[] }
+type MockOptions = { grantedPermissions?: string[]; failingPaths?: string[]; deferredRequests?: DeferredApiRequests }
 
 async function mockApi(page: Page, options: MockOptions = {}): Promise<void> {
   const grantedPermissions = options.grantedPermissions ?? permissions
   const failingPaths = new Set(options.failingPaths ?? [])
-  const delayedPaths = new Set(options.delayedPaths ?? [])
   await page.route('**/sanctum/csrf-cookie', route => route.fulfill({ status: 204 }))
   await page.route('**/api/v1/**', async route => {
     const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
-    if (delayedPaths.has(path)) await new Promise(resolve => setTimeout(resolve, 800))
+    await options.deferredRequests?.wait(path)
     if (failingPaths.has(path)) return route.fulfill({ status: 500, json: { error: { message: `Недоступен ресурс ${path}` } } })
     if (path === '/admin/auth/me') return route.fulfill({ json: { data: { ...employee, permissions: grantedPermissions } } })
     if (path === '/admin/users') return route.fulfill({ json: pageOf([employee]) })
@@ -47,7 +47,8 @@ test('TASK-A029 routes render without serious accessibility violations', async (
   for (const [path, heading] of routes) {
     await page.goto(path)
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+    await page.waitForLoadState('networkidle')
+    const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations.filter(violation => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
   }
 })
@@ -83,7 +84,9 @@ test('employee mutations require the manage permission', async ({ page }) => {
   await expect(page.getByRole('button', { name: /(?:Редактировать|Удалить) сотрудника/ })).toHaveCount(0)
 })
 
-test('dependent mutations are blocked when reference data is unavailable', async ({ page }) => {
+test('dependent mutations are blocked when reference data is unavailable', async ({ page, browserIssueGuard }) => {
+  browserIssueGuard.allowApiError(500, '/api/v1/admin/users/roles')
+  browserIssueGuard.allowApiError(500, '/api/v1/admin/contact-statuses')
   await mockApi(page, { failingPaths: ['/admin/users/roles', '/admin/contact-statuses'] })
   await page.goto('/employees')
   await expect(page.getByRole('alert')).toContainText('Редактирование сотрудников временно недоступно')
@@ -97,37 +100,55 @@ test('dependent mutations are blocked when reference data is unavailable', async
 })
 
 test('dependent controls wait for their reference data', async ({ page }) => {
-  await mockApi(page, { delayedPaths: ['/admin/users/roles', '/admin/roles/permissions', '/admin/order-statuses', '/admin/contact-statuses', '/admin/contact-assignees'] })
+  const deferredRequests = createDeferredApiRequests()
+  await mockApi(page, { deferredRequests })
+
+  const employeeRoles = deferredRequests.defer('/admin/users/roles')
   await page.goto('/employees')
+  await employeeRoles.requested
   const employeeButton = page.getByRole('button', { name: 'Добавить сотрудника' })
   await expect(employeeButton).toBeDisabled()
+  employeeRoles.release()
   await expect(employeeButton).toBeEnabled()
 
+  const rolePermissions = deferredRequests.defer('/admin/roles/permissions')
   await page.goto('/roles')
+  await rolePermissions.requested
   const roleButton = page.getByRole('button', { name: 'Добавить роль' })
   await expect(roleButton).toBeDisabled()
+  rolePermissions.release()
   await expect(roleButton).toBeEnabled()
 
+  const orderStatuses = deferredRequests.defer('/admin/order-statuses')
   await page.goto('/orders')
+  await orderStatuses.requested
   const orderStatusFilter = page.getByLabel('Статус заказа', { exact: true })
   await expect(orderStatusFilter).toBeDisabled()
   await page.getByRole('button', { name: 'Найти' }).click()
   await page.getByRole('button', { name: `Открыть заказ ${order.order_number}` }).click()
   await expect(page.getByRole('button', { name: 'Сохранить', exact: true })).toHaveCount(0)
+  orderStatuses.release()
   await expect(orderStatusFilter).toBeEnabled()
   await expect(page.getByRole('button', { name: 'Сохранить', exact: true })).toBeVisible()
 
+  const contactStatuses = deferredRequests.defer('/admin/contact-statuses')
+  const contactAssignees = deferredRequests.defer('/admin/contact-assignees')
   await page.goto('/contacts')
+  await contactStatuses.requested
   const contactStatusFilter = page.getByLabel('Статус обращения', { exact: true })
   await expect(contactStatusFilter).toBeDisabled()
-  await page.getByRole('button', { name: 'Найти' }).click()
-  await page.getByRole('button', { name: 'Открыть обращение 1' }).click()
   await expect(page.getByRole('heading', { name: 'Обработка' })).toHaveCount(0)
+  contactStatuses.release()
+  await contactAssignees.requested
+  contactAssignees.release()
   await expect(contactStatusFilter).toBeEnabled()
+  await page.getByRole('button', { name: 'Открыть обращение 1' }).click()
   await expect(page.getByLabel('Ответственный')).toBeVisible()
 })
 
-test('initial detail failures remain visible', async ({ page }) => {
+test('initial detail failures remain visible', async ({ page, browserIssueGuard }) => {
+  browserIssueGuard.allowApiError(500, '/api/v1/admin/orders/1')
+  browserIssueGuard.allowApiError(500, '/api/v1/admin/contact-requests/1')
   await mockApi(page, { failingPaths: ['/admin/orders/1', '/admin/contact-requests/1'] })
   await page.goto('/orders')
   await page.getByRole('button', { name: `Открыть заказ ${order.order_number}` }).click()

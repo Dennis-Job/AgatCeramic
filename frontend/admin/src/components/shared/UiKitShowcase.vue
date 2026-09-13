@@ -79,6 +79,9 @@ function confirmAction(): void {
           <UiButton variant="danger-ghost">Удалить</UiButton>
           <UiButton :loading="isButtonLoading" @click="showLoadingState">Загрузка</UiButton>
           <UiButton disabled>Недоступна</UiButton>
+          <UiButton variant="secondary" disabled>Вторичная недоступна</UiButton>
+          <UiButton variant="danger" disabled>Опасная недоступна</UiButton>
+          <UiButton variant="ghost" disabled>Прозрачная недоступна</UiButton>
         </div>
       </UiCard>
 
@@ -124,6 +127,7 @@ function confirmAction(): void {
           <div class="grid gap-2 sm:grid-cols-2">
             <UiRadio v-model="radio" name="ui-kit-radio" value="standard">Стандартный</UiRadio>
             <UiRadio v-model="radio" name="ui-kit-radio" value="extended">Расширенный</UiRadio>
+            <UiRadio v-model="radio" name="ui-kit-radio" value="disabled" disabled>Недоступный</UiRadio>
           </div>
         </div>
       </UiCard>

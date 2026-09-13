@@ -1,31 +1,121 @@
 :root {
   --admin-font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
   --admin-font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
-  --admin-color-primary: #465fff;
-  --admin-color-primary-hover: #3641f5;
-  --admin-color-surface: #ffffff;
+
+  --admin-color-primary-25: #f2f7ff;
+  --admin-color-primary-50: #ecf3ff;
+  --admin-color-primary-100: #dde9ff;
+  --admin-color-primary-200: #c2d6ff;
+  --admin-color-primary-300: #9cb9ff;
+  --admin-color-primary-400: #7592ff;
+  --admin-color-primary-500: #465fff;
+  --admin-color-primary-600: #3641f5;
+  --admin-color-primary-700: #2a31d8;
+  --admin-color-primary-800: #252dae;
+  --admin-color-primary-900: #262e89;
+  --admin-color-primary-950: #161950;
+
+  --admin-color-white: #ffffff;
   --admin-color-page: #f7f9fc;
-  --admin-color-text: #101828;
-  --admin-color-text-muted: #667085;
-  --admin-color-border: #d0d5dd;
-  --admin-color-danger: #f04438;
-  --admin-color-success: #039855;
-  --admin-spacing-1: 0.25rem;
-  --admin-spacing-2: 0.5rem;
-  --admin-spacing-3: 0.75rem;
-  --admin-spacing-4: 1rem;
-  --admin-spacing-5: 1.25rem;
-  --admin-spacing-6: 1.5rem;
-  --admin-radius-sm: 0.375rem;
-  --admin-radius-md: 0.5rem;
-  --admin-radius-lg: 0.75rem;
+  --admin-color-gray-25: #fcfcfd;
+  --admin-color-gray-50: #f9fafb;
+  --admin-color-gray-100: #f2f4f7;
+  --admin-color-gray-200: #e4e7ec;
+  --admin-color-gray-300: #d0d5dd;
+  --admin-color-gray-400: #667085;
+  --admin-color-gray-500: #475467;
+  --admin-color-gray-600: #344054;
+  --admin-color-gray-700: #1d2939;
+  --admin-color-gray-800: #101828;
+  --admin-color-gray-900: #0c111d;
+  --admin-color-gray-950: #070b12;
+  --admin-color-gray-dark: #1a2231;
+  --admin-color-text: var(--admin-color-gray-900);
+
+  --admin-color-success-25: #f6fef9;
+  --admin-color-success-50: #ecfdf3;
+  --admin-color-success-100: #d1fadf;
+  --admin-color-success-200: #a6f4c5;
+  --admin-color-success-500: #027a48;
+  --admin-color-success-600: #05603a;
+  --admin-color-success-700: #054f31;
+
+  --admin-color-warning-25: #fffcf5;
+  --admin-color-warning-50: #fffaeb;
+  --admin-color-warning-100: #fef0c7;
+  --admin-color-warning-200: #fedf89;
+  --admin-color-warning-500: #b54708;
+  --admin-color-warning-600: #93370d;
+  --admin-color-warning-700: #792e0d;
+
+  --admin-color-error-25: #fffbfa;
+  --admin-color-error-50: #fef3f2;
+  --admin-color-error-100: #fee4e2;
+  --admin-color-error-200: #fecdca;
+  --admin-color-error-500: #b42318;
+  --admin-color-error-600: #912018;
+  --admin-color-error-700: #7a1b15;
+
+  --admin-color-blue-50: #eff6ff;
+  --admin-color-blue-500: #2563eb;
+  --admin-color-blue-700: #1d4ed8;
+  --admin-color-green-500: #047857;
+
+  --admin-color-orange-25: #fffaf5;
+  --admin-color-orange-50: #fff6ed;
+  --admin-color-orange-100: #ffead5;
+  --admin-color-orange-200: #fddcab;
+  --admin-color-orange-300: #feb273;
+  --admin-color-orange-400: #fd853a;
+  --admin-color-orange-500: #c4320a;
+  --admin-color-orange-600: #9c2a10;
+  --admin-color-orange-700: #7e2410;
+  --admin-color-orange-800: #681d0c;
+  --admin-color-orange-900: #57180a;
+  --admin-color-orange-950: #421006;
+
+  --admin-color-blue-light-25: #f5fbff;
+  --admin-color-blue-light-50: #f0f9ff;
+  --admin-color-blue-light-100: #e0f2fe;
+  --admin-color-blue-light-200: #b9e6fe;
+  --admin-color-blue-light-300: #7cd4fd;
+  --admin-color-blue-light-400: #36bffa;
+  --admin-color-blue-light-500: #026aa2;
+  --admin-color-blue-light-600: #065986;
+  --admin-color-blue-light-700: #0b4a6f;
+  --admin-color-blue-light-800: #0c3b58;
+  --admin-color-blue-light-900: #082f49;
+  --admin-color-blue-light-950: #062c41;
+
+  --admin-spacing-unit: 0.25rem;
+  --admin-spacing-1: var(--admin-spacing-unit);
+  --admin-spacing-2: calc(var(--admin-spacing-unit) * 2);
+  --admin-spacing-3: calc(var(--admin-spacing-unit) * 3);
+  --admin-spacing-4: calc(var(--admin-spacing-unit) * 4);
+  --admin-spacing-5: calc(var(--admin-spacing-unit) * 5);
+  --admin-spacing-6: calc(var(--admin-spacing-unit) * 6);
+
+  --admin-radius-md: 0.375rem;
+  --admin-radius-lg: 0.5rem;
+  --admin-radius-xl: 0.75rem;
+  --admin-radius-2xl: 1rem;
+
   --admin-control-height-sm: 2rem;
   --admin-control-height-md: 2.625rem;
   --admin-control-height-lg: 3rem;
-  --admin-border-default: 1px solid var(--admin-color-border);
+  --admin-border-width: 1px;
+  --admin-border-default: var(--admin-border-width) solid var(--admin-color-gray-300);
+
   --admin-shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
   --admin-shadow-input: 0 1px 2px rgb(16 24 40 / 0.05);
   --admin-shadow-dialog: 0 8px 24px rgb(16 24 40 / 0.08);
-  --admin-transition-control: 150ms ease;
-  --admin-focus-ring: 0 0 0 4px rgb(236 243 255);
+  --admin-shadow-dropdown: 0 12px 20px rgb(16 24 40 / 0.12);
+  --admin-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.10), 0 1px 2px -1px rgb(0 0 0 / 0.10);
+  --admin-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+
+  --admin-transition-duration: 150ms;
+  --admin-transition-timing: ease;
+  --admin-focus-outline-width: 2px;
+  --admin-focus-outline-offset: 2px;
+  --admin-focus-ring: 0 0 0 2px var(--admin-color-white), 0 0 0 4px var(--admin-color-primary-500);
 }

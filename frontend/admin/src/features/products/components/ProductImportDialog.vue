@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { CheckCircle2, Download, ImagePlus, Upload, X } from '@lucide/vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
+import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
+import UiField from '../../../components/ui/UiField.vue'
+import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
+import UiRadio from '../../../components/ui/UiRadio.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import { getCategories } from '../../categories/services/categories'
 import type { Category } from '../../categories/types/category.types'
-import { getProductImport, getProductImportErrors, getProductImportTemplate, uploadProductImport, type ProductImport } from '../services/products'
-import { getProductImageImport, getProductImageImportErrors, uploadProductImageImport, type ProductImageImport } from '../services/productImageImports'
+import { getProductImport, getProductImportErrors, getProductImportTemplate, uploadProductImport } from '../services/products'
+import { getProductImageImport, getProductImageImportErrors, uploadProductImageImport } from '../services/productImageImports'
+import type { ProductImageImport, ProductImport } from '../types/product.types'
 import { compareAlphabetically } from '../../../utils/alphabetical'
 
 const props = defineProps<{ open: boolean }>()
@@ -201,27 +208,27 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (ima
         <h2 id="product-import-title" class="text-xl font-bold text-gray-900">Массовая загрузка</h2>
         <p id="product-import-description" class="mt-1 text-sm text-gray-500">{{ tab === 'products' ? 'Добавление и массовое редактирование товаров из Excel' : 'Массовая загрузка изображений товаров из ZIP-архива' }}</p>
       </div>
-      <button type="button" class="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500" aria-label="Закрыть массовую загрузку" @click="emit('close')"><X :size="20" aria-hidden="true" /></button>
+      <UiButton type="button" class="shrink-0" variant="ghost" size="sm" aria-label="Закрыть массовую загрузку" @click="emit('close')"><X :size="20" aria-hidden="true" /></UiButton>
     </header>
     <div class="min-h-0 overflow-y-auto overscroll-contain px-5 sm:px-7">
       <div class="grid grid-cols-2 gap-2 border-b border-gray-200" role="tablist" aria-label="Тип загрузки" @keydown="changeTab">
-        <button v-for="item in [{ id: 'products', label: 'Загрузка товаров' }, { id: 'images', label: 'Загрузка изображений' }]" :id="`import-tab-${item.id}`" :key="item.id" type="button" role="tab" :aria-selected="tab === item.id" :aria-controls="`import-panel-${item.id}`" :tabindex="tab === item.id ? 0 : -1" class="border-b-2 px-2 py-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500" :class="tab === item.id ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'" @click="tab = item.id as typeof tab">{{ item.label }}</button>
+        <UiButton v-for="item in [{ id: 'products', label: 'Загрузка товаров' }, { id: 'images', label: 'Загрузка изображений' }]" :id="`import-tab-${item.id}`" :key="item.id" type="button" variant="ghost" role="tab" :aria-selected="tab === item.id" :aria-controls="`import-panel-${item.id}`" :tabindex="tab === item.id ? 0 : -1" class="rounded-none border-b-2 py-4" :class="tab === item.id ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'" @click="tab = item.id as typeof tab">{{ item.label }}</UiButton>
       </div>
       <div v-show="tab === 'products'" id="import-panel-products" role="tabpanel" aria-labelledby="import-tab-products" class="space-y-5 py-5 sm:py-6">
         <fieldset :disabled="busy || downloading" class="grid gap-3 rounded-xl border border-gray-200 p-4 sm:grid-cols-2 sm:p-5">
           <legend class="px-1 text-base font-semibold text-gray-900">1. Выберите сценарий</legend>
-          <label class="flex cursor-pointer gap-3 rounded-lg border p-3 text-sm" :class="importMode === 'template' ? 'border-primary-500 bg-primary-50' : 'border-gray-200'"><input v-model="importMode" type="radio" value="template" class="mt-0.5 accent-primary-500" /><span><span class="block font-semibold text-gray-900">Добавить товары</span><span class="mt-1 block text-gray-600">Создайте товары по шаблону выбранной категории.</span></span></label>
-          <label class="flex cursor-pointer gap-3 rounded-lg border p-3 text-sm" :class="importMode === 'edit' ? 'border-primary-500 bg-primary-50' : 'border-gray-200'"><input v-model="importMode" type="radio" value="edit" class="mt-0.5 accent-primary-500" /><span><span class="block font-semibold text-gray-900">Редактировать товары</span><span class="mt-1 block text-gray-600">Скачайте товары категории с SKU и списками характеристик.</span></span></label>
+          <UiRadio v-model="importMode" name="product-import-mode" value="template"><span><span class="block font-semibold text-gray-900">Добавить товары</span><span class="mt-1 block text-gray-600">Создайте товары по шаблону выбранной категории.</span></span></UiRadio>
+          <UiRadio v-model="importMode" name="product-import-mode" value="edit"><span><span class="block font-semibold text-gray-900">Редактировать товары</span><span class="mt-1 block text-gray-600">Скачайте товары категории с SKU и списками характеристик.</span></span></UiRadio>
         </fieldset>
         <div>
           <h3 class="text-base font-semibold text-gray-900">2. Подготовьте шаблон</h3>
           <p class="mt-1 text-sm text-gray-500">{{ importMode === 'template' ? 'До 5 000 товаров в одном файле. Шаблон содержит характеристики выбранной категории.' : 'Файл содержит все товары выбранной категории, их SKU и характеристики. SKU определяет редактируемый товар.' }}</p>
-          <p v-if="categoriesLoading" class="mt-3 text-sm text-gray-500" role="status">Загружаем категории…</p>
-          <div v-else-if="categoryError" class="mt-3 text-sm text-error-500" role="alert">{{ categoryError }} <button type="button" class="rounded font-semibold underline focus-visible:ring-2 focus-visible:ring-primary-500" @click="loadCategories">Повторить</button></div>
-          <p v-else-if="!categoryOptions.length" class="mt-3 text-sm text-gray-500">Категорий пока нет. Сначала создайте категорию в каталоге.</p>
-          <fieldset v-else :disabled="busy || downloading" class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2 disabled:opacity-60">
-            <div class="min-w-0"><p class="mb-1.5 text-sm font-medium text-gray-700">Категория товаров</p><UiSelect v-model="categoryId" :options="categoryOptions" accessible-name="Категория товаров для загрузки" placeholder="Выберите категорию" searchable /></div>
-            <button type="button" :disabled="!categoryId" class="inline-flex items-center justify-center gap-2 self-end rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50" @click="downloadTemplate()"><Download :size="18" class="shrink-0" aria-hidden="true" />{{ downloading ? 'Скачиваем…' : 'Скачать шаблон Excel' }}</button>
+          <UiLoadingState v-if="categoriesLoading" class="mt-3" label="Загружаем категории…" />
+          <UiAlert v-else-if="categoryError" class="mt-3">{{ categoryError }} <UiButton type="button" variant="danger-ghost" size="sm" @click="loadCategories">Повторить</UiButton></UiAlert>
+          <UiEmptyState v-else-if="!categoryOptions.length" class="mt-3" label="Категорий пока нет. Сначала создайте категорию в каталоге." />
+          <fieldset v-else :disabled="busy || downloading" class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
+            <UiField class="min-w-0" label="Категория товаров"><UiSelect v-model="categoryId" class="mt-1.5" :options="categoryOptions" accessible-name="Категория товаров для загрузки" placeholder="Выберите категорию" searchable /></UiField>
+            <UiButton type="button" variant="secondary" class="self-end" :loading="downloading" :disabled="!categoryId || downloading" @click="downloadTemplate()"><Download :size="18" class="shrink-0" aria-hidden="true" />{{ downloading ? 'Скачиваем…' : 'Скачать шаблон Excel' }}</UiButton>
           </fieldset>
           <p class="mt-3 text-sm leading-6 text-gray-500">{{ importMode === 'template' ? 'SKU присваивается автоматически. Slug можно оставить пустым — он создастся из наименования.' : 'Не изменяйте SKU и не добавляйте строки: редактируются только товары выбранной категории.' }} Значения списков выбирайте в ячейках Excel; новые значения добавляются на сайте с соответствующими правами.</p>
         </div>
@@ -229,12 +236,12 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (ima
           <h3 class="text-base font-semibold text-gray-900">3. Загрузите заполненный файл</h3>
           <p id="product-import-file-help" class="mt-1 text-sm text-gray-500">XLSX, до 10 МБ. Корректные товары сохранятся, строки с ошибками можно будет исправить и загрузить повторно.</p>
           <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div class="min-w-0"><p id="product-import-file-label" class="mb-1.5 text-sm font-medium text-gray-700">Заполненный шаблон</p><input id="product-import-file" ref="input" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Заполненный шаблон" tabindex="-1" :disabled="busy || !categoryId" class="hidden" @change="selectFile"><button type="button" :disabled="busy || !categoryId" aria-labelledby="product-import-file-label product-import-file-selection" aria-describedby="product-import-file-help" class="flex w-full min-w-0 items-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm text-gray-600 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50" @click="input?.click()"><Upload :size="18" class="shrink-0" aria-hidden="true" /><span id="product-import-file-selection" class="min-w-0 break-all">{{ file?.name ?? 'Выбрать файл XLSX' }}</span></button></div>
-            <button type="submit" :disabled="busy || !file || !categoryId" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><Upload :size="18" aria-hidden="true" />{{ busy ? 'Загрузка…' : 'Загрузить' }}</button>
+            <div class="min-w-0"><p id="product-import-file-label" class="mb-1.5 text-sm font-medium text-gray-700">Заполненный шаблон</p><input id="product-import-file" ref="input" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Заполненный шаблон" tabindex="-1" :disabled="busy || !categoryId" class="hidden" @change="selectFile"><UiButton type="button" variant="secondary" class="w-full min-w-0 justify-start text-left" :disabled="busy || !categoryId" aria-labelledby="product-import-file-label product-import-file-selection" aria-describedby="product-import-file-help" @click="input?.click()"><Upload :size="18" class="shrink-0" aria-hidden="true" /><span id="product-import-file-selection" class="min-w-0 break-all">{{ file?.name ?? 'Выбрать файл XLSX' }}</span></UiButton></div>
+            <UiButton type="submit" :loading="busy" :disabled="busy || !file || !categoryId"><Upload :size="18" aria-hidden="true" />{{ busy ? 'Загрузка…' : 'Загрузить' }}</UiButton>
           </div>
         </form>
-        <p v-if="error" role="alert" class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-500">{{ error }}</p>
-        <p v-if="notice" role="status" class="text-sm text-success-700">{{ notice }}</p>
+        <UiAlert v-if="error">{{ error }}</UiAlert>
+        <UiAlert v-if="notice" tone="success" live="polite">{{ notice }}</UiAlert>
         <div class="min-h-32 rounded-xl border p-4 sm:p-5" :class="finished ? result?.failed_rows || result?.status === 'failed' ? 'border-warning-200 bg-warning-50' : 'border-success-200 bg-success-50' : 'border-gray-200 bg-gray-25'">
           <template v-if="finished && result">
             <div role="status" aria-live="polite">
@@ -245,14 +252,14 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (ima
             <ul v-if="result.row_errors?.length" class="mt-4 max-h-64 space-y-3 overflow-y-auto" aria-label="Ошибки товаров" tabindex="0">
               <li v-for="entry in result.row_errors" :key="entry.row" class="break-words rounded-lg border border-warning-200 bg-white p-3 text-sm"><p class="font-semibold text-gray-900">{{ entry.name || 'Без наименования' }} <span class="font-normal text-gray-500">· строка {{ entry.row }}</span></p><p v-for="message in entry.messages" :key="message" class="mt-1 text-gray-700">{{ message }}</p></li>
             </ul>
-            <button v-if="result.has_error_file" type="button" :disabled="downloading" class="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50" @click="downloadTemplate(true)"><Download :size="18" class="shrink-0" aria-hidden="true" />Скачать Excel с ошибками</button>
+            <UiButton v-if="result.has_error_file" type="button" variant="secondary" class="mt-4" :loading="downloading" :disabled="downloading" @click="downloadTemplate(true)"><Download :size="18" class="shrink-0" aria-hidden="true" />Скачать Excel с ошибками</UiButton>
           </template>
           <template v-else>
             <p role="status" aria-live="polite" class="text-sm text-gray-700">{{ statusText }}</p>
             <progress v-if="busy" class="mt-4 h-2 w-full accent-primary-500" aria-label="Обработка товаров" :value="progress" max="100" />
             <div v-else class="mt-4 h-2 rounded-full bg-gray-200" aria-hidden="true" />
             <p v-if="busy" class="mt-3 text-xs text-gray-500">Можно закрыть окно — обработка продолжится. Откройте «Загрузить массово», чтобы посмотреть результат.</p>
-            <p v-if="pollingError && result" class="mt-3 text-sm text-error-500" role="alert">Не удалось получить статус. Обработка на сервере продолжается. <button type="button" class="rounded font-semibold underline focus-visible:ring-2 focus-visible:ring-primary-500" @click="poll(result.id)">Обновить статус</button></p>
+            <UiAlert v-if="pollingError && result" class="mt-3">Не удалось получить статус. Обработка на сервере продолжается. <UiButton type="button" variant="danger-ghost" size="sm" @click="poll(result.id)">Обновить статус</UiButton></UiAlert>
           </template>
         </div>
       </div>
@@ -286,16 +293,16 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (ima
             <div class="min-w-0">
               <p id="image-import-file-label" class="mb-1.5 text-sm font-medium text-gray-700">ZIP-архив с изображениями</p>
               <input id="image-import-file" ref="imageInput" type="file" accept=".zip,application/zip" class="hidden" :disabled="imageBusy" @change="selectImageFile">
-              <button type="button" :disabled="imageBusy" aria-labelledby="image-import-file-label image-import-file-selection" aria-describedby="image-import-file-help" class="flex w-full min-w-0 items-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm text-gray-600 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50" @click="imageInput?.click()">
+              <UiButton type="button" variant="secondary" class="w-full min-w-0 justify-start text-left" :disabled="imageBusy" aria-labelledby="image-import-file-label image-import-file-selection" aria-describedby="image-import-file-help" @click="imageInput?.click()">
                 <Upload :size="18" class="shrink-0" aria-hidden="true" />
                 <span id="image-import-file-selection" class="min-w-0 break-all">{{ imageFile?.name ?? 'Выбрать ZIP-архив' }}</span>
-              </button>
+              </UiButton>
             </div>
-            <button type="submit" :disabled="imageBusy || !imageFile" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><Upload :size="18" aria-hidden="true" />{{ imageBusy ? 'Загрузка…' : 'Загрузить архив' }}</button>
+            <UiButton type="submit" :loading="imageBusy" :disabled="imageBusy || !imageFile"><Upload :size="18" aria-hidden="true" />{{ imageBusy ? 'Загрузка…' : 'Загрузить архив' }}</UiButton>
           </div>
         </form>
 
-        <p v-if="imageError" role="alert" class="rounded-lg border border-error-200 bg-error-50 p-4 text-sm text-error-500">{{ imageError }}</p>
+        <UiAlert v-if="imageError">{{ imageError }}</UiAlert>
 
         <section class="min-h-32 rounded-xl border p-4 sm:p-5" :class="imageFinished ? imageResult?.failed_folders || imageResult?.status === 'failed' ? 'border-warning-200 bg-warning-50' : 'border-success-200 bg-success-50' : 'border-gray-200 bg-gray-25'" aria-labelledby="image-import-result-title">
           <template v-if="imageFinished && imageResult">
@@ -312,7 +319,7 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (ima
             <ul v-if="imageResult.errors?.length" class="mt-4 max-h-64 space-y-3 overflow-y-auto" aria-label="Ошибки импорта изображений" tabindex="0">
               <li v-for="entry in imageResult.errors" :key="`${entry.sku}-${entry.entry}`" class="break-words rounded-lg border border-warning-200 bg-white p-3 text-sm"><p class="font-semibold text-gray-900">{{ entry.sku || 'Без названия папки' }}<span v-if="entry.entry" class="font-normal text-gray-500"> · {{ entry.entry }}</span></p><p v-for="message in entry.messages" :key="message" class="mt-1 text-gray-700">{{ message }}</p></li>
             </ul>
-            <button v-if="imageResult.has_error_file" type="button" :disabled="imageDownloading" class="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50" @click="downloadImageErrors"><Download :size="18" class="shrink-0" aria-hidden="true" />{{ imageDownloading ? 'Скачиваем…' : 'Скачать отчёт с ошибками' }}</button>
+            <UiButton v-if="imageResult.has_error_file" type="button" variant="secondary" class="mt-4" :loading="imageDownloading" :disabled="imageDownloading" @click="downloadImageErrors"><Download :size="18" class="shrink-0" aria-hidden="true" />{{ imageDownloading ? 'Скачиваем…' : 'Скачать отчёт с ошибками' }}</UiButton>
           </template>
           <template v-else>
             <h3 id="image-import-result-title" class="text-base font-semibold text-gray-900">Статус импорта</h3>
@@ -320,7 +327,7 @@ onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (ima
             <progress v-if="imageBusy" class="mt-4 h-2 w-full accent-primary-500" aria-label="Обработка изображений" :value="imageProgress" max="100" />
             <div v-else class="mt-4 h-2 rounded-full bg-gray-200" aria-hidden="true" />
             <p v-if="imageBusy" class="mt-3 text-xs text-gray-500">Можно закрыть окно — обработка продолжится. Откройте «Загрузить массово», чтобы посмотреть результат.</p>
-            <p v-if="imagePollingError && imageResult" class="mt-3 text-sm text-error-500" role="alert">Не удалось получить статус. Обработка на сервере продолжается. <button type="button" class="rounded font-semibold underline focus-visible:ring-2 focus-visible:ring-primary-500" @click="pollImageImport(imageResult.id)">Обновить статус</button></p>
+            <UiAlert v-if="imagePollingError && imageResult" class="mt-3">Не удалось получить статус. Обработка на сервере продолжается. <UiButton type="button" variant="danger-ghost" size="sm" @click="pollImageImport(imageResult.id)">Обновить статус</UiButton></UiAlert>
           </template>
         </section>
       </div>

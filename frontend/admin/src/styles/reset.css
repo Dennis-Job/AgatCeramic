@@ -3,7 +3,7 @@ body { margin: 0; min-width: 100%; background: var(--admin-color-page); color: v
 * { box-sizing: border-box; }
 button:not(:disabled), select:not(:disabled) { cursor: pointer; }
 button:disabled, select:disabled { cursor: not-allowed; }
-button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--admin-color-primary); outline-offset: 2px; }
-button.bg-primary-500:not(:disabled):hover { background-color: var(--admin-color-primary-hover); }
-button.bg-error-500:not(:disabled):hover { background-color: #b42318; }
-button.border-gray-300.text-gray-600:not(:disabled):hover { background-color: #fcfcfd; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: var(--admin-focus-outline-width) solid var(--admin-color-primary-500); outline-offset: var(--admin-focus-outline-offset); }
+button.bg-primary-500:not(:disabled):hover { background-color: var(--admin-color-primary-600); }
+button.bg-error-500:not(:disabled):hover { background-color: var(--admin-color-error-700); }
+button.border-gray-300.text-gray-600:not(:disabled):hover { background-color: var(--admin-color-gray-25); }

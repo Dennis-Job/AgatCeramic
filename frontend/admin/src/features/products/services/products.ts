@@ -1,37 +1,6 @@
 import { apiFetch, requestCsrfCookie } from '../../../services/auth'
-import type { Brand } from '../../brands/types/brand.types'
-import type { Category } from '../../categories/types/category.types'
-import type { ProductAttributeValue } from './productAttributes'
-import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from '../../../services/pagination'
-
-export type Product = {
-  id: number; category_id: number; brand_id: number | null; name: string; slug: string; description: string | null
-  sku: string; article_number: string | null; barcode: string | null; unit: ProductUnit; price: string; old_price: string | null; stock_quantity: number; is_active: boolean; is_on_sale: boolean
-  attribute_values?: ProductAttributeValue[]
-  primary_image?: { id: number; url: string; alt: string | null } | null
-  category: Category; brand: Brand | null; created_at: string; updated_at: string
-}
-export type ProductUnit = 'piece' | 'square_meter' | 'linear_meter' | 'package' | 'kilogram' | 'liter' | 'set'
-export type ProductSort = 'sku' | 'name' | 'created_at' | 'updated_at'
-export type SortDirection = 'asc' | 'desc'
-export type ProductImport = {
-  id: number
-  filename: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
-  created_rows: number
-  updated_rows: number
-  processed_rows: number
-  category_id: number | null
-  total_rows: number
-  failed_rows: number
-  row_errors: { row: number; name: string; messages: string[] }[]
-  has_error_file: boolean
-  error_message: string | null
-  created_at: string
-  started_at: string | null
-  completed_at: string | null
-  operation?: 'catalog' | 'price_status' | 'group'
-}
+import { loadAllPages, withPage, type PaginatedResponse } from '../../../services/pagination'
+import type { Product, ProductFilters, ProductImport, ProductPayload } from '../types/product.types'
 export async function getProductPriceStatusTemplate(): Promise<{ blob: Blob; filename: string }> {
   const response = await apiFetch('/admin/products/price-status-template')
   if (!response.ok) return fail(response)
@@ -76,9 +45,6 @@ export async function getProductGroupImportErrors(id: number): Promise<{ blob: B
   if (!response.ok) return fail(response)
   return { blob: await response.blob(), filename: `product-group-import-${id}-errors.xlsx` }
 }
-export type ProductPayload = Omit<Product, 'id' | 'sku' | 'category' | 'brand' | 'attribute_values' | 'primary_image' | 'created_at' | 'updated_at'>
-export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; is_on_sale?: boolean; has_stock?: boolean; price_from?: string; price_to?: string; sort?: ProductSort; direction?: SortDirection } & PageRequest
-
 function productQuery(filters: ProductFilters, includePage: boolean): URLSearchParams {
   const query = new URLSearchParams()
   Object.entries(filters).forEach(([key, value]) => {

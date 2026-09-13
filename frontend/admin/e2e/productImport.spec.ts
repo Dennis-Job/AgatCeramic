@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
+import { createDeferredApiRequests } from './deferredApi'
 
 async function openImport(page: Page) {
   await page.goto('/products')
@@ -17,7 +18,8 @@ async function attach(page: Page) {
 }
 
 test('product Excel import downloads category template and preserves processing when closed', async ({ page }) => {
-  await mockCatalogApi(page, { delayPath: '/admin/product-imports/1' })
+  const deferredRequests = createDeferredApiRequests()
+  await mockCatalogApi(page, { deferredRequests })
   const dialog = await openImport(page)
   const templateRequest = page.waitForRequest(request => request.url().includes('/products/import-template?category_id=1'))
   const download = page.waitForEvent('download')
@@ -26,14 +28,17 @@ test('product Excel import downloads category template and preserves processing 
   expect((await download).suggestedFilename()).toBe('products-category-1.xlsx')
   await attach(page)
   const requestPromise = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/import'))
+  const statusRequest = deferredRequests.defer('/admin/product-imports/1')
   await dialog.getByRole('button', { name: 'Загрузить', exact: true }).click()
   const request = await requestPromise
   expect(request.method()).toBe('POST')
   expect(request.postDataBuffer()?.toString()).toContain('name="category_id"\r\n\r\n1')
+  await statusRequest.requested
   await expect(dialog.getByRole('progressbar')).toBeVisible()
   await expect(dialog.getByRole('button', { name: 'Загрузка…' })).toBeDisabled()
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
+  statusRequest.release()
   await page.getByRole('button', { name: 'Загрузить массово', exact: true }).click()
   await expect(dialog.getByRole('status').filter({ hasText: 'Успешно: 5. С ошибками: 0.' })).toBeVisible()
   await expect(dialog.getByRole('progressbar')).toHaveCount(0)
@@ -71,7 +76,7 @@ test('product Excel import errors are downloadable and modal is accessible at su
 test('category edit template includes SKU and uses the category import flow', async ({ page }) => {
   await mockCatalogApi(page, { importErrors: true })
   const dialog = await openImport(page)
-  await dialog.getByLabel('Редактировать товары').check()
+  await dialog.getByRole('radio', { name: 'Редактировать товары' }).locator('..').click()
   await expect(dialog.getByText('SKU определяет редактируемый товар', { exact: false })).toBeVisible()
   const templateRequest = page.waitForRequest(request => request.url().includes('/products/import-template?category_id=1&editing=1'))
   const download = page.waitForEvent('download')
@@ -90,7 +95,8 @@ test('category edit template includes SKU and uses the category import flow', as
   await errorsDownload
 })
 
-test('product Excel import shows upload failure and allows retry', async ({ page }) => {
+test('product Excel import shows upload failure and allows retry', async ({ page, browserIssueGuard }) => {
+  browserIssueGuard.allowApiError(500, '/api/v1/admin/products/import')
   await mockCatalogApi(page, { errorPath: '/admin/products/import' })
   const dialog = await openImport(page)
   await attach(page)
@@ -100,7 +106,8 @@ test('product Excel import shows upload failure and allows retry', async ({ page
   await expect(dialog.getByRole('progressbar')).toHaveCount(0)
 })
 
-test('product Excel import retains job on polling failure and refreshes status', async ({ page }) => {
+test('product Excel import retains job on polling failure and refreshes status', async ({ page, browserIssueGuard }) => {
+  browserIssueGuard.allowApiError(503, '/api/v1/admin/product-imports/1')
   await mockCatalogApi(page)
   await page.route('**/admin/product-imports/1', route => route.fulfill({ status: 503, json: {} }))
   const dialog = await openImport(page)
@@ -135,4 +142,38 @@ test('variation-group Excel import downloads, uploads and reports its accessible
   }
   const accessibility = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
   expect(accessibility.violations.filter(v => ['serious', 'critical'].includes(v.impact ?? ''))).toEqual([])
+})
+
+test('price and status Excel import preserves its contract and responsive accessible states', async ({ page }, testInfo) => {
+  await mockCatalogApi(page, { importErrors: true })
+  await page.goto('/products')
+  await page.getByRole('button', { name: 'Цены и статусы', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Цены и статусы из Excel' })
+
+  const templateRequest = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/price-status-template'))
+  const templateDownload = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Скачать шаблон Excel' }).click()
+  await templateRequest
+  expect((await templateDownload).suggestedFilename()).toBe('product-price-status-template.xlsx')
+
+  await dialog.locator('input[type="file"]').setInputFiles({ name: 'price-status.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: Buffer.from('mock xlsx') })
+  const uploadRequest = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/products/price-status-import'))
+  await dialog.getByRole('button', { name: 'Запустить обработку' }).click()
+  expect((await uploadRequest).method()).toBe('POST')
+  await expect(dialog.getByText('Обработано: 3 из 3. Изменено: 2. Ошибок: 1.')).toBeVisible()
+
+  const errorDownload = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Скачать Excel с ошибками' }).click()
+  expect((await errorDownload).suggestedFilename()).toBe('product-price-status-import-1-errors.xlsx')
+
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 800 })
+    expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await dialog.screenshot({ path: testInfo.outputPath(`price-status-import-${width}.png`) })
+  }
+  const accessibility = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+  expect(accessibility.violations.filter(v => ['serious', 'critical'].includes(v.impact ?? ''))).toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: 'Цены и статусы', exact: true })).toBeFocused()
 })

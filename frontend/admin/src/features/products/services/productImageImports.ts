@@ -1,23 +1,5 @@
 import { apiFetch, requestCsrfCookie } from '../../../services/auth'
-
-export type ProductImageImportStatus = 'pending' | 'processing' | 'completed' | 'failed'
-
-export type ProductImageImport = {
-  id: number
-  filename: string
-  status: ProductImageImportStatus
-  total_folders: number
-  processed_folders: number
-  created_images: number
-  replaced_images: number
-  failed_folders: number
-  errors: { sku: string; entry: string | null; messages: string[] }[]
-  has_error_file: boolean
-  error_message: string | null
-  created_at?: string
-  started_at?: string | null
-  completed_at?: string | null
-}
+import type { ProductImageImport } from '../types/product.types'
 
 async function fail(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }

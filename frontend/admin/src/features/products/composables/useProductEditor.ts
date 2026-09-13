@@ -1,5 +1,4 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { AttributeDraftValue } from '../components/AttributeValueField.vue'
 import { usePaginatedCollection } from '../../../composables/usePaginatedCollection'
 import type { Attribute } from '../../attributes/types/attribute.types'
 import type { AttributeGroup } from '../../attribute-groups/types/attributeGroup.types'
@@ -8,17 +7,17 @@ import type { Brand } from '../../brands/types/brand.types'
 import { getCategories, getCategoryAttributeGroups } from '../../categories/services/categories'
 import type { Category } from '../../categories/types/category.types'
 import { getCategoryAttributes, getProductAttributeValues, saveProductAttributeValues } from '../services/productAttributes'
-import { deleteProductGroup, getAllProductGroups, ProductGroupRequestError, saveProductGroup, type ProductGroup, type ProductGroupPayload } from '../services/productGroups'
-import { deleteProductImage, getAllProductImages, updateProductImage, uploadProductImage, type ProductImage } from '../services/productImages'
-import { getProductRelations, getRelationCandidates, ProductRelationRequestError, saveProductRelations, type ProductRelationType } from '../services/productRelations'
-import { deleteProduct, getProductExport, getProducts, saveProduct, type Product, type ProductFilters, type ProductPayload, type ProductSort, type ProductUnit, type SortDirection } from '../services/products'
+import { deleteProductGroup, getAllProductGroups, ProductGroupRequestError, saveProductGroup } from '../services/productGroups'
+import { deleteProductImage, getAllProductImages, updateProductImage, uploadProductImage } from '../services/productImages'
+import { getProductRelations, getRelationCandidates, ProductRelationRequestError, saveProductRelations } from '../services/productRelations'
+import { deleteProduct, getProductExport, getProducts, saveProduct } from '../services/products'
 import { useAuthStore } from '../../../stores/auth'
 import { compareAlphabetically, sortByLabel } from '../../../utils/alphabetical'
 import { useProductEditorSteps } from './useProductEditorSteps'
 import { normalizedProductName, productSlug } from '../validation/product.schema'
+import type { AttributeDraftValue, Product, ProductFilters, ProductGroup, ProductGroupPayload, ProductImage, ProductPayload, ProductRelationDraft, ProductSort, ProductUnit, SortDirection } from '../types/product.types'
 
 export function useProductEditor() {
-type RelationForm = { related_product_id: string; type: ProductRelationType; sort_order: string }
 const auth = useAuthStore(); const list = usePaginatedCollection<Product>('Не удалось загрузить товары.')
 const { items: products, pagination, error, loading } = list
 const categories = ref<Category[]>([]); const brands = ref<Brand[]>([]); const candidates = ref<Product[]>([]); const groupProducts = ref<ProductGroup['products']>([])
@@ -37,7 +36,7 @@ const form = ref<ProductPayload>(emptyProduct()); const manuallyEditedSlug = ref
 const attributes = ref<Attribute[]>([]); const attributeGroups = ref<AttributeGroup[]>([]); const attributeValues = ref<Record<number, AttributeDraftValue>>({}); const requiredIds = ref<number[]>([])
 const images = ref<ProductImage[]>([]); const draggedImageId = ref<number|null>(null); const draggedOverImageId = ref<number|null>(null); const selectedFile = ref<File | null>(null); const imageInput = ref<HTMLInputElement | null>(null); const imageDeleting = ref<ProductImage|null>(null); const imageStatus = ref('')
 const groups = ref<ProductGroup[]>([]); const selectedGroupId = ref(''); const groupErrors = ref<Record<string, string[]>>({}); const groupForm = ref<ProductGroupPayload>({ name: '', code: '', axis_attribute_ids: [], product_ids: [] }); const groupSearch=ref(''); const groupDeleting=ref(false)
-const relations = ref<RelationForm[]>([]); const relationErrors = ref<Record<number, string>>({}); const relationSearch=ref('')
+const relations = ref<ProductRelationDraft[]>([]); const relationErrors = ref<Record<number, string>>({}); const relationSearch=ref('')
 const canManage = computed(() => auth.hasPermission('catalog.manage'))
 const canManageImports = computed(() => auth.hasPermission('imports.manage'))
 const sortLabels: Record<ProductSort, string> = { sku: 'SKU', name: 'наименованию', created_at: 'дате создания', updated_at: 'дате изменения' }

@@ -12,7 +12,7 @@ defineEmits<{ 'open-navigation': [] }>()
   <header class="sticky top-0 z-20 flex admin-header items-center gap-4 border-b border-gray-200 bg-white px-4 sm:px-6 lg:px-8">
     <button
       type="button"
-      class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50 lg:hidden"
+      class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 lg:hidden"
       aria-label="Открыть меню"
       aria-controls="admin-sidebar"
       :aria-expanded="isNavigationOpen"

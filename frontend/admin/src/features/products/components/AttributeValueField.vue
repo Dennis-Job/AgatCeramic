@@ -7,8 +7,7 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import { sortByLabel } from '../../../utils/alphabetical'
-
-export type AttributeDraftValue = string | string[]
+import type { AttributeDraftValue } from '../types/product.types'
 
 const props = defineProps<{
   attribute: Attribute
