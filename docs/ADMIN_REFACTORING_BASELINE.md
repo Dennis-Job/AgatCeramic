@@ -104,6 +104,14 @@ Production build, 37 unit-тестов и полный набор из 146 E2E/a
 сценарий подтвердил backend-название роли со знакомым системным slug на
 320/640/768/1024/1280 px; независимый UI Design Guard не оставил blocking или non-blocking findings.
 
+Post-acceptance `TASK-A037` завершила disabled-контракт полей: `UiInput` и `UiSelect` блокируют
+вспомогательные clear/menu actions вместе с native control, а `UiDatePicker` получил native disabled,
+закрытие открытого calendar при отключении и адаптивный popup без потери Escape/focus return.
+Production build, 41 unit-тест и 147 E2E/axe/visual тестов прошли локально и в Linux Compose;
+Darwin/Linux snapshots закрепляют disabled и open-calendar состояния на
+320/640/768/1024/1280 px. Независимый UI Design Guard одобрил результат без blocking или
+non-blocking findings.
+
 Для каждого изменённого UI также вручную проверить ширины 320, 640, 768, 1024
 и 1280 px, keyboard focus/Escape и длинные русские строки. Это не заменяется
 snapshot-тестом на desktop.

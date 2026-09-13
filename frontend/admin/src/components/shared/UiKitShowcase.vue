@@ -8,6 +8,7 @@ import UiButton from '../ui/UiButton.vue'
 import UiCard from '../ui/UiCard.vue'
 import UiCheckbox from '../ui/UiCheckbox.vue'
 import UiDialog from '../ui/UiDialog.vue'
+import UiDatePicker from '../ui/UiDatePicker.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
 import UiField from '../ui/UiField.vue'
 import UiInput from '../ui/UiInput.vue'
@@ -20,6 +21,7 @@ import UiTextarea from '../ui/UiTextarea.vue'
 
 const input = ref('')
 const selectedOption = ref('standard')
+const date = ref('2026-09-13')
 const message = ref('')
 const checked = ref(false)
 const radio = ref('standard')
@@ -32,6 +34,7 @@ const isButtonLoading = ref(false)
 const options = [
   { label: 'Стандартный вариант', value: 'standard' },
   { label: 'Расширенный вариант', value: 'extended' },
+  { label: 'Расширенный', value: 'extended-short' },
 ]
 
 const pagination = computed(() => ({
@@ -104,8 +107,8 @@ function confirmAction(): void {
 
       <UiCard>
         <h2 class="text-lg font-semibold text-gray-900">Поля формы</h2>
-        <p class="mt-1 text-sm text-gray-500"><code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>, <code>ui/UiSelect.vue</code>, <code>ui/UiTextarea.vue</code></p>
-        <div class="mt-4 grid gap-4">
+        <p class="mt-1 break-words text-sm text-gray-500 [overflow-wrap:anywhere]"><code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>, <code>ui/UiSelect.vue</code>, <code>ui/UiDatePicker.vue</code>, <code>ui/UiTextarea.vue</code></p>
+        <div class="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
           <UiField label="Название" help="Подсказка отображается под полем." required>
             <UiInput v-model="input" class="mt-1.5" placeholder="Например, Керамогранит" />
           </UiField>
@@ -115,6 +118,24 @@ function confirmAction(): void {
           <UiField label="Комментарий">
             <UiTextarea v-model="message" class="mt-1.5" placeholder="Текст комментария" />
           </UiField>
+          <UiField label="Дата публикации">
+            <UiDatePicker v-model="date" class="mt-1.5" data-ui-kit-enabled-date accessible-name="Дата публикации" />
+          </UiField>
+          <div data-ui-kit-disabled-fields class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 rounded-lg border border-gray-200 bg-gray-25 p-4">
+            <div>
+              <h3 class="text-sm font-semibold text-gray-800">Недоступные поля</h3>
+              <p class="mt-1 text-xs text-gray-500">Значения видимы, но ввод и вспомогательные действия заблокированы.</p>
+            </div>
+            <UiField label="Поиск товара">
+              <UiInput model-value="Керамогранит" class="mt-1.5" searchable aria-label="Недоступный поиск товара" disabled />
+            </UiField>
+            <UiField label="Категория">
+              <UiSelect model-value="extended-short" class="mt-1.5" :options="options" accessible-name="Недоступная категория" clearable searchable disabled />
+            </UiField>
+            <UiField label="Дата публикации">
+              <UiDatePicker model-value="2026-09-13" class="mt-1.5" accessible-name="Недоступная дата публикации" disabled />
+            </UiField>
+          </div>
         </div>
       </UiCard>
 

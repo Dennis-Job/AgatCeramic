@@ -295,7 +295,7 @@ API behaviour без migration plan и синхронного обновлени
     неиспользуемый service re-export `getRoles`; синхронизировать итоговую документацию TASK-A030.
   - Сохранить текущие permissions, маршруты и API-contract; добавить адресную unit/E2E-проверку.
 
-- [ ] TASK-A037 Завершить disabled-контракт UI-kit
+- [x] TASK-A037 Завершить disabled-контракт UI-kit
   - Заблокировать вспомогательные действия `UiInput` и `UiSelect` в disabled-состоянии и добавить
     полноценный disabled-контракт для `UiDatePicker` без потери keyboard/focus semantics.
   - Обновить UI-kit tests, axe и visual QA затронутых состояний на контрольных ширинах; пройти

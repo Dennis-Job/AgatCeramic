@@ -146,6 +146,61 @@ test('Admin UI-kit states meet color contrast requirements', async ({ page }) =>
   expect(accessibility.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([])
 })
 
+test('Admin UI-kit field disabled contract remains accessible and usable at all supported widths', async ({ page }) => {
+  await mockAdminBaseline(page)
+  await page.goto('/ui-kit')
+  await expect(page.getByRole('heading', { level: 1, name: 'UI-kit' })).toBeVisible()
+  await page.waitForLoadState('networkidle')
+
+  const enabledDate = page.getByRole('textbox', { name: 'Дата публикации', exact: true })
+  await enabledDate.focus()
+  await expect(page.getByRole('dialog', { name: 'Дата публикации: выбор даты' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'Дата публикации: выбор даты' })).toHaveCount(0)
+  await expect(enabledDate).toBeFocused()
+
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    const disabledFields = page.locator('[data-ui-kit-disabled-fields]')
+    await expect(disabledFields).toBeVisible()
+
+    const disabledInput = disabledFields.getByRole('textbox', { name: 'Недоступный поиск товара' })
+    const disabledSelect = disabledFields.getByRole('button', { name: 'Недоступная категория', exact: true })
+    const disabledDate = disabledFields.getByRole('textbox', { name: 'Недоступная дата публикации' })
+    const inputClear = disabledFields.getByRole('button', { name: 'Очистить поле' })
+    const selectClear = disabledFields.getByRole('button', { name: 'Очистить выбор: Недоступная категория' })
+    const dateClear = disabledFields.getByRole('button', { name: 'Очистить дату' })
+
+    for (const control of [disabledInput, disabledSelect, disabledDate, inputClear, selectClear, dateClear]) {
+      await expect(control).toBeDisabled()
+    }
+
+    await inputClear.dispatchEvent('click')
+    await selectClear.dispatchEvent('click')
+    await dateClear.dispatchEvent('click')
+    await expect(disabledInput).toHaveValue('Керамогранит')
+    await expect(disabledSelect).toContainText('Расширенный')
+    await expect(disabledDate).toHaveValue('13.09.2026')
+    await disabledFields.evaluate(element => element.scrollIntoView({ block: 'center' }))
+    await expect(disabledFields).toHaveScreenshot(`ui-kit-disabled-fields-${width}.png`, { animations: 'disabled' })
+
+    const accessibility = await new AxeBuilder({ page }).include('[data-ui-kit-disabled-fields]').analyze()
+    expect(accessibility.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([])
+
+    await enabledDate.blur()
+    await enabledDate.focus()
+    const dateDialog = page.getByRole('dialog', { name: 'Дата публикации: выбор даты' })
+    await expect(dateDialog).toBeVisible()
+    await expect(dateDialog).toHaveScreenshot(`ui-kit-date-picker-open-${width}.png`, { animations: 'disabled' })
+    const openDateAccessibility = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+    expect(openDateAccessibility.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(dateDialog).toHaveCount(0)
+    await expect(enabledDate).toBeFocused()
+  }
+})
+
 for (const [path, heading] of [['/login', 'Вход'], ['/forgot-password', 'Восстановление пароля'], ['/reset-password', 'Задайте новый пароль']] as const) {
   test(`Admin baseline: guest ${path}`, async ({ page, browserIssueGuard }) => {
     browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
