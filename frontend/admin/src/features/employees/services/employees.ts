@@ -3,13 +3,6 @@ import type { Employee, EmployeePage, EmployeePayload, EmployeeRole } from '../t
 
 type ErrorResponse = { error?: { message?: string; details?: Record<string, string[]> } }
 
-const systemRoleNames: Record<string, string> = {
-  'super-admin': 'Супер Администратор', administrator: 'Администратор', 'catalog-manager': 'Менеджер каталога',
-  'order-manager': 'Менеджер заказов', 'content-manager': 'Контент-менеджер', 'seo-manager': 'SEO-менеджер', analyst: 'Аналитик',
-}
-
-export function roleDisplayName(role: EmployeeRole): string { return systemRoleNames[role.slug] ?? role.name }
-
 async function parseError(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as ErrorResponse
   const firstDetail = body.error?.details ? Object.values(body.error.details).flat()[0] : undefined
@@ -30,9 +23,6 @@ export async function getEmployeeRoles(): Promise<EmployeeRole[]> {
   if (!response.ok) return parseError(response)
   return ((await response.json()) as { data: EmployeeRole[] }).data
 }
-
-// Compatibility name for existing service consumers during the incremental migration.
-export const getRoles = getEmployeeRoles
 
 export async function saveEmployee(id: number | null, payload: EmployeePayload): Promise<Employee> {
   await requestCsrfCookie()

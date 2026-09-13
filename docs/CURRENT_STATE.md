@@ -1,6 +1,6 @@
 # Текущее состояние проекта
 
-Состояние актуализировано по итогам `TASK-A001`–`TASK-A035` и повторной финальной приёмки
+Состояние актуализировано по итогам `TASK-A001`–`TASK-A036` и повторной финальной приёмки
 `TASK-A030` (2026-09-13). Admin frontend refactoring принят; evidence приведены в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
@@ -15,7 +15,7 @@
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
 | Cart and orders | Public guest cart, locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
-| Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031` исправила mobile sidebar и browser runtime guard; `TASK-A032` централизовала design tokens и закрыла WCAG AA contrast findings; `TASK-A033` завершила products UI-kit/type migration; `TASK-A034` объединила auth shell; `TASK-A035` стабилизировала acceptance fixtures и evidence. Повторная финальная приёмка `TASK-A030` пройдена. |
+| Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031` исправила mobile sidebar и browser runtime guard; `TASK-A032` централизовала design tokens и закрыла WCAG AA contrast findings; `TASK-A033` завершила products UI-kit/type migration; `TASK-A034` объединила auth shell; `TASK-A035` стабилизировала acceptance fixtures и evidence; `TASK-A036` удалила оставшиеся frontend-словарь ролей и service re-export. Повторная финальная приёмка `TASK-A030` пройдена. |
 
 ## Принятые границы
 
@@ -56,3 +56,8 @@ evidence. Findings устранены в `TASK-A031`–`TASK-A035`; повтор
 не оставил blocking findings. `TASK-A020` и `TASK-A030` приняты. Подробности — в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
+
+Post-acceptance follow-up `TASK-A036` синхронизировал фактическую архитектуру с итогом `TASK-A030`:
+админка использует backend-названия ролей и больше не содержит employee-service compatibility alias.
+Production build, 37 unit-тестов и 146 E2E/axe/visual тестов прошли; UI Design Guard одобрил
+поведение на контрольных ширинах 320/640/768/1024/1280 px без замечаний.

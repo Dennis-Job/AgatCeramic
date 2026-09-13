@@ -17,6 +17,8 @@ acceptance fixtures и исправила evidence. Все findings устран
 Актуальные правила находятся в `frontend/admin/AGENTS.md` и
 `frontend/admin/src/components/shared/UI_KIT.md`; переходные `Base*`, layout, state/pagination и
 domain-service re-export adapters удалены после перевода consumers на source-of-truth слои.
+Обнаруженный после приёмки employee-service re-export и frontend-словарь системных
+ролей удалены в `TASK-A036`; имена ролей полностью принадлежат backend-контракту.
 
 ## Исторический результат первой приёмки TASK-A030
 
@@ -94,6 +96,13 @@ service re-export adapters. Route views не содержат raw HTTP/endpoint 
 локально и в Linux Compose. Baseline охватывает все обязательные маршруты, состояния и ширины
 320/640/768/1024/1280 px. Независимый UI Design Guard повторил полный suite и подтвердил отсутствие
 blocking findings. Admin frontend refactoring принят, Phase 7 разблокирована.
+
+Post-acceptance проверка выявила, что в итоговом статическом аудите не были замечены один
+неиспользуемый re-export `getRoles` и frontend-словарь названий системных ролей. `TASK-A036`
+удалила оба остатка и добавила адресные unit/E2E guards; API, permissions и маршруты не изменились.
+Production build, 37 unit-тестов и полный набор из 146 E2E/axe/visual тестов прошли. Адресный
+сценарий подтвердил backend-название роли со знакомым системным slug на
+320/640/768/1024/1280 px; независимый UI Design Guard не оставил blocking или non-blocking findings.
 
 Для каждого изменённого UI также вручную проверить ширины 320, 640, 768, 1024
 и 1280 px, keyboard focus/Escape и длинные русские строки. Это не заменяется

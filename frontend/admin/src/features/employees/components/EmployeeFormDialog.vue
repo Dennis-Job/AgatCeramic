@@ -7,7 +7,6 @@ import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import { roleDisplayName } from '../services/employees'
 import type { Employee, EmployeePayload, EmployeeRole } from '../types/employee.types'
 
 defineProps<{ open: boolean; title: string; editing: Employee | null; roles: EmployeeRole[]; busy: boolean; error: string }>()
@@ -32,7 +31,7 @@ const statusOptions = [{ label: 'Активен', value: 'active' }, { label: '�
           <UiField label="Подтверждение пароля" :required="!editing || Boolean(form.password)"><UiInput v-model="form.password_confirmation" class="mt-1.5 w-full font-normal" :required="!editing || Boolean(form.password)" minlength="12" type="password" autocomplete="new-password" :disabled="busy" /></UiField>
         </div>
         <UiField label="Статус" required><UiSelect v-model="form.status" class="mt-1.5 w-full font-normal" accessible-name="Статус сотрудника" :options="statusOptions" :disabled="busy" /></UiField>
-        <fieldset :disabled="busy"><legend class="text-sm font-medium text-gray-700">Роли</legend><div class="mt-2 grid gap-2 sm:grid-cols-2"><UiCheckbox v-for="role in roles" :key="role.id" v-model="form.role_ids" :value="role.id">{{ roleDisplayName(role) }}</UiCheckbox></div></fieldset>
+        <fieldset :disabled="busy"><legend class="text-sm font-medium text-gray-700">Роли</legend><div class="mt-2 grid gap-2 sm:grid-cols-2"><UiCheckbox v-for="role in roles" :key="role.id" v-model="form.role_ids" :value="role.id">{{ role.name }}</UiCheckbox></div></fieldset>
       </div>
       <div class="mt-6 flex flex-wrap justify-end gap-3"><UiButton type="button" variant="ghost" :disabled="busy" @click="emit('close')">Отмена</UiButton><UiButton type="submit" :loading="busy" :disabled="busy">{{ busy ? 'Сохранение…' : 'Сохранить' }}</UiButton></div>
     </form>

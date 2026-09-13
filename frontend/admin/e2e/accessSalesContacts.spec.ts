@@ -4,8 +4,8 @@ import { createDeferredApiRequests, type DeferredApiRequests } from './deferredA
 
 const timestamp = '2026-09-11T10:00:00.000Z'
 const permissions = ['admin-users.view', 'admin-users.manage', 'roles.view', 'roles.manage', 'permissions.view', 'audit-log.view', 'orders.view', 'orders.manage', 'payments.manage', 'contacts.view', 'contacts.manage']
-const employee = { id: 1, name: 'Тестовый администратор', email: 'admin@example.test', status: 'active', last_login_at: timestamp, roles: [{ id: 1, name: 'Администратор', slug: 'administrator' }] }
-const role = { id: 1, name: 'Администратор', slug: 'administrator', description: 'Полный доступ', is_system: false, permissions: [{ id: 1, name: 'Просмотр каталога', code: 'catalog.manage', description: null }] }
+const employee = { id: 1, name: 'Тестовый администратор', email: 'admin@example.test', status: 'active', last_login_at: timestamp, roles: [{ id: 1, name: 'Руководитель доступа', slug: 'administrator' }] }
+const role = { id: 1, name: 'Руководитель доступа', slug: 'administrator', description: 'Полный доступ', is_system: false, permissions: [{ id: 1, name: 'Просмотр каталога', code: 'catalog.manage', description: null }] }
 const contact = { id: 1, type: 'callback', contact: { name: 'Иван Петров', phone: '+79990000000', email: 'ivan@example.test' }, message: 'Перезвоните по наличию.', source: 'site', status: 'new', assignee: null, assigned_at: null, completed_at: null, created_at: timestamp }
 const order = { id: 1, order_number: 'AC-20260911-A029', customer: { name: 'Иван Петров', phone: '+79990000000', email: 'ivan@example.test' }, delivery_address: 'Москва', customer_comment: null, status: 'new', payment_status: 'not_paid', payment_amount: null, payment_method: null, payment_reference: null, total_amount: '1990.00', items: [], paid_at: null, completed_at: null, created_at: timestamp }
 const pageOf = <T>(items: T[]) => ({ data: items, meta: { current_page: 1, last_page: 1, per_page: 25, total: items.length, from: items.length ? 1 : null, to: items.length || null } })
@@ -59,10 +59,25 @@ test('employee editor keeps keyboard close and opener focus', async ({ page }) =
   const opener = page.getByRole('button', { name: 'Добавить сотрудника' })
   await opener.click()
   await expect(page.getByRole('dialog', { name: 'Новый сотрудник' })).toBeVisible()
-  await expect(page.getByText('Администратор', { exact: true }).last()).toBeVisible()
+  await expect(page.getByText('Руководитель доступа', { exact: true }).last()).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(opener).toBeFocused()
+})
+
+test('employee roles use backend names without a system-slug dictionary', async ({ page }) => {
+  await mockApi(page)
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 800 })
+    await page.goto('/employees')
+
+    await expect(page.getByText('Руководитель доступа', { exact: true }).filter({ visible: true })).toHaveCount(1)
+    await expect(page.getByText('Администратор', { exact: true })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Добавить сотрудника' }).click()
+    await expect(page.getByRole('dialog', { name: 'Новый сотрудник' }).getByText('Руководитель доступа', { exact: true })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  }
 })
 
 test('contact detail exposes protected workflow and activity data without overflow', async ({ page }) => {

@@ -290,7 +290,7 @@ API behaviour без migration plan и синхронного обновлени
 
 ## Admin frontend post-acceptance follow-up
 
-- [ ] TASK-A036 Удалить hardcoded-роли и оставшийся compatibility adapter
+- [x] TASK-A036 Удалить hardcoded-роли и оставшийся compatibility adapter
   - Использовать полученные от backend названия ролей без frontend-словаря системных slug и удалить
     неиспользуемый service re-export `getRoles`; синхронизировать итоговую документацию TASK-A030.
   - Сохранить текущие permissions, маршруты и API-contract; добавить адресную unit/E2E-проверку.
