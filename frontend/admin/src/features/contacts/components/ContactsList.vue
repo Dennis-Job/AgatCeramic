@@ -15,7 +15,7 @@ defineEmits<{ select: [contact: Contact] }>()
   <template v-else>
     <div class="divide-y divide-gray-100 md:hidden xl:block">
       <article v-for="contact in contacts" :key="contact.id" :class="selectedId === contact.id ? 'bg-primary-50' : ''" class="p-4">
-        <button type="button" class="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50" :aria-label="`Открыть обращение ${contact.id}`" :aria-current="selectedId === contact.id ? 'true' : undefined" @click="$emit('select', contact)">
+        <button type="button" class="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" :aria-label="`Открыть обращение ${contact.id}`" :aria-current="selectedId === contact.id ? 'true' : undefined" @click="$emit('select', contact)">
           <div class="flex flex-wrap items-start justify-between gap-2"><div><span class="block font-semibold text-gray-800">{{ typeName(contact.type) }}</span><span class="mt-1 block text-xs text-gray-500">{{ date(contact.created_at) }}</span></div><UiBadge tone="primary">{{ statusName(contact.status) }}</UiBadge></div>
           <p class="mt-3 break-words text-sm font-medium text-gray-700">{{ contact.contact.name ?? 'Без имени' }}</p><p class="break-all text-xs text-gray-500">{{ contact.contact.phone ?? contact.contact.email ?? '—' }}</p><p class="mt-3 text-xs text-gray-500">Ответственный: {{ contact.assignee?.name ?? 'Не назначен' }}</p>
         </button>

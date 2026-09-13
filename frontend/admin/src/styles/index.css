@@ -7,13 +7,103 @@
 @theme {
   --font-sans: var(--admin-font-sans);
   --font-poppins: var(--admin-font-display);
-  --color-primary-25: #f2f7ff; --color-primary-50: #ecf3ff; --color-primary-100: #dde9ff; --color-primary-200: #c2d6ff; --color-primary-300: #9cb9ff; --color-primary-400: #7592ff; --color-primary-500: #465fff; --color-primary-600: #3641f5; --color-primary-700: #2a31d8; --color-primary-800: #252dae; --color-primary-900: #262e89; --color-primary-950: #161950;
-  --color-white: #ffffff; --color-page: #f7f9fc; --color-gray-25: #fcfcfd; --color-gray-50: #f9fafb; --color-gray-100: #f2f4f7; --color-gray-200: #e4e7ec; --color-gray-300: #d0d5dd; --color-gray-400: #98a2b3; --color-gray-500: #667085; --color-gray-600: #475467; --color-gray-700: #344054; --color-gray-800: #1d2939; --color-gray-900: #101828; --color-gray-950: #0c111d; --color-gray-dark: #1a2231;
-  --color-success-25: #f6fef9; --color-success-50: #ecfdf3; --color-success-100: #d1fadf; --color-success-200: #a6f4c5; --color-success-500: #12b76a; --color-success-600: #039855; --color-success-700: #027a48;
-  --color-warning-25: #fffcf5; --color-warning-50: #fffaeb; --color-warning-100: #fef0c7; --color-warning-200: #fedf89; --color-warning-500: #f79009; --color-warning-600: #dc6803; --color-warning-700: #b54708;
-  --color-error-25: #fffbfa; --color-error-50: #fef3f2; --color-error-100: #fee4e2; --color-error-200: #fecdca; --color-error-500: #f04438; --color-error-600: #d92d20; --color-error-700: #b42318;
-  --color-blue-50: #eff6ff; --color-blue-500: #3b82f6; --color-blue-700: #2563eb; --color-green-500: #10b981;
-  --color-orange-25: #fffaf5; --color-orange-50: #fff6ed; --color-orange-100: #ffead5; --color-orange-200: #fddcab; --color-orange-300: #feb273; --color-orange-400: #fd853a; --color-orange-500: #fb6514; --color-orange-600: #ec4a0a; --color-orange-700: #c4320a; --color-orange-800: #9c2a10; --color-orange-900: #7e2410; --color-orange-950: #511c10;
-  --color-blue-light-25: #f5fbff; --color-blue-light-50: #f0f9ff; --color-blue-light-100: #e0f2fe; --color-blue-light-200: #b9e6fe; --color-blue-light-300: #7cd4fd; --color-blue-light-400: #36bffa; --color-blue-light-500: #0ba5ec; --color-blue-light-600: #0086c9; --color-blue-light-700: #026aa2; --color-blue-light-800: #065986; --color-blue-light-900: #0b4a6f; --color-blue-light-950: #062c41;
-  --shadow-card: var(--admin-shadow-card); --shadow-input: var(--admin-shadow-input); --shadow-dialog: var(--admin-shadow-dialog); --shadow-dropdown: 0 12px 20px rgb(16 24 40 / 0.12);
+
+  --color-primary-25: var(--admin-color-primary-25);
+  --color-primary-50: var(--admin-color-primary-50);
+  --color-primary-100: var(--admin-color-primary-100);
+  --color-primary-200: var(--admin-color-primary-200);
+  --color-primary-300: var(--admin-color-primary-300);
+  --color-primary-400: var(--admin-color-primary-400);
+  --color-primary-500: var(--admin-color-primary-500);
+  --color-primary-600: var(--admin-color-primary-600);
+  --color-primary-700: var(--admin-color-primary-700);
+  --color-primary-800: var(--admin-color-primary-800);
+  --color-primary-900: var(--admin-color-primary-900);
+  --color-primary-950: var(--admin-color-primary-950);
+
+  --color-white: var(--admin-color-white);
+  --color-page: var(--admin-color-page);
+  --color-gray-25: var(--admin-color-gray-25);
+  --color-gray-50: var(--admin-color-gray-50);
+  --color-gray-100: var(--admin-color-gray-100);
+  --color-gray-200: var(--admin-color-gray-200);
+  --color-gray-300: var(--admin-color-gray-300);
+  --color-gray-400: var(--admin-color-gray-400);
+  --color-gray-500: var(--admin-color-gray-500);
+  --color-gray-600: var(--admin-color-gray-600);
+  --color-gray-700: var(--admin-color-gray-700);
+  --color-gray-800: var(--admin-color-gray-800);
+  --color-gray-900: var(--admin-color-gray-900);
+  --color-gray-950: var(--admin-color-gray-950);
+  --color-gray-dark: var(--admin-color-gray-dark);
+
+  --color-success-25: var(--admin-color-success-25);
+  --color-success-50: var(--admin-color-success-50);
+  --color-success-100: var(--admin-color-success-100);
+  --color-success-200: var(--admin-color-success-200);
+  --color-success-500: var(--admin-color-success-500);
+  --color-success-600: var(--admin-color-success-600);
+  --color-success-700: var(--admin-color-success-700);
+
+  --color-warning-25: var(--admin-color-warning-25);
+  --color-warning-50: var(--admin-color-warning-50);
+  --color-warning-100: var(--admin-color-warning-100);
+  --color-warning-200: var(--admin-color-warning-200);
+  --color-warning-500: var(--admin-color-warning-500);
+  --color-warning-600: var(--admin-color-warning-600);
+  --color-warning-700: var(--admin-color-warning-700);
+
+  --color-error-25: var(--admin-color-error-25);
+  --color-error-50: var(--admin-color-error-50);
+  --color-error-100: var(--admin-color-error-100);
+  --color-error-200: var(--admin-color-error-200);
+  --color-error-500: var(--admin-color-error-500);
+  --color-error-600: var(--admin-color-error-600);
+  --color-error-700: var(--admin-color-error-700);
+
+  --color-blue-50: var(--admin-color-blue-50);
+  --color-blue-500: var(--admin-color-blue-500);
+  --color-blue-700: var(--admin-color-blue-700);
+  --color-green-500: var(--admin-color-green-500);
+
+  --color-orange-25: var(--admin-color-orange-25);
+  --color-orange-50: var(--admin-color-orange-50);
+  --color-orange-100: var(--admin-color-orange-100);
+  --color-orange-200: var(--admin-color-orange-200);
+  --color-orange-300: var(--admin-color-orange-300);
+  --color-orange-400: var(--admin-color-orange-400);
+  --color-orange-500: var(--admin-color-orange-500);
+  --color-orange-600: var(--admin-color-orange-600);
+  --color-orange-700: var(--admin-color-orange-700);
+  --color-orange-800: var(--admin-color-orange-800);
+  --color-orange-900: var(--admin-color-orange-900);
+  --color-orange-950: var(--admin-color-orange-950);
+
+  --color-blue-light-25: var(--admin-color-blue-light-25);
+  --color-blue-light-50: var(--admin-color-blue-light-50);
+  --color-blue-light-100: var(--admin-color-blue-light-100);
+  --color-blue-light-200: var(--admin-color-blue-light-200);
+  --color-blue-light-300: var(--admin-color-blue-light-300);
+  --color-blue-light-400: var(--admin-color-blue-light-400);
+  --color-blue-light-500: var(--admin-color-blue-light-500);
+  --color-blue-light-600: var(--admin-color-blue-light-600);
+  --color-blue-light-700: var(--admin-color-blue-light-700);
+  --color-blue-light-800: var(--admin-color-blue-light-800);
+  --color-blue-light-900: var(--admin-color-blue-light-900);
+  --color-blue-light-950: var(--admin-color-blue-light-950);
+
+  --spacing: var(--admin-spacing-unit);
+  --radius-md: var(--admin-radius-md);
+  --radius-lg: var(--admin-radius-lg);
+  --radius-xl: var(--admin-radius-xl);
+  --radius-2xl: var(--admin-radius-2xl);
+  --shadow-card: var(--admin-shadow-card);
+  --shadow-input: var(--admin-shadow-input);
+  --shadow-dialog: var(--admin-shadow-dialog);
+  --shadow-dropdown: var(--admin-shadow-dropdown);
+  --shadow-sm: var(--admin-shadow-sm);
+  --shadow-theme-xs: var(--admin-shadow-input);
+  --shadow-xl: var(--admin-shadow-xl);
+  --default-transition-duration: var(--admin-transition-duration);
+  --default-transition-timing-function: var(--admin-transition-timing);
 }

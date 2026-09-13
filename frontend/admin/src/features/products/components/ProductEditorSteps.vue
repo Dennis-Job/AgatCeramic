@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import UiButton from '../../../components/ui/UiButton.vue'
+
 defineProps<{ steps: Array<{ id: string; label: string }>; active: string; enabled: (id: string) => boolean }>()
 const emit = defineEmits<{ select: [id: string] }>()
 </script>
@@ -7,9 +9,11 @@ const emit = defineEmits<{ select: [id: string] }>()
   <nav class="border-b border-gray-200 px-4 sm:px-6" aria-label="Этапы карточки товара">
     <ol class="grid grid-cols-1 gap-1 py-2 min-[380px]:grid-cols-2 sm:flex sm:flex-wrap">
       <li v-for="(step, index) in steps" :key="step.id">
-        <button
+        <UiButton
           type="button"
-          class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          variant="ghost"
+          size="sm"
+          class="w-full justify-start text-left sm:w-auto"
           :class="active === step.id ? 'bg-primary-50 text-primary-600' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'"
           :disabled="!enabled(step.id)"
           :aria-current="active === step.id ? 'step' : undefined"
@@ -17,7 +21,7 @@ const emit = defineEmits<{ select: [id: string] }>()
         >
           <span class="grid h-6 w-6 place-items-center rounded-full text-xs" :class="active === step.id ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'">{{ index + 1 }}</span>
           {{ step.label }}
-        </button>
+        </UiButton>
       </li>
     </ol>
   </nav>

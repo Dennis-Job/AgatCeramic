@@ -5,7 +5,7 @@ import { Bell } from '@lucide/vue'
 <template>
   <button
     type="button"
-    class="grid h-10 w-10 place-items-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50"
+    class="grid h-10 w-10 place-items-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
     aria-label="Уведомления"
     aria-describedby="admin-notifications-status"
   >

@@ -1,18 +1,6 @@
 import { apiFetch, requestCsrfCookie } from '../../../services/auth'
-import type { Attribute } from '../../attributes/types/attribute.types'
-import type { Product } from './products'
 import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from '../../../services/pagination'
-
-export type ProductGroup = {
-  id: number
-  name: string
-  code: string
-  axes: Attribute[]
-  products: Array<Product & { axis_values?: Array<{ attribute_id: number; value: string | number | boolean | string[]; attribute?: Attribute }> }>
-  created_at: string
-  updated_at: string
-}
-export type ProductGroupPayload = { name: string; code: string; axis_attribute_ids: number[]; product_ids: number[] }
+import type { ProductGroup, ProductGroupPayload } from '../types/product.types'
 
 export class ProductGroupRequestError extends Error {
   readonly details: Record<string, string[]>

@@ -89,12 +89,12 @@ onBeforeUnmount(() => { if (opener?.isConnected) opener.focus() })
 </script>
 
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-30 bg-gray-900/40 lg:hidden" aria-hidden="true" @click="close" />
+  <div v-if="isOpen" data-testid="sidebar-backdrop" class="fixed inset-0 z-30 bg-gray-900/40 lg:hidden" aria-hidden="true" @click="close" />
   <aside
     id="admin-sidebar"
     ref="sidebar"
-    class="fixed inset-y-0 left-0 z-40 flex admin-sidebar -translate-x-full flex-col overflow-y-auto border-r border-gray-200 bg-white px-4 py-6 transition-transform duration-200 lg:translate-x-0 lg:overflow-visible"
-    :class="{ 'translate-x-0': isOpen }"
+    class="fixed inset-y-0 left-0 z-40 flex admin-sidebar flex-col overflow-y-auto border-r border-gray-200 bg-white px-4 py-6 transition-transform duration-200 lg:visible lg:translate-x-0 lg:overflow-visible"
+    :class="isOpen ? 'visible translate-x-0' : 'invisible -translate-x-full'"
     @keydown="handleKeydown"
   >
     <div class="mb-9 flex items-center justify-between px-2">
@@ -102,7 +102,7 @@ onBeforeUnmount(() => { if (opener?.isConnected) opener.focus() })
         <span class="grid h-10 w-10 shrink-0 place-items-center"><img src="/logo.svg" alt="AgatCeramic" class="logo-primary"></span>
         <span class="min-w-0"><span class="block truncate text-2xl leading-6 font-bold tracking-tight text-gray-800">Agat<span class="text-gray-400">Ceramic</span></span><span class="block text-end text-xs">Админ-панель</span></span>
       </RouterLink>
-      <button ref="closeButton" type="button" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50 lg:hidden" aria-label="Закрыть меню" @click="close"><X :size="20" aria-hidden="true" /></button>
+      <button ref="closeButton" type="button" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 lg:hidden" aria-label="Закрыть меню" @click="close"><X :size="20" aria-hidden="true" /></button>
     </div>
 
     <nav class="space-y-1" aria-label="Основная навигация">
