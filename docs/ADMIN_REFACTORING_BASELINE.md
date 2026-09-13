@@ -6,8 +6,12 @@
 
 Повторный аудит 2026-09-12 отозвал финальную приёмку `TASK-A030`: выявлены blocking findings по
 mobile sidebar, цветовому контрасту/design tokens, завершённости products/auth migration и
-устойчивости acceptance suite. Исправления вынесены в `TASK-A031`–`TASK-A035`; после них
-`TASK-A030` проходит повторную приёмку. Переход к Phase 7 заблокирован.
+устойчивости acceptance suite. `TASK-A031` исправила mobile sidebar, иконку удаления и browser
+runtime guard; `TASK-A032` централизовала design tokens и закрыла contrast findings без Axe-исключений;
+`TASK-A033` завершила products UI-kit/type migration и закрепила responsive/focus coverage таблиц и
+трёх import-dialog; `TASK-A034` устранила дублирование auth shell; `TASK-A035` стабилизировала
+acceptance fixtures и исправила evidence. Все findings устранены; повторная приёмка `TASK-A030`
+завершена 2026-09-13, переход к Phase 7 разрешён.
 
 Документ ниже сохраняется как исторический baseline и объясняет исходные пути/контракты.
 Актуальные правила находятся в `frontend/admin/AGENTS.md` и
@@ -24,7 +28,8 @@ loading/empty/error состояния, destructive dialog и ширины 320, 
 Route views не содержат raw HTTP, доменных DTO, крупных форм или копий UI
 primitives. Временные `Base*`, layout, state/pagination и service re-export
 adapters удалены после миграции consumers. API, permissions, backend и OpenAPI
-в рамках первой приёмки не изменялись. Phase 7 остаётся заблокирована до повторной приёмки.
+в рамках первой приёмки не изменялись. На момент повторного аудита Phase 7 была заблокирована до
+новой приёмки.
 
 ## Воспроизводимая visual и accessibility-проверка
 
@@ -37,15 +42,16 @@ browser-level fixtures. Он создаёт и сравнивает visual snaps
 горизонтального overflow на 320, 640, 768, 1024 и 1280 px. Для data-driven
 экранов (`products`, Catalog dictionaries, employees, RBAC, audit, orders и
 contacts) отдельно фиксируются empty и error screenshots; error также обязан
-содержать `role=alert`. Для тех же экранов baseline задерживает API fixture и
-фиксирует видимое `role=status` loading-состояние. Отдельный snapshot закрывает
-доступный destructive confirmation dialog на `/roles`.
+содержать `role=alert`. Для тех же экранов baseline удерживает API fixture управляемым deferred
+request до явного release и фиксирует видимое `role=status` loading-состояние без зависимости от
+таймера. Отдельные snapshots закрывают воспроизводимый ответ `403` на `/products` и доступный
+destructive confirmation dialog на `/roles`.
 
 Первое создание либо намеренное обновление snapshot выполняется только после
 визуального review:
 
-```powershell
-Set-Location frontend/admin
+```sh
+cd frontend/admin
 npm run build
 npx playwright test e2e/adminBaseline.spec.ts --update-snapshots
 ```
@@ -58,18 +64,42 @@ npx playwright test e2e/adminBaseline.spec.ts --update-snapshots
 проверяет loading/empty/error/forbidden и destructive-диалоги, imports —
 loading/error/result dialogs, Orders — detail и permission-safe controls.
 Все эти проверки запускаются той же командой. Axe блокирует все `serious` и
-`critical`, кроме узко описанного временного исключения ниже; `color-contrast` исключён осознанно согласно
-[`UI_DESIGN_REVIEW.md`](UI_DESIGN_REVIEW.md) и проверяется визуально.
+`critical` нарушения, включая `color-contrast`, без исключений правил.
 
 Исправление в `TASK-A024`: `BaseDatePicker` больше не устанавливает
 `aria-expanded` на text input, поэтому baseline не допускает serious/critical
 исключений Axe.
 
+## Исправление исторического evidence TASK-A023
+
+В `TASK-A023` было зафиксировано 52 Windows snapshot и заявлено покрытие forbidden-state, но
+исходный `adminBaseline.spec.ts` содержал только default, loading, empty, error и destructive-dialog
+сценарии. Детерминированной проверки ответа API `403` и forbidden snapshot не было. Это историческое
+расхождение не переписывается: `TASK-A035` добавляет отдельный `/products` API-forbidden сценарий,
+стандартный error envelope, `role=alert`, browser-error allowlist и snapshot для поддерживаемых сред.
+
+## Результат стабилизации TASK-A035
+
+Два последовательных локальных полных прогона завершились без flaky failures: каждый включал
+production build, 35 unit-тестов и 145 Playwright E2E/axe/visual тестов. Финальный Linux Compose
+suite также прошёл 145/145. Независимый UI Design Guard одобрил согласованные Darwin/Linux
+forbidden-state snapshots 1280×720 и не оставил blocking findings.
+
+## Результат повторной приёмки TASK-A030
+
+Статический аудит подтвердил отсутствие переходных `Base*`, layout, state, pagination и domain
+service re-export adapters. Route views не содержат raw HTTP/endpoint logic, доменных DTO, крупных
+форм или копий controls; последний дублированный page header в `PlaceholderView` заменён общим
+`PageHeader`. Production build, 35 unit-тестов и полный набор из 145 E2E/axe/visual тестов прошли
+локально и в Linux Compose. Baseline охватывает все обязательные маршруты, состояния и ширины
+320/640/768/1024/1280 px. Независимый UI Design Guard повторил полный suite и подтвердил отсутствие
+blocking findings. Admin frontend refactoring принят, Phase 7 разблокирована.
+
 Для каждого изменённого UI также вручную проверить ширины 320, 640, 768, 1024
 и 1280 px, keyboard focus/Escape и длинные русские строки. Это не заменяется
 snapshot-тестом на desktop.
 
-## Текущая карта ответственности
+## Историческая карта ответственности TASK-A023
 
 | Текущий путь | Назначение | Владелец feature | Целевой слой при переносе |
 | --- | --- | --- | --- |

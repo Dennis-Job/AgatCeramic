@@ -42,7 +42,13 @@ PostgreSQL integration-тесты запускаются с `--configuration=php
 
 Разбор инцидента и проверка восстановления: [DATABASE_RECOVERY_2026-09-03.md](DATABASE_RECOVERY_2026-09-03.md).
 
-Admin E2E запускает production-сборку SPA через Vite preview с детерминированными browser-level mock-ответами API. Это исключает race с временным Vite dev server и проверяет маршрутизацию, восстановление административной сессии, каталоговые представления и интерактивные компоненты без зависимости от общей тестовой базы данных. Axe scan блокирует serious/critical семантические accessibility-регрессии на списках и открытых диалогах; правило `color-contrast` исключено, поскольку палитра контролируется отдельным визуальным регламентом `UI_DESIGN_REVIEW.md`. Backend API-контракт отдельно защищён Laravel-тестами и OpenAPI.
+Admin E2E запускает production-сборку SPA через Vite preview с детерминированными browser-level
+mock-ответами API. Loading-состояния удерживаются управляемыми deferred fixtures до явного release,
+а не таймерами. Это исключает race с временным Vite dev server и проверяет маршрутизацию,
+восстановление административной сессии, каталоговые представления и интерактивные компоненты без
+зависимости от общей тестовой базы данных. Full-page Axe scan без исключения `color-contrast`
+блокирует serious/critical accessibility-регрессии на маршрутах, списках и открытых диалогах.
+Backend API-контракт отдельно защищён Laravel-тестами и OpenAPI.
 
 Локальный Compose runner запускается отдельной командой `docker compose --profile test run --rm admin-e2e`.
 Он выполняет чистый `npm ci`, устанавливает Chromium в отдельный volume и запускает production E2E;
