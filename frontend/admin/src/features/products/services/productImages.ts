@@ -1,8 +1,6 @@
 import { apiFetch, requestCsrfCookie } from '../../../services/auth'
 import { loadAllPages, withPage, type PageRequest, type PaginatedResponse } from '../../../services/pagination'
-
-export type ProductImage = { id: number; product_id: number; url: string; mime_type: string; size: number; alt: string | null; is_primary: boolean; sort_order: number; created_at: string; updated_at: string }
-export type ProductImageUpdatePayload = { alt?: string | null; is_primary?: boolean; sort_order?: number }
+import type { ProductImage, ProductImageUpdatePayload } from '../types/product.types'
 async function fail(response: Response): Promise<never> { const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }; throw new Error(Object.values(body.error?.details ?? {}).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.') }
 export async function getProductImages(productId: number, request: PageRequest = {}): Promise<PaginatedResponse<ProductImage>> { const query = new URLSearchParams(); withPage(query, request); const response = await apiFetch(`/admin/products/${productId}/images${query.size ? `?${query}` : ''}`); if (!response.ok) return fail(response); return (await response.json()) as PaginatedResponse<ProductImage> }
 export async function getAllProductImages(productId: number): Promise<ProductImage[]> { return loadAllPages((request) => getProductImages(productId, request)) }

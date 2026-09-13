@@ -22,13 +22,13 @@ async function signOut(): Promise<void> {
     </div>
     <button
       type="button"
-      class="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full bg-primary-500 text-sm font-bold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50"
+      class="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full bg-primary-500 text-sm font-bold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
       aria-label="Мой профиль"
       @click="router.push({ name: 'profile' })"
     >{{ initial }}</button>
     <button
       type="button"
-      class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-50"
+      class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
       aria-label="Выйти"
       @click="signOut"
     ><LogOut :size="19" aria-hidden="true" /></button>

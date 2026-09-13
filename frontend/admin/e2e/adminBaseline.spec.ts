@@ -1,13 +1,14 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from './fixtures'
+import { createDeferredApiRequests, type DeferredApiRequests } from './deferredApi'
 
 const timestamp = '2026-09-11T10:00:00.000Z'
 const permissions = ['catalog.manage', 'imports.manage', 'admin-users.view', 'admin-users.manage', 'roles.view', 'roles.manage', 'permissions.view', 'audit-log.view', 'orders.view', 'orders.manage', 'payments.manage', 'contacts.view', 'contacts.manage']
 const page = <T>(data: T[]) => ({ data, meta: { current_page: 1, last_page: 1, per_page: 25, total: data.length, from: data.length ? 1 : null, to: data.length || null } })
 
-type BaselineState = 'default' | 'loading' | 'empty' | 'error'
+type BaselineState = 'default' | 'loading' | 'empty' | 'error' | 'forbidden'
 
-async function mockAdminBaseline(pageContext: Page, guest = false, state: BaselineState = 'default'): Promise<void> {
+async function mockAdminBaseline(pageContext: Page, guest = false, state: BaselineState = 'default', deferredRequests?: DeferredApiRequests): Promise<void> {
   await pageContext.route('**/sanctum/csrf-cookie', route => route.fulfill({ status: 204 }))
   await pageContext.route('**/api/v1/**', async route => {
     const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
@@ -24,10 +25,9 @@ async function mockAdminBaseline(pageContext: Page, guest = false, state: Baseli
     if (path === '/admin/auth/me') return guest
       ? route.fulfill({ status: 401, json: { error: { message: 'Unauthenticated' } } })
       : route.fulfill({ json: { data: user } })
-    if (state === 'loading' && ['/admin/products', '/admin/categories/tree', '/admin/brands', '/admin/attribute-groups', '/admin/attributes', '/admin/users', '/admin/roles', '/admin/permissions', '/admin/audit-logs', '/admin/orders', '/admin/contact-requests'].includes(path)) {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
+    await deferredRequests?.wait(path)
     if (state === 'error') return route.fulfill({ status: 500, json: { error: { message: 'Baseline API error' } } })
+    if (state === 'forbidden' && path === '/admin/products') return route.fulfill({ status: 403, json: { error: { message: 'Недостаточно прав для просмотра ресурса.' } } })
     const collection = <T>(items: T[]) => page(state === 'empty' ? [] : items)
     const data = <T>(items: T[]) => ({ data: state === 'empty' ? [] : items })
     if (path === '/admin/categories/tree') return route.fulfill({ json: data([category]) })
@@ -51,15 +51,40 @@ async function mockAdminBaseline(pageContext: Page, guest = false, state: Baseli
 }
 
 const stateRoutes = ['/products', '/categories', '/brands', '/attribute-groups', '/attributes', '/employees', '/roles', '/permissions', '/audit-log', '/orders', '/contacts'] as const
+const stateApiPaths: Record<(typeof stateRoutes)[number], string> = {
+  '/products': '/admin/products',
+  '/categories': '/admin/categories/tree',
+  '/brands': '/admin/brands',
+  '/attribute-groups': '/admin/attribute-groups',
+  '/attributes': '/admin/attributes',
+  '/employees': '/admin/users',
+  '/roles': '/admin/roles',
+  '/permissions': '/admin/permissions',
+  '/audit-log': '/admin/audit-logs',
+  '/orders': '/admin/orders',
+  '/contacts': '/admin/contact-requests',
+}
 
 for (const path of stateRoutes) {
   test(`Admin baseline: ${path} loading state`, async ({ page }) => {
-    await mockAdminBaseline(page, false, 'loading')
+    const deferredRequests = createDeferredApiRequests()
+    const request = deferredRequests.defer(stateApiPaths[path])
+    await mockAdminBaseline(page, false, 'loading', deferredRequests)
     await page.goto(path, { waitUntil: 'commit' })
+    await request.requested
     await expect(page.getByRole('status').filter({ hasText: 'Загрузка' })).toBeVisible()
     await expect(page).toHaveScreenshot(`route-${path.slice(1)}-loading.png`, { fullPage: true, animations: 'disabled' })
+    request.release()
   })
 }
+
+test('Admin baseline: /products forbidden state', async ({ page, browserIssueGuard }) => {
+  browserIssueGuard.allowApiError(403, '/api/v1/admin/products')
+  await mockAdminBaseline(page, false, 'forbidden')
+  await page.goto('/products', { waitUntil: 'networkidle' })
+  await expect(page.getByRole('alert')).toContainText('Недостаточно прав для просмотра ресурса.')
+  await expect(page).toHaveScreenshot('route-products-forbidden.png', { animations: 'disabled' })
+})
 
 test('Admin baseline: roles destructive confirmation dialog', async ({ page }) => {
   await mockAdminBaseline(page)
@@ -72,7 +97,8 @@ test('Admin baseline: roles destructive confirmation dialog', async ({ page }) =
 
 for (const path of stateRoutes) {
   for (const state of ['empty', 'error'] as const) {
-    test(`Admin baseline: ${path} ${state} state`, async ({ page }) => {
+    test(`Admin baseline: ${path} ${state} state`, async ({ page, browserIssueGuard }) => {
+      if (state === 'error') browserIssueGuard.allowApiError(500, /^\/api\/v1\/admin\//)
       await mockAdminBaseline(page, false, state)
       await page.goto(path, { waitUntil: 'networkidle' })
       if (state === 'error') await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 })
@@ -92,27 +118,52 @@ for (const [path, heading] of authenticatedRoutes) {
     await mockAdminBaseline(page)
     await page.goto(path)
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
-    await expect(page).toHaveScreenshot(`route-${path === '/' ? 'dashboard' : path.slice(1)}.png`, { fullPage: true, animations: 'disabled' })
-    const accessibility = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+    await page.waitForLoadState('networkidle')
+    const accessibility = await new AxeBuilder({ page }).analyze()
     const serious = accessibility.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))
     expect(serious).toEqual([])
+    await expect(page).toHaveScreenshot(`route-${path === '/' ? 'dashboard' : path.slice(1)}.png`, { fullPage: true, animations: 'disabled' })
   })
 }
 
+test('Admin UI-kit states meet color contrast requirements', async ({ page }) => {
+  await mockAdminBaseline(page)
+  await page.goto('/ui-kit')
+  await expect(page.getByRole('heading', { level: 1, name: 'UI-kit' })).toBeVisible()
+  await page.waitForLoadState('networkidle')
+  for (const name of ['Недоступна', 'Вторичная недоступна', 'Опасная недоступна', 'Прозрачная недоступна']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
+  }
+  const disabledCheckbox = page.getByRole('checkbox', { name: 'Недоступный выбранный флажок' })
+  await expect(disabledCheckbox).toBeDisabled()
+  await expect(disabledCheckbox).toBeChecked()
+  await expect(disabledCheckbox.locator('..').locator('span').first()).toHaveClass(/text-gray-600/)
+  const disabledRadio = page.getByRole('radio', { name: 'Недоступный' })
+  await expect(disabledRadio).toBeDisabled()
+  await expect(disabledRadio).not.toBeChecked()
+  await expect(disabledRadio.locator('..').locator('span').first()).toHaveClass(/text-transparent/)
+  const accessibility = await new AxeBuilder({ page }).analyze()
+  expect(accessibility.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([])
+})
+
 for (const [path, heading] of [['/login', 'Вход'], ['/forgot-password', 'Восстановление пароля'], ['/reset-password', 'Задайте новый пароль']] as const) {
-  test(`Admin baseline: guest ${path}`, async ({ page }) => {
+  test(`Admin baseline: guest ${path}`, async ({ page, browserIssueGuard }) => {
+    browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
     await mockAdminBaseline(page, true)
     await page.goto(path)
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
-    await expect(page).toHaveScreenshot(`route-${path.slice(1)}.png`, { fullPage: true, animations: 'disabled' })
-    const accessibility = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+    await page.waitForLoadState('networkidle')
+    const accessibility = await new AxeBuilder({ page }).analyze()
     expect(accessibility.violations.filter(item => ['serious', 'critical'].includes(item.impact ?? ''))).toEqual([])
+    await expect(page).toHaveScreenshot(`route-${path.slice(1)}.png`, { fullPage: true, animations: 'disabled' })
   })
 }
 
 for (const path of [...authenticatedRoutes.map(([route]) => route), '/login', '/forgot-password', '/reset-password']) {
-  test(`Admin baseline: ${path} remains usable at all supported widths`, async ({ page }) => {
-    await mockAdminBaseline(page, path.startsWith('/login') || path.startsWith('/forgot') || path.startsWith('/reset'))
+  test(`Admin baseline: ${path} remains usable at all supported widths`, async ({ page, browserIssueGuard }) => {
+    const guest = path.startsWith('/login') || path.startsWith('/forgot') || path.startsWith('/reset')
+    if (guest) browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
+    await mockAdminBaseline(page, guest)
     for (const width of [320, 640, 768, 1024, 1280]) {
       await page.setViewportSize({ width, height: 800 })
       await page.goto(path)

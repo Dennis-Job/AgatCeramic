@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from './fixtures'
 
 const timestamp = '2026-09-11T10:00:00.000Z'
 const order = {
@@ -36,7 +36,7 @@ test('orders workspace exposes protected snapshot, keyboard selection, and manag
   await expect(page.getByRole('heading', { name: 'Статус заказа' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Оплата' })).toBeVisible()
   await expect(page.getByLabel('Новый внутренний комментарий')).toBeVisible()
-  const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze()
+  const results = await new AxeBuilder({ page }).analyze()
   expect(results.violations.filter(violation => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([])
 })
 
