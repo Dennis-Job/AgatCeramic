@@ -43,9 +43,10 @@ PostgreSQL integration-тесты запускаются с `--configuration=php
 Разбор инцидента и проверка восстановления: [DATABASE_RECOVERY_2026-09-03.md](DATABASE_RECOVERY_2026-09-03.md).
 
 Admin E2E в CI и локальном Compose запускает production-сборку SPA через Vite preview в одном
-поддерживаемом `admin-e2e` Docker-окружении. Это устраняет различия системных шрифтов и Chromium
-rasterization между hosted runner и средой, в которой создаются Linux visual snapshots, без
-ослабления pixel-diff threshold. Детерминированные browser-level mock-ответы API удерживают
+поддерживаемом `admin-e2e` Docker-окружении; CI явно передаёт безопасный `.env.example`. Это
+устраняет различия системных шрифтов и Chromium rasterization между hosted runner и средой, в
+которой создаются Linux visual snapshots, без ослабления pixel-diff threshold.
+Детерминированные browser-level mock-ответы API удерживают
 loading-состояния управляемыми deferred fixtures до явного release, а не таймерами. Проверяются
 маршрутизация, восстановление административной сессии, каталоговые представления и интерактивные
 компоненты без зависимости от общей тестовой базы данных. Full-page Axe scan без исключения

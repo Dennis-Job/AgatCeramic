@@ -176,7 +176,7 @@ jobs:
 
       - name: Run Admin end-to-end tests
         working-directory: .
-        run: docker compose --profile test run --rm admin-e2e
+        run: docker compose --env-file .env.example --profile test run --rm admin-e2e
 
   client:
     name: Client checks
