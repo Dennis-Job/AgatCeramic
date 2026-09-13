@@ -288,6 +288,30 @@ API behaviour без migration plan и синхронного обновлени
   - Обновить `frontend/admin/AGENTS.md`, `docs/UI_DESIGN_REVIEW.md` и актуальную документацию
     только при изменении фактических правил/контрактов; после этого разрешить Phase 7 — Content.
 
+## Admin frontend post-acceptance follow-up
+
+- [ ] TASK-A036 Удалить hardcoded-роли и оставшийся compatibility adapter
+  - Использовать полученные от backend названия ролей без frontend-словаря системных slug и удалить
+    неиспользуемый service re-export `getRoles`; синхронизировать итоговую документацию TASK-A030.
+  - Сохранить текущие permissions, маршруты и API-contract; добавить адресную unit/E2E-проверку.
+
+- [ ] TASK-A037 Завершить disabled-контракт UI-kit
+  - Заблокировать вспомогательные действия `UiInput` и `UiSelect` в disabled-состоянии и добавить
+    полноценный disabled-контракт для `UiDatePicker` без потери keyboard/focus semantics.
+  - Обновить UI-kit tests, axe и visual QA затронутых состояний на контрольных ширинах; пройти
+    независимый UI Design Guard review.
+
+- [ ] TASK-A038 Вынести orchestration импортов товаров из Vue-компонентов
+  - Перенести state, загрузку, polling, download/upload flow и validation XLSX/ZIP из трёх import
+    dialogs в feature composables/validation, оставив компонентам представление и события.
+  - Не менять API-contract, permissions, лимиты файлов и поведение фоновой обработки; выполнить
+    unit, import E2E/axe, responsive QA и независимый UI Design Guard review.
+
+- [ ] TASK-A039 Усилить Admin lint и flaky CI gates
+  - Добавить воспроизводимые lint и format-check команды в локальный workflow и CI.
+  - Не позволять Playwright retry скрывать flaky tests: отключить retries либо включить падение CI
+    при flaky-результате; подтвердить два последовательных локальных прогона и Linux Compose suite.
+
 ## Phase 7 — Content
 
 - [ ] TASK-090 Site settings
