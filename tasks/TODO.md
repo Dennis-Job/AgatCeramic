@@ -301,7 +301,7 @@ API behaviour без migration plan и синхронного обновлени
   - Обновить UI-kit tests, axe и visual QA затронутых состояний на контрольных ширинах; пройти
     независимый UI Design Guard review.
 
-- [ ] TASK-A038 Вынести orchestration импортов товаров из Vue-компонентов
+- [x] TASK-A038 Вынести orchestration импортов товаров из Vue-компонентов
   - Перенести state, загрузку, polling, download/upload flow и validation XLSX/ZIP из трёх import
     dialogs в feature composables/validation, оставив компонентам представление и события.
   - Не менять API-contract, permissions, лимиты файлов и поведение фоновой обработки; выполнить

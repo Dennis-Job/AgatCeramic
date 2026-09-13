@@ -120,6 +120,33 @@ test('product Excel import retains job on polling failure and refreshes status',
   await expect(dialog.getByText('Успешно: 5. С ошибками: 0.')).toBeVisible()
 })
 
+test('product image ZIP import uploads, polls and downloads its accessible responsive error report', async ({ page }, testInfo) => {
+  await mockCatalogApi(page, { importErrors: true })
+  const dialog = await openImport(page)
+  await dialog.getByRole('tab', { name: 'Загрузка изображений' }).click()
+  await dialog.locator('#image-import-file').setInputFiles({
+    name: 'images.zip', mimeType: 'application/zip', buffer: Buffer.from('mock zip'),
+  })
+
+  const uploadRequest = page.waitForRequest(request => new URL(request.url()).pathname.endsWith('/admin/product-image-imports'))
+  await dialog.getByRole('button', { name: 'Загрузить архив' }).click()
+  expect((await uploadRequest).method()).toBe('POST')
+  await expect(dialog.getByText('Папок обработано').locator('..')).toContainText('2 из 2')
+  await expect(dialog.getByText('Товар с таким SKU не найден.')).toBeVisible()
+
+  const report = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Скачать отчёт с ошибками' }).click()
+  expect((await report).suggestedFilename()).toBe('product-image-import-1-errors.csv')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 800 })
+    expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await dialog.screenshot({ path: testInfo.outputPath(`image-import-${width}.png`) })
+  }
+  const accessibility = await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+  expect(accessibility.violations.filter(v => ['serious', 'critical'].includes(v.impact ?? ''))).toEqual([])
+})
+
 test('variation-group Excel import downloads, uploads and reports its accessible result', async ({ page }, testInfo) => {
   await mockCatalogApi(page, { importErrors: true })
   await page.goto('/products')

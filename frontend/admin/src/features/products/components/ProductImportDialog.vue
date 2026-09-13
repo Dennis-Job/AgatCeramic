@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { CheckCircle2, Download, ImagePlus, Upload, X } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
@@ -9,188 +9,45 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiRadio from '../../../components/ui/UiRadio.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import { getCategories } from '../../categories/services/categories'
-import type { Category } from '../../categories/types/category.types'
-import { getProductImport, getProductImportErrors, getProductImportTemplate, uploadProductImport } from '../services/products'
-import { getProductImageImport, getProductImageImportErrors, uploadProductImageImport } from '../services/productImageImports'
-import type { ProductImageImport, ProductImport } from '../types/product.types'
-import { compareAlphabetically } from '../../../utils/alphabetical'
+import { useProductImportDialog } from '../composables/useProductImportDialog'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; completed: [] }>()
-const tab = ref<'products' | 'images'>('products')
-const importMode = ref<'template' | 'edit'>('template')
-const categories = ref<Category[]>([])
-const categoryId = ref('')
-const categoriesLoading = ref(false)
-const categoryError = ref('')
-const file = ref<File | null>(null)
 const input = ref<HTMLInputElement | null>(null)
-const result = ref<ProductImport | null>(null)
-const uploading = ref(false)
-const downloading = ref(false)
-const error = ref('')
-const notice = ref('')
-const pollingError = ref(false)
-let timer: ReturnType<typeof setTimeout> | undefined
-const imageFile = ref<File | null>(null)
 const imageInput = ref<HTMLInputElement | null>(null)
-const imageResult = ref<ProductImageImport | null>(null)
-const imageUploading = ref(false)
-const imageDownloading = ref(false)
-const imageError = ref('')
-const imagePollingError = ref(false)
-let imageTimer: ReturnType<typeof setTimeout> | undefined
-let disposed = false
-const busy = computed(() => uploading.value || result.value?.status === 'pending' || result.value?.status === 'processing')
-const finished = computed(() => result.value?.status === 'completed' || result.value?.status === 'failed')
-const imageBusy = computed(() => imageUploading.value || imageResult.value?.status === 'pending' || imageResult.value?.status === 'processing')
-const imageFinished = computed(() => imageResult.value?.status === 'completed' || imageResult.value?.status === 'failed')
-const successful = computed(() => (result.value?.created_rows ?? 0) + (result.value?.updated_rows ?? 0))
-const progress = computed(() => result.value?.total_rows ? Math.min(100, Math.round(result.value.processed_rows / result.value.total_rows * 100)) : undefined)
-const imageProgress = computed(() => imageResult.value?.total_folders
-  ? Math.min(100, Math.round(imageResult.value.processed_folders / imageResult.value.total_folders * 100))
-  : undefined)
-function flatten(nodes: Category[], depth = 0): { value: string; label: string }[] {
-  return [...nodes].sort((a, b) => compareAlphabetically(a.name, b.name)).flatMap(item => [
-    { value: String(item.id), label: `${'— '.repeat(depth)}${item.name}${item.is_active ? '' : ' (скрыта)'}` },
-    ...flatten(item.children ?? [], depth + 1),
-  ])
-}
-const categoryOptions = computed(() => flatten(categories.value))
-const statusText = computed(() => {
-  if (uploading.value) return 'Загружаем XLSX-файл…'
-  if (result.value?.status === 'pending') return 'Файл ожидает обработки…'
-  if (result.value?.status === 'processing') return result.value.total_rows
-    ? `Обработано ${result.value.processed_rows} из ${result.value.total_rows} товаров`
-    : 'Проверяем файл и импортируем товары…'
-  return importMode.value === 'template'
-    ? 'Выберите категорию, скачайте и заполните шаблон, затем загрузите файл.'
-    : 'Выберите категорию, скачайте заполненный шаблон и загрузите отредактированный XLSX-файл.'
-})
-async function loadCategories() {
-  categoriesLoading.value = true
-  categoryError.value = ''
-  try { categories.value = await getCategories() }
-  catch (reason) { categoryError.value = reason instanceof Error ? reason.message : 'Не удалось загрузить категории.' }
-  finally { categoriesLoading.value = false }
-}
-watch(() => props.open, open => { if (open && !categories.value.length) void loadCategories() })
+const {
+  tab, importMode, categoryId, categoriesLoading, categoryError, categoryOptions, successful, progress,
+  imageProgress, statusText, productImport, imageImport, loadCategories, downloadTemplate, uploadProducts,
+  downloadImageErrors,
+} = useProductImportDialog(() => emit('completed'))
+const {
+  file, result, downloading, error, notice, pollingError, busy, finished,
+  selectFile: selectProductFile, poll,
+} = productImport
+const {
+  file: imageFile, result: imageResult, uploading: imageUploading, downloading: imageDownloading,
+  error: imageError, pollingError: imagePollingError, busy: imageBusy, finished: imageFinished,
+  selectFile: selectProductImageFile, upload: uploadImageImport, poll: pollImageImport,
+} = imageImport
+
+watch(() => props.open, open => { if (open && !categoryOptions.value.length) void loadCategories() })
 watch([busy, downloading], async () => {
   await nextTick()
   if (props.open && tab.value === 'products' && (document.activeElement === document.body || document.activeElement?.matches(':disabled'))) {
     document.getElementById('import-tab-products')?.focus()
   }
 })
-watch(categoryId, () => {
-  file.value = null
-  if (input.value) input.value.value = ''
-  error.value = ''; notice.value = ''
-})
-watch(importMode, () => {
-  file.value = null
-  if (input.value) input.value.value = ''
-  error.value = ''; notice.value = ''
-  if (finished.value) result.value = null
-})
-watch(tab, activeTab => {
-  if (activeTab === 'images') {
-    error.value = ''
-    notice.value = ''
-  } else {
-    imageError.value = ''
-  }
-})
+watch([categoryId, importMode], () => { if (input.value) input.value.value = '' })
 function selectFile(event: Event) {
-  file.value = (event.target as HTMLInputElement).files?.[0] ?? null
-  error.value = ''; notice.value = ''
-  if (finished.value) result.value = null
-}
-function saveDownload(download: { blob: Blob; filename: string }) {
-  const url = URL.createObjectURL(download.blob)
-  const link = document.createElement('a')
-  link.href = url; link.download = download.filename
-  document.body.appendChild(link); link.click(); link.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-async function downloadTemplate(errorsOnly = false) {
-  if (downloading.value) return
-  downloading.value = true; error.value = ''; notice.value = ''
-  try {
-    saveDownload(errorsOnly && result.value ? await getProductImportErrors(result.value.id) : await getProductImportTemplate(Number(categoryId.value), importMode.value === 'edit'))
-    notice.value = errorsOnly
-      ? result.value?.category_id === null
-        ? 'Отчёт с ошибками скачан. Исправьте указанные строки в шаблоне редактирования и загрузите его повторно.'
-        : 'Файл с ошибочными товарами скачан. Исправьте ошибки и загрузите его повторно.'
-      : 'Шаблон Excel скачан. Заполните его и прикрепите ниже.'
-  } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось скачать файл.' }
-  finally { downloading.value = false }
-}
-async function poll(id: number) {
-  if (disposed) return
-  pollingError.value = false
-  try {
-    const current = await getProductImport(id)
-    if (disposed) return
-    result.value = current
-    if (current.status === 'completed' || current.status === 'failed') { emit('completed'); return }
-    timer = setTimeout(() => { void poll(id) }, 1500)
-  } catch { if (!disposed) pollingError.value = true }
+  selectProductFile((event.target as HTMLInputElement).files?.[0] ?? null)
 }
 async function upload() {
-  if (!file.value || !categoryId.value || busy.value) return
-  error.value = ''; notice.value = ''
-  if (!file.value.name.toLowerCase().endsWith('.xlsx') || file.value.size > 10 * 1024 * 1024) {
-    error.value = 'Прикрепите файл XLSX размером не более 10 МБ.'; return
-  }
-  uploading.value = true; result.value = null
-  try {
-    result.value = await uploadProductImport(file.value, Number(categoryId.value))
-    void poll(result.value.id)
-  } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить XLSX-файл.' }
-  finally { uploading.value = false }
+  await uploadProducts()
 }
 function selectImageFile(event: Event) {
   const target = event.target as HTMLInputElement
-  imageFile.value = target.files?.[0] ?? null
+  selectProductImageFile(target.files?.[0] ?? null)
   target.value = ''
-  imageError.value = ''
-  if (imageFinished.value) imageResult.value = null
-}
-async function pollImageImport(id: number) {
-  if (disposed) return
-  imagePollingError.value = false
-  try {
-    const current = await getProductImageImport(id)
-    if (disposed) return
-    imageResult.value = current
-    if (current.status === 'completed' || current.status === 'failed') { emit('completed'); return }
-    imageTimer = setTimeout(() => { void pollImageImport(id) }, 1500)
-  } catch { if (!disposed) imagePollingError.value = true }
-}
-async function uploadImageImport() {
-  if (!imageFile.value || imageBusy.value) return
-  imageError.value = ''
-  const isZip = imageFile.value.name.toLowerCase().endsWith('.zip') || imageFile.value.type === 'application/zip'
-  if (!isZip || imageFile.value.size > 500 * 1024 * 1024) {
-    imageError.value = 'Прикрепите ZIP-архив размером не более 500 МБ.'
-    return
-  }
-  imageUploading.value = true
-  imageResult.value = null
-  try {
-    imageResult.value = await uploadProductImageImport(imageFile.value)
-    void pollImageImport(imageResult.value.id)
-  } catch (reason) { imageError.value = reason instanceof Error ? reason.message : 'Не удалось загрузить ZIP-архив.' }
-  finally { imageUploading.value = false }
-}
-async function downloadImageErrors() {
-  if (!imageResult.value || imageDownloading.value) return
-  imageDownloading.value = true
-  imageError.value = ''
-  try { saveDownload(await getProductImageImportErrors(imageResult.value.id)) }
-  catch (reason) { imageError.value = reason instanceof Error ? reason.message : 'Не удалось скачать отчёт с ошибками.' }
-  finally { imageDownloading.value = false }
 }
 function changeTab(event: KeyboardEvent) {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
@@ -198,7 +55,6 @@ function changeTab(event: KeyboardEvent) {
   tab.value = event.key === 'Home' ? 'products' : event.key === 'End' ? 'images' : tab.value === 'products' ? 'images' : 'products'
   void nextTick(() => document.getElementById(`import-tab-${tab.value}`)?.focus())
 }
-onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer); if (imageTimer) clearTimeout(imageTimer) })
 </script>
 
 <template>

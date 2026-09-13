@@ -215,6 +215,28 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
       return
     }
 
+    if (path === '/admin/product-image-imports/1/errors') {
+      await route.fulfill({
+        body: 'sku,entry,error',
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': 'attachment; filename="product-image-import-1-errors.csv"',
+          'Access-Control-Expose-Headers': 'Content-Disposition',
+        },
+      })
+      return
+    }
+
+    if (path === '/admin/product-image-imports' && route.request().method() === 'POST') {
+      await route.fulfill({ status: 202, json: { data: { id: 1, filename: 'images.zip', status: 'pending', total_folders: 0, processed_folders: 0, created_images: 0, replaced_images: 0, failed_folders: 0, errors: [], has_error_file: false, error_message: null, created_at: now, started_at: null, completed_at: null } } })
+      return
+    }
+
+    if (path === '/admin/product-image-imports/1') {
+      await route.fulfill({ json: { data: { id: 1, filename: 'images.zip', status: 'completed', total_folders: 2, processed_folders: 2, created_images: 3, replaced_images: 1, failed_folders: options.importErrors ? 1 : 0, errors: options.importErrors ? [{ sku: 'UNKNOWN-SKU', entry: 'UNKNOWN-SKU_1.jpg', messages: ['Товар с таким SKU не найден.'] }] : [], has_error_file: Boolean(options.importErrors), error_message: null, created_at: now, started_at: now, completed_at: now } } })
+      return
+    }
+
     if (path === '/admin/products/import' && route.request().method() === 'POST') {
       await route.fulfill({ status: 202, json: { data: { id: 1, category_id: 1, total_rows: 0, failed_rows: 0, row_errors: [], has_error_file: false, filename: 'products.xlsx', status: 'pending', created_rows: 0, updated_rows: 0, processed_rows: 0, error_message: null, created_at: now, started_at: null, completed_at: null } } })
       return

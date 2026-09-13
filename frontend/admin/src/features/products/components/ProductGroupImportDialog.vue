@@ -1,32 +1,18 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { CheckCircle2, CircleAlert, Download, Upload, X } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
-import { getProductGroupImport, getProductGroupImportErrors, getProductGroupImportTemplate, uploadProductGroupImport } from '../services/products'
-import type { ProductImport } from '../types/product.types'
+import { useProductGroupImport } from '../composables/useProductGroupImport'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; completed: [] }>()
-const input = ref<HTMLInputElement | null>(null); const file = ref<File | null>(null); const result = ref<ProductImport | null>(null)
-const downloading = ref(false); const uploading = ref(false); const error = ref(''); const notice = ref(''); const pollingError = ref(false)
-let timer: ReturnType<typeof setTimeout> | undefined; let disposed = false
-const busy = computed(() => uploading.value || ['pending', 'processing'].includes(result.value?.status ?? ''))
-const finished = computed(() => ['completed', 'failed'].includes(result.value?.status ?? ''))
-const progress = computed(() => result.value?.total_rows ? Math.round(result.value.processed_rows / result.value.total_rows * 100) : null)
-const resultClass = computed(() => {
-  if (result.value?.status === 'failed') return 'border-error-200 bg-error-50'
-  if (finished.value) return result.value?.failed_rows ? 'border-warning-200 bg-warning-50' : 'border-success-200 bg-success-50'
-  return 'border-gray-200'
-})
-function saveDownload(download: { blob: Blob; filename: string }) { const url = URL.createObjectURL(download.blob); const link = document.createElement('a'); link.href = url; link.download = download.filename; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000) }
-function selectFile(event: Event) { const target = event.target as HTMLInputElement; file.value = target.files?.[0] ?? null; target.value = ''; error.value = ''; notice.value = ''; if (finished.value) result.value = null }
-async function downloadTemplate(errors = false) { if (downloading.value) return; downloading.value = true; error.value = ''; try { saveDownload(errors && result.value ? await getProductGroupImportErrors(result.value.id) : await getProductGroupImportTemplate()); notice.value = errors ? 'Отчёт с ошибками скачан.' : 'Выгрузка групп скачана. Измените только нужные строки и загрузите файл.' } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось скачать файл.' } finally { downloading.value = false } }
-async function poll(id: number) { if (disposed) return; pollingError.value = false; try { const current = await getProductGroupImport(id); if (disposed) return; result.value = current; if (finished.value) { emit('completed'); return }; timer = setTimeout(() => void poll(id), 1500) } catch { if (!disposed) pollingError.value = true } }
-async function upload() { if (!file.value || busy.value) return; error.value = ''; notice.value = ''; if (!file.value.name.toLowerCase().endsWith('.xlsx') || file.value.size > 10 * 1024 * 1024) { error.value = 'Прикрепите XLSX-файл размером не более 10 МБ.'; return }; uploading.value = true; result.value = null; try { result.value = await uploadProductGroupImport(file.value); void poll(result.value.id) } catch (reason) { error.value = reason instanceof Error ? reason.message : 'Не удалось загрузить XLSX-файл.' } finally { uploading.value = false } }
+const input = ref<HTMLInputElement | null>(null)
+const workflow = useProductGroupImport(() => emit('completed'))
+const { file, result, downloading, uploading, error, notice, pollingError, busy, finished, progress, resultClass, downloadTemplate, poll, upload } = workflow
+function selectFile(event: Event) { const target = event.target as HTMLInputElement; workflow.selectFile(target.files?.[0] ?? null); target.value = '' }
 watch([busy, downloading], async () => { await nextTick(); if (props.open && (document.activeElement === document.body || document.activeElement?.matches(':disabled'))) document.getElementById('group-import-template')?.focus() })
-onBeforeUnmount(() => { disposed = true; if (timer) clearTimeout(timer) })
 </script>
 
 <template>
