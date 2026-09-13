@@ -2,9 +2,9 @@
 
 Audit date: 2026-09-11. Result: **accepted**; the transition to Phase 7 is authorised.
 
-Status note (2026-09-12): this verdict remains the historical result for the Phase 0–6 interim
-scope, but a later Admin refactoring audit reopened `TASK-A030`. Phase 7 is currently blocked until
-`TASK-A031`–`TASK-A035` and the repeated `TASK-A030` acceptance are complete.
+Status note (updated 2026-09-13): this verdict remains the historical result for the Phase 0–6
+interim scope. A later Admin refactoring audit reopened `TASK-A030`; its findings were resolved in
+`TASK-A031`–`TASK-A035`, and the repeated acceptance passed. Phase 7 is authorised.
 
 ## Scope and evidence
 
