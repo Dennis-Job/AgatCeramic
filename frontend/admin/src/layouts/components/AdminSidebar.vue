@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
   <aside
     id="admin-sidebar"
     ref="sidebar"
-    class="fixed inset-y-0 left-0 z-40 flex admin-sidebar flex-col overflow-y-auto border-r border-gray-200 bg-white px-4 py-6 transition-transform duration-200 lg:visible lg:translate-x-0 lg:overflow-visible"
+    class="fixed inset-y-0 left-0 z-40 flex admin-sidebar flex-col overflow-y-auto overscroll-contain border-r border-gray-200 bg-white px-4 py-6 transition-transform duration-200 lg:visible lg:translate-x-0"
     :class="isOpen ? 'visible translate-x-0' : 'invisible -translate-x-full'"
     @keydown="handleKeydown"
   >

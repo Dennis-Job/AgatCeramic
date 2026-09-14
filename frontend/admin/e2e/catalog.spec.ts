@@ -209,6 +209,38 @@ test('mobile sidebar leaves the accessibility and keyboard flow while closed', a
   }
 })
 
+test('desktop sidebar scrolls to navigation links below the viewport', async ({
+  page,
+}) => {
+  await mockCatalogApi(page)
+  await page.setViewportSize({ width: 1280, height: 480 })
+  await page.goto('/products')
+
+  const sidebar = page.locator('#admin-sidebar')
+  await expect(sidebar).toBeVisible()
+  expect(
+    await sidebar.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+  ).toBe(true)
+
+  await sidebar.hover()
+  await page.mouse.wheel(0, 1200)
+  await expect
+    .poll(() => sidebar.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0)
+  await page.mouse.wheel(0, 1200)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+
+  const uiKitLink = page.getByRole('link', { name: 'UI-kit', exact: true })
+  await expect(uiKitLink).toBeVisible()
+  await uiKitLink.click()
+  await expect(page).toHaveURL('/ui-kit')
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'UI-kit' }),
+  ).toBeVisible()
+})
+
 test('product destructive action uses the shared accessible confirmation flow', async ({
   page,
 }) => {

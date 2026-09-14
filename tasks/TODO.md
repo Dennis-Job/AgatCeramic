@@ -318,6 +318,12 @@ API behaviour без migration plan и синхронного обновлени
   - Закрепить полноту inventory и tokens unit-тестами; проверить responsive, visual, axe и
     интерактивные состояния локально и в Linux Compose; пройти независимый UI Design Guard review.
 
+- [x] TASK-A041 Восстановить desktop-прокрутку Admin sidebar
+  - Сохранить `overflow-y-auto` на desktop и изолировать wheel/trackpad-прокрутку sidebar от
+    основной страницы через `overscroll-contain`.
+  - Закрепить на viewport 1280×480 переполнение, hover + wheel, отсутствие scroll chaining,
+    видимость нижней навигации и переход по ссылке; обновить просмотренные visual baselines.
+
 ## Phase 7 — Content
 
 - [ ] TASK-090 Site settings
