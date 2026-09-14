@@ -54,9 +54,11 @@ bash scripts/assert-no-database-artifacts.sh
    --no-privileges`.
 6. Применить migrations и выполнить health/API smoke checks. Проверки данных используют только
    агрегаты и технические IDs; строки с PII не выводятся.
-7. До открытия бизнес-доступа повторно применить актуальный реестр уничтожения и все просроченные
-   retention batches. Проверка deleted-subject tombstones использует только необратимые HMAC и не
-   выводит исходные значения.
+7. До открытия бизнес-доступа получить актуальный tombstone journal из отдельного защищённого
+   recovery channel. Сначала выполнить `php artisan retention:tombstones-replay /secure/journal.jsonl`,
+   затем ту же команду с `--apply`. После этого выполнить dry-run/apply просроченных orders,
+   contacts и technical batches. Replay bounded, учитывает legal hold и сверяет versioned HMAC до
+   mutation; fingerprint mismatch блокирует транзакцию без вывода исходных значений.
 8. Переключать production на восстановленную БД можно только в согласованное окно, после отдельного
    approval и с проверенным rollback plan.
 9. Удалить временный расшифрованный архив и отозвать выданный доступ.
@@ -82,3 +84,10 @@ PBKDF2, а plaintext удалён до restore. SHA-256 encrypted object сов�
 
 Exercise подтверждает процедуру, но не выбирает production storage/KMS и не заменяет production
 restore schedule из Phase 11.
+
+В `TASK-A044` добавлен автоматический synthetic restore test: после anonymization экспортируется
+PII-free JSONL tombstone, строка заказа имитируется восстановленной из старого backup, replay снова
+анонимизирует aggregate и удаляет восстановленный comment. Отдельный negative exercise доказывает,
+что совпавший record ID с другим keyed fingerprint не изменяется. Production journal экспортируется
+bounded командой `php artisan retention:tombstones-export`; его availability, encryption, append-only
+storage и срок хранения являются ответственностью утверждённого recovery provider.

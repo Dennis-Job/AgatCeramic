@@ -19,11 +19,11 @@ Docker перезапускает его. Это позволяет подхва
 не создаёт задачу; ошибка отправки не отменяет созданный заказ и обрабатывается обычными тремя попытками
 воркера с записью окончательной ошибки в `failed_jobs`.
 
-`failed_jobs` не является долговременным журналом. Предложенная lifecycle policy ограничивает
-хранение payload/exception 30 днями от `failed_at`; jobs обязаны сериализовать только технические
-ID, а exception перед сохранением не должна содержать PII. Исполняемый prune, boundary tests и
-проверка фактического oldest record принадлежат `TASK-A044`. До принятия политики production-prune
-не включается.
+`failed_jobs` не является долговременным журналом. Lifecycle policy ограничивает хранение
+payload/exception 30 днями от `failed_at`; jobs обязаны сериализовать только технические ID, а
+exception перед сохранением не должна содержать PII. `retention:technical` dry-run показывает
+только count/cutoff, а gated `--apply` удаляет один bounded batch вместе с expired database sessions
+и password reset tokens. До принятия ADR-014 scheduler регистрирует только dry-run.
 
 Сервис `scheduler` запускает `php artisan schedule:work`. В TASK-016 создаётся
 только процесс планировщика: расписания следует регистрировать через API
@@ -31,7 +31,9 @@ ID, а exception перед сохранением не должна содер�
 команды-заглушки в расписание.
 
 TASK-029B registers the daily `audit:prune` command. It permanently removes audit records older
-than the configured five-year retention period.
+than the configured five-year retention period. TASK-A044 schedules retention dry-runs at
+01:10/01:20/01:30 and, only after the dual production gate is active, apply batches at
+02:10/02:20/02:30. Every command uses `withoutOverlapping` and records append-only metrics/failures.
 
 ## Durable storage cleanup
 

@@ -17,4 +17,9 @@ class LoggingConfigurationTest extends TestCase
             );
         }
     }
+
+    public function test_rotating_daily_channel_has_the_approved_maximum_retention(): void
+    {
+        $this->assertSame(14, (int) config('logging.channels.daily.days'));
+    }
 }

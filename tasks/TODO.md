@@ -365,6 +365,8 @@ API behaviour без migration plan и синхронного обновлени
     command output, logs, queue payloads и аналитических агрегатов.
   - Обновить `DATABASE.md`, `LOGGING.md`, `OPERATIONS.md` и recovery/backup правила; подтвердить
     результат на обезличенных fixtures и в restore exercise.
+  - Repository-side controls и synthetic tests реализованы 2026-09-14. Production activation и
+    закрытие задачи заблокированы pending approvals `TASK-A043` и внешним provider evidence.
 
 - [ ] TASK-A045 Защитить bearer-токены и ограничить срок жизни гостевых корзин
   - Хранить необратимый HMAC/hash `X-Cart-Token` вместо raw bearer-токена, сохранив текущий wire

@@ -24,6 +24,7 @@ use App\Policies\PermissionPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
+use App\Services\Retention\RetentionPolicy;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
     #[\Override]
     public function register(): void
     {
-        //
+        $this->app->singleton(RetentionPolicy::class, static fn (): RetentionPolicy => RetentionPolicy::fromConfig());
     }
 
     /**

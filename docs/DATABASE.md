@@ -224,11 +224,13 @@ independent of `product_relations`.
 Подтверждение заказа не создаёт отдельную запись в БД: queued job читает уже сохранённые immutable
 `order_items` snapshots после commit и не меняет заказ.
 
-Целевой lifecycle direct PII, order number, payment reference, comments, history и коммерческого
-остатка определён в
-[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). До юридического принятия ADR-014 схема
-остаётся неизменной, а production-анонимизация/удаление запрещены; migrations и application
-commands принадлежат `TASK-A044`.
+Lifecycle direct PII, order number, payment reference, comments, history и коммерческого остатка
+определён в [`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). `TASK-A044` добавляет
+`anonymized_at` и `commercial_retention_until`; поля direct PII становятся nullable, потому что
+анонимизированный коммерческий остаток не содержит имя, телефон, email, адрес, комментарий,
+payment reference или прежний публичный номер. `order_items` остаются только при утверждённом
+`retain_commercial`; при `delete_all` aggregate удаляется целиком. Production apply всё ещё
+запрещён, пока ADR-014 не принят и disposition не выбран явно.
 
 ### order_statuses
 Управляемый каталог статусов заказа: стабильный уникальный `code`, русское `name`, уникальный
@@ -276,8 +278,26 @@ TASK-083 добавляет nullable `assignee_id` с `nullOnDelete` и `assigne
 `contact_request_status_histories` с начальным/целевым статусом, снимком автора и `occurred_at`.
 
 Обращение, comments и workflow history удаляются как единый lifecycle aggregate по матрице из
-[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Текущие таблицы ещё не реализуют
-retention/legal hold; это явная граница `TASK-A044`, а не разрешение хранить данные бессрочно.
+[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Bounded service повторно проверяет
+`completed_at` и active legal hold под транзакционной блокировкой; missing terminal timestamp и
+active requests старше review threshold попадают в техническую exception queue без текста запроса.
+
+## Personal-data retention evidence
+
+`retention_legal_holds` хранит только scope, технический record ID, номер дела, основание, владельца,
+`started_at`, `review_at` и release time. PostgreSQL запрещает scope вне `orders`/`contacts`, review
+позже 90 дней и второй активный hold для одной записи.
+
+`retention_exceptions` — операционная очередь missing T0 и overdue active review. Она не содержит
+контактов, адресов, комментариев или snapshots. Повторное обнаружение обновляет только техническое
+время; закрытие требует отдельного решения владельца процесса.
+
+`retention_executions` — append-only результат каждого dry-run/apply/replay: policy version, UUID
+batch, scope/action, cutoff, mode/status, агрегированные counts, failure code и service identity.
+`retention_tombstones` — append-only реестр необратимых действий с UUID, техническим record ID,
+версией HMAC key и keyed fingerprint; исходная PII и обратимое соответствие отсутствуют. PostgreSQL
+triggers запрещают `UPDATE`/`DELETE` обеих evidence-таблиц. Restore replay сверяет HMAC до mutation,
+чтобы не применить старый tombstone к переиспользованному ID.
 
 ## Content
 

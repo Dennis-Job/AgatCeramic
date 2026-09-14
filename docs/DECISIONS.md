@@ -143,3 +143,7 @@ ADR и API/UI migration plan.
 Необратимые операции реализует `TASK-A044`: только idempotent bounded batches с dry-run,
 legal-hold check, PII-free output, PostgreSQL tests, доказательством уничтожения и replay удалений
 после restore. Шифрование не считается самостоятельным подтверждением соответствия 152-ФЗ.
+
+Repository-side реализация A044 существует, но не меняет статус этого ADR: safe defaults оставляют
+apply выключенным до заполнения approval block, явного выбора commercial disposition и проверки
+внешних provider controls.

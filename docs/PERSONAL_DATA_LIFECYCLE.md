@@ -216,3 +216,12 @@ incident owner устанавливает узкий hold, изолирует д
 
 Изменение срока, цели, основания, способа анонимизации, backup window или key boundary требует новой
 редакции policy/ADR и повторного согласования до применения к production.
+
+### Техническое состояние 2026-09-14
+
+Repository-side controls реализованы: safe-default configuration, bounded dry-run/apply services,
+legal holds/exceptions, append-only execution evidence и versioned-HMAC tombstones, scheduler,
+technical storage cleanup и restore replay. SQLite acceptance tests и PostgreSQL lock/rollback/
+immutability tests используют только synthetic fixtures. Production apply остаётся выключен и
+`TASK-A044` не считается принятой: отсутствуют три согласования выше и external provider evidence
+для logs, email, backup/KMS и records schedule.

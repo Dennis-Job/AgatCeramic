@@ -6,8 +6,9 @@
 refactoring принят. Repository-side remediation `TASK-A042` завершён, а server-side очистка
 GitHub cached views/PR refs ожидается по открытому запросу Support `#4756780`; остальные
 security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты.
-Для `TASK-A043` подготовлены ADR, threat model и retention/deletion matrix; юридическое принятие
-ещё не зафиксировано, поэтому production-очистка остаётся запрещённой.
+Для `TASK-A043` подготовлены ADR, threat model и retention/deletion matrix; `TASK-A044` реализует
+gated bounded controls, evidence и restore replay. Юридическое принятие ещё не зафиксировано,
+поэтому production-очистка остаётся запрещённой.
 Evidence приведены в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
@@ -37,7 +38,7 @@ Evidence приведены в
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
 | Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через четыре скрытых GitHub PR refs до выполнения server-side purge по запросу Support `#4756780`; также ожидаются оставшиеся operational confirmations. | `TASK-A042` |
-| High | Для business PII orders/contacts подготовлена проверяемая policy, но отсутствуют подписи ответственного за ПДн/юриста и исполняемые controls. | `TASK-A043`, `TASK-A044` |
+| High | Для business PII orders/contacts подготовлена policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
 | Medium | Guest cart bearer tokens хранятся raw, а abandoned carts не имеют TTL/cleanup. | `TASK-A045` |
 | Medium | OpenAPI compatibility, PostgreSQL/Redis и real Admin→API boundaries покрыты слабее, чем следует из исторической формулировки приёмки. | `TASK-A046`, `TASK-A048`–`TASK-A050` |
 | Medium | Persisted Compose dependency volumes могут не соответствовать lock-файлам. | `TASK-A047` |

@@ -27,10 +27,15 @@
 
 ## Application log retention
 
-Целевой maximum для обычных application/HTTP/queue logs во всех локальных и внешних sinks — 14
-дней. PII запрещена независимо от срока. Текущий `daily` channel уже использует 14 дней, но default
-`single` channel сам по себе не обеспечивает rotation; production configuration и provider-side
-retention должны быть проверены и закреплены в `TASK-A044` до запуска.
+Maximum для обычных application/HTTP/queue logs во всех локальных и внешних sinks — 14 дней. PII
+запрещена независимо от срока. `stack` по умолчанию использует rotating `daily` channel с
+`LOG_DAILY_DAYS=14`; production обязан сохранить эту границу и отдельно подтвердить provider-side
+retention/oldest object. `single` остаётся доступен только для осознанной локальной диагностики и не
+является допустимой production-конфигурацией.
+
+Retention-команды выводят только batch UUID, scope/action, cutoff и агрегированные counts. При
+ошибке в log попадают batch UUID, scope и класс исключения без message, query bindings или PII;
+полная техническая видимость сохраняется в append-only `retention_executions`.
 
 ## Audit log retention
 

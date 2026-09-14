@@ -18,6 +18,31 @@
 Развёртывание production и monitoring намеренно не входят в текущую эксплуатационную область и
 принадлежат Phase 11 (`TASK-140`–`145`). До production backup provider/KMS ещё не выбран, однако
 обязательная граница хранения и безопасная процедура restore уже зафиксированы после incident
-2026-09-14: database archives никогда не являются артефактами Git или CI. Предложенная политика
-ПДн запрещает необратимую production-очистку до юридического принятия; реализация принадлежит
-`TASK-A044`.
+2026-09-14: database archives никогда не являются артефактами Git или CI.
+
+## Retention operations
+
+Scheduler ежедневно выполняет PII-safe dry-run по orders, contacts и technical storage. Apply jobs
+регистрируются только если при старте процесса одновременно заданы
+`PII_RETENTION_POLICY_STATUS=accepted` и `PII_RETENTION_APPLY_ENABLED=true`. Для orders дополнительно
+обязателен явный `PII_RETENTION_ORDER_DISPOSITION=retain_commercial|delete_all`; `pending` блокирует
+mutation. После изменения конфигурации scheduler перезапускается и его список проверяется.
+
+Ручной preflight и один bounded batch:
+
+```sh
+php artisan retention:orders
+php artisan retention:contacts
+php artisan retention:technical
+```
+
+`--apply` разрешается только после заполнения approval block ADR-014, выбора disposition, выдачи
+отдельного versioned `PII_RETENTION_TOMBSTONE_KEY_ID`/key через secret manager и подтверждения
+backup/provider controls. Не копируйте key, command output или tombstone journal в Git/CI artifacts.
+Сигналы для monitoring: failed rows в `retention_executions`, рост `error_count`/`exception_count`,
+stale active holds с наступившим `review_at`, oldest failed job/session и повторяющийся ненулевой
+eligible count.
+
+Техническая реализация `TASK-A044` готова и выключена безопасными defaults. Необратимая production-
+очистка остаётся заблокированной до юридического принятия A043 и operational evidence по внешним
+logs, email provider, backups/KMS и records schedule.
