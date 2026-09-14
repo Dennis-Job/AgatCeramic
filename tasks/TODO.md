@@ -324,6 +324,138 @@ API behaviour без migration plan и синхронного обновлени
   - Закрепить на viewport 1280×480 переполнение, hover + wheel, отсутствие scroll chaining,
     видимость нижней навигации и переход по ссылке; обновить просмотренные visual baselines.
 
+## Follow-up повторного аудита Phases 0–6 — 2026-09-14
+
+Функциональная приёмка Phases 0–6 сохраняется, однако повторная проверка выявила один
+критический security incident и несколько пробелов в lifecycle данных и production-like
+проверках. `TASK-A042` блокирует публикацию новых изменений до закрытия incident. Остальные
+задачи выполняются в указанном порядке зависимостей; подробное evidence находится в
+[`docs/INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md).
+
+- [ ] TASK-A042 Удалить опубликованные дампы БД и закрыть incident утечки
+  - Без вывода содержимого инвентаризировать четыре отслеживаемых PostgreSQL dump-файла и все их
+    Git-объекты. Считать административные записи, password hashes, session payloads и audit
+    snapshots скомпрометированными, пока не доказано обратное.
+  - После отдельного подтверждения destructive history rewrite удалить dump blobs из текущего
+    дерева, всех refs и публичной Git-истории; добавить обязательные ignore/secret-scan gates и
+    хранить recovery backups только вне репозитория в шифрованном хранилище с контролем доступа.
+  - Инвалидировать затронутые sessions/reset tokens, сменить пароли административных аккаунтов и
+    ротировать `APP_KEY`/связанные секреты по подтверждённому содержимому дампов. Зафиксировать
+    incident timeline, внешние копии/forks/caches, ответственного и результат проверки очистки.
+  - Обновить безопасный restore runbook и доказать восстановление из нового backup-канала без
+    помещения архива или чувствительных значений в Git, CI logs либо task evidence.
+
+- [ ] TASK-A043 Утвердить политику жизненного цикла персональных данных
+  - Совместно с ответственным за ПДн/юристом определить сроки и правовые основания хранения для
+    заказов, обращений, комментариев, workflow history, administrative snapshots, sessions,
+    failed jobs, логов и backups; отделить обязательное хранение от операционного удобства.
+  - Зафиксировать threat model и решение по encryption at rest, key management, поиску по
+    зашифрованным полям, backup-копиям, доступу, выгрузке и уничтожению данных. Не считать
+    application encryption самостоятельным подтверждением соответствия 152-ФЗ.
+  - Принять ADR и проверяемую retention/deletion matrix до необратимой анонимизации либо удаления.
+
+- [ ] TASK-A044 Реализовать утверждённые retention, anonymization и deletion controls для ПДн
+  - На основе `TASK-A043` реализовать отдельные application services/commands для заказов,
+    обращений и связанных history/comments без обхода permissions, audit и юридически обязательных
+    сроков; операции должны быть идемпотентными, bounded и безопасными для повторного запуска.
+  - Добавить scheduler, dry-run/metrics, failure visibility и PostgreSQL tests; исключить PII из
+    command output, logs, queue payloads и аналитических агрегатов.
+  - Обновить `DATABASE.md`, `LOGGING.md`, `OPERATIONS.md` и recovery/backup правила; подтвердить
+    результат на обезличенных fixtures и в restore exercise.
+
+- [ ] TASK-A045 Защитить bearer-токены и ограничить срок жизни гостевых корзин
+  - Хранить необратимый HMAC/hash `X-Cart-Token` вместо raw bearer-токена, сохранив текущий wire
+    contract; предусмотреть безопасную migration/expiration strategy для существующих корзин.
+  - Утвердить configurable TTL для пустых, брошенных и оформленных корзин и добавить bounded
+    scheduled cleanup без удаления активной корзины во время конкурентного add/update/checkout.
+  - Закрепить ownership, expiry, replay/concurrency, индекс и cleanup tests на SQLite и PostgreSQL;
+    обновить OpenAPI, `API.md`, `DATABASE.md` и operations visibility.
+
+- [ ] TASK-A046 Усилить семантическую и compatibility-проверку OpenAPI
+  - Подключить воспроизводимый OpenAPI 3.1 validator/linter, проверяющий `$ref`, schemas, formats,
+    parameters, request/response media types и уникальность `operationId`, а не только JSON parse и
+    совпадение route registry.
+  - Заменить поверхностный compatibility check на рекурсивное сравнение request/response schemas,
+    типов, required/nullable, enum, bounds, parameters, headers и status codes с корректной
+    классификацией breaking/non-breaking изменений.
+  - Обычный patch/minor version bump не должен автоматически разрешать удаление operation или
+    несовместимый wire contract. Закрепить сам checker mutation/fixture-тестами и требовать явный
+    migration plan для разрешённого breaking change.
+
+- [ ] TASK-A047 Сделать Compose bootstrap зависимостей lock-aware
+  - Заменить проверки только наличия `vendor/autoload.php`, `vite` или `nuxt` на детерминированную
+    сверку `composer.lock`/`package-lock.json` с содержимым named volumes для backend, queue,
+    scheduler, Admin и Client.
+  - Гарантировать, что `docker compose up --build` после изменения lock-файла устанавливает точный
+    набор зависимостей либо завершается с понятной ошибкой, не оставляя частично рабочие сервисы.
+  - Добавить clean-volume и stale-volume smoke tests, описать recovery без ручного удаления рабочих
+    данных и синхронизировать `ENVIRONMENT.md`/`CI.md`.
+
+- [ ] TASK-A048 Прогонять Laravel feature suite на PostgreSQL
+  - Добавить безопасный CI job для полного либо обоснованно разделённого backend feature suite на
+    отдельной PostgreSQL database; существующий SQLite suite оставить быстрым feedback, а не
+    единственным доказательством большинства HTTP/business сценариев.
+  - Исключить destructive доступ к development/production DB теми же fail-closed guards, что и у
+    текущих integration tests; обеспечить deterministic reset и отсутствие зависимости от порядка.
+  - Зафиксировать PostgreSQL-specific различия constraints, JSON, decimal, locking и transactions;
+    не скрывать несовместимые тесты условными skip без адресной follow-up задачи.
+
+- [ ] TASK-A049 Проверить реальную доставку queue jobs через Redis worker
+  - В изолированном CI/Compose profile отправить representative import, storage cleanup и order
+    confirmation jobs через реальную Redis queue и дождаться обработки отдельным worker process,
+    не вызывая `handle()` напрямую.
+  - Проверить after-commit dispatch, serialization только разрешённых identifiers, retry/backoff,
+    terminal failure, `failed_jobs`, stale-dispatch recovery и отсутствие дублей/потери cleanup.
+  - Использовать bounded timeouts и диагностический output без PII; сохранить быстрые fake/sync
+    tests для unit/feature уровня.
+
+- [ ] TASK-A050 Добавить минимальный full-stack smoke Admin SPA → Laravel API
+  - В отдельном test profile поднять production build Admin, Laravel, PostgreSQL и Redis; создать
+    изолированные fixtures и пройти реальный Sanctum CSRF/login/logout flow без `page.route()` mocks.
+  - Проверить по одному representative read/mutation сценарию для Catalog, orders и contacts,
+    включая permissions и стандартный error envelope. Не дублировать полный visual suite.
+  - Не помещать credentials/PII fixtures в repository или logs; обеспечить cleanup и блокирующий CI
+    result. UI Design Guard нужен только если исправление smoke findings изменит интерфейс.
+
+- [ ] TASK-A051 Нормализовать task ledger и исторические audit reports
+  - Выполнить обещание `TASK-A005`: оставить в `TODO.md` только незавершённые задачи, а завершённые
+    `TASK-A001`–`TASK-A041` держать в компактном `DONE.md`/Git без второго полного roadmap.
+  - Пометить audit evidence как историческое либо обновить изменяемые счётчики маршрутов, файлов и
+    тестов; убрать противоречия между `CURRENT_STATE.md`, `INTERIM_AUDIT_FINAL.md`, специализированными
+    audit reports и фактическими CI gates.
+  - Сохранить русский основным языком канонической документации и добавить автоматическую проверку
+    внутренних Markdown links и запрещённых tracked artifacts.
+
+- [ ] TASK-A052 Декомпозировать импортный контур backend по ответственностям
+  - Разделить чтение workbook, parsing, validation, планирование изменений, применение,
+    формирование template/error report и cleanup на небольшие компоненты с явными контрактами.
+  - Сохранить текущий API, checkpoint/resume, transaction и locking contract; не вводить
+    repository/interface без реальной границы persistence или вариативности.
+  - Удалить неиспользуемые зависимости и покрыть каждый извлечённый workflow тестами; основные
+    orchestration-классы должны пройти review по эвристикам из `backend/AGENTS.md`.
+
+- [ ] TASK-A053 Устранить скрытые зависимости и test-driven production API
+  - Заменить `app()`/`resolve()` в обычном production flow на явный constructor/method injection.
+  - Убрать nullable service-аргументы и container fallback, добавленные ради прямых legacy-вызовов
+    Jobs; тесты перевести на реальный production entry point/container invocation.
+  - Заменить глобальные `request()`/`auth()` в Controllers на типизированные зависимости. Для
+    неизбежных Laravel lifecycle callbacks оставить минимальный adapter, комментарий и тест.
+
+- [ ] TASK-A054 Вынести нетривиальные admin read queries из Controllers
+  - Вынести многоусловные filters/search/sort и metadata enrichment для audit logs, orders,
+    contact requests, admin users и других list endpoints в Query objects.
+  - Оставить простой локальный CRUD query в Controller там, где новый слой не улучшает код.
+  - Исключить N+1, проверить PostgreSQL indexes и сохранить текущие response/OpenAPI contracts;
+    каждый фильтр покрыть feature-тестом.
+
+- [ ] TASK-A055 Автоматизировать backend architecture guardrails
+  - Добавить проверку направлений зависимостей между HTTP, application, data/integration и
+    presentation слоями.
+  - Запретить в Controllers DB transactions/mutations, service locator и глобальные request/auth
+    helpers; временный allowlist допускается только с номером задачи на удаление долга.
+  - Добавить отчёт по чрезмерному размеру/complexity классов и методов с review-порогами из
+    `backend/AGENTS.md`, подключить guard к обязательному CI и документировать локальную команду.
+
 ## Phase 7 — Content
 
 - [ ] TASK-090 Site settings

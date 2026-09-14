@@ -1,5 +1,35 @@
 # Final Interim Audit — Phases 0–6 (TASK-A020)
 
+## Повторная оценка 2026-09-14
+
+Историческая функциональная приёмка `TASK-A020` сохраняется, но утверждение об отсутствии
+незадокументированных security/data-lifecycle gaps больше не является актуальным. До публикации
+новых изменений блокирующим является `TASK-A042`; остальные follow-up задачи добавлены в
+[`tasks/TODO.md`](../tasks/TODO.md) и имеют собственные границы.
+
+| Finding | Приоритет | Подтверждённое evidence | Follow-up |
+| --- | --- | --- | --- |
+| IA-R01 | Critical | Публичный GitHub repository отслеживает четыре PostgreSQL dumps. Один dump содержит 1 `users`, 4 `sessions` и 157 `audit_logs`; остальные содержат session rows. `.gitignore` явно оставляет правила dumps закомментированными. | `TASK-A042` |
+| IA-R02 | High | Для orders, contacts, comments и workflow history отсутствует утверждённая retention/deletion matrix и исполняемый lifecycle. Реализован только срок audit logs и checkout idempotency keys. | `TASK-A043`, `TASK-A044` |
+| IA-R03 | Medium | `carts.token` хранит raw bearer token; `GET /cart` создаёт persistent row, а scheduler не очищает пустые, брошенные или оформленные carts. | `TASK-A045` |
+| IA-R04 | Medium | Compatibility script пропускает изменение типа request field без version bump и принимает удаление operation при любом изменении `info.version`, включая patch. Стандартного OpenAPI semantic validator нет. | `TASK-A046` |
+| IA-R05 | Medium | Compose services считают зависимости актуальными по одному существующему файлу/бинарнику. Сохранённый backend volume стартовал без OpenSpout/PHPStan, из-за чего 42 tests упали после успешного запуска контейнера. | `TASK-A047` |
+| IA-R06 | Medium | Большинство backend feature tests выполняется только на SQLite; PostgreSQL CI покрывает migration и две специализированные integration suites. | `TASK-A048` |
+| IA-R07 | Medium | Redis CI проверяет connection/configuration, а jobs в feature tests fake-ятся или вызываются через `handle()`; реальная доставка отдельному worker не проверяется. | `TASK-A049` |
+| IA-R08 | Medium | Все Admin Playwright suites подменяют API через `page.route()`. Отдельного browser smoke реального Sanctum/API contract нет. | `TASK-A050` |
+| IA-R09 | Low | `TODO.md` содержит все завершённые audit/refactoring tasks вопреки итоговой записи `TASK-A005`; специализированные отчёты сохраняют устаревшие route/test counts и смешение языков. | `TASK-A051` |
+| IA-R10 | Medium | Import application layer остаётся чрезмерно крупным и совмещает несколько причин изменения: `ProductImportService` — 931 строка, `ProductGroupImportService` — 665, `ProductImportTemplateService` — 465. В них одновременно находятся workbook I/O, parsing, validation, planning, mutation и reporting. | `TASK-A052` |
+| IA-R11 | Medium | В import/jobs/bootstrap/validation flow сохраняется скрытый container resolution через `app()` и nullable service dependencies ради прямых legacy test invocations; несколько Controllers используют глобальный `request()` вместо явной типизированной зависимости. | `TASK-A053` |
+| IA-R12 | Medium | `AuditLogController`, `OrderController`, `ContactRequestController` и `AdminUserController` содержат многоусловные read queries и metadata/reference enrichment, выходящие за границу тонкого Controller. | `TASK-A054` |
+| IA-R13 | Medium | Larastan level 8 и Pint строго проверяются, но архитектурные границы SOLID/Laravel пока не являются автоматическим CI gate. Локальный стандарт добавлен в `backend/AGENTS.md`; enforcement остаётся отдельной работой. | `TASK-A055` |
+
+Повторная проверка не выявила причины отвергать реализованные Catalog, import/export, orders,
+contacts или Admin workflows целиком. Findings `IA-R10`–`IA-R13` относятся к сопровождаемости и
+будущему контролю архитектуры, а не к доказанному нарушению API behavior. Текущий commit `e4cdbff`
+прошёл все GitHub Actions jobs; локально прошли Admin lint, format, 50 unit tests и production
+build. Локальный backend failure
+классифицирован как evidence `IA-R05`, поскольку clean-install CI того же commit успешен.
+
 Audit date: 2026-09-11. Result: **accepted**; the transition to Phase 7 is authorised.
 
 Status note (updated 2026-09-13): this verdict remains the historical result for the Phase 0–6

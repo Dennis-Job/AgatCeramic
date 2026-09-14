@@ -1,5 +1,8 @@
 # AgatCeramic Backend
 
+Обязательные правила архитектуры, Laravel-конвенций и читаемости для любых изменений
+в этой папке: [`AGENTS.md`](AGENTS.md).
+
 Laravel 13 API-only application and the common business API for the public storefront and admin SPA.
 
 ## Local commands
