@@ -38,7 +38,14 @@ coverage/
 *.log
 *.local
 
-# Local database backups (may contain credentials or personal data)
-# /backup.sql
-# /backups/*.dump
-# /backups/*.dump.sha256
+# Database exports and recovery archives are sensitive operational data.
+# Keep them outside the repository in approved encrypted storage.
+/backups/
+*.sql
+*.sql.*
+*.dump
+*.dump.*
+*.backup
+*.backup.*
+*.bak
+*.bak.*

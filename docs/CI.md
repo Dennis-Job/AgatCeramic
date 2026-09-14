@@ -7,12 +7,22 @@ Workflow получает только право `contents: read` и не ис�
 
 | Job | Проверки |
 | --- | --- |
+| Repository security | Запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
 | Backend checks | Composer manifest и audit, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose configuration | Валидация `compose.yaml` с `.env.example` |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+Repository security checkout использует полную историю. Скрипт
+[`assert-no-database-artifacts.sh`](../scripts/assert-no-database-artifacts.sh) отклоняет SQL exports,
+PostgreSQL dumps и backup archives как в текущем дереве, так и во всех publication refs
+(local/remote branches and tags). Внутренние tool refs, которые не публикуются GitHub, не входят в
+gate; публичные hidden PR refs обрабатываются GitHub Support после sensitive-data rewrite.
+Gitleaks 8.30.1 загружается только с официального release, проверяется закреплённым SHA-256 и
+сканирует `--all`; вывод находок всегда полностью редактируется. Версия и checksum обновляются
+одновременно после проверки официального release manifest.
 
 Два последовательных запуска полного backend test suite защищают общие factory и другое
 состояние тестовой инфраструктуры от недетерминированных коллизий между прогонами.

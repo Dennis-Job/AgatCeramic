@@ -11,6 +11,10 @@
 | Queues, scheduler, import jobs и storage cleanup | [`QUEUE.md`](QUEUE.md) |
 | PII-safe logging и audit retention | [`LOGGING.md`](LOGGING.md) |
 | Recovery incident and test DB isolation | [`DATABASE_RECOVERY_2026-09-03.md`](DATABASE_RECOVERY_2026-09-03.md) |
+| Безопасный backup/restore channel | [`DATABASE_BACKUP_RESTORE.md`](DATABASE_BACKUP_RESTORE.md) |
+| Incident опубликованных DB dumps | [`SECURITY_INCIDENT_2026-09-14.md`](SECURITY_INCIDENT_2026-09-14.md) |
 
-Развёртывание production, резервное копирование и monitoring намеренно не входят в текущую
-эксплуатационную область и принадлежат Phase 11 (`TASK-140`–`145`).
+Развёртывание production и monitoring намеренно не входят в текущую эксплуатационную область и
+принадлежат Phase 11 (`TASK-140`–`145`). До production backup provider/KMS ещё не выбран, однако
+обязательная граница хранения и безопасная процедура restore уже зафиксированы после incident
+2026-09-14: database archives никогда не являются артефактами Git или CI.

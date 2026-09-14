@@ -64,6 +64,20 @@ the explicit `--force` option. Do not pass a password with `--password` except f
 local development environment, because command-line arguments can be visible to other local
 processes.
 
+## Emergency authentication invalidation
+
+После подтверждённой утечки administrative database state оператор из backend runtime выполняет:
+
+```sh
+php artisan security:invalidate-compromised-admin-auth --force
+```
+
+Команда атомарно заменяет password hashes всех администраторов случайными неизвестными значениями,
+очищает database sessions/password reset tokens и remember tokens и пишет только агрегированные
+счётчики в audit log. Она намеренно лишает все аккаунты доступа. После containment каждый
+администратор задаёт уникальный новый пароль через штатный reset flow с защищённым mail transport;
+пароли нельзя передавать через CLI options, task evidence или application logs.
+
 Основные тесты Laravel изолированно работают с SQLite `:memory:`. CI дополнительно прогоняет
 миграции и отдельные integration tests на PostgreSQL 17, включая реальные конкурентные транзакции
 Catalog в независимых PHP-процессах.
