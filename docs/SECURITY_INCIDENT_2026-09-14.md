@@ -3,7 +3,7 @@
 Incident ID: `AGAT-2026-09-14-DB-DUMPS`  
 Severity: Critical  
 Owner: владелец repository `Dennis-Job`  
-Status: **open — containment and history rewrite in progress**
+Status: **open — repository remediation complete; GitHub Support purge pending**
 
 Документ намеренно не содержит строк БД, password hashes, session payloads, audit snapshots,
 credentials или иных чувствительных значений.
@@ -18,6 +18,10 @@ credentials или иных чувствительных значений.
 | 2026-09-14 | Dump-файлы удалены из текущего рабочего дерева; добавлены обязательные ignore, history artifact gate, secret scan и безопасный restore runbook. |
 | 2026-09-14 | В локальном затронутом окружении заменён password hash одного администратора, удалены четыре sessions, reset tokens отсутствовали, remember token сброшен и `APP_KEY` ротирован без вывода значений. |
 | 2026-09-14 12:15 | Encrypted backup/restore exercise на синтетической БД подтвердил checksum и одну контрольную строку; обе временные БД, файлы и key material удалены. |
+| 2026-09-14 | `git-filter-repo` 2.47.0 удалил шесть recovery paths из истории; переписанные `main` (`d9dd3a8901e8ce725712061e6d5aeaaeb3869660`) и `admin-refactor-finalization` (`fd7aae953ea7c310cbd9d075c3fc50a97fac588f`) принудительно опубликованы. First Changed Commit: `79f3d53d3ed24140f363eb52d6723c4544cd2b21`. |
+| 2026-09-14 | GitHub Actions run `34847508182` для remediation commit завершился со статусом Success, включая repository-security gates. |
+| 2026-09-14 | Проверка свежего remote mirror подтвердила чистые public branches/tags, но GitHub продолжил публиковать старые objects через `refs/pull/1/head`–`refs/pull/4/head`; требуется server-side purge. |
+| 2026-09-14 16:30 | В GitHub Support отправлен запрос `#4756780` на очистку cached views и четырёх скрытых pull-request refs; статус запроса — Open. |
 
 ## Inventory без содержимого
 
@@ -36,17 +40,21 @@ sessions и 157 audit snapshots; остальные архивы содержа�
 password hashes, session payloads и audit snapshots считаются скомпрометированными независимо от
 того, был ли доказан download третьей стороной.
 
-Gitleaks 8.30.1 просканировал 189 commits с `--all` и полной redaction: отдельных textual secrets
-в Git не найдено. Этот результат не уменьшает severity binary database disclosure.
+Gitleaks 8.30.1 до rewrite просканировал 189 commits, а после rewrite — 190 commits с `--all` и
+полной redaction: отдельных textual secrets в Git не найдено. Этот результат не уменьшает severity
+binary database disclosure.
 
 ## Containment и recovery checklist
 
 - [x] Остановлена публикация новых изменений до закрытия incident.
 - [x] Dump-файлы и рядом лежавший checksum удалены из текущего дерева.
 - [x] Добавлены обязательные ignore и CI gates для database artifacts и secrets.
-- [ ] После отдельного подтверждения переписать все локальные и публичные branches/refs через
+- [x] После отдельного подтверждения переписать все локальные и публичные branches/refs через
   `git-filter-repo >= 2.47 --sensitive-data-removal` и force-push rewritten refs.
-- [ ] Проверить, что четыре blob ID и все `backups/` paths недостижимы из локальных и GitHub refs.
+- [x] Проверить, что четыре blob ID и все `backups/` paths недостижимы из текущих локальных refs,
+  публичных GitHub branches и tags; fresh mirror и history artifact gate подтверждают результат.
+- [ ] Получить подтверждение GitHub Support, что старые objects удалены из cached views и
+  `refs/pull/1/head`–`refs/pull/4/head`, затем повторить fresh mirror verification.
 - [x] В локальном затронутом окружении инвалидированы database sessions/reset tokens и remember
   tokens; password hash единственного администратора заменён случайным неизвестным значением.
 - [ ] Администратор должен задать уникальный новый пароль через штатный защищённый reset flow;
@@ -54,10 +62,11 @@ Gitleaks 8.30.1 просканировал 189 commits с `--all` и полно�
 - [x] Локальный `APP_KEY` ротирован без вывода значения; предыдущий ключ больше не используется.
 - [ ] Подтвердить inventory иных deployed environments. Если они восстанавливались из этих dumps,
   повторить auth invalidation и ротировать `APP_KEY`/related secrets через их secret storage.
-- [ ] После rewrite отправить GitHub Support First Changed Commit и affected object IDs для purge
-  cached views и PR references: <https://support.github.com/>.
+- [x] После rewrite отправить GitHub Support First Changed Commit и affected object IDs для purge
+  cached views и PR references: запрос `#4756780`, отправлен 2026-09-14 16:30 MSK.
 - [ ] Уведомить владельцев иных clones; старые clones удалить, а не merge/pull в clean history.
-- [x] По GitHub API на момент inventory forks отсутствуют; повторить проверку после purge.
+- [x] На момент inventory и после force-push видимые forks отсутствуют; повторить проверку после
+  подтверждённого purge.
 - [x] Пройти encrypted backup/restore exercise на синтетических fixtures по
   [`DATABASE_BACKUP_RESTORE.md`](DATABASE_BACKUP_RESTORE.md); production storage/KMS остаётся
   отдельным Phase 11 решением.
@@ -78,5 +87,7 @@ rows, но зависят от скомпрометированного recovery
 Incident закрывается только когда все пункты checklist подтверждены датой, оператором и
 нечувствительным evidence. Проверка должна показать ноль forbidden paths/objects во всех refs,
 успешный fully-redacted Gitleaks scan, завершённую credential/session rotation, обработанные
-GitHub caches/clones и успешный restore из нового backup channel. До этого `TASK-A042` остаётся
-в `IN_PROGRESS` и блокирует публикацию остальных изменений.
+GitHub caches/clones и успешный restore из нового backup channel. На 2026-09-14 repository-side
+remediation завершён, но запрос GitHub Support `#4756780` остаётся открытым и четыре скрытых
+`refs/pull/*` всё ещё достижимы. До server-side purge и оставшихся operational confirmations
+`TASK-A042` остаётся в `IN_PROGRESS` и блокирует публикацию остальных изменений.

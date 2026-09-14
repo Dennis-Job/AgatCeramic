@@ -2,8 +2,10 @@
 
 Состояние актуализировано по итогам `TASK-A001`–`TASK-A041`, повторной финальной приёмки
 `TASK-A030` (2026-09-13) и повторной оценки Interim Audit (2026-09-14). Admin frontend
-refactoring принят; security/data-lifecycle, архитектурные и quality-gate follow-ups
-`TASK-A042`–`TASK-A055` открыты. Evidence приведены в
+refactoring принят. Repository-side remediation `TASK-A042` завершён, а server-side очистка
+GitHub cached views/PR refs ожидается по открытому запросу Support `#4756780`; остальные
+security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты.
+Evidence приведены в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
 
@@ -31,7 +33,7 @@ refactoring принят; security/data-lifecycle, архитектурные и
 
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
-| Critical | Четыре PostgreSQL dumps с administrative/session/audit data опубликованы в Git history публичного repository; требуется incident response, history cleanup и credential/session rotation. | `TASK-A042` |
+| Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через четыре скрытых GitHub PR refs до выполнения server-side purge по запросу Support `#4756780`; также ожидаются оставшиеся operational confirmations. | `TASK-A042` |
 | High | Для business PII orders/contacts нет утверждённой и исполняемой retention/deletion policy. | `TASK-A043`, `TASK-A044` |
 | Medium | Guest cart bearer tokens хранятся raw, а abandoned carts не имеют TTL/cleanup. | `TASK-A045` |
 | Medium | OpenAPI compatibility, PostgreSQL/Redis и real Admin→API boundaries покрыты слабее, чем следует из исторической формулировки приёмки. | `TASK-A046`, `TASK-A048`–`TASK-A050` |
@@ -40,9 +42,10 @@ refactoring принят; security/data-lifecycle, архитектурные и
 | Medium | Правила из `backend/AGENTS.md` пока не подкреплены автоматическим architecture CI gate. | `TASK-A055` |
 | Low | Task ledger и исторические audit reports требуют нормализации. | `TASK-A051` |
 
-Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. До закрытия
-`TASK-A042` публикация новых изменений приостановлена; остальные follow-ups выполняются до
-соответствующих зависимых фаз и не означают переделку всех принятых модулей.
+Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. До подтверждения
+server-side purge и полного закрытия `TASK-A042` публикация несвязанных изменений приостановлена;
+остальные follow-ups выполняются до соответствующих зависимых фаз и не означают переделку всех
+принятых модулей.
 
 ## Отложено по roadmap
 

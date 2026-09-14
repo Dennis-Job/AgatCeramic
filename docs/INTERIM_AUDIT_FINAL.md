@@ -3,13 +3,14 @@
 ## Повторная оценка 2026-09-14
 
 Историческая функциональная приёмка `TASK-A020` сохраняется, но утверждение об отсутствии
-незадокументированных security/data-lifecycle gaps больше не является актуальным. До публикации
-новых изменений блокирующим является `TASK-A042`; остальные follow-up задачи добавлены в
+незадокументированных security/data-lifecycle gaps больше не является актуальным. Repository-side
+remediation выполнен; до подтверждения GitHub server-side purge по запросу Support `#4756780`
+блокирующим остаётся `TASK-A042`. Остальные follow-up задачи добавлены в
 [`tasks/TODO.md`](../tasks/TODO.md) и имеют собственные границы.
 
 | Finding | Приоритет | Подтверждённое evidence | Follow-up |
 | --- | --- | --- | --- |
-| IA-R01 | Critical | Публичный GitHub repository отслеживает четыре PostgreSQL dumps. Один dump содержит 1 `users`, 4 `sessions` и 157 `audit_logs`; остальные содержат session rows. `.gitignore` явно оставляет правила dumps закомментированными. | `TASK-A042` |
+| IA-R01 | Critical | Четыре PostgreSQL dumps удалены из текущего дерева и public branches/tags переписанной истории; добавлены ignore/history/secret gates, выполнены локальная auth invalidation и encrypted restore exercise. Fresh mirror всё ещё получает старые objects через `refs/pull/1/head`–`refs/pull/4/head`; server-side purge ожидается по GitHub Support `#4756780`. | `TASK-A042` |
 | IA-R02 | High | Для orders, contacts, comments и workflow history отсутствует утверждённая retention/deletion matrix и исполняемый lifecycle. Реализован только срок audit logs и checkout idempotency keys. | `TASK-A043`, `TASK-A044` |
 | IA-R03 | Medium | `carts.token` хранит raw bearer token; `GET /cart` создаёт persistent row, а scheduler не очищает пустые, брошенные или оформленные carts. | `TASK-A045` |
 | IA-R04 | Medium | Compatibility script пропускает изменение типа request field без version bump и принимает удаление operation при любом изменении `info.version`, включая patch. Стандартного OpenAPI semantic validator нет. | `TASK-A046` |
