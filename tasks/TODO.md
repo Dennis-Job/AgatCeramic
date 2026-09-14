@@ -307,6 +307,11 @@ API behaviour без migration plan и синхронного обновлени
   - Не менять API-contract, permissions, лимиты файлов и поведение фоновой обработки; выполнить
     unit, import E2E/axe, responsive QA и независимый UI Design Guard review.
 
+- [x] TASK-A039 Усилить Admin lint и flaky CI gates
+  - Добавить воспроизводимые lint и format-check команды в локальный workflow и CI.
+  - Не позволять Playwright retry скрывать flaky tests: отключить retries либо включить падение CI
+    при flaky-результате; подтвердить два последовательных локальных прогона и Linux Compose suite.
+
 ## Phase 7 — Content
 
 - [ ] TASK-090 Site settings
