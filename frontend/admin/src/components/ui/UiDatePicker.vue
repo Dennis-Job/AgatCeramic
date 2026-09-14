@@ -2,16 +2,19 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { CalendarDays, ChevronLeft, ChevronRight, X } from '@lucide/vue'
 
-const props = withDefaults(defineProps<{
-  modelValue: string
-  placeholder?: string
-  accessibleName?: string
-  disabled?: boolean
-}>(), {
-  placeholder: 'дд.мм.гггг',
-  accessibleName: 'Дата',
-  disabled: false,
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue: string
+    placeholder?: string
+    accessibleName?: string
+    disabled?: boolean
+  }>(),
+  {
+    placeholder: 'дд.мм.гггг',
+    accessibleName: 'Дата',
+    disabled: false,
+  },
+)
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
@@ -22,15 +25,29 @@ const currentMonth = ref(dateFromIso(props.modelValue) ?? new Date())
 const typedValue = ref(formatDate(dateFromIso(props.modelValue)))
 const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
-const monthLabel = computed(() => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(currentMonth.value))
+const monthLabel = computed(() =>
+  new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(
+    currentMonth.value,
+  ),
+)
 const calendarDays = computed(() => {
-  const start = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth(), 1)
+  const start = new Date(
+    currentMonth.value.getFullYear(),
+    currentMonth.value.getMonth(),
+    1,
+  )
   const offset = (start.getDay() + 6) % 7
-  const daysInMonth = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1, 0).getDate()
+  const daysInMonth = new Date(
+    currentMonth.value.getFullYear(),
+    currentMonth.value.getMonth() + 1,
+    0,
+  ).getDate()
 
   return Array.from({ length: 42 }, (_, index) => {
     const day = index - offset + 1
-    return day > 0 && day <= daysInMonth ? new Date(start.getFullYear(), start.getMonth(), day) : null
+    return day > 0 && day <= daysInMonth
+      ? new Date(start.getFullYear(), start.getMonth(), day)
+      : null
   })
 })
 
@@ -38,7 +55,11 @@ function dateFromIso(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
   const [year, month, day] = value.split('-').map(Number)
   const date = new Date(year, month - 1, day)
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
+  return date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+    ? date
+    : null
 }
 
 function toIso(date: Date): string {
@@ -56,13 +77,19 @@ function isoFromDisplay(value: string): string | null {
   const [, day, month, year] = match
   const date = new Date(Number(year), Number(month) - 1, Number(day))
 
-  return date.getFullYear() === Number(year) && date.getMonth() === Number(month) - 1 && date.getDate() === Number(day)
+  return date.getFullYear() === Number(year) &&
+    date.getMonth() === Number(month) - 1 &&
+    date.getDate() === Number(day)
     ? toIso(date)
     : null
 }
 
 function isSameDate(left: Date | null, right: Date): boolean {
-  return left?.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate()
+  return (
+    left?.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  )
 }
 
 function open(): void {
@@ -90,7 +117,11 @@ function clear(): void {
 
 function formatTypedDate(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 8)
-  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean)
+  const parts = [
+    digits.slice(0, 2),
+    digits.slice(2, 4),
+    digits.slice(4, 8),
+  ].filter(Boolean)
 
   return parts.join('.')
 }
@@ -124,16 +155,23 @@ function confirmTypedValue(): void {
 
 function normalizeTypedValue(): void {
   const isoValue = isoFromDisplay(typedValue.value)
-  typedValue.value = isoValue ? formatDate(dateFromIso(isoValue)) : formatDate(dateFromIso(props.modelValue))
+  typedValue.value = isoValue
+    ? formatDate(dateFromIso(isoValue))
+    : formatDate(dateFromIso(props.modelValue))
 }
 
 function changeMonth(offset: number): void {
   if (props.disabled) return
-  currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + offset, 1)
+  currentMonth.value = new Date(
+    currentMonth.value.getFullYear(),
+    currentMonth.value.getMonth() + offset,
+    1,
+  )
 }
 
 function handleOutsideClick(event: MouseEvent): void {
-  if (root.value && !root.value.contains(event.target as Node)) isOpen.value = false
+  if (root.value && !root.value.contains(event.target as Node))
+    isOpen.value = false
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -144,15 +182,21 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
-watch(() => props.modelValue, (value) => {
-  const selected = dateFromIso(value)
-  if (selected) currentMonth.value = selected
-  typedValue.value = formatDate(selected)
-})
+watch(
+  () => props.modelValue,
+  (value) => {
+    const selected = dateFromIso(value)
+    if (selected) currentMonth.value = selected
+    typedValue.value = formatDate(selected)
+  },
+)
 
-watch(() => props.disabled, (disabled) => {
-  if (disabled) isOpen.value = false
-})
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (disabled) isOpen.value = false
+  },
+)
 
 onMounted(() => {
   document.addEventListener('mousedown', handleOutsideClick)
@@ -169,34 +213,128 @@ onBeforeUnmount(() => {
   <div ref="root" class="relative w-full min-w-0">
     <div
       class="flex h-11 items-center rounded-lg border px-3 shadow-theme-xs transition"
-      :class="disabled ? 'cursor-not-allowed border-gray-200 bg-gray-50' : 'border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2'"
+      :class="
+        disabled
+          ? 'cursor-not-allowed border-gray-200 bg-gray-50'
+          : 'border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2'
+      "
     >
-      <CalendarDays :size="18" class="shrink-0" :class="disabled ? 'text-gray-500' : 'text-gray-400'" aria-hidden="true" />
-      <input ref="input" :value="typedValue" type="text" inputmode="numeric" maxlength="10" class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:text-gray-500" :placeholder="placeholder" :aria-label="accessibleName" :disabled="disabled" @focus="open" @input="updateTypedValue" @keydown.enter.prevent="confirmTypedValue" @blur="normalizeTypedValue" />
-      <button v-if="modelValue" type="button" class="rounded p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500" aria-label="Очистить дату" :disabled="disabled" @click="clear">
+      <CalendarDays
+        :size="18"
+        class="shrink-0"
+        :class="disabled ? 'text-gray-500' : 'text-gray-400'"
+        aria-hidden="true"
+      />
+      <input
+        ref="input"
+        :value="typedValue"
+        type="text"
+        inputmode="numeric"
+        maxlength="10"
+        class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:text-gray-500"
+        :placeholder="placeholder"
+        :aria-label="accessibleName"
+        :disabled="disabled"
+        @focus="open"
+        @input="updateTypedValue"
+        @keydown.enter.prevent="confirmTypedValue"
+        @blur="normalizeTypedValue"
+      />
+      <button
+        v-if="modelValue"
+        type="button"
+        class="rounded p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+        aria-label="Очистить дату"
+        :disabled="disabled"
+        @click="clear"
+      >
         <X :size="16" aria-hidden="true" />
       </button>
     </div>
 
-    <div v-if="isOpen" class="absolute z-30 mt-2 w-full min-w-0 rounded-xl border border-gray-200 bg-white p-3 shadow-dropdown sm:w-80" role="dialog" aria-modal="false" :aria-label="`${accessibleName}: выбор даты`">
+    <div
+      v-if="isOpen"
+      class="absolute z-30 mt-2 w-full min-w-0 rounded-xl border border-gray-200 bg-white p-3 shadow-dropdown sm:w-80"
+      role="dialog"
+      aria-modal="false"
+      :aria-label="`${accessibleName}: выбор даты`"
+    >
       <div class="mb-3 flex items-center justify-between px-1">
-        <button type="button" class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" aria-label="Предыдущий месяц" @click="changeMonth(-1)"><ChevronLeft :size="18" aria-hidden="true" /></button>
-        <p class="capitalize text-sm font-semibold text-gray-800">{{ monthLabel }}</p>
-        <button type="button" class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" aria-label="Следующий месяц" @click="changeMonth(1)"><ChevronRight :size="18" aria-hidden="true" /></button>
+        <button
+          type="button"
+          class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          aria-label="Предыдущий месяц"
+          @click="changeMonth(-1)"
+        >
+          <ChevronLeft :size="18" aria-hidden="true" />
+        </button>
+        <p class="capitalize text-sm font-semibold text-gray-800">
+          {{ monthLabel }}
+        </p>
+        <button
+          type="button"
+          class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          aria-label="Следующий месяц"
+          @click="changeMonth(1)"
+        >
+          <ChevronRight :size="18" aria-hidden="true" />
+        </button>
       </div>
 
       <div class="grid grid-cols-7 gap-1 text-center">
-        <span v-for="weekday in weekdays" :key="weekday" class="py-1 text-xs font-medium text-gray-400">{{ weekday }}</span>
-        <span v-for="(date, index) in calendarDays" :key="index" class="grid h-9 place-items-center">
-          <button v-if="date" type="button" class="grid h-8 w-full max-w-8 place-items-center rounded-lg text-sm font-medium transition hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1" :class="[isSameDate(dateFromIso(modelValue), date) ? 'bg-primary-600 text-white hover:bg-primary-700 hover:text-white' : 'text-gray-700', isSameDate(new Date(), date) && !isSameDate(dateFromIso(modelValue), date) ? 'ring-1 ring-primary-300' : '']" :aria-label="new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long' }).format(date)" @click="select(date)">
+        <span
+          v-for="weekday in weekdays"
+          :key="weekday"
+          class="py-1 text-xs font-medium text-gray-400"
+          >{{ weekday }}</span
+        >
+        <span
+          v-for="(date, index) in calendarDays"
+          :key="index"
+          class="grid h-9 place-items-center"
+        >
+          <button
+            v-if="date"
+            type="button"
+            class="grid h-8 w-full max-w-8 place-items-center rounded-lg text-sm font-medium transition hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
+            :class="[
+              isSameDate(dateFromIso(modelValue), date)
+                ? 'bg-primary-600 text-white hover:bg-primary-700 hover:text-white'
+                : 'text-gray-700',
+              isSameDate(new Date(), date) &&
+              !isSameDate(dateFromIso(modelValue), date)
+                ? 'ring-1 ring-primary-300'
+                : '',
+            ]"
+            :aria-label="
+              new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long' }).format(
+                date,
+              )
+            "
+            @click="select(date)"
+          >
             {{ date.getDate() }}
           </button>
         </span>
       </div>
 
-      <div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
-        <button type="button" class="rounded text-sm font-medium text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" @click="select(new Date())">Сегодня</button>
-        <button type="button" class="rounded text-sm font-medium text-gray-500 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" @click="clear">Очистить</button>
+      <div
+        class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3"
+      >
+        <button
+          type="button"
+          class="rounded text-sm font-medium text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          @click="select(new Date())"
+        >
+          Сегодня
+        </button>
+        <button
+          type="button"
+          class="rounded text-sm font-medium text-gray-500 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          @click="clear"
+        >
+          Очистить
+        </button>
       </div>
     </div>
   </div>

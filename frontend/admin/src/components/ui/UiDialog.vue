@@ -2,21 +2,24 @@
 // Source-of-truth dialog primitive.
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-const props = withDefaults(defineProps<{
-  open: boolean
-  labelledby: string
-  describedby?: string
-  closeDisabled?: boolean
-  suspended?: boolean
-  overlayClass?: string
-  panelClass?: string
-}>(), {
-  describedby: undefined,
-  closeDisabled: false,
-  suspended: false,
-  overlayClass: 'z-50 grid place-items-center p-4',
-  panelClass: '',
-})
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    labelledby: string
+    describedby?: string
+    closeDisabled?: boolean
+    suspended?: boolean
+    overlayClass?: string
+    panelClass?: string
+  }>(),
+  {
+    describedby: undefined,
+    closeDisabled: false,
+    suspended: false,
+    overlayClass: 'z-50 grid place-items-center p-4',
+    panelClass: '',
+  },
+)
 
 const emit = defineEmits<{ close: [] }>()
 const panel = ref<HTMLElement | null>(null)
@@ -33,9 +36,22 @@ const focusableSelector = [
 ].join(',')
 
 function focusableElements(): HTMLElement[] {
-  const roots = [panel.value, ...Array.from(document.querySelectorAll<HTMLElement>('[data-floating-select-menu]'))].filter((element): element is HTMLElement => element !== null)
-  return roots.flatMap(root => Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)))
-    .filter(element => !element.matches(':disabled') && element.tabIndex >= 0 && element.getClientRects().length > 0)
+  const roots = [
+    panel.value,
+    ...Array.from(
+      document.querySelectorAll<HTMLElement>('[data-floating-select-menu]'),
+    ),
+  ].filter((element): element is HTMLElement => element !== null)
+  return roots
+    .flatMap((root) =>
+      Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)),
+    )
+    .filter(
+      (element) =>
+        !element.matches(':disabled') &&
+        element.tabIndex >= 0 &&
+        element.getClientRects().length > 0,
+    )
 }
 
 function requestClose(): void {
@@ -43,11 +59,16 @@ function requestClose(): void {
 }
 
 function handleBackdropPointerDown(event: PointerEvent): void {
-  backdropPointerId = event.target === event.currentTarget && event.button === 0 ? event.pointerId : null
+  backdropPointerId =
+    event.target === event.currentTarget && event.button === 0
+      ? event.pointerId
+      : null
 }
 
 function handleBackdropPointerUp(event: PointerEvent): void {
-  const shouldClose = backdropPointerId === event.pointerId && event.target === event.currentTarget
+  const shouldClose =
+    backdropPointerId === event.pointerId &&
+    event.target === event.currentTarget
   backdropPointerId = null
   if (shouldClose) requestClose()
 }
@@ -82,18 +103,28 @@ function handleKeydown(event: KeyboardEvent): void {
   }
 }
 
-watch(() => props.open, async (open) => {
-  if (open) {
-    opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    await nextTick()
-    const initial = panel.value?.querySelector<HTMLElement>('[data-autofocus]') ?? focusableElements()[0] ?? panel.value
-    initial?.focus()
-  } else if (opener) {
-    await nextTick()
-    if (opener.isConnected) opener.focus()
-    opener = null
-  }
-}, { flush: 'post' })
+watch(
+  () => props.open,
+  async (open) => {
+    if (open) {
+      opener =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null
+      await nextTick()
+      const initial =
+        panel.value?.querySelector<HTMLElement>('[data-autofocus]') ??
+        focusableElements()[0] ??
+        panel.value
+      initial?.focus()
+    } else if (opener) {
+      await nextTick()
+      if (opener.isConnected) opener.focus()
+      opener = null
+    }
+  },
+  { flush: 'post' },
+)
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeydown, true)

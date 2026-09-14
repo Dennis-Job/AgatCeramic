@@ -119,7 +119,8 @@ Native control допустим внутри реализации соответ
 1. Изучить существующий feature, `src/components/ui/`, shared-компоненты и design tokens.
 2. Сохранить route, permissions, API-contract и видимые состояния.
 3. Разместить новую ответственность в правильном слое и не менять несвязанные модули.
-4. Выполнить `npm run build`, `npm run test:unit` и релевантные production E2E/axe проверки.
+4. Выполнить `npm run lint`, `npm run format:check`, `npm run build`, `npm run test:unit` и
+   релевантные production E2E/axe проверки.
 5. При изменении shared UI, layout или tokens выполнить полный `npm run test:e2e` и visual
    baseline.
 6. До сдачи передать UI-изменение независимому UI Design Guard согласно

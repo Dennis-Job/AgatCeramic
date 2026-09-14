@@ -13,7 +13,9 @@ type FileImportOptions<T extends ImportJob> = {
   pollInterval?: number
 }
 
-export function useFileImport<T extends ImportJob>(options: FileImportOptions<T>) {
+export function useFileImport<T extends ImportJob>(
+  options: FileImportOptions<T>,
+) {
   const file = ref<File | null>(null)
   const result = ref<T | null>(null)
   const uploading = ref(false)
@@ -24,8 +26,16 @@ export function useFileImport<T extends ImportJob>(options: FileImportOptions<T>
   let timer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
 
-  const finished = computed(() => result.value?.status === 'completed' || result.value?.status === 'failed')
-  const busy = computed(() => uploading.value || result.value?.status === 'pending' || result.value?.status === 'processing')
+  const finished = computed(
+    () =>
+      result.value?.status === 'completed' || result.value?.status === 'failed',
+  )
+  const busy = computed(
+    () =>
+      uploading.value ||
+      result.value?.status === 'pending' ||
+      result.value?.status === 'processing',
+  )
 
   function clearFeedback() {
     error.value = ''
@@ -55,7 +65,9 @@ export function useFileImport<T extends ImportJob>(options: FileImportOptions<T>
         options.onCompleted()
         return
       }
-      timer = setTimeout(() => { void poll(id) }, options.pollInterval ?? 1500)
+      timer = setTimeout(() => {
+        void poll(id)
+      }, options.pollInterval ?? 1500)
     } catch {
       if (!disposed) pollingError.value = true
     }
@@ -75,20 +87,27 @@ export function useFileImport<T extends ImportJob>(options: FileImportOptions<T>
       result.value = await options.upload(file.value)
       void poll(result.value.id)
     } catch (reason) {
-      error.value = reason instanceof Error ? reason.message : options.uploadError
+      error.value =
+        reason instanceof Error ? reason.message : options.uploadError
     } finally {
       uploading.value = false
     }
   }
 
-  async function download(request: () => Promise<Download>, successNotice: string | (() => string), failureMessage: string, preserveNotice = false) {
+  async function download(
+    request: () => Promise<Download>,
+    successNotice: string | (() => string),
+    failureMessage: string,
+    preserveNotice = false,
+  ) {
     if (downloading.value) return
     downloading.value = true
     error.value = ''
     if (!preserveNotice) notice.value = ''
     try {
       saveDownload(await request())
-      notice.value = typeof successNotice === 'function' ? successNotice() : successNotice
+      notice.value =
+        typeof successNotice === 'function' ? successNotice() : successNotice
     } catch (reason) {
       error.value = reason instanceof Error ? reason.message : failureMessage
     } finally {

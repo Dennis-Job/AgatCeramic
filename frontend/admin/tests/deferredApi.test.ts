@@ -7,13 +7,17 @@ describe('deferred API requests', () => {
     const request = deferredRequests.defer('/admin/products')
     let completed = false
 
-    const pending = deferredRequests.wait('/admin/products').then(() => { completed = true })
+    const pending = deferredRequests.wait('/admin/products').then(() => {
+      completed = true
+    })
     await request.requested
     expect(completed).toBe(false)
 
     request.release()
     await pending
     expect(completed).toBe(true)
-    await expect(deferredRequests.wait('/admin/brands')).resolves.toBeUndefined()
+    await expect(
+      deferredRequests.wait('/admin/brands'),
+    ).resolves.toBeUndefined()
   })
 })

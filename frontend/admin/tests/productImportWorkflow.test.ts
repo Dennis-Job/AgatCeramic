@@ -8,7 +8,10 @@ import {
   validateZipImport,
 } from '../src/features/products/validation/importFiles'
 
-type TestJob = { id: number; status: 'pending' | 'processing' | 'completed' | 'failed' }
+type TestJob = {
+  id: number
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+}
 
 afterEach(() => {
   vi.useRealTimers()
@@ -17,39 +20,63 @@ afterEach(() => {
 describe('product import file validation', () => {
   test('accepts XLSX up to the configured limit and rejects other or oversized files', () => {
     expect(validateXlsxImport(new File(['content'], 'catalog.XLSX'))).toBe('')
-    expect(validateXlsxImport(new File(['content'], 'catalog.csv'))).toBe('Прикрепите XLSX-файл размером не более 10 МБ.')
-    expect(validateXlsxImport(new File(['content'], 'catalog.xlsx'), 'Своя ошибка')).toBe('')
+    expect(validateXlsxImport(new File(['content'], 'catalog.csv'))).toBe(
+      'Прикрепите XLSX-файл размером не более 10 МБ.',
+    )
+    expect(
+      validateXlsxImport(new File(['content'], 'catalog.xlsx'), 'Своя ошибка'),
+    ).toBe('')
 
     const oversized = new File(['content'], 'catalog.xlsx')
-    Object.defineProperty(oversized, 'size', { value: PRODUCT_IMPORT_MAX_BYTES + 1 })
+    Object.defineProperty(oversized, 'size', {
+      value: PRODUCT_IMPORT_MAX_BYTES + 1,
+    })
     expect(validateXlsxImport(oversized, 'Своя ошибка')).toBe('Своя ошибка')
   })
 
   test('accepts ZIP by extension or MIME type and enforces the image archive limit', () => {
     expect(validateZipImport(new File(['content'], 'images.ZIP'))).toBe('')
-    expect(validateZipImport(new File(['content'], 'images.bin', { type: 'application/zip' }))).toBe('')
-    expect(validateZipImport(new File(['content'], 'images.tar'))).toBe('Прикрепите ZIP-архив размером не более 500 МБ.')
+    expect(
+      validateZipImport(
+        new File(['content'], 'images.bin', { type: 'application/zip' }),
+      ),
+    ).toBe('')
+    expect(validateZipImport(new File(['content'], 'images.tar'))).toBe(
+      'Прикрепите ZIP-архив размером не более 500 МБ.',
+    )
 
     const oversized = new File(['content'], 'images.zip')
-    Object.defineProperty(oversized, 'size', { value: PRODUCT_IMAGE_IMPORT_MAX_BYTES + 1 })
-    expect(validateZipImport(oversized)).toBe('Прикрепите ZIP-архив размером не более 500 МБ.')
+    Object.defineProperty(oversized, 'size', {
+      value: PRODUCT_IMAGE_IMPORT_MAX_BYTES + 1,
+    })
+    expect(validateZipImport(oversized)).toBe(
+      'Прикрепите ZIP-архив размером не более 500 МБ.',
+    )
   })
 })
 
 describe('useFileImport', () => {
   test('uploads, polls to completion and emits completion outside the component', async () => {
-    const upload = vi.fn(async (): Promise<TestJob> => ({ id: 7, status: 'pending' }))
-    const getStatus = vi.fn(async (): Promise<TestJob> => ({ id: 7, status: 'completed' }))
+    const upload = vi.fn(async (): Promise<TestJob> => ({
+      id: 7,
+      status: 'pending',
+    }))
+    const getStatus = vi.fn(async (): Promise<TestJob> => ({
+      id: 7,
+      status: 'completed',
+    }))
     const completed = vi.fn()
     const scope = effectScope()
-    const workflow = scope.run(() => useFileImport({
-      upload,
-      getStatus,
-      validate: () => '',
-      uploadError: 'Ошибка загрузки.',
-      onCompleted: completed,
-      pollInterval: 1,
-    }))!
+    const workflow = scope.run(() =>
+      useFileImport({
+        upload,
+        getStatus,
+        validate: () => '',
+        uploadError: 'Ошибка загрузки.',
+        onCompleted: completed,
+        pollInterval: 1,
+      }),
+    )!
 
     const file = new File(['content'], 'products.xlsx')
     workflow.selectFile(file)
@@ -64,17 +91,20 @@ describe('useFileImport', () => {
   })
 
   test('keeps a pending job retryable after a polling error', async () => {
-    const getStatus = vi.fn()
+    const getStatus = vi
+      .fn()
       .mockRejectedValueOnce(new Error('temporary'))
       .mockResolvedValueOnce({ id: 3, status: 'completed' } satisfies TestJob)
     const scope = effectScope()
-    const workflow = scope.run(() => useFileImport<TestJob>({
-      upload: async () => ({ id: 3, status: 'pending' }),
-      getStatus,
-      validate: () => '',
-      uploadError: 'Ошибка загрузки.',
-      onCompleted: vi.fn(),
-    }))!
+    const workflow = scope.run(() =>
+      useFileImport<TestJob>({
+        upload: async () => ({ id: 3, status: 'pending' }),
+        getStatus,
+        validate: () => '',
+        uploadError: 'Ошибка загрузки.',
+        onCompleted: vi.fn(),
+      }),
+    )!
 
     workflow.selectFile(new File(['content'], 'products.xlsx'))
     await workflow.upload()
@@ -91,13 +121,15 @@ describe('useFileImport', () => {
   test('stops before transport when validation fails', async () => {
     const upload = vi.fn()
     const scope = effectScope()
-    const workflow = scope.run(() => useFileImport<TestJob>({
-      upload,
-      getStatus: vi.fn(),
-      validate: () => 'Некорректный файл.',
-      uploadError: 'Ошибка загрузки.',
-      onCompleted: vi.fn(),
-    }))!
+    const workflow = scope.run(() =>
+      useFileImport<TestJob>({
+        upload,
+        getStatus: vi.fn(),
+        validate: () => 'Некорректный файл.',
+        uploadError: 'Ошибка загрузки.',
+        onCompleted: vi.fn(),
+      }),
+    )!
 
     workflow.selectFile(new File(['content'], 'products.csv'))
     await workflow.upload()
@@ -110,15 +142,19 @@ describe('useFileImport', () => {
     const createObjectURL = vi.fn(() => 'blob:test')
     const revokeObjectURL = vi.fn()
     vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined)
     const scope = effectScope()
-    const workflow = scope.run(() => useFileImport<TestJob>({
-      upload: vi.fn(),
-      getStatus: vi.fn(),
-      validate: () => '',
-      uploadError: 'Ошибка загрузки.',
-      onCompleted: vi.fn(),
-    }))!
+    const workflow = scope.run(() =>
+      useFileImport<TestJob>({
+        upload: vi.fn(),
+        getStatus: vi.fn(),
+        validate: () => '',
+        uploadError: 'Ошибка загрузки.',
+        onCompleted: vi.fn(),
+      }),
+    )!
 
     await workflow.download(
       async () => ({ blob: new Blob(['report']), filename: 'errors.xlsx' }),

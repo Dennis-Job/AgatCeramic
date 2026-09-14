@@ -23,20 +23,40 @@ export function useProfileEditor() {
       await auth.updateProfile({
         name: name.value,
         email: email.value,
-        ...(passwordChanged ? { password: password.value, password_confirmation: passwordConfirmation.value } : {}),
+        ...(passwordChanged
+          ? {
+              password: password.value,
+              password_confirmation: passwordConfirmation.value,
+            }
+          : {}),
       })
       if (passwordChanged) {
         await auth.logout()
-        await router.replace({ name: 'login', query: { password_changed: '1' } })
+        await router.replace({
+          name: 'login',
+          query: { password_changed: '1' },
+        })
         return
       }
       success.value = 'Профиль сохранён.'
     } catch (reason) {
-      error.value = reason instanceof Error ? reason.message : 'Не удалось сохранить профиль.'
+      error.value =
+        reason instanceof Error
+          ? reason.message
+          : 'Не удалось сохранить профиль.'
     } finally {
       isSubmitting.value = false
     }
   }
 
-  return { name, email, password, passwordConfirmation, error, success, isSubmitting, submit }
+  return {
+    name,
+    email,
+    password,
+    passwordConfirmation,
+    error,
+    success,
+    isSubmitting,
+    submit,
+  }
 }

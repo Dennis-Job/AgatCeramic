@@ -1,5 +1,8 @@
 import { ref } from 'vue'
-import type { ProductEditorStep, ProductEditorStepDefinition } from '../types/product.types'
+import type {
+  ProductEditorStep,
+  ProductEditorStepDefinition,
+} from '../types/product.types'
 
 const steps: ProductEditorStepDefinition[] = [
   { id: 'main', label: 'Основное и продажа' },

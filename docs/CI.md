@@ -8,7 +8,7 @@ Workflow получает только право `contents: read` и не ис�
 | Job | Проверки |
 | --- | --- |
 | Backend checks | Composer manifest и audit, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
-| Admin checks | `npm ci`, audit production-зависимостей, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
+| Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose configuration | Валидация `compose.yaml` с `.env.example` |
 
@@ -46,6 +46,8 @@ Admin E2E в CI и локальном Compose запускает production-сб
 поддерживаемом `admin-e2e` Docker-окружении; CI явно передаёт безопасный `.env.example`. Это
 устраняет различия системных шрифтов и Chromium rasterization между hosted runner и средой, в
 которой создаются Linux visual snapshots, без ослабления pixel-diff threshold.
+Playwright retries отключены во всех окружениях: каждый упавший тест немедленно делает suite
+неуспешным и не может быть скрыт успешной повторной попыткой.
 Детерминированные browser-level mock-ответы API удерживают
 loading-состояния управляемыми deferred fixtures до явного release, а не таймерами. Проверяются
 маршрутизация, восстановление административной сессии, каталоговые представления и интерактивные
@@ -56,3 +58,22 @@ loading-состояния управляемыми deferred fixtures до яв�
 Локальный Compose runner запускается отдельной командой `docker compose --profile test run --rm admin-e2e`.
 Он выполняет чистый `npm ci`, устанавливает Chromium в отдельный volume и запускает production E2E;
 dev-сервис `admin` и его `node_modules` не используются и не изменяются.
+
+Полный локальный Admin workflow после `npm ci` запускается командой `npm run test:ci`: ESLint,
+Prettier check, unit-тесты, production build и Playwright выполняются последовательно с единым
+ненулевым exit code при любой ошибке. Быстрая проверка без браузера доступна как `npm run check`.
+
+## Статус TASK-A039 (2026-09-14)
+
+Admin source, tests и конфигурация приведены к зафиксированному Prettier baseline. ESLint 10
+использует flat config для JavaScript, TypeScript и Vue; warnings считаются ошибками. Обе проверки
+выполняются отдельными blocking steps в Admin CI job. Playwright запускается с `retries: 0`
+локально и в CI.
+
+Visual-тест открытого `UiDatePicker` фиксирует системное время на 13.09.2026. Это исключает
+изменение подсветки «сегодня» при смене календарного дня без изменения или ослабления snapshot
+threshold.
+
+Два последовательных локальных запуска `npm run test:ci` прошли одинаково: ESLint и Prettier
+без ошибок, 47 unit-тестов, production build и 148/148 Playwright E2E/axe/visual тестов. Финальный
+Linux Compose suite после чистого `npm ci` прошёл 148/148.

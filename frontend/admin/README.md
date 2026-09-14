@@ -13,15 +13,23 @@ requests, and supports logout from the application header.
 ## Commands
 
 ```bash
-npm install
+npm ci
 npm run dev
+npm run lint
+npm run format:check
+npm run check
 npm run build
 npm run test:unit
 npm exec playwright install chromium
 npm run test:e2e
+npm run test:ci
 ```
 
-`test:unit` запускает Vitest для composable и Vue component-тестов. `test:e2e` запускает authenticated Catalog flows в Chromium; API изолирован browser-level fixtures в `e2e/catalogApi.ts`.
+`check` последовательно запускает ESLint, Prettier check, Vitest и production build. `test:ci`
+добавляет к тем же lint/format/unit gates полный production Playwright suite. `test:e2e` запускает
+его отдельно в Chromium; API изолирован browser-level fixtures в `e2e/catalogApi.ts`. Playwright
+не повторяет упавшие тесты ни локально, ни в CI: любой нестабильный результат сразу завершает
+команду с ошибкой.
 
 ## Initial structure
 

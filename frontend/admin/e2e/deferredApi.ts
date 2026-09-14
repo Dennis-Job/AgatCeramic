@@ -20,8 +20,12 @@ export function createDeferredApiRequests(): DeferredApiRequests {
     defer(path) {
       let markRequested = () => undefined
       let release = () => undefined
-      const requested = new Promise<void>((resolve) => { markRequested = resolve })
-      const released = new Promise<void>((resolve) => { release = resolve })
+      const requested = new Promise<void>((resolve) => {
+        markRequested = resolve
+      })
+      const released = new Promise<void>((resolve) => {
+        release = resolve
+      })
       const queue = queues.get(path) ?? []
       queue.push({ markRequested, released })
       queues.set(path, queue)

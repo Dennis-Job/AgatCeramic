@@ -11,16 +11,28 @@ import ConfirmDialog from '../src/components/shared/ConfirmDialog.vue'
 import PageHeader from '../src/components/shared/PageHeader.vue'
 import UiTable from '../src/components/ui/UiTable.vue'
 import { sortByLabel } from '../src/utils/alphabetical'
-import { attributeTypeLabel, attributeTypeOptions } from '../src/utils/attributeTypes'
+import {
+  attributeTypeLabel,
+  attributeTypeOptions,
+} from '../src/utils/attributeTypes'
 
-const readSource = (relativePath: string) => readFileSync(new URL(relativePath, import.meta.url), 'utf8')
+const readSource = (relativePath: string) =>
+  readFileSync(new URL(relativePath, import.meta.url), 'utf8')
 
 describe('products feature boundaries', () => {
   test('keeps product domain types in the feature types module', () => {
-    const editorComposable = readSource('../src/features/products/composables/useProductEditor.ts')
-    const contextComposable = readSource('../src/features/products/composables/useProductEditorContext.ts')
-    const productService = readSource('../src/features/products/services/products.ts')
-    const productTypes = readSource('../src/features/products/types/product.types.ts')
+    const editorComposable = readSource(
+      '../src/features/products/composables/useProductEditor.ts',
+    )
+    const contextComposable = readSource(
+      '../src/features/products/composables/useProductEditorContext.ts',
+    )
+    const productService = readSource(
+      '../src/features/products/services/products.ts',
+    )
+    const productTypes = readSource(
+      '../src/features/products/types/product.types.ts',
+    )
 
     expect(editorComposable).not.toMatch(/from\s+['"][^'"]+\.vue['"]/) // composables must not import components
     expect(contextComposable).not.toMatch(/from\s+['"][^'"]+\.vue['"]/) // context stays feature-layer only
@@ -45,17 +57,24 @@ describe('products feature boundaries', () => {
     ]
 
     for (const componentName of componentNames) {
-      const source = readSource(`../src/features/products/components/${componentName}`)
-      expect(source, componentName).not.toMatch(/<(?:button|select|textarea|table)\b/)
+      const source = readSource(
+        `../src/features/products/components/${componentName}`,
+      )
+      expect(source, componentName).not.toMatch(
+        /<(?:button|select|textarea|table)\b/,
+      )
       const inputs = source.match(/<input\b[^>]*>/g) ?? []
-      expect(inputs.every(input => /type="file"/.test(input)), componentName).toBe(true)
+      expect(
+        inputs.every((input) => /type="file"/.test(input)),
+        componentName,
+      ).toBe(true)
     }
   })
 })
 
 describe('attribute type labels', () => {
   test('provides Russian labels for every supported attribute type', () => {
-    expect(attributeTypeOptions.map(option => option.label)).toEqual([
+    expect(attributeTypeOptions.map((option) => option.label)).toEqual([
       'Строка',
       'Многострочный текст',
       'Целое число',
@@ -78,8 +97,18 @@ describe('alphabetical option ordering', () => {
       { value: '4', label: 'Плитка 2' },
     ]
 
-    expect(sortByLabel(source).map(option => option.label)).toEqual(['ёж', 'Ель', 'Плитка 2', 'Плитка 10'])
-    expect(source.map(option => option.label)).toEqual(['Плитка 10', 'ёж', 'Ель', 'Плитка 2'])
+    expect(sortByLabel(source).map((option) => option.label)).toEqual([
+      'ёж',
+      'Ель',
+      'Плитка 2',
+      'Плитка 10',
+    ])
+    expect(source.map((option) => option.label)).toEqual([
+      'Плитка 10',
+      'ёж',
+      'Ель',
+      'Плитка 2',
+    ])
   })
 
   test('shows product attribute choices alphabetically', async () => {
@@ -110,7 +139,13 @@ describe('alphabetical option ordering', () => {
     })
 
     await wrapper.get('button[aria-label="Цвет"]').trigger('click')
-    expect(Array.from(document.body.querySelectorAll('[data-floating-select-menu] [data-select-option]')).map(button => button.textContent?.trim())).toEqual(['Бежевый', 'Белый', 'Лазурный'])
+    expect(
+      Array.from(
+        document.body.querySelectorAll(
+          '[data-floating-select-menu] [data-select-option]',
+        ),
+      ).map((button) => button.textContent?.trim()),
+    ).toEqual(['Бежевый', 'Белый', 'Лазурный'])
     wrapper.unmount()
   })
 })
@@ -132,7 +167,11 @@ describe('UiLoadingState', () => {
 describe('shared page patterns', () => {
   test('keeps an eyebrow and actions together in the reusable page header', () => {
     const wrapper = mount(PageHeader, {
-      props: { eyebrow: 'Каталог', title: 'Длинное название раздела', description: 'Описание раздела.' },
+      props: {
+        eyebrow: 'Каталог',
+        title: 'Длинное название раздела',
+        description: 'Описание раздела.',
+      },
       slots: { actions: '<button type="button">Добавить</button>' },
     })
 
@@ -143,15 +182,29 @@ describe('shared page patterns', () => {
 
   test('provides a labelled, scrollable table shell with an optional minimum width', () => {
     const wrapper = mount(UiTable, {
-      props: { label: 'Список сотрудников', minWidth: 'min-w-[680px]', tableClass: 'admin-table-employees' },
+      props: {
+        label: 'Список сотрудников',
+        minWidth: 'min-w-[680px]',
+        tableClass: 'admin-table-employees',
+      },
       slots: { default: '<tbody><tr><td>Иван</td></tr></tbody>' },
     })
 
-    expect(wrapper.get('table').attributes('aria-label')).toBe('Список сотрудников')
-    expect(wrapper.get('[role="region"]').attributes('aria-label')).toBe('Список сотрудников')
-    expect(wrapper.get('[role="region"]').classes()).toContain('[contain:paint]')
-    expect(wrapper.get('[role="region"]').classes()).toContain('focus-visible:ring-2')
-    expect(wrapper.get('[role="region"]').classes()).toContain('focus-visible:ring-inset')
+    expect(wrapper.get('table').attributes('aria-label')).toBe(
+      'Список сотрудников',
+    )
+    expect(wrapper.get('[role="region"]').attributes('aria-label')).toBe(
+      'Список сотрудников',
+    )
+    expect(wrapper.get('[role="region"]').classes()).toContain(
+      '[contain:paint]',
+    )
+    expect(wrapper.get('[role="region"]').classes()).toContain(
+      'focus-visible:ring-2',
+    )
+    expect(wrapper.get('[role="region"]').classes()).toContain(
+      'focus-visible:ring-inset',
+    )
     expect(wrapper.get('table').classes()).toContain('min-w-[680px]')
     expect(wrapper.get('table').classes()).toContain('admin-table-employees')
     expect(wrapper.text()).toContain('Иван')
@@ -160,15 +213,25 @@ describe('shared page patterns', () => {
 
 describe('shared feedback and destructive confirmation', () => {
   test('announces errors as alerts', () => {
-    const wrapper = mount(UiAlert, { slots: { default: 'Не удалось сохранить изменения.' } })
+    const wrapper = mount(UiAlert, {
+      slots: { default: 'Не удалось сохранить изменения.' },
+    })
 
-    expect(wrapper.get('[role="alert"]').text()).toBe('Не удалось сохранить изменения.')
-    expect(wrapper.get('[role="alert"]').attributes('aria-live')).toBe('assertive')
+    expect(wrapper.get('[role="alert"]').text()).toBe(
+      'Не удалось сохранить изменения.',
+    )
+    expect(wrapper.get('[role="alert"]').attributes('aria-live')).toBe(
+      'assertive',
+    )
   })
 
   test('uses the shared dialog controls for destructive confirmation', async () => {
     const wrapper = mount(ConfirmDialog, {
-      props: { open: true, title: 'Удалить запись?', description: 'Отменить нельзя.' },
+      props: {
+        open: true,
+        title: 'Удалить запись?',
+        description: 'Отменить нельзя.',
+      },
     })
 
     await wrapper.get('button.bg-error-500').trigger('click')
@@ -182,7 +245,10 @@ describe('UiDialog', () => {
   test('does not close when a text-selection drag starts inside the panel and ends on the backdrop', async () => {
     const wrapper = mount(UiDialog, {
       props: { open: true, labelledby: 'dialog-title' },
-      slots: { default: '<h2 id="dialog-title">Редактирование</h2><input value="Текст для выделения">' },
+      slots: {
+        default:
+          '<h2 id="dialog-title">Редактирование</h2><input value="Текст для выделения">',
+      },
     })
 
     await wrapper.get('input').trigger('pointerdown')
@@ -221,10 +287,14 @@ describe('UiSelect', () => {
     const trigger = wrapper.get('button[aria-label="Статус заказа"]')
     const descriptionId = trigger.attributes('aria-describedby')
     expect(descriptionId).toBeTruthy()
-    expect(wrapper.get(`#${descriptionId}`).text()).toBe('Текущее значение: Новый')
+    expect(wrapper.get(`#${descriptionId}`).text()).toBe(
+      'Текущее значение: Новый',
+    )
 
     await wrapper.setProps({ modelValue: 'processing' })
-    expect(wrapper.get(`#${descriptionId}`).text()).toBe('Текущее значение: В обработке')
+    expect(wrapper.get(`#${descriptionId}`).text()).toBe(
+      'Текущее значение: В обработке',
+    )
   })
 
   test('teleports an opted-in menu outside clipping containers and keeps keyboard and outside-click handling', async () => {
@@ -247,9 +317,13 @@ describe('UiSelect', () => {
     expect(wrapper.element.contains(menu)).toBe(false)
     expect(document.activeElement?.textContent?.trim()).toBe('Глянцевая')
 
-    await (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    await (document.activeElement as HTMLElement).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }),
+    )
     expect(document.activeElement?.textContent?.trim()).toBe('Матовая')
-    await (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await (document.activeElement as HTMLElement).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    )
     await wrapper.vm.$nextTick()
     expect(document.body.querySelector('.fixed.z-\\[70\\]')).toBeNull()
     expect(document.activeElement?.getAttribute('aria-label')).toBe('Текстура')
@@ -272,13 +346,19 @@ describe('UiSelect', () => {
       },
     })
 
-    await wrapper.get('button[aria-label="Очистить выбор: Поверхность"]').trigger('click')
+    await wrapper
+      .get('button[aria-label="Очистить выбор: Поверхность"]')
+      .trigger('click')
     expect(wrapper.emitted('update:modelValue')).toEqual([['']])
     expect(wrapper.emitted('change')).toEqual([['']])
-    expect(document.activeElement?.getAttribute('aria-label')).toBe('Поверхность')
+    expect(document.activeElement?.getAttribute('aria-label')).toBe(
+      'Поверхность',
+    )
 
     await wrapper.setProps({ clearable: false })
-    expect(wrapper.find('button[aria-label="Очистить выбор: Поверхность"]').exists()).toBe(false)
+    expect(
+      wrapper.find('button[aria-label="Очистить выбор: Поверхность"]').exists(),
+    ).toBe(false)
     wrapper.unmount()
   })
 
@@ -303,12 +383,16 @@ describe('UiSelect', () => {
     expect(trigger.attributes('aria-expanded')).toBe('true')
 
     const search = wrapper.get('input[aria-label="Поиск: Категория"]')
-    expect(search.attributes('placeholder')).toBe('Начните вводить название категории')
+    expect(search.attributes('placeholder')).toBe(
+      'Начните вводить название категории',
+    )
     await search.setValue('моз')
     expect(wrapper.text()).toContain('Мозаика')
     expect(wrapper.text()).not.toContain('Керамогранит')
 
-    const option = wrapper.findAll('button').find((button) => button.text().includes('Мозаика'))
+    const option = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Мозаика'))
     expect(option).toBeDefined()
     await option!.trigger('click')
     expect(wrapper.emitted('update:modelValue')).toEqual([['2']])
@@ -332,7 +416,9 @@ describe('UiSelect', () => {
     await wrapper.get('button[aria-label="Бренд"]').trigger('click')
     await wrapper.get('input[type="search"]').setValue('нет такого')
     expect(wrapper.text()).toContain('Ничего не найдено')
-    await wrapper.get('input[type="search"]').trigger('keydown', { key: 'Escape' })
+    await wrapper
+      .get('input[type="search"]')
+      .trigger('keydown', { key: 'Escape' })
     expect(wrapper.find('input[type="search"]').exists()).toBe(false)
     expect(document.activeElement?.getAttribute('aria-label')).toBe('Бренд')
     wrapper.unmount()
@@ -343,26 +429,52 @@ describe('UiPagination', () => {
   test('announces the range, changes pages, and guards unavailable navigation', async () => {
     const wrapper = mount(UiPagination, {
       props: {
-        meta: { current_page: 2, last_page: 3, per_page: 15, total: 31, from: 16, to: 30 },
+        meta: {
+          current_page: 2,
+          last_page: 3,
+          per_page: 15,
+          total: 31,
+          from: 16,
+          to: 30,
+        },
       },
     })
 
-    expect(wrapper.get('nav').attributes('aria-label')).toBe('Пагинация: страница 2 из 3')
-    expect(wrapper.get('[aria-label="Текущая страница 2 из 3"]').text()).toBe('2 / 3')
+    expect(wrapper.get('nav').attributes('aria-label')).toBe(
+      'Пагинация: страница 2 из 3',
+    )
+    expect(wrapper.get('[aria-label="Текущая страница 2 из 3"]').text()).toBe(
+      '2 / 3',
+    )
     expect(wrapper.get('[role="status"]').text()).toBe('Показано 16–30 из 31')
-    await wrapper.get('button[aria-label="Предыдущая страница"]').trigger('click')
-    await wrapper.get('button[aria-label="Следующая страница"]').trigger('click')
+    await wrapper
+      .get('button[aria-label="Предыдущая страница"]')
+      .trigger('click')
+    await wrapper
+      .get('button[aria-label="Следующая страница"]')
+      .trigger('click')
     expect(wrapper.emitted('change')).toEqual([[1], [3]])
 
     await wrapper.setProps({ loading: true })
-    expect(wrapper.get('button[aria-label="Предыдущая страница"]').attributes()).toHaveProperty('disabled')
-    expect(wrapper.get('button[aria-label="Следующая страница"]').attributes()).toHaveProperty('disabled')
+    expect(
+      wrapper.get('button[aria-label="Предыдущая страница"]').attributes(),
+    ).toHaveProperty('disabled')
+    expect(
+      wrapper.get('button[aria-label="Следующая страница"]').attributes(),
+    ).toHaveProperty('disabled')
   })
 
   test('can render the visible range without a second live announcement', () => {
     const wrapper = mount(UiPagination, {
       props: {
-        meta: { current_page: 1, last_page: 1, per_page: 25, total: 3, from: 1, to: 3 },
+        meta: {
+          current_page: 1,
+          last_page: 1,
+          per_page: 25,
+          total: 3,
+          from: 1,
+          to: 3,
+        },
         announce: false,
       },
     })
@@ -373,7 +485,9 @@ describe('UiPagination', () => {
 
   test('does not render for an empty collection', () => {
     const wrapper = mount(UiPagination, {
-      props: { meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } },
+      props: {
+        meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 },
+      },
     })
     expect(wrapper.find('nav').exists()).toBe(false)
   })

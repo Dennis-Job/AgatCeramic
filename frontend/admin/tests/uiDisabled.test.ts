@@ -42,7 +42,9 @@ describe('UI-kit disabled contract', () => {
     expect(wrapper.find('[role="group"]').exists()).toBe(false)
     expect(trigger.attributes()).toHaveProperty('disabled')
 
-    const clear = wrapper.get('button[aria-label="Очистить выбор: Поверхность"]')
+    const clear = wrapper.get(
+      'button[aria-label="Очистить выбор: Поверхность"]',
+    )
     expect(clear.attributes()).toHaveProperty('disabled')
     await clear.trigger('click')
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
@@ -52,7 +54,11 @@ describe('UI-kit disabled contract', () => {
 
   test('UiDatePicker disables input and clear action without opening or emitting changes', async () => {
     const wrapper = mount(UiDatePicker, {
-      props: { modelValue: '2026-09-13', accessibleName: 'Дата публикации', disabled: true },
+      props: {
+        modelValue: '2026-09-13',
+        accessibleName: 'Дата публикации',
+        disabled: true,
+      },
     })
 
     const input = wrapper.get('input')
@@ -80,7 +86,9 @@ describe('UI-kit disabled contract', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    )
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
     expect(document.activeElement).toBe(input.element)

@@ -105,15 +105,29 @@ export const product = {
   updated_at: now,
 }
 
-const groupedVariant = { ...product, id: 2, name: 'Монте Тиберио Тёмный', slug: 'monte-tiberio-dark', sku: 'MONTE-TIBERIO-DARK', article_number: 'KM-101', barcode: null }
+const groupedVariant = {
+  ...product,
+  id: 2,
+  name: 'Монте Тиберио Тёмный',
+  slug: 'monte-tiberio-dark',
+  sku: 'MONTE-TIBERIO-DARK',
+  article_number: 'KM-101',
+  barcode: null,
+}
 const sourceProductGroup = {
   id: 1,
   name: 'Монте Тиберио',
   code: 'MONTE-TIBERIO-GROUP',
   axes: [attribute],
   products: [
-    { ...product, axis_values: [{ attribute_id: attribute.id, value: '60.00', attribute }] },
-    { ...groupedVariant, axis_values: [{ attribute_id: attribute.id, value: '120.00', attribute }] },
+    {
+      ...product,
+      axis_values: [{ attribute_id: attribute.id, value: '60.00', attribute }],
+    },
+    {
+      ...groupedVariant,
+      axis_values: [{ attribute_id: attribute.id, value: '120.00', attribute }],
+    },
   ],
   created_at: now,
   updated_at: now,
@@ -129,10 +143,21 @@ type ApiOptions = {
   includeSharedAttribute?: boolean
   includeOptionalSelectAttribute?: boolean
   sourceProduct?: Partial<typeof product>
-  initialProductImages?: Array<{ id: number; url: string; alt: string; is_primary: boolean; sort_order: number }>
+  initialProductImages?: Array<{
+    id: number
+    url: string
+    alt: string
+    is_primary: boolean
+    sort_order: number
+  }>
 }
 
-function page(data: unknown[], currentPage = 1, lastPage = 1, total = data.length) {
+function page(
+  data: unknown[],
+  currentPage = 1,
+  lastPage = 1,
+  total = data.length,
+) {
   return {
     data,
     meta: {
@@ -146,69 +171,162 @@ function page(data: unknown[], currentPage = 1, lastPage = 1, total = data.lengt
   }
 }
 
-function paginatedFixture(url: URL, first: Record<string, unknown>, secondName: string) {
-  const second = { ...first, id: 2, name: secondName, slug: `${String(first.slug)}-2` }
-  if (url.searchParams.get('per_page') === '100') return page([first, second], 1, 1, 2)
+function paginatedFixture(
+  url: URL,
+  first: Record<string, unknown>,
+  secondName: string,
+) {
+  const second = {
+    ...first,
+    id: 2,
+    name: secondName,
+    slug: `${String(first.slug)}-2`,
+  }
+  if (url.searchParams.get('per_page') === '100')
+    return page([first, second], 1, 1, 2)
   const currentPage = Number(url.searchParams.get('page') ?? '1')
   return page(currentPage === 2 ? [second] : [first], currentPage, 2, 16)
 }
 
-export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}): Promise<void> {
+export async function mockCatalogApi(
+  pageContext: Page,
+  options: ApiOptions = {},
+): Promise<void> {
   let catalogProduct = { ...product, ...options.sourceProduct }
   const createdProducts: Array<typeof product> = []
-  const productImages = new Map<number, Array<{ id: number; product_id: number; url: string; mime_type: string; size: number; alt: string; is_primary: boolean; sort_order: number; created_at: string; updated_at: string }>>([
-    [1, (options.initialProductImages ?? []).map(image => ({ ...image, product_id: 1, mime_type: 'image/jpeg', size: 1024, created_at: now, updated_at: now }))],
+  const productImages = new Map<
+    number,
+    Array<{
+      id: number
+      product_id: number
+      url: string
+      mime_type: string
+      size: number
+      alt: string
+      is_primary: boolean
+      sort_order: number
+      created_at: string
+      updated_at: string
+    }>
+  >([
+    [
+      1,
+      (options.initialProductImages ?? []).map((image) => ({
+        ...image,
+        product_id: 1,
+        mime_type: 'image/jpeg',
+        size: 1024,
+        created_at: now,
+        updated_at: now,
+      })),
+    ],
   ])
   const withPrimaryImage = (item: typeof product) => {
-    const primary = (productImages.get(item.id) ?? []).find(image => image.is_primary) ?? null
-    return { ...item, primary_image: primary ? { id: primary.id, url: primary.url, alt: primary.alt } : null }
+    const primary =
+      (productImages.get(item.id) ?? []).find((image) => image.is_primary) ??
+      null
+    return {
+      ...item,
+      primary_image: primary
+        ? { id: primary.id, url: primary.url, alt: primary.alt }
+        : null,
+    }
   }
-  await pageContext.route('**/sanctum/csrf-cookie', async (route) => route.fulfill({ status: 204 }))
+  await pageContext.route('**/sanctum/csrf-cookie', async (route) =>
+    route.fulfill({ status: 204 }),
+  )
   await pageContext.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname.replace('/api/v1', '')
 
     await options.deferredRequests?.wait(path)
     if (options.errorPath === path) {
-      await route.fulfill({ status: 500, json: { error: { message: 'Тестовая ошибка каталога' } } })
+      await route.fulfill({
+        status: 500,
+        json: { error: { message: 'Тестовая ошибка каталога' } },
+      })
       return
     }
 
     if (path === '/admin/auth/me') {
       if (options.auth === 'unauthenticated') {
-        await route.fulfill({ status: 401, json: { error: { message: 'Unauthenticated' } } })
+        await route.fulfill({
+          status: 401,
+          json: { error: { message: 'Unauthenticated' } },
+        })
         return
       }
-      await route.fulfill({ json: { data: { id: 1, name: 'Тестовый администратор', email: 'admin@example.test', status: 'active', last_login_at: now, permissions: options.auth === 'forbidden' ? [] : ['catalog.manage', 'imports.manage'] } } })
+      await route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            name: 'Тестовый администратор',
+            email: 'admin@example.test',
+            status: 'active',
+            last_login_at: now,
+            permissions:
+              options.auth === 'forbidden'
+                ? []
+                : ['catalog.manage', 'imports.manage'],
+          },
+        },
+      })
       return
     }
 
     if (path === '/admin/categories/tree') {
-      await route.fulfill({ json: { data: options.emptyPath === path ? [] : [category] } })
+      await route.fulfill({
+        json: { data: options.emptyPath === path ? [] : [category] },
+      })
       return
     }
 
     if (path === '/admin/brands') {
-      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, brand, 'Italon') })
+      await route.fulfill({
+        json:
+          options.emptyPath === path
+            ? page([])
+            : paginatedFixture(url, brand, 'Italon'),
+      })
       return
     }
 
     if (path === '/admin/attribute-groups') {
-      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, attributeGroup, 'Поверхность') })
+      await route.fulfill({
+        json:
+          options.emptyPath === path
+            ? page([])
+            : paginatedFixture(url, attributeGroup, 'Поверхность'),
+      })
       return
     }
 
     if (path === '/admin/attributes') {
-      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, attribute, 'Длина') })
+      await route.fulfill({
+        json:
+          options.emptyPath === path
+            ? page([])
+            : paginatedFixture(url, attribute, 'Длина'),
+      })
       return
     }
 
-    if (path === '/admin/products/export' || path === '/admin/products/import-template' || path === '/admin/product-imports/1/errors' || path === '/admin/products/group-import-template' || path === '/admin/product-group-imports/1/errors' || path === '/admin/products/price-status-template' || path === '/admin/product-price-status-imports/1/errors') {
+    if (
+      path === '/admin/products/export' ||
+      path === '/admin/products/import-template' ||
+      path === '/admin/product-imports/1/errors' ||
+      path === '/admin/products/group-import-template' ||
+      path === '/admin/product-group-imports/1/errors' ||
+      path === '/admin/products/price-status-template' ||
+      path === '/admin/product-price-status-imports/1/errors'
+    ) {
       await route.fulfill({
         body: 'mock xlsx',
         headers: {
-          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Disposition': 'attachment; filename="products-2026-09-01-120000.xlsx"',
+          'Content-Type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition':
+            'attachment; filename="products-2026-09-01-120000.xlsx"',
           'Access-Control-Expose-Headers': 'Content-Disposition',
         },
       })
@@ -220,67 +338,299 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
         body: 'sku,entry,error',
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': 'attachment; filename="product-image-import-1-errors.csv"',
+          'Content-Disposition':
+            'attachment; filename="product-image-import-1-errors.csv"',
           'Access-Control-Expose-Headers': 'Content-Disposition',
         },
       })
       return
     }
 
-    if (path === '/admin/product-image-imports' && route.request().method() === 'POST') {
-      await route.fulfill({ status: 202, json: { data: { id: 1, filename: 'images.zip', status: 'pending', total_folders: 0, processed_folders: 0, created_images: 0, replaced_images: 0, failed_folders: 0, errors: [], has_error_file: false, error_message: null, created_at: now, started_at: null, completed_at: null } } })
+    if (
+      path === '/admin/product-image-imports' &&
+      route.request().method() === 'POST'
+    ) {
+      await route.fulfill({
+        status: 202,
+        json: {
+          data: {
+            id: 1,
+            filename: 'images.zip',
+            status: 'pending',
+            total_folders: 0,
+            processed_folders: 0,
+            created_images: 0,
+            replaced_images: 0,
+            failed_folders: 0,
+            errors: [],
+            has_error_file: false,
+            error_message: null,
+            created_at: now,
+            started_at: null,
+            completed_at: null,
+          },
+        },
+      })
       return
     }
 
     if (path === '/admin/product-image-imports/1') {
-      await route.fulfill({ json: { data: { id: 1, filename: 'images.zip', status: 'completed', total_folders: 2, processed_folders: 2, created_images: 3, replaced_images: 1, failed_folders: options.importErrors ? 1 : 0, errors: options.importErrors ? [{ sku: 'UNKNOWN-SKU', entry: 'UNKNOWN-SKU_1.jpg', messages: ['Товар с таким SKU не найден.'] }] : [], has_error_file: Boolean(options.importErrors), error_message: null, created_at: now, started_at: now, completed_at: now } } })
+      await route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            filename: 'images.zip',
+            status: 'completed',
+            total_folders: 2,
+            processed_folders: 2,
+            created_images: 3,
+            replaced_images: 1,
+            failed_folders: options.importErrors ? 1 : 0,
+            errors: options.importErrors
+              ? [
+                  {
+                    sku: 'UNKNOWN-SKU',
+                    entry: 'UNKNOWN-SKU_1.jpg',
+                    messages: ['Товар с таким SKU не найден.'],
+                  },
+                ]
+              : [],
+            has_error_file: Boolean(options.importErrors),
+            error_message: null,
+            created_at: now,
+            started_at: now,
+            completed_at: now,
+          },
+        },
+      })
       return
     }
 
-    if (path === '/admin/products/import' && route.request().method() === 'POST') {
-      await route.fulfill({ status: 202, json: { data: { id: 1, category_id: 1, total_rows: 0, failed_rows: 0, row_errors: [], has_error_file: false, filename: 'products.xlsx', status: 'pending', created_rows: 0, updated_rows: 0, processed_rows: 0, error_message: null, created_at: now, started_at: null, completed_at: null } } })
+    if (
+      path === '/admin/products/import' &&
+      route.request().method() === 'POST'
+    ) {
+      await route.fulfill({
+        status: 202,
+        json: {
+          data: {
+            id: 1,
+            category_id: 1,
+            total_rows: 0,
+            failed_rows: 0,
+            row_errors: [],
+            has_error_file: false,
+            filename: 'products.xlsx',
+            status: 'pending',
+            created_rows: 0,
+            updated_rows: 0,
+            processed_rows: 0,
+            error_message: null,
+            created_at: now,
+            started_at: null,
+            completed_at: null,
+          },
+        },
+      })
       return
     }
 
-    if (path === '/admin/products/group-import' && route.request().method() === 'POST') {
-      await route.fulfill({ status: 202, json: { data: { id: 1, operation: 'group', category_id: null, total_rows: 0, failed_rows: 0, row_errors: [], has_error_file: false, filename: 'product-groups.xlsx', status: 'pending', created_rows: 0, updated_rows: 0, processed_rows: 0, error_message: null, created_at: now, started_at: null, completed_at: null } } })
+    if (
+      path === '/admin/products/group-import' &&
+      route.request().method() === 'POST'
+    ) {
+      await route.fulfill({
+        status: 202,
+        json: {
+          data: {
+            id: 1,
+            operation: 'group',
+            category_id: null,
+            total_rows: 0,
+            failed_rows: 0,
+            row_errors: [],
+            has_error_file: false,
+            filename: 'product-groups.xlsx',
+            status: 'pending',
+            created_rows: 0,
+            updated_rows: 0,
+            processed_rows: 0,
+            error_message: null,
+            created_at: now,
+            started_at: null,
+            completed_at: null,
+          },
+        },
+      })
       return
     }
 
-    if (path === '/admin/products/price-status-import' && route.request().method() === 'POST') {
-      await route.fulfill({ status: 202, json: { data: { id: 1, operation: 'price_status', category_id: null, total_rows: 0, failed_rows: 0, row_errors: [], has_error_file: false, filename: 'product-price-status.xlsx', status: 'pending', created_rows: 0, updated_rows: 0, processed_rows: 0, error_message: null, created_at: now, started_at: null, completed_at: null } } })
+    if (
+      path === '/admin/products/price-status-import' &&
+      route.request().method() === 'POST'
+    ) {
+      await route.fulfill({
+        status: 202,
+        json: {
+          data: {
+            id: 1,
+            operation: 'price_status',
+            category_id: null,
+            total_rows: 0,
+            failed_rows: 0,
+            row_errors: [],
+            has_error_file: false,
+            filename: 'product-price-status.xlsx',
+            status: 'pending',
+            created_rows: 0,
+            updated_rows: 0,
+            processed_rows: 0,
+            error_message: null,
+            created_at: now,
+            started_at: null,
+            completed_at: null,
+          },
+        },
+      })
       return
     }
 
     if (path === '/admin/product-imports/1') {
-      await route.fulfill({ json: { data: { id: 1, category_id: 1, total_rows: 5, failed_rows: options.importErrors ? 1 : 0, row_errors: options.importErrors ? [{ row: 4, name: 'Керамогранит с очень длинным наименованием для проверки переноса текста в модальном окне загрузки товаров', messages: ['Товар с таким наименованием уже существует.', 'Выберите значение из списка «Поверхность».'] }] : [], has_error_file: Boolean(options.importErrors), filename: 'products.xlsx', status: 'completed', created_rows: options.importErrors ? 4 : 5, updated_rows: 0, processed_rows: 5, error_message: null, created_at: now, started_at: now, completed_at: now } } })
+      await route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            category_id: 1,
+            total_rows: 5,
+            failed_rows: options.importErrors ? 1 : 0,
+            row_errors: options.importErrors
+              ? [
+                  {
+                    row: 4,
+                    name: 'Керамогранит с очень длинным наименованием для проверки переноса текста в модальном окне загрузки товаров',
+                    messages: [
+                      'Товар с таким наименованием уже существует.',
+                      'Выберите значение из списка «Поверхность».',
+                    ],
+                  },
+                ]
+              : [],
+            has_error_file: Boolean(options.importErrors),
+            filename: 'products.xlsx',
+            status: 'completed',
+            created_rows: options.importErrors ? 4 : 5,
+            updated_rows: 0,
+            processed_rows: 5,
+            error_message: null,
+            created_at: now,
+            started_at: now,
+            completed_at: now,
+          },
+        },
+      })
       return
     }
 
     if (path === '/admin/product-group-imports/1') {
-      await route.fulfill({ json: { data: { id: 1, operation: 'group', category_id: null, total_rows: 2, failed_rows: options.importErrors ? 1 : 0, row_errors: options.importErrors ? [{ row: 2, name: 'MONTE-TIBERIO-GROUP', messages: ['Состав группы не соответствует выбранным осям.'] }] : [], has_error_file: Boolean(options.importErrors), filename: 'product-groups.xlsx', status: 'completed', created_rows: 0, updated_rows: options.importErrors ? 1 : 2, processed_rows: 2, error_message: null, created_at: now, started_at: now, completed_at: now } } })
+      await route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            operation: 'group',
+            category_id: null,
+            total_rows: 2,
+            failed_rows: options.importErrors ? 1 : 0,
+            row_errors: options.importErrors
+              ? [
+                  {
+                    row: 2,
+                    name: 'MONTE-TIBERIO-GROUP',
+                    messages: [
+                      'Состав группы не соответствует выбранным осям.',
+                    ],
+                  },
+                ]
+              : [],
+            has_error_file: Boolean(options.importErrors),
+            filename: 'product-groups.xlsx',
+            status: 'completed',
+            created_rows: 0,
+            updated_rows: options.importErrors ? 1 : 2,
+            processed_rows: 2,
+            error_message: null,
+            created_at: now,
+            started_at: now,
+            completed_at: now,
+          },
+        },
+      })
       return
     }
 
     if (path === '/admin/product-price-status-imports/1') {
-      await route.fulfill({ json: { data: { id: 1, operation: 'price_status', category_id: null, total_rows: 3, failed_rows: options.importErrors ? 1 : 0, row_errors: [], has_error_file: Boolean(options.importErrors), filename: 'product-price-status.xlsx', status: 'completed', created_rows: 0, updated_rows: options.importErrors ? 2 : 3, processed_rows: 3, error_message: null, created_at: now, started_at: now, completed_at: now } } })
+      await route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            operation: 'price_status',
+            category_id: null,
+            total_rows: 3,
+            failed_rows: options.importErrors ? 1 : 0,
+            row_errors: [],
+            has_error_file: Boolean(options.importErrors),
+            filename: 'product-price-status.xlsx',
+            status: 'completed',
+            created_rows: 0,
+            updated_rows: options.importErrors ? 2 : 3,
+            processed_rows: 3,
+            error_message: null,
+            created_at: now,
+            started_at: now,
+            completed_at: now,
+          },
+        },
+      })
       return
     }
 
     if (path === '/admin/products') {
       if (route.request().method() === 'POST') {
         const payload = route.request().postDataJSON() as typeof product
-        const createdProduct = { ...catalogProduct, ...payload, id: 3, sku: '1000001', category, brand, is_active: false, created_at: now, updated_at: now }
+        const createdProduct = {
+          ...catalogProduct,
+          ...payload,
+          id: 3,
+          sku: '1000001',
+          category,
+          brand,
+          is_active: false,
+          created_at: now,
+          updated_at: now,
+        }
         createdProducts.push(createdProduct)
         productImages.set(createdProduct.id, [])
         await route.fulfill({ status: 201, json: { data: createdProduct } })
         return
       }
       if (createdProducts.length) {
-        await route.fulfill({ json: page([withPrimaryImage(catalogProduct), ...createdProducts.map(withPrimaryImage)]) })
+        await route.fulfill({
+          json: page([
+            withPrimaryImage(catalogProduct),
+            ...createdProducts.map(withPrimaryImage),
+          ]),
+        })
         return
       }
-      await route.fulfill({ json: options.emptyPath === path ? page([]) : paginatedFixture(url, withPrimaryImage(catalogProduct), 'Про Стоун') })
+      await route.fulfill({
+        json:
+          options.emptyPath === path
+            ? page([])
+            : paginatedFixture(
+                url,
+                withPrimaryImage(catalogProduct),
+                'Про Стоун',
+              ),
+      })
       return
     }
 
@@ -294,47 +644,77 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
       const payload = route.request().postDataJSON() as Partial<typeof product>
       if (productId === 1) {
         catalogProduct = { ...catalogProduct, ...payload }
-        await route.fulfill({ json: { data: withPrimaryImage(catalogProduct) } })
+        await route.fulfill({
+          json: { data: withPrimaryImage(catalogProduct) },
+        })
         return
       }
-      const createdProduct = createdProducts.find(item => item.id === productId)!
+      const createdProduct = createdProducts.find(
+        (item) => item.id === productId,
+      )!
       Object.assign(createdProduct, payload)
       await route.fulfill({ json: { data: withPrimaryImage(createdProduct) } })
       return
     }
 
-    const imageCollectionMatch = path.match(/^\/admin\/products\/(1|3)\/images$/)
+    const imageCollectionMatch = path.match(
+      /^\/admin\/products\/(1|3)\/images$/,
+    )
     if (imageCollectionMatch) {
       const productId = Number(imageCollectionMatch[1])
       const images = productImages.get(productId) ?? []
       if (route.request().method() === 'POST') {
-        const id = Math.max(0, ...images.map(image => image.id)) + 1
-        const sku = createdProducts.find(item => item.id === productId)?.sku ?? catalogProduct.sku
-        const image = { id, product_id: productId, url: `/uploaded-${productId}-${id}.jpg`, mime_type: 'image/jpeg', size: 1024, alt: `${sku}_${id}`, is_primary: images.length === 0, sort_order: images.length, created_at: now, updated_at: now }
+        const id = Math.max(0, ...images.map((image) => image.id)) + 1
+        const sku =
+          createdProducts.find((item) => item.id === productId)?.sku ??
+          catalogProduct.sku
+        const image = {
+          id,
+          product_id: productId,
+          url: `/uploaded-${productId}-${id}.jpg`,
+          mime_type: 'image/jpeg',
+          size: 1024,
+          alt: `${sku}_${id}`,
+          is_primary: images.length === 0,
+          sort_order: images.length,
+          created_at: now,
+          updated_at: now,
+        }
         images.push(image)
         productImages.set(productId, images)
         await route.fulfill({ status: 201, json: { data: image } })
         return
       }
-      await route.fulfill({ json: page([...images].sort((a, b) => a.sort_order - b.sort_order)) })
+      await route.fulfill({
+        json: page([...images].sort((a, b) => a.sort_order - b.sort_order)),
+      })
       return
     }
 
-    const imageItemMatch = path.match(/^\/admin\/products\/(1|3)\/images\/(\d+)$/)
+    const imageItemMatch = path.match(
+      /^\/admin\/products\/(1|3)\/images\/(\d+)$/,
+    )
     if (imageItemMatch) {
       const productId = Number(imageItemMatch[1])
       const imageId = Number(imageItemMatch[2])
       const images = productImages.get(productId) ?? []
       if (route.request().method() === 'DELETE') {
-        const remaining = images.filter(image => image.id !== imageId)
-        if (remaining.length && !remaining.some(image => image.is_primary)) remaining[0].is_primary = true
+        const remaining = images.filter((image) => image.id !== imageId)
+        if (remaining.length && !remaining.some((image) => image.is_primary))
+          remaining[0].is_primary = true
         productImages.set(productId, remaining)
         await route.fulfill({ status: 204 })
         return
       }
-      const payload = route.request().postDataJSON() as { sort_order?: number; is_primary?: boolean }
-      if (payload.is_primary) images.forEach(image => { image.is_primary = image.id === imageId })
-      const image = images.find(item => item.id === imageId)!
+      const payload = route.request().postDataJSON() as {
+        sort_order?: number
+        is_primary?: boolean
+      }
+      if (payload.is_primary)
+        images.forEach((image) => {
+          image.is_primary = image.id === imageId
+        })
+      const image = images.find((item) => item.id === imageId)!
       Object.assign(image, payload)
       await route.fulfill({ json: { data: image } })
       return
@@ -342,8 +722,10 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
 
     if (path === '/admin/categories/1/attributes') {
       const categoryAttributes: unknown[] = [attribute]
-      if (options.includeSharedAttribute) categoryAttributes.push(sharedAttribute)
-      if (options.includeOptionalSelectAttribute) categoryAttributes.push(optionalSelectAttribute)
+      if (options.includeSharedAttribute)
+        categoryAttributes.push(sharedAttribute)
+      if (options.includeOptionalSelectAttribute)
+        categoryAttributes.push(optionalSelectAttribute)
       await route.fulfill({ json: { data: categoryAttributes } })
       return
     }
@@ -354,29 +736,86 @@ export async function mockCatalogApi(pageContext: Page, options: ApiOptions = {}
     }
 
     if (path === '/admin/products/1/attributes') {
-      const values: unknown[] = [{ id: 1, product_id: 1, attribute_id: attribute.id, value: '60.00', attribute }]
-      if (options.includeSharedAttribute) values.push({ id: 2, product_id: 1, attribute_id: sharedAttribute.id, value: 'Матовая', attribute: sharedAttribute })
-      if (options.includeOptionalSelectAttribute) values.push({ id: 3, product_id: 1, attribute_id: optionalSelectAttribute.id, value: 'stone', attribute: optionalSelectAttribute })
+      const values: unknown[] = [
+        {
+          id: 1,
+          product_id: 1,
+          attribute_id: attribute.id,
+          value: '60.00',
+          attribute,
+        },
+      ]
+      if (options.includeSharedAttribute)
+        values.push({
+          id: 2,
+          product_id: 1,
+          attribute_id: sharedAttribute.id,
+          value: 'Матовая',
+          attribute: sharedAttribute,
+        })
+      if (options.includeOptionalSelectAttribute)
+        values.push({
+          id: 3,
+          product_id: 1,
+          attribute_id: optionalSelectAttribute.id,
+          value: 'stone',
+          attribute: optionalSelectAttribute,
+        })
       await route.fulfill({ json: { data: values } })
       return
     }
 
-    if (path === '/admin/products/1/relations' || path === '/admin/products/3/attributes' || path === '/admin/products/3/relations') {
+    if (
+      path === '/admin/products/1/relations' ||
+      path === '/admin/products/3/attributes' ||
+      path === '/admin/products/3/relations'
+    ) {
       await route.fulfill({ json: { data: [] } })
       return
     }
 
     if (path === '/admin/product-groups') {
-      const groupFixture = { ...sourceProductGroup, products: [{ ...catalogProduct, axis_values: [{ attribute_id: attribute.id, value: '60.00', attribute }] }, sourceProductGroup.products[1]] }
-      await route.fulfill({ json: page(options.sourceProductInGroup ? [groupFixture] : []) })
+      const groupFixture = {
+        ...sourceProductGroup,
+        products: [
+          {
+            ...catalogProduct,
+            axis_values: [
+              { attribute_id: attribute.id, value: '60.00', attribute },
+            ],
+          },
+          sourceProductGroup.products[1],
+        ],
+      }
+      await route.fulfill({
+        json: page(options.sourceProductInGroup ? [groupFixture] : []),
+      })
       return
     }
 
-    if (path === '/admin/products/1/relation-candidates' || path === '/admin/products/3/relation-candidates') {
-      await route.fulfill({ json: { data: [{ ...product, id: 2, name: 'Про Стоун', sku: 'PRO-STONE', slug: 'pro-stone' }] } })
+    if (
+      path === '/admin/products/1/relation-candidates' ||
+      path === '/admin/products/3/relation-candidates'
+    ) {
+      await route.fulfill({
+        json: {
+          data: [
+            {
+              ...product,
+              id: 2,
+              name: 'Про Стоун',
+              sku: 'PRO-STONE',
+              slug: 'pro-stone',
+            },
+          ],
+        },
+      })
       return
     }
 
-    await route.fulfill({ status: 404, json: { error: { message: `Unhandled test route: ${path}` } } })
+    await route.fulfill({
+      status: 404,
+      json: { error: { message: `Unhandled test route: ${path}` } },
+    })
   })
 }

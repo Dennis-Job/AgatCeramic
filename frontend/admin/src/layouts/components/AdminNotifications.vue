@@ -10,6 +10,8 @@ import { Bell } from '@lucide/vue'
     aria-describedby="admin-notifications-status"
   >
     <Bell :size="20" aria-hidden="true" />
-    <span id="admin-notifications-status" class="sr-only">Новых уведомлений нет</span>
+    <span id="admin-notifications-status" class="sr-only"
+      >Новых уведомлений нет</span
+    >
   </button>
 </template>

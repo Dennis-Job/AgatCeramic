@@ -10,18 +10,225 @@ const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: []; completed: [] }>()
 const input = ref<HTMLInputElement | null>(null)
 const workflow = useProductPriceStatusImport(() => emit('completed'))
-const { file, result, downloading, uploading, error, notice, pollingError, busy, finished, progress, downloadTemplate, poll, upload } = workflow
-function selectFile(event: Event) { const target = event.target as HTMLInputElement; workflow.selectFile(target.files?.[0] ?? null); target.value = '' }
-watch([busy, downloading], async () => { await nextTick(); if (props.open && (document.activeElement === document.body || document.activeElement?.matches(':disabled'))) document.getElementById('price-status-template')?.focus() })
+const {
+  file,
+  result,
+  downloading,
+  uploading,
+  error,
+  notice,
+  pollingError,
+  busy,
+  finished,
+  progress,
+  downloadTemplate,
+  poll,
+  upload,
+} = workflow
+function selectFile(event: Event) {
+  const target = event.target as HTMLInputElement
+  workflow.selectFile(target.files?.[0] ?? null)
+  target.value = ''
+}
+watch([busy, downloading], async () => {
+  await nextTick()
+  if (
+    props.open &&
+    (document.activeElement === document.body ||
+      document.activeElement?.matches(':disabled'))
+  )
+    document.getElementById('price-status-template')?.focus()
+})
 </script>
 
 <template>
-  <UiDialog :open="open" labelledby="price-status-import-title" describedby="price-status-import-description" panel-class="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-card" @close="emit('close')">
-    <header class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7"><div><h2 id="price-status-import-title" class="text-xl font-bold text-gray-900">Цены и статусы из Excel</h2><p id="price-status-import-description" class="mt-1 text-sm text-gray-500">Безопасное массовое изменение только цены, активности и распродажи.</p></div><UiButton type="button" variant="ghost" size="sm" aria-label="Закрыть окно импорта цен и статусов" @click="emit('close')"><X :size="20" aria-hidden="true" /></UiButton></header>
-    <div class="min-h-0 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7"><section class="rounded-xl border border-gray-200 p-4 sm:p-5" aria-labelledby="price-status-preparation"><h3 id="price-status-preparation" class="text-base font-semibold text-gray-900">1. Скачайте и заполните шаблон</h3><p class="mt-1 text-sm leading-6 text-gray-500">«Цены»: SKU, новая и необязательная старая цена. «Активность» и «Распродажа»: SKU и выбор «Да» или «Нет». Листы можно оставлять пустыми; характеристики, названия, остатки и категории этот файл не меняет.</p><UiButton id="price-status-template" type="button" variant="secondary" class="mt-4" :loading="downloading" :disabled="busy" @click="downloadTemplate()"><Download :size="18" aria-hidden="true" />{{ downloading ? 'Скачиваем…' : 'Скачать шаблон Excel' }}</UiButton></section>
-      <form class="rounded-xl border border-gray-200 p-4 sm:p-5" @submit.prevent="upload"><h3 class="text-base font-semibold text-gray-900">2. Загрузите заполненный файл</h3><p id="price-status-file-help" class="mt-1 text-sm text-gray-500">XLSX до 10 МБ. Строки с ошибками не помешают обработать остальные.</p><input ref="input" class="hidden" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" aria-label="Заполненный файл цен и статусов" @change="selectFile"><p id="price-status-file-selection" class="sr-only" role="status" aria-live="polite">{{ file ? `Выбран файл: ${file.name}` : 'Файл не выбран' }}</p><UiButton type="button" variant="secondary" class="mt-4 flex w-full justify-start text-left" :disabled="busy" aria-describedby="price-status-file-help price-status-file-selection" @click="input?.click()"><Upload :size="18" class="shrink-0" aria-hidden="true" /><span class="break-all">{{ file?.name ?? 'Выбрать файл XLSX' }}</span></UiButton><UiButton type="submit" class="mt-4" :loading="uploading" :disabled="!file || busy"><Upload :size="18" aria-hidden="true" />{{ uploading ? 'Загружаем…' : busy ? 'Обработка…' : 'Запустить обработку' }}</UiButton><UiAlert v-if="busy && !uploading" class="mt-3" tone="info" live="polite">Файл обрабатывается в фоне. Окно можно закрыть.</UiAlert></form>
-      <UiAlert v-if="error">{{ error }}</UiAlert><UiAlert v-if="notice" tone="success" live="polite">{{ notice }}</UiAlert>
-    <section v-if="result" class="rounded-xl border p-4 sm:p-5" :class="result.status === 'failed' ? 'border-error-200 bg-error-50' : finished ? result.failed_rows ? 'border-warning-200 bg-warning-50' : 'border-success-200 bg-success-50' : 'border-gray-200'" aria-live="polite"><h3 class="flex items-center gap-2 font-semibold text-gray-900"><CheckCircle2 v-if="finished" :size="20" aria-hidden="true" />{{ result.status === 'failed' ? 'Обработка не завершена' : finished ? result.failed_rows ? 'Обработка завершена с ошибками' : 'Обработка завершена' : 'Обработка выполняется' }}</h3><p class="mt-2 text-sm text-gray-700">Обработано: {{ result.processed_rows }} из {{ result.total_rows }}. Изменено: {{ result.updated_rows }}. Ошибок: {{ result.failed_rows }}.</p><UiAlert v-if="result.status === 'failed' && result.error_message" class="mt-3">{{ result.error_message }}</UiAlert><progress v-if="progress !== null" class="mt-3 h-2 w-full overflow-hidden rounded-full" :value="Math.min(progress, 100)" max="100" aria-label="Ход обработки файла">{{ progress }}%</progress><UiAlert v-if="pollingError" class="mt-3">Не удалось обновить статус. <UiButton type="button" variant="danger-ghost" size="sm" @click="poll(result!.id)">Повторить</UiButton></UiAlert><UiButton v-if="finished && result.failed_rows" type="button" variant="secondary" class="mt-4" :loading="downloading" @click="downloadTemplate(true)"><Download :size="18" aria-hidden="true" />Скачать Excel с ошибками</UiButton></section>
+  <UiDialog
+    :open="open"
+    labelledby="price-status-import-title"
+    describedby="price-status-import-description"
+    panel-class="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-card"
+    @close="emit('close')"
+  >
+    <header
+      class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7"
+    >
+      <div>
+        <h2
+          id="price-status-import-title"
+          class="text-xl font-bold text-gray-900"
+        >
+          Цены и статусы из Excel
+        </h2>
+        <p
+          id="price-status-import-description"
+          class="mt-1 text-sm text-gray-500"
+        >
+          Безопасное массовое изменение только цены, активности и распродажи.
+        </p>
+      </div>
+      <UiButton
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-label="Закрыть окно импорта цен и статусов"
+        @click="emit('close')"
+        ><X :size="20" aria-hidden="true"
+      /></UiButton>
+    </header>
+    <div
+      class="min-h-0 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7"
+    >
+      <section
+        class="rounded-xl border border-gray-200 p-4 sm:p-5"
+        aria-labelledby="price-status-preparation"
+      >
+        <h3
+          id="price-status-preparation"
+          class="text-base font-semibold text-gray-900"
+        >
+          1. Скачайте и заполните шаблон
+        </h3>
+        <p class="mt-1 text-sm leading-6 text-gray-500">
+          «Цены»: SKU, новая и необязательная старая цена. «Активность» и
+          «Распродажа»: SKU и выбор «Да» или «Нет». Листы можно оставлять
+          пустыми; характеристики, названия, остатки и категории этот файл не
+          меняет.
+        </p>
+        <UiButton
+          id="price-status-template"
+          type="button"
+          variant="secondary"
+          class="mt-4"
+          :loading="downloading"
+          :disabled="busy"
+          @click="downloadTemplate()"
+          ><Download :size="18" aria-hidden="true" />{{
+            downloading ? 'Скачиваем…' : 'Скачать шаблон Excel'
+          }}</UiButton
+        >
+      </section>
+      <form
+        class="rounded-xl border border-gray-200 p-4 sm:p-5"
+        @submit.prevent="upload"
+      >
+        <h3 class="text-base font-semibold text-gray-900">
+          2. Загрузите заполненный файл
+        </h3>
+        <p id="price-status-file-help" class="mt-1 text-sm text-gray-500">
+          XLSX до 10 МБ. Строки с ошибками не помешают обработать остальные.
+        </p>
+        <input
+          ref="input"
+          class="hidden"
+          type="file"
+          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          aria-label="Заполненный файл цен и статусов"
+          @change="selectFile"
+        />
+        <p
+          id="price-status-file-selection"
+          class="sr-only"
+          role="status"
+          aria-live="polite"
+        >
+          {{ file ? `Выбран файл: ${file.name}` : 'Файл не выбран' }}
+        </p>
+        <UiButton
+          type="button"
+          variant="secondary"
+          class="mt-4 flex w-full justify-start text-left"
+          :disabled="busy"
+          aria-describedby="price-status-file-help price-status-file-selection"
+          @click="input?.click()"
+          ><Upload :size="18" class="shrink-0" aria-hidden="true" /><span
+            class="break-all"
+            >{{ file?.name ?? 'Выбрать файл XLSX' }}</span
+          ></UiButton
+        ><UiButton
+          type="submit"
+          class="mt-4"
+          :loading="uploading"
+          :disabled="!file || busy"
+          ><Upload :size="18" aria-hidden="true" />{{
+            uploading
+              ? 'Загружаем…'
+              : busy
+                ? 'Обработка…'
+                : 'Запустить обработку'
+          }}</UiButton
+        ><UiAlert
+          v-if="busy && !uploading"
+          class="mt-3"
+          tone="info"
+          live="polite"
+          >Файл обрабатывается в фоне. Окно можно закрыть.</UiAlert
+        >
+      </form>
+      <UiAlert v-if="error">{{ error }}</UiAlert
+      ><UiAlert v-if="notice" tone="success" live="polite">{{
+        notice
+      }}</UiAlert>
+      <section
+        v-if="result"
+        class="rounded-xl border p-4 sm:p-5"
+        :class="
+          result.status === 'failed'
+            ? 'border-error-200 bg-error-50'
+            : finished
+              ? result.failed_rows
+                ? 'border-warning-200 bg-warning-50'
+                : 'border-success-200 bg-success-50'
+              : 'border-gray-200'
+        "
+        aria-live="polite"
+      >
+        <h3 class="flex items-center gap-2 font-semibold text-gray-900">
+          <CheckCircle2 v-if="finished" :size="20" aria-hidden="true" />{{
+            result.status === 'failed'
+              ? 'Обработка не завершена'
+              : finished
+                ? result.failed_rows
+                  ? 'Обработка завершена с ошибками'
+                  : 'Обработка завершена'
+                : 'Обработка выполняется'
+          }}
+        </h3>
+        <p class="mt-2 text-sm text-gray-700">
+          Обработано: {{ result.processed_rows }} из {{ result.total_rows }}.
+          Изменено: {{ result.updated_rows }}. Ошибок: {{ result.failed_rows }}.
+        </p>
+        <UiAlert
+          v-if="result.status === 'failed' && result.error_message"
+          class="mt-3"
+          >{{ result.error_message }}</UiAlert
+        ><progress
+          v-if="progress !== null"
+          class="mt-3 h-2 w-full overflow-hidden rounded-full"
+          :value="Math.min(progress, 100)"
+          max="100"
+          aria-label="Ход обработки файла"
+        >
+          {{ progress }}%</progress
+        ><UiAlert v-if="pollingError" class="mt-3"
+          >Не удалось обновить статус.
+          <UiButton
+            type="button"
+            variant="danger-ghost"
+            size="sm"
+            @click="poll(result!.id)"
+            >Повторить</UiButton
+          ></UiAlert
+        ><UiButton
+          v-if="finished && result.failed_rows"
+          type="button"
+          variant="secondary"
+          class="mt-4"
+          :loading="downloading"
+          @click="downloadTemplate(true)"
+          ><Download :size="18" aria-hidden="true" />Скачать Excel с
+          ошибками</UiButton
+        >
+      </section>
     </div>
   </UiDialog>
 </template>

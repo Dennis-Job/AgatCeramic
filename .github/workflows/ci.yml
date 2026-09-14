@@ -168,6 +168,12 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Lint Admin source
+        run: npm run lint
+
+      - name: Check Admin formatting
+        run: npm run format:check
+
       - name: Run Admin unit tests
         run: npm run test:unit
 

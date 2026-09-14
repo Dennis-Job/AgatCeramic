@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia'
-import { currentAdmin, login, logout, updateCurrentAdmin, type AdminUser } from '../services/auth'
+import {
+  currentAdmin,
+  login,
+  logout,
+  updateCurrentAdmin,
+  type AdminUser,
+} from '../services/auth'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -30,7 +36,12 @@ export const useAuthStore = defineStore('auth', {
       await logout()
       this.user = null
     },
-    async updateProfile(payload: { name?: string; email?: string; password?: string; password_confirmation?: string }): Promise<void> {
+    async updateProfile(payload: {
+      name?: string
+      email?: string
+      password?: string
+      password_confirmation?: string
+    }): Promise<void> {
       this.user = await updateCurrentAdmin(payload)
     },
   },

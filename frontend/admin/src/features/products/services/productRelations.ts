@@ -1,7 +1,58 @@
 import { apiFetch, requestCsrfCookie } from '../../../services/auth'
-import type { Product, ProductRelation, ProductRelationPayload } from '../types/product.types'
-export class ProductRelationRequestError extends Error { readonly details: Record<string, string[]>; constructor(message: string, details: Record<string, string[]>) { super(message); this.details = details } }
-async function fail(response: Response): Promise<never> { const body = (await response.json().catch(() => ({}))) as { error?: { message?: string; details?: Record<string, string[]> } }; const details = body.error?.details ?? {}; throw new ProductRelationRequestError(Object.values(details).flat()[0] ?? body.error?.message ?? 'Не удалось выполнить запрос.', details) }
-export async function getProductRelations(productId: number): Promise<ProductRelation[]> { const response = await apiFetch(`/admin/products/${productId}/relations`); if (!response.ok) return fail(response); return ((await response.json()) as { data: ProductRelation[] }).data }
-export async function getRelationCandidates(productId: number, search = '', limit = 20): Promise<Product[]> { const query = new URLSearchParams({ limit: String(limit) }); if (search) query.set('search', search); const response = await apiFetch(`/admin/products/${productId}/relation-candidates?${query}`); if (!response.ok) return fail(response); return ((await response.json()) as { data: Product[] }).data }
-export async function saveProductRelations(productId: number, payload: ProductRelationPayload): Promise<ProductRelation[]> { await requestCsrfCookie(); const response = await apiFetch(`/admin/products/${productId}/relations`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) return fail(response); return ((await response.json()) as { data: ProductRelation[] }).data }
+import type {
+  Product,
+  ProductRelation,
+  ProductRelationPayload,
+} from '../types/product.types'
+export class ProductRelationRequestError extends Error {
+  readonly details: Record<string, string[]>
+  constructor(message: string, details: Record<string, string[]>) {
+    super(message)
+    this.details = details
+  }
+}
+async function fail(response: Response): Promise<never> {
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: { message?: string; details?: Record<string, string[]> }
+  }
+  const details = body.error?.details ?? {}
+  throw new ProductRelationRequestError(
+    Object.values(details).flat()[0] ??
+      body.error?.message ??
+      'Не удалось выполнить запрос.',
+    details,
+  )
+}
+export async function getProductRelations(
+  productId: number,
+): Promise<ProductRelation[]> {
+  const response = await apiFetch(`/admin/products/${productId}/relations`)
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductRelation[] }).data
+}
+export async function getRelationCandidates(
+  productId: number,
+  search = '',
+  limit = 20,
+): Promise<Product[]> {
+  const query = new URLSearchParams({ limit: String(limit) })
+  if (search) query.set('search', search)
+  const response = await apiFetch(
+    `/admin/products/${productId}/relation-candidates?${query}`,
+  )
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: Product[] }).data
+}
+export async function saveProductRelations(
+  productId: number,
+  payload: ProductRelationPayload,
+): Promise<ProductRelation[]> {
+  await requestCsrfCookie()
+  const response = await apiFetch(`/admin/products/${productId}/relations`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ProductRelation[] }).data
+}

@@ -7,14 +7,18 @@ describe('employee roles', () => {
   test('renders the backend role name for a known system slug', () => {
     const wrapper = mount(EmployeesList, {
       props: {
-        employees: [{
-          id: 1,
-          name: 'Иван Петров',
-          email: 'ivan@example.test',
-          status: 'active',
-          last_login_at: null,
-          roles: [{ id: 7, name: 'Руководитель доступа', slug: 'administrator' }],
-        }],
+        employees: [
+          {
+            id: 1,
+            name: 'Иван Петров',
+            email: 'ivan@example.test',
+            status: 'active',
+            last_login_at: null,
+            roles: [
+              { id: 7, name: 'Руководитель доступа', slug: 'administrator' },
+            ],
+          },
+        ],
         loading: false,
         canManage: false,
         canEdit: false,

@@ -22,25 +22,166 @@ import UiKitView from '../views/UiKitView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/brands', name: 'brands', component: BrandsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Бренды' } },
-    { path: '/attributes', name: 'attributes', component: AttributesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Характеристики' } },
-    { path: '/attribute-groups', name: 'attribute-groups', component: AttributeGroupsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Группы характеристик' } },
-    { path: '/categories', name: 'categories', component: CategoriesView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Категории' } },
-    { path: '/products', name: 'products', component: ProductsView, meta: { requiresAuth: true, requiredPermission: 'catalog.manage', title: 'Товары' } },
-    { path: '/login', name: 'login', component: LoginView, meta: { guestOnly: true, title: 'Вход' } },
-    { path: '/forgot-password', name: 'forgot-password', component: ForgotPasswordView, meta: { guestOnly: true, title: 'Восстановление пароля' } },
-    { path: '/reset-password', name: 'reset-password', component: ResetPasswordView, meta: { guestOnly: true, title: 'Сброс пароля' } },
-    { path: '/', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true, title: 'Главная' } },
-    { path: '/profile', name: 'profile', component: ProfileView, meta: { requiresAuth: true, title: 'Мой профиль' } },
-    { path: '/employees', name: 'employees', component: EmployeesView, meta: { requiresAuth: true, requiredPermission: 'admin-users.view', title: 'Сотрудники' } },
-    { path: '/roles', name: 'roles', component: RolesView, meta: { requiresAuth: true, requiredPermission: 'roles.view', title: 'Роли' } },
-    { path: '/permissions', name: 'permissions', component: PermissionsView, meta: { requiresAuth: true, requiredPermission: 'permissions.view', title: 'Права доступа' } },
-    { path: '/audit-log', name: 'audit-log', component: AuditLogView, meta: { requiresAuth: true, requiredPermission: 'audit-log.view', title: 'Журнал аудита' } },
-    { path: '/orders', name: 'orders', component: OrdersView, meta: { requiresAuth: true, requiredPermission: 'orders.view', title: 'Заказы' } },
-    { path: '/contacts', name: 'contacts', component: ContactsView, meta: { requiresAuth: true, requiredPermission: 'contacts.view', title: 'Обращения' } },
-    { path: '/ui-kit', name: 'ui-kit', component: UiKitView, meta: { requiresAuth: true, title: 'UI-kit' } },
-    { path: '/content', name: 'content', component: PlaceholderView, props: { title: 'Контент' }, meta: { requiresAuth: true, title: 'Контент' } },
-    { path: '/settings', name: 'settings', component: PlaceholderView, props: { title: 'Настройки' }, meta: { requiresAuth: true, title: 'Настройки' } },
+    {
+      path: '/brands',
+      name: 'brands',
+      component: BrandsView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'catalog.manage',
+        title: 'Бренды',
+      },
+    },
+    {
+      path: '/attributes',
+      name: 'attributes',
+      component: AttributesView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'catalog.manage',
+        title: 'Характеристики',
+      },
+    },
+    {
+      path: '/attribute-groups',
+      name: 'attribute-groups',
+      component: AttributeGroupsView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'catalog.manage',
+        title: 'Группы характеристик',
+      },
+    },
+    {
+      path: '/categories',
+      name: 'categories',
+      component: CategoriesView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'catalog.manage',
+        title: 'Категории',
+      },
+    },
+    {
+      path: '/products',
+      name: 'products',
+      component: ProductsView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'catalog.manage',
+        title: 'Товары',
+      },
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
+      meta: { guestOnly: true, title: 'Вход' },
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: ForgotPasswordView,
+      meta: { guestOnly: true, title: 'Восстановление пароля' },
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: ResetPasswordView,
+      meta: { guestOnly: true, title: 'Сброс пароля' },
+    },
+    {
+      path: '/',
+      name: 'dashboard',
+      component: DashboardView,
+      meta: { requiresAuth: true, title: 'Главная' },
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
+      meta: { requiresAuth: true, title: 'Мой профиль' },
+    },
+    {
+      path: '/employees',
+      name: 'employees',
+      component: EmployeesView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'admin-users.view',
+        title: 'Сотрудники',
+      },
+    },
+    {
+      path: '/roles',
+      name: 'roles',
+      component: RolesView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'roles.view',
+        title: 'Роли',
+      },
+    },
+    {
+      path: '/permissions',
+      name: 'permissions',
+      component: PermissionsView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'permissions.view',
+        title: 'Права доступа',
+      },
+    },
+    {
+      path: '/audit-log',
+      name: 'audit-log',
+      component: AuditLogView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'audit-log.view',
+        title: 'Журнал аудита',
+      },
+    },
+    {
+      path: '/orders',
+      name: 'orders',
+      component: OrdersView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'orders.view',
+        title: 'Заказы',
+      },
+    },
+    {
+      path: '/contacts',
+      name: 'contacts',
+      component: ContactsView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'contacts.view',
+        title: 'Обращения',
+      },
+    },
+    {
+      path: '/ui-kit',
+      name: 'ui-kit',
+      component: UiKitView,
+      meta: { requiresAuth: true, title: 'UI-kit' },
+    },
+    {
+      path: '/content',
+      name: 'content',
+      component: PlaceholderView,
+      props: { title: 'Контент' },
+      meta: { requiresAuth: true, title: 'Контент' },
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: PlaceholderView,
+      props: { title: 'Настройки' },
+      meta: { requiresAuth: true, title: 'Настройки' },
+    },
   ],
 })
 
@@ -51,7 +192,11 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !auth.user) return { name: 'login' }
   if (to.meta.guestOnly && auth.user) return { name: 'dashboard' }
-  if (to.meta.requiredPermission && !auth.hasPermission(to.meta.requiredPermission as string)) return { name: 'dashboard' }
+  if (
+    to.meta.requiredPermission &&
+    !auth.hasPermission(to.meta.requiredPermission as string)
+  )
+    return { name: 'dashboard' }
 })
 
 router.afterEach((to) => {

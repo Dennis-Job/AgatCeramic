@@ -16,10 +16,20 @@ export type ProductAttributeValue = {
 }
 
 export type ProductAttributePayload = {
-  attributes: Array<{ attribute_id: number; value: string | number | boolean | string[] }>
+  attributes: Array<{
+    attribute_id: number
+    value: string | number | boolean | string[]
+  }>
 }
 
-export type ProductUnit = 'piece' | 'square_meter' | 'linear_meter' | 'package' | 'kilogram' | 'liter' | 'set'
+export type ProductUnit =
+  | 'piece'
+  | 'square_meter'
+  | 'linear_meter'
+  | 'package'
+  | 'kilogram'
+  | 'liter'
+  | 'set'
 export type ProductSort = 'sku' | 'name' | 'created_at' | 'updated_at'
 export type SortDirection = 'asc' | 'desc'
 
@@ -47,8 +57,29 @@ export type Product = {
   updated_at: string
 }
 
-export type ProductPayload = Omit<Product, 'id' | 'sku' | 'category' | 'brand' | 'attribute_values' | 'primary_image' | 'created_at' | 'updated_at'>
-export type ProductFilters = { search?: string; category_id?: number; brand_id?: number; is_active?: boolean; is_on_sale?: boolean; has_stock?: boolean; price_from?: string; price_to?: string; sort?: ProductSort; direction?: SortDirection } & PageRequest
+export type ProductPayload = Omit<
+  Product,
+  | 'id'
+  | 'sku'
+  | 'category'
+  | 'brand'
+  | 'attribute_values'
+  | 'primary_image'
+  | 'created_at'
+  | 'updated_at'
+>
+export type ProductFilters = {
+  search?: string
+  category_id?: number
+  brand_id?: number
+  is_active?: boolean
+  is_on_sale?: boolean
+  has_stock?: boolean
+  price_from?: string
+  price_to?: string
+  sort?: ProductSort
+  direction?: SortDirection
+} & PageRequest
 
 export type ProductImport = {
   id: number
@@ -69,10 +100,26 @@ export type ProductImport = {
   operation?: 'catalog' | 'price_status' | 'group'
 }
 
-export type ProductImage = { id: number; product_id: number; url: string; mime_type: string; size: number; alt: string | null; is_primary: boolean; sort_order: number; created_at: string; updated_at: string }
-export type ProductImageUpdatePayload = { alt?: string | null; is_primary?: boolean; sort_order?: number }
+export type ProductImage = {
+  id: number
+  product_id: number
+  url: string
+  mime_type: string
+  size: number
+  alt: string | null
+  is_primary: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+export type ProductImageUpdatePayload = {
+  alt?: string | null
+  is_primary?: boolean
+  sort_order?: number
+}
 
-export type ProductImageImportStatus = 'pending' | 'processing' | 'completed' | 'failed'
+export type ProductImageImportStatus =
+  'pending' | 'processing' | 'completed' | 'failed'
 export type ProductImageImport = {
   id: number
   filename: string
@@ -95,18 +142,51 @@ export type ProductGroup = {
   name: string
   code: string
   axes: Attribute[]
-  products: Array<Product & { axis_values?: Array<{ attribute_id: number; value: string | number | boolean | string[]; attribute?: Attribute }> }>
+  products: Array<
+    Product & {
+      axis_values?: Array<{
+        attribute_id: number
+        value: string | number | boolean | string[]
+        attribute?: Attribute
+      }>
+    }
+  >
   created_at: string
   updated_at: string
 }
-export type ProductGroupPayload = { name: string; code: string; axis_attribute_ids: number[]; product_ids: number[] }
+export type ProductGroupPayload = {
+  name: string
+  code: string
+  axis_attribute_ids: number[]
+  product_ids: number[]
+}
 
 export type ProductRelationType = 'related' | 'recommended'
-export type ProductRelation = { id: number; product_id: number; related_product_id: number; type: ProductRelationType; sort_order: number; related_product: Product; created_at: string; updated_at: string }
-export type ProductRelationPayload = { relations: Array<{ related_product_id: number; type: ProductRelationType; sort_order: number }> }
-export type ProductRelationDraft = { related_product_id: string; type: ProductRelationType; sort_order: string }
+export type ProductRelation = {
+  id: number
+  product_id: number
+  related_product_id: number
+  type: ProductRelationType
+  sort_order: number
+  related_product: Product
+  created_at: string
+  updated_at: string
+}
+export type ProductRelationPayload = {
+  relations: Array<{
+    related_product_id: number
+    type: ProductRelationType
+    sort_order: number
+  }>
+}
+export type ProductRelationDraft = {
+  related_product_id: string
+  type: ProductRelationType
+  sort_order: string
+}
 
-export type ProductEditorStep = 'main' | 'attributes' | 'images' | 'group' | 'review'
+export type ProductEditorStep =
+  'main' | 'attributes' | 'images' | 'group' | 'review'
 
 export type ProductEditorStepDefinition = {
   id: ProductEditorStep

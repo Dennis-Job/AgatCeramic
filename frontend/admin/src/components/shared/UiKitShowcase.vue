@@ -48,7 +48,9 @@ const pagination = computed(() => ({
 
 function showLoadingState(): void {
   isButtonLoading.value = true
-  window.setTimeout(() => { isButtonLoading.value = false }, 900)
+  window.setTimeout(() => {
+    isButtonLoading.value = false
+  }, 900)
 }
 
 function confirmAction(): void {
@@ -66,7 +68,8 @@ function confirmAction(): void {
     />
 
     <UiAlert tone="info" live="polite">
-      Исходники компонентов находятся в <code>src/components/ui/</code> и <code>src/components/shared/</code>.
+      Исходники компонентов находятся в <code>src/components/ui/</code> и
+      <code>src/components/shared/</code>.
     </UiAlert>
     <UiAlert v-if="notice" tone="success" live="polite">{{ notice }}</UiAlert>
 
@@ -80,7 +83,9 @@ function confirmAction(): void {
           <UiButton variant="danger">Опасное действие</UiButton>
           <UiButton variant="ghost">Прозрачная</UiButton>
           <UiButton variant="danger-ghost">Удалить</UiButton>
-          <UiButton :loading="isButtonLoading" @click="showLoadingState">Загрузка</UiButton>
+          <UiButton :loading="isButtonLoading" @click="showLoadingState"
+            >Загрузка</UiButton
+          >
           <UiButton disabled>Недоступна</UiButton>
           <UiButton variant="secondary" disabled>Вторичная недоступна</UiButton>
           <UiButton variant="danger" disabled>Опасная недоступна</UiButton>
@@ -90,7 +95,9 @@ function confirmAction(): void {
 
       <UiCard>
         <h2 class="text-lg font-semibold text-gray-900">Статусы</h2>
-        <p class="mt-1 text-sm text-gray-500"><code>ui/UiAlert.vue</code>, <code>ui/UiBadge.vue</code></p>
+        <p class="mt-1 text-sm text-gray-500">
+          <code>ui/UiAlert.vue</code>, <code>ui/UiBadge.vue</code>
+        </p>
         <div class="mt-4 flex flex-wrap gap-2">
           <UiBadge>Нейтральный</UiBadge>
           <UiBadge tone="primary">Основной</UiBadge>
@@ -99,41 +106,101 @@ function confirmAction(): void {
           <UiBadge tone="danger">Ошибка</UiBadge>
         </div>
         <div class="mt-4 space-y-2">
-          <UiAlert tone="success" live="polite">Операция выполнена успешно.</UiAlert>
-          <UiAlert tone="warning" live="polite">Проверьте данные перед сохранением.</UiAlert>
+          <UiAlert tone="success" live="polite"
+            >Операция выполнена успешно.</UiAlert
+          >
+          <UiAlert tone="warning" live="polite"
+            >Проверьте данные перед сохранением.</UiAlert
+          >
           <UiAlert>Не удалось сохранить изменения.</UiAlert>
         </div>
       </UiCard>
 
       <UiCard>
         <h2 class="text-lg font-semibold text-gray-900">Поля формы</h2>
-        <p class="mt-1 break-words text-sm text-gray-500 [overflow-wrap:anywhere]"><code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>, <code>ui/UiSelect.vue</code>, <code>ui/UiDatePicker.vue</code>, <code>ui/UiTextarea.vue</code></p>
+        <p
+          class="mt-1 break-words text-sm text-gray-500 [overflow-wrap:anywhere]"
+        >
+          <code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>,
+          <code>ui/UiSelect.vue</code>, <code>ui/UiDatePicker.vue</code>,
+          <code>ui/UiTextarea.vue</code>
+        </p>
         <div class="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
-          <UiField label="Название" help="Подсказка отображается под полем." required>
-            <UiInput v-model="input" class="mt-1.5" placeholder="Например, Керамогранит" />
+          <UiField
+            label="Название"
+            help="Подсказка отображается под полем."
+            required
+          >
+            <UiInput
+              v-model="input"
+              class="mt-1.5"
+              placeholder="Например, Керамогранит"
+            />
           </UiField>
           <UiField label="Категория" error="Выберите один вариант.">
-            <UiSelect v-model="selectedOption" class="mt-1.5" :options="options" accessible-name="Демонстрационная категория" searchable />
+            <UiSelect
+              v-model="selectedOption"
+              class="mt-1.5"
+              :options="options"
+              accessible-name="Демонстрационная категория"
+              searchable
+            />
           </UiField>
           <UiField label="Комментарий">
-            <UiTextarea v-model="message" class="mt-1.5" placeholder="Текст комментария" />
+            <UiTextarea
+              v-model="message"
+              class="mt-1.5"
+              placeholder="Текст комментария"
+            />
           </UiField>
           <UiField label="Дата публикации">
-            <UiDatePicker v-model="date" class="mt-1.5" data-ui-kit-enabled-date accessible-name="Дата публикации" />
+            <UiDatePicker
+              v-model="date"
+              class="mt-1.5"
+              data-ui-kit-enabled-date
+              accessible-name="Дата публикации"
+            />
           </UiField>
-          <div data-ui-kit-disabled-fields class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 rounded-lg border border-gray-200 bg-gray-25 p-4">
+          <div
+            data-ui-kit-disabled-fields
+            class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 rounded-lg border border-gray-200 bg-gray-25 p-4"
+          >
             <div>
-              <h3 class="text-sm font-semibold text-gray-800">Недоступные поля</h3>
-              <p class="mt-1 text-xs text-gray-500">Значения видимы, но ввод и вспомогательные действия заблокированы.</p>
+              <h3 class="text-sm font-semibold text-gray-800">
+                Недоступные поля
+              </h3>
+              <p class="mt-1 text-xs text-gray-500">
+                Значения видимы, но ввод и вспомогательные действия
+                заблокированы.
+              </p>
             </div>
             <UiField label="Поиск товара">
-              <UiInput model-value="Керамогранит" class="mt-1.5" searchable aria-label="Недоступный поиск товара" disabled />
+              <UiInput
+                model-value="Керамогранит"
+                class="mt-1.5"
+                searchable
+                aria-label="Недоступный поиск товара"
+                disabled
+              />
             </UiField>
             <UiField label="Категория">
-              <UiSelect model-value="extended-short" class="mt-1.5" :options="options" accessible-name="Недоступная категория" clearable searchable disabled />
+              <UiSelect
+                model-value="extended-short"
+                class="mt-1.5"
+                :options="options"
+                accessible-name="Недоступная категория"
+                clearable
+                searchable
+                disabled
+              />
             </UiField>
             <UiField label="Дата публикации">
-              <UiDatePicker model-value="2026-09-13" class="mt-1.5" accessible-name="Недоступная дата публикации" disabled />
+              <UiDatePicker
+                model-value="2026-09-13"
+                class="mt-1.5"
+                accessible-name="Недоступная дата публикации"
+                disabled
+              />
             </UiField>
           </div>
         </div>
@@ -141,14 +208,37 @@ function confirmAction(): void {
 
       <UiCard>
         <h2 class="text-lg font-semibold text-gray-900">Выбор</h2>
-        <p class="mt-1 text-sm text-gray-500"><code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code></p>
+        <p class="mt-1 text-sm text-gray-500">
+          <code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code>
+        </p>
         <div class="mt-4 grid gap-3">
-          <UiCheckbox v-model:checked="checked" mode="boolean" accessible-name="Публиковать товар">Публиковать товар</UiCheckbox>
-          <UiCheckbox :checked="true" mode="boolean" disabled accessible-name="Недоступный выбранный флажок">Недоступный выбранный вариант</UiCheckbox>
+          <UiCheckbox
+            v-model:checked="checked"
+            mode="boolean"
+            accessible-name="Публиковать товар"
+            >Публиковать товар</UiCheckbox
+          >
+          <UiCheckbox
+            :checked="true"
+            mode="boolean"
+            disabled
+            accessible-name="Недоступный выбранный флажок"
+            >Недоступный выбранный вариант</UiCheckbox
+          >
           <div class="grid gap-2 sm:grid-cols-2">
-            <UiRadio v-model="radio" name="ui-kit-radio" value="standard">Стандартный</UiRadio>
-            <UiRadio v-model="radio" name="ui-kit-radio" value="extended">Расширенный</UiRadio>
-            <UiRadio v-model="radio" name="ui-kit-radio" value="disabled" disabled>Недоступный</UiRadio>
+            <UiRadio v-model="radio" name="ui-kit-radio" value="standard"
+              >Стандартный</UiRadio
+            >
+            <UiRadio v-model="radio" name="ui-kit-radio" value="extended"
+              >Расширенный</UiRadio
+            >
+            <UiRadio
+              v-model="radio"
+              name="ui-kit-radio"
+              value="disabled"
+              disabled
+              >Недоступный</UiRadio
+            >
           </div>
         </div>
       </UiCard>
@@ -156,15 +246,29 @@ function confirmAction(): void {
 
     <UiCard>
       <h2 class="text-lg font-semibold text-gray-900">Таблица и пагинация</h2>
-      <p class="mt-1 text-sm text-gray-500"><code>ui/UiTable.vue</code>, <code>ui/UiPagination.vue</code></p>
+      <p class="mt-1 text-sm text-gray-500">
+        <code>ui/UiTable.vue</code>, <code>ui/UiPagination.vue</code>
+      </p>
       <div class="mt-4">
         <UiTable min-width="min-w-[560px]" label="Пример компонентов UI-kit">
           <thead class="bg-gray-25 text-xs font-medium text-gray-500">
-            <tr><th class="px-5 py-3">Компонент</th><th class="px-5 py-3">Расположение</th><th class="px-5 py-3">Назначение</th></tr>
+            <tr>
+              <th class="px-5 py-3">Компонент</th>
+              <th class="px-5 py-3">Расположение</th>
+              <th class="px-5 py-3">Назначение</th>
+            </tr>
           </thead>
           <tbody>
-            <tr class="border-t border-gray-100 text-gray-700"><td class="px-5 py-4 font-medium">UiButton</td><td class="px-5 py-4"><code>components/ui</code></td><td class="px-5 py-4">Действия и отправка форм</td></tr>
-            <tr class="border-t border-gray-100 text-gray-700"><td class="px-5 py-4 font-medium">PageHeader</td><td class="px-5 py-4"><code>components/shared</code></td><td class="px-5 py-4">Заголовок route-level страницы</td></tr>
+            <tr class="border-t border-gray-100 text-gray-700">
+              <td class="px-5 py-4 font-medium">UiButton</td>
+              <td class="px-5 py-4"><code>components/ui</code></td>
+              <td class="px-5 py-4">Действия и отправка форм</td>
+            </tr>
+            <tr class="border-t border-gray-100 text-gray-700">
+              <td class="px-5 py-4 font-medium">PageHeader</td>
+              <td class="px-5 py-4"><code>components/shared</code></td>
+              <td class="px-5 py-4">Заголовок route-level страницы</td>
+            </tr>
           </tbody>
         </UiTable>
         <UiPagination :meta="pagination" @change="currentPage = $event" />
@@ -174,25 +278,45 @@ function confirmAction(): void {
     <div class="grid gap-6 xl:grid-cols-2">
       <UiCard>
         <h2 class="text-lg font-semibold text-gray-900">Состояния коллекций</h2>
-        <p class="mt-1 text-sm text-gray-500"><code>ui/UiLoadingState.vue</code>, <code>ui/UiEmptyState.vue</code></p>
+        <p class="mt-1 text-sm text-gray-500">
+          <code>ui/UiLoadingState.vue</code>, <code>ui/UiEmptyState.vue</code>
+        </p>
         <UiLoadingState label="Загрузка данных для примера…" />
         <UiEmptyState label="В этой коллекции пока нет данных." />
       </UiCard>
 
       <UiCard>
         <h2 class="text-lg font-semibold text-gray-900">Диалоги</h2>
-        <p class="mt-1 text-sm text-gray-500"><code>ui/UiDialog.vue</code>, <code>shared/ConfirmDialog.vue</code></p>
+        <p class="mt-1 text-sm text-gray-500">
+          <code>ui/UiDialog.vue</code>, <code>shared/ConfirmDialog.vue</code>
+        </p>
         <div class="mt-4 flex flex-wrap gap-3">
-          <UiButton variant="secondary" @click="isDialogOpen = true">Открыть диалог</UiButton>
-          <UiButton variant="danger" @click="isConfirmDialogOpen = true">Подтверждение удаления</UiButton>
+          <UiButton variant="secondary" @click="isDialogOpen = true"
+            >Открыть диалог</UiButton
+          >
+          <UiButton variant="danger" @click="isConfirmDialogOpen = true"
+            >Подтверждение удаления</UiButton
+          >
         </div>
       </UiCard>
     </div>
 
-    <UiDialog :open="isDialogOpen" labelledby="ui-kit-dialog-title" describedby="ui-kit-dialog-description" panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" @close="isDialogOpen = false">
-      <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-900">Обычный диалог</h2>
-      <p id="ui-kit-dialog-description" class="mt-2 text-sm text-gray-500">Проверьте закрытие через Escape, клик по фону и возврат фокуса.</p>
-      <div class="mt-6 flex justify-end"><UiButton @click="isDialogOpen = false">Закрыть</UiButton></div>
+    <UiDialog
+      :open="isDialogOpen"
+      labelledby="ui-kit-dialog-title"
+      describedby="ui-kit-dialog-description"
+      panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+      @close="isDialogOpen = false"
+    >
+      <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-900">
+        Обычный диалог
+      </h2>
+      <p id="ui-kit-dialog-description" class="mt-2 text-sm text-gray-500">
+        Проверьте закрытие через Escape, клик по фону и возврат фокуса.
+      </p>
+      <div class="mt-6 flex justify-end">
+        <UiButton @click="isDialogOpen = false">Закрыть</UiButton>
+      </div>
     </UiDialog>
     <ConfirmDialog
       :open="isConfirmDialogOpen"

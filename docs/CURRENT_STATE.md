@@ -1,6 +1,6 @@
 # Текущее состояние проекта
 
-Состояние актуализировано по итогам `TASK-A001`–`TASK-A037` и повторной финальной приёмки
+Состояние актуализировано по итогам `TASK-A001`–`TASK-A039` и повторной финальной приёмки
 `TASK-A030` (2026-09-13). Admin frontend refactoring принят; evidence приведены в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
@@ -15,7 +15,7 @@
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
 | Cart and orders | Public guest cart, locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
-| Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031` исправила mobile sidebar и browser runtime guard; `TASK-A032` централизовала design tokens и закрыла WCAG AA contrast findings; `TASK-A033` завершила products UI-kit/type migration; `TASK-A034` объединила auth shell; `TASK-A035` стабилизировала acceptance fixtures и evidence; `TASK-A036` удалила оставшиеся frontend-словарь ролей и service re-export; `TASK-A037` завершила disabled-контракт полей UI-kit. Повторная финальная приёмка `TASK-A030` пройдена. |
+| Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031`–`TASK-A037` закрыли findings повторной приёмки и post-acceptance UI contracts; `TASK-A038` вынесла orchestration импортов в feature composables; `TASK-A039` добавила blocking ESLint/Prettier gates, отключила Playwright retries и стабилизировала date-dependent visual test. Повторная финальная приёмка `TASK-A030` пройдена. |
 
 ## Принятые границы
 
@@ -67,3 +67,9 @@ Production build, 37 unit-тестов и 146 E2E/axe/visual тестов про
 popup. Production build, 41 unit-тест и 147 E2E/axe/visual тестов прошли локально и в Linux Compose;
 disabled и открытый calendar визуально проверены на 320/640/768/1024/1280 px в Darwin/Linux;
 независимый UI Design Guard не оставил blocking или non-blocking findings.
+
+`TASK-A038` перенесла orchestration трёх товарных import dialogs в feature composables и validation.
+`TASK-A039` зафиксировала ESLint/Prettier baseline, добавила blocking lint/format checks в CI,
+отключила Playwright retries и устранила зависимость calendar snapshot от текущего дня. Два
+последовательных локальных Admin suite прошли по 47 unit и 148 E2E/axe/visual тестов; Linux Compose
+suite прошёл 148/148.

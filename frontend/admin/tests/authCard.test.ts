@@ -20,12 +20,22 @@ describe('AuthCard', () => {
   })
 
   test('is the only owner of the auth card shell used by all guest views', () => {
-    const authCard = readFileSync(resolve(process.cwd(), 'src/components/shared/AuthCard.vue'), 'utf8')
+    const authCard = readFileSync(
+      resolve(process.cwd(), 'src/components/shared/AuthCard.vue'),
+      'utf8',
+    )
     expect(authCard).toContain('shadow-dialog')
 
-    for (const viewName of ['LoginView.vue', 'ForgotPasswordView.vue', 'ResetPasswordView.vue']) {
-      const source = readFileSync(resolve(process.cwd(), `src/views/${viewName}`), 'utf8')
-      expect(source, viewName).toContain("components/shared/AuthCard.vue")
+    for (const viewName of [
+      'LoginView.vue',
+      'ForgotPasswordView.vue',
+      'ResetPasswordView.vue',
+    ]) {
+      const source = readFileSync(
+        resolve(process.cwd(), `src/views/${viewName}`),
+        'utf8',
+      )
+      expect(source, viewName).toContain('components/shared/AuthCard.vue')
       expect(source, viewName).not.toContain('shadow-dialog')
       expect(source, viewName).not.toContain('AgatCeramic</p>')
     }

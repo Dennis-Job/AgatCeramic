@@ -8,18 +8,34 @@ type Deferred<T> = { promise: Promise<T>; resolve: (value: T) => void }
 
 function deferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((done) => { resolve = done })
+  const promise = new Promise<T>((done) => {
+    resolve = done
+  })
   return { promise, resolve }
 }
 
-function page(currentPage: number, ids: number[], lastPage = currentPage): PaginatedResponse<Item> {
+function page(
+  currentPage: number,
+  ids: number[],
+  lastPage = currentPage,
+): PaginatedResponse<Item> {
   return {
     data: ids.map((id) => ({ id })),
-    meta: { current_page: currentPage, last_page: lastPage, per_page: 15, total: ids.length + (currentPage - 1) * 15 },
+    meta: {
+      current_page: currentPage,
+      last_page: lastPage,
+      per_page: 15,
+      total: ids.length + (currentPage - 1) * 15,
+    },
   }
 }
 
-for (const collection of ['products', 'brands', 'attributes', 'attribute groups']) {
+for (const collection of [
+  'products',
+  'brands',
+  'attributes',
+  'attribute groups',
+]) {
   describe(collection, () => {
     test('ignores a stale response that finishes after a newer page', async () => {
       const list = usePaginatedCollection<Item>('Load failed')

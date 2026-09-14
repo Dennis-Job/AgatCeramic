@@ -104,18 +104,22 @@
   --admin-control-height-md: 2.625rem;
   --admin-control-height-lg: 3rem;
   --admin-border-width: 1px;
-  --admin-border-default: var(--admin-border-width) solid var(--admin-color-gray-300);
+  --admin-border-default: var(--admin-border-width) solid
+    var(--admin-color-gray-300);
 
   --admin-shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
   --admin-shadow-input: 0 1px 2px rgb(16 24 40 / 0.05);
   --admin-shadow-dialog: 0 8px 24px rgb(16 24 40 / 0.08);
   --admin-shadow-dropdown: 0 12px 20px rgb(16 24 40 / 0.12);
-  --admin-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.10), 0 1px 2px -1px rgb(0 0 0 / 0.10);
-  --admin-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10);
+  --admin-shadow-sm:
+    0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --admin-shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   --admin-transition-duration: 150ms;
   --admin-transition-timing: ease;
   --admin-focus-outline-width: 2px;
   --admin-focus-outline-offset: 2px;
-  --admin-focus-ring: 0 0 0 2px var(--admin-color-white), 0 0 0 4px var(--admin-color-primary-500);
+  --admin-focus-ring:
+    0 0 0 2px var(--admin-color-white), 0 0 0 4px var(--admin-color-primary-500);
 }

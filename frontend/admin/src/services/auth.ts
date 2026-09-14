@@ -1,4 +1,5 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
+const apiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
 const backendBaseUrl = apiBaseUrl.replace(/\/api\/v1\/?$/, '')
 
 export type AdminUser = {
@@ -17,9 +18,14 @@ type ApiError = {
   }
 }
 
-async function throwApiError(response: Response, fallback: string): Promise<never> {
+async function throwApiError(
+  response: Response,
+  fallback: string,
+): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as ApiError
-  const firstDetail = body.error?.details ? Object.values(body.error.details).flat()[0] : undefined
+  const firstDetail = body.error?.details
+    ? Object.values(body.error.details).flat()[0]
+    : undefined
   throw new Error(firstDetail ?? body.error?.message ?? fallback)
 }
 
@@ -43,7 +49,10 @@ function csrfToken(): string | undefined {
   return token ? decodeURIComponent(token) : undefined
 }
 
-export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+export async function apiFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
 
@@ -70,7 +79,12 @@ export async function currentAdmin(): Promise<AdminUser> {
   return ((await response.json()) as { data: AdminUser }).data
 }
 
-export async function updateCurrentAdmin(payload: { name?: string; email?: string; password?: string; password_confirmation?: string }): Promise<AdminUser> {
+export async function updateCurrentAdmin(payload: {
+  name?: string
+  email?: string
+  password?: string
+  password_confirmation?: string
+}): Promise<AdminUser> {
   await requestCsrfCookie()
   const response = await apiFetch('/admin/auth/me', {
     method: 'PATCH',
@@ -78,7 +92,8 @@ export async function updateCurrentAdmin(payload: { name?: string; email?: strin
     body: JSON.stringify(payload),
   })
 
-  if (!response.ok) return throwApiError(response, 'Не удалось сохранить профиль.')
+  if (!response.ok)
+    return throwApiError(response, 'Не удалось сохранить профиль.')
 
   return ((await response.json()) as { data: AdminUser }).data
 }
@@ -111,10 +126,19 @@ export async function requestPasswordReset(email: string): Promise<void> {
     body: JSON.stringify({ email }),
   })
 
-  if (!response.ok) return throwApiError(response, 'Не удалось отправить ссылку для сброса пароля.')
+  if (!response.ok)
+    return throwApiError(
+      response,
+      'Не удалось отправить ссылку для сброса пароля.',
+    )
 }
 
-export async function resetPassword(payload: { email: string; token: string; password: string; password_confirmation: string }): Promise<void> {
+export async function resetPassword(payload: {
+  email: string
+  token: string
+  password: string
+  password_confirmation: string
+}): Promise<void> {
   await requestCsrfCookie()
   const response = await apiFetch('/admin/auth/reset-password', {
     method: 'POST',
@@ -122,5 +146,6 @@ export async function resetPassword(payload: { email: string; token: string; pas
     body: JSON.stringify(payload),
   })
 
-  if (!response.ok) return throwApiError(response, 'Не удалось сбросить пароль.')
+  if (!response.ok)
+    return throwApiError(response, 'Не удалось сбросить пароль.')
 }

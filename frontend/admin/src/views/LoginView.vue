@@ -24,7 +24,8 @@ async function submit(): Promise<void> {
     await auth.login(email.value, password.value)
     await router.replace('/')
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : 'Не удалось выполнить вход.'
+    error.value =
+      reason instanceof Error ? reason.message : 'Не удалось выполнить вход.'
   } finally {
     isSubmitting.value = false
   }
@@ -32,12 +33,50 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <AuthCard title="Вход в админ-панель" description="Используйте учётную запись сотрудника." @submit="submit">
+  <AuthCard
+    title="Вход в админ-панель"
+    description="Используйте учётную запись сотрудника."
+    @submit="submit"
+  >
     <UiAlert v-if="error" class="mt-5">{{ error }}</UiAlert>
-    <UiAlert v-if="route.query.password_reset === '1' || route.query.password_changed === '1'" class="mt-5" tone="success" live="polite">Пароль изменён. Теперь войдите с новым паролем.</UiAlert>
-    <UiField class="mt-6" label="Email" required><UiInput v-model="email" class="mt-1.5 w-full" type="email" autocomplete="username" autofocus required /></UiField>
-    <UiField class="mt-4" label="Пароль" required><UiInput v-model="password" class="mt-1.5 w-full" type="password" autocomplete="current-password" required /></UiField>
-    <RouterLink class="mt-3 inline-block rounded text-sm font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2" :to="{ name: 'forgot-password' }">Забыли пароль?</RouterLink>
-    <UiButton class="mt-6 w-full" type="submit" :loading="isSubmitting" :disabled="isSubmitting">{{ isSubmitting ? 'Выполняется вход…' : 'Войти' }}</UiButton>
+    <UiAlert
+      v-if="
+        route.query.password_reset === '1' ||
+        route.query.password_changed === '1'
+      "
+      class="mt-5"
+      tone="success"
+      live="polite"
+      >Пароль изменён. Теперь войдите с новым паролем.</UiAlert
+    >
+    <UiField class="mt-6" label="Email" required
+      ><UiInput
+        v-model="email"
+        class="mt-1.5 w-full"
+        type="email"
+        autocomplete="username"
+        autofocus
+        required
+    /></UiField>
+    <UiField class="mt-4" label="Пароль" required
+      ><UiInput
+        v-model="password"
+        class="mt-1.5 w-full"
+        type="password"
+        autocomplete="current-password"
+        required
+    /></UiField>
+    <RouterLink
+      class="mt-3 inline-block rounded text-sm font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+      :to="{ name: 'forgot-password' }"
+      >Забыли пароль?</RouterLink
+    >
+    <UiButton
+      class="mt-6 w-full"
+      type="submit"
+      :loading="isSubmitting"
+      :disabled="isSubmitting"
+      >{{ isSubmitting ? 'Выполняется вход…' : 'Войти' }}</UiButton
+    >
   </AuthCard>
 </template>

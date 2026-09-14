@@ -1,6 +1,9 @@
 import type { AttributeType } from '../features/attributes/types/attribute.types'
 
-export const attributeTypeOptions: Array<{ value: AttributeType; label: string }> = [
+export const attributeTypeOptions: Array<{
+  value: AttributeType
+  label: string
+}> = [
   { value: 'string', label: 'Строка' },
   { value: 'text', label: 'Многострочный текст' },
   { value: 'integer', label: 'Целое число' },
@@ -12,7 +15,7 @@ export const attributeTypeOptions: Array<{ value: AttributeType; label: string }
 ]
 
 const attributeTypeLabels: Record<AttributeType, string> = Object.fromEntries(
-  attributeTypeOptions.map(option => [option.value, option.label]),
+  attributeTypeOptions.map((option) => [option.value, option.label]),
 ) as Record<AttributeType, string>
 
 export function attributeTypeLabel(type: AttributeType): string {
