@@ -224,6 +224,12 @@ independent of `product_relations`.
 Подтверждение заказа не создаёт отдельную запись в БД: queued job читает уже сохранённые immutable
 `order_items` snapshots после commit и не меняет заказ.
 
+Целевой lifecycle direct PII, order number, payment reference, comments, history и коммерческого
+остатка определён в
+[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). До юридического принятия ADR-014 схема
+остаётся неизменной, а production-анонимизация/удаление запрещены; migrations и application
+commands принадлежат `TASK-A044`.
+
 ### order_statuses
 Управляемый каталог статусов заказа: стабильный уникальный `code`, русское `name`, уникальный
 `sort_order`, флаги `is_active`, `is_terminal` и `sets_completed_at`. Базовые записи создаются миграцией:
@@ -268,6 +274,10 @@ TASK-083 добавляет nullable `assignee_id` с `nullOnDelete` и `assigne
 `author_snapshot`, `body` и `created_at`. Индекс `(contact_request_id, created_at, id)` поддерживает
 хронологическое постраничное чтение. История переходов хранится отдельно в
 `contact_request_status_histories` с начальным/целевым статусом, снимком автора и `occurred_at`.
+
+Обращение, comments и workflow history удаляются как единый lifecycle aggregate по матрице из
+[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Текущие таблицы ещё не реализуют
+retention/legal hold; это явная граница `TASK-A044`, а не разрешение хранить данные бессрочно.
 
 ## Content
 

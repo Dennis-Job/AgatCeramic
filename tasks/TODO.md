@@ -353,6 +353,9 @@ API behaviour без migration plan и синхронного обновлени
     зашифрованным полям, backup-копиям, доступу, выгрузке и уничтожению данных. Не считать
     application encryption самостоятельным подтверждением соответствия 152-ФЗ.
   - Принять ADR и проверяемую retention/deletion matrix до необратимой анонимизации либо удаления.
+  - Инженерная редакция, threat model и матрица подготовлены в
+    [`docs/PERSONAL_DATA_LIFECYCLE.md`](../docs/PERSONAL_DATA_LIFECYCLE.md); остаются три явно
+    зафиксированных согласования, после которых ADR-014 переводится из `proposed` в `accepted`.
 
 - [ ] TASK-A044 Реализовать утверждённые retention, anonymization и deletion controls для ПДн
   - На основе `TASK-A043` реализовать отдельные application services/commands для заказов,

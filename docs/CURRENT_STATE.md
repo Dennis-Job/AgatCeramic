@@ -1,10 +1,13 @@
 # Текущее состояние проекта
 
-Состояние актуализировано по итогам `TASK-A001`–`TASK-A041`, повторной финальной приёмки
-`TASK-A030` (2026-09-13) и повторной оценки Interim Audit (2026-09-14). Admin frontend
+Состояние актуализировано по итогам `TASK-A001`–`TASK-A041`, инженерной редакции `TASK-A043`,
+повторной финальной приёмки `TASK-A030` (2026-09-13) и повторной оценки Interim Audit
+(2026-09-14). Admin frontend
 refactoring принят. Repository-side remediation `TASK-A042` завершён, а server-side очистка
 GitHub cached views/PR refs ожидается по открытому запросу Support `#4756780`; остальные
 security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты.
+Для `TASK-A043` подготовлены ADR, threat model и retention/deletion matrix; юридическое принятие
+ещё не зафиксировано, поэтому production-очистка остаётся запрещённой.
 Evidence приведены в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
@@ -34,7 +37,7 @@ Evidence приведены в
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
 | Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через четыре скрытых GitHub PR refs до выполнения server-side purge по запросу Support `#4756780`; также ожидаются оставшиеся operational confirmations. | `TASK-A042` |
-| High | Для business PII orders/contacts нет утверждённой и исполняемой retention/deletion policy. | `TASK-A043`, `TASK-A044` |
+| High | Для business PII orders/contacts подготовлена проверяемая policy, но отсутствуют подписи ответственного за ПДн/юриста и исполняемые controls. | `TASK-A043`, `TASK-A044` |
 | Medium | Guest cart bearer tokens хранятся raw, а abandoned carts не имеют TTL/cleanup. | `TASK-A045` |
 | Medium | OpenAPI compatibility, PostgreSQL/Redis и real Admin→API boundaries покрыты слабее, чем следует из исторической формулировки приёмки. | `TASK-A046`, `TASK-A048`–`TASK-A050` |
 | Medium | Persisted Compose dependency volumes могут не соответствовать lock-файлам. | `TASK-A047` |

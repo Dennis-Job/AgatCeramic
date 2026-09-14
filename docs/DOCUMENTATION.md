@@ -23,6 +23,7 @@ permissions, команд, технологий и устоявшиеся тер
 | Требования | [`REQUIREMENTS.md`](REQUIREMENTS.md) | техническая реализация и текущий status |
 | Архитектура | [`ARCHITECTURE.md`](ARCHITECTURE.md) | подробные таблицы БД и HTTP schemas |
 | Данные и lifecycle schema | [`DATABASE.md`](DATABASE.md) | миграционный журнал и API examples |
+| Retention, ПДн и уничтожение | [`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md) | сроки в feature guides и task history |
 | Машинный API contract | [`openapi.json`](openapi.json) | human-readable explanation каждого поля |
 | API guide и нетривиальные правила | [`API.md`](API.md) | полные повторные schemas OpenAPI |
 | Environment и эксплуатационная навигация | [`OPERATIONS.md`](OPERATIONS.md) | секреты, runtime commands и CI details в README |

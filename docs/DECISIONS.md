@@ -121,3 +121,25 @@ read-only до отдельного подтверждённого удален�
 
 Обязательность характеристики является свойством её назначения категории. Она блокирует активацию
 неполного товара, но не сохранение неактивного черновика.
+
+## ADR-014 — Personal-data lifecycle, retention and destruction
+
+Status: proposed.
+
+Для business PII, administrative snapshots и технических хранилищ используется единая
+проверяемая retention/deletion matrix из
+[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Обязательный срок отделяется от
+операционного удобства; legal hold всегда узкий, документированный и периодически пересматриваемый.
+Production-анонимизация и удаление запрещены, пока владелец бизнес-процесса, ответственный за ПДн и
+юрист не заполнят approval block и ADR не получит статус `accepted`.
+
+Production storage шифруется at rest, sessions шифруются приложением, а backups используют
+отдельный KMS boundary и живут не более 30 дней. Field-level encryption customer fields не
+вводится автоматически: действующий Admin API использует substring search, а выбранная threat
+model требует прежде всего storage encryption, RBAC, аудита, минимизации и короткого lifecycle.
+Требование защититься от DBA/storage operator или изменение search semantics оформляется отдельным
+ADR и API/UI migration plan.
+
+Необратимые операции реализует `TASK-A044`: только idempotent bounded batches с dry-run,
+legal-hold check, PII-free output, PostgreSQL tests, доказательством уничтожения и replay удалений
+после restore. Шифрование не считается самостоятельным подтверждением соответствия 152-ФЗ.
