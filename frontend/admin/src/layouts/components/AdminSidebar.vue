@@ -102,7 +102,7 @@ const siteManagementNavigation = [
   { label: 'Настройки', to: '/settings', icon: Settings },
 ]
 const developmentNavigation = [
-  { label: 'UI-kit · временно', to: '/ui-kit', icon: PanelsTopLeft },
+  { label: 'UI-kit', to: '/ui-kit', icon: PanelsTopLeft },
 ]
 
 const visibleEmployeeNavigation = computed(() =>

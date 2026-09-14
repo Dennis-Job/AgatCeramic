@@ -19,6 +19,23 @@ describe('AuthCard', () => {
     expect(wrapper.emitted('submit')).toEqual([[]])
   })
 
+  test('can use an h2 when embedded in the UI-kit without changing the auth default', () => {
+    const embedded = mount(AuthCard, {
+      props: {
+        title: 'Пример формы',
+        description: 'Встроенная демонстрация.',
+        headingTag: 'h2',
+      },
+    })
+    const standalone = mount(AuthCard, {
+      props: { title: 'Вход', description: 'Отдельная страница.' },
+    })
+
+    expect(embedded.get('h2').text()).toBe('Пример формы')
+    expect(embedded.find('h1').exists()).toBe(false)
+    expect(standalone.get('h1').text()).toBe('Вход')
+  })
+
   test('is the only owner of the auth card shell used by all guest views', () => {
     const authCard = readFileSync(
       resolve(process.cwd(), 'src/components/shared/AuthCard.vue'),

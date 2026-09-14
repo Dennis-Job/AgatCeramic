@@ -1,6 +1,6 @@
 # Текущее состояние проекта
 
-Состояние актуализировано по итогам `TASK-A001`–`TASK-A039` и повторной финальной приёмки
+Состояние актуализировано по итогам `TASK-A001`–`TASK-A040` и повторной финальной приёмки
 `TASK-A030` (2026-09-13). Admin frontend refactoring принят; evidence приведены в
 [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
 [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
@@ -15,7 +15,7 @@
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
 | Cart and orders | Public guest cart, locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
-| Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031`–`TASK-A037` закрыли findings повторной приёмки и post-acceptance UI contracts; `TASK-A038` вынесла orchestration импортов в feature composables; `TASK-A039` добавила blocking ESLint/Prettier gates, отключила Playwright retries и стабилизировала date-dependent visual test. Повторная финальная приёмка `TASK-A030` пройдена. |
+| Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031`–`TASK-A037` закрыли findings повторной приёмки и post-acceptance UI contracts; `TASK-A038` вынесла orchestration импортов в feature composables; `TASK-A039` добавила blocking ESLint/Prettier gates, отключила Playwright retries и стабилизировала date-dependent visual test; `TASK-A040` сделала `/ui-kit` полным живым каталогом компонентов и design tokens. Повторная финальная приёмка `TASK-A030` пройдена. |
 
 ## Принятые границы
 
@@ -73,3 +73,8 @@ disabled и открытый calendar визуально проверены на
 отключила Playwright retries и устранила зависимость calendar snapshot от текущего дня. Два
 последовательных локальных Admin suite прошли по 47 unit и 148 E2E/axe/visual тестов; Linux Compose
 suite прошёл 148/148.
+
+`TASK-A040` дополнила `/ui-kit` до полного живого каталога 16 `Ui*` и трёх shared-компонентов,
+их значимых состояний и всех CSS design tokens. Полнота закреплена unit/E2E, axe, responsive и
+visual-проверками: 50 unit и 149 E2E/axe/visual тестов прошли локально и в Linux Compose;
+независимый UI Design Guard не оставил замечаний.

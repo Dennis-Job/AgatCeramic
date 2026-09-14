@@ -1,5 +1,12 @@
 <script setup lang="ts">
-defineProps<{ title: string; description: string }>()
+withDefaults(
+  defineProps<{
+    title: string
+    description: string
+    headingTag?: 'h1' | 'h2'
+  }>(),
+  { headingTag: 'h1' },
+)
 defineEmits<{ submit: [] }>()
 </script>
 
@@ -9,7 +16,9 @@ defineEmits<{ submit: [] }>()
     @submit.prevent="$emit('submit')"
   >
     <p class="text-sm font-semibold text-primary-500">AgatCeramic</p>
-    <h1 class="mt-3 text-2xl font-bold text-gray-900">{{ title }}</h1>
+    <component :is="headingTag" class="mt-3 text-2xl font-bold text-gray-900">{{
+      title
+    }}</component>
     <p class="mt-2 text-sm text-gray-500">{{ description }}</p>
     <slot />
   </form>

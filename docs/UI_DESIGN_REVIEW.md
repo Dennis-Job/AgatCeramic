@@ -100,9 +100,10 @@ docker compose --profile test run --rm admin-e2e
 ## Маршруты для визуальной QA
 
 Admin: `/login`, `/forgot-password`, `/reset-password`, `/`, `/profile`, `/products`, `/categories`, `/brands`, `/attribute-groups`, `/attributes`, `/employees`, `/roles`, `/permissions`, `/audit-log`, `/orders`, `/contacts`, `/content`, `/settings`.
+UI-kit: `/ui-kit` — проверять при изменении `components/ui`, `components/shared` или design tokens.
 
 Client: `/` и все изменённые или новые маршруты.
 
 Для ручной проверки запустить `npm run dev -- --host 127.0.0.1 --port 5173` из
 `frontend/admin/` либо `npm run dev -- --host 127.0.0.1 --port 3000` из `frontend/client/`.
-Локальные адреса: Admin — `http://127.0.0.1:5173`, Client — `http://127.0.0.1:3000`.
+Локальные адреса: Admin — `http://localhost:5173`, Client — `http://localhost:3000`.

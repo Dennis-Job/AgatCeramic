@@ -396,11 +396,22 @@ test('Admin UI-kit states meet color contrast requirements', async ({
     page.getByRole('heading', { level: 1, name: 'UI-kit' }),
   ).toBeVisible()
   await page.waitForLoadState('networkidle')
+  await expect(page.locator('[data-ui-kit-section]')).toHaveCount(11)
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Пример auth-формы' }),
+  ).toBeVisible()
+  await expect(
+    page.getByText('--admin-color-primary-500', { exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByText('--admin-focus-outline-offset', { exact: true }),
+  ).toBeVisible()
   for (const name of [
     'Недоступна',
     'Вторичная недоступна',
     'Опасная недоступна',
     'Прозрачная недоступна',
+    'Удаление недоступно',
   ]) {
     await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
   }
@@ -412,7 +423,10 @@ test('Admin UI-kit states meet color contrast requirements', async ({
   await expect(
     disabledCheckbox.locator('..').locator('span').first(),
   ).toHaveClass(/text-gray-600/)
-  const disabledRadio = page.getByRole('radio', { name: 'Недоступный' })
+  const disabledRadio = page.getByRole('radio', {
+    name: 'Недоступный',
+    exact: true,
+  })
   await expect(disabledRadio).toBeDisabled()
   await expect(disabledRadio).not.toBeChecked()
   await expect(disabledRadio.locator('..').locator('span').first()).toHaveClass(
@@ -424,6 +438,45 @@ test('Admin UI-kit states meet color contrast requirements', async ({
       ['serious', 'critical'].includes(item.impact ?? ''),
     ),
   ).toEqual([])
+})
+
+test('Admin UI-kit exposes interactive select and confirmation states', async ({
+  page,
+}) => {
+  await mockAdminBaseline(page)
+  await page.goto('/ui-kit')
+
+  const teleportedSelect = page.getByRole('button', {
+    name: 'Select с teleport menu',
+    exact: true,
+  })
+  await teleportedSelect.click()
+  const search = page.getByRole('searchbox', {
+    name: 'Поиск: Select с teleport menu',
+  })
+  await expect(search).toBeFocused()
+  await search.fill('несуществующий вариант')
+  await expect(
+    page.getByText('Ничего не найдено', { exact: true }),
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(teleportedSelect).toBeFocused()
+
+  await page.getByRole('button', { name: 'Confirm: error' }).click()
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'Не удалось выполнить демонстрационное действие.',
+    }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Отмена' }).click()
+
+  await page.getByRole('button', { name: 'Confirm: busy' }).click()
+  await expect(page.getByRole('button', { name: 'Удаление…' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Отмена' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Отмена' })).toBeEnabled({
+    timeout: 2_000,
+  })
+  await page.getByRole('button', { name: 'Отмена' }).click()
 })
 
 test('Admin UI-kit field disabled contract remains accessible and usable at all supported widths', async ({

@@ -312,6 +312,12 @@ API behaviour без migration plan и синхронного обновлени
   - Не позволять Playwright retry скрывать flaky tests: отключить retries либо включить падение CI
     при flaky-результате; подтвердить два последовательных локальных прогона и Linux Compose suite.
 
+- [x] TASK-A040 Дополнить живую витрину Admin UI-kit
+  - Показать на `/ui-kit` все 16 `Ui*`-компонентов, shared-компоненты, значимые варианты,
+    состояния и полный набор design tokens без изменения самих UI primitives.
+  - Закрепить полноту inventory и tokens unit-тестами; проверить responsive, visual, axe и
+    интерактивные состояния локально и в Linux Compose; пройти независимый UI Design Guard review.
+
 ## Phase 7 — Content
 
 - [ ] TASK-090 Site settings
