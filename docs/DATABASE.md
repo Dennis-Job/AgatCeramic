@@ -199,10 +199,19 @@ independent of `product_relations`.
 ## Orders
 
 ### carts
-Анонимная корзина. Содержит внутренний идентификатор, уникальный 256-битный `token` и timestamps.
-Токен является bearer-идентификатором корзины: сервер выдаёт его при первом `GET /cart`, а клиент
-сохраняет и передаёт исключительно в заголовке `X-Cart-Token`. Токен не включается в URL и не
-принимается в теле запроса.
+Анонимная корзина. Содержит внутренний идентификатор, уникальный `token_hash` (HMAC-SHA-256 от
+256-битного bearer-токена), `expires_at`, nullable `checked_out_at` и timestamps. Исходный токен
+выдаётся только при первом `GET /cart`, хранится клиентом и передаётся исключительно в заголовке
+`X-Cart-Token`; в БД, URL и request body он не сохраняется. Поиск владельца использует unique index
+`token_hash`, а bounded cleanup — составной index (`expires_at`, `id`).
+
+Новая пустая корзина получает configurable empty TTL. Успешное добавление/изменение позиции продлевает
+abandoned TTL; удаление последней позиции снова применяет empty TTL. Checkout под row lock очищает
+позиции, устанавливает `checked_out_at` и checked-out TTL, после чего корзину нельзя переиспользовать
+для новых позиций. Миграция существующих строк необратимо HMAC-ирует raw `token`: legacy-корзины с
+позициями получают abandoned TTL от прежнего `updated_at`, пустые — empty TTL. Уже вышедшие за этот
+срок становятся недоступны сразу и удаляются ближайшим cleanup batch. Rollback требует восстановления
+pre-migration backup, потому что исходный bearer-токен из HMAC восстановить нельзя.
 
 ### cart_items
 Позиции корзины: `cart_id`, `product_id`, `quantity` и timestamps. Пара (`cart_id`, `product_id`)

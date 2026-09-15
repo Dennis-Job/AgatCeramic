@@ -15,9 +15,9 @@ class CartController extends Controller
 
     public function show(ResolveCartRequest $request): JsonResponse
     {
-        $cart = $this->guestCartService->resolve($request->cartToken());
+        $resolved = $this->guestCartService->resolve($request->cartToken());
 
-        return (new CartResource($cart->load('items.product.primaryImage')))
+        return (new CartResource($resolved->cart->load('items.product.primaryImage'), $resolved->token))
             ->response()
             ->setStatusCode(Response::HTTP_OK);
     }

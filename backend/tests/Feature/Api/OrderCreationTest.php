@@ -3,27 +3,30 @@
 namespace Tests\Feature\Api;
 
 use App\Enums\PaymentStatus;
-use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesGuestCarts;
 use Tests\TestCase;
 
 class OrderCreationTest extends TestCase
 {
+    use CreatesGuestCarts;
     use RefreshDatabase;
 
     public function test_guest_checkout_creates_an_order_with_current_immutable_product_snapshots(): void
     {
-        $cart = Cart::factory()->create();
+        config(['cart.checked_out_ttl_hours' => 2]);
+        $resolved = $this->createGuestCart();
+        $cart = $resolved->cart;
         $firstProduct = Product::factory()->create(['name' => 'Белый мрамор', 'sku' => '11000001', 'price' => '1200.00', 'stock_quantity' => 10]);
         $secondProduct = Product::factory()->create(['name' => 'Клей для плитки', 'sku' => '12000001', 'price' => '500.00', 'stock_quantity' => 4]);
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $firstProduct->id, 'quantity' => 2]);
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $secondProduct->id, 'quantity' => 3]);
 
         $firstProduct->update(['price' => '1250.00']);
-        $response = $this->withHeader('X-Cart-Token', $cart->token)
+        $response = $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', 'order-create-immutable-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertCreated()
@@ -56,6 +59,15 @@ class OrderCreationTest extends TestCase
             'line_total' => '2500.00',
         ]);
         $this->assertDatabaseCount('cart_items', 0);
+        $checkedOutCart = $cart->fresh();
+        $this->assertNotNull($checkedOutCart->checked_out_at);
+        $this->assertTrue($checkedOutCart->expires_at->isSameSecond(
+            $checkedOutCart->checked_out_at->addHours((int) config('cart.checked_out_ttl_hours')),
+        ));
+
+        $this->withHeader('X-Cart-Token', $resolved->token)
+            ->postJson('/api/v1/cart/items', ['product_id' => $firstProduct->id, 'quantity' => 1])
+            ->assertNotFound();
 
         $firstProduct->update(['name' => 'Новое название', 'price' => '1.00']);
         $order = Order::query()->where('order_number', $number)->with('items')->sole();
@@ -66,19 +78,20 @@ class OrderCreationTest extends TestCase
 
     public function test_checkout_rejects_empty_or_unavailable_carts_without_creating_an_order(): void
     {
-        $emptyCart = Cart::factory()->create();
+        $emptyCart = $this->createGuestCart();
         $this->withHeader('X-Cart-Token', $emptyCart->token)
             ->withHeader('Idempotency-Key', 'order-create-empty-cart-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertUnprocessable()
             ->assertJsonPath('error.details.cart.0', 'Корзина пуста.');
 
-        $cart = Cart::factory()->create();
+        $resolved = $this->createGuestCart();
+        $cart = $resolved->cart;
         $product = Product::factory()->create(['stock_quantity' => 2]);
         $item = CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 2]);
         $product->update(['stock_quantity' => 1]);
 
-        $this->withHeader('X-Cart-Token', $cart->token)
+        $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', 'order-create-unavailable-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertUnprocessable()
@@ -90,11 +103,12 @@ class OrderCreationTest extends TestCase
 
     public function test_checkout_validates_contact_data_and_honeypot_before_using_the_cart(): void
     {
-        $cart = Cart::factory()->create();
+        $resolved = $this->createGuestCart();
+        $cart = $resolved->cart;
         $product = Product::factory()->create();
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
 
-        $this->withHeader('X-Cart-Token', $cart->token)
+        $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', 'order-create-validation-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload([
                 'customer_phone' => '123',
@@ -111,16 +125,17 @@ class OrderCreationTest extends TestCase
 
     public function test_checkout_replays_the_original_order_for_the_same_idempotency_key(): void
     {
-        $cart = Cart::factory()->create();
+        $resolved = $this->createGuestCart();
+        $cart = $resolved->cart;
         $product = Product::factory()->create(['price' => '100.00', 'stock_quantity' => 2]);
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
         $key = 'order-create-replay-test-0001';
 
-        $first = $this->withHeader('X-Cart-Token', $cart->token)
+        $first = $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', $key)
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertCreated();
-        $second = $this->withHeader('X-Cart-Token', $cart->token)
+        $second = $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', $key)
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertOk()
@@ -132,14 +147,15 @@ class OrderCreationTest extends TestCase
 
     public function test_checkout_rejects_reusing_an_idempotency_key_with_different_data(): void
     {
-        $cart = Cart::factory()->create();
+        $resolved = $this->createGuestCart();
+        $cart = $resolved->cart;
         $product = Product::factory()->create(['stock_quantity' => 2]);
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
         $key = 'order-create-conflict-test-001';
 
-        $this->withHeader('X-Cart-Token', $cart->token)->withHeader('Idempotency-Key', $key)
+        $this->withHeader('X-Cart-Token', $resolved->token)->withHeader('Idempotency-Key', $key)
             ->postJson('/api/v1/orders', $this->checkoutPayload())->assertCreated();
-        $this->withHeader('X-Cart-Token', $cart->token)->withHeader('Idempotency-Key', $key)
+        $this->withHeader('X-Cart-Token', $resolved->token)->withHeader('Idempotency-Key', $key)
             ->postJson('/api/v1/orders', $this->checkoutPayload(['delivery_address' => 'Другой адрес']))
             ->assertConflict();
     }

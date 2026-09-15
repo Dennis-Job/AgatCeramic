@@ -368,13 +368,16 @@ API behaviour без migration plan и синхронного обновлени
   - Repository-side controls и synthetic tests реализованы 2026-09-14. Production activation и
     закрытие задачи заблокированы pending approvals `TASK-A043` и внешним provider evidence.
 
-- [ ] TASK-A045 Защитить bearer-токены и ограничить срок жизни гостевых корзин
+- [x] TASK-A045 Защитить bearer-токены и ограничить срок жизни гостевых корзин
   - Хранить необратимый HMAC/hash `X-Cart-Token` вместо raw bearer-токена, сохранив текущий wire
     contract; предусмотреть безопасную migration/expiration strategy для существующих корзин.
   - Утвердить configurable TTL для пустых, брошенных и оформленных корзин и добавить bounded
     scheduled cleanup без удаления активной корзины во время конкурентного add/update/checkout.
   - Закрепить ownership, expiry, replay/concurrency, индекс и cleanup tests на SQLite и PostgreSQL;
     обновить OpenAPI, `API.md`, `DATABASE.md` и operations visibility.
+  - Реализовано 2026-09-15: raw tokens мигрируются в HMAC-SHA-256, lifecycle/TTL и bounded hourly
+    cleanup синхронизированы row locks; SQLite contract tests и отдельный PostgreSQL concurrency/index
+    suite добавлены в CI.
 
 - [ ] TASK-A046 Усилить семантическую и compatibility-проверку OpenAPI
   - Подключить воспроизводимый OpenAPI 3.1 validator/linter, проверяющий `$ref`, schemas, formats,

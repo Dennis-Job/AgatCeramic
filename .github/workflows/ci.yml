@@ -171,6 +171,18 @@ jobs:
           DB_SSLMODE: prefer
         run: vendor/bin/phpunit --configuration=phpunit.postgres.xml tests/Integration/PostgresRetentionControlsTest.php
 
+      - name: Test PostgreSQL guest cart lifecycle concurrency
+        env:
+          CI: "true"
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: agatceramic_test
+          DB_USERNAME: agatceramic
+          DB_PASSWORD: ci-only-password
+          DB_SSLMODE: prefer
+        run: vendor/bin/phpunit --configuration=phpunit.postgres.xml tests/Integration/PostgresGuestCartLifecycleTest.php
+
       - name: Verify Redis cache connection
         env:
           CACHE_STORE: redis

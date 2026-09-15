@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v1.1",
+        "version": "v1.2",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -1266,13 +1266,13 @@
             "get": {
                 "operationId": "resolveGuestCart",
                 "summary": "Create or retrieve a guest cart",
-                "description": "Without X-Cart-Token, creates a cart and returns its identifier. Store the returned identifier client-side and send it only as X-Cart-Token on later cart requests. An unknown token is not treated as a request to create a cart.",
+                "description": "Without X-Cart-Token, creates a cart and returns its identifier. Store the returned identifier client-side and send it only as X-Cart-Token on later cart requests. The server stores only an HMAC of the bearer identifier. Unknown or expired identifiers are not treated as requests to create a cart and return 404.",
                 "parameters": [
                     {
                         "name": "X-Cart-Token",
                         "in": "header",
                         "required": false,
-                        "description": "64-character lowercase hexadecimal bearer identifier returned by an earlier GET /cart.",
+                        "description": "64-character lowercase hexadecimal bearer identifier returned by an earlier GET /cart. Empty, abandoned, and checked-out carts expire according to server policy.",
                         "schema": {
                             "type": "string",
                             "pattern": "^[a-f0-9]{64}$"
@@ -4075,7 +4075,8 @@
                 "properties": {
                     "identifier": {
                         "type": "string",
-                        "pattern": "^[a-f0-9]{64}$"
+                        "pattern": "^[a-f0-9]{64}$",
+                        "description": "Opaque bearer identifier returned over the wire; only its HMAC is stored server-side."
                     },
                     "items": {
                         "type": "array",

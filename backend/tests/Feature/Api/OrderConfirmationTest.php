@@ -4,17 +4,19 @@ namespace Tests\Feature\Api;
 
 use App\Jobs\SendOrderConfirmation;
 use App\Mail\OrderConfirmationMail;
-use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\ResolvedGuestCart;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Tests\Concerns\CreatesGuestCarts;
 use Tests\TestCase;
 
 class OrderConfirmationTest extends TestCase
 {
+    use CreatesGuestCarts;
     use RefreshDatabase;
 
     public function test_checkout_queues_confirmation_after_commit_only_when_customer_supplies_an_email(): void
@@ -69,11 +71,11 @@ class OrderConfirmationTest extends TestCase
         });
     }
 
-    private function cartWithProduct(): Cart
+    private function cartWithProduct(): ResolvedGuestCart
     {
-        $cart = Cart::factory()->create();
+        $cart = $this->createGuestCart();
         $product = Product::factory()->create(['price' => '1250.00', 'stock_quantity' => 2]);
-        CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
+        CartItem::query()->create(['cart_id' => $cart->cart->id, 'product_id' => $product->id, 'quantity' => 1]);
 
         return $cart;
     }

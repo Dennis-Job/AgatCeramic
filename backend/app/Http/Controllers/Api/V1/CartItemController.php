@@ -23,7 +23,7 @@ class CartItemController extends Controller
     public function store(StoreCartItemRequest $request): JsonResponse
     {
         $result = $this->managementService->add(
-            $this->guestCartService->resolve($request->cartToken()),
+            $this->guestCartService->resolve($request->cartToken())->cart,
             $request->integer('product_id'),
             $request->integer('quantity'),
         );
@@ -36,7 +36,7 @@ class CartItemController extends Controller
     public function update(UpdateCartItemRequest $request, CartItem $item): CartItemResource
     {
         return new CartItemResource($this->managementService->update(
-            $this->guestCartService->resolve($request->cartToken()),
+            $this->guestCartService->resolve($request->cartToken())->cart,
             $item,
             $request->integer('quantity'),
         ));
@@ -44,7 +44,7 @@ class CartItemController extends Controller
 
     public function destroy(CartTokenRequest $request, CartItem $item): Response
     {
-        $this->managementService->delete($this->guestCartService->resolve($request->cartToken()), $item);
+        $this->managementService->delete($this->guestCartService->resolve($request->cartToken())->cart, $item);
 
         return response()->noContent();
     }

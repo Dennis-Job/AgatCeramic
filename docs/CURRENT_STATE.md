@@ -5,7 +5,8 @@
 (2026-09-14). Admin frontend
 refactoring принят. Repository-side remediation `TASK-A042` завершён, а server-side очистка
 GitHub cached views/PR refs ожидается по открытому запросу Support `#4756780`; остальные
-security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты.
+security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты,
+кроме завершённой `TASK-A045`.
 Для `TASK-A043` подготовлены ADR, threat model и retention/deletion matrix; `TASK-A044` реализует
 gated bounded controls, evidence и restore replay. Юридическое принятие ещё не зафиксировано,
 поэтому production-очистка остаётся запрещённой.
@@ -21,7 +22,7 @@ Evidence приведены в
 | Access control | Admin authentication, password reset, active-user guard, RBAC, granular permissions, audit log, snapshots, retention и PostgreSQL immutability. |
 | Catalog | Categories, brands, attribute groups/typed attributes, standalone sellable products, product groups, generated immutable SKU, images, related products, filters/search и durable storage cleanup. Legacy variants остаются read-only до отдельной verified migration. |
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
-| Cart and orders | Public guest cart, locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
+| Cart and orders | Public guest cart with HMAC-only bearer lookup, configurable TTL and lock-safe cleanup; locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
 | Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031`–`TASK-A037` закрыли findings повторной приёмки и post-acceptance UI contracts; `TASK-A038` вынесла orchestration импортов в feature composables; `TASK-A039` добавила blocking ESLint/Prettier gates, отключила Playwright retries и стабилизировала date-dependent visual test; `TASK-A040` сделала `/ui-kit` полным живым каталогом компонентов и design tokens; `TASK-A041` восстановила независимую desktop-прокрутку sidebar. Повторная финальная приёмка `TASK-A030` пройдена. |
 
@@ -39,7 +40,7 @@ Evidence приведены в
 | --- | --- | --- |
 | Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через четыре скрытых GitHub PR refs до выполнения server-side purge по запросу Support `#4756780`; также ожидаются оставшиеся operational confirmations. | `TASK-A042` |
 | High | Для business PII orders/contacts подготовлена policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
-| Medium | Guest cart bearer tokens хранятся raw, а abandoned carts не имеют TTL/cleanup. | `TASK-A045` |
+| Resolved | Guest cart tokens хранятся только как HMAC; configurable TTL и lock-safe bounded cleanup реализованы. | `TASK-A045` |
 | Medium | OpenAPI compatibility, PostgreSQL/Redis и real Admin→API boundaries покрыты слабее, чем следует из исторической формулировки приёмки. | `TASK-A046`, `TASK-A048`–`TASK-A050` |
 | Medium | Persisted Compose dependency volumes могут не соответствовать lock-файлам. | `TASK-A047` |
 | Medium | Import services совмещают workbook I/O, parsing, validation, mutation и reporting; скрытые container dependencies и нетривиальные queries в Controllers ухудшают SOLID/читаемость. | `TASK-A052`–`TASK-A054` |

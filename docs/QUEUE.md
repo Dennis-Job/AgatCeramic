@@ -35,6 +35,12 @@ than the configured five-year retention period. TASK-A044 schedules retention dr
 01:10/01:20/01:30 and, only after the dual production gate is active, apply batches at
 02:10/02:20/02:30. Every command uses `withoutOverlapping` and records append-only metrics/failures.
 
+Guest carts have an independent technical lifecycle. The scheduler runs `cart:prune` hourly with
+`withoutOverlapping`; each run locks and deletes at most the configured batch of expired rows and
+reports aggregate deleted/remaining counts only. Cart writes and checkout lock the same cart row;
+PostgreSQL cleanup uses `SKIP LOCKED`, leaves in-flight carts for a later run and rechecks
+`expires_at` before deletion.
+
 ## Durable storage cleanup
 
 Product and product-image deletion writes one `storage_cleanup_tasks` record per

@@ -7,22 +7,37 @@ use Illuminate\Database\QueryException;
 
 class GuestCartService
 {
-    public function resolve(?string $token): Cart
+    public function __construct(
+        private readonly CartTokenHasher $tokenHasher,
+        private readonly GuestCartLifetime $lifetime,
+    ) {}
+
+    public function resolve(?string $token): ResolvedGuestCart
     {
         if ($token !== null) {
-            return Cart::query()->where('token', $token)->firstOrFail();
+            $cart = Cart::query()
+                ->where('token_hash', $this->tokenHasher->hash($token))
+                ->where('expires_at', '>', now())
+                ->firstOrFail();
+
+            return new ResolvedGuestCart($cart, $token);
         }
 
         return $this->create();
     }
 
-    private function create(): Cart
+    private function create(): ResolvedGuestCart
     {
         for ($attempt = 0; $attempt < 3; $attempt++) {
+            $token = bin2hex(random_bytes(32));
+
             try {
-                return Cart::query()->create([
-                    'token' => bin2hex(random_bytes(32)),
+                $cart = Cart::query()->create([
+                    'token_hash' => $this->tokenHasher->hash($token),
+                    'expires_at' => $this->lifetime->emptyExpiry(),
                 ]);
+
+                return new ResolvedGuestCart($cart, $token);
             } catch (QueryException $exception) {
                 if ($attempt === 2) {
                     throw $exception;

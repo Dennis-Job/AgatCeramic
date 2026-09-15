@@ -37,3 +37,4 @@ php artisan migrate:fresh --force
 vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresAuditLogImmutabilityTest.php
 vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresCatalogConcurrencyTest.php
 vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresRetentionControlsTest.php
+vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresGuestCartLifecycleTest.php

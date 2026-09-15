@@ -1,6 +1,18 @@
-# OpenAPI migration plan — v1 to v1.1
+# OpenAPI migration plan — version history
 
 Date: 2026-09-09.
+
+## v1.2 — guest cart token storage and expiry
+
+Date: 2026-09-15. The HTTP contract is unchanged: clients continue using the 64-character
+`X-Cart-Token`. The specification now documents that only its HMAC is persisted and that unknown or
+expired carts return `404`. Empty, abandoned and checked-out TTLs are server configuration. After a
+successful checkout the token remains usable for an immediate idempotent replay, but cannot accept
+new items; clients start a new cart by calling `GET /cart` without the old header. Deploy the schema
+migration before serving the new code. Rollback requires a pre-migration database restore because
+the raw legacy tokens are intentionally not recoverable from their HMACs.
+
+## v1.1 — checkout idempotency
 
 ## Breaking change
 

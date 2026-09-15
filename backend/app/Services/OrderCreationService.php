@@ -22,6 +22,7 @@ class OrderCreationService
         private readonly OrderAmountCalculator $amountCalculator,
         private readonly OrderConfirmationService $confirmationService,
         private readonly OrderNumberService $orderNumberService,
+        private readonly GuestCartLifetime $cartLifetime,
     ) {}
 
     /** @param array<string, mixed> $attributes */
@@ -67,7 +68,12 @@ class OrderCreationService
             ]);
         }
 
-        $cart = Cart::query()->whereKey($cart->id)->lockForUpdate()->firstOrFail();
+        $cart = Cart::query()
+            ->whereKey($cart->id)
+            ->whereNull('checked_out_at')
+            ->where('expires_at', '>', now())
+            ->lockForUpdate()
+            ->firstOrFail();
         $items = CartItem::query()
             ->where('cart_id', $cart->id)
             ->orderBy('product_id')
@@ -94,6 +100,7 @@ class OrderCreationService
         ]);
         $order->items()->createMany($snapshots);
         $cart->items()->delete();
+        $this->cartLifetime->markCheckedOut($cart);
         $this->confirmationService->queue($order);
         $idempotency->order()->associate($order);
         $idempotency->save();

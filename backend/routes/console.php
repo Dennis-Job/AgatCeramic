@@ -12,6 +12,7 @@ Schedule::command('audit:prune')->daily();
 Schedule::command('storage-cleanup:retry')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('imports:retry-dispatch')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('checkout-idempotency:prune')->hourly()->withoutOverlapping();
+Schedule::command('cart:prune')->hourly()->withoutOverlapping();
 Schedule::command('retention:orders')->dailyAt('01:10')->withoutOverlapping();
 Schedule::command('retention:contacts')->dailyAt('01:20')->withoutOverlapping();
 Schedule::command('retention:technical')->dailyAt('01:30')->withoutOverlapping();

@@ -20,7 +20,7 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         $result = $this->orderCreationService->create(
-            $this->guestCartService->resolve($request->cartToken()),
+            $this->guestCartService->resolve($request->cartToken())->cart,
             $request->orderAttributes(),
             $request->idempotencyKey(),
         );

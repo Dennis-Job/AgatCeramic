@@ -12,7 +12,7 @@ remediation выполнен; до подтверждения GitHub server-side
 | --- | --- | --- | --- |
 | IA-R01 | Critical | Четыре PostgreSQL dumps удалены из текущего дерева и public branches/tags переписанной истории; добавлены ignore/history/secret gates, выполнены локальная auth invalidation и encrypted restore exercise. Fresh mirror всё ещё получает старые objects через `refs/pull/1/head`–`refs/pull/4/head`; server-side purge ожидается по GitHub Support `#4756780`. | `TASK-A042` |
 | IA-R02 | High | Для orders, contacts, comments и workflow history отсутствует утверждённая retention/deletion matrix и исполняемый lifecycle. Реализован только срок audit logs и checkout idempotency keys. | `TASK-A043`, `TASK-A044` |
-| IA-R03 | Medium | `carts.token` хранит raw bearer token; `GET /cart` создаёт persistent row, а scheduler не очищает пустые, брошенные или оформленные carts. | `TASK-A045` |
+| IA-R03 | Resolved | `TASK-A045`: `carts.token_hash` хранит HMAC, а configurable empty/abandoned/checked-out TTL обслуживает bounded lock-safe scheduled cleanup. | `TASK-A045` |
 | IA-R04 | Medium | Compatibility script пропускает изменение типа request field без version bump и принимает удаление operation при любом изменении `info.version`, включая patch. Стандартного OpenAPI semantic validator нет. | `TASK-A046` |
 | IA-R05 | Medium | Compose services считают зависимости актуальными по одному существующему файлу/бинарнику. Сохранённый backend volume стартовал без OpenSpout/PHPStan, из-за чего 42 tests упали после успешного запуска контейнера. | `TASK-A047` |
 | IA-R06 | Medium | Большинство backend feature tests выполняется только на SQLite; PostgreSQL CI покрывает migration и две специализированные integration suites. | `TASK-A048` |

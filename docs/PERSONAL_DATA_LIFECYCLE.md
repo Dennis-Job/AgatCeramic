@@ -22,7 +22,7 @@
 Политика охватывает персональные данные покупателей и сотрудников в `orders`, `contact_requests`,
 комментариях и workflow history, административных snapshots, sessions/reset tokens,
 `failed_jobs`, application logs, выгрузках, Redis и резервных копиях. Корзины и их bearer-токены
-получат отдельный исполняемый lifecycle в `TASK-A045`, но общие правила доступа, backup и
+получили отдельный исполняемый lifecycle в `TASK-A045`; общие правила доступа, backup и
 уничтожения применяются и к ним.
 
 Основные правила:

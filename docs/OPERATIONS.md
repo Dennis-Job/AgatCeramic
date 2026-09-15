@@ -46,3 +46,19 @@ eligible count.
 Техническая реализация `TASK-A044` готова и выключена безопасными defaults. Необратимая production-
 очистка остаётся заблокированной до юридического принятия A043 и operational evidence по внешним
 logs, email provider, backups/KMS и records schedule.
+
+## Guest cart lifecycle
+
+Scheduler ежечасно запускает bounded `cart:prune`. Значения `CART_EMPTY_TTL_HOURS`,
+`CART_ABANDONED_TTL_DAYS`, `CART_CHECKED_OUT_TTL_HOURS` и `CART_CLEANUP_BATCH_SIZE` должны быть
+положительными; batch ограничен диапазоном 1–1000. Ручной запуск одного пакета:
+
+```sh
+php artisan cart:prune --limit=100
+```
+
+Команда выводит только количество удалённых и оставшихся eligible строк, без token/hash values.
+Ненулевой остаток после нескольких hourly runs и ошибки scheduler являются monitoring signals.
+`CART_TOKEN_HMAC_KEY` хранится в secret manager; при отсутствии отдельного значения используется
+`APP_KEY`. Смена ключа инвалидирует все текущие корзины, поэтому выполняется как запланированная
+security-операция вместе с удалением/истечением существующих строк.
