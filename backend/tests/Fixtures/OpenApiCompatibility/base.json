@@ -1,0 +1,67 @@
+{
+  "openapi": "3.1.1",
+  "info": {"title": "Compatibility fixture", "version": "v1.2"},
+  "security": [{"bearer": []}],
+  "paths": {
+    "/things": {
+      "post": {
+        "operationId": "createThing",
+        "parameters": [
+          {"name": "q", "in": "query", "schema": {"type": "string", "minLength": 1}}
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {"schema": {"$ref": "#/components/schemas/ThingRequest"}}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thing",
+            "headers": {
+              "X-RateLimit": {"schema": {"type": "integer", "minimum": 0}}
+            },
+            "content": {
+              "application/json": {"schema": {"$ref": "#/components/schemas/ThingResponse"}}
+            }
+          },
+          "400": {"description": "Bad request"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {"type": "http", "scheme": "bearer"},
+      "apiKey": {"type": "apiKey", "in": "header", "name": "X-Api-Key"}
+    },
+    "schemas": {
+      "ThingRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string", "minLength": 2, "maxLength": 50},
+          "state": {"type": "string", "enum": ["draft", "published"]},
+          "note": {"type": ["string", "null"]},
+          "choice": {"oneOf": [{"type": "string"}, {"type": "integer"}]},
+          "nested": {"$ref": "#/components/schemas/NestedRequest"}
+        }
+      },
+      "NestedRequest": {
+        "type": "object",
+        "properties": {"count": {"type": "integer", "minimum": 0, "maximum": 10}}
+      },
+      "ThingResponse": {
+        "type": "object",
+        "required": ["id", "state", "score", "note", "nullable_note"],
+        "properties": {
+          "id": {"type": "integer"},
+          "state": {"type": "string", "enum": ["draft", "published"]},
+          "score": {"type": "integer", "minimum": 0, "maximum": 100},
+          "note": {"type": "string", "format": "uuid"},
+          "nullable_note": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

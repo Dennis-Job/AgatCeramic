@@ -84,6 +84,12 @@ jobs:
           extensions: mbstring, pdo_pgsql, pdo_sqlite, redis
           coverage: none
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: backend/openapi-tooling/package-lock.json
+
       - name: Cache Composer packages
         uses: actions/cache@v5
         with:
@@ -108,6 +114,16 @@ jobs:
       - name: Audit PHP dependencies
         run: composer audit --locked
 
+      - name: Install pinned OpenAPI tooling
+        working-directory: backend/openapi-tooling
+        run: npm ci --ignore-scripts
+
+      - name: Validate OpenAPI semantics and project conventions
+        working-directory: backend/openapi-tooling
+        run: |
+          npm test
+          npm run lint
+
       - name: Guard against incompatible OpenAPI drift
         working-directory: .
         env:
@@ -115,7 +131,8 @@ jobs:
         run: |
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:docs/openapi.json"; then
             git show "$BASE_SHA:docs/openapi.json" > "$RUNNER_TEMP/openapi-base.json"
-            php backend/scripts/assert-openapi-compatible.php "$RUNNER_TEMP/openapi-base.json" docs/openapi.json
+            php backend/scripts/assert-openapi-compatible.php "$RUNNER_TEMP/openapi-base.json" docs/openapi.json \
+              --migration-plan docs/OPENAPI_MIGRATION_PLAN.md
           fi
 
       - name: Check PHP formatting

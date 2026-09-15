@@ -379,7 +379,7 @@ API behaviour без migration plan и синхронного обновлени
     cleanup синхронизированы row locks; SQLite contract tests и отдельный PostgreSQL concurrency/index
     suite добавлены в CI.
 
-- [ ] TASK-A046 Усилить семантическую и compatibility-проверку OpenAPI
+- [x] TASK-A046 Усилить семантическую и compatibility-проверку OpenAPI
   - Подключить воспроизводимый OpenAPI 3.1 validator/linter, проверяющий `$ref`, schemas, formats,
     parameters, request/response media types и уникальность `operationId`, а не только JSON parse и
     совпадение route registry.
@@ -389,6 +389,10 @@ API behaviour без migration plan и синхронного обновлени
   - Обычный patch/minor version bump не должен автоматически разрешать удаление operation или
     несовместимый wire contract. Закрепить сам checker mutation/fixture-тестами и требовать явный
     migration plan для разрешённого breaking change.
+  - Реализовано 2026-09-15: закреплённый Redocly OpenAPI 3.1 gate и project conventions проверяют
+    semantics/formats/media types; направленно-рекурсивный checker и mutation fixtures покрывают
+    request/response schemas, parameters, headers/status/security. Breaking разрешён только major
+    bump с явным versioned migration plan.
 
 - [ ] TASK-A047 Сделать Compose bootstrap зависимостей lock-aware
   - Заменить проверки только наличия `vendor/autoload.php`, `vite` или `nuxt` на детерминированную

@@ -2,13 +2,25 @@
 
 declare(strict_types=1);
 
+use AgatCeramic\OpenApi\CompatibilityChecker;
+use AgatCeramic\OpenApi\CompatibilityPolicy;
+
+require_once __DIR__.'/openapi/OpenApiDocument.php';
+require_once __DIR__.'/openapi/SchemaCompatibilityChecker.php';
+require_once __DIR__.'/openapi/CompatibilityChecker.php';
+require_once __DIR__.'/openapi/CompatibilityPolicy.php';
+
 /**
- * Rejects unversioned breaking changes to the published OpenAPI contract.
- *
  * Usage: php scripts/assert-openapi-compatible.php <base-spec> <candidate-spec>
+ *        [--migration-plan <path>]
  */
-if ($argc !== 3) {
-    fwrite(STDERR, "Usage: php scripts/assert-openapi-compatible.php <base-spec> <candidate-spec>\n");
+if ($argc !== 3 && $argc !== 5) {
+    fwrite(STDERR, "Usage: php scripts/assert-openapi-compatible.php <base-spec> <candidate-spec> [--migration-plan <path>]\n");
+    exit(2);
+}
+
+if ($argc === 5 && $argv[3] !== '--migration-plan') {
+    fwrite(STDERR, "Expected --migration-plan before the migration plan path.\n");
     exit(2);
 }
 
@@ -21,141 +33,45 @@ function loadSpecification(string $path): array
         throw new RuntimeException("Cannot read {$path}.");
     }
 
-    return json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
-}
+    $decoded = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
 
-/** @return array<string, array<string, array<string, mixed>>> */
-function operations(array $specification): array
-{
-    $operations = [];
-
-    foreach ($specification['paths'] ?? [] as $path => $pathItem) {
-        foreach ($pathItem as $method => $operation) {
-            if (in_array($method, ['get', 'post', 'put', 'patch', 'delete'], true)) {
-                $operations[$path][$method] = $operation;
-            }
-        }
+    if (! is_array($decoded)) {
+        throw new RuntimeException("OpenAPI specification {$path} must be a JSON object.");
     }
 
-    return $operations;
-}
-
-/** @return array<int, string> */
-function requiredProperties(array $schema): array
-{
-    return $schema['required'] ?? [];
-}
-
-/** @param array<int, string> $breakingChanges */
-function compareSchema(array $base, array $candidate, string $location, array &$breakingChanges): void
-{
-    foreach (requiredProperties($base) as $property) {
-        if (! in_array($property, requiredProperties($candidate), true)) {
-            $breakingChanges[] = "{$location}: required property '{$property}' was removed.";
-        }
-    }
-
-    if (isset($base['enum'])) {
-        $candidateValues = $candidate['enum'] ?? [];
-        foreach ($base['enum'] as $value) {
-            if (! in_array($value, $candidateValues, true)) {
-                $breakingChanges[] = "{$location}: enum value '".json_encode($value, JSON_UNESCAPED_UNICODE)."' was removed.";
-            }
-        }
-    }
+    return $decoded;
 }
 
 try {
     $base = loadSpecification($argv[1]);
     $candidate = loadSpecification($argv[2]);
+    $breakingChanges = (new CompatibilityChecker($base, $candidate))->breakingChanges();
+
+    if ($breakingChanges === []) {
+        fwrite(STDOUT, "OpenAPI contracts are backward compatible.\n");
+        exit(0);
+    }
+
+    $policyError = (new CompatibilityPolicy)->breakingChangePolicyError(
+        (string) ($base['info']['version'] ?? ''),
+        (string) ($candidate['info']['version'] ?? ''),
+        $argc === 5 ? $argv[4] : null,
+    );
+
+    if ($policyError === null) {
+        fwrite(STDOUT, "OpenAPI contains an approved breaking major release:\n");
+        foreach ($breakingChanges as $change) {
+            fwrite(STDOUT, "- {$change}\n");
+        }
+        exit(0);
+    }
+
+    fwrite(STDERR, "OpenAPI contains breaking changes. {$policyError}\n");
+    foreach ($breakingChanges as $change) {
+        fwrite(STDERR, "- {$change}\n");
+    }
+    exit(1);
 } catch (Throwable $exception) {
     fwrite(STDERR, $exception->getMessage().PHP_EOL);
     exit(2);
 }
-
-$breakingChanges = [];
-$baseOperations = operations($base);
-$candidateOperations = operations($candidate);
-
-foreach ($baseOperations as $path => $methods) {
-    foreach ($methods as $method => $baseOperation) {
-        $candidateOperation = $candidateOperations[$path][$method] ?? null;
-
-        if ($candidateOperation === null) {
-            $breakingChanges[] = strtoupper($method)." {$path}: operation was removed.";
-
-            continue;
-        }
-
-        if (($baseOperation['security'] ?? []) !== ($candidateOperation['security'] ?? [])) {
-            $breakingChanges[] = strtoupper($method)." {$path}: security requirements changed.";
-        }
-
-        foreach (($baseOperation['responses'] ?? []) as $status => $baseResponse) {
-            if (! isset($candidateOperation['responses'][$status])) {
-                $breakingChanges[] = strtoupper($method)." {$path}: response {$status} was removed.";
-
-                continue;
-            }
-
-            foreach (($baseResponse['content'] ?? []) as $mediaType => $baseMedia) {
-                $candidateMedia = $candidateOperation['responses'][$status]['content'][$mediaType] ?? null;
-
-                if ($candidateMedia === null) {
-                    $breakingChanges[] = strtoupper($method)." {$path}: response {$status} no longer supports {$mediaType}.";
-
-                    continue;
-                }
-
-                if (($baseMedia['schema']['$ref'] ?? null) !== ($candidateMedia['schema']['$ref'] ?? null)) {
-                    $breakingChanges[] = strtoupper($method)." {$path}: response {$status} schema changed.";
-                }
-            }
-        }
-
-        $baseRequired = $baseOperation['requestBody']['required'] ?? false;
-        $candidateRequired = $candidateOperation['requestBody']['required'] ?? false;
-        if (! $baseRequired && $candidateRequired) {
-            $breakingChanges[] = strtoupper($method)." {$path}: request body became required.";
-        }
-
-        foreach (($baseOperation['requestBody']['content'] ?? []) as $mediaType => $baseMedia) {
-            if (! isset($candidateOperation['requestBody']['content'][$mediaType])) {
-                $breakingChanges[] = strtoupper($method)." {$path}: request body no longer supports {$mediaType}.";
-            }
-        }
-    }
-}
-
-foreach (($base['components']['schemas'] ?? []) as $name => $baseSchema) {
-    $candidateSchema = $candidate['components']['schemas'][$name] ?? null;
-
-    if ($candidateSchema === null) {
-        $breakingChanges[] = "Schema {$name} was removed.";
-
-        continue;
-    }
-
-    compareSchema($baseSchema, $candidateSchema, "Schema {$name}", $breakingChanges);
-}
-
-if ($breakingChanges === []) {
-    exit(0);
-}
-
-$baseVersion = $base['info']['version'] ?? null;
-$candidateVersion = $candidate['info']['version'] ?? null;
-
-if ($baseVersion !== $candidateVersion) {
-    fwrite(STDOUT, "OpenAPI contains intentional breaking changes with a version bump ({$baseVersion} -> {$candidateVersion}):\n");
-    foreach ($breakingChanges as $change) {
-        fwrite(STDOUT, "- {$change}\n");
-    }
-    exit(0);
-}
-
-fwrite(STDERR, "OpenAPI breaking changes require an info.version bump and migration plan:\n");
-foreach ($breakingChanges as $change) {
-    fwrite(STDERR, "- {$change}\n");
-}
-exit(1);

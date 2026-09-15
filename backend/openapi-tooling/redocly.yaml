@@ -1,0 +1,18 @@
+extends:
+  - spec
+
+rules:
+  no-duplicated-enum-values: error
+  no-enum-type-mismatch: error
+  no-invalid-media-type-examples: error
+  no-invalid-parameter-examples: error
+  no-invalid-schema-examples: error
+  no-schema-type-mismatch: error
+  operation-operationId: error
+  operation-operationId-unique: error
+  operation-parameters-unique: error
+  operation-summary: error
+  path-parameters-defined: error
+  security-defined: error
+  spec-strict-refs: error
+  struct: error

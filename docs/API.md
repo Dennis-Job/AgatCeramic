@@ -7,11 +7,15 @@
 маршрута необходимо одновременно обновить соответствующую OpenAPI-операцию;
 запланированные маршруты в этом документе не являются доступными операциями API.
 
-В CI выполняются два независимых gate: Laravel route registry должен в точности
-совпадать с OpenAPI по пути и HTTP-методу, а изменение опубликованной операции,
-security, ответа, обязательности body или обязательных/enum полей схемы требует
-повышения `info.version` и migration plan. Это предотвращает недокументированный
-route drift и не позволяет выдать breaking change за патч-обновление контракта.
+В CI выполняются три независимых gate. Закреплённый Redocly CLI проверяет OpenAPI 3.1
+семантически, включая структуру schemas/parameters, `$ref`, examples и уникальность
+`operationId`; проектная надстройка проверяет поддерживаемые `format` и корректные
+request/response media types. Laravel route registry должен в точности совпадать со
+спецификацией по пути и HTTP-методу. Compatibility checker рекурсивно сравнивает
+входные и выходные schemas, parameters, headers, status/media types и security.
+Breaking change допускается только с повышением major-версии и явным разделом этой
+версии с заголовком `Breaking change` в `OPENAPI_MIGRATION_PLAN.md`; patch/minor bump
+не является разрешением несовместимости.
 
 ## Базовый путь
 

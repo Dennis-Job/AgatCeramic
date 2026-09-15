@@ -23,15 +23,28 @@ The reconciliation found and corrected these contract gaps:
 
 ## CI gates
 
-`backend/scripts/assert-openapi-compatible.php` compares the base and candidate
-specifications in CI. Removing an operation, declared response or schema; changing
-operation security; making a request body mandatory; or removing required/enum schema
-values fails unless `info.version` is bumped. A breaking change still requires the
-repository's migration plan and synchronized guide/OpenAPI updates during review.
+The reproducibly locked Redocly CLI validates the OpenAPI 3.1 structure, references,
+schemas, parameters, examples and unique operation IDs. A project convention pass also
+rejects unsupported schema format/type combinations and malformed or empty request/response
+media-type maps. Its fixtures prove these project-specific checks independently.
+
+`backend/scripts/assert-openapi-compatible.php` recursively compares base and candidate
+operations. Request schemas are checked contravariantly (existing client inputs must remain
+accepted), while response schemas are checked covariantly (new server outputs must remain
+valid for existing clients). The gate covers types/nullability, required/properties, enum,
+bounds, formats, arrays, composition, additional properties, parameters, headers, status
+codes, media types and security alternatives, including local `$ref` traversal. Mutation
+fixtures cover breaking and directionally compatible changes.
+
+A breaking change is accepted only for a major `info.version` increase and only when
+`OPENAPI_MIGRATION_PLAN.md` contains the matching version section followed by an explicit
+`Breaking change` heading. Patch/minor changes cannot override the result.
 
 ## Limits
 
 The route coverage gate validates registered wire endpoints and their structural
-OpenAPI metadata. Runtime behavioural assertions (validation, permissions, error
-details, streaming downloads and concurrent checkout) remain covered by their feature
-and integration tests; this audit does not substitute for those tests.
+OpenAPI metadata. Semantic validation also repaired two historical dangling role-operation
+schema references without changing runtime behavior. Runtime behavioural assertions
+(validation, permissions, error details, streaming downloads and concurrent checkout)
+remain covered by their feature and integration tests; these contract gates do not
+substitute for those tests.

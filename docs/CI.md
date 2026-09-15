@@ -8,12 +8,33 @@ Workflow получает только право `contents: read` и не ис�
 | Job | Проверки |
 | --- | --- |
 | Repository security | Запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
-| Backend checks | Composer manifest и audit, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
+| Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose configuration | Валидация `compose.yaml` с `.env.example` |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+OpenAPI tooling из `backend/openapi-tooling` устанавливается строго через `npm ci` по
+lock-файлу. `npm test` запускает mutation tests проектных правил форматов/media types,
+а `npm run lint` — закреплённый Redocly OpenAPI 3.1 ruleset и эти правила на
+`docs/openapi.json`. Compatibility gate сравнивает спецификацию с base Git revision;
+направленно-рекурсивные PHP mutation tests входят в обычный backend suite. Breaking
+изменение проходит только при major bump и совпадающем явном разделе migration plan.
+
+Локально проверки запускаются так:
+
+```bash
+cd backend/openapi-tooling
+npm ci --ignore-scripts
+npm test
+npm run lint
+
+cd ..
+vendor/bin/phpunit tests/Unit/OpenApiCompatibilityCheckerTest.php
+php scripts/assert-openapi-compatible.php <base.json> ../docs/openapi.json \
+  --migration-plan ../docs/OPENAPI_MIGRATION_PLAN.md
+```
 
 Repository security checkout использует полную историю. Скрипт
 [`assert-no-database-artifacts.sh`](../scripts/assert-no-database-artifacts.sh) отклоняет SQL exports,

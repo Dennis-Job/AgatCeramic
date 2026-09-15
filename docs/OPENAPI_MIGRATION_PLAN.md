@@ -2,6 +2,11 @@
 
 Date: 2026-09-09.
 
+Breaking compatibility policy: a breaking wire-contract change requires a new major
+`info.version`. Its version section in this file must contain a `Breaking change` heading
+and describe client migration, rollout and rollback. A patch/minor bump never authorizes
+operation removal or another incompatible contract change.
+
 ## v1.2 — guest cart token storage and expiry
 
 Date: 2026-09-15. The HTTP contract is unchanged: clients continue using the 64-character
