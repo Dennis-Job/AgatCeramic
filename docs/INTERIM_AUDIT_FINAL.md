@@ -14,7 +14,7 @@ remediation выполнен; до подтверждения GitHub server-side
 | IA-R02 | High | Для orders, contacts, comments и workflow history отсутствует утверждённая retention/deletion matrix и исполняемый lifecycle. Реализован только срок audit logs и checkout idempotency keys. | `TASK-A043`, `TASK-A044` |
 | IA-R03 | Resolved | `TASK-A045`: `carts.token_hash` хранит HMAC, а configurable empty/abandoned/checked-out TTL обслуживает bounded lock-safe scheduled cleanup. | `TASK-A045` |
 | IA-R04 | Resolved | `TASK-A046`: закреплённый Redocly валидирует OpenAPI 3.1 semantics, а рекурсивный direction-aware checker с mutation fixtures отклоняет несовместимые request/response changes; breaking разрешён только major bump с явным migration plan. | `TASK-A046` |
-| IA-R05 | Medium | Compose services считают зависимости актуальными по одному существующему файлу/бинарнику. Сохранённый backend volume стартовал без OpenSpout/PHPStan, из-за чего 42 tests упали после успешного запуска контейнера. | `TASK-A047` |
+| IA-R05 | Resolved | `TASK-A047`: dependency volumes сверяются с атомарным manifest/lock/runtime fingerprint; backend bootstrap сериализован, lock-файлы инициируют image rebuild, а clean/stale volume recovery проверяется в CI до запуска application processes. | `TASK-A047` |
 | IA-R06 | Medium | Большинство backend feature tests выполняется только на SQLite; PostgreSQL CI покрывает migration и две специализированные integration suites. | `TASK-A048` |
 | IA-R07 | Medium | Redis CI проверяет connection/configuration, а jobs в feature tests fake-ятся или вызываются через `handle()`; реальная доставка отдельному worker не проверяется. | `TASK-A049` |
 | IA-R08 | Medium | Все Admin Playwright suites подменяют API через `page.route()`. Отдельного browser smoke реального Sanctum/API contract нет. | `TASK-A050` |
@@ -28,8 +28,8 @@ remediation выполнен; до подтверждения GitHub server-side
 contacts или Admin workflows целиком. Findings `IA-R10`–`IA-R13` относятся к сопровождаемости и
 будущему контролю архитектуры, а не к доказанному нарушению API behavior. Текущий commit `e4cdbff`
 прошёл все GitHub Actions jobs; локально прошли Admin lint, format, 50 unit tests и production
-build. Локальный backend failure
-классифицирован как evidence `IA-R05`, поскольку clean-install CI того же commit успешен.
+build. Зафиксированный тогда локальный backend failure был evidence `IA-R05`, поскольку
+clean-install CI того же commit был успешен; lock-aware remediation выполнена в `TASK-A047`.
 
 Audit date: 2026-09-11. Result: **accepted**; the transition to Phase 7 is authorised.
 

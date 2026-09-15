@@ -22,6 +22,39 @@ Set-Location ..
 
 После этого для Docker development-окружения используйте `docker compose up --build` из корня репозитория.
 
+## Lock-aware bootstrap зависимостей Compose
+
+`backend`, `queue` и `scheduler` используют общий named volume `backend_vendor`; Admin и Client
+используют отдельные `admin_node_modules` и `client_node_modules`. Перед запуском application
+process каждый сервис сравнивает сохранённый в своём dependency volume fingerprint с текущими
+`composer.json`/`composer.lock` либо `package.json`/`package-lock.json`, архитектурой контейнера и
+версией package manager/runtime. Fingerprint записывается атомарно только после успешного
+`composer install` или `npm ci`.
+
+Lock-файлы также входят в Docker image как rebuild inputs. Поэтому обычная команда
+`docker compose up --build` после изменения lock-файла создаёт новый image, пересоздаёт связанные
+контейнеры и синхронизирует сохранённые dependency volumes до запуска Laravel, queue worker,
+scheduler, Vite или Nuxt. Одновременный bootstrap трёх backend-процессов сериализуется через
+file lock. Если установка завершается ошибкой или входные файлы меняются во время установки,
+fingerprint не публикуется, application process не запускается, а следующий запуск повторяет
+установку.
+
+При повреждении dependency volume без изменения lock-файла выполните принудительное
+восстановление. Эти команды не удаляют `postgres_data`, `redis_data` и другие рабочие данные:
+
+```bash
+docker compose run --rm --no-deps -e DEPENDENCY_BOOTSTRAP_FORCE=1 backend \
+  install-locked-dependencies composer /var/www/backend
+docker compose run --rm --no-deps -e DEPENDENCY_BOOTSTRAP_FORCE=1 admin \
+  install-locked-dependencies npm /app
+docker compose run --rm --no-deps -e DEPENDENCY_BOOTSTRAP_FORCE=1 client \
+  install-locked-dependencies npm /app
+docker compose up --build --force-recreate
+```
+
+Удалять все Compose volumes через `docker compose down --volumes` для такого recovery нельзя:
+вместе с dependency caches эта команда удалит локальные PostgreSQL и Redis data volumes.
+
 ## Ответственность файлов
 
 | Файл | Назначение |

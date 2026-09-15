@@ -283,10 +283,13 @@ jobs:
         run: npm run build
 
   compose:
-    name: Compose configuration
+    name: Compose bootstrap
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
       - name: Validate Docker Compose configuration
         run: docker compose --env-file .env.example config --quiet
+
+      - name: Test clean and stale dependency volumes
+        run: bash scripts/test-compose-dependency-bootstrap.sh

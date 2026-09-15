@@ -7,8 +7,8 @@ services:
       dockerfile: infrastructure/docker/backend/Dockerfile
     working_dir: /var/www/backend
     command: >-
-      sh -c "test -f vendor/autoload.php || composer install --no-interaction;
-      php artisan serve --host=0.0.0.0 --port=8000 --no-reload"
+      sh -c "install-locked-dependencies composer /var/www/backend
+      && exec php artisan serve --host=0.0.0.0 --port=8000 --no-reload"
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
@@ -42,8 +42,8 @@ services:
       dockerfile: infrastructure/docker/backend/Dockerfile
     working_dir: /var/www/backend
     command: >-
-      sh -c "test -f vendor/autoload.php || composer install --no-interaction;
-      php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600"
+      sh -c "install-locked-dependencies composer /var/www/backend
+      && exec php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600"
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
@@ -75,8 +75,8 @@ services:
       dockerfile: infrastructure/docker/backend/Dockerfile
     working_dir: /var/www/backend
     command: >-
-      sh -c "test -f vendor/autoload.php || composer install --no-interaction;
-      php artisan schedule:work"
+      sh -c "install-locked-dependencies composer /var/www/backend
+      && exec php artisan schedule:work"
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
@@ -108,8 +108,8 @@ services:
       dockerfile: infrastructure/docker/node/Dockerfile
     working_dir: /app
     command: >-
-      sh -c "test -x node_modules/.bin/vite || npm ci;
-      npm run dev -- --host 0.0.0.0 --port=5173"
+      sh -c "install-locked-dependencies npm /app
+      && exec npm run dev -- --host 0.0.0.0 --port=5173"
     volumes:
       - ./frontend/admin:/app
       - admin_node_modules:/app/node_modules
@@ -140,8 +140,8 @@ services:
       dockerfile: infrastructure/docker/node/Dockerfile
     working_dir: /app
     command: >-
-      sh -c "test -x node_modules/.bin/nuxt || npm ci;
-      npm run dev -- --host 0.0.0.0 --port=3000"
+      sh -c "install-locked-dependencies npm /app
+      && exec npm run dev -- --host 0.0.0.0 --port=3000"
     volumes:
       - ./frontend/client:/app
       - client_node_modules:/app/node_modules

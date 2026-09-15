@@ -394,7 +394,7 @@ API behaviour без migration plan и синхронного обновлени
     request/response schemas, parameters, headers/status/security. Breaking разрешён только major
     bump с явным versioned migration plan.
 
-- [ ] TASK-A047 Сделать Compose bootstrap зависимостей lock-aware
+- [x] TASK-A047 Сделать Compose bootstrap зависимостей lock-aware
   - Заменить проверки только наличия `vendor/autoload.php`, `vite` или `nuxt` на детерминированную
     сверку `composer.lock`/`package-lock.json` с содержимым named volumes для backend, queue,
     scheduler, Admin и Client.
@@ -402,6 +402,10 @@ API behaviour без migration plan и синхронного обновлени
     набор зависимостей либо завершается с понятной ошибкой, не оставляя частично рабочие сервисы.
   - Добавить clean-volume и stale-volume smoke tests, описать recovery без ручного удаления рабочих
     данных и синхронизировать `ENVIRONMENT.md`/`CI.md`.
+  - Реализовано 2026-09-15: единый fail-closed bootstrap хранит атомарный fingerprint manifest,
+    lock-файла и runtime в dependency volume, сериализует общий Composer install и запускает
+    application process только после успешного `composer install`/`npm ci`. Lock-файлы являются
+    image rebuild inputs; отдельный CI smoke проверяет clean/stale volumes и безопасный recovery.
 
 - [ ] TASK-A048 Прогонять Laravel feature suite на PostgreSQL
   - Добавить безопасный CI job для полного либо обоснованно разделённого backend feature suite на

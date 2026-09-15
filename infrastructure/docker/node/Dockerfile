@@ -24,6 +24,13 @@ RUN apt-get update \
         libxkbcommon0 \
         libxrandr2 \
         fonts-liberation \
+        util-linux \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --chmod=755 infrastructure/docker/install-locked-dependencies.sh /usr/local/bin/install-locked-dependencies
+
+# Both lock sets are rebuild inputs because Admin and Client share this image.
+COPY frontend/admin/package.json frontend/admin/package-lock.json /opt/agatceramic/dependency-inputs/admin/
+COPY frontend/client/package.json frontend/client/package-lock.json /opt/agatceramic/dependency-inputs/client/
 
 WORKDIR /app

@@ -6,7 +6,7 @@
 refactoring принят. Repository-side remediation `TASK-A042` завершён, а server-side очистка
 GitHub cached views/PR refs ожидается по открытому запросу Support `#4756780`; остальные
 security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты,
-кроме завершённой `TASK-A045`.
+кроме завершённых `TASK-A045`–`TASK-A047`.
 Для `TASK-A043` подготовлены ADR, threat model и retention/deletion matrix; `TASK-A044` реализует
 gated bounded controls, evidence и restore replay. Юридическое принятие ещё не зафиксировано,
 поэтому production-очистка остаётся запрещённой.
@@ -42,7 +42,7 @@ Evidence приведены в
 | High | Для business PII orders/contacts подготовлена policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
 | Resolved | Guest cart tokens хранятся только как HMAC; configurable TTL и lock-safe bounded cleanup реализованы. | `TASK-A045` |
 | Medium | PostgreSQL/Redis и real Admin→API boundaries покрыты слабее, чем следует из исторической формулировки приёмки. | `TASK-A048`–`TASK-A050` |
-| Medium | Persisted Compose dependency volumes могут не соответствовать lock-файлам. | `TASK-A047` |
+| Resolved | Compose dependency volumes синхронизируются с manifest/lock/runtime fingerprint до запуска application process; clean/stale recovery проверяется в CI. | `TASK-A047` |
 | Medium | Import services совмещают workbook I/O, parsing, validation, mutation и reporting; скрытые container dependencies и нетривиальные queries в Controllers ухудшают SOLID/читаемость. | `TASK-A052`–`TASK-A054` |
 | Medium | Правила из `backend/AGENTS.md` пока не подкреплены автоматическим architecture CI gate. | `TASK-A055` |
 | Low | Task ledger и исторические audit reports требуют нормализации. | `TASK-A051` |

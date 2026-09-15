@@ -11,9 +11,17 @@ Workflow получает только право `contents: read` и не ис�
 | Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
-| Compose configuration | Валидация `compose.yaml` с `.env.example` |
+| Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+Compose smoke запускает [`scripts/test-compose-dependency-bootstrap.sh`](../scripts/test-compose-dependency-bootstrap.sh)
+с отдельным project name и только временными named volumes. Он собирает реальные backend/node
+images, подтверждает установку из чистых volumes, повторное использование общего `backend_vendor`
+сервисами backend/queue/scheduler и обязательную переустановку после stale fingerprint для
+Composer, Admin и Client. Cleanup удаляет только volumes временного smoke project и не обращается
+к development database. Ошибка установки блокирует запуск соответствующего application process,
+поскольку runtime-команда связана с bootstrap через `&&`.
 
 OpenAPI tooling из `backend/openapi-tooling` устанавливается строго через `npm ci` по
 lock-файлу. `npm test` запускает mutation tests проектных правил форматов/media types,

@@ -30,4 +30,10 @@ operation is documented in [`docs/QUEUE.md`](../docs/QUEUE.md).
 
 Stop containers with `docker compose down`. Add `--volumes` only when local database and cache data may be discarded.
 
+Dependency volumes are synchronized with Composer/npm lock files before an application process
+starts. A lock-file change is also a Docker image rebuild input, so `docker compose up --build`
+refreshes stale volumes automatically. For recovery from manual dependency-volume corruption
+without deleting PostgreSQL or Redis data, use the forced bootstrap commands in
+[`docs/ENVIRONMENT.md`](../docs/ENVIRONMENT.md#lock-aware-bootstrap-зависимостей-compose).
+
 The Compose configuration does not contain database credentials: copy the root `.env.example` to `.env` before starting. See [`docs/ENVIRONMENT.md`](../docs/ENVIRONMENT.md) for the complete local setup and secret-management rules. Laravel's use of PostgreSQL and Redis is configured in TASK-010 and TASK-011 respectively.
