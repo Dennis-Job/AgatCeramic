@@ -19,9 +19,15 @@ abstract class TestCase extends BaseTestCase
         $host = $app['config']->get("database.connections.{$connection}.host");
         $url = $app['config']->get("database.connections.{$connection}.url");
         $inMemory = $connection === 'sqlite' && $database === ':memory:';
+        $allowedPostgresTargets = [
+            'agatceramic_test' => ['127.0.0.1', 'localhost'],
+            'agatceramic_feature_test' => ['127.0.0.1', 'localhost'],
+            'agatceramic_queue_test' => ['127.0.0.1', 'localhost', 'queue-test-postgres'],
+        ];
         $isolatedPostgres = $connection === 'pgsql'
-            && in_array($database, ['agatceramic_test', 'agatceramic_feature_test'], true)
-            && in_array($host, ['127.0.0.1', 'localhost'], true)
+            && is_string($database)
+            && isset($allowedPostgresTargets[$database])
+            && in_array($host, $allowedPostgresTargets[$database], true)
             && getenv('CI') === 'true';
 
         if (! $app->environment('testing') || $url || (! $inMemory && ! $isolatedPostgres)) {

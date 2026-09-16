@@ -17,6 +17,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Job Backoff
+    |--------------------------------------------------------------------------
+    |
+    | Production defaults stay deliberately conservative. Isolated queue
+    | integration tests may shorten them without changing the job contract.
+    |
+    */
+
+    'job_backoff' => [
+        'storage_cleanup' => array_map(
+            static fn (string $delay): int => (int) trim($delay),
+            explode(',', (string) env('STORAGE_CLEANUP_JOB_BACKOFF', '60,300')),
+        ),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------
     |

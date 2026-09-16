@@ -10,6 +10,7 @@ Workflow получает только право `contents: read` и не ис�
 | Repository security | Запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
 | Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Backend feature suite (PostgreSQL) | Все Laravel feature tests на отдельной PostgreSQL 17 database в фиксированном случайном порядке |
+| Redis queue delivery | Реальные import, storage cleanup и order confirmation jobs через отдельный Redis worker и PostgreSQL 17 |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
@@ -77,6 +78,34 @@ rollback retention batch, ограничения legal hold, индексы gues
 родителей дерева категорий и пропуск cart row, занятой конкурентной write-транзакцией. Эти тесты
 намеренно не входят в быстрый SQLite suite.
 
+Отдельный blocking job `Redis queue delivery` запускает Compose profile `queue-integration` с
+эфемерными PostgreSQL 17 и Redis 7.4 без опубликованных портов и persistent data volumes. Тест
+отправляет `ProcessProductImport`, `DeleteStoredFile` и `SendOrderConfirmation` в настоящую Redis
+queue и обрабатывает их отдельными `queue:work` процессами. Проверяются after-commit visibility,
+identifier-only payloads без PII и file paths, завершение import и cleanup, order confirmation,
+реальный delayed retry/backoff, terminal failure и `failed_jobs`, stale cleanup redispatch и
+идемпотентность duplicate delivery. Каждый worker имеет `--max-time` и внешний process timeout;
+диагностика ограничена техническими ID, статусами и именами job classes.
+
+Production backoff cleanup-job остаётся `60,300` секунд. Только изолированная конфигурация
+`phpunit.redis-queue.xml` задаёт `1,1`, чтобы проверить оба delayed retry в bounded CI run. Redis
+gate разрешает только database `14`, prefix `agatceramic-queue-test:` и localhost либо внутренний
+Compose host `queue-test-redis`; PostgreSQL gate аналогично разрешает отдельную базу
+`agatceramic_queue_test`. Перед тестом оба fail-closed guard выполняются до `migrate:fresh` и
+очистки изолированной Redis database.
+
+Локальный воспроизводимый запуск не использует development PostgreSQL/Redis:
+
+```bash
+docker compose -p agatceramic-queue-test --env-file .env.example \
+  --profile queue-integration run --rm queue-integration
+docker compose -p agatceramic-queue-test --env-file .env.example \
+  --profile queue-integration down --volumes
+```
+
+Отдельный project name обязателен: он изолирует test containers, network и dependency volume от
+уже запущенного development Compose project, поэтому `down --volumes` удаляет только test volume.
+
 После инцидента 2026-09-03 тестовые параметры принудительно задаются и через `<env>`, и через
 `<server>`: Docker заполняет `$_SERVER`, который Laravel читает раньше `$_ENV`. Одного
 `<env force="true">` недостаточно для изоляции рабочей БД. Обычный `php artisan test`, включая
@@ -84,11 +113,12 @@ rollback retention batch, ограничения legal hold, индексы gues
 `array` и синхронную очередь. `Tests\\TestCase` до запуска `RefreshDatabase` запрещает небезопасное
 подключение, URL подключения и запуск с кэшированной конфигурацией.
 
-PostgreSQL integration-тесты запускаются с `--configuration=phpunit.postgres.xml`, а feature suite —
-с `--configuration=phpunit.postgres-feature.xml`. Разрешены только отдельные базы
-`agatceramic_test` и `agatceramic_feature_test` при `CI=true`. Перед каждым destructive reset CI и
+PostgreSQL integration-тесты запускаются с `--configuration=phpunit.postgres.xml`, feature suite —
+с `--configuration=phpunit.postgres-feature.xml`, а Redis queue suite — с
+`--configuration=phpunit.redis-queue.xml`. Разрешены только отдельные базы `agatceramic_test`,
+`agatceramic_feature_test` и `agatceramic_queue_test` при `CI=true`. Перед каждым destructive reset CI и
 локальный runner вызывают `scripts/assert-safe-postgres-test-environment.php`: он fail-closed
-проверяет `APP_ENV=testing`, `CI=true`, драйвер `pgsql`, localhost, точное allowlisted имя
+проверяет `APP_ENV=testing`, `CI=true`, драйвер `pgsql`, разрешённый test host, точное allowlisted имя
 базы, пустой `DB_URL` и отсутствие cached config. Не запускать `migrate:fresh`, `db:wipe`
 или тесты против локальной базы
 `agatceramic`.
@@ -99,6 +129,10 @@ PostgreSQL integration-тесты запускаются с `--configuration=php
 запускает миграции, PostgreSQL-only integration suites и полный feature suite с `CI=true`. Обе базы
 должны быть заранее созданы на разрешённом localhost PostgreSQL. Пароль передаётся параметром
 процесса и не сохраняется в репозитории.
+
+Для Redis queue suite поддерживаемым локальным способом является Compose profile выше. Внутренний
+[`run-redis-queue-integration.sh`](../backend/scripts/run-redis-queue-integration.sh) запускается
+только после обоих safety guards и не предназначен для development database/services.
 
 Разбор инцидента и проверка восстановления: [DATABASE_RECOVERY_2026-09-03.md](DATABASE_RECOVERY_2026-09-03.md).
 

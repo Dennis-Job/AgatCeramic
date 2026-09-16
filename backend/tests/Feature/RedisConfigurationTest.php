@@ -19,5 +19,6 @@ class RedisConfigurationTest extends TestCase
         $this->assertSame('queue', config('queue.connections.redis.connection'));
         $this->assertSame('2', config('database.redis.queue.database'));
         $this->assertTrue(config('queue.connections.redis.after_commit'));
+        $this->assertSame([60, 300], config('queue.job_backoff.storage_cleanup'));
     }
 }

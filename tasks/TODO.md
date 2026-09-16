@@ -420,7 +420,7 @@ API behaviour без migration plan и синхронного обновлени
     запускает все 229 feature tests в воспроизводимом случайном порядке. Без skip исправлены
     выявленные PostgreSQL-различия signed `smallint`, JSON equality и URL encoding.
 
-- [ ] TASK-A049 Проверить реальную доставку queue jobs через Redis worker
+- [x] TASK-A049 Проверить реальную доставку queue jobs через Redis worker
   - В изолированном CI/Compose profile отправить representative import, storage cleanup и order
     confirmation jobs через реальную Redis queue и дождаться обработки отдельным worker process,
     не вызывая `handle()` напрямую.
@@ -428,6 +428,10 @@ API behaviour без migration plan и синхронного обновлени
     terminal failure, `failed_jobs`, stale-dispatch recovery и отсутствие дублей/потери cleanup.
   - Использовать bounded timeouts и диагностический output без PII; сохранить быстрые fake/sync
     tests для unit/feature уровня.
+  - Реализовано 2026-09-16: отдельный blocking Compose/CI profile с эфемерными PostgreSQL и Redis
+    доставляет representative import, cleanup и order confirmation jobs отдельным workers;
+    84 assertions покрывают after-commit, identifier-only payloads, retry/backoff, terminal
+    failure/`failed_jobs`, stale redispatch и идемпотентную duplicate delivery.
 
 - [ ] TASK-A050 Добавить минимальный full-stack smoke Admin SPA → Laravel API
   - В отдельном test profile поднять production build Admin, Laravel, PostgreSQL и Redis; создать

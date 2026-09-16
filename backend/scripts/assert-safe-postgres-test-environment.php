@@ -6,10 +6,14 @@ use Illuminate\Contracts\Console\Kernel;
 
 require __DIR__.'/../vendor/autoload.php';
 
-$allowedDatabases = ['agatceramic_test', 'agatceramic_feature_test'];
+$allowedTargets = [
+    'agatceramic_test' => ['127.0.0.1', 'localhost'],
+    'agatceramic_feature_test' => ['127.0.0.1', 'localhost'],
+    'agatceramic_queue_test' => ['127.0.0.1', 'localhost', 'queue-test-postgres'],
+];
 $expectedDatabase = $argv[1] ?? null;
 
-if (! is_string($expectedDatabase) || ! in_array($expectedDatabase, $allowedDatabases, true)) {
+if (! is_string($expectedDatabase) || ! isset($allowedTargets[$expectedDatabase])) {
     fwrite(STDERR, "Expected an allowlisted PostgreSQL test database name.\n");
     exit(1);
 }
@@ -25,7 +29,7 @@ $safe = app()->environment('testing')
     && getenv('CI') === 'true'
     && $connection === 'pgsql'
     && $database === $expectedDatabase
-    && in_array($host, ['127.0.0.1', 'localhost'], true)
+    && in_array($host, $allowedTargets[$expectedDatabase], true)
     && empty($url)
     && ! file_exists(__DIR__.'/../bootstrap/cache/config.php');
 

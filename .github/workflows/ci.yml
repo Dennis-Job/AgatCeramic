@@ -289,6 +289,23 @@ jobs:
           vendor/bin/phpunit --configuration=phpunit.postgres-feature.xml
           --order-by=random --random-order-seed=48048
 
+  backend-redis-queue:
+    name: Redis queue delivery
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run isolated PostgreSQL and Redis worker integration
+        run: >-
+          docker compose -p agatceramic-queue-ci --env-file .env.example
+          --profile queue-integration run --rm queue-integration
+
+      - name: Stop isolated queue integration services
+        if: always()
+        run: >-
+          docker compose -p agatceramic-queue-ci --env-file .env.example
+          --profile queue-integration down --volumes
+
   admin:
     name: Admin checks
     runs-on: ubuntu-24.04

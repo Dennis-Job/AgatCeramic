@@ -69,6 +69,78 @@ services:
       redis:
         condition: service_healthy
 
+  queue-integration:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend/Dockerfile
+    profiles: ["queue-integration"]
+    working_dir: /var/www/backend
+    command: >-
+      sh -c "install-locked-dependencies composer /var/www/backend
+      && exec sh scripts/run-redis-queue-integration.sh"
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      APP_KEY: "base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+      CI: "true"
+      DB_CONNECTION: pgsql
+      DB_HOST: queue-test-postgres
+      DB_PORT: "5432"
+      DB_DATABASE: agatceramic_queue_test
+      DB_USERNAME: agatceramic_queue_test
+      DB_PASSWORD: queue-test-only-password
+      DB_SSLMODE: prefer
+      DB_URL: ""
+      CACHE_STORE: array
+      MAIL_MAILER: array
+      MAIL_FROM_ADDRESS: queue-worker@example.test
+      QUEUE_CONNECTION: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: queue-test-redis
+      REDIS_PORT: "6379"
+      REDIS_QUEUE_CONNECTION: queue
+      REDIS_QUEUE_DB: "14"
+      REDIS_PREFIX: "agatceramic-queue-test:"
+      REDIS_QUEUE_BLOCK_FOR: "1"
+      SESSION_DRIVER: array
+      STORAGE_CLEANUP_JOB_BACKOFF: "1,1"
+    volumes:
+      - ./backend:/var/www/backend
+      - backend_vendor:/var/www/backend/vendor
+    depends_on:
+      queue-test-postgres:
+        condition: service_healthy
+      queue-test-redis:
+        condition: service_healthy
+
+  queue-test-postgres:
+    image: postgres:17.9-alpine
+    profiles: ["queue-integration"]
+    environment:
+      POSTGRES_DB: agatceramic_queue_test
+      POSTGRES_USER: agatceramic_queue_test
+      POSTGRES_PASSWORD: queue-test-only-password
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agatceramic_queue_test -d agatceramic_queue_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 2s
+
+  queue-test-redis:
+    image: redis:7.4-alpine
+    profiles: ["queue-integration"]
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 2s
+
   scheduler:
     build:
       context: .

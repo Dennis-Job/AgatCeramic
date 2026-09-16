@@ -22,6 +22,20 @@ Set-Location ..
 
 После этого для Docker development-окружения используйте `docker compose up --build` из корня репозитория.
 
+Изолированный smoke реальной Redis queue запускается отдельно и не использует development data:
+
+```sh
+docker compose -p agatceramic-queue-test --env-file .env.example \
+  --profile queue-integration run --rm queue-integration
+docker compose -p agatceramic-queue-test --env-file .env.example \
+  --profile queue-integration down --volumes
+```
+
+Profile создаёт эфемерные PostgreSQL `agatceramic_queue_test` и Redis database `14` без внешних
+портов. Fail-closed guards проверяют точные database/host/prefix до reset; `down` не удаляет
+development volumes. Отдельный project name нельзя убирать: он не позволяет test cleanup
+останавливать development-контейнеры.
+
 ## Lock-aware bootstrap зависимостей Compose
 
 `backend`, `queue` и `scheduler` используют общий named volume `backend_vendor`; Admin и Client
@@ -118,4 +132,6 @@ php artisan security:invalidate-compromised-admin-auth --force
 при `APP_ENV=testing`, `CI=true`, пустом `DB_URL` и отсутствии cached config; destructive-команды
 предварительно проверяются `backend/scripts/assert-safe-postgres-test-environment.php`.
 
-Подключение Redis реализуется в TASK-011.
+Production queue использует отдельное Redis-подключение/database. Реальная доставка import,
+storage cleanup и order confirmation jobs отдельному worker проверяется изолированным
+`queue-integration` profile; короткий retry backoff применяется только в этом test profile.

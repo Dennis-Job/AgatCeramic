@@ -6,6 +6,7 @@ use App\Models\StorageCleanupTask;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
+use LogicException;
 use RuntimeException;
 use Throwable;
 
@@ -15,10 +16,26 @@ class DeleteStoredFile implements ShouldQueue
 
     public int $tries = 3;
 
-    /** @var list<int> */
-    public array $backoff = [60, 300];
-
     public function __construct(public readonly int $cleanupTaskId) {}
+
+    /** @return list<int> */
+    public function backoff(): array
+    {
+        $delays = config('queue.job_backoff.storage_cleanup', [60, 300]);
+        if (! is_array($delays) || $delays === []) {
+            throw new LogicException('Storage cleanup queue backoff must be a non-empty list of integers.');
+        }
+
+        $validated = [];
+        foreach ($delays as $delay) {
+            if (! is_int($delay) || $delay < 0) {
+                throw new LogicException('Storage cleanup queue backoff must contain non-negative integers.');
+            }
+            $validated[] = $delay;
+        }
+
+        return $validated;
+    }
 
     public function handle(): void
     {
