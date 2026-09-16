@@ -479,12 +479,17 @@ API behaviour без migration plan и синхронного обновлени
     container. Только Laravel `failed()` callbacks оставляют документированный узкий container
     adapter, покрытый отдельными unit-тестами; публичный API-контракт не изменён.
 
-- [ ] TASK-A054 Вынести нетривиальные admin read queries из Controllers
+- [x] TASK-A054 Вынести нетривиальные admin read queries из Controllers
   - Вынести многоусловные filters/search/sort и metadata enrichment для audit logs, orders,
     contact requests, admin users и других list endpoints в Query objects.
   - Оставить простой локальный CRUD query в Controller там, где новый слой не улучшает код.
   - Исключить N+1, проверить PostgreSQL indexes и сохранить текущие response/OpenAPI contracts;
     каждый фильтр покрыть feature-тестом.
+  - Реализовано 2026-09-16: сложные admin reads для audit logs, orders, contacts, users,
+    assignee catalogue и product relation candidates вынесены в Query objects с eager loading и
+    пакетным metadata enrichment. Добавлены составные PostgreSQL indexes для equality filters с
+    сортировкой; все документированные фильтры и пагинация покрыты feature-тестами без изменения
+    HTTP/OpenAPI-контрактов.
 
 - [ ] TASK-A055 Автоматизировать backend architecture guardrails
   - Добавить проверку направлений зависимостей между HTTP, application, data/integration и

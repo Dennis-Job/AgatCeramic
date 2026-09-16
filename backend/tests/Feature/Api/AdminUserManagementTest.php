@@ -65,6 +65,26 @@ class AdminUserManagementTest extends TestCase
         $this->actingAs($actor)->patchJson("/api/v1/admin/users/{$employee->id}", ['status' => 'blocked'])->assertForbidden();
     }
 
+    public function test_admin_user_list_supports_every_documented_filter_and_pagination(): void
+    {
+        $actor = $this->superAdmin();
+        $matching = User::factory()->blocked()->create([
+            'name' => 'Filter Employee',
+            'email' => 'filter@example.test',
+        ]);
+        User::factory()->create(['name' => 'Другой сотрудник']);
+
+        foreach (['FILTER EMPLOYEE', 'FILTER@EXAMPLE.TEST'] as $search) {
+            $this->actingAs($actor)->getJson('/api/v1/admin/users?search='.rawurlencode($search))
+                ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching->id);
+        }
+
+        $this->actingAs($actor)->getJson('/api/v1/admin/users?status=blocked')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching->id);
+        $this->actingAs($actor)->getJson('/api/v1/admin/users?per_page=1')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.per_page', 1);
+    }
+
     public function test_last_active_super_admin_cannot_be_blocked_or_deleted(): void
     {
         $actor = $this->superAdmin();

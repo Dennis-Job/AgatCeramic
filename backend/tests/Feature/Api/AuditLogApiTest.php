@@ -36,6 +36,44 @@ class AuditLogApiTest extends TestCase
             ->assertJsonPath('data.0.details.1.value', $role->name);
     }
 
+    public function test_audit_log_supports_every_documented_filter_and_pagination(): void
+    {
+        $actor = $this->userWithRole('administrator');
+        $actor->update(['name' => 'Искомый сотрудник']);
+        $anotherActor = User::factory()->create(['name' => 'Другой сотрудник']);
+        $older = AuditLog::query()->create([
+            'actor_id' => $actor->id,
+            'action' => 'auth.login',
+            'occurred_at' => '2026-09-10 12:00:00',
+        ]);
+        $matching = AuditLog::query()->create([
+            'actor_id' => $actor->id,
+            'action' => 'catalog.product-updated',
+            'occurred_at' => '2026-09-15 12:00:00',
+        ]);
+        $newer = AuditLog::query()->create([
+            'actor_id' => $anotherActor->id,
+            'action' => 'order.updated',
+            'occurred_at' => '2026-09-16 12:00:00',
+        ]);
+
+        $this->actingAs($actor)->getJson('/api/v1/admin/audit-logs?search='.rawurlencode('Искомый'))
+            ->assertOk()->assertJsonCount(2, 'data')
+            ->assertJsonMissing(['id' => $newer->id]);
+        $this->actingAs($actor)->getJson('/api/v1/admin/audit-logs?action=catalog.product-updated')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching->id);
+        $this->actingAs($actor)->getJson("/api/v1/admin/audit-logs?actor_id={$anotherActor->id}")
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $newer->id);
+        $fromResponse = $this->actingAs($actor)->getJson('/api/v1/admin/audit-logs?date_from=2026-09-15')
+            ->assertOk()->assertJsonCount(2, 'data');
+        $this->assertNotContains($older->id, collect($fromResponse->json('data'))->pluck('id'));
+        $toResponse = $this->actingAs($actor)->getJson('/api/v1/admin/audit-logs?date_to=2026-09-15')
+            ->assertOk()->assertJsonCount(2, 'data');
+        $this->assertNotContains($newer->id, collect($toResponse->json('data'))->pluck('id'));
+        $this->actingAs($actor)->getJson('/api/v1/admin/audit-logs?per_page=1')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.per_page', 1);
+    }
+
     public function test_user_without_audit_log_permission_cannot_view_the_log(): void
     {
         $actor = $this->userWithRole('analyst');

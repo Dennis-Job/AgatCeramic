@@ -8,13 +8,16 @@ use App\Http\Requests\Api\V1\Admin\ReplaceProductRelationsRequest;
 use App\Http\Resources\Catalog\ProductRelationResource;
 use App\Http\Resources\Catalog\ProductResource;
 use App\Models\Product;
-use App\Models\ProductRelation;
+use App\Queries\ProductRelationCandidateQuery;
 use App\Services\ProductRelationManagementService;
 use Illuminate\Support\Facades\Gate;
 
 class ProductRelationController extends Controller
 {
-    public function __construct(private readonly ProductRelationManagementService $managementService) {}
+    public function __construct(
+        private readonly ProductRelationManagementService $managementService,
+        private readonly ProductRelationCandidateQuery $relationCandidates,
+    ) {}
 
     public function index(Product $product): mixed
     {
@@ -26,18 +29,12 @@ class ProductRelationController extends Controller
     public function candidates(ListProductRelationCandidatesRequest $request, Product $product): mixed
     {
         Gate::authorize('view', $product);
-        $excludedIds = $product->outgoingRelations()->pluck('related_product_id')
-            ->merge(ProductRelation::query()->where('related_product_id', $product->id)->pluck('product_id'))
-            ->push($product->id)->unique();
-        $query = Product::query()->with(['category', 'brand', 'primaryImage'])->whereNotIn('id', $excludedIds);
-        if ($search = $request->string('search')->trim()->toString()) {
-            $pattern = '%'.mb_strtolower($search).'%';
-            $query->where(fn ($query) => $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
-                ->orWhereRaw('LOWER(slug) LIKE ?', [$pattern])
-                ->orWhereRaw('LOWER(sku) LIKE ?', [$pattern]));
-        }
 
-        return ProductResource::collection($query->orderBy('name')->limit($request->integer('limit', 20))->get());
+        return ProductResource::collection($this->relationCandidates->get(
+            $product,
+            $request->string('search')->trim()->toString() ?: null,
+            $request->integer('limit', 20),
+        ));
     }
 
     public function replace(ReplaceProductRelationsRequest $request, Product $product): mixed

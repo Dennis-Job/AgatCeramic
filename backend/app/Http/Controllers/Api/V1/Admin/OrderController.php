@@ -18,6 +18,7 @@ use App\Http\Resources\OrderStatusResource;
 use App\Http\Resources\PaymentRegistrationResource;
 use App\Models\Order;
 use App\Models\OrderStatus;
+use App\Queries\OrderQuery;
 use App\Services\OrderCommentService;
 use App\Services\OrderPaymentManagementService;
 use App\Services\OrderStatusManagementService;
@@ -32,36 +33,23 @@ class OrderController extends Controller
         private readonly OrderCommentService $commentService,
         private readonly OrderPaymentManagementService $paymentManagementService,
         private readonly OrderStatusManagementService $statusManagementService,
+        private readonly OrderQuery $orders,
     ) {}
 
     public function index(ListOrdersRequest $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Order::class);
 
-        $orders = Order::query()
-            ->with('items')
-            ->latest()
-            ->when($request->string('search')->trim()->toString(), function ($query, string $search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query->where('order_number', 'like', '%'.$search.'%')
-                        ->orWhere('customer_name', 'like', '%'.$search.'%')
-                        ->orWhere('customer_phone', 'like', '%'.$search.'%')
-                        ->orWhere('customer_email', 'like', '%'.$search.'%');
-                });
-            })
-            ->when($request->string('status')->trim()->toString(), fn ($query, string $status) => $query->where('status', $status))
-            ->when($request->enum('payment_status', PaymentStatus::class), fn ($query, PaymentStatus $paymentStatus) => $query->where('payment_status', $paymentStatus->value))
-            ->paginate($request->integer('per_page', 25))
-            ->withQueryString();
-
-        return AdminOrderResource::collection($orders);
+        return AdminOrderResource::collection(
+            $this->orders->paginate($request->validated(), $request->integer('per_page', 25)),
+        );
     }
 
     public function show(Order $order): AdminOrderResource
     {
         Gate::authorize('view', $order);
 
-        return new AdminOrderResource($order->load('items'));
+        return new AdminOrderResource($this->orders->prepare($order));
     }
 
     public function statuses(): AnonymousResourceCollection

@@ -63,6 +63,45 @@ class ContactWorkflowTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['action' => 'contact.comment-added', 'entity_id' => $contact->id]);
     }
 
+    public function test_contact_list_supports_every_documented_filter_and_pagination(): void
+    {
+        $viewer = $this->userWithRole('order-manager');
+        $assignee = $this->userWithRole('order-manager');
+        $assigned = ContactRequest::factory()->create([
+            'type' => 'email',
+            'name' => 'Фильтруемый клиент',
+            'phone' => '+79990001122',
+            'email' => 'filter@example.test',
+            'message' => 'Нужен образец мозаики',
+            'status' => 'processing',
+            'assignee_id' => $assignee->id,
+        ]);
+        $unassigned = ContactRequest::factory()->create([
+            'type' => 'callback',
+            'name' => 'Другой клиент',
+            'status' => 'new',
+            'assignee_id' => null,
+        ]);
+
+        foreach (['Фильтруемый', '0001122', 'filter@example.test', 'образец мозаики'] as $search) {
+            $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?search='.rawurlencode($search))
+                ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $assigned->id);
+        }
+
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?type=email')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $assigned->id);
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?status=processing')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $assigned->id);
+        $this->actingAs($viewer)->getJson("/api/v1/admin/contact-requests?assignee_id={$assignee->id}")
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $assigned->id);
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?unassigned=1')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $unassigned->id);
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?unassigned=0')
+            ->assertOk()->assertJsonCount(2, 'data');
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?per_page=1')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.per_page', 1);
+    }
+
     private function userWithRole(string $slug): User
     {
         $this->seed([RoleSeeder::class, PermissionSeeder::class]);

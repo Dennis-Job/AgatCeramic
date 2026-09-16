@@ -56,6 +56,36 @@ class AdminOrderWorkspaceTest extends TestCase
         $this->actingAs($unauthorized)->getJson("/api/v1/admin/orders/{$order->id}")->assertForbidden();
     }
 
+    public function test_order_list_supports_every_documented_filter_and_pagination(): void
+    {
+        $viewer = $this->orderViewer();
+        $matching = Order::factory()->create([
+            'order_number' => 'AC-20260916-FILTER',
+            'customer_name' => 'Фильтруемый покупатель',
+            'customer_phone' => '+79990001122',
+            'customer_email' => 'filter@example.test',
+            'status' => 'processing',
+            'payment_status' => PaymentStatus::Pending,
+        ]);
+        Order::factory()->create([
+            'customer_name' => 'Другой покупатель',
+            'status' => 'new',
+            'payment_status' => PaymentStatus::NotPaid,
+        ]);
+
+        foreach (['FILTER', 'Фильтруемый', '0001122', 'filter@example.test'] as $search) {
+            $this->actingAs($viewer)->getJson('/api/v1/admin/orders?search='.rawurlencode($search))
+                ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching->id);
+        }
+
+        $this->actingAs($viewer)->getJson('/api/v1/admin/orders?status=processing')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching->id);
+        $this->actingAs($viewer)->getJson('/api/v1/admin/orders?payment_status=pending')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $matching->id);
+        $this->actingAs($viewer)->getJson('/api/v1/admin/orders?per_page=1')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.per_page', 1);
+    }
+
     private function orderViewer(): User
     {
         $this->seed([RoleSeeder::class, PermissionSeeder::class]);

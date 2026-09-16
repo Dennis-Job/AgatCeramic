@@ -12,6 +12,7 @@ use App\Http\Resources\ContactRequestCommentResource;
 use App\Http\Resources\ContactRequestResource;
 use App\Http\Resources\ContactRequestStatusHistoryResource;
 use App\Models\ContactRequest;
+use App\Queries\ContactRequestQuery;
 use App\Services\ContactCommentService;
 use App\Services\ContactStatusManagementService;
 use Illuminate\Http\JsonResponse;
@@ -24,34 +25,23 @@ class ContactRequestController extends Controller
     public function __construct(
         private readonly ContactCommentService $commentService,
         private readonly ContactStatusManagementService $statusManagementService,
+        private readonly ContactRequestQuery $contactRequests,
     ) {}
 
     public function index(ListContactRequestsRequest $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', ContactRequest::class);
-        $contacts = ContactRequest::query()->with('assignee:id,name')->latest()
-            ->when($request->string('search')->trim()->toString(), function ($query, string $search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('phone', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%')
-                        ->orWhere('message', 'like', '%'.$search.'%');
-                });
-            })
-            ->when($request->string('type')->trim()->toString(), fn ($query, string $type) => $query->where('type', $type))
-            ->when($request->string('status')->trim()->toString(), fn ($query, string $status) => $query->where('status', $status))
-            ->when($request->integer('assignee_id') ?: null, fn ($query, int $assigneeId) => $query->where('assignee_id', $assigneeId))
-            ->when($request->boolean('unassigned'), fn ($query) => $query->whereNull('assignee_id'))
-            ->paginate($request->integer('per_page', 25))->withQueryString();
 
-        return ContactRequestResource::collection($contacts);
+        return ContactRequestResource::collection(
+            $this->contactRequests->paginate($request->validated(), $request->integer('per_page', 25)),
+        );
     }
 
     public function show(ContactRequest $contactRequest): ContactRequestResource
     {
         Gate::authorize('view', $contactRequest);
 
-        return new ContactRequestResource($contactRequest->load('assignee:id,name'));
+        return new ContactRequestResource($this->contactRequests->prepare($contactRequest));
     }
 
     public function statuses(): JsonResponse

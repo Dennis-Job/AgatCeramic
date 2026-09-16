@@ -10,6 +10,7 @@ use App\Http\Resources\AdminRoleResource;
 use App\Http\Resources\AdminUserResource;
 use App\Models\Role;
 use App\Models\User;
+use App\Queries\AdminUserQuery;
 use App\Services\AdminUserManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,28 +21,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AdminUserController extends Controller
 {
-    public function __construct(private readonly AdminUserManagementService $managementService) {}
+    public function __construct(
+        private readonly AdminUserManagementService $managementService,
+        private readonly AdminUserQuery $users,
+    ) {}
 
     public function index(ListAdminUsersRequest $request): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', User::class);
-        $filters = $request->validated();
 
-        $users = User::query()
-            ->with('roles')
-            ->when($request->string('search')->trim()->toString(), static function ($query, string $search): void {
-                $pattern = '%'.mb_strtolower($search).'%';
-                $query->where(static function ($query) use ($pattern): void {
-                    $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
-                        ->orWhereRaw('LOWER(email) LIKE ?', [$pattern]);
-                });
-            })
-            ->when($request->string('status')->trim()->toString(), static fn ($query, string $status) => $query->where('status', $status))
-            ->orderBy('name')
-            ->paginate($request->integer('per_page', 20))
-            ->withQueryString();
-
-        return AdminUserResource::collection($users);
+        return AdminUserResource::collection(
+            $this->users->paginate($request->validated(), $request->integer('per_page', 20)),
+        );
     }
 
     public function store(StoreAdminUserRequest $request): JsonResponse
@@ -57,7 +48,7 @@ class AdminUserController extends Controller
     {
         Gate::authorize('view', $user);
 
-        return new AdminUserResource($user->load('roles'));
+        return new AdminUserResource($this->users->prepare($user));
     }
 
     public function update(UpdateAdminUserRequest $request, User $user): AdminUserResource

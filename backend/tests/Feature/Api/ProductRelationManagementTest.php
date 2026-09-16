@@ -91,6 +91,36 @@ class ProductRelationManagementTest extends TestCase
         ProductRelation::query()->create(['product_id' => $other->id, 'related_product_id' => $product->id, 'type' => 'recommended']);
     }
 
+    public function test_relation_candidates_exclude_existing_and_reverse_relations_and_support_search_and_limit(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create();
+        $existing = Product::factory()->create(['name' => 'Existing relation']);
+        $reverse = Product::factory()->create(['name' => 'Reverse relation']);
+        $matching = Product::factory()->create(['name' => 'Search tile']);
+        $secondMatching = Product::factory()->create(['name' => 'Search porcelain']);
+        ProductRelation::query()->create([
+            'product_id' => $product->id,
+            'related_product_id' => $existing->id,
+            'type' => 'related',
+        ]);
+        ProductRelation::query()->create([
+            'product_id' => $reverse->id,
+            'related_product_id' => $product->id,
+            'type' => 'related',
+        ]);
+
+        $response = $this->actingAs($actor)
+            ->getJson("/api/v1/admin/products/{$product->id}/relation-candidates?search=SEARCH&limit=1")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonMissing(['id' => $product->id])
+            ->assertJsonMissing(['id' => $existing->id])
+            ->assertJsonMissing(['id' => $reverse->id]);
+
+        $this->assertContains($response->json('data.0.id'), [$matching->id, $secondMatching->id]);
+    }
+
     private function userWithRole(string $slug): User
     {
         $this->seed(RoleSeeder::class);

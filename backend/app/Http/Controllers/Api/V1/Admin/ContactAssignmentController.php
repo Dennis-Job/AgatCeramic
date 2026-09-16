@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\AssignContactRequestRequest;
 use App\Models\ContactRequest;
-use App\Models\User;
+use App\Queries\ContactAssigneeQuery;
 use App\Services\ContactAssignmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -13,7 +13,10 @@ use Illuminate\Support\Facades\Gate;
 
 class ContactAssignmentController extends Controller
 {
-    public function __construct(private readonly ContactAssignmentService $contactAssignmentService) {}
+    public function __construct(
+        private readonly ContactAssignmentService $contactAssignmentService,
+        private readonly ContactAssigneeQuery $contactAssignees,
+    ) {}
 
     public function update(AssignContactRequestRequest $request, ContactRequest $contactRequest): Response
     {
@@ -34,10 +37,6 @@ class ContactAssignmentController extends Controller
     {
         Gate::authorize('viewAssignees', ContactRequest::class);
 
-        return response()->json(['data' => User::query()
-            ->where('status', 'active')
-            ->whereHas('roles.permissions', fn ($query) => $query->where('code', 'contacts.manage'))
-            ->orderBy('name')
-            ->get(['id', 'name'])]);
+        return response()->json(['data' => $this->contactAssignees->get()]);
     }
 }

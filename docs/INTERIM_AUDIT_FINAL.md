@@ -27,7 +27,7 @@ remediation выполнен; до подтверждения GitHub server-side
 | IA-R09 | Resolved | `TASK-A051`: `TODO.md` содержит только будущие задачи, `DONE.md` сжат до индекса, исторические reports отделены от актуального состояния; CI проверяет Markdown links и запрещённые tracked artifacts. | `TASK-A051` |
 | IA-R10 | Medium | Import application layer остаётся чрезмерно крупным и совмещает несколько причин изменения: `ProductImportService` — 931 строка, `ProductGroupImportService` — 665, `ProductImportTemplateService` — 465. В них одновременно находятся workbook I/O, parsing, validation, planning, mutation и reporting. | `TASK-A052` |
 | IA-R11 | Medium | В import/jobs/bootstrap/validation flow сохраняется скрытый container resolution через `app()` и nullable service dependencies ради прямых legacy test invocations; несколько Controllers используют глобальный `request()` вместо явной типизированной зависимости. | `TASK-A053` |
-| IA-R12 | Medium | `AuditLogController`, `OrderController`, `ContactRequestController` и `AdminUserController` содержат многоусловные read queries и metadata/reference enrichment, выходящие за границу тонкого Controller. | `TASK-A054` |
+| IA-R12 | Resolved | `TASK-A054`: многоусловные admin read queries и пакетный metadata/reference enrichment вынесены в Query objects; eager loading, PostgreSQL indexes и отдельное feature-покрытие фильтров добавлены без изменения API-контрактов. | `TASK-A054` |
 | IA-R13 | Medium | Larastan level 8 и Pint строго проверяются, но архитектурные границы SOLID/Laravel пока не являются автоматическим CI gate. Локальный стандарт добавлен в `backend/AGENTS.md`; enforcement остаётся отдельной работой. | `TASK-A055` |
 
 Повторная проверка не выявила причины отвергать реализованные Catalog, import/export, orders,
