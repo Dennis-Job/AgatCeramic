@@ -9,6 +9,7 @@ use App\Http\Resources\Catalog\ProductGroupResource;
 use App\Models\ProductGroup;
 use App\Services\ProductGroupManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,10 +46,10 @@ class ProductGroupController extends Controller
         return new ProductGroupResource($this->service->update($this->authenticatedAdmin($request), $productGroup, $request->payload()));
     }
 
-    public function destroy(ProductGroup $productGroup): Response
+    public function destroy(Request $request, ProductGroup $productGroup): Response
     {
         Gate::authorize('delete', $productGroup);
-        $this->service->delete($this->authenticatedAdmin(request()), $productGroup);
+        $this->service->delete($this->authenticatedAdmin($request), $productGroup);
 
         return response()->noContent();
     }

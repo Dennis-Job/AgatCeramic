@@ -23,7 +23,7 @@ class MigrateStandaloneProducts extends Command
 
     protected $description = 'Preview or convert legacy product variants into standalone sellable products.';
 
-    public function handle(): int
+    public function handle(ProductCompletenessService $productCompleteness): int
     {
         if (! Schema::hasTable('product_variants')) {
             $this->info('Legacy variant tables have already been removed.');
@@ -58,7 +58,7 @@ class MigrateStandaloneProducts extends Command
 
             $this->copiedFiles = [];
             try {
-                DB::transaction(function () use ($product, $variants, $canGroup, $axisIds): void {
+                DB::transaction(function () use ($product, $variants, $canGroup, $axisIds, $productCompleteness): void {
                     $locked = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
                     $baseName = $locked->name;
                     $baseSlug = $locked->slug;
@@ -97,7 +97,7 @@ class MigrateStandaloneProducts extends Command
                         }
                         if ($variant->is_active && $baseActive) {
                             try {
-                                app(ProductCompletenessService::class)->assertCanActivate($offer->load('category'));
+                                $productCompleteness->assertCanActivate($offer->load('category'));
                                 $offer->update(['is_active' => true]);
                             } catch (ValidationException) {
                                 $this->warn("Product {$offer->id} remains inactive because required standalone data is incomplete.");

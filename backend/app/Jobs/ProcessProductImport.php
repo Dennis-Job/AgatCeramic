@@ -6,9 +6,7 @@ use App\Services\CategoryProductImportService;
 use App\Services\GenericProductImportService;
 use App\Services\ImportLifecycleService;
 use App\Services\ProductGroupImportService;
-use App\Services\ProductImportService;
 use App\Services\ProductPriceStatusImportService;
-use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
@@ -29,21 +27,12 @@ class ProcessProductImport implements ShouldQueue
     public function __construct(public readonly int $productImportId) {}
 
     public function handle(
-        ProductImportService $service,
-        StorageCleanupService $cleanupService,
-        ?ImportLifecycleService $lifecycle = null,
-        ?GenericProductImportService $generic = null,
-        ?CategoryProductImportService $categoryImport = null,
-        ?ProductGroupImportService $groupImport = null,
-        ?ProductPriceStatusImportService $priceStatusImport = null,
+        ImportLifecycleService $lifecycle,
+        GenericProductImportService $generic,
+        CategoryProductImportService $categoryImport,
+        ProductGroupImportService $groupImport,
+        ProductPriceStatusImportService $priceStatusImport,
     ): void {
-        // Optional arguments keep direct legacy test invocations compatible; queued execution injects all services.
-        $lifecycle ??= app(ImportLifecycleService::class);
-        $generic ??= app(GenericProductImportService::class);
-        $categoryImport ??= app(CategoryProductImportService::class);
-        $groupImport ??= app(ProductGroupImportService::class);
-        $priceStatusImport ??= app(ProductPriceStatusImportService::class);
-
         $import = $lifecycle->startProductImport($this->productImportId);
         if ($import === null) {
             return;
@@ -97,6 +86,8 @@ class ProcessProductImport implements ShouldQueue
             : null;
         $message = is_string($message) && $message !== '' ? $message : 'Не удалось обработать XLSX-файл.';
 
+        // Laravel invokes failed() directly instead of through Container::call, so this callback is
+        // the narrow framework adapter where resolving the application service is unavoidable.
         app(ImportLifecycleService::class)->failProductImport($this->productImportId, $message);
     }
 }

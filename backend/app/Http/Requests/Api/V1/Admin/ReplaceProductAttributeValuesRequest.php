@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api\V1\Admin;
 
 use App\Http\Requests\Api\V1\Admin\Concerns\ValidatesCategoryAttributeValues;
 use App\Models\Product;
+use App\Services\AttributeValueValidator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -28,9 +29,9 @@ class ReplaceProductAttributeValuesRequest extends FormRequest
     }
 
     /** @return list<\Closure(Validator): void> */
-    public function after(): array
+    public function after(AttributeValueValidator $attributeValueValidator): array
     {
-        return [function (Validator $validator): void {
+        return [function (Validator $validator) use ($attributeValueValidator): void {
             /** @var Product $product */
             $product = $this->route('product');
             $values = [];
@@ -39,7 +40,7 @@ class ReplaceProductAttributeValuesRequest extends FormRequest
                     $values[] = ['attribute_id' => $value['attribute_id'], 'value' => $value['value']];
                 }
             }
-            $this->validateCategoryAttributeValues($validator, $product, $values, 'attributes', $product->is_active);
+            $this->validateCategoryAttributeValues($validator, $attributeValueValidator, $product, $values, 'attributes', $product->is_active);
         }];
     }
 

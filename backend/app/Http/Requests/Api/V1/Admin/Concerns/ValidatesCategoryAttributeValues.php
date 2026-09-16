@@ -11,8 +11,14 @@ use Illuminate\Validation\Validator;
 trait ValidatesCategoryAttributeValues
 {
     /** @param array<int, array{attribute_id: mixed, value: mixed}> $values */
-    protected function validateCategoryAttributeValues(Validator $validator, Product $product, array $values, string $field, bool $requireAll): void
-    {
+    protected function validateCategoryAttributeValues(
+        Validator $validator,
+        AttributeValueValidator $attributeValueValidator,
+        Product $product,
+        array $values,
+        string $field,
+        bool $requireAll,
+    ): void {
         $category = $product->category;
         if ($category === null) {
             return;
@@ -34,7 +40,7 @@ trait ValidatesCategoryAttributeValues
                 continue;
             }
 
-            $this->validateCategoryAttributeValue($validator, "{$field}.{$index}.value", $attribute, $item['value']);
+            $this->validateCategoryAttributeValue($validator, $attributeValueValidator, "{$field}.{$index}.value", $attribute, $item['value']);
         }
 
         if (! $requireAll) {
@@ -52,9 +58,14 @@ trait ValidatesCategoryAttributeValues
         }
     }
 
-    private function validateCategoryAttributeValue(Validator $validator, string $key, Attribute $attribute, mixed $value): void
-    {
-        $valid = app(AttributeValueValidator::class)->isValid(
+    private function validateCategoryAttributeValue(
+        Validator $validator,
+        AttributeValueValidator $attributeValueValidator,
+        string $key,
+        Attribute $attribute,
+        mixed $value,
+    ): void {
+        $valid = $attributeValueValidator->isValid(
             $attribute->type,
             $value,
             $attribute->options->pluck('value')->filter(static fn (mixed $value): bool => is_string($value))->values()->all(),

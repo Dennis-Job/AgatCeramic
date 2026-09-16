@@ -9,6 +9,7 @@ use App\Http\Resources\Catalog\BrandResource;
 use App\Models\Brand;
 use App\Services\BrandManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,10 +46,10 @@ class BrandController extends Controller
         return new BrandResource($this->managementService->update($this->authenticatedAdmin($request), $brand, $request->validated()));
     }
 
-    public function destroy(Brand $brand): Response
+    public function destroy(Request $request, Brand $brand): Response
     {
         Gate::authorize('delete', $brand);
-        $this->managementService->delete($this->authenticatedAdmin(request()), $brand);
+        $this->managementService->delete($this->authenticatedAdmin($request), $brand);
 
         return response()->noContent();
     }

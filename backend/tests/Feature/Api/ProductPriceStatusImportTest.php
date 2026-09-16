@@ -9,9 +9,7 @@ use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\ProductExportService;
-use App\Services\ProductImportService;
 use App\Services\ProductPriceStatusImportService;
-use App\Services\StorageCleanupService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,7 +72,7 @@ class ProductPriceStatusImportTest extends TestCase
         Storage::disk('local')->put($diskPath, file_get_contents($path));
         @unlink($path);
         $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'prices.xlsx', 'disk' => 'local', 'path' => $diskPath, 'status' => 'pending', 'operation' => 'price_status']);
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $product->refresh();
         $import->refresh();
         $this->assertSame('80.00', $product->price);

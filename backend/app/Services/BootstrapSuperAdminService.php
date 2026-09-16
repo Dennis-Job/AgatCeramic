@@ -13,7 +13,11 @@ use Illuminate\Support\Facades\Hash;
 
 class BootstrapSuperAdminService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly RoleSeeder $roleSeeder,
+        private readonly PermissionSeeder $permissionSeeder,
+    ) {}
 
     public function create(string $name, string $email, string $password): User
     {
@@ -22,8 +26,8 @@ class BootstrapSuperAdminService
                 throw new DomainException('The initial super administrator can only be created when no staff accounts exist.');
             }
 
-            app(RoleSeeder::class)->run();
-            app(PermissionSeeder::class)->run();
+            $this->roleSeeder->run();
+            $this->permissionSeeder->run();
 
             $superAdminRole = Role::query()->where('slug', 'super-admin')->firstOrFail();
             $user = User::query()->create([

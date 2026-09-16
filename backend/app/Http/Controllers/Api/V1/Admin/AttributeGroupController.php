@@ -9,6 +9,7 @@ use App\Http\Resources\Catalog\AttributeGroupResource;
 use App\Models\AttributeGroup;
 use App\Services\AttributeGroupManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,10 +46,10 @@ class AttributeGroupController extends Controller
         return new AttributeGroupResource($this->managementService->update($this->authenticatedAdmin($request), $attributeGroup, $request->validated()));
     }
 
-    public function destroy(AttributeGroup $attributeGroup): Response
+    public function destroy(Request $request, AttributeGroup $attributeGroup): Response
     {
         Gate::authorize('delete', $attributeGroup);
-        $this->managementService->delete($this->authenticatedAdmin(request()), $attributeGroup);
+        $this->managementService->delete($this->authenticatedAdmin($request), $attributeGroup);
 
         return response()->noContent();
     }

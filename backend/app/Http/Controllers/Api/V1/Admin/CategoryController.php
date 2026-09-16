@@ -9,6 +9,7 @@ use App\Http\Resources\Catalog\CategoryResource;
 use App\Models\Category;
 use App\Services\CategoryManagementService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,10 +54,10 @@ class CategoryController extends Controller
         return new CategoryResource($this->managementService->update($this->authenticatedAdmin($request), $category, $request->validated()));
     }
 
-    public function destroy(Category $category): Response
+    public function destroy(Request $request, Category $category): Response
     {
         Gate::authorize('delete', $category);
-        $this->managementService->delete($this->authenticatedAdmin(request()), $category);
+        $this->managementService->delete($this->authenticatedAdmin($request), $category);
 
         return response()->noContent();
     }

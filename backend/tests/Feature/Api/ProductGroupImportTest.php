@@ -13,8 +13,6 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\ProductExportService;
 use App\Services\ProductGroupImportService;
-use App\Services\ProductImportService;
-use App\Services\StorageCleanupService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -81,7 +79,7 @@ class ProductGroupImportTest extends TestCase
         Storage::disk('local')->put($disk, file_get_contents($path));
         @unlink($path);
         $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'groups.xlsx', 'disk' => 'local', 'path' => $disk, 'status' => 'pending', 'operation' => 'group']);
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $this->assertDatabaseHas('product_groups', ['code' => 'NEW', 'name' => 'New']);
         $this->assertDatabaseMissing('product_groups', ['code' => 'OTHER']);
         $this->assertDatabaseHas('product_group_members', ['product_id' => $products[2]->id, 'product_group_id' => ProductGroup::query()->where('code', 'NEW')->sole()->id]);
@@ -104,7 +102,7 @@ class ProductGroupImportTest extends TestCase
         @unlink($file['path']);
         $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'generated.xlsx', 'disk' => 'local', 'path' => $path, 'status' => 'pending', 'operation' => 'group']);
 
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
 
         $this->assertSame('completed', $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->total_rows);
@@ -138,7 +136,7 @@ class ProductGroupImportTest extends TestCase
         Storage::disk('local')->put($disk, file_get_contents($path));
         @unlink($path);
         $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'bad.xlsx', 'disk' => 'local', 'path' => $disk, 'status' => 'pending', 'operation' => 'group']);
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $this->assertSame('completed', $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->failed_rows);
         $this->assertDatabaseMissing('product_groups', ['code' => 'BAD']);

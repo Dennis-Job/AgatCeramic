@@ -468,12 +468,16 @@ API behaviour без migration plan и синхронного обновлени
     validation; group и price/status imports — на reader/planner, template, report и orchestration.
     Публичный API, транзакции, блокировки, durable items, checkpoint/resume и cleanup сохранены.
 
-- [ ] TASK-A053 Устранить скрытые зависимости и test-driven production API
+- [x] TASK-A053 Устранить скрытые зависимости и test-driven production API
   - Заменить `app()`/`resolve()` в обычном production flow на явный constructor/method injection.
   - Убрать nullable service-аргументы и container fallback, добавленные ради прямых legacy-вызовов
     Jobs; тесты перевести на реальный production entry point/container invocation.
   - Заменить глобальные `request()`/`auth()` в Controllers на типизированные зависимости. Для
     неизбежных Laravel lifecycle callbacks оставить минимальный adapter, комментарий и тест.
+  - Реализовано 2026-09-16: Jobs, bootstrap, validation, console и Controller flows используют
+    явный constructor/method injection; import Job tests вызывают production `handle()` через
+    container. Только Laravel `failed()` callbacks оставляют документированный узкий container
+    adapter, покрытый отдельными unit-тестами; публичный API-контракт не изменён.
 
 - [ ] TASK-A054 Вынести нетривиальные admin read queries из Controllers
   - Вынести многоусловные filters/search/sort и metadata enrichment для audit logs, orders,

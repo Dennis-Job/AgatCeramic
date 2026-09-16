@@ -12,9 +12,7 @@ use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CategoryProductImportService;
-use App\Services\ProductImportService;
 use App\Services\ProductImportTemplateService;
-use App\Services\StorageCleanupService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use DOMDocument;
@@ -169,7 +167,7 @@ class CategoryProductImportTest extends TestCase
             $this->values('Неверное булево') + ['attribute.rectified' => 'Иногда'],
         ];
         $import = $this->storedImport($actor, $category, $rows);
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $import->refresh();
         $this->assertSame('completed', $import->status);
         $this->assertSame(7, $import->total_rows);
@@ -196,7 +194,7 @@ class CategoryProductImportTest extends TestCase
         $fixed = $errorRows[0]['values'];
         $fixed['attribute.color'] = 'Серый';
         $retry = $this->storedImport($actor, $category, [$fixed]);
-        (new ProcessProductImport($retry->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($retry->id), 'handle']);
         $this->assertSame(1, $retry->refresh()->created_rows);
         $this->assertSame(0, $retry->failed_rows);
         $this->assertDatabaseCount('products', 3);
@@ -259,7 +257,7 @@ class CategoryProductImportTest extends TestCase
         $this->assertSame(101, $import->refresh()->created_rows);
         $this->assertSame(0, $import->failed_rows);
         $this->assertDatabaseCount('products', 101);
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $this->assertSame('completed', $import->refresh()->status);
         $this->assertDatabaseCount('products', 101);
     }

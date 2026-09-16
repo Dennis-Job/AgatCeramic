@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Services\ImportLifecycleService;
 use App\Services\ProductImageImportService;
-use App\Services\StorageCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Throwable;
@@ -22,9 +21,8 @@ class ProcessProductImageImport implements ShouldQueue
 
     public function __construct(public readonly int $productImageImportId) {}
 
-    public function handle(ProductImageImportService $service, StorageCleanupService $cleanup, ?ImportLifecycleService $lifecycle = null): void
+    public function handle(ProductImageImportService $service, ImportLifecycleService $lifecycle): void
     {
-        $lifecycle ??= app(ImportLifecycleService::class);
         $import = $lifecycle->startProductImageImport($this->productImageImportId);
         if ($import === null) {
             return;
@@ -37,6 +35,8 @@ class ProcessProductImageImport implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
+        // Laravel invokes failed() directly instead of through Container::call, so this callback is
+        // the narrow framework adapter where resolving the application service is unavoidable.
         app(ImportLifecycleService::class)->failProductImageImport(
             $this->productImageImportId,
             $exception?->getMessage() ?: 'Не удалось обработать ZIP-архив.',

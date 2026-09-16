@@ -17,7 +17,6 @@ use App\Models\User;
 use App\Services\ProductExportService;
 use App\Services\ProductImportService;
 use App\Services\ProductManagementService;
-use App\Services\StorageCleanupService;
 use App\Support\ProductWorkbookSchema;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -231,7 +230,7 @@ class ProductImportTest extends TestCase
         ];
         $import = $this->storedImport($actor, $this->workbook([$headers], $rows));
 
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
 
         $import->refresh();
         $this->assertSame('completed', $import->status);
@@ -262,7 +261,7 @@ class ProductImportTest extends TestCase
             $this->row($headers, ['name' => 'Invalid price', 'slug' => 'invalid-price', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => -1, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false]),
         ];
         $import = $this->storedImport($actor, $this->workbook([$headers], $rows));
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
 
         $this->assertDatabaseMissing('products', ['slug' => 'valid']);
         $import->refresh();
@@ -299,7 +298,7 @@ class ProductImportTest extends TestCase
         ]), range(1, 101));
         $import = $this->storedImport($actor, $this->workbook([$headers], $rows));
 
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $import->refresh();
         $this->assertSame('processing', $import->status);
         $this->assertSame(100, $import->processed_rows);
@@ -307,7 +306,7 @@ class ProductImportTest extends TestCase
         $this->assertDatabaseHas('product_import_items', ['product_import_id' => $import->id, 'status' => 'pending']);
         Queue::assertPushed(ProcessProductImport::class, fn (ProcessProductImport $job): bool => $job->productImportId === $import->id);
 
-        (new ProcessProductImport($import->id))->handle(app(ProductImportService::class), app(StorageCleanupService::class));
+        $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $import->refresh();
         $this->assertSame('completed', $import->status);
         $this->assertSame(101, $import->processed_rows);
