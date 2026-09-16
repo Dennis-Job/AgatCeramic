@@ -6,6 +6,7 @@ use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductAttributeValue;
 use App\Models\ProductImage;
 use App\Models\ProductRelation;
 use App\Models\ProductVariant;
@@ -128,15 +129,9 @@ class StandaloneProductManagementTest extends TestCase
                 ['attribute_id' => $texture->id, 'value' => 'matte'],
             ],
         ])->assertOk();
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $blue->id, 'attribute_id' => $material->id, 'value' => json_encode('ceramic'),
-        ]);
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $blue->id, 'attribute_id' => $texture->id, 'value' => json_encode('matte'),
-        ]);
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $blue->id, 'attribute_id' => $color->id, 'value' => json_encode('blue'),
-        ]);
+        $this->assertProductAttributeValue($blue->id, $material->id, 'ceramic');
+        $this->assertProductAttributeValue($blue->id, $texture->id, 'matte');
+        $this->assertProductAttributeValue($blue->id, $color->id, 'blue');
 
         $this->actingAs($actor)->putJson("/api/v1/admin/products/{$red->id}/attributes", [
             'attributes' => [
@@ -147,15 +142,9 @@ class StandaloneProductManagementTest extends TestCase
             'error.details.product_ids.0',
             'Каждый товар должен иметь уникальное сочетание значений осей группы.',
         );
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $red->id, 'attribute_id' => $color->id, 'value' => json_encode('red'),
-        ]);
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $blue->id, 'attribute_id' => $material->id, 'value' => json_encode('ceramic'),
-        ]);
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $blue->id, 'attribute_id' => $texture->id, 'value' => json_encode('matte'),
-        ]);
+        $this->assertProductAttributeValue($red->id, $color->id, 'red');
+        $this->assertProductAttributeValue($blue->id, $material->id, 'ceramic');
+        $this->assertProductAttributeValue($blue->id, $texture->id, 'matte');
 
         $category->attributes()->updateExistingPivot($material->id, ['is_required' => true]);
         $red->update(['is_active' => false]);
@@ -168,9 +157,7 @@ class StandaloneProductManagementTest extends TestCase
             'error.details.attributes.0',
             'Общие обязательные характеристики нельзя очистить, пока в группе есть опубликованные товары.',
         );
-        $this->assertDatabaseHas('product_attribute_values', [
-            'product_id' => $blue->id, 'attribute_id' => $material->id, 'value' => json_encode('ceramic'),
-        ]);
+        $this->assertProductAttributeValue($blue->id, $material->id, 'ceramic');
 
         $this->actingAs($actor)->putJson("/api/v1/admin/products/{$red->id}/attributes", [
             'attributes' => [
@@ -389,5 +376,16 @@ class StandaloneProductManagementTest extends TestCase
         $user->roles()->attach(Role::query()->where('slug', 'catalog-manager')->sole());
 
         return $user;
+    }
+
+    private function assertProductAttributeValue(int $productId, int $attributeId, mixed $expected): void
+    {
+        $value = ProductAttributeValue::query()
+            ->where('product_id', $productId)
+            ->where('attribute_id', $attributeId)
+            ->sole()
+            ->value;
+
+        $this->assertSame($expected, $value);
     }
 }

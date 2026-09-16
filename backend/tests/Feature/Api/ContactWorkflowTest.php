@@ -22,7 +22,7 @@ class ContactWorkflowTest extends TestCase
 
         $this->actingAs($viewer)->getJson('/api/v1/admin/contact-statuses')
             ->assertOk()->assertJsonPath('data.0.code', 'new')->assertJsonPath('data.3.is_terminal', true);
-        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?type=callback&search=Иван')
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-requests?type=callback&search='.rawurlencode('Иван'))
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $callback->id)
             ->assertJsonPath('data.0.contact.phone', '+7 (999) 123-45-67');
         $this->actingAs($viewer)->getJson("/api/v1/admin/contact-requests/{$callback->id}")

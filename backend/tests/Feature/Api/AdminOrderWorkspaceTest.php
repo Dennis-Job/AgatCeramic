@@ -31,7 +31,7 @@ class AdminOrderWorkspaceTest extends TestCase
         Order::factory()->create(['customer_name' => 'Другой покупатель', 'status' => 'processing']);
 
         $this->actingAs($viewer)
-            ->getJson('/api/v1/admin/orders?search=Иван&payment_status=pending')
+            ->getJson('/api/v1/admin/orders?search='.rawurlencode('Иван').'&payment_status=pending')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $matching->id)

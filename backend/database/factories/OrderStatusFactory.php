@@ -17,7 +17,8 @@ class OrderStatusFactory extends Factory
         return [
             'code' => fake()->unique()->slug(2),
             'name' => fake()->unique()->words(2, true),
-            'sort_order' => fake()->unique()->numberBetween(1000, 65000),
+            // PostgreSQL smallint is signed even when Laravel declares the column unsigned.
+            'sort_order' => fake()->unique()->numberBetween(1000, 32767),
             'is_active' => true,
             'is_terminal' => false,
             'sets_completed_at' => false,

@@ -9,6 +9,7 @@ Workflow получает только право `contents: read` и не ис�
 | --- | --- |
 | Repository security | Запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
 | Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
+| Backend feature suite (PostgreSQL) | Все Laravel feature tests на отдельной PostgreSQL 17 database в фиксированном случайном порядке |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
@@ -56,6 +57,18 @@ Gitleaks 8.30.1 загружается только с официального 
 Два последовательных запуска полного backend test suite защищают общие factory и другое
 состояние тестовой инфраструктуры от недетерминированных коллизий между прогонами.
 
+Отдельный job `Backend feature suite (PostgreSQL)` поднимает собственный PostgreSQL service с
+базой `agatceramic_feature_test`, выполняет guarded `migrate:fresh` и все `tests/Feature` через
+`phpunit.postgres-feature.xml`. Порядок тестов псевдослучайный с закреплённым seed `48048`, поэтому
+скрытые зависимости от порядка выявляются воспроизводимо. `RefreshDatabase` создаёт схему один раз
+и изолирует DB-dependent test cases транзакциями; перед suite база всегда пересоздаётся.
+
+PostgreSQL-прогон является блокирующим и не заменяет быстрые SQLite-прогоны. Он фиксирует различия,
+которые SQLite не моделирует: реальный signed-диапазон `smallint`, сравнение и casts JSON-колонок,
+точность `decimal`, foreign/unique/check constraints, вложенные application-транзакции и
+`lockForUpdate()`. Межпроцессные ожидания блокировок и `SKIP LOCKED` остаются в специализированных
+integration suites, поскольку feature suite намеренно однопроцессный.
+
 PostgreSQL integration suite отдельно проверяет неизменяемость audit log и retention evidence,
 rollback retention batch, ограничения legal hold, индексы guest carts, а также реальные конкурентные
 транзакции Catalog, retention и cart cleanup. Concurrency-тесты используют независимые PHP-процессы и соединения, подтверждают
@@ -71,15 +84,21 @@ rollback retention batch, ограничения legal hold, индексы gues
 `array` и синхронную очередь. `Tests\\TestCase` до запуска `RefreshDatabase` запрещает небезопасное
 подключение, URL подключения и запуск с кэшированной конфигурацией.
 
-PostgreSQL integration-тесты запускаются с `--configuration=phpunit.postgres.xml`; разрешена
-только отдельная база `agatceramic_test` при `CI=true`. Не запускать `migrate:fresh`, `db:wipe`
-или интеграционные проверки против локальной базы `agatceramic`.
+PostgreSQL integration-тесты запускаются с `--configuration=phpunit.postgres.xml`, а feature suite —
+с `--configuration=phpunit.postgres-feature.xml`. Разрешены только отдельные базы
+`agatceramic_test` и `agatceramic_feature_test` при `CI=true`. Перед каждым destructive reset CI и
+локальный runner вызывают `scripts/assert-safe-postgres-test-environment.php`: он fail-closed
+проверяет `APP_ENV=testing`, `CI=true`, драйвер `pgsql`, localhost, точное allowlisted имя
+базы, пустой `DB_URL` и отсутствие cached config. Не запускать `migrate:fresh`, `db:wipe`
+или тесты против локальной базы
+`agatceramic`.
 
 Для локального прогона используется только
 [`backend/scripts/run-postgres-integration.ps1`](../backend/scripts/run-postgres-integration.ps1):
-он требует явный destructive-флаг, жёстко задаёт `agatceramic_test`, проверяет `pdo_pgsql` и
-запускает миграции и PostgreSQL-only suites с `CI=true`. Пароль передаётся параметром процесса и
-не сохраняется в репозитории.
+он требует явный destructive-флаг, жёстко задаёт обе test-only базы, проверяет `pdo_pgsql` и
+запускает миграции, PostgreSQL-only integration suites и полный feature suite с `CI=true`. Обе базы
+должны быть заранее созданы на разрешённом localhost PostgreSQL. Пароль передаётся параметром
+процесса и не сохраняется в репозитории.
 
 Разбор инцидента и проверка восстановления: [DATABASE_RECOVERY_2026-09-03.md](DATABASE_RECOVERY_2026-09-03.md).
 

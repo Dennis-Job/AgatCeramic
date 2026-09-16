@@ -407,7 +407,7 @@ API behaviour без migration plan и синхронного обновлени
     application process только после успешного `composer install`/`npm ci`. Lock-файлы являются
     image rebuild inputs; отдельный CI smoke проверяет clean/stale volumes и безопасный recovery.
 
-- [ ] TASK-A048 Прогонять Laravel feature suite на PostgreSQL
+- [x] TASK-A048 Прогонять Laravel feature suite на PostgreSQL
   - Добавить безопасный CI job для полного либо обоснованно разделённого backend feature suite на
     отдельной PostgreSQL database; существующий SQLite suite оставить быстрым feedback, а не
     единственным доказательством большинства HTTP/business сценариев.
@@ -415,6 +415,10 @@ API behaviour без migration plan и синхронного обновлени
     текущих integration tests; обеспечить deterministic reset и отсутствие зависимости от порядка.
   - Зафиксировать PostgreSQL-specific различия constraints, JSON, decimal, locking и transactions;
     не скрывать несовместимые тесты условными skip без адресной follow-up задачи.
+  - Реализовано 2026-09-16: отдельный blocking CI job поднимает PostgreSQL 17 с
+    `agatceramic_feature_test`, fail-closed проверяет окружение, делает deterministic reset и
+    запускает все 229 feature tests в воспроизводимом случайном порядке. Без skip исправлены
+    выявленные PostgreSQL-различия signed `smallint`, JSON equality и URL encoding.
 
 - [ ] TASK-A049 Проверить реальную доставку queue jobs через Redis worker
   - В изолированном CI/Compose profile отправить representative import, storage cleanup и order

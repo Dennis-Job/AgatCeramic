@@ -31,10 +31,17 @@ $env:DB_DATABASE = 'agatceramic_test'
 $env:DB_USERNAME = $UserName
 $env:DB_PASSWORD = $Password
 $env:DB_SSLMODE = 'prefer'
+$env:DB_URL = ''
 
 php artisan config:clear
+php scripts/assert-safe-postgres-test-environment.php agatceramic_test
 php artisan migrate:fresh --force
 vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresAuditLogImmutabilityTest.php
 vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresCatalogConcurrencyTest.php
 vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresRetentionControlsTest.php
 vendor\bin\phpunit --configuration=phpunit.postgres.xml tests\Integration\PostgresGuestCartLifecycleTest.php
+
+$env:DB_DATABASE = 'agatceramic_feature_test'
+php scripts/assert-safe-postgres-test-environment.php agatceramic_feature_test
+php artisan migrate:fresh --force
+vendor\bin\phpunit --configuration=phpunit.postgres-feature.xml --order-by=random --random-order-seed=48048

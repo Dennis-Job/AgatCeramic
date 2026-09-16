@@ -111,8 +111,11 @@ php artisan security:invalidate-compromised-admin-auth --force
 администратор задаёт уникальный новый пароль через штатный reset flow с защищённым mail transport;
 пароли нельзя передавать через CLI options, task evidence или application logs.
 
-Основные тесты Laravel изолированно работают с SQLite `:memory:`. CI дополнительно прогоняет
-миграции и отдельные integration tests на PostgreSQL 17, включая реальные конкурентные транзакции
-Catalog в независимых PHP-процессах.
+Основные тесты Laravel изолированно работают с SQLite `:memory:` для быстрого feedback. CI
+дополнительно прогоняет полный feature suite на отдельной базе `agatceramic_feature_test` и
+специализированные integration tests на `agatceramic_test` в PostgreSQL 17, включая реальные
+конкурентные транзакции в независимых PHP-процессах. Обе PostgreSQL test database разрешены только
+при `APP_ENV=testing`, `CI=true`, пустом `DB_URL` и отсутствии cached config; destructive-команды
+предварительно проверяются `backend/scripts/assert-safe-postgres-test-environment.php`.
 
 Подключение Redis реализуется в TASK-011.

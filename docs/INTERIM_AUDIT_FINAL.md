@@ -15,7 +15,7 @@ remediation выполнен; до подтверждения GitHub server-side
 | IA-R03 | Resolved | `TASK-A045`: `carts.token_hash` хранит HMAC, а configurable empty/abandoned/checked-out TTL обслуживает bounded lock-safe scheduled cleanup. | `TASK-A045` |
 | IA-R04 | Resolved | `TASK-A046`: закреплённый Redocly валидирует OpenAPI 3.1 semantics, а рекурсивный direction-aware checker с mutation fixtures отклоняет несовместимые request/response changes; breaking разрешён только major bump с явным migration plan. | `TASK-A046` |
 | IA-R05 | Resolved | `TASK-A047`: dependency volumes сверяются с атомарным manifest/lock/runtime fingerprint; backend bootstrap сериализован, lock-файлы инициируют image rebuild, а clean/stale volume recovery проверяется в CI до запуска application processes. | `TASK-A047` |
-| IA-R06 | Medium | Большинство backend feature tests выполняется только на SQLite; PostgreSQL CI покрывает migration и две специализированные integration suites. | `TASK-A048` |
+| IA-R06 | Resolved | `TASK-A048`: все 229 backend feature tests запускаются в blocking CI job на отдельной PostgreSQL 17 database; SQLite сохранён как быстрый feedback. | `TASK-A048` |
 | IA-R07 | Medium | Redis CI проверяет connection/configuration, а jobs в feature tests fake-ятся или вызываются через `handle()`; реальная доставка отдельному worker не проверяется. | `TASK-A049` |
 | IA-R08 | Medium | Все Admin Playwright suites подменяют API через `page.route()`. Отдельного browser smoke реального Sanctum/API contract нет. | `TASK-A050` |
 | IA-R09 | Low | `TODO.md` содержит все завершённые audit/refactoring tasks вопреки итоговой записи `TASK-A005`; специализированные отчёты сохраняют устаревшие route/test counts и смешение языков. | `TASK-A051` |

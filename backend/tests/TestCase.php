@@ -16,14 +16,18 @@ abstract class TestCase extends BaseTestCase
         $app = parent::createApplication();
         $connection = $app['config']->get('database.default');
         $database = $app['config']->get("database.connections.{$connection}.database");
+        $host = $app['config']->get("database.connections.{$connection}.host");
         $url = $app['config']->get("database.connections.{$connection}.url");
         $inMemory = $connection === 'sqlite' && $database === ':memory:';
         $isolatedPostgres = $connection === 'pgsql'
-            && $database === 'agatceramic_test'
+            && in_array($database, ['agatceramic_test', 'agatceramic_feature_test'], true)
+            && in_array($host, ['127.0.0.1', 'localhost'], true)
             && getenv('CI') === 'true';
 
         if (! $app->environment('testing') || $url || (! $inMemory && ! $isolatedPostgres)) {
-            throw new RuntimeException('Unsafe test database: use SQLite :memory: or the CI-only agatceramic_test database.');
+            throw new RuntimeException(
+                'Unsafe test database: use SQLite :memory: or an explicitly allowlisted CI-only PostgreSQL test database.',
+            );
         }
 
         return $app;

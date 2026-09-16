@@ -143,6 +143,8 @@ jobs:
 
       - name: Verify PostgreSQL migrations
         env:
+          CI: "true"
+          APP_ENV: testing
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
@@ -150,7 +152,9 @@ jobs:
           DB_USERNAME: agatceramic
           DB_PASSWORD: ci-only-password
           DB_SSLMODE: prefer
-        run: php artisan migrate:fresh --force
+        run: |
+          php scripts/assert-safe-postgres-test-environment.php agatceramic_test
+          php artisan migrate:fresh --force
 
       - name: Test PostgreSQL audit-log immutability
         env:
@@ -217,6 +221,73 @@ jobs:
         run: |
           composer test
           composer test
+
+  backend-postgres-feature:
+    name: Backend feature suite (PostgreSQL)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.9-alpine
+        env:
+          POSTGRES_DB: agatceramic_feature_test
+          POSTGRES_USER: agatceramic
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agatceramic -d agatceramic_feature_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      CI: "true"
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: agatceramic_feature_test
+      DB_USERNAME: agatceramic
+      DB_PASSWORD: ci-only-password
+      DB_SSLMODE: prefer
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/composer/files
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Ensure Laravel writable directories exist
+        run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Create test application key
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Reset isolated PostgreSQL feature database
+        run: |
+          php scripts/assert-safe-postgres-test-environment.php agatceramic_feature_test
+          php artisan migrate:fresh --force
+
+      - name: Run full Laravel feature suite on PostgreSQL
+        run: >-
+          vendor/bin/phpunit --configuration=phpunit.postgres-feature.xml
+          --order-by=random --random-order-seed=48048
 
   admin:
     name: Admin checks
