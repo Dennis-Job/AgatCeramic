@@ -456,13 +456,17 @@ API behaviour без migration plan и синхронного обновлени
   - Сохранить русский основным языком канонической документации и добавить автоматическую проверку
     внутренних Markdown links и запрещённых tracked artifacts.
 
-- [ ] TASK-A052 Декомпозировать импортный контур backend по ответственностям
+- [x] TASK-A052 Декомпозировать импортный контур backend по ответственностям
   - Разделить чтение workbook, parsing, validation, планирование изменений, применение,
     формирование template/error report и cleanup на небольшие компоненты с явными контрактами.
   - Сохранить текущий API, checkpoint/resume, transaction и locking contract; не вводить
     repository/interface без реальной границы persistence или вариативности.
   - Удалить неиспользуемые зависимости и покрыть каждый извлечённый workflow тестами; основные
     orchestration-классы должны пройти review по эвристикам из `backend/AGENTS.md`.
+  - Реализовано 2026-09-16: общий product import разделён на workbook reader, value parser,
+    row mapper, plan builder и executor; category templates — на schema/reader/writer/OOXML
+    validation; group и price/status imports — на reader/planner, template, report и orchestration.
+    Публичный API, транзакции, блокировки, durable items, checkpoint/resume и cleanup сохранены.
 
 - [ ] TASK-A053 Устранить скрытые зависимости и test-driven production API
   - Заменить `app()`/`resolve()` в обычном production flow на явный constructor/method injection.

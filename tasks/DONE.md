@@ -18,6 +18,7 @@
 | Admin refactoring | TASK-A023–A041 | Admin переведён на feature-слои и source-of-truth UI-kit, усилены accessibility/responsive/visual/lint gates и подтверждена повторная приёмка. Исторический baseline: [`ADMIN_REFACTORING_BASELINE.md`](../docs/ADMIN_REFACTORING_BASELINE.md). |
 | Production-like quality gates | TASK-A045–A050 | Защищены cart tokens и TTL; усилены OpenAPI compatibility, lock-aware dependency bootstrap, PostgreSQL feature suite, реальная Redis delivery и Admin full-stack smoke. Актуальные gates: [`CI.md`](../docs/CI.md). |
 | Нормализация project ledger | TASK-A051 | `TODO` содержит только будущие работы, исторические audits явно отделены от текущего состояния, а CI проверяет внутренние Markdown-ссылки и запрещённые tracked artifacts. |
+| Backend import architecture | TASK-A052 | Workbook I/O, parsing/validation, planning, mutation, template/error reports и cleanup разделены по ответственностям без изменения API, checkpoint/resume, transaction и locking contracts. |
 
 `TASK-A042`–`TASK-A044` не включены в этот индекс: они остаются незавершёнными и перечислены в
 [`IN_PROGRESS.md`](IN_PROGRESS.md).

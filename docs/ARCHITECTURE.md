@@ -213,6 +213,11 @@ Excel import:
 - produce result;
 - show result in Admin.
 
+Внутри backend импорт разделён на явные роли: workbook reader, value/row parser,
+validator/planner, executor, template writer и error report writer. Orchestration-сервисы владеют
+границами транзакций, блокировками и durable checkpoints, а lifecycle-сервис — завершением,
+повторной диспетчеризацией и cleanup временного файла.
+
 Не обрабатывать 100k+ строк одним HTTP запросом.
 
 ## 12. Media
@@ -240,4 +245,3 @@ Excel import:
 - content changes.
 
 Не сохранять секреты и лишние персональные данные в audit payload.
-

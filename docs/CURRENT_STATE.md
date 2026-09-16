@@ -1,13 +1,13 @@
 # Текущее состояние проекта
 
-Документ отражает состояние после завершения `TASK-A051` 2026-09-16. Исторические результаты
+Документ отражает состояние после завершения `TASK-A052` 2026-09-16. Исторические результаты
 аудитов и их числовые срезы не обновляются задним числом; текущий набор обязательных проверок
 описан в [`CI.md`](CI.md), завершённые задачи — в [`tasks/DONE.md`](../tasks/DONE.md).
 
 Admin frontend refactoring принят. Follow-up проверки `TASK-A045`–`TASK-A050` закрыли cart-token,
 OpenAPI, dependency bootstrap, PostgreSQL feature-suite, Redis delivery и Admin full-stack gaps.
-Security/data-lifecycle задачи `TASK-A042`–`TASK-A044` остаются в работе. Архитектурные follow-ups
-`TASK-A052`–`TASK-A055` находятся в будущем roadmap.
+Security/data-lifecycle задачи `TASK-A042`–`TASK-A044` остаются в работе. Импортный application
+layer декомпозирован; архитектурные follow-ups `TASK-A053`–`TASK-A055` находятся в roadmap.
 
 ## Реализовано
 
@@ -16,7 +16,7 @@ Security/data-lifecycle задачи `TASK-A042`–`TASK-A044` остаются 
 | Foundation | Laravel API-only, Vue Admin, Nuxt Client skeleton, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned `/api/v1`, stable error envelope и OpenAPI. |
 | Access control | Admin authentication, password reset, active-user guard, RBAC, granular permissions, audit log, snapshots, retention и PostgreSQL immutability. |
 | Catalog | Categories, brands, attribute groups/typed attributes, standalone sellable products, product groups, generated immutable SKU, images, related products, filters/search и durable storage cleanup. Legacy variants остаются read-only до отдельной verified migration. |
-| Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
+| Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. Workbook I/O, parsing/validation, planning, mutation и report/template generation разделены на небольшие сервисы; orchestration сохраняет прежние transaction, locking и checkpoint contracts. |
 | Cart and orders | Public guest cart with HMAC-only bearer lookup, configurable TTL and lock-safe cleanup; locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
 | Admin frontend | Route views и feature-слои выделены, compatibility adapters удалены, source-of-truth UI-kit и обязательные lint, unit, production E2E, accessibility, responsive и visual gates действуют. Orders и contacts имеют рабочие list/detail/workflow экраны. |
@@ -39,7 +39,7 @@ Security/data-lifecycle задачи `TASK-A042`–`TASK-A044` остаются 
 | --- | --- | --- |
 | Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через скрытые GitHub PR refs до server-side purge по запросу Support `#4756780`; также ожидаются operational confirmations. | `TASK-A042` |
 | High | Для business PII orders/contacts подготовлены policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
-| Medium | Import services совмещают workbook I/O, parsing, validation, mutation и reporting; скрытые container dependencies и нетривиальные queries в Controllers ухудшают SOLID и читаемость. | `TASK-A052`–`TASK-A054` |
+| Medium | В Jobs/bootstrap/validation flow остаются скрытые container dependencies, а нетривиальные queries в Controllers ухудшают SOLID и читаемость. | `TASK-A053`, `TASK-A054` |
 | Medium | Правила из `backend/AGENTS.md` пока не подкреплены автоматическим architecture CI gate. | `TASK-A055` |
 
 Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. До подтверждения

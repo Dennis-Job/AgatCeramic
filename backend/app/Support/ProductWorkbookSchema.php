@@ -4,6 +4,8 @@ namespace App\Support;
 
 final class ProductWorkbookSchema
 {
+    public const MAX_ROWS = 5000;
+
     public const MANAGER_HEADERS = [
         'sku' => 'SKU', 'article_number' => 'Артикул', 'barcode' => 'Штрихкод',
         'name' => 'Название', 'description' => 'Описание', 'category_name' => 'Категория',
