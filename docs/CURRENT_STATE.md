@@ -6,7 +6,7 @@
 refactoring принят. Repository-side remediation `TASK-A042` завершён, а server-side очистка
 GitHub cached views/PR refs ожидается по открытому запросу Support `#4756780`; остальные
 security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты,
-кроме завершённых `TASK-A045`–`TASK-A049`.
+кроме завершённых `TASK-A045`–`TASK-A050`.
 Для `TASK-A043` подготовлены ADR, threat model и retention/deletion matrix; `TASK-A044` реализует
 gated bounded controls, evidence и restore replay. Юридическое принятие ещё не зафиксировано,
 поэтому production-очистка остаётся запрещённой.
@@ -43,7 +43,7 @@ Evidence приведены в
 | Resolved | Guest cart tokens хранятся только как HMAC; configurable TTL и lock-safe bounded cleanup реализованы. | `TASK-A045` |
 | Resolved | Полный Laravel feature suite выполняется в CI на отдельной PostgreSQL 17 database с fail-closed guard и deterministic reset. | `TASK-A048` |
 | Resolved | Реальная доставка import, storage cleanup и order confirmation jobs отдельному Redis worker покрыта изолированным PostgreSQL/Redis Compose/CI gate. | `TASK-A049` |
-| Medium | Real Admin→API boundary покрыта слабее, чем следует из исторической формулировки приёмки. | `TASK-A050` |
+| Resolved | Production Admin проходит отдельный browser smoke реального Sanctum/Laravel boundary с PostgreSQL и Redis без API mocks. | `TASK-A050` |
 | Resolved | Compose dependency volumes синхронизируются с manifest/lock/runtime fingerprint до запуска application process; clean/stale recovery проверяется в CI. | `TASK-A047` |
 | Medium | Import services совмещают workbook I/O, parsing, validation, mutation и reporting; скрытые container dependencies и нетривиальные queries в Controllers ухудшают SOLID/читаемость. | `TASK-A052`–`TASK-A054` |
 | Medium | Правила из `backend/AGENTS.md` пока не подкреплены автоматическим architecture CI gate. | `TASK-A055` |
@@ -110,3 +110,9 @@ PostgreSQL 17 и Redis 7.4. Настоящие workers обрабатывают 
 confirmation jobs; проверены after-commit dispatch, identifier-only payloads, bounded delayed
 retry/backoff, terminal failure и `failed_jobs`, stale redispatch и идемпотентная duplicate
 delivery. Изолированный suite прошёл: 1 тест, 84 assertions; быстрые fake/sync tests сохранены.
+
+`TASK-A050` добавила blocking `Admin full-stack smoke`: production build SPA через same-origin
+proxy проходит реальный Sanctum CSRF/login/logout flow с Laravel, PostgreSQL 17 и Redis 7.4.
+Browser без API mocks проверяет Catalog read/create, order/contact read/status mutation, route/API
+permissions и стандартные `401/403` error envelopes. Локальный изолированный прогон прошёл: 1 test;
+runtime credentials/синтетические PII и все volumes удалены после проверки.

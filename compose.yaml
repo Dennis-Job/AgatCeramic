@@ -141,6 +141,159 @@ services:
       retries: 20
       start_period: 2s
 
+  admin-smoke-backend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/backend/Dockerfile
+    profiles: ["admin-smoke"]
+    working_dir: /var/www/backend
+    command: >-
+      sh -c "install-locked-dependencies composer /var/www/backend
+      && php scripts/assert-safe-postgres-test-environment.php agatceramic_admin_smoke_test
+      && php artisan migrate:fresh --seed --force
+      && php scripts/setup-admin-full-stack-smoke.php
+      && exec php artisan serve --host=0.0.0.0 --port=8000 --no-reload"
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      APP_KEY: "base64:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+      APP_URL: http://admin-smoke:4173
+      ADMIN_APP_URL: http://admin-smoke:4173
+      ADMIN_SMOKE_STATE_FILE: /smoke-state/fixtures.json
+      BCRYPT_ROUNDS: "4"
+      CI: "true"
+      DB_CONNECTION: pgsql
+      DB_HOST: admin-smoke-postgres
+      DB_PORT: "5432"
+      DB_DATABASE: agatceramic_admin_smoke_test
+      DB_USERNAME: agatceramic_admin_smoke_test
+      DB_PASSWORD: admin-smoke-test-only-password
+      DB_SSLMODE: prefer
+      DB_URL: ""
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: admin-smoke-redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "13"
+      REDIS_CACHE_DB: "12"
+      SESSION_DRIVER: redis
+      SESSION_COOKIE: agatceramic_admin_smoke_session
+      SESSION_SECURE_COOKIE: "false"
+      SESSION_SAME_SITE: lax
+      SANCTUM_STATEFUL_DOMAINS: admin-smoke:4173
+      CORS_ALLOWED_ORIGINS: http://admin-smoke:4173
+      MAIL_MAILER: array
+    volumes:
+      - ./backend:/var/www/backend
+      - admin_smoke_backend_vendor:/var/www/backend/vendor
+      - admin_smoke_state:/smoke-state
+    depends_on:
+      admin-smoke-postgres:
+        condition: service_healthy
+      admin-smoke-redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "php -r 'exit(@file_get_contents(\"http://127.0.0.1:8000/up\") === false ? 1 : 0);'",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  admin-smoke:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/node/Dockerfile
+    profiles: ["admin-smoke"]
+    working_dir: /app
+    command: >-
+      sh -c "install-locked-dependencies npm /app
+      && npm run build
+      && exec npm run preview -- --host 0.0.0.0 --port=4173"
+    environment:
+      ADMIN_PREVIEW_BACKEND_URL: http://admin-smoke-backend:8000
+      VITE_API_BASE_URL: /api/v1
+    volumes:
+      - ./frontend/admin:/app
+      - admin_smoke_node_modules:/app/node_modules
+    depends_on:
+      admin-smoke-backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4173/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  admin-smoke-e2e:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/node/Dockerfile
+    profiles: ["admin-smoke"]
+    working_dir: /app
+    command: >-
+      sh -c "install-locked-dependencies npm /app
+      && npm exec playwright install chromium
+      && exec npm run test:smoke"
+    environment:
+      ADMIN_SMOKE_BASE_URL: http://admin-smoke:4173
+      ADMIN_SMOKE_STATE_FILE: /smoke-state/fixtures.json
+      CI: "true"
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      - ./frontend/admin:/app
+      - admin_smoke_node_modules:/app/node_modules
+      - admin_smoke_playwright_browsers:/ms-playwright
+      - admin_smoke_state:/smoke-state:ro
+    depends_on:
+      admin-smoke-backend:
+        condition: service_healthy
+      admin-smoke:
+        condition: service_healthy
+
+  admin-smoke-postgres:
+    image: postgres:17.9-alpine
+    profiles: ["admin-smoke"]
+    environment:
+      POSTGRES_DB: agatceramic_admin_smoke_test
+      POSTGRES_USER: agatceramic_admin_smoke_test
+      POSTGRES_PASSWORD: admin-smoke-test-only-password
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U agatceramic_admin_smoke_test -d agatceramic_admin_smoke_test",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 2s
+
+  admin-smoke-redis:
+    image: redis:7.4-alpine
+    profiles: ["admin-smoke"]
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 2s
+
   scheduler:
     build:
       context: .
@@ -252,6 +405,10 @@ services:
 
 volumes:
   backend_vendor:
+  admin_smoke_backend_vendor:
+  admin_smoke_node_modules:
+  admin_smoke_playwright_browsers:
+  admin_smoke_state:
   admin_node_modules:
   admin_e2e_node_modules:
   admin_playwright_browsers:

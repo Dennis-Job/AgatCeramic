@@ -11,6 +11,7 @@ Workflow получает только право `contents: read` и не ис�
 | Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Backend feature suite (PostgreSQL) | Все Laravel feature tests на отдельной PostgreSQL 17 database в фиксированном случайном порядке |
 | Redis queue delivery | Реальные import, storage cleanup и order confirmation jobs через отдельный Redis worker и PostgreSQL 17 |
+| Admin full-stack smoke | Production build Admin, реальный Sanctum session/CSRF flow, Laravel, PostgreSQL 17 и Redis 7.4 без browser API mocks |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
@@ -116,7 +117,8 @@ docker compose -p agatceramic-queue-test --env-file .env.example \
 PostgreSQL integration-тесты запускаются с `--configuration=phpunit.postgres.xml`, feature suite —
 с `--configuration=phpunit.postgres-feature.xml`, а Redis queue suite — с
 `--configuration=phpunit.redis-queue.xml`. Разрешены только отдельные базы `agatceramic_test`,
-`agatceramic_feature_test` и `agatceramic_queue_test` при `CI=true`. Перед каждым destructive reset CI и
+`agatceramic_feature_test`, `agatceramic_queue_test` и `agatceramic_admin_smoke_test` при `CI=true`.
+Перед каждым destructive reset CI и
 локальный runner вызывают `scripts/assert-safe-postgres-test-environment.php`: он fail-closed
 проверяет `APP_ENV=testing`, `CI=true`, драйвер `pgsql`, разрешённый test host, точное allowlisted имя
 базы, пустой `DB_URL` и отсутствие cached config. Не запускать `migrate:fresh`, `db:wipe`
@@ -152,6 +154,28 @@ loading-состояния управляемыми deferred fixtures до яв�
 Локальный Compose runner запускается отдельной командой `docker compose --profile test run --rm admin-e2e`.
 Он выполняет чистый `npm ci`, устанавливает Chromium в отдельный volume и запускает production E2E;
 dev-сервис `admin` и его `node_modules` не используются и не изменяются.
+
+Отдельный blocking job `Admin full-stack smoke` не дублирует visual suite. Compose profile
+`admin-smoke` собирает Admin с `VITE_API_BASE_URL=/api/v1`, обслуживает production bundle через
+Vite preview с same-origin proxy к Laravel и поднимает эфемерные PostgreSQL/Redis без опубликованных
+портов. Playwright без `page.route()` проходит настоящий Sanctum CSRF/login/logout flow, читает и
+изменяет representative Catalog, order и contact записи, а затем проверяет route permission,
+backend `403` и стандартные `forbidden`/`unauthenticated` error envelopes.
+
+Обе учётные записи, пароли и синтетические contact/order данные генерируются при запуске. Только
+идентификаторы учётных записей и пароли записываются с mode `0600` во временный Compose volume;
+синтетические PII остаются в PostgreSQL tmpfs. Trace, screenshots и video отключены, credentials не
+печатаются; `if: always()` удаляет containers, network и volumes даже после failure. Локальный
+воспроизводимый запуск:
+
+```bash
+docker compose -p agatceramic-admin-smoke-test --env-file .env.example \
+  --profile admin-smoke run --rm admin-smoke-e2e
+docker compose -p agatceramic-admin-smoke-test --env-file .env.example \
+  --profile admin-smoke down --volumes
+```
+
+Отдельный project name обязателен, чтобы cleanup не затронул development Compose.
 
 Полный локальный Admin workflow после `npm ci` запускается командой `npm run test:ci`: ESLint,
 Prettier check, unit-тесты, production build и Playwright выполняются последовательно с единым

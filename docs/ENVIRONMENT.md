@@ -36,6 +36,20 @@ Profile создаёт эфемерные PostgreSQL `agatceramic_queue_test` и
 development volumes. Отдельный project name нельзя убирать: он не позволяет test cleanup
 останавливать development-контейнеры.
 
+Full-stack smoke Admin запускается в другом изолированном profile:
+
+```sh
+docker compose -p agatceramic-admin-smoke-test --env-file .env.example \
+  --profile admin-smoke run --rm admin-smoke-e2e
+docker compose -p agatceramic-admin-smoke-test --env-file .env.example \
+  --profile admin-smoke down --volumes
+```
+
+Он использует только `agatceramic_admin_smoke_test`, эфемерный Redis и временный state volume.
+Credentials создаются во время запуска и хранятся с mode `0600` только в state volume;
+синтетические PII остаются в PostgreSQL tmpfs. Они не попадают в репозиторий/логи и удаляются при
+cleanup. Обязательный отдельный project name защищает development containers и data volumes.
+
 ## Lock-aware bootstrap зависимостей Compose
 
 `backend`, `queue` и `scheduler` используют общий named volume `backend_vendor`; Admin и Client
@@ -131,6 +145,10 @@ php artisan security:invalidate-compromised-admin-auth --force
 конкурентные транзакции в независимых PHP-процессах. Обе PostgreSQL test database разрешены только
 при `APP_ENV=testing`, `CI=true`, пустом `DB_URL` и отсутствии cached config; destructive-команды
 предварительно проверяются `backend/scripts/assert-safe-postgres-test-environment.php`.
+
+Тот же fail-closed guard разрешает `agatceramic_admin_smoke_test` только на внутреннем host
+`admin-smoke-postgres`; full-stack profile также требует `APP_ENV=testing`, `CI=true`, пустой
+`DB_URL` и отсутствие cached config до `migrate:fresh`.
 
 Production queue использует отдельное Redis-подключение/database. Реальная доставка import,
 storage cleanup и order confirmation jobs отдельному worker проверяется изолированным

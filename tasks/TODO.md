@@ -433,13 +433,19 @@ API behaviour без migration plan и синхронного обновлени
     84 assertions покрывают after-commit, identifier-only payloads, retry/backoff, terminal
     failure/`failed_jobs`, stale redispatch и идемпотентную duplicate delivery.
 
-- [ ] TASK-A050 Добавить минимальный full-stack smoke Admin SPA → Laravel API
+- [x] TASK-A050 Добавить минимальный full-stack smoke Admin SPA → Laravel API
   - В отдельном test profile поднять production build Admin, Laravel, PostgreSQL и Redis; создать
     изолированные fixtures и пройти реальный Sanctum CSRF/login/logout flow без `page.route()` mocks.
   - Проверить по одному representative read/mutation сценарию для Catalog, orders и contacts,
     включая permissions и стандартный error envelope. Не дублировать полный visual suite.
   - Не помещать credentials/PII fixtures в repository или logs; обеспечить cleanup и блокирующий CI
     result. UI Design Guard нужен только если исправление smoke findings изменит интерфейс.
+  - Реализовано 2026-09-16: отдельный blocking Compose/CI profile поднимает production build Admin,
+    Laravel, эфемерные PostgreSQL/Redis и проходит настоящий Sanctum CSRF/login/logout без API mocks.
+    Browser проверяет Catalog read/create, orders/contacts read/status mutation, permissions и
+    стандартные `401/403` envelopes; runtime credentials живут во временном volume с mode `0600`,
+    синтетические PII — только в PostgreSQL tmpfs, trace/screenshots/video отключены, cleanup
+    выполняется через `if: always()`.
 
 - [ ] TASK-A051 Нормализовать task ledger и исторические audit reports
   - Выполнить обещание `TASK-A005`: оставить в `TODO.md` только незавершённые задачи, а завершённые

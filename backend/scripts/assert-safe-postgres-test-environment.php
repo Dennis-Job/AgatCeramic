@@ -10,6 +10,7 @@ $allowedTargets = [
     'agatceramic_test' => ['127.0.0.1', 'localhost'],
     'agatceramic_feature_test' => ['127.0.0.1', 'localhost'],
     'agatceramic_queue_test' => ['127.0.0.1', 'localhost', 'queue-test-postgres'],
+    'agatceramic_admin_smoke_test' => ['admin-smoke-postgres'],
 ];
 $expectedDatabase = $argv[1] ?? null;
 
