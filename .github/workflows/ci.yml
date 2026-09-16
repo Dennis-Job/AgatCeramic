@@ -25,6 +25,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate Markdown links and tracked artifacts
+        run: python3 scripts/check-repository-hygiene.py
+
       - name: Reject database artifacts in Git refs
         run: bash scripts/assert-no-database-artifacts.sh
 

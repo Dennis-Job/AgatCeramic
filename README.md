@@ -17,10 +17,10 @@ AgatCeramic
 
 ## Текущее состояние
 
-Laravel — API и единое business core. Vue Admin реализует access control и Catalog,
-а Nuxt Client пока является каркасом. Public cart/checkout, orders и contacts уже доступны
-через API, но полноценные Admin workspaces для orders/contacts и публичный storefront ещё не
-реализованы. Online payment и customer registration не предусмотрены.
+Laravel — API и единое business core. Vue Admin реализует access control, Catalog, orders и
+contacts, а Nuxt Client пока является каркасом. Public cart/checkout, orders и contacts доступны
+через API; публичный storefront ещё не реализован. Online payment и customer registration не
+предусмотрены.
 
 Полная картина реализованного, ограничений и зависимостей Phases 7–11:
 [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md).

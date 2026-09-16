@@ -1,6 +1,10 @@
-# Interim Audit — API-only and frontend boundaries (TASK-A011)
+# Исторический аудит API-only и frontend-границ (TASK-A011)
 
-Audit date: 2026-09-09.
+> **Статус:** исторический evidence-снимок на дату проверки. Указанные ниже пути, количества и
+> результаты тестов не являются текущими метриками. Актуальное состояние описано в
+> [`CURRENT_STATE.md`](CURRENT_STATE.md), действующие проверки — в [`CI.md`](CI.md).
+
+Дата аудита: 2026-09-09.
 
 ## Result: confirmed
 

@@ -1,6 +1,10 @@
-# Interim Audit — Admin UI-kit (TASK-A017)
+# Исторический аудит Admin UI-kit (TASK-A017)
 
-Audit date: 2026-09-10. Scope: Admin SPA shared controls and Phase 0–6
+> **Статус:** исторический evidence-снимок на дату проверки. Указанные ниже пути, количества и
+> результаты тестов не являются текущими метриками. Актуальное состояние описано в
+> [`CURRENT_STATE.md`](CURRENT_STATE.md), действующие проверки — в [`CI.md`](CI.md).
+
+Дата аудита: 2026-09-10. Scope: Admin SPA shared controls and Phase 0–6
 screens. The visual reference is the TailAdmin-derived token system in
 `frontend/admin/src/style.css`.
 

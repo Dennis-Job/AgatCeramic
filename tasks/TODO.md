@@ -447,7 +447,7 @@ API behaviour без migration plan и синхронного обновлени
     синтетические PII — только в PostgreSQL tmpfs, trace/screenshots/video отключены, cleanup
     выполняется через `if: always()`.
 
-- [ ] TASK-A051 Нормализовать task ledger и исторические audit reports
+- [x] TASK-A051 Нормализовать task ledger и исторические audit reports
   - Выполнить обещание `TASK-A005`: оставить в `TODO.md` только незавершённые задачи, а завершённые
     `TASK-A001`–`TASK-A041` держать в компактном `DONE.md`/Git без второго полного roadmap.
   - Пометить audit evidence как историческое либо обновить изменяемые счётчики маршрутов, файлов и
@@ -488,35 +488,35 @@ API behaviour без migration plan и синхронного обновлени
 
 ## Phase 7 — Content
 
-- [ ] TASK-090 Site settings
-- [ ] TASK-091 Pages
-- [ ] TASK-092 Banners
-- [ ] TASK-093 Sliders
-- [ ] TASK-094 Stores
-- [ ] TASK-095 Working hours
-- [ ] TASK-096 Media library
-  - Deliver category images, brand logos and documents through managed media references; reconcile
-    every pre-existing non-null placeholder before adding foreign keys.
+- [ ] TASK-090 Настройки сайта
+- [ ] TASK-091 Страницы
+- [ ] TASK-092 Баннеры
+- [ ] TASK-093 Слайдеры
+- [ ] TASK-094 Магазины
+- [ ] TASK-095 Часы работы
+- [ ] TASK-096 Медиатека
+  - Доставлять изображения категорий, логотипы брендов и документы через управляемые media
+    references; до добавления foreign keys сверить все существующие непустые placeholders.
 
 ## Phase 8 — SEO
 
 - [ ] TASK-100 SEO metadata
-  - Create a separate managed SEO layer for products, categories and brands; do not duplicate values
-    in Catalog tables.
-- [ ] TASK-101 Canonical for indexable entities
-- [ ] TASK-102 Sitemap generation
-- [ ] TASK-103 Robots metadata/directives and robots.txt
-- [ ] TASK-104 Redirects, including Catalog slug changes
-- [ ] TASK-105 Structured data
-- [ ] TASK-106 SEO AI draft generation
+  - Создать отдельный управляемый SEO-слой для товаров, категорий и брендов; не дублировать
+    значения в таблицах Catalog.
+- [ ] TASK-101 Canonical для индексируемых сущностей
+- [ ] TASK-102 Генерация sitemap
+- [ ] TASK-103 Robots metadata/directives и robots.txt
+- [ ] TASK-104 Redirects, включая изменения Catalog slug
+- [ ] TASK-105 Структурированные данные
+- [ ] TASK-106 Черновики SEO-контента с AI
 
 ## Phase 9 — Analytics
 
-- [ ] TASK-110 Orders dashboard
-- [ ] TASK-111 Paid sales dashboard
-- [ ] TASK-112 Monthly reports
-- [ ] TASK-113 Category/brand/product sales
-- [ ] TASK-114 Average order value
+- [ ] TASK-110 Dashboard заказов
+- [ ] TASK-111 Dashboard оплаченных продаж
+- [ ] TASK-112 Ежемесячные отчёты
+- [ ] TASK-113 Продажи по категориям, брендам и товарам
+- [ ] TASK-114 Средний чек
 
 ## Phase 10 — Client
 
@@ -527,14 +527,14 @@ API behaviour без migration plan и синхронного обновлени
 - [ ] TASK-124 Checkout
 - [ ] TASK-125 Order confirmation
 - [ ] TASK-126 SEO implementation
-- [ ] TASK-127 Structured data
-- [ ] TASK-128 Performance optimization
+- [ ] TASK-127 Структурированные данные
+- [ ] TASK-128 Оптимизация производительности
 
 ## Phase 11 — Production
 
 - [ ] TASK-140 Production Docker
 - [ ] TASK-141 CI/CD
-- [ ] TASK-142 Backups
-- [ ] TASK-143 Monitoring
+- [ ] TASK-142 Резервное копирование
+- [ ] TASK-143 Мониторинг
 - [ ] TASK-144 Security hardening
 - [ ] TASK-145 Production deployment

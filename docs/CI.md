@@ -7,7 +7,7 @@ Workflow получает только право `contents: read` и не ис�
 
 | Job | Проверки |
 | --- | --- |
-| Repository security | Запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
+| Repository security | Проверка внутренних Markdown-ссылок и tracked artifacts, запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
 | Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Backend feature suite (PostgreSQL) | Все Laravel feature tests на отдельной PostgreSQL 17 database в фиксированном случайном порядке |
 | Redis queue delivery | Реальные import, storage cleanup и order confirmation jobs через отдельный Redis worker и PostgreSQL 17 |
@@ -17,6 +17,17 @@ Workflow получает только право `contents: read` и не ис�
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+Repository hygiene локально проверяется без установки зависимостей:
+
+```bash
+python3 scripts/check-repository-hygiene.py
+```
+
+Скрипт обходит tracked Markdown-файлы, проверяет относительные цели и anchors ссылок и отклоняет
+tracked dependency/build/test/editor/runtime artifacts. Проверка database exports во всех Git refs
+остаётся в отдельном
+[`assert-no-database-artifacts.sh`](../scripts/assert-no-database-artifacts.sh).
 
 Compose smoke запускает [`scripts/test-compose-dependency-bootstrap.sh`](../scripts/test-compose-dependency-bootstrap.sh)
 с отдельным project name и только временными named volumes. Он собирает реальные backend/node
@@ -144,6 +155,8 @@ Admin E2E в CI и локальном Compose запускает production-сб
 которой создаются Linux visual snapshots, без ослабления pixel-diff threshold.
 Playwright retries отключены во всех окружениях: каждый упавший тест немедленно делает suite
 неуспешным и не может быть скрыт успешной повторной попыткой.
+Visual-тест открытого `UiDatePicker` фиксирует системное время, чтобы подсветка текущего дня не
+меняла snapshot без изменения интерфейса.
 Детерминированные browser-level mock-ответы API удерживают
 loading-состояния управляемыми deferred fixtures до явного release, а не таймерами. Проверяются
 маршрутизация, восстановление административной сессии, каталоговые представления и интерактивные
@@ -180,18 +193,3 @@ docker compose -p agatceramic-admin-smoke-test --env-file .env.example \
 Полный локальный Admin workflow после `npm ci` запускается командой `npm run test:ci`: ESLint,
 Prettier check, unit-тесты, production build и Playwright выполняются последовательно с единым
 ненулевым exit code при любой ошибке. Быстрая проверка без браузера доступна как `npm run check`.
-
-## Статус TASK-A039 (2026-09-14)
-
-Admin source, tests и конфигурация приведены к зафиксированному Prettier baseline. ESLint 10
-использует flat config для JavaScript, TypeScript и Vue; warnings считаются ошибками. Обе проверки
-выполняются отдельными blocking steps в Admin CI job. Playwright запускается с `retries: 0`
-локально и в CI.
-
-Visual-тест открытого `UiDatePicker` фиксирует системное время на 13.09.2026. Это исключает
-изменение подсветки «сегодня» при смене календарного дня без изменения или ослабления snapshot
-threshold.
-
-Два последовательных локальных запуска `npm run test:ci` прошли одинаково: ESLint и Prettier
-без ошибок, 47 unit-тестов, production build и 148/148 Playwright E2E/axe/visual тестов. Финальный
-Linux Compose suite после чистого `npm ci` прошёл 148/148.

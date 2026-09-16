@@ -1,4 +1,9 @@
-# Backend quality baseline
+# Baseline качества backend
+
+> **Статус:** конфигурация quality gates остаётся действующей, а количества файлов, тестов и
+> assertions ниже являются историческим evidence `TASK-A007`. Актуальные команды и обязательные
+> CI jobs описаны в [`CI.md`](CI.md); текущее состояние — в
+> [`CURRENT_STATE.md`](CURRENT_STATE.md).
 
 ## Статус TASK-A007 (2026-09-10)
 

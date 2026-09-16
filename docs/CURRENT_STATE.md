@@ -1,36 +1,35 @@
 # Текущее состояние проекта
 
-Состояние актуализировано по итогам `TASK-A001`–`TASK-A041`, инженерной редакции `TASK-A043`,
-повторной финальной приёмки `TASK-A030` (2026-09-13) и повторной оценки Interim Audit
-(2026-09-14). Admin frontend
-refactoring принят. Repository-side remediation `TASK-A042` завершён, а server-side очистка
-GitHub cached views/PR refs ожидается по открытому запросу Support `#4756780`; остальные
-security/data-lifecycle, архитектурные и quality-gate follow-ups `TASK-A043`–`TASK-A055` открыты,
-кроме завершённых `TASK-A045`–`TASK-A050`.
-Для `TASK-A043` подготовлены ADR, threat model и retention/deletion matrix; `TASK-A044` реализует
-gated bounded controls, evidence и restore replay. Юридическое принятие ещё не зафиксировано,
-поэтому production-очистка остаётся запрещённой.
-Evidence приведены в
-[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
-[`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
+Документ отражает состояние после завершения `TASK-A051` 2026-09-16. Исторические результаты
+аудитов и их числовые срезы не обновляются задним числом; текущий набор обязательных проверок
+описан в [`CI.md`](CI.md), завершённые задачи — в [`tasks/DONE.md`](../tasks/DONE.md).
+
+Admin frontend refactoring принят. Follow-up проверки `TASK-A045`–`TASK-A050` закрыли cart-token,
+OpenAPI, dependency bootstrap, PostgreSQL feature-suite, Redis delivery и Admin full-stack gaps.
+Security/data-lifecycle задачи `TASK-A042`–`TASK-A044` остаются в работе. Архитектурные follow-ups
+`TASK-A052`–`TASK-A055` находятся в будущем roadmap.
 
 ## Реализовано
 
 | Область | Фактическое состояние |
 | --- | --- |
-| Foundation | Laravel API-only, Vue Admin, Nuxt Client skeleton, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned `/api/v1`, stable error envelope, OpenAPI. |
+| Foundation | Laravel API-only, Vue Admin, Nuxt Client skeleton, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned `/api/v1`, stable error envelope и OpenAPI. |
 | Access control | Admin authentication, password reset, active-user guard, RBAC, granular permissions, audit log, snapshots, retention и PostgreSQL immutability. |
 | Catalog | Categories, brands, attribute groups/typed attributes, standalone sellable products, product groups, generated immutable SKU, images, related products, filters/search и durable storage cleanup. Legacy variants остаются read-only до отдельной verified migration. |
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. |
 | Cart and orders | Public guest cart with HMAC-only bearer lookup, configurable TTL and lock-safe cleanup; locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
-| Admin frontend | Route views и feature-слои выделены, временные compatibility adapters удалены. `TASK-A031`–`TASK-A037` закрыли findings повторной приёмки и post-acceptance UI contracts; `TASK-A038` вынесла orchestration импортов в feature composables; `TASK-A039` добавила blocking ESLint/Prettier gates, отключила Playwright retries и стабилизировала date-dependent visual test; `TASK-A040` сделала `/ui-kit` полным живым каталогом компонентов и design tokens; `TASK-A041` восстановила независимую desktop-прокрутку sidebar. Повторная финальная приёмка `TASK-A030` пройдена. |
+| Admin frontend | Route views и feature-слои выделены, compatibility adapters удалены, source-of-truth UI-kit и обязательные lint, unit, production E2E, accessibility, responsive и visual gates действуют. Orders и contacts имеют рабочие list/detail/workflow экраны. |
+| Production-like проверки | Полный Laravel feature suite выполняется на PostgreSQL; отдельные CI profiles проверяют реальную Redis queue delivery, Admin SPA → Sanctum/Laravel API и lock-aware bootstrap dependency volumes. |
 
 ## Принятые границы
 
-- Laravel — единственное бизнес-ядро для Admin и будущего Client; Blade и server-rendered storefront не используются.
-- Товар — самостоятельная продаваемая позиция. Product group служит навигации между товарами и не является nested variant.
-- Публичные формы, cart и checkout не принимают client-owned prices, totals, statuses или workflow fields.
+- Laravel — единственное бизнес-ядро для Admin и будущего Client; Blade и server-rendered
+  storefront не используются.
+- Товар — самостоятельная продаваемая позиция. Product group служит навигации между товарами и
+  не является nested variant.
+- Публичные формы, cart и checkout не принимают client-owned prices, totals, statuses или
+  workflow fields.
 - PII минимизируется и не попадает в обычные application logs или audit metadata.
 - OpenAPI — машинный контракт; [`API.md`](API.md) описывает только сценарии и нетривиальные правила.
 
@@ -38,21 +37,15 @@ Evidence приведены в
 
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
-| Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через четыре скрытых GitHub PR refs до выполнения server-side purge по запросу Support `#4756780`; также ожидаются оставшиеся operational confirmations. | `TASK-A042` |
-| High | Для business PII orders/contacts подготовлена policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
-| Resolved | Guest cart tokens хранятся только как HMAC; configurable TTL и lock-safe bounded cleanup реализованы. | `TASK-A045` |
-| Resolved | Полный Laravel feature suite выполняется в CI на отдельной PostgreSQL 17 database с fail-closed guard и deterministic reset. | `TASK-A048` |
-| Resolved | Реальная доставка import, storage cleanup и order confirmation jobs отдельному Redis worker покрыта изолированным PostgreSQL/Redis Compose/CI gate. | `TASK-A049` |
-| Resolved | Production Admin проходит отдельный browser smoke реального Sanctum/Laravel boundary с PostgreSQL и Redis без API mocks. | `TASK-A050` |
-| Resolved | Compose dependency volumes синхронизируются с manifest/lock/runtime fingerprint до запуска application process; clean/stale recovery проверяется в CI. | `TASK-A047` |
-| Medium | Import services совмещают workbook I/O, parsing, validation, mutation и reporting; скрытые container dependencies и нетривиальные queries в Controllers ухудшают SOLID/читаемость. | `TASK-A052`–`TASK-A054` |
+| Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через скрытые GitHub PR refs до server-side purge по запросу Support `#4756780`; также ожидаются operational confirmations. | `TASK-A042` |
+| High | Для business PII orders/contacts подготовлены policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
+| Medium | Import services совмещают workbook I/O, parsing, validation, mutation и reporting; скрытые container dependencies и нетривиальные queries в Controllers ухудшают SOLID и читаемость. | `TASK-A052`–`TASK-A054` |
 | Medium | Правила из `backend/AGENTS.md` пока не подкреплены автоматическим architecture CI gate. | `TASK-A055` |
-| Low | Task ledger и исторические audit reports требуют нормализации. | `TASK-A051` |
 
 Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. До подтверждения
-server-side purge и полного закрытия `TASK-A042` публикация несвязанных изменений приостановлена;
-остальные follow-ups выполняются до соответствующих зависимых фаз и не означают переделку всех
-принятых модулей.
+server-side purge и полного закрытия `TASK-A042` публикация несвязанных изменений приостановлена.
+Подробный текущий статус активных работ находится в
+[`tasks/IN_PROGRESS.md`](../tasks/IN_PROGRESS.md).
 
 ## Отложено по roadmap
 
@@ -64,55 +57,15 @@ server-side purge и полного закрытия `TASK-A042` публика�
 | 10 — Client | Public catalog/category/product pages, cart, checkout, confirmation и SEO implementation. | Использует существующие API contracts без дублирования business logic. |
 | 11 — Production | Production Compose, CI/CD delivery, backups, monitoring, security hardening и deployment. | Требует завершённых operational policies. |
 
-## Проверки baseline
+## Проверки и историческое evidence
 
-На 2026-09-11 прошли Composer validation/audit, Pint, Larastan, PostgreSQL migration/concurrency
-(9 tests, 43 assertions), Redis/queue, OpenAPI JSON, Admin unit tests (27), Admin build и Client
-typecheck/build. После TASK-A021 два последовательных полных backend suite прошли; после TASK-A022
-clean-install local Admin E2E/axe run passed (58 tests). Исторический запуск 2026-09-12 также
-показал build, 30 unit-тестов и 136 production E2E/visual/axe/responsive тестов локально и в Linux
-Compose, но повторный аудит обнаружил blocking findings и недостаточную устойчивость части
-evidence. Findings устранены в `TASK-A031`–`TASK-A035`; повторная приёмка `TASK-A030` подтвердила
-35 unit и 145 E2E/axe/visual тестов локально и 145/145 в Linux Compose. Независимый UI Design Guard
-не оставил blocking findings. `TASK-A020` и `TASK-A030` приняты. Подробности — в
-[`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) и
-[`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md).
+Актуальные обязательные jobs, локальные команды и safety guards перечислены только в
+[`CI.md`](CI.md). Количество маршрутов, файлов, тестов и assertions намеренно не копируется сюда:
+оно изменяется вместе с кодом и подтверждается самим CI run.
 
-Post-acceptance follow-up `TASK-A036` синхронизировал фактическую архитектуру с итогом `TASK-A030`:
-админка использует backend-названия ролей и больше не содержит employee-service compatibility alias.
-Production build, 37 unit-тестов и 146 E2E/axe/visual тестов прошли; UI Design Guard одобрил
-поведение на контрольных ширинах 320/640/768/1024/1280 px без замечаний.
+Исторические снимки приёмки сохранены без ретроспективной подмены результатов:
 
-`TASK-A037` синхронизировала native disabled-состояние `UiInput`, `UiSelect` и `UiDatePicker` с их
-вспомогательными clear/menu actions, сохранила Escape/focus return и закрепила адаптивный calendar
-popup. Production build, 41 unit-тест и 147 E2E/axe/visual тестов прошли локально и в Linux Compose;
-disabled и открытый calendar визуально проверены на 320/640/768/1024/1280 px в Darwin/Linux;
-независимый UI Design Guard не оставил blocking или non-blocking findings.
-
-`TASK-A038` перенесла orchestration трёх товарных import dialogs в feature composables и validation.
-`TASK-A039` зафиксировала ESLint/Prettier baseline, добавила blocking lint/format checks в CI,
-отключила Playwright retries и устранила зависимость calendar snapshot от текущего дня. Два
-последовательных локальных Admin suite прошли по 47 unit и 148 E2E/axe/visual тестов; Linux Compose
-suite прошёл 148/148.
-
-`TASK-A040` дополнила `/ui-kit` до полного живого каталога 16 `Ui*` и трёх shared-компонентов,
-их значимых состояний и всех CSS design tokens. Полнота закреплена unit/E2E, axe, responsive и
-visual-проверками: 50 unit и 149 E2E/axe/visual тестов прошли локально и в Linux Compose;
-независимый UI Design Guard не оставил замечаний.
-
-`TASK-A041` восстановила desktop-прокрутку sidebar на экранах с небольшой высотой и исключила
-scroll chaining в основную страницу. Адресный сценарий проверяет viewport 1280×480, hover + wheel,
-достижимость нижней навигации и переход; 50 unit и 150 E2E/axe/visual тестов прошли локально и в
-Linux Compose. Независимый UI Design Guard одобрил результат.
-
-`TASK-A049` добавила отдельный blocking `Redis queue delivery` job и Compose profile с эфемерными
-PostgreSQL 17 и Redis 7.4. Настоящие workers обрабатывают import, storage cleanup и order
-confirmation jobs; проверены after-commit dispatch, identifier-only payloads, bounded delayed
-retry/backoff, terminal failure и `failed_jobs`, stale redispatch и идемпотентная duplicate
-delivery. Изолированный suite прошёл: 1 тест, 84 assertions; быстрые fake/sync tests сохранены.
-
-`TASK-A050` добавила blocking `Admin full-stack smoke`: production build SPA через same-origin
-proxy проходит реальный Sanctum CSRF/login/logout flow с Laravel, PostgreSQL 17 и Redis 7.4.
-Browser без API mocks проверяет Catalog read/create, order/contact read/status mutation, route/API
-permissions и стандартные `401/403` error envelopes. Локальный изолированный прогон прошёл: 1 test;
-runtime credentials/синтетические PII и все volumes удалены после проверки.
+- [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) — приёмка Phases 0–6 и последующие findings;
+- [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md) — baseline и повторная приёмка
+  Admin refactoring;
+- специализированные `*_AUDIT.md` — evidence конкретного слоя на указанную в них дату.

@@ -1,6 +1,10 @@
-# Interim Audit — Backend API → Admin UI matrix (TASK-A016)
+# Исторический аудит Backend API → Admin UI (TASK-A016)
 
-Audit date: 2026-09-10. Scope: implemented Phase 0–6 administrative API
+> **Статус:** исторический evidence-снимок на дату проверки. Описанные ниже gaps были входными
+> данными для последующих задач и не отражают текущее состояние. Актуальная реализация описана в
+> [`CURRENT_STATE.md`](CURRENT_STATE.md), действующие проверки — в [`CI.md`](CI.md).
+
+Дата аудита: 2026-09-10. Scope: implemented Phase 0–6 administrative API
 operations in [`openapi.json`](openapi.json), their Laravel policies and the
 Vue Admin SPA. Public storefront operations are outside this matrix.
 
