@@ -141,6 +141,9 @@ jobs:
       - name: Check PHP formatting
         run: vendor/bin/pint --test
 
+      - name: Enforce backend architecture boundaries
+        run: composer architecture
+
       - name: Run Laravel static analysis
         run: composer analyse
 

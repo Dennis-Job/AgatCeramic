@@ -20,21 +20,32 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): Response
     {
-        $this->authenticationService->login($request);
+        $user = $this->authenticationService->login(
+            $request->string('email')->toString(),
+            $request->string('password')->toString(),
+        );
+
+        Auth::guard('web')->login($user);
+        $request->session()->regenerate();
 
         return response()->noContent();
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): Response
     {
-        $this->authenticationService->sendPasswordResetLink($request);
+        $this->authenticationService->sendPasswordResetLink($request->string('email')->toString());
 
         return response()->noContent();
     }
 
     public function resetPassword(ResetPasswordRequest $request): Response
     {
-        $this->authenticationService->resetPassword($request);
+        $this->authenticationService->resetPassword(
+            $request->string('email')->toString(),
+            $request->string('password')->toString(),
+            $request->string('password_confirmation')->toString(),
+            $request->string('token')->toString(),
+        );
 
         return response()->noContent();
     }
@@ -62,7 +73,10 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $this->authenticationService->logout($request);
+        $this->authenticationService->recordLogout($this->authenticatedAdmin($request));
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return response()->json(status: Response::HTTP_NO_CONTENT);
     }

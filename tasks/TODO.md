@@ -491,13 +491,17 @@ API behaviour без migration plan и синхронного обновлени
     сортировкой; все документированные фильтры и пагинация покрыты feature-тестами без изменения
     HTTP/OpenAPI-контрактов.
 
-- [ ] TASK-A055 Автоматизировать backend architecture guardrails
+- [x] TASK-A055 Автоматизировать backend architecture guardrails
   - Добавить проверку направлений зависимостей между HTTP, application, data/integration и
     presentation слоями.
   - Запретить в Controllers DB transactions/mutations, service locator и глобальные request/auth
     helpers; временный allowlist допускается только с номером задачи на удаление долга.
   - Добавить отчёт по чрезмерному размеру/complexity классов и методов с review-порогами из
     `backend/AGENTS.md`, подключить guard к обязательному CI и документировать локальную команду.
+  - Реализовано 2026-09-16: PHP AST guard проверяет направления слоёв и запрещённые операции в
+    Controllers, task-bound allowlist отклоняет некорректный и stale debt, а size/complexity
+    review report выполняется обязательной Composer-командой в CI. Auth application service
+    больше не зависит от Form Requests/HTTP session lifecycle.
 
 ## Phase 7 — Content
 

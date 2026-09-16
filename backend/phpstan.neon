@@ -9,6 +9,8 @@ parameters:
         - config
         - database
         - routes
+        - scripts/architecture
+        - scripts/check-architecture.php
 
     level: 8
     reportUnmatchedIgnoredErrors: true

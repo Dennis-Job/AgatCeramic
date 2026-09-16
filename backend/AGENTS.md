@@ -205,6 +205,7 @@ validator, planner, executor, exporter, report builder и т. п.
 composer validate --strict
 composer audit --locked
 vendor/bin/pint --test
+composer architecture
 composer analyse
 composer test
 ```

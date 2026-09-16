@@ -8,7 +8,7 @@ Workflow получает только право `contents: read` и не ис�
 | Job | Проверки |
 | --- | --- |
 | Repository security | Проверка внутренних Markdown-ссылок и tracked artifacts, запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
-| Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
+| Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, backend architecture guard, Larastan, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
 | Backend feature suite (PostgreSQL) | Все Laravel feature tests на отдельной PostgreSQL 17 database в фиксированном случайном порядке |
 | Redis queue delivery | Реальные import, storage cleanup и order confirmation jobs через отдельный Redis worker и PostgreSQL 17 |
 | Admin full-stack smoke | Production build Admin, реальный Sanctum session/CSRF flow, Laravel, PostgreSQL 17 и Redis 7.4 без browser API mocks |
@@ -17,6 +17,20 @@ Workflow получает только право `contents: read` и не ис�
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+Backend architecture guard локально запускается после установки Composer dependencies:
+
+```bash
+cd backend
+composer architecture
+```
+
+Команда анализирует PHP AST, блокирует обратные зависимости слоёв, прямой DB/Eloquent mutation,
+service locator и глобальные `request()`/`auth()` helpers в Controllers. В том же выводе находится
+неблокирующий review-отчёт для классов длиннее 250 строк, методов длиннее 40 строк и методов с
+cyclomatic complexity выше 10. Новые findings отчёта требуют осознанного review, но сами размеры
+не являются автоматическим требованием создавать новый слой. Точные правила и политика временного
+allowlist описаны в [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 Repository hygiene локально проверяется без установки зависимостей:
 

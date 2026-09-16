@@ -71,6 +71,31 @@ Eloquent / DB
 
 Для простых CRUD операций допустимо не создавать искусственную сложность.
 
+### Автоматические границы
+
+`cd backend && composer architecture` разбирает `app/**/*.php` через PHP Parser и является
+блокирующим шагом CI. Guard закрепляет следующие направления:
+
+| Исходный слой | Разрешённое направление | Запрещённое направление |
+| --- | --- | --- |
+| HTTP Controllers/Requests/Middleware | Application services, Queries, Models, API Resources | Controllers: DB facade, прямые Eloquent mutations, `app()`/`resolve()`, глобальные `request()`/`auth()` |
+| Application (`app/Services`) | Models, Queries и явные integration entry points | `App\Http\*`, HTTP Request/Response types |
+| Data models (`app/Models`) | Enums, local model/support primitives | HTTP, Services, Queries, Jobs, Console, Mail |
+| Read queries (`app/Queries`) | Models и query primitives | HTTP, Services, Jobs, Console, Mail |
+| API presentation (`Http/Resources`, `Http/Responses`) | Models, enums и другие presentation components | Services, Queries, Jobs, Console, Mail |
+| Integration entry points (`Jobs`, `Console`, `Mail`, `Logging`) | Application/Data | Controllers, Requests, Resources, Responses |
+
+Guard отдельно печатает review-сигналы из [`backend/AGENTS.md`](../backend/AGENTS.md): класс
+длиннее 250 строк и метод длиннее 40 строк. Дополнительный проектный сигнал — cyclomatic
+complexity метода выше 10. Эти findings не блокируют CI автоматически: они требуют проверить
+разделение ответственности и зафиксировать решение в review.
+
+Исключение архитектурного нарушения допускается только временно в
+[`backend/scripts/architecture-allowlist.php`](../backend/scripts/architecture-allowlist.php).
+Запись должна точно указывать `path`, `rule`, `line`, причину и отдельную задачу удаления долга в
+формате `TASK-A000` или `TASK-000`. Некорректная или устаревшая запись сама ломает gate; общий
+baseline и wildcard-исключения не поддерживаются.
+
 ## 4. API
 
 API versioning:

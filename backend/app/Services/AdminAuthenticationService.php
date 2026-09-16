@@ -3,13 +3,8 @@
 namespace App\Services;
 
 use App\Enums\AdminUserStatus;
-use App\Http\Requests\Api\V1\Admin\ForgotPasswordRequest;
-use App\Http\Requests\Api\V1\Admin\LoginRequest;
-use App\Http\Requests\Api\V1\Admin\ResetPasswordRequest;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -20,39 +15,32 @@ class AdminAuthenticationService
 {
     public function __construct(private readonly AuditLogService $auditLogService) {}
 
-    public function login(LoginRequest $request): void
+    public function login(string $email, string $password): User
     {
         $user = User::query()
-            ->where('email', $request->string('email')->lower()->toString())
+            ->where('email', strtolower($email))
             ->first();
 
         if ($user === null
             || $user->getRawOriginal('status') !== AdminUserStatus::Active->value
-            || ! Hash::check($request->string('password')->toString(), $user->password)) {
+            || ! Hash::check($password, $user->password)) {
             throw new AuthenticationException;
         }
 
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
-
         $user->forceFill(['last_login_at' => now()])->save();
         $this->auditLogService->record($user, 'auth.login', $user);
+
+        return $user;
     }
 
-    public function logout(Request $request): void
+    public function recordLogout(User $user): void
     {
-        /** @var User $user */
-        $user = $request->user();
-
         $this->auditLogService->record($user, 'auth.logout', $user);
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
     }
 
-    public function sendPasswordResetLink(ForgotPasswordRequest $request): void
+    public function sendPasswordResetLink(string $email): void
     {
-        $email = $request->string('email')->lower()->toString();
+        $email = strtolower($email);
         $user = User::query()->where('email', $email)->first();
 
         if ($user === null || $user->getRawOriginal('status') !== AdminUserStatus::Active->value) {
@@ -62,9 +50,9 @@ class AdminAuthenticationService
         Password::sendResetLink(['email' => $email]);
     }
 
-    public function resetPassword(ResetPasswordRequest $request): void
+    public function resetPassword(string $email, string $password, string $passwordConfirmation, string $token): void
     {
-        $email = $request->string('email')->lower()->toString();
+        $email = strtolower($email);
         $user = User::query()->where('email', $email)->first();
 
         if ($user === null || $user->getRawOriginal('status') !== AdminUserStatus::Active->value) {
@@ -73,9 +61,9 @@ class AdminAuthenticationService
 
         $status = Password::reset([
             'email' => $email,
-            'password' => $request->string('password')->toString(),
-            'password_confirmation' => $request->string('password_confirmation')->toString(),
-            'token' => $request->string('token')->toString(),
+            'password' => $password,
+            'password_confirmation' => $passwordConfirmation,
+            'token' => $token,
         ], function (User $user, string $password): void {
             DB::transaction(function () use ($user, $password): void {
                 $user->forceFill([

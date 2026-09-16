@@ -21,6 +21,7 @@
 | Backend import architecture | TASK-A052 | Workbook I/O, parsing/validation, planning, mutation, template/error reports и cleanup разделены по ответственностям без изменения API, checkpoint/resume, transaction и locking contracts. |
 | Явные backend dependencies | TASK-A053 | Jobs, bootstrap, validation, console и Controllers переведены на constructor/method injection; тесты Jobs используют container invocation, а неизбежный `failed()` adapter изолирован и протестирован. |
 | Backend read layer | TASK-A054 | Многоусловные admin filters/search/sort и audit metadata enrichment вынесены в Query objects; eager loading, PostgreSQL indexes и feature-покрытие фильтров закреплены без изменения API-контрактов. |
+| Backend architecture guard | TASK-A055 | PHP AST gate блокирует обратные зависимости слоёв, запрещённые DB/Eloquent/service-locator/helper операции в Controllers и stale allowlist; size/complexity findings публикуются для review. |
 
 `TASK-A042`–`TASK-A044` не включены в этот индекс: они остаются незавершёнными и перечислены в
 [`IN_PROGRESS.md`](IN_PROGRESS.md).

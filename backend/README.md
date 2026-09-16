@@ -20,8 +20,15 @@ Run the checks:
 ```powershell
 composer test
 vendor/bin/pint --test
+composer architecture
 composer analyse
 ```
+
+`composer architecture` блокирует обратные зависимости между HTTP, application, data/query,
+integration и API presentation слоями, а также DB/model mutations, service locator и глобальные
+`request()`/`auth()` helpers в Controllers. Та же команда печатает неблокирующий review-отчёт по
+размеру классов/методов и cyclomatic complexity; правила и временный debt allowlist описаны в
+[`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
 
 PostgreSQL is the default application database. Set the `DB_*` values in `backend/.env`; when Laravel runs through Docker Compose, those values are supplied by the root `.env` and the database host is `postgres`.
 

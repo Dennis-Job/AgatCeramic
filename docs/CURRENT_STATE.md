@@ -1,21 +1,22 @@
 # Текущее состояние проекта
 
-Документ отражает состояние после завершения `TASK-A054` 2026-09-16. Исторические результаты
+Документ отражает состояние после завершения `TASK-A055` 2026-09-16. Исторические результаты
 аудитов и их числовые срезы не обновляются задним числом; текущий набор обязательных проверок
 описан в [`CI.md`](CI.md), завершённые задачи — в [`tasks/DONE.md`](../tasks/DONE.md).
 
 Admin frontend refactoring принят. Follow-up проверки `TASK-A045`–`TASK-A050` закрыли cart-token,
 OpenAPI, dependency bootstrap, PostgreSQL feature-suite, Redis delivery и Admin full-stack gaps.
 Security/data-lifecycle задачи `TASK-A042`–`TASK-A044` остаются в работе. Импортный application
-layer декомпозирован, production dependencies сделаны явными, а сложные admin read queries
-вынесены из Controllers; в roadmap остаётся architecture enforcement `TASK-A055`.
+layer декомпозирован, production dependencies сделаны явными, сложные admin read queries
+вынесены из Controllers, а направления зависимостей и тонкие Controllers защищены blocking
+architecture gate.
 
 ## Реализовано
 
 | Область | Фактическое состояние |
 | --- | --- |
 | Foundation | Laravel API-only, Vue Admin, Nuxt Client skeleton, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned `/api/v1`, stable error envelope и OpenAPI. |
-| Backend architecture | Нетривиальные admin filters/search/sort, eager loading и audit metadata enrichment изолированы в Query objects; основные equality-filter/sort paths подкреплены PostgreSQL indexes. Простые локальные CRUD reads остаются в Controllers. |
+| Backend architecture | Нетривиальные admin filters/search/sort, eager loading и audit metadata enrichment изолированы в Query objects; основные equality-filter/sort paths подкреплены PostgreSQL indexes. AST guard блокирует обратные зависимости слоёв, DB/Eloquent mutations и service locator/global request/auth helpers в Controllers; размер и complexity публикуются как review-сигналы. |
 | Access control | Admin authentication, password reset, active-user guard, RBAC, granular permissions, audit log, snapshots, retention и PostgreSQL immutability. |
 | Catalog | Categories, brands, attribute groups/typed attributes, standalone sellable products, product groups, generated immutable SKU, images, related products, filters/search и durable storage cleanup. Legacy variants остаются read-only до отдельной verified migration. |
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. Workbook I/O, parsing/validation, planning, mutation и report/template generation разделены на небольшие сервисы; orchestration сохраняет прежние transaction, locking и checkpoint contracts. Queue entry points получают обязательные сервисы через container injection; только прямые Laravel `failed()` callbacks используют документированный узкий adapter. |
@@ -41,7 +42,6 @@ layer декомпозирован, production dependencies сделаны яв�
 | --- | --- | --- |
 | Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через скрытые GitHub PR refs до server-side purge по запросу Support `#4756780`; также ожидаются operational confirmations. | `TASK-A042` |
 | High | Для business PII orders/contacts подготовлены policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
-| Medium | Правила из `backend/AGENTS.md` пока не подкреплены автоматическим architecture CI gate. | `TASK-A055` |
 
 Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. До подтверждения
 server-side purge и полного закрытия `TASK-A042` публикация несвязанных изменений приостановлена.
