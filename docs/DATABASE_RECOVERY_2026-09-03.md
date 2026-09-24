@@ -40,7 +40,8 @@ backend/queue/scheduler имена баз переключены одной тр
 ## Security correction 2026-09-14
 
 Исторические archives и recovery manifest позднее были ошибочно опубликованы в публичном GitHub
-repository. Они признаны скомпрометированными и удаляются из всех refs в рамках `TASK-A042`; их
-нельзя использовать как recovery source. Incident evidence и статус ротации находятся в
+repository. Они удалены из current tree, public branches и tags в рамках `TASK-A042`; остаточная
+доступность test-only objects через четыре GitHub-managed PR refs принята владельцем без удаления
+PR. Эти archives нельзя использовать как recovery source. Incident evidence и статус находятся в
 [`SECURITY_INCIDENT_2026-09-14.md`](SECURITY_INCIDENT_2026-09-14.md), актуальная процедура — в
 [`DATABASE_BACKUP_RESTORE.md`](DATABASE_BACKUP_RESTORE.md).

@@ -1,12 +1,12 @@
 # Текущее состояние проекта
 
-Документ отражает состояние после завершения `TASK-A055` 2026-09-16. Исторические результаты
+Документ отражает состояние после закрытия `TASK-A042` 2026-09-24. Исторические результаты
 аудитов и их числовые срезы не обновляются задним числом; текущий набор обязательных проверок
 описан в [`CI.md`](CI.md), завершённые задачи — в [`tasks/DONE.md`](../tasks/DONE.md).
 
 Admin frontend refactoring принят. Follow-up проверки `TASK-A045`–`TASK-A050` закрыли cart-token,
 OpenAPI, dependency bootstrap, PostgreSQL feature-suite, Redis delivery и Admin full-stack gaps.
-Security/data-lifecycle задачи `TASK-A042`–`TASK-A044` остаются в работе. Импортный application
+Security/data-lifecycle задачи `TASK-A043`–`TASK-A044` остаются в работе. Импортный application
 layer декомпозирован, production dependencies сделаны явными, сложные admin read queries
 вынесены из Controllers, а направления зависимостей и тонкие Controllers защищены blocking
 architecture gate.
@@ -24,6 +24,7 @@ architecture gate.
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
 | Admin frontend | Route views и feature-слои выделены, compatibility adapters удалены, source-of-truth UI-kit и обязательные lint, unit, production E2E, accessibility, responsive и visual gates действуют. Orders и contacts имеют рабочие list/detail/workflow экраны. |
 | Production-like проверки | Полный Laravel feature suite выполняется на PostgreSQL; отдельные CI profiles проверяют реальную Redis queue delivery, Admin SPA → Sanctum/Laravel API и lock-aware bootstrap dependency volumes. |
+| Repository security | Database exports удалены из current tree/public branches/tags; ignore, history artifact gate и полный Gitleaks scan обнаруживают повторное добавление. Остаточная доступность test-only объектов через четыре GitHub-managed PR refs принята владельцем без удаления PR. GitHub ruleset/branch protection пока не настроен, поэтому CI не является pre-receive запретом. |
 
 ## Принятые границы
 
@@ -40,12 +41,11 @@ architecture gate.
 
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
-| Critical | Публичные branches/tags очищены от четырёх PostgreSQL dumps, локальные auth/session credentials инвалидированы и prevention gates включены. Старые objects остаются достижимы через скрытые GitHub PR refs до server-side purge по запросу Support `#4756780`; также ожидаются operational confirmations. | `TASK-A042` |
 | High | Для business PII orders/contacts подготовлены policy и gated repository-side controls, но отсутствуют подписи ответственного за ПДн/юриста и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
 
-Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. До подтверждения
-server-side purge и полного закрытия `TASK-A042` публикация несвязанных изменений приостановлена.
-Подробный текущий статус активных работ находится в
+Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. `TASK-A042` закрыта с
+явным принятием остаточного риска test-only PR refs; публикация новых database exports остаётся
+запрещённой policy и проверяется обязательными CI checks. Подробный текущий статус активных работ находится в
 [`tasks/IN_PROGRESS.md`](../tasks/IN_PROGRESS.md).
 
 ## Отложено по roadmap

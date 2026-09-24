@@ -332,7 +332,7 @@ API behaviour без migration plan и синхронного обновлени
 задачи выполняются в указанном порядке зависимостей; подробное evidence находится в
 [`docs/INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md).
 
-- [ ] TASK-A042 Удалить опубликованные дампы БД и закрыть incident утечки
+- [x] TASK-A042 Удалить опубликованные дампы БД и закрыть incident утечки
   - Без вывода содержимого инвентаризировать четыре отслеживаемых PostgreSQL dump-файла и все их
     Git-объекты. Считать административные записи, password hashes, session payloads и audit
     snapshots скомпрометированными, пока не доказано обратное.

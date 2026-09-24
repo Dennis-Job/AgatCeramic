@@ -9,14 +9,14 @@
 
 Историческая функциональная приёмка `TASK-A020` сохраняется, но утверждение об отсутствии
 незадокументированных security/data-lifecycle gaps больше не является актуальным. Repository-side
-remediation выполнен; до подтверждения GitHub server-side purge по запросу Support `#4756780`
-блокирующим остаётся `TASK-A042`. Активные follow-up задачи находятся в
+remediation выполнен. 2026-09-24 владелец подтвердил test-only характер дампов и принял остаточную
+доступность четырёх GitHub-managed PR refs без удаления PR; `TASK-A042` закрыта. Активные follow-up задачи находятся в
 [`tasks/IN_PROGRESS.md`](../tasks/IN_PROGRESS.md), будущие — в
 [`tasks/TODO.md`](../tasks/TODO.md).
 
 | Finding | Приоритет | Подтверждённое evidence | Follow-up |
 | --- | --- | --- | --- |
-| IA-R01 | Critical | Четыре PostgreSQL dumps удалены из текущего дерева и public branches/tags переписанной истории; добавлены ignore/history/secret gates, выполнены локальная auth invalidation и encrypted restore exercise. Fresh mirror всё ещё получает старые objects через `refs/pull/1/head`–`refs/pull/4/head`; server-side purge ожидается по GitHub Support `#4756780`. | `TASK-A042` |
+| IA-R01 | Resolved — risk accepted | Четыре PostgreSQL dumps удалены из текущего дерева и public branches/tags переписанной истории; добавлены ignore/history/secret gates, выполнены локальная test auth invalidation и encrypted restore exercise. Владелец подтвердил test-only характер данных и принял остаточную доступность objects через `refs/pull/1/head`–`refs/pull/4/head`, отказавшись удалять PR №1–4. | `TASK-A042` |
 | IA-R02 | High | `TASK-A043` подготовила policy, threat model и retention/deletion matrix, а `TASK-A044` — gated repository-side controls и synthetic restore evidence. До закрытия остаются обязательные approvals и external provider evidence; production apply выключен. | `TASK-A043`, `TASK-A044` |
 | IA-R03 | Resolved | `TASK-A045`: `carts.token_hash` хранит HMAC, а configurable empty/abandoned/checked-out TTL обслуживает bounded lock-safe scheduled cleanup. | `TASK-A045` |
 | IA-R04 | Resolved | `TASK-A046`: закреплённый Redocly валидирует OpenAPI 3.1 semantics, а рекурсивный direction-aware checker с mutation fixtures отклоняет несовместимые request/response changes; breaking разрешён только major bump с явным migration plan. | `TASK-A046` |
