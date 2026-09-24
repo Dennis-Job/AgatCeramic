@@ -22,8 +22,8 @@
 Описанные меры поддерживают минимизацию данных, но сами по себе не подтверждают соответствие
 152-ФЗ. Канонические сроки, основания для согласования, legal hold и требования к уничтожению
 зафиксированы в
-[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Пока документ имеет статус `proposed`,
-его сроки не разрешают необратимую production-очистку.
+[`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Политика принята для реализации, но
+необратимая production-очистка остаётся закрыта отдельным operational approval gate.
 
 ## Application log retention
 

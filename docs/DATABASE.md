@@ -239,7 +239,7 @@ Lifecycle direct PII, order number, payment reference, comments, history и ко
 анонимизированный коммерческий остаток не содержит имя, телефон, email, адрес, комментарий,
 payment reference или прежний публичный номер. `order_items` остаются только при утверждённом
 `retain_commercial`; при `delete_all` aggregate удаляется целиком. Production apply всё ещё
-запрещён, пока ADR-014 не принят и disposition не выбран явно.
+запрещён, пока не заполнен operational approval block ADR-014 и disposition не выбран явно.
 
 ### order_statuses
 Управляемый каталог статусов заказа: стабильный уникальный `code`, русское `name`, уникальный

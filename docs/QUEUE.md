@@ -23,7 +23,8 @@ Docker перезапускает его. Это позволяет подхва
 payload/exception 30 днями от `failed_at`; jobs обязаны сериализовать только технические ID, а
 exception перед сохранением не должна содержать PII. `retention:technical` dry-run показывает
 только count/cutoff, а gated `--apply` удаляет один bounded batch вместе с expired database sessions
-и password reset tokens. До принятия ADR-014 scheduler регистрирует только dry-run.
+и password reset tokens. Пока не завершён operational approval gate ADR-014, scheduler
+регистрирует только dry-run.
 
 Сервис `scheduler` запускает `php artisan schedule:work`. В TASK-016 создаётся
 только процесс планировщика: расписания следует регистрировать через API

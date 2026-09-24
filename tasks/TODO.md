@@ -345,17 +345,17 @@ API behaviour без migration plan и синхронного обновлени
   - Обновить безопасный restore runbook и доказать восстановление из нового backup-канала без
     помещения архива или чувствительных значений в Git, CI logs либо task evidence.
 
-- [ ] TASK-A043 Утвердить политику жизненного цикла персональных данных
-  - Совместно с ответственным за ПДн/юристом определить сроки и правовые основания хранения для
-    заказов, обращений, комментариев, workflow history, administrative snapshots, sessions,
-    failed jobs, логов и backups; отделить обязательное хранение от операционного удобства.
+- [x] TASK-A043 Утвердить политику жизненного цикла персональных данных
+  - Зафиксировать инженерный baseline сроков и правовых оснований для заказов, обращений,
+    комментариев, workflow history, administrative snapshots, sessions, failed jobs, логов и
+    backups; окончательную юридическую проверку выполнить до production activation.
   - Зафиксировать threat model и решение по encryption at rest, key management, поиску по
     зашифрованным полям, backup-копиям, доступу, выгрузке и уничтожению данных. Не считать
     application encryption самостоятельным подтверждением соответствия 152-ФЗ.
   - Принять ADR и проверяемую retention/deletion matrix до необратимой анонимизации либо удаления.
-  - Инженерная редакция, threat model и матрица подготовлены в
-    [`docs/PERSONAL_DATA_LIFECYCLE.md`](../docs/PERSONAL_DATA_LIFECYCLE.md); остаются три явно
-    зафиксированных согласования, после которых ADR-014 переводится из `proposed` в `accepted`.
+  - Принято 2026-09-24: ADR-014, threat model и проверяемая матрица утверждены для реализации.
+    Персоналии, юридическая проверка и provider evidence перенесены в обязательный pre-production
+    gate `TASK-090`/`TASK-145`; safe defaults до его прохождения запрещают production apply.
 
 - [ ] TASK-A044 Реализовать утверждённые retention, anonymization и deletion controls для ПДн
   - На основе `TASK-A043` реализовать отдельные application services/commands для заказов,
@@ -366,7 +366,7 @@ API behaviour без migration plan и синхронного обновлени
   - Обновить `DATABASE.md`, `LOGGING.md`, `OPERATIONS.md` и recovery/backup правила; подтвердить
     результат на обезличенных fixtures и в restore exercise.
   - Repository-side controls и synthetic tests реализованы 2026-09-14. Production activation и
-    закрытие задачи заблокированы pending approvals `TASK-A043` и внешним provider evidence.
+    закрытие задачи заблокированы pre-production approvals и внешним provider evidence.
 
 - [x] TASK-A045 Защитить bearer-токены и ограничить срок жизни гостевых корзин
   - Хранить необратимый HMAC/hash `X-Cart-Token` вместо raw bearer-токена, сохранив текущий wire
@@ -506,6 +506,12 @@ API behaviour без migration plan и синхронного обновлени
 ## Phase 7 — Content
 
 - [ ] TASK-090 Настройки сайта
+  - Добавить управляемые публичные реквизиты продавца: тип/наименование оператора, ФИО ИП,
+    ИНН/ОГРНИП, адрес, телефоны, email и отдельно контролируемые банковские реквизиты.
+  - Хранить версии оферты, политики ПДн и текстов согласий; отделить публичные поля от admin-only
+    compliance metadata и не публиковать банковские/служебные данные без явной настройки.
+  - Добавить admin-only operational approval block ADR-014: ответственные, юридический reviewer,
+    даты/решения и ссылку на утверждённую версию документа с audit trail.
 - [ ] TASK-091 Страницы
 - [ ] TASK-092 Баннеры
 - [ ] TASK-093 Слайдеры
@@ -555,3 +561,8 @@ API behaviour без migration plan и синхронного обновлени
 - [ ] TASK-143 Мониторинг
 - [ ] TASK-144 Security hardening
 - [ ] TASK-145 Production deployment
+  - До включения checkout/обращений заполнить реквизиты оператора и operational approval block
+    ADR-014, опубликовать актуальные юридические документы и подтвердить processors/provider
+    retention, backup/KMS, primary storage location и records schedule.
+  - Только после pre-production проверки задавать `PII_RETENTION_POLICY_STATUS=accepted`; apply
+    дополнительно требует `PII_RETENTION_APPLY_ENABLED=true`, выбранный disposition и versioned key.

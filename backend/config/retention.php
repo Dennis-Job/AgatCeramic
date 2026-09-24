@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'policy_version' => env('PII_RETENTION_POLICY_VERSION', '2026-09-14'),
+    'policy_version' => env('PII_RETENTION_POLICY_VERSION', '2026-09-24'),
     'policy_status' => env('PII_RETENTION_POLICY_STATUS', 'proposed'),
     'apply_enabled' => env('PII_RETENTION_APPLY_ENABLED', false),
     'service_identity' => env('PII_RETENTION_SERVICE_IDENTITY', 'scheduler'),

@@ -36,16 +36,17 @@ php artisan retention:contacts
 php artisan retention:technical
 ```
 
-`--apply` разрешается только после заполнения approval block ADR-014, выбора disposition, выдачи
-отдельного versioned `PII_RETENTION_TOMBSTONE_KEY_ID`/key через secret manager и подтверждения
-backup/provider controls. Не копируйте key, command output или tombstone journal в Git/CI artifacts.
+`--apply` разрешается только после заполнения operational approval block ADR-014, выбора
+disposition, выдачи отдельного versioned `PII_RETENTION_TOMBSTONE_KEY_ID`/key через secret manager
+и подтверждения backup/provider controls. Не копируйте key, command output или tombstone journal в
+Git/CI artifacts.
 Сигналы для monitoring: failed rows в `retention_executions`, рост `error_count`/`exception_count`,
 stale active holds с наступившим `review_at`, oldest failed job/session и повторяющийся ненулевой
 eligible count.
 
-Техническая реализация `TASK-A044` готова и выключена безопасными defaults. Необратимая production-
-очистка остаётся заблокированной до юридического принятия A043 и operational evidence по внешним
-logs, email provider, backups/KMS и records schedule.
+Техническая реализация `TASK-A044` готова и выключена безопасными defaults. `TASK-A043` принята для
+реализации, но необратимая production-очистка остаётся заблокированной до pre-production approvals
+и operational evidence по внешним logs, email provider, backups/KMS и records schedule.
 
 ## Guest cart lifecycle
 

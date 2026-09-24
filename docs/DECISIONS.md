@@ -124,14 +124,15 @@ read-only до отдельного подтверждённого удален�
 
 ## ADR-014 — Personal-data lifecycle, retention and destruction
 
-Status: proposed.
+Status: accepted for implementation (2026-09-24).
 
 Для business PII, administrative snapshots и технических хранилищ используется единая
 проверяемая retention/deletion matrix из
 [`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Обязательный срок отделяется от
 операционного удобства; legal hold всегда узкий, документированный и периодически пересматриваемый.
-Production-анонимизация и удаление запрещены, пока владелец бизнес-процесса, ответственный за ПДн и
-юрист не заполнят approval block и ADR не получит статус `accepted`.
+ADR принят как инженерное решение и основание для repository-side реализации. Это не юридическое
+заключение: production-сбор ПДн, анонимизация и удаление запрещены, пока владелец бизнес-процесса,
+ответственный за ПДн и юрист не заполнят operational approval block.
 
 Production storage шифруется at rest, sessions шифруются приложением, а backups используют
 отдельный KMS boundary и живут не более 30 дней. Field-level encryption customer fields не
@@ -144,6 +145,7 @@ ADR и API/UI migration plan.
 legal-hold check, PII-free output, PostgreSQL tests, доказательством уничтожения и replay удалений
 после restore. Шифрование не считается самостоятельным подтверждением соответствия 152-ФЗ.
 
-Repository-side реализация A044 существует, но не меняет статус этого ADR: safe defaults оставляют
-apply выключенным до заполнения approval block, явного выбора commercial disposition и проверки
-внешних provider controls.
+Repository-side реализация A044 существует; safe defaults оставляют apply выключенным до
+заполнения operational approval block, явного выбора commercial disposition и проверки внешних
+provider controls. Персоналии и реквизиты оператора добавляются в `TASK-090`, а production gate
+проверяется в `TASK-145`.
