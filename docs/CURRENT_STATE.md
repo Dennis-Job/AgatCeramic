@@ -6,7 +6,8 @@
 
 Admin frontend refactoring принят. Follow-up проверки `TASK-A045`–`TASK-A050` закрыли cart-token,
 OpenAPI, dependency bootstrap, PostgreSQL feature-suite, Redis delivery и Admin full-stack gaps.
-Lifecycle policy `TASK-A043` принята для реализации; `TASK-A044` остаётся в работе до external
+Lifecycle policy `TASK-A043` принята для реализации, а repository-side controls `TASK-A044`
+завершены. Production apply остаётся закрыт отдельным gate `TASK-090`/`TASK-145` до external
 provider evidence и pre-production approvals. Импортный application
 layer декомпозирован, production dependencies сделаны явными, сложные admin read queries
 вынесены из Controllers, а направления зависимостей и тонкие Controllers защищены blocking
@@ -42,7 +43,7 @@ architecture gate.
 
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
-| High | Для business PII orders/contacts policy принята и gated repository-side controls готовы, но отсутствуют pre-production approvals и external provider evidence; production apply выключен. | `TASK-A044`, `TASK-090`, `TASK-145` |
+| High | Для business PII orders/contacts policy и gated repository-side controls готовы, но отсутствуют pre-production approvals и external provider evidence; production apply выключен. | `TASK-090`, `TASK-145` |
 
 Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. `TASK-A042` закрыта с
 явным принятием остаточного риска test-only PR refs; публикация новых database exports остаётся

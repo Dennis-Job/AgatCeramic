@@ -357,7 +357,7 @@ API behaviour без migration plan и синхронного обновлени
     Персоналии, юридическая проверка и provider evidence перенесены в обязательный pre-production
     gate `TASK-090`/`TASK-145`; safe defaults до его прохождения запрещают production apply.
 
-- [ ] TASK-A044 Реализовать утверждённые retention, anonymization и deletion controls для ПДн
+- [x] TASK-A044 Реализовать утверждённые retention, anonymization и deletion controls для ПДн
   - На основе `TASK-A043` реализовать отдельные application services/commands для заказов,
     обращений и связанных history/comments без обхода permissions, audit и юридически обязательных
     сроков; операции должны быть идемпотентными, bounded и безопасными для повторного запуска.
@@ -365,8 +365,9 @@ API behaviour без migration plan и синхронного обновлени
     command output, logs, queue payloads и аналитических агрегатов.
   - Обновить `DATABASE.md`, `LOGGING.md`, `OPERATIONS.md` и recovery/backup правила; подтвердить
     результат на обезличенных fixtures и в restore exercise.
-  - Repository-side controls и synthetic tests реализованы 2026-09-14. Production activation и
-    закрытие задачи заблокированы pre-production approvals и внешним provider evidence.
+  - Закрыто 2026-09-24: repository-side controls, scheduler, evidence, PostgreSQL checks и
+    synthetic restore replay реализованы. Production activation остаётся отдельным fail-closed
+    gate `TASK-090`/`TASK-145` и не входит в критерий завершения этой implementation-задачи.
 
 - [x] TASK-A045 Защитить bearer-токены и ограничить срок жизни гостевых корзин
   - Хранить необратимый HMAC/hash `X-Cart-Token` вместо raw bearer-токена, сохранив текущий wire

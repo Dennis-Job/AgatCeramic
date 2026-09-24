@@ -230,6 +230,6 @@ Repository-side controls реализованы: safe-default configuration, bou
 legal holds/exceptions, append-only execution evidence и versioned-HMAC tombstones, scheduler,
 technical storage cleanup и restore replay. SQLite acceptance tests и PostgreSQL lock/rollback/
 immutability tests используют только synthetic fixtures. `TASK-A043` закрыта как принятое
-инженерное решение. Production apply остаётся выключен, а завершение `TASK-A044` и production
-activation ожидают три operational согласования и external provider evidence для logs, email,
-backup/KMS и records schedule.
+инженерное решение, `TASK-A044` закрыта как завершённая repository-side реализация. Production
+apply остаётся выключен: production activation ожидает три operational согласования и external
+provider evidence для logs, email, backup/KMS и records schedule в `TASK-090`/`TASK-145`.
