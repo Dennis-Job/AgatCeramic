@@ -88,7 +88,9 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
     .getByRole('button', { name: 'Редактировать страницу О компании' })
     .click()
   await page.getByText('Опубликовать страницу', { exact: true }).click()
-  await expect(page.getByRole('checkbox', { name: 'Опубликовать страницу' })).toBeChecked()
+  await expect(
+    page.getByRole('checkbox', { name: 'Опубликовать страницу' }),
+  ).toBeChecked()
   await page.getByRole('button', { name: 'Сохранить' }).click()
   await expect(page.getByText('Опубликована')).toBeVisible()
   expect(submittedPublicationStates).toEqual([false, true])
