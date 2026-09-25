@@ -8,16 +8,22 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "typecheck": "nuxt typecheck",
+    "format": "prettier --write \"app/**/*.{vue,ts,css}\" nuxt.config.ts",
+    "format:check": "prettier --check \"app/**/*.{vue,ts,css}\" nuxt.config.ts",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@lucide/vue": "^1.48.0",
     "nuxt": "4.5.2",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "prettier": "^3.9.9",
     "typescript": "~5.9.3",
     "vue-tsc": "^3.3.9"
   }

@@ -1,0 +1,30 @@
+:root {
+  --color-bg: #f2f1ee;
+  --color-bg-soft: #fafaf8;
+  --color-ink: #141414;
+  --color-muted: #6e6b66;
+  --color-line: #e3e1db;
+  --color-line-strong: #cdc9c0;
+  --color-beige: #e9e6e0;
+  --color-white: #fff;
+  --color-ink-hover: #2e2e2e;
+  --color-ink-soft: #5d5a55;
+  --color-on-dark-muted: #b8b8b8;
+  --color-on-dark-eyebrow: #aaa8a4;
+  --color-header-surface: rgb(242 241 238 / 93%);
+  --color-overlay: rgb(20 20 20 / 40%);
+  --color-shadow-soft: rgb(0 0 0 / 8%);
+  --color-hero-control-surface: rgb(255 255 255 / 55%);
+  --color-card-label-surface: rgb(255 255 255 / 92%);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --content-width: 1280px;
+  --page-gutter: 40px;
+  --section-space: 110px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --page-gutter: 20px;
+    --section-space: 76px;
+  }
+}

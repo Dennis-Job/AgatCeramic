@@ -1,6 +1,12 @@
 # Текущее состояние проекта
 
-Документ отражает состояние после закрытия `TASK-A042` 2026-09-24. Исторические результаты
+На 2026-09-25 добавлена первая версия главной страницы Nuxt Client (`TASK-119`).
+Она реализует визуальный язык [`CLIENT_UI_KIT.md`](CLIENT_UI_KIT.md), адаптивные
+секции, локальные оптимизированные иллюстрации, навигацию и метаданные главной.
+Категории пока представлены редакционным содержимым: публичного catalog API
+и настоящих карточек товаров на клиенте ещё нет.
+
+Базовый срез после закрытия `TASK-A042` обновлён состоянием `TASK-119`. Исторические результаты
 аудитов и их числовые срезы не обновляются задним числом; текущий набор обязательных проверок
 описан в [`CI.md`](CI.md), завершённые задачи — в [`tasks/DONE.md`](../tasks/DONE.md).
 
@@ -17,7 +23,7 @@ architecture gate.
 
 | Область | Фактическое состояние |
 | --- | --- |
-| Foundation | Laravel API-only, Vue Admin, Nuxt Client skeleton, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned `/api/v1`, stable error envelope и OpenAPI. |
+| Foundation | Laravel API-only, Vue Admin, Nuxt Client с первой главной страницей, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned `/api/v1`, stable error envelope и OpenAPI. |
 | Backend architecture | Нетривиальные admin filters/search/sort, eager loading и audit metadata enrichment изолированы в Query objects; основные equality-filter/sort paths подкреплены PostgreSQL indexes. AST guard блокирует обратные зависимости слоёв, DB/Eloquent mutations и service locator/global request/auth helpers в Controllers; размер и complexity публикуются как review-сигналы. |
 | Access control | Admin authentication, password reset, active-user guard, RBAC, granular permissions, audit log, snapshots, retention и PostgreSQL immutability. |
 | Catalog | Categories, brands, attribute groups/typed attributes, standalone sellable products, product groups, generated immutable SKU, images, related products, filters/search и durable storage cleanup. Legacy variants остаются read-only до отдельной verified migration. |
@@ -57,7 +63,7 @@ architecture gate.
 | 7 — Content | Site settings, pages, banners, stores, working hours, managed Media Library. | Media заменит Catalog placeholders `categories.image_id` и `brands.logo_id`. |
 | 8 — SEO | Managed metadata, canonical, sitemap, robots, redirects, structured data и AI drafts. | SEO использует managed media для OG image; slug остаётся Catalog-owned. |
 | 9 — Analytics | Orders/paid sales dashboards и reports. | Использует order `paid_at`, не только `created_at`. |
-| 10 — Client | Public catalog/category/product pages, cart, checkout, confirmation и SEO implementation. | Использует существующие API contracts без дублирования business logic. |
+| 10 — Client | Public catalog/category/product pages, cart, checkout, confirmation и managed SEO implementation. Первая редакционная главная страница готова. | Использует существующие API contracts без дублирования business logic. |
 | 11 — Production | Production Compose, CI/CD delivery, backups, monitoring, security hardening и deployment. | Требует завершённых operational policies. |
 
 ## Проверки и историческое evidence
