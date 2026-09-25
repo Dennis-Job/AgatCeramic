@@ -20,6 +20,7 @@ const permissions = [
   'payments.manage',
   'contacts.view',
   'contacts.manage',
+  'content.manage',
   'settings.manage',
   'settings.approve',
 ]
@@ -254,6 +255,20 @@ async function mockAdminBaseline(
       return route.fulfill({ json: data([{ id: 1, name: user.name }]) })
     if (path === '/admin/contact-requests')
       return route.fulfill({ json: collection([contact]) })
+    if (path === '/admin/pages')
+      return route.fulfill({
+        json: collection([
+          {
+            id: 1,
+            title: 'О компании',
+            slug: 'about',
+            body: 'Информация о компании.',
+            is_published: true,
+            created_at: timestamp,
+            updated_at: timestamp,
+          },
+        ]),
+      })
     if (path === '/admin/site-settings')
       return route.fulfill({
         json: {
@@ -297,6 +312,7 @@ const stateRoutes = [
   '/audit-log',
   '/orders',
   '/contacts',
+  '/content',
 ] as const
 const stateApiPaths: Record<(typeof stateRoutes)[number], string> = {
   '/products': '/admin/products',
@@ -310,6 +326,7 @@ const stateApiPaths: Record<(typeof stateRoutes)[number], string> = {
   '/audit-log': '/admin/audit-logs',
   '/orders': '/admin/orders',
   '/contacts': '/admin/contact-requests',
+  '/content': '/admin/pages',
 }
 
 for (const path of stateRoutes) {

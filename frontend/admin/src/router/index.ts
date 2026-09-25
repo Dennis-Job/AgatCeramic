@@ -4,7 +4,6 @@ import DashboardView from '../views/DashboardView.vue'
 import LoginView from '../views/LoginView.vue'
 import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import ResetPasswordView from '../views/ResetPasswordView.vue'
-import PlaceholderView from '../views/PlaceholderView.vue'
 import EmployeesView from '../views/EmployeesView.vue'
 import RolesView from '../views/RolesView.vue'
 import PermissionsView from '../views/PermissionsView.vue'
@@ -19,6 +18,7 @@ import OrdersView from '../views/OrdersView.vue'
 import ContactsView from '../views/ContactsView.vue'
 import UiKitView from '../views/UiKitView.vue'
 import SettingsView from '../views/SettingsView.vue'
+import ContentView from '../views/ContentView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -172,9 +172,12 @@ const router = createRouter({
     {
       path: '/content',
       name: 'content',
-      component: PlaceholderView,
-      props: { title: 'Контент' },
-      meta: { requiresAuth: true, title: 'Контент' },
+      component: ContentView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'content.manage',
+        title: 'Контент',
+      },
     },
     {
       path: '/settings',

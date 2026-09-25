@@ -9,6 +9,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\ContactRequest;
 use App\Models\Order;
+use App\Models\Page;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\Role;
@@ -21,6 +22,7 @@ use App\Policies\BrandPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\ContactRequestPolicy;
 use App\Policies\OrderPolicy;
+use App\Policies\PagePolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\RolePolicy;
@@ -61,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Brand::class, BrandPolicy::class);
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(Order::class, OrderPolicy::class);
+        Gate::policy(Page::class, PagePolicy::class);
         Gate::policy(SiteSetting::class, SiteSettingPolicy::class);
 
         RateLimiter::for('api', static fn (Request $request): Limit => Limit::perMinute(60)->by($request->ip()));

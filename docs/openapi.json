@@ -13,6 +13,281 @@
     ],
     "security": [],
     "paths": {
+        "/pages": {
+            "get": {
+                "operationId": "listPublicPages",
+                "summary": "List published pages",
+                "responses": {
+                    "200": {
+                        "description": "Paginated published pages",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageCollection"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pages/{slug}": {
+            "parameters": [
+                {
+                    "name": "slug",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getPublicPage",
+                "summary": "Get a published page by slug",
+                "responses": {
+                    "200": {
+                        "description": "Published page",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/admin/pages": {
+            "get": {
+                "operationId": "listPages",
+                "summary": "List pages",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated resources",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "description": "Requires content.manage. Includes drafts."
+            },
+            "post": {
+                "operationId": "createPage",
+                "summary": "Create a page",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorePageRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                },
+                "description": "Requires content.manage. Pages are drafts unless is_published is true."
+            }
+        },
+        "/admin/pages/{page}": {
+            "parameters": [
+                {
+                    "name": "page",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getPage",
+                "summary": "Get a page",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "description": "Requires content.manage."
+            },
+            "patch": {
+                "operationId": "updatePage",
+                "summary": "Update a page",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePageRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "description": "Requires content.manage."
+            },
+            "delete": {
+                "operationId": "deletePage",
+                "summary": "Delete a page",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Page deleted"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "description": "Requires content.manage."
+            },
+            "put": {
+                "operationId": "putUpdatePage",
+                "summary": "Replace: Update a page",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePageRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "description": "Requires content.manage."
+            }
+        },
         "/site-settings": {
             "get": {
                 "operationId": "getPublicSiteSettings",
@@ -3718,6 +3993,135 @@
     },
     "components": {
         "schemas": {
+            "Page": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "slug",
+                    "body",
+                    "is_published",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Plain text. Render as text, never as trusted HTML."
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PageResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/Page"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "PageCollection": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Page"
+                        }
+                    },
+                    "links": {
+                        "type": "object"
+                    },
+                    "meta": {
+                        "type": "object"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "StorePageRequest": {
+                "type": "object",
+                "required": [
+                    "title",
+                    "slug",
+                    "body"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "body": {
+                        "type": "string",
+                        "maxLength": 100000
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "UpdatePageRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "body": {
+                        "type": "string",
+                        "maxLength": 100000
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    }
+                },
+                "additionalProperties": false
+            },
             "PublicSiteSettings": {
                 "type": "object",
                 "required": [

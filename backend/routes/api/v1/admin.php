@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\ContactAssignmentController;
 use App\Http\Controllers\Api\V1\Admin\ContactRequestController;
 use App\Http\Controllers\Api\V1\Admin\LegalDocumentController;
 use App\Http\Controllers\Api\V1\Admin\OrderController;
+use App\Http\Controllers\Api\V1\Admin\PageController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\ProductAttributeValueController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
@@ -44,6 +45,7 @@ Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('r
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('permissions', PermissionController::class)->only(['index', 'show']);
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+Route::apiResource('pages', PageController::class);
 Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
 Route::patch('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
 Route::get('legal-documents', [LegalDocumentController::class, 'index'])->name('legal-documents.index');

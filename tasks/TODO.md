@@ -513,7 +513,7 @@ API behaviour без migration plan и синхронного обновлени
     compliance metadata и не публиковать банковские/служебные данные без явной настройки.
   - Добавить admin-only operational approval block ADR-014: ответственные, юридический reviewer,
     даты/решения и ссылку на утверждённую версию документа с audit trail.
-- [ ] TASK-091 Страницы
+- [x] TASK-091 Страницы
 - [ ] TASK-092 Баннеры
 - [ ] TASK-093 Слайдеры
 - [ ] TASK-094 Магазины

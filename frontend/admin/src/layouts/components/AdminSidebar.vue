@@ -98,8 +98,18 @@ const employeeNavigation = [
   },
 ]
 const siteManagementNavigation = [
-  { label: 'Контент', to: '/content', icon: FileText },
-  { label: 'Настройки', to: '/settings', icon: Settings },
+  {
+    label: 'Контент',
+    to: '/content',
+    icon: FileText,
+    requiredPermission: 'content.manage',
+  },
+  {
+    label: 'Настройки',
+    to: '/settings',
+    icon: Settings,
+    requiredPermission: 'settings.manage',
+  },
 ]
 const developmentNavigation = [
   { label: 'UI-kit', to: '/ui-kit', icon: PanelsTopLeft },
@@ -119,6 +129,12 @@ const visiblePrimaryNavigation = computed(() =>
 )
 const visibleProductManagementNavigation = computed(() =>
   productManagementNavigation.filter(
+    (item) =>
+      !item.requiredPermission || auth.hasPermission(item.requiredPermission),
+  ),
+)
+const visibleSiteManagementNavigation = computed(() =>
+  siteManagementNavigation.filter(
     (item) =>
       !item.requiredPermission || auth.hasPermission(item.requiredPermission),
   ),
@@ -285,13 +301,14 @@ onBeforeUnmount(() => {
       </nav></template
     >
     <p
+      v-if="visibleSiteManagementNavigation.length"
       class="mb-2 mt-8 px-3 text-xs font-semibold uppercase admin-nav-heading text-gray-400"
     >
       Управление сайтом
     </p>
     <nav class="space-y-1" aria-label="Управление сайтом">
       <RouterLink
-        v-for="item in siteManagementNavigation"
+        v-for="item in visibleSiteManagementNavigation"
         :key="item.to"
         :to="item.to"
         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-25"

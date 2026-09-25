@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CartItemController;
 use App\Http\Controllers\Api\V1\EmailRequestController;
 use App\Http\Controllers\Api\V1\LegalDocumentController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\PartnerRequestController;
 use App\Http\Controllers\Api\V1\SiteSettingController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('cart', [CartController::class, 'show'])->name('cart.show');
 Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
+Route::get('pages', [PageController::class, 'index'])->name('pages.index');
+Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 Route::get('legal-documents/{type}', [LegalDocumentController::class, 'show'])->name('legal-documents.show');
 Route::post('cart/items', [CartItemController::class, 'store'])->name('cart.items.store');
 Route::patch('cart/items/{item}', [CartItemController::class, 'update'])->name('cart.items.update');
