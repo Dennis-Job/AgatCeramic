@@ -35,8 +35,8 @@ class PermissionTest extends TestCase
         $this->seed(PermissionSeeder::class);
         $this->seed(PermissionSeeder::class);
 
-        $this->assertSame(19, Permission::query()->count());
-        $this->assertSame(19, Role::query()->where('slug', 'super-admin')->firstOrFail()->permissions()->count());
+        $this->assertSame(20, Permission::query()->count());
+        $this->assertSame(20, Role::query()->where('slug', 'super-admin')->firstOrFail()->permissions()->count());
         $this->assertSame(['analytics.view'], Role::query()->where('slug', 'analyst')->firstOrFail()->permissions()->pluck('code')->all());
     }
 }

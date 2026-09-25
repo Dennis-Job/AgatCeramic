@@ -147,5 +147,5 @@ legal-hold check, PII-free output, PostgreSQL tests, доказательств�
 
 Repository-side реализация A044 существует; safe defaults оставляют apply выключенным до
 заполнения operational approval block, явного выбора commercial disposition и проверки внешних
-provider controls. Персоналии и реквизиты оператора добавляются в `TASK-090`, а production gate
-проверяется в `TASK-145`.
+provider controls. `TASK-090` добавила поля реквизитов оператора и admin-only журнал решений;
+фактические персоналии и решения в репозиторий не внесены. Production gate проверяется в `TASK-145`.

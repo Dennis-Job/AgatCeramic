@@ -33,6 +33,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'Управление SEO', 'code' => 'seo.manage', 'description' => 'Управление SEO-метаданными и редиректами.'],
             ['name' => 'Просмотр аналитики', 'code' => 'analytics.view', 'description' => 'Просмотр отчётов и аналитики.'],
             ['name' => 'Управление настройками сайта', 'code' => 'settings.manage', 'description' => 'Управление глобальными настройками сайта.'],
+            ['name' => 'Фиксация согласований ПДн', 'code' => 'settings.approve', 'description' => 'Запись подтверждённых операционных согласований ADR-014.'],
             ['name' => 'Просмотр журнала аудита', 'code' => 'audit-log.view', 'description' => 'Просмотр журнала действий.'],
         ];
 
@@ -64,7 +65,7 @@ class PermissionSeeder extends Seeder
             'permissions.view', 'permissions.manage', 'catalog.manage', 'imports.manage',
             'orders.view', 'orders.manage', 'payments.manage', 'contacts.view', 'contacts.manage',
             'content.manage', 'media.manage', 'seo.manage', 'analytics.view', 'settings.manage',
-            'audit-log.view',
+            'audit-log.view', 'settings.approve',
         ];
 
         return [

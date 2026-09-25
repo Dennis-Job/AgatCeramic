@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v1.2",
+        "version": "v1.3",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -13,6 +13,309 @@
     ],
     "security": [],
     "paths": {
+        "/site-settings": {
+            "get": {
+                "operationId": "getPublicSiteSettings",
+                "summary": "Public seller and contact settings",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PublicSiteSettingsResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/legal-documents/{type}": {
+            "parameters": [
+                {
+                    "name": "type",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "enum": [
+                            "offer",
+                            "privacy_policy",
+                            "consent"
+                        ]
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getPublishedLegalDocument",
+                "summary": "Latest published version of a legal document",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LegalDocumentVersionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/admin/site-settings": {
+            "get": {
+                "operationId": "getAdminSiteSettings",
+                "summary": "Read seller and bank settings",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSiteSettingsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "updateAdminSiteSettings",
+                "summary": "Update seller and bank settings",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSiteSettingsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSiteSettingsRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/legal-documents": {
+            "get": {
+                "operationId": "listLegalDocumentVersions",
+                "summary": "List all legal document versions",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LegalDocumentVersionCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "createLegalDocumentVersion",
+                "summary": "Create an immutable draft legal document version",
+                "responses": {
+                    "201": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LegalDocumentVersionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateLegalDocumentVersionRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/legal-documents/{legalDocumentVersion}/publish": {
+            "parameters": [
+                {
+                    "name": "legalDocumentVersion",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "post": {
+                "operationId": "publishLegalDocumentVersion",
+                "summary": "Publish a legal document version",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LegalDocumentVersionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ]
+            }
+        },
+        "/admin/compliance-approvals": {
+            "get": {
+                "operationId": "listComplianceApprovals",
+                "summary": "List internal ADR-014 approval records",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComplianceApprovalCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "recordComplianceApproval",
+                "summary": "Record an append-only ADR-014 decision",
+                "responses": {
+                    "201": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ComplianceApprovalResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateComplianceApprovalRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/auth/login": {
             "post": {
                 "operationId": "loginAdmin",
@@ -3415,6 +3718,469 @@
     },
     "components": {
         "schemas": {
+            "PublicSiteSettings": {
+                "type": "object",
+                "required": [
+                    "operator_type",
+                    "seller_name",
+                    "entrepreneur_name",
+                    "inn",
+                    "ogrnip",
+                    "address",
+                    "phones",
+                    "email",
+                    "bank_details"
+                ],
+                "properties": {
+                    "operator_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "individual_entrepreneur",
+                            "legal_entity",
+                            null
+                        ]
+                    },
+                    "seller_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "entrepreneur_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "inn": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ogrnip": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "phones": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "email"
+                    },
+                    "bank_details": {
+                        "oneOf": [
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "object",
+                                "required": [
+                                    "name",
+                                    "bik",
+                                    "account",
+                                    "correspondent_account"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "bik": {
+                                        "type": "string"
+                                    },
+                                    "account": {
+                                        "type": "string"
+                                    },
+                                    "correspondent_account": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
+            "AdminSiteSettings": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/PublicSiteSettings"
+                    },
+                    {
+                        "type": "object",
+                        "required": [
+                            "bank_name",
+                            "bank_bik",
+                            "bank_account",
+                            "bank_correspondent_account",
+                            "publish_bank_details",
+                            "updated_at"
+                        ],
+                        "properties": {
+                            "bank_name": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "bank_bik": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "bank_account": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "bank_correspondent_account": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "updated_at": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "publish_bank_details": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                ]
+            },
+            "UpdateSiteSettingsRequest": {
+                "type": "object",
+                "properties": {
+                    "seller_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "entrepreneur_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "inn": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "ogrnip": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "bank_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "bank_bik": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "bank_account": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "bank_correspondent_account": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "operator_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "individual_entrepreneur",
+                            "legal_entity",
+                            null
+                        ]
+                    },
+                    "phones": {
+                        "type": "array",
+                        "maxItems": 5,
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "publish_bank_details": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "LegalDocumentVersion": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "type",
+                    "version",
+                    "body",
+                    "published_at",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "offer",
+                            "privacy_policy",
+                            "consent"
+                        ]
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "CreateLegalDocumentVersionRequest": {
+                "type": "object",
+                "required": [
+                    "type",
+                    "version",
+                    "body"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "offer",
+                            "privacy_policy",
+                            "consent"
+                        ]
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ComplianceApproval": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "role",
+                    "reviewer_name",
+                    "decision",
+                    "decided_on",
+                    "document_version_id",
+                    "recorded_by",
+                    "created_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "business_owner",
+                            "data_protection_officer",
+                            "legal_reviewer"
+                        ]
+                    },
+                    "reviewer_name": {
+                        "type": "string"
+                    },
+                    "decision": {
+                        "type": "string",
+                        "enum": [
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "decided_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "document_version_id": {
+                        "type": "integer"
+                    },
+                    "recorded_by": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "CreateComplianceApprovalRequest": {
+                "type": "object",
+                "required": [
+                    "role",
+                    "reviewer_name",
+                    "decision",
+                    "decided_on",
+                    "document_version_id"
+                ],
+                "properties": {
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "business_owner",
+                            "data_protection_officer",
+                            "legal_reviewer"
+                        ]
+                    },
+                    "reviewer_name": {
+                        "type": "string"
+                    },
+                    "decision": {
+                        "type": "string",
+                        "enum": [
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "decided_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "document_version_id": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "PublicSiteSettingsResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/PublicSiteSettings"
+                    }
+                }
+            },
+            "AdminSiteSettingsResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/AdminSiteSettings"
+                    }
+                }
+            },
+            "LegalDocumentVersionResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/LegalDocumentVersion"
+                    }
+                }
+            },
+            "ComplianceApprovalResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/ComplianceApproval"
+                    }
+                }
+            },
+            "LegalDocumentVersionCollection": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LegalDocumentVersion"
+                        }
+                    }
+                }
+            },
+            "ComplianceApprovalCollection": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ComplianceApproval"
+                        }
+                    }
+                }
+            },
             "LoginRequest": {
                 "type": "object",
                 "required": [

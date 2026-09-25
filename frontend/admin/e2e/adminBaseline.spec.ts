@@ -20,6 +20,8 @@ const permissions = [
   'payments.manage',
   'contacts.view',
   'contacts.manage',
+  'settings.manage',
+  'settings.approve',
 ]
 const page = <T>(data: T[]) => ({
   data,
@@ -252,6 +254,33 @@ async function mockAdminBaseline(
       return route.fulfill({ json: data([{ id: 1, name: user.name }]) })
     if (path === '/admin/contact-requests')
       return route.fulfill({ json: collection([contact]) })
+    if (path === '/admin/site-settings')
+      return route.fulfill({
+        json: {
+          data: {
+            operator_type: 'individual_entrepreneur',
+            seller_name: 'ИП Тестовый продавец',
+            entrepreneur_name: 'Тестовый Продавец',
+            inn: '123456789012',
+            ogrnip: '123456789012345',
+            address: 'Москва, ул. Примерная, 1',
+            phones: ['+79990000000'],
+            email: 'seller@example.test',
+            bank_name: null,
+            bank_bik: null,
+            bank_account: null,
+            bank_correspondent_account: null,
+            bank_details: null,
+            publish_bank_details: false,
+            updated_at: timestamp,
+          },
+        },
+      })
+    if (
+      path === '/admin/legal-documents' ||
+      path === '/admin/compliance-approvals'
+    )
+      return route.fulfill({ json: { data: [] } })
     return route.fulfill({ json: { data: [] } })
   })
 }
@@ -364,7 +393,7 @@ const authenticatedRoutes = [
   ['/orders', 'Заказы'],
   ['/contacts', 'Обращения'],
   ['/content', 'Контент'],
-  ['/settings', 'Настройки'],
+  ['/settings', 'Настройки сайта'],
 ] as const
 
 for (const [path, heading] of authenticatedRoutes) {

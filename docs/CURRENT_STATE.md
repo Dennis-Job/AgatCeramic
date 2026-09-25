@@ -13,7 +13,8 @@
 Admin frontend refactoring принят. Follow-up проверки `TASK-A045`–`TASK-A050` закрыли cart-token,
 OpenAPI, dependency bootstrap, PostgreSQL feature-suite, Redis delivery и Admin full-stack gaps.
 Lifecycle policy `TASK-A043` принята для реализации, а repository-side controls `TASK-A044`
-завершены. Production apply остаётся закрыт отдельным gate `TASK-090`/`TASK-145` до external
+завершены. `TASK-090` добавила site settings и журнал согласований. Production apply остаётся закрыт
+отдельным gate `TASK-145` до external
 provider evidence и pre-production approvals. Импортный application
 layer декомпозирован, production dependencies сделаны явными, сложные admin read queries
 вынесены из Controllers, а направления зависимостей и тонкие Controllers защищены blocking
@@ -49,7 +50,7 @@ architecture gate.
 
 | Приоритет | Ограничение | Владелец |
 | --- | --- | --- |
-| High | Для business PII orders/contacts policy и gated repository-side controls готовы, но отсутствуют pre-production approvals и external provider evidence; production apply выключен. | `TASK-090`, `TASK-145` |
+| High | Для business PII orders/contacts policy, gated repository-side controls и журнал согласований готовы, но отсутствуют фактические pre-production approvals и external provider evidence; production apply выключен. | `TASK-145` |
 
 Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. `TASK-A042` закрыта с
 явным принятием остаточного риска test-only PR refs; публикация новых database exports остаётся
@@ -60,7 +61,7 @@ architecture gate.
 
 | Phase | Не реализовано | Зависимость |
 | --- | --- | --- |
-| 7 — Content | Site settings, pages, banners, stores, working hours, managed Media Library. | Media заменит Catalog placeholders `categories.image_id` и `brands.logo_id`. |
+| 7 — Content | Site settings (`TASK-090`) готовы; pages, banners, stores, working hours и managed Media Library ещё не реализованы. | Media заменит Catalog placeholders `categories.image_id` и `brands.logo_id`. |
 | 8 — SEO | Managed metadata, canonical, sitemap, robots, redirects, structured data и AI drafts. | SEO использует managed media для OG image; slug остаётся Catalog-owned. |
 | 9 — Analytics | Orders/paid sales dashboards и reports. | Использует order `paid_at`, не только `created_at`. |
 | 10 — Client | Public catalog/category/product pages, cart, checkout, confirmation и managed SEO implementation. Первая редакционная главная страница готова. | Использует существующие API contracts без дублирования business logic. |

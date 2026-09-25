@@ -18,6 +18,7 @@ import ProductsView from '../views/ProductsView.vue'
 import OrdersView from '../views/OrdersView.vue'
 import ContactsView from '../views/ContactsView.vue'
 import UiKitView from '../views/UiKitView.vue'
+import SettingsView from '../views/SettingsView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -178,9 +179,12 @@ const router = createRouter({
     {
       path: '/settings',
       name: 'settings',
-      component: PlaceholderView,
-      props: { title: 'Настройки' },
-      meta: { requiresAuth: true, title: 'Настройки' },
+      component: SettingsView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'settings.manage',
+        title: 'Настройки',
+      },
     },
   ],
 })

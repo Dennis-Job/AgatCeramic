@@ -16,8 +16,9 @@
 
 До заполнения блока production-сбор реальных заказов/обращений и необратимое удаление или
 анонимизация запрещены. Разрешены разработка, деплой закрытого staging, dry-run и тесты только на
-синтетических или уже обезличенных fixtures. Персоналии и реквизиты оператора заполняются в
-`TASK-090`, а финальная готовность проверяется в `TASK-145`. Политика пересматривается не реже
+синтетических или уже обезличенных fixtures. `TASK-090` добавила поля реквизитов оператора и
+внутренний журнал согласований; фактическое заполнение и финальная готовность проверяются в
+`TASK-145`. Политика пересматривается не реже
 одного раза в год, при изменении целей обработки, состава данных, подрядчиков, инфраструктуры или
 применимых требований.
 
@@ -231,5 +232,7 @@ legal holds/exceptions, append-only execution evidence и versioned-HMAC tombsto
 technical storage cleanup и restore replay. SQLite acceptance tests и PostgreSQL lock/rollback/
 immutability tests используют только synthetic fixtures. `TASK-A043` закрыта как принятое
 инженерное решение, `TASK-A044` закрыта как завершённая repository-side реализация. Production
-apply остаётся выключен: production activation ожидает три operational согласования и external
-provider evidence для logs, email, backup/KMS и records schedule в `TASK-090`/`TASK-145`.
+apply остаётся выключен: `TASK-090` добавила admin-only журнал трёх operational согласований,
+ссылающихся на опубликованную версию политики ПДн, но не заполняет решения от имени ответственных.
+Production activation ожидает фактические согласования и external provider evidence для logs, email,
+backup/KMS и records schedule в `TASK-145`.

@@ -31,6 +31,23 @@ Breaking change допускается только с повышением majo
 
 ## Публичный API
 
+### Реквизиты и юридические документы
+
+`GET /site-settings` отдаёт публичные реквизиты продавца. `bank_details` равен `null`, пока
+администратор явно не включил публикацию полного банковского блока. В ответе нет служебных
+согласований и переключателя публикации.
+
+`GET /legal-documents/{type}` принимает `offer`, `privacy_policy` или `consent` и отдаёт последнюю
+опубликованную версию; до первой публикации возвращает `404`. Тексты доставляются как данные JSON,
+без HTML-рендеринга Laravel.
+
+Admin API: `GET/PATCH /admin/site-settings`, `GET/POST /admin/legal-documents`,
+`POST /admin/legal-documents/{legalDocumentVersion}/publish` требуют `settings.manage`.
+`GET /admin/compliance-approvals` доступен с `settings.manage`, а
+`POST /admin/compliance-approvals` требует отдельного `settings.approve` (базово только super-admin).
+Записи решений не редактируются и не удаляются через API; каждое решение ссылается на опубликованную
+версию политики ПДн. Поля, схемы ошибок и коды ответов описаны в OpenAPI.
+
 ### Корзина
 
 `GET /cart`

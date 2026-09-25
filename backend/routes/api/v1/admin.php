@@ -7,8 +7,10 @@ use App\Http\Controllers\Api\V1\Admin\AuditLogController;
 use App\Http\Controllers\Api\V1\Admin\BrandController;
 use App\Http\Controllers\Api\V1\Admin\CategoryAttributeController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
+use App\Http\Controllers\Api\V1\Admin\ComplianceApprovalController;
 use App\Http\Controllers\Api\V1\Admin\ContactAssignmentController;
 use App\Http\Controllers\Api\V1\Admin\ContactRequestController;
+use App\Http\Controllers\Api\V1\Admin\LegalDocumentController;
 use App\Http\Controllers\Api\V1\Admin\OrderController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\ProductAttributeValueController;
@@ -22,6 +24,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductPriceStatusImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
+use App\Http\Controllers\Api\V1\Admin\SiteSettingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -41,6 +44,13 @@ Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('r
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('permissions', PermissionController::class)->only(['index', 'show']);
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
+Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
+Route::patch('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
+Route::get('legal-documents', [LegalDocumentController::class, 'index'])->name('legal-documents.index');
+Route::post('legal-documents', [LegalDocumentController::class, 'store'])->name('legal-documents.store');
+Route::post('legal-documents/{legalDocumentVersion}/publish', [LegalDocumentController::class, 'publish'])->name('legal-documents.publish');
+Route::get('compliance-approvals', [ComplianceApprovalController::class, 'index'])->name('compliance-approvals.index');
+Route::post('compliance-approvals', [ComplianceApprovalController::class, 'store'])->name('compliance-approvals.store');
 Route::patch('contact-requests/{contactRequest}/assignee', [ContactAssignmentController::class, 'update'])
     ->name('contact-requests.assignee.update');
 Route::get('contact-assignees', [ContactAssignmentController::class, 'candidates'])->name('contact-assignees.index');
