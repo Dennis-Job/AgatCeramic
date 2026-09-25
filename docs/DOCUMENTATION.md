@@ -32,6 +32,8 @@ permissions, команд, технологий и устоявшиеся тер
 | Текущая работа | [`../tasks/IN_PROGRESS.md`](../tasks/IN_PROGRESS.md) | roadmap и завершённые результаты |
 | Завершённые работы | [`../tasks/DONE.md`](../tasks/DONE.md) | requirements и canonical design rules |
 | UI implementation/review standard | [`UI_DESIGN_REVIEW.md`](UI_DESIGN_REVIEW.md) | screen-specific business requirements |
+| Client visual tokens and patterns | [`CLIENT_UI_KIT.md`](CLIENT_UI_KIT.md) | demo content from [`exampleSite.html`](../exampleSite.html) |
+| Client Nuxt architecture | [`../frontend/client/AGENTS.md`](../frontend/client/AGENTS.md) | API schemas and visual token values |
 
 `DATABASE_RECOVERY_2026-09-03.md` — recovery runbook инцидента; его актуальные постоянные
 правила должны ссылаться на канонические operations documents, а не копироваться в новые документы.
