@@ -53,7 +53,7 @@ return new class extends Migration
         });
 
         if (DB::getDriverName() === 'pgsql') {
-            DB::unprepared("CREATE FUNCTION prevent_compliance_approval_mutation() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'compliance approvals are append-only'; END; $$ LANGUAGE plpgsql");
+            DB::unprepared("CREATE OR REPLACE FUNCTION prevent_compliance_approval_mutation() RETURNS trigger AS $$ BEGIN RAISE EXCEPTION 'compliance approvals are append-only'; END; $$ LANGUAGE plpgsql");
             DB::unprepared('CREATE TRIGGER compliance_approvals_immutable BEFORE UPDATE OR DELETE ON compliance_approvals FOR EACH ROW EXECUTE FUNCTION prevent_compliance_approval_mutation()');
         }
     }
