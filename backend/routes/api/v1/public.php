@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\V1\BannerController;
-use App\Http\Controllers\Api\V1\SliderController;
 use App\Http\Controllers\Api\V1\CallbackRequestController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
@@ -11,6 +10,7 @@ use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\PartnerRequestController;
 use App\Http\Controllers\Api\V1\SiteSettingController;
+use App\Http\Controllers\Api\V1\SliderController;
 use Illuminate\Support\Facades\Route;
 
 /*
