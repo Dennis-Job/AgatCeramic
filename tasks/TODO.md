@@ -514,7 +514,7 @@ API behaviour без migration plan и синхронного обновлени
   - Добавить admin-only operational approval block ADR-014: ответственные, юридический reviewer,
     даты/решения и ссылку на утверждённую версию документа с audit trail.
 - [x] TASK-091 Страницы
-- [ ] TASK-092 Баннеры
+- [x] TASK-092 Баннеры
 - [ ] TASK-093 Слайдеры
 - [ ] TASK-094 Магазины
 - [ ] TASK-095 Часы работы
