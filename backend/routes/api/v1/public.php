@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\BannerController;
+use App\Http\Controllers\Api\V1\SliderController;
 use App\Http\Controllers\Api\V1\CallbackRequestController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
@@ -25,6 +26,7 @@ Route::get('cart', [CartController::class, 'show'])->name('cart.show');
 Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
 Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
+Route::get('sliders/{slug}', [SliderController::class, 'show'])->name('sliders.show');
 Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 Route::get('legal-documents/{type}', [LegalDocumentController::class, 'show'])->name('legal-documents.show');
 Route::post('cart/items', [CartItemController::class, 'store'])->name('cart.items.store');

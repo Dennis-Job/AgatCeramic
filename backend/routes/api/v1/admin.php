@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductPriceStatusImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\SiteSettingController;
+use App\Http\Controllers\Api\V1\Admin\SliderController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -48,6 +49,8 @@ Route::apiResource('permissions', PermissionController::class)->only(['index', '
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
 Route::apiResource('pages', PageController::class);
 Route::apiResource('banners', BannerController::class);
+Route::get('sliders/banner-options', [SliderController::class, 'bannerOptions'])->name('sliders.banner-options');
+Route::apiResource('sliders', SliderController::class);
 Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
 Route::patch('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
 Route::get('legal-documents', [LegalDocumentController::class, 'index'])->name('legal-documents.index');

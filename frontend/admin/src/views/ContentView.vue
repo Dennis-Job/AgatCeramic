@@ -3,8 +3,9 @@ import { ref } from 'vue'
 import UiButton from '../components/ui/UiButton.vue'
 import BannersWorkspace from '../features/banners/components/BannersWorkspace.vue'
 import PagesWorkspace from '../features/pages/components/PagesWorkspace.vue'
+import SlidersWorkspace from '../features/sliders/components/SlidersWorkspace.vue'
 
-const section = ref<'pages' | 'banners'>('pages')
+const section = ref<'pages' | 'banners' | 'sliders'>('pages')
 </script>
 
 <template>
@@ -22,13 +23,26 @@ const section = ref<'pages' | 'banners'>('pages')
         @click="section = 'banners'"
         >Баннеры</UiButton
       >
+      <UiButton
+        :aria-pressed="section === 'sliders'"
+        :variant="section === 'sliders' ? 'primary' : 'secondary'"
+        @click="section = 'sliders'"
+        >Слайдеры</UiButton
+      >
     </nav>
     <div
       role="region"
-      :aria-label="section === 'pages' ? 'Страницы' : 'Баннеры'"
+      :aria-label="
+        section === 'pages'
+          ? 'Страницы'
+          : section === 'banners'
+            ? 'Баннеры'
+            : 'Слайдеры'
+      "
     >
       <PagesWorkspace v-if="section === 'pages'" />
-      <BannersWorkspace v-else />
+      <BannersWorkspace v-else-if="section === 'banners'" />
+      <SlidersWorkspace v-else />
     </div>
   </div>
 </template>

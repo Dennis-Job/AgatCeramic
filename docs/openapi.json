@@ -532,6 +532,302 @@
                 "description": "Requires content.manage."
             }
         },
+        "/sliders/{slug}": {
+            "parameters": [
+                {
+                    "name": "slug",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getPublicSlider",
+                "summary": "Get a published slider with published banners",
+                "responses": {
+                    "200": {
+                        "description": "Published slider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SliderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
+        "/admin/sliders/banner-options": {
+            "get": {
+                "operationId": "listSliderBannerOptions",
+                "summary": "Search banners available for a slider",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Up to 20 matching banners",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SliderBannerOptions"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                },
+                "description": "Requires content.manage. Returns drafts and published banners."
+            }
+        },
+        "/admin/sliders": {
+            "get": {
+                "operationId": "listSliders",
+                "summary": "List sliders",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated sliders",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SliderCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                },
+                "description": "Requires content.manage. Includes drafts."
+            },
+            "post": {
+                "operationId": "createSlider",
+                "summary": "Create a slider",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreSliderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created slider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SliderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                },
+                "description": "Requires content.manage. Draft by default."
+            }
+        },
+        "/admin/sliders/{slider}": {
+            "parameters": [
+                {
+                    "name": "slider",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getSlider",
+                "summary": "Get a slider",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Slider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SliderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "updateSlider",
+                "summary": "Update a slider",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSliderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Slider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SliderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "putUpdateSlider",
+                "summary": "Update a slider",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSliderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Slider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SliderResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "deleteSlider",
+                "summary": "Delete a slider",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Slider deleted"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            }
+        },
         "/site-settings": {
             "get": {
                 "operationId": "getPublicSiteSettings",
@@ -4237,6 +4533,159 @@
     },
     "components": {
         "schemas": {
+            "Slider": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "is_published",
+                    "banners",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    },
+                    "banners": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Banner"
+                        }
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "SliderResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/Slider"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "SliderCollection": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Slider"
+                        }
+                    },
+                    "links": {
+                        "type": "object"
+                    },
+                    "meta": {
+                        "type": "object"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "SliderBannerOptions": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Banner"
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "StoreSliderRequest": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "slug"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    },
+                    "banner_ids": {
+                        "type": "array",
+                        "maxItems": 50,
+                        "uniqueItems": true,
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "UpdateSliderRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "is_published": {
+                        "type": "boolean"
+                    },
+                    "banner_ids": {
+                        "type": "array",
+                        "maxItems": 50,
+                        "uniqueItems": true,
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
             "Banner": {
                 "type": "object",
                 "required": [
