@@ -16,6 +16,7 @@ request/response media types. Laravel route registry должен в точно�
 Breaking change допускается только с повышением major-версии и явным разделом этой
 версии с заголовком `Breaking change` в `OPENAPI_MIGRATION_PLAN.md`; patch/minor bump
 не является разрешением несовместимости.
+`info.version` относится к редакции OpenAPI-контракта; базовый URL `/api/v1` версионируется отдельно.
 
 ## Базовый путь
 

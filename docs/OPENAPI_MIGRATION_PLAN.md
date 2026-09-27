@@ -7,6 +7,31 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v2.0 — managed media response fields
+
+Date: 2026-09-27. The OpenAPI document version is independent of the `/api/v1` URL prefix.
+
+### Breaking change
+
+Category, brand and banner responses include managed media references and metadata. These
+fields also appear in nested category and brand objects in product responses. The previous
+response schemas prohibited additional properties, so strict schema validators can reject
+the expanded responses even though existing fields retain their meaning.
+
+### Client migration
+
+Update generated clients and strict response validators to the v2.0 OpenAPI document before
+deploying the media library. Clients should accept the new media fields and continue reading
+existing identifiers and URLs. Banner `image_url` still resolves to the effective image URL;
+`legacy_image_url` preserves the external URL separately for editors.
+
+### Rollout and rollback
+
+Deploy the media migration before the backend that reads the new tables, then release clients
+using the v2.0 schema. Keep old clients that reject unknown response fields off the new backend
+until updated. For rollback, restore the prior backend and client versions together; retain the
+media tables and stored files until a separate data-preserving rollback plan is approved.
+
 ## v1.2 — guest cart token storage and expiry
 
 Date: 2026-09-15. The HTTP contract is unchanged: clients continue using the 64-character

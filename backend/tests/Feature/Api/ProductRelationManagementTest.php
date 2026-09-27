@@ -113,12 +113,11 @@ class ProductRelationManagementTest extends TestCase
         $response = $this->actingAs($actor)
             ->getJson("/api/v1/admin/products/{$product->id}/relation-candidates?search=SEARCH&limit=1")
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonMissing(['id' => $product->id])
-            ->assertJsonMissing(['id' => $existing->id])
-            ->assertJsonMissing(['id' => $reverse->id]);
+            ->assertJsonCount(1, 'data');
 
-        $this->assertContains($response->json('data.0.id'), [$matching->id, $secondMatching->id]);
+        $candidateId = $response->json('data.0.id');
+        $this->assertNotContains($candidateId, [$product->id, $existing->id, $reverse->id]);
+        $this->assertContains($candidateId, [$matching->id, $secondMatching->id]);
     }
 
     private function userWithRole(string $slug): User
