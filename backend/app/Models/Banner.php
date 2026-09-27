@@ -4,10 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['title', 'description', 'image_url', 'link_label', 'link_url', 'is_published'])]
+#[Fillable(['title', 'description', 'image_url', 'image_media_id', 'link_label', 'link_url', 'is_published'])]
 class Banner extends Model
 {
+    /** @return BelongsTo<Media, $this> */
+    public function image(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'image_media_id');
+    }
+
     /** @return array<string, string> */
     #[\Override]
     protected function casts(): array

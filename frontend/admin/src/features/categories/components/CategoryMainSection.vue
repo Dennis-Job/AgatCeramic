@@ -5,6 +5,7 @@ import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import type { CategoryPayload } from '../types/category.types'
 import { slugPattern } from '../../catalog/validation/slug'
+import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
 
 defineProps<{
   form: CategoryPayload
@@ -37,6 +38,22 @@ defineProps<{
         v-model="form.description"
         class="mt-1.5 min-h-24 font-normal"
     /></label>
+    <MediaReferenceField
+      kind="image"
+      label="Изображение категории"
+      :model-value="form.image_id"
+      @update:model-value="
+        form.image_id = Array.isArray($event) ? null : $event
+      "
+    />
+    <MediaReferenceField
+      kind="document"
+      label="Документы категории"
+      :model-value="form.document_ids"
+      @update:model-value="
+        form.document_ids = Array.isArray($event) ? $event : []
+      "
+    />
     <label class="text-sm font-medium text-gray-700"
       >Родительская категория<UiSelect
         :model-value="form.parent_id === null ? '' : String(form.parent_id)"

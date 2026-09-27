@@ -9,6 +9,7 @@ import UiDialog from '../../../components/ui/UiDialog.vue'
 import { COUNTRY_OPTIONS } from '../../../constants/countries'
 import type { BrandPayload } from '../types/brand.types'
 import { slugPattern } from '../../catalog/validation/slug'
+import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
 defineProps<{
   open: boolean
   title: string
@@ -71,7 +72,25 @@ const emit = defineEmits<{
             @update:model-value="form.country_code = $event || null" /></label
         ><label class="sm:col-span-2"
           >Описание<UiTextarea v-model="form.description" /></label
-        ><UiCheckbox
+        ><MediaReferenceField
+          kind="image"
+          label="Логотип"
+          :model-value="form.logo_id"
+          :disabled="busy"
+          @update:model-value="
+            form.logo_id = Array.isArray($event) ? null : $event
+          "
+        />
+        <MediaReferenceField
+          kind="document"
+          label="Документы бренда"
+          :model-value="form.document_ids"
+          :disabled="busy"
+          @update:model-value="
+            form.document_ids = Array.isArray($event) ? $event : []
+          "
+        />
+        <UiCheckbox
           class="sm:col-span-2"
           mode="boolean"
           :checked="form.is_active"

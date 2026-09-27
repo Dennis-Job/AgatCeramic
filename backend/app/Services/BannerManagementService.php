@@ -14,26 +14,32 @@ class BannerManagementService
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): Banner
     {
+        if (isset($attributes['image_media_id'])) {
+            $attributes['image_url'] = null;
+        }
         $this->validateLink($attributes);
 
         return DB::transaction(function () use ($actor, $attributes): Banner {
             $banner = Banner::query()->create($attributes);
             $this->auditLogService->record($actor, 'banner.created', $banner);
 
-            return $banner->refresh();
+            return $banner->refresh()->load('image');
         });
     }
 
     /** @param array<string, mixed> $attributes */
     public function update(User $actor, Banner $banner, array $attributes): Banner
     {
+        if (isset($attributes['image_media_id'])) {
+            $attributes['image_url'] = null;
+        }
         $this->validateLink(array_merge($banner->only(['link_label', 'link_url']), $attributes));
 
         return DB::transaction(function () use ($actor, $banner, $attributes): Banner {
             $banner->fill($attributes)->save();
             $this->auditLogService->record($actor, 'banner.updated', $banner);
 
-            return $banner;
+            return $banner->load('image');
         });
     }
 

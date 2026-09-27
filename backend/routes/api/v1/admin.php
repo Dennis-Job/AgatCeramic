@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\ComplianceApprovalController;
 use App\Http\Controllers\Api\V1\Admin\ContactAssignmentController;
 use App\Http\Controllers\Api\V1\Admin\ContactRequestController;
 use App\Http\Controllers\Api\V1\Admin\LegalDocumentController;
+use App\Http\Controllers\Api\V1\Admin\MediaController;
 use App\Http\Controllers\Api\V1\Admin\OrderController;
 use App\Http\Controllers\Api\V1\Admin\PageController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
@@ -50,6 +51,7 @@ Route::apiResource('permissions', PermissionController::class)->only(['index', '
 Route::apiResource('audit-logs', AuditLogController::class)->only(['index', 'show']);
 Route::apiResource('pages', PageController::class);
 Route::apiResource('banners', BannerController::class);
+Route::apiResource('media', MediaController::class)->parameters(['media' => 'media']);
 Route::get('sliders/banner-options', [SliderController::class, 'bannerOptions'])->name('sliders.banner-options');
 Route::apiResource('sliders', SliderController::class);
 Route::put('stores/{store}/working-hours', [StoreController::class, 'replaceWorkingHours'])->name('stores.working-hours.replace');

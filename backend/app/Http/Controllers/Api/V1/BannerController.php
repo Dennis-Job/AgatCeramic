@@ -11,6 +11,6 @@ class BannerController extends Controller
 {
     public function index(): AnonymousResourceCollection
     {
-        return BannerResource::collection(Banner::query()->where('is_published', true)->orderBy('id')->paginate(25));
+        return BannerResource::collection(Banner::query()->with('image')->where('is_published', true)->orderBy('id')->paginate(25));
     }
 }

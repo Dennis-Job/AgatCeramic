@@ -36,10 +36,24 @@ Breaking change допускается только с повышением majo
 `GET /banners` возвращает страницу опубликованных баннеров в порядке ID. `GET/POST /admin/banners`,
 `GET/PUT/PATCH/DELETE /admin/banners/{banner}` требуют `content.manage`; административный список
 включает черновики. Новый баннер создаётся черновиком, если `is_published` не передан явно.
-Поля: обязательный `title`, необязательные `description`, `image_url` и пара
+Поля: обязательный `title`, необязательные `description`, `image_media_id`, legacy `image_url` и пара
 `link_label`/`link_url`. Обе ссылки принимают только HTTP(S) URL. Подпись и URL кнопки должны
-передаваться вместе. `image_url` пока указывает на отдельно размещённое изображение;
-подключение медиатеки относится к `TASK-096`. HTML в текстовых полях не исполняется.
+передаваться вместе. При выборе `image_media_id` прежний `image_url` очищается; публичный
+`image_url` вычисляется по управляемому файлу. Старые HTTP(S) ссылки сохраняются как fallback
+до явной замены; исходное поле доступно отдельно как `legacy_image_url`, чтобы при снятии
+managed изображения не сохранить его публичный URL как внешнюю ссылку. HTML в текстовых полях не исполняется.
+
+### Медиатека
+
+`GET /admin/media?kind=image|document` и `GET /admin/media/{media}` требуют
+`media.manage`, `catalog.manage` или `content.manage`; запись
+`POST /admin/media`, `PATCH|PUT|DELETE /admin/media/{media}` требует `media.manage`. Загрузка использует
+`multipart/form-data` с обязательными `kind`, `title`, `file` и необязательным `alt`.
+Изображения JPEG/PNG/WebP ограничены 10 MiB и 40 мегапикселями, PDF — 20 MiB.
+Имена хранения генерируются сервером; для изображений создаётся WebP thumbnail до 320×320.
+Ответ содержит `id`, `kind`, `url`, `thumbnail_url`, MIME, размер, название, alt и размеры.
+Удаление занятого файла возвращает `422`; после снятия всех ссылок файл и thumbnail удаляются
+через durable cleanup. Замена ссылки не удаляет прежний файл из библиотеки.
 
 ### Слайдеры
 
@@ -560,9 +574,9 @@ without permitted values.
 в транзакции, поэтому клиенту следует обработать `422`, если параллельное изменение сделало выбранного
 родителя недопустимым.
 
-`image_id` and SEO fields are intentionally unavailable in category requests and responses. Category
-images are owned by `TASK-096` (Phase 7), while category metadata is owned by `TASK-100` and the
-related SEO tasks (Phase 8); clients must not send placeholder IDs before those contracts exist.
+`image_id` принимает ID managed image или `null`; `document_ids` заменяет упорядоченный список
+PDF-вложений. Ответы содержат `image` и `documents` с публичными URL. SEO fields остаются
+за `TASK-100` и связанными задачами Phase 8.
 
 ```json
 POST /api/v1/admin/categories
@@ -617,10 +631,9 @@ POST /api/v1/admin/attribute-groups
 доступностью бренда на витрине и по умолчанию включён. Удаление бренда не удаляет товары: связанные
 товары сохраняются без бренда.
 
-`logo_id`, document attachments, and SEO fields are intentionally unavailable in brand requests and
-responses. Logos and documents are owned by `TASK-096` (Phase 7), while brand metadata is owned by
-`TASK-100` and the related SEO tasks (Phase 8); clients must not send placeholder IDs before those
-contracts exist.
+`logo_id` принимает ID managed image или `null`; `document_ids` заменяет упорядоченный список
+PDF-вложений. Ответы содержат `logo` и `documents` с публичными URL. SEO fields остаются
+за `TASK-100` и связанными задачами Phase 8.
 
 ```json
 PATCH /api/v1/admin/brands/8

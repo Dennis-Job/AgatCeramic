@@ -4825,6 +4825,249 @@
                     }
                 }
             }
+        },
+        "/admin/media": {
+            "get": {
+                "operationId": "listMedia",
+                "summary": "List managed media",
+                "description": "Requires media.manage, catalog.manage or content.manage. Optional kind filter; 25 items per page.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "kind",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "image",
+                                "document"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "createMedia",
+                "summary": "Upload managed media",
+                "description": "Requires media.manage. Files receive generated storage paths.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreMediaRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
+        "/admin/media/{media}": {
+            "parameters": [
+                {
+                    "name": "media",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getMedia",
+                "summary": "Get managed media",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "updateMedia",
+                "summary": "Update media metadata",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMediaRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "deleteMedia",
+                "summary": "Delete unused media",
+                "description": "Requires media.manage. Attached files cannot be deleted. File cleanup is queued after commit.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "replaceMediaMetadata",
+                "summary": "Update media metadata",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMediaRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MediaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -5220,7 +5463,9 @@
                     "link_url",
                     "is_published",
                     "created_at",
-                    "updated_at"
+                    "updated_at",
+                    "image_media_id",
+                    "legacy_image_url"
                 ],
                 "properties": {
                     "id": {
@@ -5266,6 +5511,20 @@
                         ]
                     },
                     "link_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uri"
+                    },
+                    "image_media_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "legacy_image_url": {
                         "type": [
                             "string",
                             "null"
@@ -5352,6 +5611,13 @@
                         ],
                         "format": "uri",
                         "maxLength": 2048
+                    },
+                    "image_media_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
                     }
                 },
                 "additionalProperties": false
@@ -5395,6 +5661,13 @@
                         ],
                         "format": "uri",
                         "maxLength": 2048
+                    },
+                    "image_media_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
                     }
                 },
                 "additionalProperties": false
@@ -6457,6 +6730,22 @@
                     "sort_order": {
                         "type": "integer",
                         "minimum": 0
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "document_ids": {
+                        "type": "array",
+                        "maxItems": 50,
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "uniqueItems": true
                     }
                 },
                 "additionalProperties": false
@@ -6494,6 +6783,22 @@
                     "sort_order": {
                         "type": "integer",
                         "minimum": 0
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "document_ids": {
+                        "type": "array",
+                        "maxItems": 50,
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "uniqueItems": true
                     }
                 },
                 "additionalProperties": false
@@ -6573,6 +6878,22 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "logo_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "document_ids": {
+                        "type": "array",
+                        "maxItems": 50,
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "uniqueItems": true
                     }
                 },
                 "additionalProperties": false
@@ -6596,6 +6917,22 @@
                     },
                     "is_active": {
                         "type": "boolean"
+                    },
+                    "logo_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "document_ids": {
+                        "type": "array",
+                        "maxItems": 50,
+                        "items": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "uniqueItems": true
                     }
                 },
                 "additionalProperties": false
@@ -7729,7 +8066,10 @@
                     "country_code",
                     "is_active",
                     "created_at",
-                    "updated_at"
+                    "updated_at",
+                    "logo_id",
+                    "logo",
+                    "documents"
                 ],
                 "properties": {
                     "id": {
@@ -7770,6 +8110,29 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "logo_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "logo": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Media"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "documents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Media"
+                        }
                     }
                 },
                 "additionalProperties": false
@@ -7823,7 +8186,10 @@
                     "sort_order",
                     "children",
                     "created_at",
-                    "updated_at"
+                    "updated_at",
+                    "image_id",
+                    "image",
+                    "documents"
                 ],
                 "properties": {
                     "id": {
@@ -7848,7 +8214,10 @@
                         ]
                     },
                     "sku_prefix": {
-                        "type": ["string", "null"],
+                        "type": [
+                            "string",
+                            "null"
+                        ],
                         "pattern": "^(?:[1-9]|[1-9][1-9])$",
                         "description": "Server-owned one- or two-digit root product-type prefix inherited by descendants. Multiples of ten are not allocated. Null is possible only for a legacy or directly inserted category until first use."
                     },
@@ -7880,6 +8249,29 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "image": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Media"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "documents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Media"
+                        }
                     }
                 },
                 "additionalProperties": false
@@ -8623,6 +9015,174 @@
                         "items": {
                             "$ref": "#/components/schemas/AttributeGroup"
                         }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "Media": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "kind",
+                    "url",
+                    "thumbnail_url",
+                    "mime_type",
+                    "size",
+                    "title",
+                    "alt",
+                    "width",
+                    "height",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "image",
+                            "document"
+                        ]
+                    },
+                    "url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "mime_type": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "alt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "width": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "height": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "thumbnail_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uri"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "MediaResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/Media"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "MediaCollection": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Media"
+                        }
+                    },
+                    "links": {
+                        "type": "object"
+                    },
+                    "meta": {
+                        "type": "object"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "StoreMediaRequest": {
+                "type": "object",
+                "required": [
+                    "kind",
+                    "file",
+                    "title"
+                ],
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "image",
+                            "document"
+                        ]
+                    },
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "description": "JPEG, PNG or WebP up to 10 MiB, or PDF up to 20 MiB."
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "alt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    }
+                },
+                "additionalProperties": false
+            },
+            "UpdateMediaRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "alt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "additionalProperties": false

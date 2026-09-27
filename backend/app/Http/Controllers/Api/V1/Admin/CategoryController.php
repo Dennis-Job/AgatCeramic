@@ -22,7 +22,7 @@ class CategoryController extends Controller
     {
         Gate::authorize('viewAny', Category::class);
 
-        return CategoryResource::collection(Category::query()->orderBy('sort_order')->orderBy('name')->paginate(25));
+        return CategoryResource::collection(Category::query()->with(['image', 'documents'])->orderBy('sort_order')->orderBy('name')->paginate(25));
     }
 
     public function tree(): AnonymousResourceCollection
@@ -44,7 +44,7 @@ class CategoryController extends Controller
     {
         Gate::authorize('view', $category);
 
-        return new CategoryResource($category);
+        return new CategoryResource($category->load(['image', 'documents']));
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): CategoryResource

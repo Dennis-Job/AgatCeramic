@@ -27,6 +27,13 @@ test('content manager creates and publishes a banner', async ({ page }) => {
           meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 },
         },
       })
+    if (path === '/admin/media' && route.request().method() === 'GET')
+      return route.fulfill({
+        json: {
+          data: [],
+          meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 },
+        },
+      })
     if (path === '/admin/banners' && route.request().method() === 'GET')
       return route.fulfill({
         json: {

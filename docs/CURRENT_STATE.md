@@ -61,7 +61,7 @@ architecture gate.
 
 | Phase | Не реализовано | Зависимость |
 | --- | --- | --- |
-| 7 — Content | Site settings (`TASK-090`), pages (`TASK-091`), banners (`TASK-092`), sliders (`TASK-093`), stores (`TASK-094`) и working hours (`TASK-095`) готовы; managed Media Library ещё не реализована. | Media заменит Catalog placeholders `categories.image_id` и `brands.logo_id`, а также внешние URL изображений баннеров. |
+| 7 — Content | `TASK-090`–`TASK-096` реализованы: настройки, страницы, баннеры, слайдеры, магазины, часы работы и медиатека. | Категории и бренды используют managed media FK, документы — отдельные ordered associations. Внешние URL старых баннеров остаются fallback до явной замены. |
 | 8 — SEO | Managed metadata, canonical, sitemap, robots, redirects, structured data и AI drafts. | SEO использует managed media для OG image; slug остаётся Catalog-owned. |
 | 9 — Analytics | Orders/paid sales dashboards и reports. | Использует order `paid_at`, не только `created_at`. |
 | 10 — Client | Public catalog/category/product pages, cart, checkout, confirmation и managed SEO implementation. Первая редакционная главная страница готова. | Использует существующие API contracts без дублирования business logic. |

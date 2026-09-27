@@ -22,7 +22,7 @@ class BrandController extends Controller
     {
         Gate::authorize('viewAny', Brand::class);
 
-        return BrandResource::collection(Brand::query()->orderBy('name')->paginate(25));
+        return BrandResource::collection(Brand::query()->with(['logo', 'documents'])->orderBy('name')->paginate(25));
     }
 
     public function store(StoreBrandRequest $request): JsonResponse
@@ -36,7 +36,7 @@ class BrandController extends Controller
     {
         Gate::authorize('view', $brand);
 
-        return new BrandResource($brand);
+        return new BrandResource($brand->load(['logo', 'documents']));
     }
 
     public function update(UpdateBrandRequest $request, Brand $brand): BrandResource

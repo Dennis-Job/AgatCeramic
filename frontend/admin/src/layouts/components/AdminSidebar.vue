@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { BadgeCheck, FolderTree, Layers3, ListFilter } from '@lucide/vue'
+import {
+  BadgeCheck,
+  FolderTree,
+  Images,
+  Layers3,
+  ListFilter,
+} from '@lucide/vue'
 import {
   Package,
   FileText,
@@ -98,6 +104,12 @@ const employeeNavigation = [
   },
 ]
 const siteManagementNavigation = [
+  {
+    label: 'Медиатека',
+    to: '/media',
+    icon: Images,
+    requiredPermission: 'media.manage',
+  },
   {
     label: 'Контент',
     to: '/content',

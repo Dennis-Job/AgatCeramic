@@ -19,15 +19,18 @@ class CategoryManagementService
     public function create(User $actor, array $attributes): Category
     {
         return DB::transaction(function () use ($actor, $attributes): Category {
+            $documentIds = $attributes['document_ids'] ?? [];
+            unset($attributes['document_ids']);
             $parentId = $this->parentId($attributes['parent_id'] ?? null);
             $parent = $this->lockParent($parentId);
             $this->ensureParentCanBeAssigned(null, $parentId, $parent);
             $category = new Category($attributes);
             $category->sku_prefix = $this->skuService->prefixForNewCategory($parent);
             $category->save();
+            $category->documents()->sync($this->documentOrder($documentIds));
             $this->auditLogService->record($actor, 'category.created', $category);
 
-            return $category;
+            return $category->load(['image', 'documents']);
         });
     }
 
@@ -35,6 +38,8 @@ class CategoryManagementService
     public function update(User $actor, Category $category, array $attributes): Category
     {
         return DB::transaction(function () use ($actor, $category, $attributes): Category {
+            $documentIds = $attributes['document_ids'] ?? null;
+            unset($attributes['document_ids']);
             $categories = array_key_exists('parent_id', $attributes) && $attributes['parent_id'] !== null
                 ? Category::query()->orderBy('id')->lockForUpdate()->get()
                 : null;
@@ -54,12 +59,15 @@ class CategoryManagementService
             }
 
             $category->fill($attributes)->save();
+            if ($documentIds !== null) {
+                $category->documents()->sync($this->documentOrder($documentIds));
+            }
             if (array_key_exists('parent_id', $attributes) && $attributes['parent_id'] !== $originalParentId) {
                 $this->skuService->reassignSubtree($category, $parent);
             }
             $this->auditLogService->record($actor, 'category.updated', $category);
 
-            return $category;
+            return $category->load(['image', 'documents']);
         });
     }
 
@@ -74,7 +82,7 @@ class CategoryManagementService
     /** @return Collection<int, Category> */
     public function tree(): Collection
     {
-        $categories = Category::query()->orderBy('sort_order')->orderBy('name')->get();
+        $categories = Category::query()->with(['image', 'documents'])->orderBy('sort_order')->orderBy('name')->get();
         $byParent = $categories->groupBy('parent_id');
         $attach = function (mixed $category) use (&$attach, $byParent): Category {
             if (! $category instanceof Category) {
@@ -95,6 +103,25 @@ class CategoryManagementService
         }
 
         return Category::query()->whereKey($parentId)->lockForUpdate()->first();
+    }
+
+    /** @return array<int, array{sort_order: int}> */
+    private function documentOrder(mixed $ids): array
+    {
+        if (! is_array($ids)) {
+            throw new \InvalidArgumentException('Document IDs must be an array.');
+        }
+        $ordered = [];
+        $position = 0;
+        foreach ($ids as $id) {
+            if (! is_int($id)) {
+                throw new \InvalidArgumentException('Document IDs must be integers.');
+            }
+            $ordered[$id] = ['sort_order' => $position];
+            $position++;
+        }
+
+        return $ordered;
     }
 
     private function parentId(mixed $parentId): ?int

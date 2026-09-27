@@ -5,6 +5,8 @@ export function emptyBrand(): BrandPayload {
     slug: '',
     description: '',
     country_code: null,
+    logo_id: null,
+    document_ids: [],
     is_active: true,
   }
 }

@@ -22,7 +22,7 @@ class BannerController extends Controller
     {
         Gate::authorize('viewAny', Banner::class);
 
-        return BannerResource::collection(Banner::query()->orderByDesc('updated_at')->orderByDesc('id')->paginate(25));
+        return BannerResource::collection(Banner::query()->with('image')->orderByDesc('updated_at')->orderByDesc('id')->paginate(25));
     }
 
     public function store(StoreBannerRequest $request): JsonResponse
@@ -37,7 +37,7 @@ class BannerController extends Controller
     {
         Gate::authorize('view', $banner);
 
-        return new BannerResource($banner);
+        return new BannerResource($banner->load('image'));
     }
 
     public function update(UpdateBannerRequest $request, Banner $banner): BannerResource

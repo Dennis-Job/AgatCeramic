@@ -8,6 +8,7 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import type { BannerPayload } from '../types/banner.types'
 import BannerImagePreview from './BannerImagePreview.vue'
+import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
 
 defineProps<{
   open: boolean
@@ -66,9 +67,19 @@ const emit = defineEmits<{ close: []; submit: [] }>()
             maxlength="2000"
             rows="4"
         /></UiField>
+        <MediaReferenceField
+          kind="image"
+          label="Изображение баннера"
+          :model-value="form.image_media_id"
+          :disabled="busy"
+          @update:model-value="
+            form.image_media_id = Array.isArray($event) ? null : $event
+          "
+        />
         <UiField
-          label="URL изображения"
-          help="HTTPS или HTTP ссылка на изображение. Пока медиатека не подключена, изображение размещается отдельно."
+          v-if="form.image_url && !form.image_media_id"
+          label="Существующий внешний URL"
+          help="Сохранённая ссылка доступна до выбора файла в медиатеке."
           ><UiInput
             v-model="form.image_url"
             type="url"
@@ -76,6 +87,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
             maxlength="2048"
         /></UiField>
         <BannerImagePreview
+          v-if="!form.image_media_id"
           :url="form.image_url"
           :alt="`Баннер «${form.title || 'Без названия'}»`"
         />

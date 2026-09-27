@@ -25,6 +25,8 @@ export function useBrandForm(
           slug: brand.slug,
           description: brand.description ?? '',
           country_code: brand.country_code,
+          logo_id: brand.logo_id,
+          document_ids: brand.documents.map((item) => item.id),
           is_active: brand.is_active,
         }
       : emptyBrand()

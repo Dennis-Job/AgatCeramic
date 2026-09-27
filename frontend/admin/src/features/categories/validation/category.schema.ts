@@ -5,6 +5,8 @@ export function emptyCategory(): CategoryPayload {
     name: '',
     slug: '',
     description: '',
+    image_id: null,
+    document_ids: [],
     is_parent: false,
     is_active: true,
     sort_order: 0,

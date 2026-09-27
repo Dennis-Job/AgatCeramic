@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Catalog;
 
 use App\Http\Resources\ApiResource;
+use App\Http\Resources\MediaResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
 
@@ -19,6 +20,9 @@ class CategoryResource extends ApiResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'image_id' => $this->image_id,
+            'image' => new MediaResource($this->whenLoaded('image')),
+            'documents' => MediaResource::collection($this->whenLoaded('documents')),
             'sku_prefix' => $this->sku_prefix,
             'is_parent' => $this->is_parent,
             'is_active' => $this->is_active,

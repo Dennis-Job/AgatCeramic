@@ -19,7 +19,7 @@ class SliderManagementService
             $this->syncBanners($slider, $this->bannerIds($attributes));
             $this->auditLogService->record($actor, 'slider.created', $slider);
 
-            return $slider->refresh()->load('banners');
+            return $slider->refresh()->load('banners.image');
         });
     }
 
@@ -33,7 +33,7 @@ class SliderManagementService
             }
             $this->auditLogService->record($actor, 'slider.updated', $slider);
 
-            return $slider->load('banners');
+            return $slider->load('banners.image');
         });
     }
 

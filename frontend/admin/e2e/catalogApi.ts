@@ -9,6 +9,9 @@ export const category = {
   name: 'Керамогранит',
   slug: 'keramogranit',
   description: 'Напольная плитка',
+  image_id: null,
+  image: null,
+  documents: [],
   sku_prefix: '1',
   is_parent: true,
   is_active: true,
@@ -23,6 +26,9 @@ export const brand = {
   name: 'Kerama Marazzi',
   slug: 'kerama-marazzi',
   description: 'Российский бренд',
+  logo_id: null,
+  logo: null,
+  documents: [],
   country_code: 'RU',
   is_active: true,
   created_at: now,
@@ -278,6 +284,11 @@ export async function mockCatalogApi(
       await route.fulfill({
         json: { data: options.emptyPath === path ? [] : [category] },
       })
+      return
+    }
+
+    if (path === '/admin/media') {
+      await route.fulfill({ json: page([]) })
       return
     }
 

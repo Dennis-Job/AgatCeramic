@@ -24,7 +24,7 @@ class SliderController extends Controller
     {
         Gate::authorize('viewAny', Slider::class);
 
-        return SliderResource::collection(Slider::query()->with('banners')->orderByDesc('updated_at')->orderByDesc('id')->paginate(25));
+        return SliderResource::collection(Slider::query()->with('banners.image')->orderByDesc('updated_at')->orderByDesc('id')->paginate(25));
     }
 
     public function bannerOptions(Request $request): AnonymousResourceCollection
@@ -32,7 +32,7 @@ class SliderController extends Controller
         Gate::authorize('viewAny', Slider::class);
         $request->validate(['q' => ['sometimes', 'string', 'max:100']]);
         $search = $request->query('q');
-        $banners = Banner::query()->orderByDesc('id');
+        $banners = Banner::query()->with('image')->orderByDesc('id');
         if (is_string($search) && $search !== '') {
             $banners->where('title', 'like', '%'.$search.'%');
         }
@@ -52,7 +52,7 @@ class SliderController extends Controller
     {
         Gate::authorize('view', $slider);
 
-        return new SliderResource($slider->load('banners'));
+        return new SliderResource($slider->load('banners.image'));
     }
 
     public function update(UpdateSliderRequest $request, Slider $slider): SliderResource

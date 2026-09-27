@@ -13,6 +13,7 @@ class SliderController extends Controller
     {
         $slider = Slider::query()->where('slug', $slug)->where('is_published', true)->firstOrFail();
         $slider->load(['banners' => static fn (BelongsToMany $query): BelongsToMany => $query->where('is_published', true)]);
+        $slider->banners->load('image');
 
         return new SliderResource($slider);
     }

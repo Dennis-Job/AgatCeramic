@@ -7,6 +7,7 @@ const blankForm = (): BannerPayload => ({
   title: '',
   description: '',
   image_url: '',
+  image_media_id: null,
   link_label: '',
   link_url: '',
   is_published: false,
@@ -36,7 +37,8 @@ export function useBanners() {
       ? {
           title: banner.title,
           description: banner.description ?? '',
-          image_url: banner.image_url ?? '',
+          image_url: banner.legacy_image_url ?? '',
+          image_media_id: banner.image_media_id,
           link_label: banner.link_label ?? '',
           link_url: banner.link_url ?? '',
           is_published: banner.is_published,

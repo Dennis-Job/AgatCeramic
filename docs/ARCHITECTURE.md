@@ -256,6 +256,11 @@ validator/planner, executor, template writer и error report writer. Orchestrati
 - optional alt;
 - image variants/thumbnails.
 
+`TASK-096` хранит изображения и PDF в управляемой медиатеке с WebP thumbnail до 320×320.
+Категория, бренд и баннер ссылаются на media ID; документы привязаны к категории/бренду
+отдельными упорядоченными отношениями. Удаление используемого файла запрещено, свободный файл
+удаляется через durable storage cleanup. Старые внешние URL баннеров остаются fallback до замены.
+
 ## 13. Audit
 
 Аудитировать важные действия:

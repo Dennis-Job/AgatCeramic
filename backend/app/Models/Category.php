@@ -10,11 +10,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['parent_id', 'name', 'slug', 'description', 'is_parent', 'is_active', 'sort_order'])]
+#[Fillable(['parent_id', 'name', 'slug', 'description', 'image_id', 'is_parent', 'is_active', 'sort_order'])]
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
     use HasFactory;
+
+    /** @return BelongsTo<Media, $this> */
+    public function image(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'image_id');
+    }
+
+    /** @return BelongsToMany<Media, $this> */
+    public function documents(): BelongsToMany
+    {
+        return $this->belongsToMany(Media::class, 'category_media_documents')->withPivot('sort_order')
+            ->orderByPivot('sort_order')->orderBy('media.id');
+    }
 
     /** @return BelongsTo<Category, $this> */
     public function parent(): BelongsTo

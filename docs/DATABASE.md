@@ -53,10 +53,10 @@ assignments; deleting a staff account or role removes its pivot rows.
 - sort_order
 - timestamps
 
-`image_id` is a nullable Catalog-phase placeholder, not an active media foreign key and not a raw
-storage path. `TASK-096` (Phase 7) owns the `media` entity, the migration that turns this placeholder
-into an enforced managed-media relationship, and its replacement/deletion lifecycle. Until then the
-Catalog API does not accept or expose category image management. Category SEO is intentionally absent
+`image_id` is a nullable foreign key to managed `media` (`kind=image`). The Media Library migration
+refuses any pre-existing non-null placeholder because its old value has no defined file mapping.
+The admin API accepts `image_id` and ordered `document_ids`; deleting an attached media file is
+rejected until these references are removed. Category SEO is intentionally absent
 from this table; `TASK-100` (Phase 8) owns it through the separate `seo_metadata` layer.
 
 Root categories receive `sku_prefix` values `1` through `99`, excluding `10`, `20`, ..., `90`;
@@ -122,10 +122,9 @@ assignment to have a valid product value.
 двухбуквенный ISO 3166-1 alpha-2 `country_code` страны происхождения, будущую ссылку
 `logo_id` и флаг `is_active`.
 
-`logo_id` is a nullable Catalog-phase placeholder with no active foreign key and no raw storage-path
-semantics. `TASK-096` (Phase 7) owns the media table, the enforced relationship and lifecycle for the
-logo, and a separate attachment relationship for reusable brand/catalog documents. The singular
-`logo_id` must not be overloaded as a document association. Brand SEO columns are intentionally
+`logo_id` is a nullable foreign key to managed `media` (`kind=image`). The Media Library migration
+refuses any pre-existing non-null placeholder. Ordered brand documents use
+`brand_media_documents`; `logo_id` is never used as a document association. Brand SEO columns are intentionally
 absent; `TASK-100` (Phase 8) owns brand metadata through the separate `seo_metadata` layer.
 
 ### products
@@ -322,8 +321,9 @@ triggers запрещают `UPDATE`/`DELETE` обеих evidence-таблиц. 
 `TASK-092`: отдельные баннеры с заголовком, необязательными кратким текстом, URL изображения и
 парой `link_label`/`link_url`. `is_published=false` по умолчанию; публичная выборка отдаёт только
 опубликованные записи по ID. Пока `TASK-096` не создал медиатеку, изображение указывается как
-внешний HTTP(S) URL; сервер его не скачивает. Переход к управляемой media reference должен быть
-отдельной миграцией с сохранением существующих ссылок. Баннеры не задают порядок и состав
+внешний HTTP(S) URL; сервер его не скачивает. `TASK-096` добавляет `image_media_id` с FK к
+медиатеке, сохраняя прежние URL как legacy fallback. При выборе управляемого изображения
+`image_url` очищается, а публичный ответ отдаёт URL файла медиатеки. Баннеры не задают порядок и состав
 слайдеров (`TASK-093`). Создание, изменение и удаление фиксируются в audit trail без содержимого.
 
 ### sliders
@@ -378,13 +378,14 @@ Admin-only append-only решения по ADR-014: роль согласующ�
 
 ### media
 
-Owned by `TASK-096` (Phase 7). Besides content assets, this entity supplies managed category images,
-brand logos, and reusable brand/catalog documents. The task must reconcile the existing nullable
-`categories.image_id` and `brands.logo_id` placeholders by adding valid relationships and explicit
-replacement/deletion behavior. Before adding foreign keys, its migration must define how every
-pre-existing non-null value is mapped, backfilled, nulled, or rejected and must define the on-delete
-semantics. Documents require their own association, cardinality, role/order, and lifecycle instead
-of overloading `brands.logo_id`. The task must not preserve unconstrained IDs or file paths.
+`TASK-096` хранит тип (`image`/`document`), случайный storage path на public disk, MIME, размер,
+название, необязательный alt и размеры изображения. Для каждого изображения создаётся WebP
+thumbnail до 320×320; обе storage paths удаляются через durable cleanup после удаления записи.
+Допустимы JPEG/PNG/WebP до 10 MiB и PDF до 20 MiB. `categories.image_id`, `brands.logo_id` и
+`banners.image_media_id` — nullable FK с `RESTRICT ON DELETE`. Связанные документы имеют отдельные
+таблицы `category_media_documents` и `brand_media_documents` с порядком и FK. Удаление медиа,
+на которое есть ссылки, возвращает validation error; при замене ссылки старый файл остаётся в
+библиотеке для повторного использования. Старые внешние banner URL сохраняются до явной замены.
 
 ## SEO
 
