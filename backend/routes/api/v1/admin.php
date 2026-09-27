@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\SiteSettingController;
 use App\Http\Controllers\Api\V1\Admin\SliderController;
+use App\Http\Controllers\Api\V1\Admin\StoreController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,6 +52,8 @@ Route::apiResource('pages', PageController::class);
 Route::apiResource('banners', BannerController::class);
 Route::get('sliders/banner-options', [SliderController::class, 'bannerOptions'])->name('sliders.banner-options');
 Route::apiResource('sliders', SliderController::class);
+Route::put('stores/{store}/working-hours', [StoreController::class, 'replaceWorkingHours'])->name('stores.working-hours.replace');
+Route::apiResource('stores', StoreController::class);
 Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
 Route::patch('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
 Route::get('legal-documents', [LegalDocumentController::class, 'index'])->name('legal-documents.index');

@@ -4,8 +4,9 @@ import UiButton from '../components/ui/UiButton.vue'
 import BannersWorkspace from '../features/banners/components/BannersWorkspace.vue'
 import PagesWorkspace from '../features/pages/components/PagesWorkspace.vue'
 import SlidersWorkspace from '../features/sliders/components/SlidersWorkspace.vue'
+import StoresWorkspace from '../features/stores/components/StoresWorkspace.vue'
 
-const section = ref<'pages' | 'banners' | 'sliders'>('pages')
+const section = ref<'pages' | 'banners' | 'sliders' | 'stores'>('pages')
 </script>
 
 <template>
@@ -29,6 +30,12 @@ const section = ref<'pages' | 'banners' | 'sliders'>('pages')
         @click="section = 'sliders'"
         >Слайдеры</UiButton
       >
+      <UiButton
+        :aria-pressed="section === 'stores'"
+        :variant="section === 'stores' ? 'primary' : 'secondary'"
+        @click="section = 'stores'"
+        >Магазины</UiButton
+      >
     </nav>
     <div
       role="region"
@@ -37,12 +44,15 @@ const section = ref<'pages' | 'banners' | 'sliders'>('pages')
           ? 'Страницы'
           : section === 'banners'
             ? 'Баннеры'
-            : 'Слайдеры'
+            : section === 'sliders'
+              ? 'Слайдеры'
+              : 'Магазины'
       "
     >
       <PagesWorkspace v-if="section === 'pages'" />
       <BannersWorkspace v-else-if="section === 'banners'" />
-      <SlidersWorkspace v-else />
+      <SlidersWorkspace v-else-if="section === 'sliders'" />
+      <StoresWorkspace v-else />
     </div>
   </div>
 </template>

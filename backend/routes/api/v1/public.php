@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\PartnerRequestController;
 use App\Http\Controllers\Api\V1\SiteSettingController;
 use App\Http\Controllers\Api\V1\SliderController;
+use App\Http\Controllers\Api\V1\StoreController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +28,7 @@ Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-
 Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
 Route::get('sliders/{slug}', [SliderController::class, 'show'])->name('sliders.show');
+Route::get('stores', [StoreController::class, 'index'])->name('stores.index');
 Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 Route::get('legal-documents/{type}', [LegalDocumentController::class, 'show'])->name('legal-documents.show');
 Route::post('cart/items', [CartItemController::class, 'store'])->name('cart.items.store');

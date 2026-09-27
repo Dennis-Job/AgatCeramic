@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\SiteSetting;
 use App\Models\Slider;
+use App\Models\Store;
 use App\Models\User;
 use App\Policies\AttributeGroupPolicy;
 use App\Policies\AttributePolicy;
@@ -31,6 +32,7 @@ use App\Policies\ProductPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\SiteSettingPolicy;
 use App\Policies\SliderPolicy;
+use App\Policies\StorePolicy;
 use App\Policies\UserPolicy;
 use App\Services\Retention\RetentionPolicy;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -70,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Page::class, PagePolicy::class);
         Gate::policy(Banner::class, BannerPolicy::class);
         Gate::policy(Slider::class, SliderPolicy::class);
+        Gate::policy(Store::class, StorePolicy::class);
         Gate::policy(SiteSetting::class, SiteSettingPolicy::class);
 
         RateLimiter::for('api', static fn (Request $request): Limit => Limit::perMinute(60)->by($request->ip()));
