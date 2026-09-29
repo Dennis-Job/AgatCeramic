@@ -17,7 +17,7 @@
 | `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                    |
 | `UiField`                                        | label, required, help, error (`role=alert`)                                                                                        |
 | `UiLoadingState`, `UiEmptyState`, `UiPagination` | status announcement, optional empty-state action; first/middle/last/zero/loading pagination                                        |
-| `UiImagePreview`                                 | изображение, пустое состояние и сообщение об ошибке загрузки                                                                      |
+| `UiImagePreview`                                 | изображение, пустое состояние и сообщение об ошибке загрузки                                                                       |
 | `AuthCard`                                       | общий guest-auth form shell: branding, title, description и card surface; `headingTag=h2` только для embedded preview              |
 | `PageHeader`                                     | eyebrow, title, description, actions slot                                                                                          |
 

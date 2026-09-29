@@ -7,6 +7,32 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v3.0 — managed homepage and banner presentation
+
+Date: 2026-09-29. The OpenAPI document version remains independent of the `/api/v1` URL prefix.
+
+### Breaking change
+
+Banner responses now include `eyebrow` and `image_alt`. Their `image_url` can be a root-relative
+storefront asset path as well as an absolute URL. The v2.0 banner response schemas prohibited
+additional properties and required an absolute URI, so strict response validators can reject
+these responses. The new homepage endpoints are additive.
+
+### Client migration
+
+Regenerate strict clients and response validators against v3.0 before using the updated banner
+endpoints. Accept the two new nullable presentation fields. Resolve root-relative banner image
+paths against the public storefront origin; continue to accept existing absolute image URLs.
+The Admin editor and Nuxt storefront in this repository have been updated together.
+
+### Rollout and rollback
+
+Apply the homepage migration, then deploy the backend and updated Admin/Client together. Any
+external client with a strict v2.0 banner response validator must move to v3.0 before calling
+the updated backend. For rollback, restore the previous application versions together and retain
+the added columns, homepage table, and seeded content until a separate data-preserving cleanup;
+dropping the new schema would discard administrator edits.
+
 ## v2.0 — managed media response fields
 
 Date: 2026-09-27. The OpenAPI document version is independent of the `/api/v1` URL prefix.

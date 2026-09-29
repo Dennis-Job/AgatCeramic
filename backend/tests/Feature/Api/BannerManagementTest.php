@@ -15,6 +15,7 @@ class BannerManagementTest extends TestCase
 
     public function test_manager_can_manage_banner_and_only_published_banners_are_public(): void
     {
+        $initialPublicBannerCount = count($this->getJson('/api/v1/banners')->assertOk()->json('data'));
         $manager = $this->userWithRole('content-manager');
         $created = $this->actingAs($manager)->postJson('/api/v1/admin/banners', [
             'title' => 'Новая коллекция',
@@ -25,13 +26,15 @@ class BannerManagementTest extends TestCase
         ])->assertCreated()->assertJsonPath('data.is_published', false);
         $id = $created->json('data.id');
 
-        $this->getJson('/api/v1/banners')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/banners')->assertOk()->assertJsonCount($initialPublicBannerCount, 'data');
         $this->actingAs($manager)->getJson('/api/v1/admin/banners')->assertOk()->assertJsonPath('data.0.id', $id);
         $this->actingAs($manager)->patchJson("/api/v1/admin/banners/{$id}", ['is_published' => true])
             ->assertOk()->assertJsonPath('data.is_published', true);
-        $this->getJson('/api/v1/banners')->assertOk()->assertJsonPath('data.0.id', $id);
+        $publicBanners = $this->getJson('/api/v1/banners')->assertOk()
+            ->assertJsonCount($initialPublicBannerCount + 1, 'data')->json('data');
+        $this->assertContains($id, array_column($publicBanners, 'id'));
         $this->actingAs($manager)->patchJson("/api/v1/admin/banners/{$id}", ['is_published' => false])->assertOk();
-        $this->getJson('/api/v1/banners')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/banners')->assertOk()->assertJsonCount($initialPublicBannerCount, 'data');
         $this->actingAs($manager)->deleteJson("/api/v1/admin/banners/{$id}")->assertNoContent();
         $this->assertDatabaseMissing('banners', ['id' => $id]);
         foreach (['banner.created', 'banner.updated', 'banner.deleted'] as $action) {

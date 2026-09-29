@@ -112,7 +112,10 @@ class MediaLibraryTest extends TestCase
             'image_media_id' => null, 'image_url' => null,
         ])->assertOk()->assertJsonPath('data.image_url', null)
             ->assertJsonPath('data.legacy_image_url', null);
-        $this->getJson('/api/v1/banners')->assertOk()->assertJsonPath('data.0.image_url', null);
+        $publicBanners = $this->getJson('/api/v1/banners')->assertOk()->json('data');
+        $updatedBanner = collect($publicBanners)->firstWhere('id', $id);
+        $this->assertNotNull($updatedBanner);
+        $this->assertNull($updatedBanner['image_url']);
     }
 
     private function userWithRole(string $slug): User

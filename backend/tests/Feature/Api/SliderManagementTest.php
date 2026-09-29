@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class SliderManagementTest extends TestCase
@@ -16,6 +17,8 @@ class SliderManagementTest extends TestCase
 
     public function test_slider_publication_order_and_banner_visibility(): void
     {
+        $initialBannerCount = Banner::query()->count();
+        $initialSliderBannerCount = DB::table('slider_banner')->count();
         $manager = $this->userWithRole('content-manager');
         $first = Banner::query()->create(['title' => 'Первый', 'is_published' => true]);
         $draft = Banner::query()->create(['title' => 'Черновик']);
@@ -43,8 +46,9 @@ class SliderManagementTest extends TestCase
         ])->assertOk()->assertJsonPath('data.banners.0.id', $first->id);
         $this->getJson('/api/v1/sliders/home')->assertJsonPath('data.banners.0.id', $first->id);
         $this->actingAs($manager)->deleteJson("/api/v1/admin/sliders/{$id}")->assertNoContent();
-        $this->assertDatabaseCount('banners', 3);
-        $this->assertDatabaseCount('slider_banner', 0);
+        $this->assertDatabaseCount('banners', $initialBannerCount + 3);
+        $this->assertDatabaseCount('slider_banner', $initialSliderBannerCount);
+        $this->assertDatabaseMissing('slider_banner', ['slider_id' => $id]);
         foreach (['slider.created', 'slider.updated', 'slider.deleted'] as $action) {
             $this->assertDatabaseHas('audit_logs', ['action' => $action, 'entity_id' => $id]);
         }
