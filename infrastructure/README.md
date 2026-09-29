@@ -8,6 +8,8 @@ Nuxt Client, PostgreSQL, and Redis.
 - Docker Desktop running with Linux containers;
 - Docker Compose v2+.
 
+Shell scripts are checked out with LF line endings on Windows so Docker can run them.
+
 ## Start
 
 ```powershell
