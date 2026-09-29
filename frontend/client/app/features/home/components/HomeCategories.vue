@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { MaterialCategory } from '../data/homeContent'
+import type { HomePageContent } from '~/types/homePage'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
 import HomeCategoryCard from './HomeCategoryCard.vue'
 
-defineProps<{ categories: readonly MaterialCategory[] }>()
+defineProps<{ content: HomePageContent['categories'] }>()
 defineEmits<{ select: [id: string] }>()
 </script>
 
@@ -16,13 +16,13 @@ defineEmits<{ select: [id: string] }>()
     <div class="container">
       <SectionHeading
         title-id="catalog-title"
-        eyebrow="Каталог"
-        title="Наша коллекция материалов"
-        description="Выберите направление и изучите его фактуру ближе."
+        :eyebrow="content.eyebrow"
+        :title="content.title"
+        :description="content.description"
       />
       <div class="categories-section__grid">
         <HomeCategoryCard
-          v-for="category in categories"
+          v-for="category in content.items"
           :key="category.id"
           :category="category"
           @select="$emit('select', $event)"

@@ -12,6 +12,7 @@ import UiDialog from '../ui/UiDialog.vue'
 import UiDatePicker from '../ui/UiDatePicker.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
 import UiField from '../ui/UiField.vue'
+import UiImagePreview from '../ui/UiImagePreview.vue'
 import UiInput from '../ui/UiInput.vue'
 import UiLoadingState from '../ui/UiLoadingState.vue'
 import UiPagination from '../ui/UiPagination.vue'
@@ -61,6 +62,7 @@ const uiComponents = [
   'UiDialog',
   'UiEmptyState',
   'UiField',
+  'UiImagePreview',
   'UiInput',
   'UiLoadingState',
   'UiPagination',
@@ -283,7 +285,7 @@ function submitAuthPreview(): void {
     <UiCard data-ui-kit-section="inventory">
       <h2 class="text-lg font-semibold text-gray-900">Состав UI-kit</h2>
       <p class="mt-1 text-sm text-gray-500">
-        16 UI primitives и 3 shared-компонента, доступных для повторного
+        17 UI primitives и 3 shared-компонента, доступных для повторного
         использования. Layout- и feature-компоненты в этот каталог не входят.
       </p>
       <div class="mt-4 grid gap-4 lg:grid-cols-2">
@@ -729,6 +731,12 @@ function submitAuthPreview(): void {
             >Добавить элемент</UiButton
           >
         </UiEmptyState>
+        <div class="mt-4 max-w-xs">
+          <p class="mb-2 text-sm text-gray-500">
+            <code>ui/UiImagePreview.vue</code>: пустое изображение
+          </p>
+          <UiImagePreview :url="null" alt="Пример изображения" />
+        </div>
       </UiCard>
 
       <UiCard data-ui-kit-section="dialogs">

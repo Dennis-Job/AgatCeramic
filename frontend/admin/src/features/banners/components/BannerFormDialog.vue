@@ -7,7 +7,7 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import type { BannerPayload } from '../types/banner.types'
-import BannerImagePreview from './BannerImagePreview.vue'
+import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
 
 defineProps<{
@@ -59,6 +59,12 @@ const emit = defineEmits<{ close: []; submit: [] }>()
             data-autofocus
         /></UiField>
         <UiField
+          label="Надпись над заголовком"
+          help="Например, AgatCeramic · Керамогранит. Используется на главной странице."
+        >
+          <UiInput v-model="form.eyebrow" :disabled="busy" maxlength="255" />
+        </UiField>
+        <UiField
           label="Описание"
           help="Короткий текст. HTML будет показан как текст."
           ><UiTextarea
@@ -78,28 +84,28 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         />
         <UiField
           v-if="form.image_url && !form.image_media_id"
-          label="Существующий внешний URL"
-          help="Сохранённая ссылка доступна до выбора файла в медиатеке."
-          ><UiInput
-            v-model="form.image_url"
-            type="url"
-            :disabled="busy"
-            maxlength="2048"
+          label="Существующий адрес изображения"
+          help="Локальный путь /images/... или HTTPS-адрес доступен до выбора файла в медиатеке."
+          ><UiInput v-model="form.image_url" :disabled="busy" maxlength="2048"
         /></UiField>
-        <BannerImagePreview
+        <UiImagePreview
           v-if="!form.image_media_id"
           :url="form.image_url"
           :alt="`Баннер «${form.title || 'Без названия'}»`"
         />
+        <UiField
+          label="Альтернативный текст изображения"
+          help="Кратко опишите изображение для посетителей, использующих экранный диктор."
+        >
+          <UiInput v-model="form.image_alt" :disabled="busy" maxlength="255" />
+        </UiField>
         <UiField label="Подпись кнопки"
           ><UiInput v-model="form.link_label" :disabled="busy" maxlength="255"
         /></UiField>
-        <UiField label="Ссылка кнопки" help="Укажите вместе с подписью кнопки."
-          ><UiInput
-            v-model="form.link_url"
-            type="url"
-            :disabled="busy"
-            maxlength="2048"
+        <UiField
+          label="Ссылка кнопки"
+          help="Укажите вместе с подписью. Внутренний путь /... или HTTPS-адрес."
+          ><UiInput v-model="form.link_url" :disabled="busy" maxlength="2048"
         /></UiField>
         <UiCheckbox
           mode="boolean"

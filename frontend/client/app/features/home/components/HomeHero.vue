@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight } from '@lucide/vue'
 import UiButton from '~/components/ui/UiButton.vue'
-import type { HomeSlide } from '../data/homeContent'
+import type { HomeSlide } from '~/types/homePage'
 
-const props = defineProps<{ slides: readonly HomeSlide[] }>()
+const props = defineProps<{
+  slides: readonly HomeSlide[]
+  emptyTitle: string
+  emptyDescription: string
+}>()
 const activeIndex = ref(0)
 const isPaused = ref(false)
 const activeSlide = computed(() => props.slides[activeIndex.value])
 let timer: ReturnType<typeof setInterval> | undefined
+
+watch(
+  () => props.slides.length,
+  (count) => {
+    if (activeIndex.value >= count) activeIndex.value = 0
+  },
+)
 
 function selectSlide(index: number) {
   activeIndex.value = (index + props.slides.length) % props.slides.length
@@ -32,29 +43,30 @@ onUnmounted(() => {
 
 <template>
   <section
-    v-if="activeSlide"
     id="home"
     class="hero"
+    :class="{ 'hero--empty': !activeSlide }"
     aria-label="Главный экран"
     @mouseenter="isPaused = true"
     @mouseleave="isPaused = false"
     @focusin="isPaused = true"
     @focusout="isPaused = false"
   >
-    <div :key="activeSlide.id" class="hero__slide">
+    <div v-if="activeSlide" :key="activeSlide.id" class="hero__slide">
       <div class="hero__copy">
         <div class="hero__copy-inner">
           <span class="eyebrow">{{ activeSlide.eyebrow }}</span>
           <h1>{{ activeSlide.title }}</h1>
           <p>{{ activeSlide.description }}</p>
-          <UiButton to="/#catalog">
-            Смотреть направления
+          <UiButton v-if="activeSlide.linkUrl" :to="activeSlide.linkUrl">
+            {{ activeSlide.linkLabel }}
             <span class="hero__button-arrow" aria-hidden="true">→</span>
           </UiButton>
         </div>
       </div>
       <div class="hero__image">
         <img
+          v-if="activeSlide.image"
           :src="activeSlide.image"
           :alt="activeSlide.imageAlt"
           width="1280"
@@ -62,6 +74,11 @@ onUnmounted(() => {
           fetchpriority="high"
         />
       </div>
+    </div>
+
+    <div v-else class="hero__empty container">
+      <h1>{{ emptyTitle }}</h1>
+      <p>{{ emptyDescription }}</p>
     </div>
 
     <div
@@ -100,7 +117,9 @@ onUnmounted(() => {
         @click="selectSlide(index)"
       />
     </div>
-    <div class="hero__scroll-hint" aria-hidden="true">Листайте <span /></div>
+    <div v-if="activeSlide" class="hero__scroll-hint" aria-hidden="true">
+      Листайте <span />
+    </div>
   </section>
 </template>
 
@@ -110,6 +129,16 @@ onUnmounted(() => {
   min-height: 620px;
   height: min(790px, calc(100svh - 118px));
   overflow: hidden;
+}
+.hero--empty {
+  display: flex;
+  min-height: 400px;
+  height: auto;
+  align-items: center;
+  padding-block: 100px;
+}
+.hero__empty {
+  width: 100%;
 }
 .hero__slide {
   display: grid;

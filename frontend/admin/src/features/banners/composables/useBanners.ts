@@ -5,9 +5,11 @@ import type { Banner, BannerPayload } from '../types/banner.types'
 
 const blankForm = (): BannerPayload => ({
   title: '',
+  eyebrow: '',
   description: '',
   image_url: '',
   image_media_id: null,
+  image_alt: '',
   link_label: '',
   link_url: '',
   is_published: false,
@@ -36,9 +38,11 @@ export function useBanners() {
     form.value = banner
       ? {
           title: banner.title,
+          eyebrow: banner.eyebrow ?? '',
           description: banner.description ?? '',
           image_url: banner.legacy_image_url ?? '',
           image_media_id: banner.image_media_id,
+          image_alt: banner.image_alt ?? '',
           link_label: banner.link_label ?? '',
           link_url: banner.link_url ?? '',
           is_published: banner.is_published,

@@ -13,7 +13,7 @@ import UiPagination from '../../../components/ui/UiPagination.vue'
 import { useBanners } from '../composables/useBanners'
 import type { Banner } from '../types/banner.types'
 import BannerFormDialog from './BannerFormDialog.vue'
-import BannerImagePreview from './BannerImagePreview.vue'
+import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 
 const banners = useBanners()
 const deleting = ref<Banner | null>(null)
@@ -64,7 +64,7 @@ onMounted(() => banners.load())
           :key="banner.id"
           class="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center"
         >
-          <BannerImagePreview
+          <UiImagePreview
             :url="banner.image_url"
             :alt="`Баннер «${banner.title}»`"
             class="w-20 shrink-0 sm:w-28"

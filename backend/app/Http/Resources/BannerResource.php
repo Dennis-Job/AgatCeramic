@@ -15,11 +15,13 @@ class BannerResource extends ApiResource
     {
         return [
             'id' => $this->id,
+            'eyebrow' => $this->eyebrow,
             'title' => $this->title,
             'description' => $this->description,
             'image_url' => $this->image?->disk === 'public' ? Storage::disk('public')->url($this->image->path) : $this->image_url,
             'legacy_image_url' => $this->image_url,
             'image_media_id' => $this->image_media_id,
+            'image_alt' => $this->image_alt,
             'link_label' => $this->link_label,
             'link_url' => $this->link_url,
             'is_published' => $this->is_published,

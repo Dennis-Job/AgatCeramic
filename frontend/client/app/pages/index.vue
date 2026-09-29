@@ -1,25 +1,29 @@
 <script setup lang="ts">
 import HomePage from '~/features/home/components/HomePage.vue'
 
+const { data: content, status, error, refresh } = useHomePageContent()
+
 const siteOrigin = useRuntimeConfig().public.siteUrl || useRequestURL().origin
 const canonicalUrl = new URL('/', siteOrigin).toString()
-const imageUrl = new URL(
-  '/images/home/hero-porcelain.webp',
-  canonicalUrl,
-).toString()
+const seo = computed(() => content.value?.seo)
+const imageUrl = computed(() => {
+  const image = seo.value?.ogImage || content.value?.heroSlides[0]?.image
+  return image ? new URL(image, canonicalUrl).toString() : undefined
+})
 
 useSeoMeta({
-  title: 'AgatCeramic — керамогранит, плитка и мозаика',
-  description:
-    'Откройте керамогранит, керамическую плитку и мозаику AgatCeramic. Изучайте фактуры, форматы и оттенки для своего пространства.',
-  ogTitle: 'AgatCeramic — керамогранит, плитка и мозаика',
-  ogDescription: 'Материалы, которые задают характер пространству.',
+  title: () => seo.value?.title || 'AgatCeramic',
+  description: () => seo.value?.description || undefined,
+  ogTitle: () => seo.value?.ogTitle || seo.value?.title || 'AgatCeramic',
+  ogDescription: () =>
+    seo.value?.ogDescription || seo.value?.description || undefined,
   ogImage: imageUrl,
   ogUrl: canonicalUrl,
   ogType: 'website',
+  robots: () => (error.value ? 'noindex' : 'index,follow'),
 })
 
-useHead({
+useHead(() => ({
   link: [{ rel: 'canonical', href: canonicalUrl }],
   script: [
     {
@@ -31,13 +35,54 @@ useHead({
         name: 'AgatCeramic',
         url: canonicalUrl,
         inLanguage: 'ru-RU',
-        description: 'Керамогранит, керамическая плитка и мозаика AgatCeramic.',
-      }),
+        description: seo.value?.description || '',
+      }).replace(/</g, '\\u003c'),
     },
   ],
-})
+}))
 </script>
 
 <template>
-  <HomePage />
+  <HomePage v-if="content" :content="content" />
+  <section
+    v-else
+    class="home-unavailable container"
+    :role="error ? 'alert' : 'status'"
+  >
+    <h1>
+      {{ error ? 'Главная страница временно недоступна' : 'Главная страница' }}
+    </h1>
+    <p v-if="error">
+      Не удалось загрузить содержимое. Попробуйте ещё раз позже.
+    </p>
+    <p v-else-if="status === 'pending'">Загружаем содержимое…</p>
+    <p v-else>Для главной страницы пока нет опубликованного содержимого.</p>
+    <button v-if="error" type="button" @click="refresh()">
+      Повторить загрузку
+    </button>
+  </section>
 </template>
+
+<style scoped>
+.home-unavailable {
+  min-height: 60vh;
+  padding-block: 100px;
+}
+.home-unavailable h1 {
+  margin: 0 0 16px;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 500;
+}
+.home-unavailable p {
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+.home-unavailable button {
+  min-height: 44px;
+  margin-top: 16px;
+  border: 1px solid var(--color-ink);
+  padding: 8px 20px;
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+</style>

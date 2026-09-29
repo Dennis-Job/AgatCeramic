@@ -10,6 +10,7 @@ import {
 import {
   Package,
   FileText,
+  House,
   KeyRound,
   LayoutDashboard,
   MessageSquareMore,
@@ -104,6 +105,12 @@ const employeeNavigation = [
   },
 ]
 const siteManagementNavigation = [
+  {
+    label: 'Главная сайта',
+    to: '/home-page',
+    icon: House,
+    requiredPermission: 'content.manage',
+  },
   {
     label: 'Медиатека',
     to: '/media',

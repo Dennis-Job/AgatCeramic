@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import UiButton from '~/components/ui/UiButton.vue'
+import type { HomePageContent } from '~/types/homePage'
+
+defineProps<{ content: HomePageContent['promo'] }>()
 </script>
 
 <template>
   <section class="home-promo" aria-labelledby="home-promo-title">
     <div class="container">
-      <span class="eyebrow">AgatCeramic</span>
-      <h2 id="home-promo-title">Пространство начинается с поверхности.</h2>
-      <p>Исследуйте материалы, формы и оттенки, чтобы найти своё сочетание.</p>
-      <UiButton to="/#catalog" variant="light"
-        >Выбрать направление <span aria-hidden="true">→</span></UiButton
-      >
+      <span class="eyebrow">{{ content.eyebrow }}</span>
+      <h2 id="home-promo-title">{{ content.title }}</h2>
+      <p>{{ content.description }}</p>
+      <UiButton v-if="content.linkUrl" :to="content.linkUrl" variant="light">
+        {{ content.linkLabel }} <span aria-hidden="true">→</span>
+      </UiButton>
     </div>
   </section>
 </template>

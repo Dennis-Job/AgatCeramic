@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CallbackRequestController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
 use App\Http\Controllers\Api\V1\EmailRequestController;
+use App\Http\Controllers\Api\V1\HomePageController;
 use App\Http\Controllers\Api\V1\LegalDocumentController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PageController;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('cart', [CartController::class, 'show'])->name('cart.show');
 Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
+Route::get('home-page', [HomePageController::class, 'show'])->name('home-page.show');
 Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
 Route::get('sliders/{slug}', [SliderController::class, 'show'])->name('sliders.show');

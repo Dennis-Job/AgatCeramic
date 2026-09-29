@@ -17,6 +17,7 @@
 | `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                    |
 | `UiField`                                        | label, required, help, error (`role=alert`)                                                                                        |
 | `UiLoadingState`, `UiEmptyState`, `UiPagination` | status announcement, optional empty-state action; first/middle/last/zero/loading pagination                                        |
+| `UiImagePreview`                                 | изображение, пустое состояние и сообщение об ошибке загрузки                                                                      |
 | `AuthCard`                                       | общий guest-auth form shell: branding, title, description и card surface; `headingTag=h2` только для embedded preview              |
 | `PageHeader`                                     | eyebrow, title, description, actions slot                                                                                          |
 
@@ -29,7 +30,7 @@ opacity. Общий focus outline также задаётся токенами �
 
 Живая витрина доступна авторизованному пользователю по `/ui-kit` и через sidebar →
 «Разработка» → «UI-kit». Она собрана в `components/shared/UiKitShowcase.vue` и показывает все
-16 `Ui*` primitives, `AuthCard`, `ConfirmDialog`, `PageHeader`, их значимые варианты и состояния,
+17 `Ui*` primitives, `AuthCard`, `ConfirmDialog`, `PageHeader`, их значимые варианты и состояния,
 а также все CSS custom properties из `styles/tokens.css`. Layout- и feature-компоненты не являются
 частью UI-kit и на витрину не выносятся.
 

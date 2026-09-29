@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { Menu, Search, X } from '@lucide/vue'
-import { siteNavigation } from '~/config/siteNavigation'
+import type { HomePageContent } from '~/types/homePage'
 
 type Panel = 'menu' | 'search' | null
+
+const props = defineProps<{
+  content?: HomePageContent['header']
+  tagline?: string
+}>()
+const navigation = computed(() => props.content?.navigation ?? [])
 
 const route = useRoute()
 const panel = ref<Panel>(null)
@@ -15,10 +21,10 @@ const searchInput = ref<HTMLInputElement | null>(null)
 const searchResults = computed(() => {
   const query = searchQuery.value.trim().toLocaleLowerCase('ru')
   return query
-    ? siteNavigation.filter((link) =>
+    ? navigation.value.filter((link) =>
         link.label.toLocaleLowerCase('ru').includes(query),
       )
-    : siteNavigation
+    : navigation.value
 })
 
 function closePanel() {
@@ -80,10 +86,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="topbar">
+  <div v-if="content?.topbarLeft || content?.topbarRight" class="topbar">
     <div class="container topbar__inner">
-      <span>Керамика. Пространство. Детали.</span>
-      <span>Керамогранит · Плитка · Мозаика</span>
+      <span v-if="content?.topbarLeft">{{ content.topbarLeft }}</span>
+      <span v-if="content?.topbarRight">{{ content.topbarRight }}</span>
     </div>
   </div>
 
@@ -94,12 +100,23 @@ onUnmounted(() => {
         class="wordmark"
         aria-label="AgatCeramic — на главную"
       >
-        AGAT<span>CERAMIC</span><sup>°</sup>
+        <img
+          v-if="content?.logoUrl"
+          :src="content.logoUrl"
+          :alt="content.logoAlt"
+          width="240"
+          height="48"
+        />
+        <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
       </NuxtLink>
 
-      <nav class="site-nav" aria-label="Основная навигация">
+      <nav
+        v-if="navigation.length"
+        class="site-nav"
+        aria-label="Основная навигация"
+      >
         <NuxtLink
-          v-for="link in siteNavigation"
+          v-for="link in navigation"
           :key="link.to"
           :to="link.to"
           :aria-current="
@@ -113,7 +130,7 @@ onUnmounted(() => {
         </NuxtLink>
       </nav>
 
-      <div class="site-header__actions">
+      <div v-if="navigation.length" class="site-header__actions">
         <button
           ref="menuTrigger"
           class="icon-button"
@@ -148,9 +165,16 @@ onUnmounted(() => {
     aria-label="Меню сайта"
   >
     <div class="menu-panel__top">
-      <span class="wordmark wordmark--small"
-        >AGAT<span>CERAMIC</span><sup>°</sup></span
-      >
+      <span class="wordmark wordmark--small">
+        <img
+          v-if="content?.logoUrl"
+          :src="content.logoUrl"
+          :alt="content.logoAlt"
+          width="200"
+          height="40"
+        />
+        <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
+      </span>
       <button
         class="close-button"
         type="button"
@@ -162,7 +186,7 @@ onUnmounted(() => {
     </div>
     <nav class="menu-panel__nav" aria-label="Мобильная навигация">
       <NuxtLink
-        v-for="(link, index) in siteNavigation"
+        v-for="(link, index) in navigation"
         :key="link.to"
         :to="link.to"
         @click="closePanel"
@@ -179,9 +203,7 @@ onUnmounted(() => {
       <Search :size="18" :stroke-width="1.6" aria-hidden="true" />
       Поиск по разделам страницы
     </button>
-    <p class="menu-panel__note">
-      AgatCeramic · Материалы для вашего пространства
-    </p>
+    <p v-if="tagline" class="menu-panel__note">{{ tagline }}</p>
   </aside>
 
   <div
@@ -269,6 +291,13 @@ onUnmounted(() => {
   letter-spacing: 0.19em;
   white-space: nowrap;
 }
+.wordmark img {
+  display: block;
+  width: min(240px, 50vw);
+  height: 48px;
+  object-fit: contain;
+  object-position: left center;
+}
 .wordmark span {
   font-weight: 400;
 }
@@ -283,6 +312,10 @@ onUnmounted(() => {
 }
 .wordmark--small {
   font-size: 16px;
+}
+.wordmark--small img {
+  width: min(200px, 50vw);
+  height: 40px;
 }
 .site-nav {
   display: flex;
@@ -485,7 +518,7 @@ onUnmounted(() => {
   }
 }
 @media (max-width: 760px) {
-  .topbar__inner span:first-child {
+  .topbar__inner span:first-child:not(:last-child) {
     display: none;
   }
   .site-header__inner {

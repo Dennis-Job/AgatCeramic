@@ -20,6 +20,7 @@ import UiKitView from '../views/UiKitView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ContentView from '../views/ContentView.vue'
 import MediaView from '../views/MediaView.vue'
+import HomePageView from '../views/HomePageView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -169,6 +170,16 @@ const router = createRouter({
       name: 'ui-kit',
       component: UiKitView,
       meta: { requiresAuth: true, title: 'UI-kit' },
+    },
+    {
+      path: '/home-page',
+      name: 'home-page',
+      component: HomePageView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'content.manage',
+        title: 'Главная сайта',
+      },
     },
     {
       path: '/content',

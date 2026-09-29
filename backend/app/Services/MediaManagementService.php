@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\HomePage;
 use App\Models\Media;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -71,12 +72,14 @@ class MediaManagementService
     public function delete(User $actor, Media $media): void
     {
         DB::transaction(function () use ($actor, $media): void {
+            $homePage = HomePage::query()->lockForUpdate()->find(1);
             $media = Media::query()->whereKey($media->id)->lockForUpdate()->firstOrFail();
             $used = DB::table('categories')->where('image_id', $media->id)->exists()
                 || DB::table('brands')->where('logo_id', $media->id)->exists()
                 || DB::table('banners')->where('image_media_id', $media->id)->exists()
                 || DB::table('brand_media_documents')->where('media_id', $media->id)->exists()
                 || DB::table('category_media_documents')->where('media_id', $media->id)->exists();
+            $used = $used || ($homePage !== null && in_array($media->id, $homePage->referencedMediaIds(), true));
             if ($used) {
                 throw ValidationException::withMessages(['media' => 'Файл используется. Сначала удалите все ссылки на него.']);
             }

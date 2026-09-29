@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { MaterialCategory } from '../data/homeContent'
+import type { HomePageContent, MaterialCategory } from '~/types/homePage'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
 
 const props = defineProps<{
   categories: readonly MaterialCategory[]
   selectedId: string
+  content: HomePageContent['materials']
 }>()
 
 const emit = defineEmits<{ select: [id: string] }>()
@@ -39,9 +40,9 @@ async function selectNext(currentId: string, direction: 1 | -1) {
     <div class="container">
       <SectionHeading
         title-id="materials-title"
-        eyebrow="Фактуры и формы"
-        title="Материал задаёт характер"
-        description="Посмотрите, как разные поверхности работают в интерьере."
+        :eyebrow="content.eyebrow"
+        :title="content.title"
+        :description="content.description"
       />
 
       <div
@@ -78,6 +79,7 @@ async function selectNext(currentId: string, direction: 1 | -1) {
       >
         <div class="materials-section__image">
           <img
+            v-if="selectedCategory.image"
             :src="selectedCategory.image"
             :alt="selectedCategory.imageAlt"
             width="880"
@@ -86,12 +88,12 @@ async function selectNext(currentId: string, direction: 1 | -1) {
           />
         </div>
         <div class="materials-section__copy">
-          <span class="eyebrow">AgatCeramic · Материалы</span>
+          <span class="eyebrow">{{ content.eyebrow }}</span>
           <h3>{{ selectedCategory.name }}</h3>
           <p>{{ selectedCategory.description }}</p>
-          <span class="materials-section__note"
-            >Товары и цены появятся в каталоге после его запуска.</span
-          >
+          <span v-if="content.note" class="materials-section__note">{{
+            content.note
+          }}</span>
         </div>
       </div>
     </div>

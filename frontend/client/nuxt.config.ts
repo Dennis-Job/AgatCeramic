@@ -4,8 +4,10 @@ export default defineNuxtConfig({
   ssr: true,
   devtools: { enabled: true },
   runtimeConfig: {
+    apiBaseInternal: '',
     public: {
       siteUrl: '',
+      apiBase: 'http://localhost:8000/api/v1',
     },
   },
   css: [

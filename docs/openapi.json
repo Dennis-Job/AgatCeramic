@@ -13,6 +13,96 @@
     ],
     "security": [],
     "paths": {
+        "/home-page": {
+            "get": {
+                "operationId": "getPublicHomePage",
+                "summary": "Get published homepage content",
+                "description": "Includes only published hero slider banners. Header and footer fields are shared across the site.",
+                "responses": {
+                    "200": {
+                        "description": "Homepage content",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HomePageResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/home-page": {
+            "get": {
+                "operationId": "getAdminHomePage",
+                "summary": "Get homepage editor content",
+                "description": "Requires content.manage. Header and footer fields affect the shared site layout.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Editable homepage content",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HomePageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "updateHomePage",
+                "summary": "Update homepage sections",
+                "description": "Requires content.manage. Each supplied section is replaced atomically. Updating header and footer affects the shared site layout.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateHomePageRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated homepage content",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HomePageResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
         "/pages": {
             "get": {
                 "operationId": "listPublicPages",
@@ -461,7 +551,7 @@
                         "$ref": "#/components/responses/NotFound"
                     }
                 },
-                "description": "Requires content.manage."
+                "description": "Requires content.manage. Existing HTTP image and link URLs can be retained unchanged for legacy banners; new URLs must be root-relative or HTTPS."
             },
             "delete": {
                 "operationId": "deleteBanner",
@@ -5072,6 +5162,1032 @@
     },
     "components": {
         "schemas": {
+            "HomePage": {
+                "type": "object",
+                "properties": {
+                    "hero_slider_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "hero_slides": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "eyebrow": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "title": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "maxLength": 2000
+                                },
+                                "image_url": {
+                                    "anyOf": [
+                                        {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ]
+                                },
+                                "image_alt": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "link_label": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "link_url": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "eyebrow",
+                                "title",
+                                "description",
+                                "image_url",
+                                "image_alt",
+                                "link_label",
+                                "link_url"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "minItems": 0,
+                        "maxItems": 100
+                    },
+                    "header": {
+                        "type": "object",
+                        "properties": {
+                            "topbar_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "topbar_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "logo_alt": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_url": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "navigation": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 12
+                            }
+                        },
+                        "required": [
+                            "topbar_left",
+                            "topbar_right",
+                            "logo_media_id",
+                            "logo_alt",
+                            "logo_url",
+                            "navigation"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "footer": {
+                        "type": "object",
+                        "properties": {
+                            "tagline": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "explore_links": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12
+                            },
+                            "message": {
+                                "type": "object",
+                                "properties": {
+                                    "eyebrow": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "text": {
+                                        "type": "string",
+                                        "maxLength": 2000
+                                    },
+                                    "link_label": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "link_url": {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    }
+                                },
+                                "required": [
+                                    "eyebrow",
+                                    "text",
+                                    "link_label",
+                                    "link_url"
+                                ],
+                                "additionalProperties": false
+                            },
+                            "bottom_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "bottom_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            }
+                        },
+                        "required": [
+                            "tagline",
+                            "explore_links",
+                            "message",
+                            "bottom_left",
+                            "bottom_right"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "marquee": {
+                        "type": "object",
+                        "properties": {
+                            "topics": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "minItems": 1,
+                                "maxItems": 20
+                            }
+                        },
+                        "required": [
+                            "topics"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "categories": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9-]+$"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "short_description": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        },
+                                        "image_url": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "maxLength": 2048,
+                                                    "description": "Root-relative internal path or HTTPS URL without credentials."
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
+                                        },
+                                        "image_media_id": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 1
+                                        },
+                                        "image_alt": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "short_description",
+                                        "description",
+                                        "image_url",
+                                        "image_media_id",
+                                        "image_alt"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 12
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "items"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "materials": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "note": {
+                                "type": "string",
+                                "maxLength": 2000
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "note"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "promo": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "link_label": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "link_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "description": "Root-relative internal path or HTTPS URL without credentials."
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "link_label",
+                            "link_url"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "about": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "image_url": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "image_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "image_alt": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "link_label": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "link_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "description": "Root-relative internal path or HTTPS URL without credentials."
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "image_url",
+                            "image_media_id",
+                            "image_alt",
+                            "link_label",
+                            "link_url"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "guide": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        }
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 12
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "items"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "seo": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "og_title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "og_description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "og_image_url": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "og_image_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "description",
+                            "og_title",
+                            "og_description",
+                            "og_image_url",
+                            "og_image_media_id"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "required": [
+                    "hero_slider_id",
+                    "hero_slides",
+                    "header",
+                    "footer",
+                    "marquee",
+                    "categories",
+                    "materials",
+                    "promo",
+                    "about",
+                    "guide",
+                    "seo"
+                ],
+                "additionalProperties": false
+            },
+            "HomePageResponse": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/HomePage"
+                    }
+                },
+                "required": [
+                    "data"
+                ],
+                "additionalProperties": false
+            },
+            "UpdateHomePageRequest": {
+                "type": "object",
+                "properties": {
+                    "hero_slider_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "header": {
+                        "type": "object",
+                        "properties": {
+                            "topbar_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "topbar_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "logo_alt": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "navigation": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 12
+                            }
+                        },
+                        "required": [
+                            "topbar_left",
+                            "topbar_right",
+                            "logo_media_id",
+                            "logo_alt",
+                            "navigation"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "footer": {
+                        "type": "object",
+                        "properties": {
+                            "tagline": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "explore_links": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12
+                            },
+                            "message": {
+                                "type": "object",
+                                "properties": {
+                                    "eyebrow": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "text": {
+                                        "type": "string",
+                                        "maxLength": 2000
+                                    },
+                                    "link_label": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "link_url": {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    }
+                                },
+                                "required": [
+                                    "eyebrow",
+                                    "text",
+                                    "link_label",
+                                    "link_url"
+                                ],
+                                "additionalProperties": false
+                            },
+                            "bottom_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "bottom_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            }
+                        },
+                        "required": [
+                            "tagline",
+                            "explore_links",
+                            "message",
+                            "bottom_left",
+                            "bottom_right"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "marquee": {
+                        "type": "object",
+                        "properties": {
+                            "topics": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                },
+                                "minItems": 1,
+                                "maxItems": 20
+                            }
+                        },
+                        "required": [
+                            "topics"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "categories": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9-]+$"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "short_description": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        },
+                                        "image_url": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "maxLength": 2048,
+                                                    "description": "Root-relative internal path or HTTPS URL without credentials."
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
+                                        },
+                                        "image_media_id": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 1
+                                        },
+                                        "image_alt": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "short_description",
+                                        "description",
+                                        "image_url",
+                                        "image_media_id",
+                                        "image_alt"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 12
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "items"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "materials": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "note": {
+                                "type": "string",
+                                "maxLength": 2000
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "note"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "promo": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "link_label": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "link_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "description": "Root-relative internal path or HTTPS URL without credentials."
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "link_label",
+                            "link_url"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "about": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "image_url": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "image_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "image_alt": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "link_label": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "link_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "description": "Root-relative internal path or HTTPS URL without credentials."
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "description",
+                            "image_url",
+                            "image_media_id",
+                            "image_alt",
+                            "link_label",
+                            "link_url"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "guide": {
+                        "type": "object",
+                        "properties": {
+                            "eyebrow": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        }
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 12
+                            }
+                        },
+                        "required": [
+                            "eyebrow",
+                            "title",
+                            "items"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "seo": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "og_title": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "og_description": {
+                                "type": "string",
+                                "maxLength": 2000
+                            },
+                            "og_image_url": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "og_image_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "description",
+                            "og_title",
+                            "og_description",
+                            "og_image_url",
+                            "og_image_media_id"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "required": [],
+                "additionalProperties": false,
+                "description": "Partial top-level update. A supplied section replaces that entire section. header and footer also affect the shared site layout."
+            },
             "StoreWorkingHour": {
                 "type": "object",
                 "required": [
@@ -5465,7 +6581,9 @@
                     "created_at",
                     "updated_at",
                     "image_media_id",
-                    "legacy_image_url"
+                    "legacy_image_url",
+                    "eyebrow",
+                    "image_alt"
                 ],
                 "properties": {
                     "id": {
@@ -5502,7 +6620,7 @@
                             "string",
                             "null"
                         ],
-                        "format": "uri"
+                        "description": "Root-relative internal path or HTTPS URL without credentials."
                     },
                     "link_label": {
                         "type": [
@@ -5515,7 +6633,7 @@
                             "string",
                             "null"
                         ],
-                        "format": "uri"
+                        "description": "Root-relative internal path or HTTPS URL without credentials."
                     },
                     "image_media_id": {
                         "type": [
@@ -5530,6 +6648,20 @@
                             "null"
                         ],
                         "format": "uri"
+                    },
+                    "eyebrow": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "image_alt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "additionalProperties": false
@@ -5594,8 +6726,8 @@
                             "string",
                             "null"
                         ],
-                        "format": "uri",
-                        "maxLength": 2048
+                        "maxLength": 2048,
+                        "description": "Root-relative internal path or HTTPS URL without credentials."
                     },
                     "link_label": {
                         "type": [
@@ -5609,8 +6741,8 @@
                             "string",
                             "null"
                         ],
-                        "format": "uri",
-                        "maxLength": 2048
+                        "maxLength": 2048,
+                        "description": "Root-relative internal path or HTTPS URL without credentials."
                     },
                     "image_media_id": {
                         "type": [
@@ -5618,6 +6750,20 @@
                             "null"
                         ],
                         "minimum": 1
+                    },
+                    "eyebrow": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "image_alt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "additionalProperties": false
@@ -5644,8 +6790,8 @@
                             "string",
                             "null"
                         ],
-                        "format": "uri",
-                        "maxLength": 2048
+                        "maxLength": 2048,
+                        "description": "Root-relative internal path or HTTPS URL without credentials."
                     },
                     "link_label": {
                         "type": [
@@ -5659,8 +6805,8 @@
                             "string",
                             "null"
                         ],
-                        "format": "uri",
-                        "maxLength": 2048
+                        "maxLength": 2048,
+                        "description": "Root-relative internal path or HTTPS URL without credentials."
                     },
                     "image_media_id": {
                         "type": [
@@ -5668,6 +6814,20 @@
                             "null"
                         ],
                         "minimum": 1
+                    },
+                    "eyebrow": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "image_alt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
                     }
                 },
                 "additionalProperties": false

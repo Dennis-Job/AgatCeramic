@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { siteNavigation } from '~/config/siteNavigation'
+import type { HomePageContent, SiteLink } from '~/types/homePage'
+
+defineProps<{
+  content?: HomePageContent['footer']
+  navigation?: SiteLink[]
+  logoUrl?: string
+  logoAlt?: string
+}>()
 </script>
 
 <template>
@@ -12,38 +19,54 @@ import { siteNavigation } from '~/config/siteNavigation'
             class="site-footer__logo"
             aria-label="AgatCeramic — на главную"
           >
-            AGAT<span>CERAMIC</span><sup>°</sup>
+            <img
+              v-if="logoUrl"
+              :src="logoUrl"
+              :alt="logoAlt || 'AgatCeramic'"
+              width="240"
+              height="48"
+            />
+            <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
           </NuxtLink>
-          <p>Керамогранит · Плитка · Мозаика</p>
+          <p v-if="content?.tagline">{{ content.tagline }}</p>
         </div>
-        <div class="site-footer__column">
+        <div v-if="navigation?.length" class="site-footer__column">
           <h2>Навигация</h2>
           <NuxtLink
-            v-for="link in siteNavigation"
+            v-for="link in navigation ?? []"
             :key="link.to"
             :to="link.to"
             >{{ link.label }}</NuxtLink
           >
         </div>
-        <div class="site-footer__column">
+        <div v-if="content?.exploreLinks.length" class="site-footer__column">
           <h2>Исследовать</h2>
-          <NuxtLink to="/#catalog">Направления</NuxtLink>
-          <NuxtLink to="/#materials">Фактуры и формы</NuxtLink>
-          <NuxtLink to="/#guide">Советы по выбору</NuxtLink>
-        </div>
-        <div class="site-footer__message">
-          <span class="eyebrow">AgatCeramic</span>
-          <p>
-            Поверхности, которые помогают создать пространство с характером.
-          </p>
-          <NuxtLink to="/#catalog"
-            >Смотреть направления <span aria-hidden="true">→</span></NuxtLink
+          <NuxtLink
+            v-for="link in content?.exploreLinks ?? []"
+            :key="link.to"
+            :to="link.to"
+            >{{ link.label }}</NuxtLink
           >
         </div>
+        <div v-if="content?.message" class="site-footer__message">
+          <span v-if="content?.message.eyebrow" class="eyebrow">{{
+            content.message.eyebrow
+          }}</span>
+          <p v-if="content?.message.text">{{ content.message.text }}</p>
+          <NuxtLink
+            v-if="content?.message.linkUrl"
+            :to="content.message.linkUrl"
+          >
+            {{ content.message.linkLabel }} <span aria-hidden="true">→</span>
+          </NuxtLink>
+        </div>
       </div>
-      <div class="site-footer__bottom">
-        <span>© 2026 AgatCeramic</span>
-        <span>Керамогранит · Плитка · Мозаика</span>
+      <div
+        v-if="content?.bottomLeft || content?.bottomRight"
+        class="site-footer__bottom"
+      >
+        <span v-if="content?.bottomLeft">{{ content.bottomLeft }}</span>
+        <span v-if="content?.bottomRight">{{ content.bottomRight }}</span>
       </div>
     </div>
   </footer>
@@ -68,6 +91,13 @@ import { siteNavigation } from '~/config/siteNavigation'
   font-weight: 600;
   letter-spacing: 0.19em;
   white-space: nowrap;
+}
+.site-footer__logo img {
+  display: block;
+  width: min(240px, 60vw);
+  height: 48px;
+  object-fit: contain;
+  object-position: left center;
 }
 .site-footer__logo span {
   font-weight: 400;

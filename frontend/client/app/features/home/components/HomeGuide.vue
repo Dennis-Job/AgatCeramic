@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { materialGuide } from '../data/homeContent'
+import type { HomePageContent } from '~/types/homePage'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
+
+defineProps<{ content: HomePageContent['guide'] }>()
 </script>
 
 <template>
@@ -12,12 +14,12 @@ import SectionHeading from '~/components/shared/SectionHeading.vue'
     <div class="container">
       <SectionHeading
         title-id="home-guide-title"
-        eyebrow="Детали выбора"
-        title="На что обратить внимание"
+        :eyebrow="content.eyebrow"
+        :title="content.title"
       />
       <div class="home-guide__grid">
         <article
-          v-for="(item, index) in materialGuide"
+          v-for="(item, index) in content.items"
           :key="item.title"
           class="home-guide__item"
         >

@@ -1,12 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import UiButton from '../components/ui/UiButton.vue'
 import BannersWorkspace from '../features/banners/components/BannersWorkspace.vue'
 import PagesWorkspace from '../features/pages/components/PagesWorkspace.vue'
 import SlidersWorkspace from '../features/sliders/components/SlidersWorkspace.vue'
 import StoresWorkspace from '../features/stores/components/StoresWorkspace.vue'
 
-const section = ref<'pages' | 'banners' | 'sliders' | 'stores'>('pages')
+type Section = 'pages' | 'banners' | 'sliders' | 'stores'
+const route = useRoute()
+const router = useRouter()
+const section = computed<Section>({
+  get: () => {
+    const value = route.query.section
+    return value === 'banners' || value === 'sliders' || value === 'stores'
+      ? value
+      : 'pages'
+  },
+  set: (value) => {
+    void router.replace({ query: { ...route.query, section: value } })
+  },
+})
 </script>
 
 <template>

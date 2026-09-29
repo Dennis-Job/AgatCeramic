@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MaterialCategory } from '../data/homeContent'
+import type { MaterialCategory } from '~/types/homePage'
 
 defineProps<{ category: MaterialCategory }>()
 defineEmits<{ select: [id: string] }>()
@@ -14,6 +14,7 @@ defineEmits<{ select: [id: string] }>()
   >
     <span class="category-card__image">
       <img
+        v-if="category.image"
         :src="category.image"
         :alt="category.imageAlt"
         width="880"

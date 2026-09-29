@@ -1,22 +1,28 @@
+<script setup lang="ts">
+import type { HomePageContent } from '~/types/homePage'
+
+defineProps<{ content: HomePageContent['about'] }>()
+</script>
+
 <template>
   <section id="about" class="home-about" aria-labelledby="home-about-title">
     <div class="home-about__copy">
-      <span class="eyebrow">О проекте</span>
-      <h2 id="home-about-title">Философия материала</h2>
-      <p>
-        Поверхность формирует ощущение пространства. Тон, формат и фактура
-        меняют то, как свет ложится на стены и пол. В выборе покрытия важны не
-        только оттенок и рисунок: размер элемента, поверхность и направление
-        укладки тоже задают ритм интерьера.
-      </p>
-      <NuxtLink to="/#materials" class="home-about__link"
-        >Изучить материалы <span aria-hidden="true">→</span></NuxtLink
+      <span class="eyebrow">{{ content.eyebrow }}</span>
+      <h2 id="home-about-title">{{ content.title }}</h2>
+      <p>{{ content.description }}</p>
+      <NuxtLink
+        v-if="content.linkUrl"
+        :to="content.linkUrl"
+        class="home-about__link"
       >
+        {{ content.linkLabel }} <span aria-hidden="true">→</span>
+      </NuxtLink>
     </div>
     <div class="home-about__image">
       <img
-        src="/images/home/materials.webp"
-        alt="Образцы керамических поверхностей в тёплой нейтральной палитре"
+        v-if="content.image"
+        :src="content.image"
+        :alt="content.imageAlt"
         width="1280"
         height="853"
         loading="lazy"

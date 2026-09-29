@@ -4,6 +4,10 @@
 
 Визуальная основа — TailAdmin Vue style. Бизнес-правила и доступ к данным остаются в Laravel API.
 
+Раздел «Главная сайта» (`/home-page`, право `content.manage`) редактирует секции клиентской
+главной, общие шапку и подвал, SEO и выбор главного слайдера. Сами баннеры и порядок слайдов
+управляются в «Контент» → «Баннеры» / «Слайдеры».
+
 ## Authentication
 
 Admin SPA uses Laravel Sanctum cookie sessions. On startup it restores the active session,
