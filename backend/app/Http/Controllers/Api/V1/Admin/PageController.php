@@ -54,4 +54,11 @@ class PageController extends Controller
 
         return response()->noContent();
     }
+
+    public function publish(Request $request, Page $page): PageResource
+    {
+        Gate::authorize('update', $page);
+
+        return new PageResource($this->managementService->publish($this->authenticatedAdmin($request), $page));
+    }
 }

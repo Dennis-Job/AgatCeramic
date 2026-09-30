@@ -7,6 +7,41 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v4.0 — typed page drafts and explicit publication
+
+Date: 2026-09-30. TASK-C002; the OpenAPI version is independent of `/api/v1`.
+
+### Breaking change
+
+Page responses add typed ordered blocks, SEO, publication timestamps and admin draft status.
+Saving a page or homepage section no longer publishes it. `is_published:true` on create/update
+is rejected; use the new explicit publish endpoint. `is_published:false` still withdraws a page.
+Public page responses are independent published snapshots, including the published slug;
+strict old response validators must be regenerated. System page slugs cannot be renamed/deleted.
+`/home-page` adds blocks while retaining existing section fields; the shared header/footer
+also remain unpublished until the saved home draft is explicitly published.
+
+### Client migration
+
+Regenerate validators against v4.0. Read the draft through admin endpoints; save it, then call
+`POST /admin/pages/{page}/publish` or `POST /admin/home-page/publish`. Use
+`has_unpublished_changes`, `is_published`, and `published_at` for editor states. Render public
+blocks in array order and ignore disabled blocks. Hero slides and image URLs are resolved by
+the public API. Nuxt, Admin, and Laravel in this repository migrate together.
+
+### Rollout and rollback
+
+Apply `2026_09_30_120000_add_page_content_snapshots` before serving new code. It adds columns
+and media FK references, preserves prior page text and homepage content, seeds missing system
+pages and appends missing public navigation links without replacing existing entries. A colliding
+generic `home` retains its legacy body in the draft; only previously published text is exposed.
+Existing public data is initially snapshotted; later draft saves do not alter it.
+
+The migration deliberately refuses `down`: dropping snapshots would destroy the independent
+draft/published versions. Application rollback may keep the additive schema. A full schema
+downgrade requires restoring a verified pre-migration backup and coordinating old application
+versions; do not run destructive rollback on current content. Resources and stored media remain.
+
 ## v3.0 — managed homepage and banner presentation
 
 Date: 2026-09-29. The OpenAPI document version remains independent of the `/api/v1` URL prefix.

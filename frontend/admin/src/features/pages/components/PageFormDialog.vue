@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import { slugPattern } from '../../catalog/validation/slug'
 import type { PagePayload } from '../types/page.types'
+import { systemPageSlugs } from '../validation/page'
 
 defineProps<{
   open: boolean
@@ -64,28 +64,25 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           ><UiInput
             v-model="form.slug"
             required
-            :disabled="busy"
+            :disabled="busy || (editing && systemPageSlugs.includes(form.slug))"
             maxlength="255"
             :pattern="slugPattern"
         /></UiField>
         <UiField
           label="Текст страницы"
           help="Обычный текст. HTML будет показан как текст."
-          required
+          :required="!editing"
           ><UiTextarea
             v-model="form.body"
-            required
+            :required="!editing"
             :disabled="busy"
             maxlength="100000"
             rows="12"
         /></UiField>
-        <UiCheckbox
-          mode="boolean"
-          :checked="form.is_published"
-          :disabled="busy"
-          @update:checked="form.is_published = $event"
-          >Опубликовать страницу</UiCheckbox
-        >
+        <p class="text-sm text-gray-500">
+          Сохранение меняет только черновик. Публикация доступна отдельным
+          действием после сохранения.
+        </p>
       </div>
       <div class="mt-6 flex flex-wrap justify-end gap-3">
         <UiButton
@@ -95,7 +92,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           @click="emit('close')"
           >Отмена</UiButton
         >
-        <UiButton :loading="busy">Сохранить</UiButton>
+        <UiButton :loading="busy">Сохранить черновик</UiButton>
       </div>
     </form>
   </UiDialog>

@@ -1,3 +1,5 @@
+import type { ContentBlock } from './contentPage'
+
 export interface SiteLink {
   label: string
   to: string
@@ -30,6 +32,7 @@ export interface SectionIntro {
 }
 
 export interface HomePageContent {
+  blocks: ContentBlock[]
   heroSlides: HomeSlide[]
   marqueeTopics: string[]
   categories: SectionIntro & { items: MaterialCategory[] }

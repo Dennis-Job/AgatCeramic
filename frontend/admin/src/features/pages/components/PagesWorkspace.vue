@@ -16,6 +16,7 @@ import { getPage } from '../services/pages'
 import type { ContentPage } from '../types/page.types'
 import HomePageWorkspace from '../../homepage/components/HomePageWorkspace.vue'
 import PageFormDialog from './PageFormDialog.vue'
+import { systemPageSlugs } from '../validation/page'
 
 const pages = usePages()
 const route = useRoute()
@@ -35,12 +36,24 @@ const selectedPage = computed(
     pages.items.value.find((page) => page.id === selectedId.value) ??
     fetchedPage.value,
 )
+const contentPages = computed(() =>
+  pages.items.value.filter((page) => page.slug !== 'home'),
+)
 let selectedRequest = 0
+
+watch(selectedPage, (page) => {
+  if (page?.slug === 'home')
+    void router.replace({
+      path: '/content',
+      query: { ...route.query, page: 'home' },
+    })
+})
 
 watch([selectedId, () => pages.pagination.value], async ([id, pagination]) => {
   const request = ++selectedRequest
   fetchedPage.value = null
   selectedError.value = ''
+  pages.publishError.value = ''
   selectedLoading.value = false
   if (
     id === null ||
@@ -83,6 +96,12 @@ async function submitPage(): Promise<void> {
     })
 }
 
+async function publishSelected(withdraw = false): Promise<void> {
+  if (!selectedPage.value) return
+  const result = await pages.publish(selectedPage.value, withdraw)
+  if (result && selectedId.value === result.id) fetchedPage.value = result
+}
+
 function confirmDelete(page: ContentPage): void {
   pages.deleteError.value = ''
   deleting.value = page
@@ -116,6 +135,7 @@ onMounted(() => pages.load())
             size="sm"
             variant="secondary"
             aria-label="Добавить страницу"
+            :disabled="pages.busy.value"
             @click="pages.openEditor()"
             ><Plus :size="17" aria-hidden="true"
           /></UiButton>
@@ -157,7 +177,7 @@ onMounted(() => pages.load())
               ></RouterLink
             >
             <RouterLink
-              v-for="page in pages.items.value"
+              v-for="page in contentPages"
               :key="page.id"
               :to="{
                 path: '/content',
@@ -175,7 +195,10 @@ onMounted(() => pages.load())
               }}</span
               ><span class="block break-all text-xs text-gray-500"
                 >/{{ page.slug }} ·
-                {{ page.is_published ? 'Опубликована' : 'Черновик' }}</span
+                {{ page.is_published ? 'Опубликована' : 'Черновик' }}
+                {{
+                  page.has_unpublished_changes ? ' · Есть изменения' : ''
+                }}</span
               ></RouterLink
             >
             <p
@@ -231,24 +254,64 @@ onMounted(() => pages.load())
                   selectedPage.is_published ? 'Опубликована' : 'Черновик'
                 }}</UiBadge
               >
+              <p
+                v-if="selectedPage.has_unpublished_changes"
+                class="mt-2 text-sm text-gray-600"
+                role="status"
+              >
+                В черновике есть неопубликованные изменения.
+              </p>
+              <p
+                v-if="selectedPage.published_at"
+                class="mt-2 text-xs text-gray-500"
+              >
+                Последняя публикация:
+                {{
+                  new Date(selectedPage.published_at).toLocaleString('ru-RU')
+                }}
+              </p>
             </div>
-            <div class="flex gap-1">
+            <div class="flex flex-wrap gap-1">
+              <UiButton
+                size="sm"
+                :loading="pages.busy.value"
+                :disabled="
+                  selectedPage.is_published &&
+                  !selectedPage.has_unpublished_changes
+                "
+                @click="publishSelected()"
+                >Опубликовать черновик</UiButton
+              >
+              <UiButton
+                v-if="selectedPage.is_published"
+                variant="secondary"
+                size="sm"
+                :disabled="pages.busy.value"
+                @click="publishSelected(true)"
+                >Снять с публикации</UiButton
+              >
               <UiButton
                 variant="ghost"
                 size="sm"
                 :aria-label="`Редактировать страницу ${selectedPage.title}`"
+                :disabled="pages.busy.value"
                 @click="pages.openEditor(selectedPage)"
                 ><Pencil :size="17" aria-hidden="true" />Редактировать</UiButton
               >
               <UiButton
+                v-if="!systemPageSlugs.includes(selectedPage.slug)"
                 variant="danger-ghost"
                 size="sm"
                 :aria-label="`Удалить страницу ${selectedPage.title}`"
+                :disabled="pages.busy.value"
                 @click="confirmDelete(selectedPage)"
                 ><Trash2 :size="17" aria-hidden="true"
               /></UiButton>
             </div>
           </div>
+          <UiAlert v-if="pages.publishError.value" class="mt-4" role="alert">{{
+            pages.publishError.value
+          }}</UiAlert>
           <p class="mt-5 whitespace-pre-wrap break-words text-sm text-gray-700">
             {{ selectedPage.body }}
           </p>
@@ -278,9 +341,9 @@ onMounted(() => pages.load())
       >
         <h2 class="text-lg font-semibold">Предпросмотр</h2>
         <p class="mt-2 text-sm text-gray-600" role="status">
-          Точный просмотр сохранённого черновика будет подключён после
-          разделения черновика и публикации. Пока изменения главной страницы
-          после сохранения сразу видны на сайте.
+          Точный просмотр сохранённого черновика будет подключён на следующем
+          этапе. Сохранение меняет только черновик; сайт обновляется после
+          отдельной публикации.
         </p>
       </UiCard>
     </div>

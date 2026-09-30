@@ -19,6 +19,11 @@ export async function getHomePage(): Promise<HomePageContent> {
   return decode(await apiFetch('/admin/home-page'))
 }
 
+export async function publishHomePage(): Promise<HomePageContent> {
+  await requestCsrfCookie()
+  return decode(await apiFetch('/admin/home-page/publish', { method: 'POST' }))
+}
+
 export async function saveHomePageSection<K extends EditableSection>(
   section: K,
   value: HomePageContent[K],

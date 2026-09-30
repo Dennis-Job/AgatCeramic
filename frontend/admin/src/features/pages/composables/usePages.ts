@@ -1,13 +1,18 @@
 import { ref } from 'vue'
 import { usePaginatedCollection } from '../../../composables/usePaginatedCollection'
-import { deletePage, getPages, savePage } from '../services/pages'
+import {
+  deletePage,
+  getPages,
+  publishPage,
+  savePage,
+  unpublishPage,
+} from '../services/pages'
 import type { ContentPage, PagePayload } from '../types/page.types'
 
 const blankForm = (): PagePayload => ({
   title: '',
   slug: '',
   body: '',
-  is_published: false,
 })
 
 export function usePages() {
@@ -20,6 +25,7 @@ export function usePages() {
   const busy = ref(false)
   const formError = ref('')
   const deleteError = ref('')
+  const publishError = ref('')
   const success = ref('')
 
   async function load(
@@ -35,7 +41,6 @@ export function usePages() {
           title: page.title,
           slug: page.slug,
           body: page.body,
-          is_published: page.is_published,
         }
       : blankForm()
     formError.value = ''
@@ -52,7 +57,7 @@ export function usePages() {
     try {
       const savedPage = await savePage(editing.value?.id ?? null, form.value)
       editorOpen.value = false
-      success.value = 'Страница сохранена.'
+      success.value = 'Черновик страницы сохранён.'
       await load()
       return savedPage
     } catch (reason) {
@@ -87,6 +92,34 @@ export function usePages() {
     }
   }
 
+  async function publish(
+    page: ContentPage,
+    withdraw = false,
+  ): Promise<ContentPage | null> {
+    if (busy.value) return null
+    busy.value = true
+    publishError.value = ''
+    success.value = ''
+    try {
+      const publishedPage = await (withdraw
+        ? unpublishPage(page.id)
+        : publishPage(page.id))
+      success.value = withdraw
+        ? 'Страница снята с публикации.'
+        : 'Сохранённый черновик опубликован.'
+      await load()
+      return publishedPage
+    } catch (reason) {
+      publishError.value =
+        reason instanceof Error
+          ? reason.message
+          : 'Не удалось изменить публикацию страницы.'
+      return null
+    } finally {
+      busy.value = false
+    }
+  }
+
   return {
     ...list,
     load,
@@ -96,10 +129,12 @@ export function usePages() {
     busy,
     formError,
     deleteError,
+    publishError,
     success,
     openEditor,
     closeEditor,
     submit,
     remove,
+    publish,
   }
 }

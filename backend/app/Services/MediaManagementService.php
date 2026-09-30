@@ -80,6 +80,7 @@ class MediaManagementService
                 || DB::table('brand_media_documents')->where('media_id', $media->id)->exists()
                 || DB::table('category_media_documents')->where('media_id', $media->id)->exists();
             $used = $used || ($homePage !== null && in_array($media->id, $homePage->referencedMediaIds(), true));
+            $used = $used || DB::table('page_media')->where('media_id', $media->id)->exists();
             if ($used) {
                 throw ValidationException::withMessages(['media' => 'Файл используется. Сначала удалите все ссылки на него.']);
             }

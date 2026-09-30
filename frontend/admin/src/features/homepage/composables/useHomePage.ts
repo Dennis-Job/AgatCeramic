@@ -1,5 +1,9 @@
 import { onMounted, ref } from 'vue'
-import { getHomePage, saveHomePageSection } from '../services/homepage'
+import {
+  getHomePage,
+  publishHomePage,
+  saveHomePageSection,
+} from '../services/homepage'
 import type { EditableSection, HomePageContent } from '../types/homepage.types'
 
 export function useHomePage() {
@@ -7,6 +11,7 @@ export function useHomePage() {
   const saved = ref<HomePageContent | null>(null)
   const loading = ref(false)
   const saving = ref(false)
+  const publishing = ref(false)
   const error = ref('')
   const success = ref('')
 
@@ -28,7 +33,7 @@ export function useHomePage() {
   }
 
   async function save(section: EditableSection): Promise<void> {
-    if (!content.value || saving.value) return
+    if (!content.value || saving.value || publishing.value) return
     saving.value = true
     error.value = ''
     success.value = ''
@@ -44,14 +49,13 @@ export function useHomePage() {
         ...content.value,
         [section]: editedDuringSave ? content.value[section] : result[section],
         hero_slides: result.hero_slides,
+        is_published: result.is_published,
+        has_unpublished_changes: result.has_unpublished_changes,
+        published_at: result.published_at,
       }
-      if (saved.value)
-        saved.value = {
-          ...saved.value,
-          [section]: result[section],
-          hero_slides: result.hero_slides,
-        }
-      success.value = 'Раздел сохранён. Изменения доступны на сайте.'
+      saved.value = result
+      success.value =
+        'Черновик раздела сохранён. Для обновления сайта опубликуйте страницу.'
     } catch (reason) {
       error.value =
         reason instanceof Error
@@ -59,6 +63,32 @@ export function useHomePage() {
           : 'Не удалось сохранить раздел.'
     } finally {
       saving.value = false
+    }
+  }
+
+  async function publish(): Promise<void> {
+    if (!content.value || saving.value || publishing.value) return
+    publishing.value = true
+    error.value = ''
+    success.value = ''
+    try {
+      const result = await publishHomePage()
+      content.value = {
+        ...content.value,
+        hero_slides: result.hero_slides,
+        is_published: result.is_published,
+        has_unpublished_changes: result.has_unpublished_changes,
+        published_at: result.published_at,
+      }
+      saved.value = result
+      success.value = 'Сохранённый черновик главной страницы опубликован.'
+    } catch (reason) {
+      error.value =
+        reason instanceof Error
+          ? reason.message
+          : 'Не удалось опубликовать главную страницу.'
+    } finally {
+      publishing.value = false
     }
   }
 
@@ -72,5 +102,16 @@ export function useHomePage() {
     )
   }
 
-  return { content, loading, saving, error, success, load, save, isDirty }
+  return {
+    content,
+    loading,
+    saving,
+    publishing,
+    error,
+    success,
+    load,
+    save,
+    publish,
+    isDirty,
+  }
 }

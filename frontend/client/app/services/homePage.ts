@@ -1,11 +1,13 @@
 import type { HomePageContent, SiteLink } from '~/types/homePage'
+import type { ContentBlock, ContentBlockDto } from '~/types/contentPage'
 
 interface LinkDto {
   label: string
   to: string
 }
 
-interface HomePageDto {
+export interface HomePageDto {
+  blocks: ContentBlockDto[]
   hero_slides: {
     id: number
     eyebrow: string | null
@@ -85,7 +87,7 @@ interface HomePageDto {
   }
 }
 
-function safeLink(url: string | null | undefined): string | null {
+export function safeLink(url: string | null | undefined): string | null {
   if (!url) return null
   if (url.startsWith('/') && !url.startsWith('//')) return url
   try {
@@ -103,7 +105,10 @@ function mapLinks(links: LinkDto[]): SiteLink[] {
   })
 }
 
-function imageUrl(url: string | null | undefined, apiBase: string): string {
+export function imageUrl(
+  url: string | null | undefined,
+  apiBase: string,
+): string {
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
   if (!url.startsWith('/') || url.startsWith('//')) return ''
@@ -117,52 +122,18 @@ function imageUrl(url: string | null | undefined, apiBase: string): string {
 
 function mapHomePage(dto: HomePageDto, apiBase: string): HomePageContent {
   return {
-    heroSlides: dto.hero_slides.map((slide) => ({
-      id: String(slide.id),
-      eyebrow: slide.eyebrow || '',
-      title: slide.title,
-      description: slide.description || '',
-      image: imageUrl(slide.image_url, apiBase),
-      imageAlt: slide.image_alt || slide.title,
-      linkLabel: slide.link_label || '',
-      linkUrl: safeLink(slide.link_url),
-    })),
+    blocks: dto.blocks.map((block) => mapContentBlock(block, apiBase)),
+    heroSlides: mapSlides(dto.hero_slides, apiBase),
     marqueeTopics: dto.marquee.topics,
-    categories: {
-      eyebrow: dto.categories.eyebrow,
-      title: dto.categories.title,
-      description: dto.categories.description,
-      items: dto.categories.items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        shortDescription: item.short_description,
-        description: item.description,
-        image: imageUrl(item.image_url, apiBase),
-        imageAlt: item.image_alt,
-      })),
-    },
+    categories: mapCategories(dto.categories, apiBase),
     materials: {
       eyebrow: dto.materials.eyebrow,
       title: dto.materials.title,
       description: dto.materials.description,
       note: dto.materials.note,
     },
-    promo: {
-      eyebrow: dto.promo.eyebrow,
-      title: dto.promo.title,
-      description: dto.promo.description,
-      linkLabel: dto.promo.link_label,
-      linkUrl: safeLink(dto.promo.link_url),
-    },
-    about: {
-      eyebrow: dto.about.eyebrow,
-      title: dto.about.title,
-      description: dto.about.description,
-      image: imageUrl(dto.about.image_url, apiBase),
-      imageAlt: dto.about.image_alt,
-      linkLabel: dto.about.link_label,
-      linkUrl: safeLink(dto.about.link_url),
-    },
+    promo: mapPromo(dto.promo),
+    about: mapAbout(dto.about, apiBase),
     guide: dto.guide,
     header: {
       topbarLeft: dto.header.topbar_left,
@@ -190,6 +161,109 @@ function mapHomePage(dto: HomePageDto, apiBase: string): HomePageContent {
       ogDescription: dto.seo.og_description,
       ogImage: imageUrl(dto.seo.og_image_url, apiBase),
     },
+  }
+}
+
+function mapSlides(
+  slides: HomePageDto['hero_slides'],
+  apiBase: string,
+): HomePageContent['heroSlides'] {
+  return slides.map((slide) => ({
+    id: String(slide.id),
+    eyebrow: slide.eyebrow || '',
+    title: slide.title,
+    description: slide.description || '',
+    image: imageUrl(slide.image_url, apiBase),
+    imageAlt: slide.image_alt || slide.title,
+    linkLabel: slide.link_label || '',
+    linkUrl: safeLink(slide.link_url),
+  }))
+}
+
+function mapCategories(
+  data: HomePageDto['categories'],
+  apiBase: string,
+): HomePageContent['categories'] {
+  return {
+    eyebrow: data.eyebrow,
+    title: data.title,
+    description: data.description,
+    items: data.items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      shortDescription: item.short_description,
+      description: item.description,
+      image: imageUrl(item.image_url, apiBase),
+      imageAlt: item.image_alt,
+    })),
+  }
+}
+
+function mapPromo(data: HomePageDto['promo']): HomePageContent['promo'] {
+  return {
+    eyebrow: data.eyebrow,
+    title: data.title,
+    description: data.description,
+    linkLabel: data.link_label,
+    linkUrl: safeLink(data.link_url),
+  }
+}
+
+function mapAbout(
+  data: HomePageDto['about'],
+  apiBase: string,
+): HomePageContent['about'] {
+  return {
+    ...mapPromo(data),
+    image: imageUrl(data.image_url, apiBase),
+    imageAlt: data.image_alt,
+  }
+}
+
+export function mapContentBlock(
+  block: ContentBlockDto,
+  apiBase: string,
+): ContentBlock {
+  const common = { id: block.id, enabled: block.enabled }
+  switch (block.type) {
+    case 'hero':
+      return {
+        ...common,
+        type: 'hero',
+        data: {
+          slides: mapSlides(block.data.slides ?? [], apiBase),
+        },
+      }
+    case 'categories':
+      return {
+        ...common,
+        type: 'categories',
+        data: mapCategories(block.data, apiBase),
+      }
+    case 'promo':
+      return {
+        ...common,
+        type: 'promo',
+        data: mapPromo(block.data),
+      }
+    case 'about':
+      return {
+        ...common,
+        type: 'about',
+        data: mapAbout(block.data, apiBase),
+      }
+    case 'marquee':
+      return { ...common, type: 'marquee', data: block.data }
+    case 'materials':
+      return { ...common, type: 'materials', data: block.data }
+    case 'guide':
+      return { ...common, type: 'guide', data: block.data }
+    case 'text':
+      return { ...common, type: 'text', data: block.data }
+    case 'stores':
+      return { ...common, type: 'stores', data: block.data }
+    case 'catalog':
+      return { ...common, type: 'catalog', data: block.data }
   }
 }
 

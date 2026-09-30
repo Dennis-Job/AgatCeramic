@@ -17,6 +17,7 @@ defineProps<{
 
 <style scoped>
 .section-heading {
+  overflow-wrap: anywhere;
   margin-bottom: 64px;
   text-align: center;
 }

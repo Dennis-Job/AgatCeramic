@@ -1,9 +1,14 @@
 import { expect, test } from './fixtures'
+import AxeBuilder from '@axe-core/playwright'
 
 test('content manager edits the homepage and reaches banner management', async ({
   page,
 }) => {
   const content = {
+    page_id: 1,
+    is_published: true,
+    has_unpublished_changes: false,
+    published_at: '2026-09-25T10:00:00Z',
     hero_slider_id: 7,
     hero_slides: [
       {
@@ -92,6 +97,7 @@ test('content manager edits the homepage and reaches banner management', async (
     },
   }
   let patchBody: Record<string, unknown> | null = null
+  let publishedPromo = content.promo.title
 
   await page.route('**/sanctum/csrf-cookie', (route) =>
     route.fulfill({ status: 204 }),
@@ -123,6 +129,15 @@ test('content manager edits the homepage and reaches banner management', async (
     if (path === '/admin/home-page' && route.request().method() === 'PATCH') {
       patchBody = route.request().postDataJSON() as Record<string, unknown>
       Object.assign(content, patchBody)
+      content.has_unpublished_changes = true
+      return route.fulfill({ json: { data: content } })
+    }
+    if (
+      path === '/admin/home-page/publish' &&
+      route.request().method() === 'POST'
+    ) {
+      publishedPromo = content.promo.title
+      content.has_unpublished_changes = false
       return route.fulfill({ json: { data: content } })
     }
     if (path === '/admin/sliders')
@@ -165,10 +180,19 @@ test('content manager edits the homepage and reaches banner management', async (
   await expect(page).toHaveURL(/\/content\?page=home/)
   await page.getByRole('button', { name: 'Промо' }).click()
   await page.getByLabel('Заголовок').fill('Новый заголовок')
-  await page.getByRole('button', { name: 'Сохранить раздел' }).click()
   await expect(
-    page.getByText('Раздел сохранён. Изменения доступны на сайте.'),
+    page.getByRole('button', { name: 'Опубликовать черновик' }),
+  ).toBeDisabled()
+  await page.getByRole('button', { name: 'Сохранить черновик раздела' }).click()
+  await expect(
+    page.getByText(
+      'Черновик раздела сохранён. Для обновления сайта опубликуйте страницу.',
+    ),
   ).toBeVisible()
+  expect(publishedPromo).toBe('Старый заголовок')
+  await expect(
+    page.getByRole('button', { name: 'Опубликовать черновик' }),
+  ).toBeDisabled()
   expect(patchBody).toEqual({
     promo: {
       eyebrow: 'AgatCeramic',
@@ -185,6 +209,33 @@ test('content manager edits the homepage and reaches banner management', async (
   await page.reload()
   await page.getByRole('button', { name: 'Промо' }).click()
   await expect(page.getByLabel('Заголовок')).toHaveValue('Новый заголовок')
+  await page.getByRole('button', { name: 'Опубликовать черновик' }).click()
+  await expect(
+    page.getByText('Сохранённый черновик главной страницы опубликован.'),
+  ).toBeVisible()
+  expect(publishedPromo).toBe('Новый заголовок')
+  await page.screenshot({
+    path: test.info().outputPath('home-published.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 800 })
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+      ),
+      `homepage overflow at ${width}px`,
+    ).toBe(false)
+    await page.screenshot({
+      path: test.info().outputPath(`home-published-${width}.png`),
+      fullPage: true,
+      animations: 'disabled',
+    })
+  }
   await page.getByRole('button', { name: 'Главный слайдер' }).click()
   await page.getByRole('link', { name: 'Управлять баннерами' }).click()
   await expect(page).toHaveURL(/\/content\?section=banners/)

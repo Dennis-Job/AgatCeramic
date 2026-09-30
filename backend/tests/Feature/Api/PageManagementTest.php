@@ -17,21 +17,21 @@ class PageManagementTest extends TestCase
     {
         $actor = $this->userWithRole('content-manager');
         $created = $this->actingAs($actor)->postJson('/api/v1/admin/pages', [
-            'title' => 'О компании', 'slug' => 'about', 'body' => '<script>alert(1)</script> Текст',
+            'title' => 'О компании', 'slug' => 'company', 'body' => '<script>alert(1)</script> Текст',
         ])->assertCreated()->assertJsonPath('data.is_published', false);
         $id = $created->json('data.id');
 
-        $this->getJson('/api/v1/pages/about')->assertNotFound();
-        $this->getJson('/api/v1/pages')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/pages/company')->assertNotFound();
+        $this->getJson('/api/v1/pages')->assertOk()->assertJsonCount(4, 'data');
         $this->actingAs($actor)->getJson('/api/v1/admin/pages')->assertOk()->assertJsonPath('data.0.id', $id);
 
-        $this->actingAs($actor)->patchJson("/api/v1/admin/pages/{$id}", ['is_published' => true])
+        $this->actingAs($actor)->postJson("/api/v1/admin/pages/{$id}/publish")
             ->assertOk()->assertJsonPath('data.is_published', true);
-        $this->getJson('/api/v1/pages/about')->assertOk()->assertJsonPath('data.body', '<script>alert(1)</script> Текст');
-        $this->getJson('/api/v1/pages')->assertOk()->assertJsonPath('data.0.slug', 'about');
+        $this->getJson('/api/v1/pages/company')->assertOk()->assertJsonPath('data.body', '<script>alert(1)</script> Текст');
+        $this->getJson('/api/v1/pages')->assertOk()->assertJsonPath('data.4.slug', 'company');
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/pages/{$id}", ['is_published' => false])->assertOk();
-        $this->getJson('/api/v1/pages/about')->assertNotFound();
+        $this->getJson('/api/v1/pages/company')->assertNotFound();
         $this->actingAs($actor)->deleteJson("/api/v1/admin/pages/{$id}")->assertNoContent();
         $this->assertDatabaseMissing('pages', ['id' => $id]);
         foreach (['page.created', 'page.updated', 'page.deleted'] as $action) {
@@ -48,11 +48,11 @@ class PageManagementTest extends TestCase
 
         $this->actingAs($manager)->postJson('/api/v1/admin/pages', ['title' => 'A', 'slug' => 'Bad Slug', 'body' => 'A'])
             ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['slug']]]);
-        $created = $this->actingAs($manager)->postJson('/api/v1/admin/pages', ['title' => 'A', 'slug' => 'about', 'body' => 'A'])->assertCreated();
+        $created = $this->actingAs($manager)->postJson('/api/v1/admin/pages', ['title' => 'A', 'slug' => 'company', 'body' => 'A'])->assertCreated();
         $id = $created->json('data.id');
-        $this->actingAs($manager)->postJson('/api/v1/admin/pages', ['title' => 'B', 'slug' => 'about', 'body' => 'B'])
+        $this->actingAs($manager)->postJson('/api/v1/admin/pages', ['title' => 'B', 'slug' => 'company', 'body' => 'B'])
             ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['slug']]]);
-        $this->actingAs($manager)->patchJson("/api/v1/admin/pages/{$id}", ['body' => ''])->assertUnprocessable();
+        $this->actingAs($manager)->patchJson("/api/v1/admin/pages/{$id}", ['body' => ['invalid']])->assertUnprocessable();
         $this->actingAs($analyst)->patchJson("/api/v1/admin/pages/{$id}", ['title' => 'No'])->assertForbidden();
         $this->actingAs($analyst)->deleteJson("/api/v1/admin/pages/{$id}")->assertForbidden();
     }

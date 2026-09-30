@@ -29,7 +29,7 @@ class UpdateHomePageRequest extends FormRequest
             'header.topbar_right' => $short,
             'header.logo_media_id' => $imageId,
             'header.logo_alt' => $short,
-            'header.navigation' => ['required', 'array', 'min:1', 'max:12'],
+            'header.navigation' => ['required', 'array', 'min:1', 'max:16'],
             'header.navigation.*' => ['required', 'array:label,to'],
             'header.navigation.*.label' => $short,
             'header.navigation.*.to' => $link,

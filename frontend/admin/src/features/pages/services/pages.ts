@@ -57,3 +57,23 @@ export async function deletePage(id: number): Promise<void> {
   const response = await apiFetch(`/admin/pages/${id}`, { method: 'DELETE' })
   if (!response.ok) return fail(response)
 }
+
+export async function publishPage(id: number): Promise<ContentPage> {
+  await requestCsrfCookie()
+  const response = await apiFetch(`/admin/pages/${id}/publish`, {
+    method: 'POST',
+  })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ContentPage }).data
+}
+
+export async function unpublishPage(id: number): Promise<ContentPage> {
+  await requestCsrfCookie()
+  const response = await apiFetch(`/admin/pages/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_published: false }),
+  })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ContentPage }).data
+}

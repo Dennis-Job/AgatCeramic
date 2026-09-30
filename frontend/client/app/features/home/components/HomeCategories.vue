@@ -3,7 +3,13 @@ import type { HomePageContent } from '~/types/homePage'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
 import HomeCategoryCard from './HomeCategoryCard.vue'
 
-defineProps<{ content: HomePageContent['categories'] }>()
+withDefaults(
+  defineProps<{
+    content: HomePageContent['categories']
+    interactive?: boolean
+  }>(),
+  { interactive: true },
+)
 defineEmits<{ select: [id: string] }>()
 </script>
 
@@ -25,6 +31,7 @@ defineEmits<{ select: [id: string] }>()
           v-for="category in content.items"
           :key="category.id"
           :category="category"
+          :interactive="interactive"
           @select="$emit('select', $event)"
         />
       </div>

@@ -48,11 +48,15 @@ class HomePageManagementTest extends TestCase
         $this->actingAs($manager)->patchJson('/api/v1/admin/home-page', ['about' => $payload])
             ->assertOk()->assertJsonPath('data.about.title', 'Новая история')
             ->assertJsonPath('data.about.image_url', '/images/home/materials.webp');
+        $this->getJson('/api/v1/home-page')->assertJsonPath('data.about.title', 'Философия материала');
+        $this->actingAs($manager)->postJson('/api/v1/admin/home-page/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
         $this->getJson('/api/v1/home-page')->assertJsonPath('data.about.image_url', Storage::disk('public')->url('media/about.webp'));
         $header = $this->actingAs($manager)->getJson('/api/v1/admin/home-page')->json('data.header');
         unset($header['logo_url']);
         $header['logo_media_id'] = $media->id;
-        $this->actingAs($manager)->patchJson('/api/v1/admin/home-page', ['header' => $header])->assertOk();
+        $this->actingAs($manager)->patchJson('/api/v1/admin/home-page', ['header' => $header])->assertOk()->assertJsonPath('data.has_unpublished_changes', true);
+        $this->getJson('/api/v1/home-page')->assertJsonPath('data.header.logo_url', null);
+        $this->actingAs($manager)->postJson('/api/v1/admin/home-page/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
         $this->getJson('/api/v1/home-page')->assertJsonPath('data.header.logo_url', Storage::disk('public')->url('media/about.webp'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'home-page.updated', 'entity_id' => 1]);
 
@@ -96,6 +100,7 @@ class HomePageManagementTest extends TestCase
         $this->actingAs($manager)->patchJson('/api/v1/admin/home-page', ['hero_slider_id' => $slider->id])
             ->assertOk()->assertJsonCount(0, 'data.hero_slides');
         $banner->update(['is_published' => true]);
+        $this->actingAs($manager)->postJson('/api/v1/admin/home-page/publish')->assertOk();
         $this->getJson('/api/v1/home-page')->assertJsonPath('data.hero_slides.0.title', 'Слайд');
     }
 

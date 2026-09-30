@@ -12,15 +12,26 @@ npm run format:check
 npm run build
 ```
 
-The homepage is the first client implementation. It follows `docs/CLIENT_UI_KIT.md` and fetches
+The storefront follows `docs/CLIENT_UI_KIT.md` and fetches
 managed content from Laravel `GET /api/v1/home-page` during SSR. Text, section images, the selected
 published slider, header, footer, and homepage SEO are edited in Admin → «Главная сайта». Banner
-content and order are edited in Admin → «Контент» → «Баннеры» / «Слайдеры». Local optimized images
-remain as initial values until replaced through the media library. Category cards are editorial
-tabs until public catalog endpoints are available; they do not represent real products, prices,
-offers, stock, or checkout. Menu search navigates between homepage sections only.
+content and order are edited in Admin → «Контент» → «Баннеры» / «Слайдеры». Saving changes updates a
+draft; explicit publication updates the public snapshot, including the shared header/footer.
+The homepage renders the ordered typed `blocks` instead of a fixed section order. Local optimized images
+remain as initial values until replaced through the media library. Homepage category cards are editorial
+tabs; they become noninteractive when their materials block is disabled. `/about`, `/contacts`, and
+`/catalog` fetch published `pages/{slug}` during SSR with metadata and structured data. Contacts load
+seller details and every published store with working hours. Catalog uses the public catalog endpoint
+with real prices/units, pagination, and image fallback. Product routes, filters, cart, and checkout
+remain Phase 10. Menu search filters managed navigation links.
 
-Set `NUXT_PUBLIC_SITE_URL` to the production origin for canonical and Open Graph URLs. Without it, the homepage uses the current request origin. Catalog, cart, checkout, managed SEO content, sitemap, and robots remain separate tasks.
+After `npm ci`, `npm run build` and `npx playwright install chromium`, run `npm run test:e2e`.
+The suite starts the production SSR build on port 3015 and a synthetic API on 8015; it never
+uses the development database. It checks SSR, safe text, block order/disabled states, pagination,
+retry/empty/404/503 states, hydration, axe, and 320/640/768/1024/1280 layouts. Screenshots are saved
+in ignored `.tmp/client-e2e` at the repository root.
+
+Set `NUXT_PUBLIC_SITE_URL` to the production origin for canonical and Open Graph URLs. Without it, pages use the current request origin. Full catalog/category/product flows, cart, checkout, entity SEO, sitemap, and robots remain separate tasks.
 Set `NUXT_PUBLIC_API_BASE` to the Laravel API v1 base URL (default `http://localhost:8000/api/v1`).
 When Nuxt runs in Docker, `NUXT_API_BASE_INTERNAL` points server-side requests to
 `http://backend:8000/api/v1`; browser requests and media URLs continue to use

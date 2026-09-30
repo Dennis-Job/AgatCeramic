@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import type { MaterialCategory } from '~/types/homePage'
 
-defineProps<{ category: MaterialCategory }>()
+withDefaults(
+  defineProps<{ category: MaterialCategory; interactive?: boolean }>(),
+  { interactive: true },
+)
 defineEmits<{ select: [id: string] }>()
 </script>
 
 <template>
-  <button
+  <component
+    :is="interactive ? 'button' : 'article'"
     class="category-card"
-    type="button"
-    :aria-label="`Подробнее: ${category.name}`"
-    @click="$emit('select', category.id)"
+    :type="interactive ? 'button' : undefined"
+    :aria-label="interactive ? `Подробнее: ${category.name}` : undefined"
+    @click="interactive && $emit('select', category.id)"
   >
     <span class="category-card__image">
       <img
@@ -21,7 +25,10 @@ defineEmits<{ select: [id: string] }>()
         height="1100"
         loading="lazy"
       />
-      <span class="category-card__image-label" aria-hidden="true"
+      <span
+        v-if="interactive"
+        class="category-card__image-label"
+        aria-hidden="true"
         >Смотреть</span
       >
     </span>
@@ -29,14 +36,15 @@ defineEmits<{ select: [id: string] }>()
     <span class="category-card__description">{{
       category.shortDescription
     }}</span>
-    <span class="category-card__link" aria-hidden="true"
+    <span v-if="interactive" class="category-card__link" aria-hidden="true"
       >Подробнее <span>→</span></span
     >
-  </button>
+  </component>
 </template>
 
 <style scoped>
 .category-card {
+  overflow-wrap: anywhere;
   display: block;
   width: 100%;
   border: 0;

@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\Models\HomePage;
 use App\Models\Media;
+use App\Models\Page;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class HomePageManagementService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(private readonly AuditLogService $auditLogService, private readonly PageManagementService $pages) {}
 
     /** @param array<string, mixed> $attributes */
     public function update(User $actor, array $attributes): HomePage
@@ -36,6 +37,27 @@ class HomePageManagementService
             }
             $changed = array_keys($page->getDirty());
             $page->save();
+            $draft = Page::query()->where('slug', 'home')->lockForUpdate()->firstOrFail();
+            $blocks = $draft->blocks;
+            foreach ($blocks as &$block) {
+                if ($block['type'] === 'hero' && array_key_exists('hero_slider_id', $attributes)) {
+                    $block['data'] = ['slider_id' => $page->hero_slider_id];
+                } elseif (array_key_exists($block['type'], $attributes)) {
+                    $data = $attributes[$block['type']];
+                    if (! is_array($data)) {
+                        throw new \LogicException('Validated page section must be an object.');
+                    }
+                    /** @var array<string, mixed> $data */
+                    $block['data'] = $data;
+                }
+            }
+            $draft->blocks = $blocks;
+            $draft->site_layout = ['header' => $content['header'], 'footer' => $content['footer']];
+            if (isset($attributes['seo'])) {
+                $draft->setAttribute('seo', $attributes['seo']);
+            }
+            $draft->save();
+            $this->pages->syncMedia($draft);
             $this->auditLogService->record($actor, 'home-page.updated', $page, ['fields' => array_keys($attributes), 'columns' => $changed]);
 
             return $page;

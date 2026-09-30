@@ -43,6 +43,18 @@ useHead(() => ({
 </script>
 
 <template>
+  <div
+    v-if="
+      content &&
+      !content.blocks.some((block) => block.enabled && block.type === 'hero')
+    "
+    class="container home-unavailable"
+  >
+    <h1>{{ content.seo.title || 'AgatCeramic' }}</h1>
+    <p v-if="!content.blocks.some((block) => block.enabled)" role="status">
+      Для главной страницы пока нет опубликованного содержимого.
+    </p>
+  </div>
   <HomePage v-if="content" :content="content" />
   <section
     v-else

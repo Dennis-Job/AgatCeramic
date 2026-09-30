@@ -11,6 +11,13 @@ const props = defineProps<{
 const navigation = computed(() => props.content?.navigation ?? [])
 
 const route = useRoute()
+function isCurrent(to: string): boolean {
+  const [path, hash] = to.split('#')
+  return (
+    path === route.path &&
+    (!hash || `#${hash}` === route.hash || (!route.hash && hash === 'home'))
+  )
+}
 const panel = ref<Panel>(null)
 const searchQuery = ref('')
 const menuTrigger = ref<HTMLButtonElement | null>(null)
@@ -119,12 +126,7 @@ onUnmounted(() => {
           v-for="link in navigation"
           :key="link.to"
           :to="link.to"
-          :aria-current="
-            route.hash === link.to.slice(1) ||
-            (!route.hash && link.to === '/#home')
-              ? 'page'
-              : undefined
-          "
+          :aria-current="isCurrent(link.to) ? 'page' : undefined"
         >
           {{ link.label }}
         </NuxtLink>
@@ -189,6 +191,7 @@ onUnmounted(() => {
         v-for="(link, index) in navigation"
         :key="link.to"
         :to="link.to"
+        :aria-current="isCurrent(link.to) ? 'page' : undefined"
         @click="closePanel"
       >
         {{ link.label }} <span>{{ String(index + 1).padStart(2, '0') }}</span>

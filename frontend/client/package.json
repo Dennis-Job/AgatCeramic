@@ -9,6 +9,7 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "typecheck": "nuxt typecheck",
+    "test:e2e": "playwright test",
     "format": "prettier --write \"app/**/*.{vue,ts,css}\" nuxt.config.ts",
     "format:check": "prettier --check \"app/**/*.{vue,ts,css}\" nuxt.config.ts",
     "generate": "nuxt generate",
@@ -23,6 +24,8 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "1.62.1",
     "prettier": "^3.9.9",
     "typescript": "~5.9.3",
     "vue-tsc": "^3.3.9"

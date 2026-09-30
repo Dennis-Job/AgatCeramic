@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
@@ -69,7 +70,7 @@ onBeforeUnmount(() =>
       class="mb-6"
       eyebrow="Управление сайтом"
       title="Главная страница"
-      description="Изменения каждого блока сохраняются отдельно. Опубликованный слайдер и его баннеры появятся на сайте после выбора."
+      description="Сохраняйте блоки в черновик, затем публикуйте страницу отдельным действием."
     />
     <UiAlert v-if="workspace.error.value" class="mb-4" role="alert">{{
       workspace.error.value
@@ -93,6 +94,61 @@ onBeforeUnmount(() =>
       label="Загрузка главной страницы…"
     />
     <template v-else-if="workspace.content.value">
+      <UiCard class="mb-5 min-w-0 p-4 sm:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <UiBadge
+              :tone="
+                workspace.content.value.is_published ? 'success' : 'neutral'
+              "
+            >
+              {{
+                workspace.content.value.is_published
+                  ? 'Опубликована'
+                  : 'Черновик'
+              }}
+            </UiBadge>
+            <p class="mt-2 text-sm text-gray-600" role="status">
+              {{
+                !workspace.content.value.is_published
+                  ? 'Сохранённый черновик пока не опубликован.'
+                  : workspace.content.value.has_unpublished_changes
+                    ? 'В черновике есть неопубликованные изменения.'
+                    : 'Сохранённый черновик соответствует опубликованной версии.'
+              }}
+            </p>
+            <p
+              v-if="workspace.content.value.published_at"
+              class="mt-2 text-xs text-gray-500"
+            >
+              Последняя публикация:
+              {{
+                new Date(workspace.content.value.published_at).toLocaleString(
+                  'ru-RU',
+                )
+              }}
+            </p>
+            <p
+              v-if="hasUnsavedChanges()"
+              class="mt-2 text-sm text-gray-600"
+              role="status"
+            >
+              Перед публикацией сохраните изменения во всех разделах.
+            </p>
+          </div>
+          <UiButton
+            :loading="workspace.publishing.value"
+            :disabled="
+              workspace.saving.value ||
+              hasUnsavedChanges() ||
+              (workspace.content.value.is_published &&
+                !workspace.content.value.has_unpublished_changes)
+            "
+            @click="workspace.publish()"
+            >Опубликовать черновик</UiButton
+          >
+        </div>
+      </UiCard>
       <nav
         class="mb-5 flex flex-wrap gap-2"
         aria-label="Разделы главной страницы"
@@ -155,8 +211,9 @@ onBeforeUnmount(() =>
         <div class="mt-7 flex justify-end border-t border-gray-200 pt-5">
           <UiButton
             :loading="workspace.saving.value"
+            :disabled="workspace.publishing.value"
             @click="workspace.save(section)"
-            >Сохранить раздел</UiButton
+            >Сохранить черновик раздела</UiButton
           >
         </div>
       </UiCard>

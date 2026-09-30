@@ -12,6 +12,10 @@ export type HomeHeading = {
 export type HomeCta = { link_label: string; link_url: string }
 
 export type HomePageContent = {
+  page_id: number
+  is_published: boolean
+  has_unpublished_changes: boolean
+  published_at: string | null
   hero_slider_id: number | null
   hero_slides: {
     id: number
@@ -63,4 +67,11 @@ export type HomePageContent = {
   }
 }
 
-export type EditableSection = Exclude<keyof HomePageContent, 'hero_slides'>
+export type EditableSection = Exclude<
+  keyof HomePageContent,
+  | 'hero_slides'
+  | 'page_id'
+  | 'is_published'
+  | 'has_unpublished_changes'
+  | 'published_at'
+>
