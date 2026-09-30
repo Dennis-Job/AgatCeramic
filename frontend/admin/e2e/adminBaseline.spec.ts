@@ -337,7 +337,7 @@ for (const path of stateRoutes) {
     await page.goto(path, { waitUntil: 'commit' })
     await request.requested
     await expect(
-      page.getByRole('status').filter({ hasText: 'Загрузка' }),
+      page.getByRole('status').filter({ hasText: 'Загрузка' }).first(),
     ).toBeVisible()
     await expect(page).toHaveScreenshot(`route-${path.slice(1)}-loading.png`, {
       fullPage: true,
@@ -409,7 +409,7 @@ const authenticatedRoutes = [
   ['/audit-log', 'Журнал аудита'],
   ['/orders', 'Заказы'],
   ['/contacts', 'Обращения'],
-  ['/content', 'Контент'],
+  ['/content', 'Страницы'],
   ['/settings', 'Настройки сайта'],
 ] as const
 

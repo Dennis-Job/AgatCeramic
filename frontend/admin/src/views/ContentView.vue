@@ -24,7 +24,7 @@ const section = computed<Section>({
 </script>
 
 <template>
-  <div class="mx-auto admin-page">
+  <div class="min-w-0">
     <nav class="mb-4 flex flex-wrap gap-2" aria-label="Разделы контента">
       <UiButton
         :aria-pressed="section === 'pages'"

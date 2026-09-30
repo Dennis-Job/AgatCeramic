@@ -92,8 +92,25 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
     page.getByRole('checkbox', { name: 'Опубликовать страницу' }),
   ).toBeChecked()
   await page.getByRole('button', { name: 'Сохранить' }).click()
-  await expect(page.getByText('Опубликована')).toBeVisible()
+  await expect(page.getByText('Опубликована', { exact: true })).toBeVisible()
   expect(submittedPublicationStates).toEqual([false, true])
+
+  for (const width of [320, 640, 768, 1024, 1280, 2560]) {
+    await page.setViewportSize({ width, height: 900 })
+    const overflow = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    )
+    expect(overflow, `horizontal overflow at ${width}px`).toBe(false)
+  }
+  const navigation = await page
+    .getByRole('navigation', { name: 'Выбор страницы сайта' })
+    .boundingBox()
+  const preview = await page.getByLabel('Предпросмотр страницы').boundingBox()
+  expect(navigation).not.toBeNull()
+  expect(preview).not.toBeNull()
+  expect(preview!.x).toBeGreaterThan(navigation!.x + navigation!.width)
 
   await page
     .getByRole('button', { name: 'Удалить страницу О компании' })
@@ -103,4 +120,54 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
     .getByRole('button', { name: 'Удалить' })
     .click()
   await expect(page.getByText('Страниц пока нет.')).toBeVisible()
+})
+
+test('content editor opens a page outside the current list from its URL', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/**', (route) => {
+    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    if (path === '/admin/auth/me')
+      return route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            name: 'Редактор',
+            email: 'editor@example.test',
+            status: 'active',
+            permissions: ['content.manage'],
+          },
+        },
+      })
+    if (path === '/admin/pages')
+      return route.fulfill({
+        json: {
+          data: [],
+          meta: { current_page: 1, last_page: 2, per_page: 25, total: 26 },
+        },
+      })
+    if (path === '/admin/pages/77')
+      return route.fulfill({
+        json: {
+          data: {
+            id: 77,
+            title: 'Доставка',
+            slug: 'delivery',
+            body: 'Информация о доставке.',
+            is_published: false,
+            created_at: timestamp,
+            updated_at: timestamp,
+          },
+        },
+      })
+    return route.fulfill({
+      status: 404,
+      json: { error: { message: 'Unknown endpoint' } },
+    })
+  })
+
+  await page.goto('/content?page=77')
+  await expect(page.getByRole('heading', { name: 'Доставка' })).toBeVisible()
+  await expect(page.getByText('Информация о доставке.')).toBeVisible()
+  await expect(page.getByText('Страниц пока нет.')).toHaveCount(0)
 })

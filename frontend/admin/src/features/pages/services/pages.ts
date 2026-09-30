@@ -29,6 +29,12 @@ export async function getPages(
   return (await response.json()) as PaginatedResponse<ContentPage>
 }
 
+export async function getPage(id: number): Promise<ContentPage> {
+  const response = await apiFetch(`/admin/pages/${id}`)
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: ContentPage }).data
+}
+
 export async function savePage(
   id: number | null,
   payload: PagePayload,

@@ -31,7 +31,7 @@ onMounted(() => sliders.load())
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
+  <section class="min-w-0">
     <PageHeader class="mb-7" eyebrow="Контент" title="Слайдеры">
       <template #actions>
         <UiButton @click="sliders.openEditor()"

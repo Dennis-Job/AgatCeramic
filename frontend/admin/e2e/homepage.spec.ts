@@ -113,6 +113,13 @@ test('content manager edits the homepage and reaches banner management', async (
       })
     if (path === '/admin/home-page' && route.request().method() === 'GET')
       return route.fulfill({ json: { data: content } })
+    if (path === '/admin/pages' && route.request().method() === 'GET')
+      return route.fulfill({
+        json: {
+          data: [],
+          meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 },
+        },
+      })
     if (path === '/admin/home-page' && route.request().method() === 'PATCH') {
       patchBody = route.request().postDataJSON() as Record<string, unknown>
       Object.assign(content, patchBody)
@@ -146,13 +153,16 @@ test('content manager edits the homepage and reaches banner management', async (
     })
   })
 
-  await page.goto('/home-page')
+  await page.goto('/content?page=home')
   await expect(
     page.getByRole('heading', { name: 'Главная страница' }),
   ).toBeVisible()
   await expect(page.getByText('Первый слайд')).toBeVisible()
   await page.getByRole('button', { name: 'Бегущая строка' }).click()
   await page.getByLabel('Тема 1: Плитка').fill('Керамогранит')
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page.getByRole('button', { name: 'Баннеры', exact: true }).click()
+  await expect(page).toHaveURL(/\/content\?page=home/)
   await page.getByRole('button', { name: 'Промо' }).click()
   await page.getByLabel('Заголовок').fill('Новый заголовок')
   await page.getByRole('button', { name: 'Сохранить раздел' }).click()

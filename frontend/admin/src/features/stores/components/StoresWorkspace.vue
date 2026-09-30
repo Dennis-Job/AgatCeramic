@@ -32,7 +32,7 @@ onMounted(() => stores.load())
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
+  <section class="min-w-0">
     <PageHeader class="mb-7" eyebrow="Контент" title="Магазины">
       <template #actions>
         <UiButton @click="stores.openEditor()"

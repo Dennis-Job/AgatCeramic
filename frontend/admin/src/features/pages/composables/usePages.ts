@@ -46,19 +46,21 @@ export function usePages() {
     if (!busy.value) editorOpen.value = false
   }
 
-  async function submit(): Promise<void> {
+  async function submit(): Promise<ContentPage | null> {
     busy.value = true
     formError.value = ''
     try {
-      await savePage(editing.value?.id ?? null, form.value)
+      const savedPage = await savePage(editing.value?.id ?? null, form.value)
       editorOpen.value = false
       success.value = 'Страница сохранена.'
       await load()
+      return savedPage
     } catch (reason) {
       formError.value =
         reason instanceof Error
           ? reason.message
           : 'Не удалось сохранить страницу.'
+      return null
     } finally {
       busy.value = false
     }

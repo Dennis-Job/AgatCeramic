@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
@@ -11,6 +12,8 @@ import HomePageHeroEditor from './HomePageHeroEditor.vue'
 import HomePageBodyEditor from './HomePageBodyEditor.vue'
 import HomePageChromeEditor from './HomePageChromeEditor.vue'
 import HomePageSeoEditor from './HomePageSeoEditor.vue'
+
+withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
 
 const workspace = useHomePage()
 const section = ref<EditableSection>('hero_slider_id')
@@ -32,10 +35,36 @@ function selectSection(value: EditableSection): void {
   workspace.error.value = ''
   workspace.success.value = ''
 }
+
+function hasUnsavedChanges(): boolean {
+  return sections.some((item) => workspace.isDirty(item.key))
+}
+
+function confirmNavigation(): boolean {
+  return (
+    !hasUnsavedChanges() ||
+    window.confirm(
+      'Есть несохранённые изменения. Покинуть редактор и потерять их?',
+    )
+  )
+}
+
+function handleBeforeUnload(event: BeforeUnloadEvent): void {
+  if (!hasUnsavedChanges()) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onBeforeRouteUpdate(confirmNavigation)
+onBeforeRouteLeave(confirmNavigation)
+onMounted(() => window.addEventListener('beforeunload', handleBeforeUnload))
+onBeforeUnmount(() =>
+  window.removeEventListener('beforeunload', handleBeforeUnload),
+)
 </script>
 
 <template>
-  <section class="admin-page mx-auto">
+  <section :class="embedded ? 'min-w-0' : 'admin-page mx-auto'">
     <PageHeader
       class="mb-6"
       eyebrow="Управление сайтом"
