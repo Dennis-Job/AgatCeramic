@@ -18,6 +18,26 @@ Workflow получает только право `contents: read` и не ис�
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
 
+Client audit использует актуальную базу advisories, поэтому может перестать проходить даже без
+изменения зависимостей в последнем коммите. Исправление выполняется совместимым обновлением
+lock-файла, после которого обязательны чистый install, повторный audit, typecheck и SSR build:
+
+```bash
+cd frontend/client
+npm audit fix --package-lock-only --ignore-scripts
+npm ci
+npm audit --omit=dev --audit-level=high
+npm exec nuxi typecheck
+npm run build
+```
+
+2026-09-30 (`TASK-A056`) устранено падение `Client checks` на шаге `Audit production dependencies`
+в [запуске для f97a4c0](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36686153839).
+В lock-файле обновлены `brace-expansion` до `2.1.7`/`5.0.12`, `undici` до `8.11.2` и `devalue`
+до `5.9.4`; версия Nuxt и порог audit сохранены.
+Чистые `npm ci`, audit (0 vulnerabilities), Nuxt typecheck и SSR build проверены в отдельном
+Linux-контейнере на Node `24.19.0`, без использования локальных `node_modules`.
+
 Backend architecture guard локально запускается после установки Composer dependencies:
 
 ```bash
