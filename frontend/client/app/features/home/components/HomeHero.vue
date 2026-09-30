@@ -3,41 +3,150 @@ import { ArrowLeft, ArrowRight } from '@lucide/vue'
 import UiButton from '~/components/ui/UiButton.vue'
 import type { HomeSlide } from '~/types/homePage'
 
+const SLIDE_DURATION = 6500
+
 const props = defineProps<{
   slides: readonly HomeSlide[]
   emptyTitle: string
   emptyDescription: string
 }>()
 const activeIndex = ref(0)
-const isPaused = ref(false)
+const isReady = ref(false)
+const isPointerInside = ref(false)
+const isFocusInside = ref(false)
+const isPageVisible = ref(true)
+const isReducedMotion = ref(false)
+const progressFill = ref<HTMLElement | null>(null)
 const activeSlide = computed(() => props.slides[activeIndex.value])
-let timer: ReturnType<typeof setInterval> | undefined
+const canPlay = computed(
+  () =>
+    isReady.value &&
+    props.slides.length > 1 &&
+    !isPointerInside.value &&
+    !isFocusInside.value &&
+    isPageVisible.value &&
+    !isReducedMotion.value,
+)
+const titleWords = computed(
+  () =>
+    activeSlide.value?.title
+      .trim()
+      .split(/\s+/u)
+      .map((word) => `${word}\u00a0`) ?? [],
+)
+let timer: ReturnType<typeof setTimeout> | undefined
+let progressFrame: number | undefined
+let timerStartedAt = 0
+let remainingMs = SLIDE_DURATION
+let motionQuery: MediaQueryList | undefined
 
 watch(
   () => props.slides.length,
   (count) => {
     if (activeIndex.value >= count) activeIndex.value = 0
+    resetCountdown()
   },
 )
 
 function selectSlide(index: number) {
+  if (!props.slides.length) return
   activeIndex.value = (index + props.slides.length) % props.slides.length
+  resetCountdown()
+}
+
+function renderProgress(timeLeft: number) {
+  const progress = 1 - timeLeft / SLIDE_DURATION
+  progressFill.value?.style.setProperty('--progress', String(progress))
+}
+
+function stopProgressFrame() {
+  if (progressFrame !== undefined) cancelAnimationFrame(progressFrame)
+  progressFrame = undefined
+}
+
+function updateProgress() {
+  const timeLeft = Math.max(
+    0,
+    remainingMs - (performance.now() - timerStartedAt),
+  )
+  renderProgress(timeLeft)
+  progressFrame = requestAnimationFrame(updateProgress)
+}
+
+function syncCountdown() {
+  if (canPlay.value) {
+    if (timer) return
+    timerStartedAt = performance.now()
+    timer = setTimeout(() => {
+      timer = undefined
+      selectSlide(activeIndex.value + 1)
+    }, remainingMs)
+    progressFrame = requestAnimationFrame(updateProgress)
+    return
+  }
+
+  if (!timer) return
+  clearTimeout(timer)
+  timer = undefined
+  remainingMs = Math.max(0, remainingMs - (performance.now() - timerStartedAt))
+  stopProgressFrame()
+  renderProgress(remainingMs)
+}
+
+function resetCountdown() {
+  if (timer) clearTimeout(timer)
+  timer = undefined
+  stopProgressFrame()
+  remainingMs = SLIDE_DURATION
+  renderProgress(remainingMs)
+  syncCountdown()
+}
+
+function onPointerEnter(event: PointerEvent) {
+  if (event.pointerType !== 'touch') isPointerInside.value = true
+}
+
+function onPointerLeave(event: PointerEvent) {
+  if (event.pointerType !== 'touch') isPointerInside.value = false
+}
+
+function onFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget
+  if (!(next instanceof Node) || !(event.currentTarget as Node).contains(next))
+    isFocusInside.value = false
+}
+
+function onVisibilityChange() {
+  isPageVisible.value = document.visibilityState === 'visible'
+}
+
+function onMotionChange(event: MediaQueryListEvent) {
+  isReducedMotion.value = event.matches
+  resetCountdown()
+}
+
+watch(canPlay, syncCountdown, { flush: 'sync' })
+
+function onSlideLeave(element: Element) {
+  const slide = element as HTMLElement
+  slide.setAttribute('aria-hidden', 'true')
+  slide.inert = true
 }
 
 onMounted(() => {
-  if (
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-    props.slides.length < 2
-  )
-    return
-  timer = setInterval(() => {
-    if (!isPaused.value && document.visibilityState === 'visible')
-      selectSlide(activeIndex.value + 1)
-  }, 6500)
+  motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+  isReducedMotion.value = motionQuery.matches
+  onVisibilityChange()
+  motionQuery.addEventListener('change', onMotionChange)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  isReady.value = true
 })
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer)
+  if (timer) clearTimeout(timer)
+  stopProgressFrame()
+  motionQuery?.removeEventListener('change', onMotionChange)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 
@@ -47,36 +156,58 @@ onUnmounted(() => {
     class="hero"
     :class="{ 'hero--empty': !activeSlide }"
     aria-label="Главный экран"
-    @mouseenter="isPaused = true"
-    @mouseleave="isPaused = false"
-    @focusin="isPaused = true"
-    @focusout="isPaused = false"
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
+    @focusin="isFocusInside = true"
+    @focusout="onFocusOut"
   >
-    <div v-if="activeSlide" :key="activeSlide.id" class="hero__slide">
-      <div class="hero__copy">
-        <div class="hero__copy-inner">
-          <span class="eyebrow">{{ activeSlide.eyebrow }}</span>
-          <h1>{{ activeSlide.title }}</h1>
-          <p>{{ activeSlide.description }}</p>
-          <UiButton v-if="activeSlide.linkUrl" :to="activeSlide.linkUrl">
-            {{ activeSlide.linkLabel }}
-            <span class="hero__button-arrow" aria-hidden="true">→</span>
-          </UiButton>
+    <Transition name="hero-slide" @leave="onSlideLeave">
+      <div v-if="activeSlide" :key="activeSlide.id" class="hero__slide">
+        <div class="hero__copy">
+          <div class="hero__copy-inner">
+            <span class="eyebrow hero__eyebrow">{{ activeSlide.eyebrow }}</span>
+            <h1 :aria-label="activeSlide.title">
+              <span
+                v-for="(word, index) in titleWords"
+                :key="index"
+                class="hero__word"
+                aria-hidden="true"
+              >
+                <span
+                  class="hero__word-inner"
+                  :style="{ animationDelay: `${300 + index * 100}ms` }"
+                  >{{ word }}</span
+                ></span
+              >
+            </h1>
+            <p class="hero__description">{{ activeSlide.description }}</p>
+            <div v-if="activeSlide.linkUrl" class="hero__cta">
+              <UiButton :to="activeSlide.linkUrl">
+                {{ activeSlide.linkLabel }}
+                <ArrowRight
+                  class="hero__button-arrow"
+                  :size="16"
+                  :stroke-width="1.6"
+                  aria-hidden="true"
+                />
+              </UiButton>
+            </div>
+          </div>
+        </div>
+        <div class="hero__image">
+          <img
+            v-if="activeSlide.image"
+            :src="activeSlide.image"
+            :alt="activeSlide.imageAlt"
+            width="1280"
+            height="853"
+            fetchpriority="high"
+          />
         </div>
       </div>
-      <div class="hero__image">
-        <img
-          v-if="activeSlide.image"
-          :src="activeSlide.image"
-          :alt="activeSlide.imageAlt"
-          width="1280"
-          height="853"
-          fetchpriority="high"
-        />
-      </div>
-    </div>
+    </Transition>
 
-    <div v-else class="hero__empty container">
+    <div v-if="!activeSlide" class="hero__empty container">
       <h1>{{ emptyTitle }}</h1>
       <p>{{ emptyDescription }}</p>
     </div>
@@ -117,8 +248,13 @@ onUnmounted(() => {
         @click="selectSlide(index)"
       />
     </div>
-    <div v-if="activeSlide" class="hero__scroll-hint" aria-hidden="true">
-      Листайте <span />
+    <div v-if="slides.length > 1 && !isReducedMotion" class="hero__next-hint">
+      <span class="visually-hidden"
+        >Шкала времени до автоматической смены слайда</span
+      >
+      <span class="hero__next-track" aria-hidden="true">
+        <span ref="progressFill" class="hero__next-fill" />
+      </span>
     </div>
   </section>
 </template>
@@ -127,7 +263,7 @@ onUnmounted(() => {
 .hero {
   position: relative;
   min-height: 620px;
-  height: min(790px, calc(100svh - 118px));
+  height: calc(100svh - 120px);
   overflow: hidden;
 }
 .hero--empty {
@@ -145,6 +281,20 @@ onUnmounted(() => {
   height: 100%;
   grid-template-columns: 1.05fr 1fr;
 }
+.hero-slide-enter-active,
+.hero-slide-leave-active {
+  transition: opacity 1s ease;
+}
+.hero-slide-enter-from,
+.hero-slide-leave-to {
+  opacity: 0;
+}
+.hero-slide-leave-active {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  pointer-events: none;
+}
 .hero__copy {
   display: flex;
   align-items: center;
@@ -154,7 +304,23 @@ onUnmounted(() => {
 }
 .hero__copy-inner {
   max-width: 540px;
-  animation: copy-in 0.8s var(--ease-out) both;
+}
+.hero__eyebrow,
+.hero__description,
+.hero__cta {
+  display: block;
+  opacity: 0;
+  transform: translateY(28px);
+  animation: hero-fade-up 0.9s var(--ease-out) both;
+}
+.hero__eyebrow {
+  animation-delay: 0.15s;
+}
+.hero__description {
+  animation-delay: 0.75s;
+}
+.hero__cta {
+  animation-delay: 0.95s;
 }
 .hero h1 {
   margin: 28px 0;
@@ -162,6 +328,18 @@ onUnmounted(() => {
   font-weight: 500;
   letter-spacing: -0.025em;
   line-height: 1.06;
+}
+.hero__word {
+  display: inline-block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+  vertical-align: top;
+}
+.hero__word-inner {
+  display: inline-block;
+  transform: translateY(112%);
+  animation: hero-word-up 1s var(--ease-out) both;
 }
 .hero p {
   max-width: 390px;
@@ -171,8 +349,7 @@ onUnmounted(() => {
   line-height: 1.7;
 }
 .hero__button-arrow {
-  font-size: 16px;
-  line-height: 1;
+  flex: none;
   transition: transform 0.3s;
 }
 :deep(.ui-button:hover) .hero__button-arrow {
@@ -253,35 +430,41 @@ onUnmounted(() => {
 .hero__dots button.is-active {
   background-image: linear-gradient(var(--color-ink), var(--color-ink));
 }
-.hero__scroll-hint {
+.hero__next-hint {
   position: absolute;
   z-index: 2;
   bottom: 44px;
   left: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: var(--color-muted);
-  font-size: 10px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
   transform: translateX(-50%);
 }
-.hero__scroll-hint span {
+.hero__next-track {
   display: block;
   width: 1px;
   height: 44px;
   background: var(--color-line);
+  overflow: hidden;
 }
-@keyframes copy-in {
+.hero__next-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--color-ink);
+  transform: scaleY(var(--progress, 0));
+  transform-origin: top;
+}
+@keyframes hero-fade-up {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(28px);
   }
   to {
     opacity: 1;
     transform: none;
+  }
+}
+@keyframes hero-word-up {
+  to {
+    transform: translateY(0);
   }
 }
 @keyframes image-in {
@@ -290,6 +473,26 @@ onUnmounted(() => {
   }
   to {
     transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero__next-hint {
+    display: none;
+  }
+  .hero-slide-enter-active,
+  .hero-slide-leave-active {
+    transition: none;
+  }
+  .hero__eyebrow,
+  .hero__word-inner,
+  .hero__description,
+  .hero__cta {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
+  .hero__image img {
+    animation: none !important;
   }
 }
 @media (max-width: 900px) {
@@ -308,7 +511,7 @@ onUnmounted(() => {
     background: linear-gradient(0deg, var(--color-bg), transparent 22%);
   }
   .hero__copy {
-    padding: 46px var(--page-gutter) 112px;
+    padding: 46px var(--page-gutter) 168px;
   }
   .hero__controls {
     left: var(--page-gutter);
@@ -318,8 +521,16 @@ onUnmounted(() => {
     right: var(--page-gutter);
     bottom: 45px;
   }
-  .hero__scroll-hint {
-    display: none;
+  .hero__next-hint {
+    bottom: 118px;
+  }
+  .hero__next-track {
+    width: 160px;
+    height: 2px;
+  }
+  .hero__next-fill {
+    transform: scaleX(var(--progress, 0));
+    transform-origin: left;
   }
 }
 @media (max-width: 520px) {
@@ -348,6 +559,17 @@ onUnmounted(() => {
   }
   .hero__dots {
     bottom: 42px;
+  }
+}
+@media (max-width: 380px) {
+  .hero__next-hint {
+    bottom: 130px;
+  }
+  .hero__dots {
+    bottom: 89px;
+  }
+  .hero__controls {
+    bottom: 28px;
   }
 }
 </style>
