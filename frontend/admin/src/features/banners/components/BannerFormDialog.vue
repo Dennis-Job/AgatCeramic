@@ -16,8 +16,15 @@ defineProps<{
   busy: boolean
   error: string
   form: BannerPayload
+  inlineUpload?: boolean
+  suspended?: boolean
 }>()
-const emit = defineEmits<{ close: []; submit: [] }>()
+const emit = defineEmits<{
+  close: []
+  submit: []
+  mediaPending: [value: boolean]
+  mediaUploading: [value: boolean]
+}>()
 </script>
 
 <template>
@@ -25,6 +32,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
     :open="open"
     labelledby="banner-dialog-title"
     :close-disabled="busy"
+    :suspended="suspended"
     panel-class="w-full max-w-2xl"
     @close="emit('close')"
   >
@@ -75,9 +83,13 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         /></UiField>
         <MediaReferenceField
           kind="image"
+          require-manage-permission
           label="Изображение баннера"
+          :inline-upload="inlineUpload"
           :model-value="form.image_media_id"
           :disabled="busy"
+          @pending="emit('mediaPending', $event)"
+          @uploading="emit('mediaUploading', $event)"
           @update:model-value="
             form.image_media_id = Array.isArray($event) ? null : $event
           "

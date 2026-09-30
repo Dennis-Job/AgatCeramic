@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiField from '../../../components/ui/UiField.vue'
+import UiInput from '../../../components/ui/UiInput.vue'
+import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
+import { useAuthStore } from '../../../stores/auth'
+import { useInlineMediaUpload } from '../composables/useInlineMediaUpload'
 import { useMediaOptions } from '../composables/useMediaOptions'
 import type { Media } from '../types/media.types'
 import MediaImagePreview from './MediaImagePreview.vue'
@@ -12,11 +17,50 @@ const props = defineProps<{
   label: string
   modelValue: number | null | number[]
   disabled?: boolean
+  inlineUpload?: boolean
+  requireManagePermission?: boolean
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: number | null | number[]]
+  pending: [value: boolean]
+  uploading: [value: boolean]
 }>()
-const { options, loading, error, load } = useMediaOptions(props.kind)
+const auth = useAuthStore()
+const canManage = computed(() => auth.hasPermission('media.manage'))
+const canPreview = computed(
+  () =>
+    auth.hasPermission('content.manage') ||
+    auth.hasPermission('catalog.manage'),
+)
+const canSelect = computed(
+  () => canManage.value || (!props.requireManagePermission && canPreview.value),
+)
+const { options, loading, error, load } = useMediaOptions(
+  props.kind,
+  () => canSelect.value || (canPreview.value && Boolean(props.modelValue)),
+)
+const upload = useInlineMediaUpload(props.kind, (media) => {
+  options.value = [
+    media,
+    ...options.value.filter((item) => item.id !== media.id),
+  ]
+  emit(
+    'update:modelValue',
+    props.kind === 'document' ? [...selected.value, media.id] : media.id,
+  )
+})
+watch(
+  () => upload.uploading.value || Boolean(upload.file.value),
+  (value) => emit('pending', value),
+)
+const preview = computed(() =>
+  options.value.find((item) => item.id === props.modelValue),
+)
+watch(upload.uploading, (value) => emit('uploading', value))
+onBeforeUnmount(() => {
+  emit('pending', false)
+  emit('uploading', false)
+})
 const selected = computed(() =>
   Array.isArray(props.modelValue) ? props.modelValue : [],
 )
@@ -34,7 +78,29 @@ function toggle(id: number, checked: boolean) {
 <template>
   <div class="min-w-0">
     <p class="text-sm font-medium text-gray-700">{{ label }}</p>
-    <p v-if="loading" class="mt-1 text-sm text-gray-500" role="status">
+    <template v-if="!canSelect">
+      <p class="mt-1 text-sm text-gray-500" role="status">
+        {{ modelValue ? `Выбран файл #${modelValue}.` : 'Файл не выбран.' }}
+        Выбор и загрузка доступны сотруднику с правом управления медиа.
+      </p>
+      <p
+        v-if="loading && modelValue"
+        class="mt-1 text-sm text-gray-500"
+        role="status"
+      >
+        Загрузка выбранного изображения…
+      </p>
+      <p v-else-if="error" class="mt-1 text-sm text-error-600" role="alert">
+        {{ error }}
+      </p>
+      <UiImagePreview
+        v-if="kind === 'image' && modelValue && !loading"
+        :url="preview?.thumbnail_url || preview?.url || null"
+        :alt="preview?.alt || label"
+        class="mt-2 max-w-sm"
+      />
+    </template>
+    <p v-else-if="loading" class="mt-1 text-sm text-gray-500" role="status">
       Загрузка файлов…
     </p>
     <div v-else-if="error" class="mt-1">
@@ -61,21 +127,38 @@ function toggle(id: number, checked: boolean) {
         :accessible-name="label"
         searchable
         teleport-menu
-        :disabled="disabled"
+        :disabled="disabled || upload.uploading.value"
         @update:model-value="
           emit('update:modelValue', $event ? Number($event) : null)
         "
       />
+      <UiImagePreview
+        v-if="inlineUpload"
+        :url="preview?.thumbnail_url || preview?.url || null"
+        :alt="preview?.alt || label"
+        class="mt-2 max-w-sm"
+      />
       <MediaImagePreview
-        v-if="options.find((item) => item.id === modelValue)"
-        :url="
-          options.find((item) => item.id === modelValue)?.thumbnail_url ||
-          options.find((item) => item.id === modelValue)?.url ||
-          null
-        "
-        :alt="options.find((item) => item.id === modelValue)?.alt || label"
+        v-else-if="preview"
+        :url="preview.thumbnail_url || preview.url"
+        :alt="preview.alt || label"
         class="mt-2 h-20 w-20 max-w-full"
       />
+      <p
+        v-if="modelValue && !preview"
+        class="mt-1 text-sm text-gray-500"
+        role="status"
+      >
+        Выбранный файл #{{ modelValue }} отсутствует в доступном списке.
+        Выберите другой файл или обновите список.
+      </p>
+      <p
+        v-if="!options.length"
+        class="mt-1 text-sm text-gray-500"
+        role="status"
+      >
+        Изображений пока нет.
+      </p>
     </template>
     <div
       v-else
@@ -108,7 +191,71 @@ function toggle(id: number, checked: boolean) {
         >
       </div>
     </div>
-    <p class="mt-1 text-xs text-gray-500">
+    <div
+      v-if="canManage && inlineUpload"
+      class="mt-4 space-y-3 rounded-lg border border-gray-200 p-3"
+    >
+      <label class="block text-sm font-medium text-gray-700"
+        >Загрузить файл — {{ label }}
+        <input
+          :key="upload.inputKey.value"
+          type="file"
+          :accept="
+            kind === 'image'
+              ? 'image/jpeg,image/png,image/webp'
+              : 'application/pdf'
+          "
+          :disabled="disabled || upload.uploading.value"
+          class="mt-2 block w-full min-w-0 text-sm"
+          @change="upload.choose"
+        />
+      </label>
+      <template v-if="upload.file.value">
+        <UiField label="Название файла" required
+          ><UiInput
+            v-model="upload.title.value"
+            maxlength="255"
+            :disabled="disabled || upload.uploading.value"
+        /></UiField>
+        <UiField
+          v-if="kind === 'image'"
+          label="Описание загружаемого изображения"
+          required
+          ><UiInput
+            v-model="upload.alt.value"
+            maxlength="255"
+            :disabled="disabled || upload.uploading.value"
+        /></UiField>
+        <UiButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          :loading="upload.uploading.value"
+          :disabled="disabled"
+          @click="upload.upload"
+          >Загрузить и выбрать</UiButton
+        >
+        <UiButton
+          type="button"
+          variant="ghost"
+          size="sm"
+          :disabled="upload.uploading.value"
+          @click="upload.cancel"
+          >Отменить выбор файла</UiButton
+        >
+      </template>
+      <p v-if="upload.error.value" class="text-sm text-error-600" role="alert">
+        {{ upload.error.value }}
+      </p>
+      <p
+        v-if="upload.success.value"
+        class="text-sm text-gray-600"
+        role="status"
+      >
+        {{ upload.success.value }}
+      </p>
+    </div>
+    <p v-else-if="canManage" class="mt-1 text-xs text-gray-500">
       Загрузка новых файлов доступна в разделе «Медиатека».
     </p>
   </div>

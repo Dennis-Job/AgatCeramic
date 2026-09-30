@@ -67,7 +67,7 @@ architecture gate.
 
 | Phase | Не реализовано | Зависимость |
 | --- | --- | --- |
-| 7 — Content | `TASK-090`–`TASK-096`, `TASK-C001`–`TASK-C002` реализованы. Редактор блоков/медиа, отдельное общее оформление и точный Nuxt-предпросмотр остаются в `TASK-C003`–`TASK-C005`. | Категории и бренды используют managed media FK, документы — отдельные ordered associations. Внешние URL старых баннеров остаются fallback до явной замены. |
+| 7 — Content | `TASK-090`–`TASK-096`, `TASK-C001`–`TASK-C003` реализованы. Страницы имеют редактор блоков и контекстных медиа/баннеров/слайдеров. Отдельное общее оформление и точный Nuxt-предпросмотр остаются в `TASK-C004`–`TASK-C005`. | Категории и бренды используют managed media FK, документы — отдельные ordered associations. Внешние URL старых баннеров остаются fallback до явной замены. |
 | 8 — SEO | Managed metadata, canonical, sitemap, robots, redirects, structured data и AI drafts. | SEO использует managed media для OG image; slug остаётся Catalog-owned. |
 | 9 — Analytics | Orders/paid sales dashboards и reports. | Использует order `paid_at`, не только `created_at`. |
 | 10 — Client | Страницы категорий/товаров, cart, checkout, confirmation и полный managed SEO. Главная, контакты, о нас и первая публичная страница каталога с реальными товарами уже готовы. | Использует существующие API contracts без дублирования business logic. |

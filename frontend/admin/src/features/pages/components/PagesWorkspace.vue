@@ -17,6 +17,7 @@ import type { ContentPage } from '../types/page.types'
 import HomePageWorkspace from '../../homepage/components/HomePageWorkspace.vue'
 import PageFormDialog from './PageFormDialog.vue'
 import { systemPageSlugs } from '../validation/page'
+import PageBlocksEditor from './PageBlocksEditor.vue'
 
 const pages = usePages()
 const route = useRoute()
@@ -25,6 +26,7 @@ const deleting = ref<ContentPage | null>(null)
 const fetchedPage = ref<ContentPage | null>(null)
 const selectedLoading = ref(false)
 const selectedError = ref('')
+const blocksPending = ref(false)
 const isHomeSelected = computed(() => route.query.page === 'home')
 const selectedId = computed(() => {
   const value = route.query.page
@@ -33,9 +35,14 @@ const selectedId = computed(() => {
 })
 const selectedPage = computed(
   () =>
-    pages.items.value.find((page) => page.id === selectedId.value) ??
-    fetchedPage.value,
+    fetchedPage.value ??
+    pages.items.value.find((page) => page.id === selectedId.value),
 )
+function blocksSaved(page: ContentPage): void {
+  fetchedPage.value = page
+  const index = pages.items.value.findIndex((item) => item.id === page.id)
+  if (index !== -1) pages.items.value[index] = page
+}
 const contentPages = computed(() =>
   pages.items.value.filter((page) => page.slug !== 'home'),
 )
@@ -89,11 +96,13 @@ async function removeSelected(): Promise<void> {
 
 async function submitPage(): Promise<void> {
   const saved = await pages.submit()
-  if (saved)
+  if (saved) {
+    blocksSaved(saved)
     await router.replace({
       path: '/content',
       query: { ...route.query, page: String(saved.id) },
     })
+  }
 }
 
 async function publishSelected(withdraw = false): Promise<void> {
@@ -135,7 +144,7 @@ onMounted(() => pages.load())
             size="sm"
             variant="secondary"
             aria-label="Добавить страницу"
-            :disabled="pages.busy.value"
+            :disabled="pages.busy.value || blocksPending"
             @click="pages.openEditor()"
             ><Plus :size="17" aria-hidden="true"
           /></UiButton>
@@ -222,13 +231,14 @@ onMounted(() => pages.load())
           class="mt-2"
           size="sm"
           variant="secondary"
+          :disabled="blocksPending"
           @click="pages.load()"
           >Повторить загрузку</UiButton
         >
         <UiPagination
           v-if="pages.pagination.value"
           :meta="pages.pagination.value"
-          :loading="pages.loading.value"
+          :loading="pages.loading.value || blocksPending"
           @change="pages.load"
         />
       </UiCard>
@@ -276,8 +286,9 @@ onMounted(() => pages.load())
                 size="sm"
                 :loading="pages.busy.value"
                 :disabled="
-                  selectedPage.is_published &&
-                  !selectedPage.has_unpublished_changes
+                  blocksPending ||
+                  (selectedPage.is_published &&
+                    !selectedPage.has_unpublished_changes)
                 "
                 @click="publishSelected()"
                 >Опубликовать черновик</UiButton
@@ -286,7 +297,7 @@ onMounted(() => pages.load())
                 v-if="selectedPage.is_published"
                 variant="secondary"
                 size="sm"
-                :disabled="pages.busy.value"
+                :disabled="pages.busy.value || blocksPending"
                 @click="publishSelected(true)"
                 >Снять с публикации</UiButton
               >
@@ -294,7 +305,7 @@ onMounted(() => pages.load())
                 variant="ghost"
                 size="sm"
                 :aria-label="`Редактировать страницу ${selectedPage.title}`"
-                :disabled="pages.busy.value"
+                :disabled="pages.busy.value || blocksPending"
                 @click="pages.openEditor(selectedPage)"
                 ><Pencil :size="17" aria-hidden="true" />Редактировать</UiButton
               >
@@ -303,7 +314,7 @@ onMounted(() => pages.load())
                 variant="danger-ghost"
                 size="sm"
                 :aria-label="`Удалить страницу ${selectedPage.title}`"
-                :disabled="pages.busy.value"
+                :disabled="pages.busy.value || blocksPending"
                 @click="confirmDelete(selectedPage)"
                 ><Trash2 :size="17" aria-hidden="true"
               /></UiButton>
@@ -312,9 +323,17 @@ onMounted(() => pages.load())
           <UiAlert v-if="pages.publishError.value" class="mt-4" role="alert">{{
             pages.publishError.value
           }}</UiAlert>
-          <p class="mt-5 whitespace-pre-wrap break-words text-sm text-gray-700">
+          <p
+            v-if="!selectedPage.blocks?.length"
+            class="mt-5 whitespace-pre-wrap break-words text-sm text-gray-700"
+          >
             {{ selectedPage.body }}
           </p>
+          <PageBlocksEditor
+            :page="selectedPage"
+            @saved="blocksSaved"
+            @pending="blocksPending = $event"
+          />
         </UiCard>
         <div v-else-if="selectedError">
           <UiAlert role="alert">{{ selectedError }}</UiAlert>

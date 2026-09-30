@@ -19,6 +19,7 @@ const props = defineProps<{
   options: Banner[]
   optionsLoading: boolean
   optionsError: string
+  suspended?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -43,6 +44,7 @@ watch(
     :open="open"
     labelledby="slider-dialog-title"
     :close-disabled="busy"
+    :suspended="suspended"
     panel-class="w-full max-w-2xl"
     @close="emit('close')"
   >

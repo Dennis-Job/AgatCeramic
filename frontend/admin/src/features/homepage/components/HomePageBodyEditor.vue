@@ -5,12 +5,35 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
-import type { HomePageContent } from '../types/homepage.types'
+import type { BodyContent } from '../../pages/types/block.types'
 
 defineProps<{
-  content: HomePageContent
+  content: BodyContent
   section: 'marquee' | 'categories' | 'materials' | 'promo' | 'about' | 'guide'
+  inlineUpload?: boolean
 }>()
+const emit = defineEmits<{
+  pending: [value: boolean]
+  uploading: [value: boolean]
+}>()
+const pendingFields = new Map<object, boolean>()
+const uploadingFields = new Map<object, boolean>()
+const itemKeys = new WeakMap<object, string>()
+function itemKey(item: object): string {
+  let key = itemKeys.get(item)
+  if (!key) {
+    key = crypto.randomUUID()
+    itemKeys.set(item, key)
+  }
+  return key
+}
+function mediaState(key: object, value: boolean, uploading = false): void {
+  const states = uploading ? uploadingFields : pendingFields
+  states.set(key, value)
+  const active = [...states.values()].some(Boolean)
+  if (uploading) emit('uploading', active)
+  else emit('pending', active)
+}
 
 function move<T>(items: T[], index: number, offset: -1 | 1): void {
   const next = index + offset
@@ -91,7 +114,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     /></UiField>
     <div
       v-for="(item, index) in content.categories.items"
-      :key="item.id || index"
+      :key="itemKey(item)"
       class="space-y-4 rounded-xl border border-gray-200 p-4"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -141,8 +164,12 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
       /></UiField>
       <MediaReferenceField
         kind="image"
+        :inline-upload="inlineUpload"
+        require-manage-permission
         :label="`Изображение материала ${index + 1}`"
         :model-value="item.image_media_id"
+        @pending="mediaState(item, $event)"
+        @uploading="mediaState(item, $event, true)"
         @update:model-value="
           item.image_media_id = Array.isArray($event) ? null : $event
         "
@@ -234,8 +261,12 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     /></UiField>
     <MediaReferenceField
       kind="image"
+      :inline-upload="inlineUpload"
+      require-manage-permission
       label="Изображение блока"
       :model-value="content.about.image_media_id"
+      @pending="mediaState(content.about, $event)"
+      @uploading="mediaState(content.about, $event, true)"
       @update:model-value="
         content.about.image_media_id = Array.isArray($event) ? null : $event
       "
