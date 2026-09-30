@@ -61,6 +61,14 @@ npx playwright test e2e/homepage.spec.ts e2e/pages.spec.ts --workers=1
 UI Guard оценил SSR/hydration/axe по исходникам и результатам E2E исполнителя; самостоятельный
 запуск тестов ревьюером не выполнялся. Визуальные E2E используют синтетические fixtures.
 
+После отправки `2dd0b49` семь из восьми jobs GitHub Actions прошли. В Admin E2E прошли
+157 сценариев; четыре visual baseline `/content` не совпали из-за изменённой подсказки
+о черновике и отдельной публикации. Обновлены только эти снимки для Linux и Windows.
+Сравнение изображений подтвердило, что изменения ограничены текстом подсказки; UI и
+pixel-diff threshold не менялись. В обоих окружениях пять профильных baseline/responsive
+сценариев прошли при обновлении и повторном запуске без перезаписи снимков. Полный CI
+повторяется после отдельного исправляющего коммита.
+
 ## Границы и эксплуатация
 
 Редактор произвольных блоков/медиа остаётся `TASK-C003`, отдельная рабочая область общего
@@ -73,7 +81,8 @@ UI Guard оценил SSR/hydration/axe по исходникам и резул�
 Откат приложения сохраняет дополнительные поля/таблицу; полный downgrade схемы требует
 проверенного восстановления резервной копии до миграции. См. план перехода OpenAPI.
 
-Коммит не создавался. Артефакты браузерных проверок находятся в игнорируемых
+Реализация отправлена в `main` коммитом `2dd0b49` по отдельному запросу пользователя.
+Артефакты браузерных проверок находятся в игнорируемых
 `.tmp/client-e2e/` и `frontend/admin/test-results/`.
 
 ## Изменённые файлы
@@ -113,6 +122,14 @@ UI Guard оценил SSR/hydration/axe по исходникам и резул�
 - [docs/openapi.json](../docs/openapi.json)
 - [frontend/admin/e2e/homepage.spec.ts](../frontend/admin/e2e/homepage.spec.ts)
 - [frontend/admin/e2e/pages.spec.ts](../frontend/admin/e2e/pages.spec.ts)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-chromium-linux.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-chromium-linux.png)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-chromium-win32.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-chromium-win32.png)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-empty-chromium-linux.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-empty-chromium-linux.png)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-empty-chromium-win32.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-empty-chromium-win32.png)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-error-chromium-linux.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-error-chromium-linux.png)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-error-chromium-win32.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-error-chromium-win32.png)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-loading-chromium-linux.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-loading-chromium-linux.png)
+- [frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-loading-chromium-win32.png](../frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-content-loading-chromium-win32.png)
 - [frontend/admin/src/features/homepage/components/HomePageWorkspace.vue](../frontend/admin/src/features/homepage/components/HomePageWorkspace.vue)
 - [frontend/admin/src/features/homepage/composables/useHomePage.ts](../frontend/admin/src/features/homepage/composables/useHomePage.ts)
 - [frontend/admin/src/features/homepage/services/homepage.ts](../frontend/admin/src/features/homepage/services/homepage.ts)
