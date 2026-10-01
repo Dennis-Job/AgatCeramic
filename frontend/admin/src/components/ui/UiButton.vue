@@ -16,8 +16,8 @@ const classes = computed(() => [
   props.size === 'sm'
     ? 'min-h-[var(--admin-control-height-sm)] px-3 py-1.5 text-xs'
     : props.size === 'lg'
-      ? 'min-h-[var(--admin-control-height-lg)] px-5 py-3 text-base'
-      : 'min-h-[var(--admin-control-height-md)] px-4 py-2.5 text-sm',
+      ? 'min-h-[var(--admin-control-height-lg)] px-5 py-2 text-base'
+      : 'min-h-[var(--admin-control-height-md)] px-4 py-1.5 text-sm',
   props.variant === 'primary'
     ? 'bg-primary-500 text-white hover:bg-primary-600 disabled:bg-gray-500 disabled:hover:bg-gray-500'
     : props.variant === 'danger'
@@ -25,7 +25,7 @@ const classes = computed(() => [
       : props.variant === 'danger-ghost'
         ? 'text-error-500 hover:bg-error-50 hover:text-error-700 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
         : props.variant === 'secondary'
-          ? 'border border-gray-300 text-gray-600 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200 disabled:hover:bg-gray-50 disabled:hover:text-gray-500'
+          ? 'border border-transparent bg-gray-50 text-gray-900 hover:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100 disabled:hover:text-gray-500'
           : 'text-gray-600 hover:bg-gray-50 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500',
   attrs.class,
 ])

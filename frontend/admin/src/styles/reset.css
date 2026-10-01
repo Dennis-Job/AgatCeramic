@@ -19,7 +19,7 @@ select:disabled {
   cursor: not-allowed;
 }
 button:focus-visible,
-input:focus-visible,
+input:not([data-composite-control]):focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   outline: var(--admin-focus-outline-width) solid var(--admin-color-primary-500);

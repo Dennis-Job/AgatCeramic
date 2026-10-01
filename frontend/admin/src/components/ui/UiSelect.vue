@@ -204,7 +204,7 @@ onBeforeUnmount(() => {
     <button
       ref="triggerButton"
       type="button"
-      class="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
+      class="flex min-h-[var(--admin-control-height-md)] w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
       :aria-expanded="isOpen"
       :aria-controls="isOpen ? menuId : undefined"
       :aria-label="accessibleName"
@@ -242,7 +242,7 @@ onBeforeUnmount(() => {
         :id="menuId"
         ref="menu"
         :data-floating-select-menu="teleportMenu ? '' : undefined"
-        class="rounded-lg border border-gray-100 bg-white py-1 shadow-dropdown"
+        class="rounded-xl border border-gray-200 bg-white py-1 shadow-dropdown"
         :class="
           teleportMenu
             ? 'fixed z-[70] overflow-x-hidden overflow-y-auto'

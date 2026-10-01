@@ -1,35 +1,37 @@
 :root {
   --admin-font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
   --admin-font-display: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --admin-logo-filter: brightness(0) saturate(100%) invert(26%) sepia(98%)
+    saturate(5098%) hue-rotate(215deg) brightness(101%) contrast(105%);
 
-  --admin-color-primary-25: #f2f7ff;
-  --admin-color-primary-50: #ecf3ff;
-  --admin-color-primary-100: #dde9ff;
-  --admin-color-primary-200: #c2d6ff;
-  --admin-color-primary-300: #9cb9ff;
-  --admin-color-primary-400: #7592ff;
-  --admin-color-primary-500: #465fff;
-  --admin-color-primary-600: #3641f5;
-  --admin-color-primary-700: #2a31d8;
-  --admin-color-primary-800: #252dae;
-  --admin-color-primary-900: #262e89;
-  --admin-color-primary-950: #161950;
+  --admin-color-primary-25: #f5f9ff;
+  --admin-color-primary-50: #ebf4ff;
+  --admin-color-primary-100: #d9eaff;
+  --admin-color-primary-200: #bad5ff;
+  --admin-color-primary-300: #8ab6ff;
+  --admin-color-primary-400: #4d8fff;
+  --admin-color-primary-500: #005bff;
+  --admin-color-primary-600: #0050e0;
+  --admin-color-primary-700: #0044c2;
+  --admin-color-primary-800: #00389e;
+  --admin-color-primary-900: #003080;
+  --admin-color-primary-950: #001c52;
 
   --admin-color-white: #ffffff;
-  --admin-color-page: #f7f9fc;
-  --admin-color-gray-25: #fcfcfd;
-  --admin-color-gray-50: #f9fafb;
-  --admin-color-gray-100: #f2f4f7;
-  --admin-color-gray-200: #e4e7ec;
-  --admin-color-gray-300: #d0d5dd;
-  --admin-color-gray-400: #667085;
-  --admin-color-gray-500: #475467;
-  --admin-color-gray-600: #344054;
-  --admin-color-gray-700: #1d2939;
-  --admin-color-gray-800: #101828;
-  --admin-color-gray-900: #0c111d;
-  --admin-color-gray-950: #070b12;
-  --admin-color-gray-dark: #1a2231;
+  --admin-color-page: #ffffff;
+  --admin-color-gray-25: #fafcff;
+  --admin-color-gray-50: #f5f7fa;
+  --admin-color-gray-100: #eef2f6;
+  --admin-color-gray-200: #e3e9f1;
+  --admin-color-gray-300: #c7d1df;
+  --admin-color-gray-400: #5e6f83;
+  --admin-color-gray-500: #52657a;
+  --admin-color-gray-600: #354a60;
+  --admin-color-gray-700: #233548;
+  --admin-color-gray-800: #172635;
+  --admin-color-gray-900: #111820;
+  --admin-color-gray-950: #080f17;
+  --admin-color-gray-dark: #172635;
   --admin-color-text: var(--admin-color-gray-900);
 
   --admin-color-success-25: #f6fef9;
@@ -97,24 +99,23 @@
 
   --admin-radius-md: 0.375rem;
   --admin-radius-lg: 0.5rem;
-  --admin-radius-xl: 0.75rem;
-  --admin-radius-2xl: 1rem;
+  --admin-radius-xl: 1rem;
+  --admin-radius-2xl: 1.25rem;
 
   --admin-control-height-sm: 2rem;
-  --admin-control-height-md: 2.625rem;
-  --admin-control-height-lg: 3rem;
+  --admin-control-height-md: 2.25rem;
+  --admin-control-height-lg: 2.5rem;
   --admin-border-width: 1px;
   --admin-border-default: var(--admin-border-width) solid
     var(--admin-color-gray-300);
 
-  --admin-shadow-card: 0 1px 2px rgb(16 24 40 / 0.04);
-  --admin-shadow-input: 0 1px 2px rgb(16 24 40 / 0.05);
-  --admin-shadow-dialog: 0 8px 24px rgb(16 24 40 / 0.08);
-  --admin-shadow-dropdown: 0 12px 20px rgb(16 24 40 / 0.12);
-  --admin-shadow-sm:
-    0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --admin-shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  /* Keep Tailwind's composed focus shadows valid while removing surface shadows. */
+  --admin-shadow-card: 0 0 0 0 rgb(0 0 0 / 0);
+  --admin-shadow-input: 0 0 0 0 rgb(0 0 0 / 0);
+  --admin-shadow-dialog: 0 8px 32px rgb(35 53 72 / 0.1);
+  --admin-shadow-dropdown: 0 4px 24px rgb(35 53 72 / 0.12);
+  --admin-shadow-sm: 0 2px 8px rgb(35 53 72 / 0.06);
+  --admin-shadow-xl: 0 12px 40px rgb(35 53 72 / 0.14);
 
   --admin-transition-duration: 150ms;
   --admin-transition-timing: ease;

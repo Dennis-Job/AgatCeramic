@@ -35,7 +35,7 @@ function clear(): void {
         ? 'cursor-not-allowed border-gray-200 bg-gray-50'
         : 'border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2',
     ]"
-    class="flex w-full min-w-0 items-center gap-2 rounded-lg border px-3 shadow-input transition"
+    class="flex min-h-[var(--admin-control-height-md)] w-full min-w-0 items-center gap-2 rounded-lg border px-3 shadow-input transition"
   >
     <Search
       v-if="searchable"
@@ -45,10 +45,11 @@ function clear(): void {
       aria-hidden="true"
     />
     <input
+      data-composite-control
       v-bind="inputAttrs"
       :value="modelValue"
       :type="type"
-      class="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-gray-700 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:text-gray-500"
+      class="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-gray-700 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:text-gray-500"
       @input="updateValue(($event.target as HTMLInputElement).value)"
     />
     <button

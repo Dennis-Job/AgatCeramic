@@ -10,7 +10,8 @@ Admin — Vue 3 SPA на TypeScript, Vite, Vue Router, Pinia и Tailwind CSS. А
 оставаться простой для сопровождения, редизайна и расширения. Соблюдать SOLID, DRY, KISS,
 разделение ответственности и тестируемость без необоснованных enterprise-абстракций.
 
-Текущий UI-kit и design tokens проекта являются визуальным source of truth. TailAdmin можно
+Текущий Seller UI-kit и design tokens проекта являются визуальным source of truth. Направление задано
+[`docs/ADMIN_SELLER_REDESIGN_PLAN.md`](../../docs/ADMIN_SELLER_REDESIGN_PLAN.md). TailAdmin можно
 использовать только как исторический контекст.
 
 Для управления публичными страницами, блоками, общим оформлением и медиа также обязателен
@@ -107,7 +108,7 @@ Native control допустим внутри реализации соответ
 - Не добавлять произвольные повторяющиеся цвета, размеры, радиусы, тени и transitions в feature,
   если значение должно быть глобальным token.
 - Component-specific стили могут оставаться рядом с компонентом.
-- Сохранять TailAdmin-derived визуальный язык текущего UI-kit.
+- Соблюдать Seller-визуальный контракт текущего UI-kit: белые поверхности, яркий синий акцент и компактные controls. Прежнюю типографику Nunito/Poppins сохранять по указанию владельца. Размеры и цвета задавать через общие tokens.
 
 ## Accessibility и responsive
 

@@ -180,6 +180,7 @@ const radiusTokens = ['md', 'lg', 'xl', '2xl']
 const controlHeightTokens = ['sm', 'md', 'lg']
 const shadowTokens = ['card', 'input', 'dialog', 'dropdown', 'sm', 'xl']
 const foundationMetaTokens = [
+  '--admin-logo-filter',
   '--admin-spacing-unit',
   '--admin-border-width',
   '--admin-focus-outline-width',
@@ -262,7 +263,7 @@ function submitAuthPreview(): void {
     <PageHeader
       eyebrow="Разработка"
       title="UI-kit"
-      description="Живой каталог UI primitives, shared-компонентов, их состояний и design tokens. Используйте эти компоненты в новых экранах вместо локальных копий."
+      description="Визуальная система Seller: белые поверхности, синий акцент и компактные controls. Общие компоненты, их состояния и design tokens для всех экранов Admin."
     >
       <template #actions>
         <UiButton
@@ -388,13 +389,13 @@ function submitAuthPreview(): void {
         eyebrow, description и actions slot.
       </p>
       <div class="mt-4 grid gap-4 md:grid-cols-2">
-        <UiCard class="bg-gray-25">
+        <UiCard>
           <h3 class="font-semibold text-gray-900">Card с отступами</h3>
           <p class="mt-1 text-sm text-gray-500">
             <code>padded=true</code> по умолчанию.
           </p>
         </UiCard>
-        <UiCard :padded="false" class="overflow-hidden bg-gray-25">
+        <UiCard :padded="false" class="overflow-hidden">
           <div
             class="border-b border-gray-200 px-5 py-3 font-semibold text-gray-900"
           >
@@ -402,6 +403,13 @@ function submitAuthPreview(): void {
           </div>
           <p class="px-5 py-4 text-sm text-gray-500">
             <code>padded=false</code> для таблиц и кастомных секций.
+          </p>
+        </UiCard>
+        <UiCard surface="muted" class="md:col-span-2">
+          <h3 class="font-semibold text-gray-900">Светлая поверхность</h3>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>surface=muted</code> для показателей и вспомогательных блоков.
+            Карточка без тени; основной текст сохраняет читаемый контраст.
           </p>
         </UiCard>
       </div>

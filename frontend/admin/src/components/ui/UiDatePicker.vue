@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="relative w-full min-w-0">
     <div
-      class="flex h-11 items-center rounded-lg border px-3 shadow-theme-xs transition"
+      class="flex min-h-[var(--admin-control-height-md)] items-center rounded-lg border px-3 shadow-theme-xs transition"
       :class="
         disabled
           ? 'cursor-not-allowed border-gray-200 bg-gray-50'
@@ -227,6 +227,7 @@ onBeforeUnmount(() => {
       />
       <input
         ref="input"
+        data-composite-control
         :value="typedValue"
         type="text"
         inputmode="numeric"

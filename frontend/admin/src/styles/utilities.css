@@ -30,8 +30,7 @@
   min-width: 850px;
 }
 .logo-primary {
-  filter: brightness(0) saturate(100%) invert(28%) sepia(98%) saturate(3000%)
-    hue-rotate(231deg) brightness(95%) contrast(101%);
+  filter: var(--admin-logo-filter);
 }
 @media (max-width: 639px) {
   .admin-dialog-content .mt-3.flex.gap-2 {
