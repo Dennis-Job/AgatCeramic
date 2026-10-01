@@ -7,6 +7,8 @@ type Panel = 'menu' | 'search' | null
 const props = defineProps<{
   content?: HomePageContent['header']
   tagline?: string
+  currentPath?: string
+  navigationLabel?: string
 }>()
 const navigation = computed(() => props.content?.navigation ?? [])
 
@@ -14,7 +16,7 @@ const route = useRoute()
 function isCurrent(to: string): boolean {
   const [path, hash] = to.split('#')
   return (
-    path === route.path &&
+    path === (props.currentPath ?? route.path) &&
     (!hash || `#${hash}` === route.hash || (!route.hash && hash === 'home'))
   )
 }
@@ -125,7 +127,7 @@ onUnmounted(() => {
       <nav
         v-if="navigation.length && navigation.length <= 4"
         class="site-nav"
-        aria-label="Основная навигация"
+        :aria-label="navigationLabel || 'Основная навигация'"
       >
         <NuxtLink
           v-for="link in navigation"

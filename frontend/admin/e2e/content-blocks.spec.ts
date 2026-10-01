@@ -415,7 +415,7 @@ test('material code edits and reordering preserve the selected upload file', asy
   ).toBeEnabled()
 })
 
-test('homepage block URL restores selection, preserves block edits, and refreshes legacy saves', async ({
+test('homepage block URL restores selection and preserves canonical block edits', async ({
   page,
 }) => {
   const state = await fixture(page)
@@ -513,28 +513,82 @@ test('homepage block URL restores selection, preserves block edits, and refreshe
   await expect(page.getByRole('textbox', { name: /^Заголовок/ })).toHaveValue(
     'Редактированное промо',
   )
-  await page.getByRole('button', { name: 'Промо', exact: true }).click()
-  await page
-    .getByRole('textbox', { name: /^Заголовок/ })
-    .fill('Промо из прежнего редактора')
-  await page
-    .getByRole('button', { name: 'Сохранить черновик раздела', exact: true })
-    .click()
   await expect(
-    page.getByText(
-      'Черновик раздела сохранён. Для обновления сайта опубликуйте страницу.',
-    ),
-  ).toBeVisible()
-  await page
-    .getByRole('button', { name: 'Блоки и порядок', exact: true })
-    .click()
-  await expect(page.getByRole('textbox', { name: /^Заголовок/ })).toHaveValue(
-    'Промо из прежнего редактора',
-  )
+    page.getByRole('button', { name: 'Блоки и порядок', exact: true }),
+  ).toHaveCount(0)
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.screenshot({
     path: test.info().outputPath('home-blocks.png'),
     fullPage: true,
     animations: 'disabled',
+  })
+})
+
+test('home block and SEO files retain independent pending guards until both are discarded', async ({
+  page,
+}) => {
+  const state = await fixture(page)
+  const data = blankBlockData()
+  state.stored().slug = 'home'
+  state.stored().title = 'Главная'
+  state.stored().blocks = [
+    { id: 'about', type: 'about', enabled: true, data: data.about },
+  ]
+  state.stored().seo = {
+    title: 'Главная',
+    description: '',
+    og_title: '',
+    og_description: '',
+    og_image_url: '',
+    og_image_media_id: null,
+  }
+  await page.route('**/api/v1/admin/home-page', (route) =>
+    route.fulfill({ json: { data: { page_id: 7 } } }),
+  )
+  await page.goto('/content?page=home&block=about')
+  const block = page.getByRole('region', { name: 'Настройки: О проекте' })
+  const seo = page.getByRole('group', { name: 'SEO страницы' })
+  await block
+    .getByRole('textbox', { name: /^Заголовок/ })
+    .fill('Новый заголовок блока')
+  const save = page.getByRole('button', {
+    name: 'Сохранить черновик блоков',
+    exact: true,
+  })
+  await expect(save).toBeEnabled()
+  const file = {
+    name: 'preview.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('selected-file'),
+  }
+  for (const first of ['seo', 'block']) {
+    await block
+      .getByLabel('Загрузить файл — Изображение блока')
+      .setInputFiles(file)
+    await seo
+      .getByLabel('Загрузить файл — Изображение Open Graph')
+      .setInputFiles(file)
+    await expect(save).toBeDisabled()
+    await (first === 'seo' ? seo : block)
+      .getByRole('button', { name: 'Отменить выбор файла', exact: true })
+      .click()
+    await expect(save).toBeDisabled()
+    await expect(
+      (first === 'seo' ? block : seo).getByRole('button', {
+        name: 'Отменить выбор файла',
+        exact: true,
+      }),
+    ).toBeVisible()
+    await expect(
+      page.getByText('Несохранённые изменения ещё не вошли в предпросмотр.'),
+    ).toBeVisible()
+    await (first === 'seo' ? block : seo)
+      .getByRole('button', { name: 'Отменить выбор файла', exact: true })
+      .click()
+    await expect(save).toBeEnabled()
+  }
+  await page.screenshot({
+    path: test.info().outputPath('home-independent-files.png'),
+    fullPage: true,
   })
 })

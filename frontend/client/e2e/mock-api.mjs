@@ -82,8 +82,26 @@ const home = {
 let scenario = 'default'
 createServer(async (request, response) => {
   response.setHeader('Content-Type', 'application/json; charset=utf-8')
-  response.setHeader('Access-Control-Allow-Origin', '*')
+  response.setHeader(
+    'Access-Control-Allow-Origin',
+    process.env.CLIENT_TEST_ORIGIN || 'http://127.0.0.1:3015',
+  )
+  response.setHeader('Access-Control-Allow-Credentials', 'true')
+  response.setHeader('Access-Control-Allow-Headers', 'Accept')
+  if (request.method === 'OPTIONS') {
+    response.end()
+    return
+  }
   const url = new URL(request.url, 'http://127.0.0.1:8015')
+  if (url.pathname === '/__editor') {
+    const clientOrigin =
+      process.env.CLIENT_TEST_ORIGIN || 'http://127.0.0.1:3015'
+    response.setHeader('Content-Type', 'text/html; charset=utf-8')
+    response.end(
+      `<!doctype html><html lang="ru"><head><title>Редактор</title></head><body><h1>Редактор</h1><iframe title="Черновик" referrerpolicy="no-referrer" src="${clientOrigin}/preview/about" width="1280" height="720"></iframe></body></html>`,
+    )
+    return
+  }
   if (url.pathname === '/__scenario') {
     scenario = url.searchParams.get('name') || 'default'
     response.end('{}')
@@ -94,6 +112,89 @@ createServer(async (request, response) => {
     response.end(JSON.stringify({ message: 'Test response' }))
   }
   const send = (payload) => response.end(JSON.stringify(payload))
+  if (url.pathname.startsWith('/api/v1/admin/content-preview/')) {
+    response.setHeader('Cache-Control', 'private, no-store')
+    if (!request.headers.cookie?.includes('preview_test_session=employee'))
+      return fail(401)
+    if (scenario === 'preview-revoked') return fail(403)
+    if (scenario === 'preview-error') return fail(503)
+    if (scenario === 'preview-missing') return fail(404)
+    const slug = url.pathname.split('/').at(-1)
+    const blocks =
+      slug === 'home'
+        ? home.blocks.map((block) =>
+            block.type === 'hero'
+              ? {
+                  ...block,
+                  data: {
+                    ...block.data,
+                    slides: [
+                      slides[0],
+                      {
+                        ...slides[0],
+                        id: 2,
+                        title: 'Второй сохранённый слайд',
+                      },
+                    ],
+                  },
+                }
+              : block,
+          )
+        : slug === 'catalog'
+          ? [
+              {
+                id: 'catalog',
+                type: 'catalog',
+                enabled: true,
+                data: {
+                  title: 'Материалы',
+                  description: 'Опубликованные товары',
+                },
+              },
+            ]
+          : slug === 'contacts'
+            ? [
+                {
+                  id: 'stores',
+                  type: 'stores',
+                  enabled: true,
+                  data: { title: 'Наши магазины' },
+                },
+              ]
+            : []
+    return send({
+      data: {
+        page: {
+          title: 'Сохранённый черновик',
+          slug,
+          body: '',
+          blocks: [
+            ...blocks,
+            {
+              id: 'draft-text',
+              type: 'text',
+              enabled: true,
+              data: {
+                title: 'Сохранённый текст черновика',
+                body: 'Черновик <script>window.unsafe = true</script>',
+              },
+            },
+            {
+              id: 'draft-hidden',
+              type: 'text',
+              enabled: false,
+              data: { title: 'Выключенный блок черновика', body: '' },
+            },
+          ],
+          seo: { ...seo, title: 'Сохранённый черновик' },
+        },
+        appearance: {
+          header: { ...home.header, topbar_left: 'Черновая шапка' },
+          footer: home.footer,
+        },
+      },
+    })
+  }
   if (url.pathname === '/api/v1/site-appearance') {
     if (scenario === 'appearance-error') return fail(503)
     const longNavigation = [

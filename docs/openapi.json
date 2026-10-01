@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v4.1",
+        "version": "v4.2",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -13,6 +13,155 @@
     ],
     "security": [],
     "paths": {
+        "/admin/content-preview/{slug}": {
+            "get": {
+                "operationId": "getAdminContentPreview",
+                "summary": "Get saved page and global appearance drafts for Nuxt preview",
+                "description": "Requires an active Sanctum session and content.manage on every request. Uses the current draft slug, including unpublished or withdrawn pages. Enabled saved blocks, media, SEO and published shared slider/banner dependencies resolve like public rendering. Does not write or publish content. Browser requests must include credentials and an allowed Origin or origin-only Referer.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Current saved draft slug; home selects the canonical synchronized home draft."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Saved draft projection",
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Private response; never cache a saved draft or authorization error.",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "private, no-store, no-cache, max-age=0"
+                                }
+                            },
+                            "X-Robots-Tag": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "noindex, nofollow"
+                                }
+                            },
+                            "Referrer-Policy": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-referrer"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContentPreviewResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication is required or the supplied credentials are invalid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Private response; never cache a saved draft or authorization error.",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "private, no-store, no-cache, max-age=0"
+                                }
+                            },
+                            "X-Robots-Tag": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "noindex, nofollow"
+                                }
+                            },
+                            "Referrer-Policy": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-referrer"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "The authenticated administrator is blocked or does not have access.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Private response; never cache a saved draft or authorization error.",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "private, no-store, no-cache, max-age=0"
+                                }
+                            },
+                            "X-Robots-Tag": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "noindex, nofollow"
+                                }
+                            },
+                            "Referrer-Policy": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-referrer"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "The requested resource was not found.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiError"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "description": "Private response; never cache a saved draft or authorization error.",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "private, no-store, no-cache, max-age=0"
+                                }
+                            },
+                            "X-Robots-Tag": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "noindex, nofollow"
+                                }
+                            },
+                            "Referrer-Policy": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "no-referrer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/home-page": {
             "get": {
                 "operationId": "getPublicHomePage",
@@ -5396,6 +5545,64 @@
     },
     "components": {
         "schemas": {
+            "ContentPreview": {
+                "type": "object",
+                "required": [
+                    "page",
+                    "appearance"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                    "page": {
+                        "type": "object",
+                        "required": [
+                            "title",
+                            "slug",
+                            "body",
+                            "blocks",
+                            "seo"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "slug": {
+                                "type": "string"
+                            },
+                            "body": {
+                                "type": "string",
+                                "description": "Plain text. Render as text, never as trusted HTML."
+                            },
+                            "blocks": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/PublicPageBlock"
+                                },
+                                "maxItems": 40
+                            },
+                            "seo": {
+                                "$ref": "#/components/schemas/PageSeo"
+                            }
+                        }
+                    },
+                    "appearance": {
+                        "$ref": "#/components/schemas/SiteAppearance"
+                    }
+                }
+            },
+            "ContentPreviewResponse": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/ContentPreview"
+                    }
+                },
+                "required": [
+                    "data"
+                ],
+                "additionalProperties": false
+            },
             "HomePage": {
                 "type": "object",
                 "properties": {

@@ -7,12 +7,16 @@ import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
 import type { HomePageContent } from '../types/homepage.types'
 
 const model = defineModel<HomePageContent['seo']>({ required: true })
+const emit = defineEmits<{
+  pending: [value: boolean]
+  uploading: [value: boolean]
+}>()
 </script>
 
 <template>
   <div class="space-y-4">
     <div>
-      <h2 class="text-lg font-semibold text-gray-800">SEO главной страницы</h2>
+      <h2 class="text-lg font-semibold text-gray-800">SEO страницы</h2>
       <p class="mt-1 text-sm text-gray-500">
         Заголовок, описание и изображение для поисковых систем и социальных
         сетей.
@@ -33,10 +37,14 @@ const model = defineModel<HomePageContent['seo']>({ required: true })
     <MediaReferenceField
       kind="image"
       label="Изображение Open Graph"
+      inline-upload
+      require-manage-permission
       :model-value="model.og_image_media_id"
       @update:model-value="
         model.og_image_media_id = Array.isArray($event) ? null : $event
       "
+      @pending="emit('pending', $event)"
+      @uploading="emit('uploading', $event)"
     />
     <UiField
       label="Локальное изображение"

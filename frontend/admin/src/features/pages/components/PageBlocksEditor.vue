@@ -19,6 +19,7 @@ import type { BlockType } from '../types/block.types'
 import { blockLabels } from '../validation/blocks'
 import { usePageBlocks } from '../composables/usePageBlocks'
 import BlockSettings from './BlockSettings.vue'
+import HomePageSeoEditor from '../../homepage/components/HomePageSeoEditor.vue'
 
 const props = defineProps<{ page: ContentPage }>()
 const emit = defineEmits<{
@@ -34,6 +35,18 @@ const route = useRoute()
 const router = useRouter()
 const adding = ref<BlockType>('text')
 const removing = ref<string | null>(null)
+const blockResourceDirty = ref(false)
+const blockResourceBusy = ref(false)
+const seoResourceDirty = ref(false)
+const seoResourceBusy = ref(false)
+watch(
+  () => blockResourceDirty.value || seoResourceDirty.value,
+  (value) => (editor.resourceDirty.value = value),
+)
+watch(
+  () => blockResourceBusy.value || seoResourceBusy.value,
+  (value) => (editor.resourceBusy.value = value),
+)
 const blocks = computed(() => editor.form.value.blocks ?? [])
 const selected = computed(
   () =>
@@ -225,8 +238,8 @@ onBeforeUnmount(() => {
         :key="selected.id"
         :block="selected"
         :disabled="editor.busy.value"
-        @dirty="editor.resourceDirty.value = $event"
-        @busy="editor.resourceBusy.value = $event"
+        @dirty="blockResourceDirty = $event"
+        @busy="blockResourceBusy = $event"
       />
     </div>
     <p
@@ -236,6 +249,19 @@ onBeforeUnmount(() => {
     >
       Есть несохранённые изменения блоков. Сохраните черновик перед публикацией.
     </p>
+    <fieldset
+      v-if="page.slug === 'home' && editor.form.value.seo"
+      class="mt-6 min-w-0 border-t border-gray-200 pt-5"
+      :disabled="editor.busy.value"
+    >
+      <legend class="sr-only">SEO страницы</legend>
+      <HomePageSeoEditor
+        :key="page.id"
+        v-model="editor.form.value.seo"
+        @pending="seoResourceDirty = $event"
+        @uploading="seoResourceBusy = $event"
+      />
+    </fieldset>
     <div class="mt-6 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
       <UiButton
         :loading="editor.busy.value"

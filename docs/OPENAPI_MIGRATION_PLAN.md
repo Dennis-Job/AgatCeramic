@@ -7,6 +7,25 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v4.2 — authenticated saved-draft preview
+
+Date: 2026-10-01. TASK-C005. Additive `GET /admin/content-preview/{slug}` returns
+saved page content and global appearance drafts for the actual Nuxt renderer. The
+response is `{data: {page: {title, slug, body, blocks, seo}, appearance: {header, footer}}}`.
+Every request requires a current active Sanctum session and `content.manage`; no
+reusable public link or token is issued. Enabled blocks, media and published shared
+slider/banner dependencies use the same resolver as public page rendering.
+
+Success and error responses are private/no-store/no-cache, noindex/nofollow, with
+`Referrer-Policy: no-referrer`. Preview callers must send credentials and an allowed
+Origin or origin-only Referer for Sanctum to initialize the session. Add the Nuxt
+origin to `SANCTUM_STATEFUL_DOMAINS` and `CORS_ALLOWED_ORIGINS` when overriding them;
+local defaults and `.env.example` include localhost/127.0.0.1 port 3000. Production
+Admin, Nuxt and API must share the configured cookie site/domain.
+
+No schema/data migration or public endpoint change is required. Deploy backend before
+the preview UI. Rolling back the UI and endpoint leaves saved and published content intact.
+
 ## v4.1 — independent global appearance publication
 
 Date: 2026-09-30. TASK-C004. Additive `/site-appearance` and `/admin/site-appearance`

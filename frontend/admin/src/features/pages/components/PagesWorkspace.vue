@@ -18,6 +18,7 @@ import HomePageWorkspace from '../../homepage/components/HomePageWorkspace.vue'
 import PageFormDialog from './PageFormDialog.vue'
 import { systemPageSlugs } from '../validation/page'
 import PageBlocksEditor from './PageBlocksEditor.vue'
+import DraftPreview from '../../content-preview/components/DraftPreview.vue'
 
 const pages = usePages()
 const route = useRoute()
@@ -27,6 +28,7 @@ const fetchedPage = ref<ContentPage | null>(null)
 const selectedLoading = ref(false)
 const selectedError = ref('')
 const blocksPending = ref(false)
+const previewRevision = ref(0)
 const isHomeSelected = computed(() => route.query.page === 'home')
 const selectedId = computed(() => {
   const value = route.query.page
@@ -39,6 +41,7 @@ const selectedPage = computed(
     pages.items.value.find((page) => page.id === selectedId.value),
 )
 function blocksSaved(page: ContentPage): void {
+  previewRevision.value++
   fetchedPage.value = page
   const index = pages.items.value.findIndex((item) => item.id === page.id)
   if (index !== -1) pages.items.value[index] = page
@@ -243,7 +246,12 @@ onMounted(() => pages.load())
         />
       </UiCard>
       <div class="min-w-0">
-        <HomePageWorkspace v-if="isHomeSelected" embedded />
+        <HomePageWorkspace
+          v-if="isHomeSelected"
+          embedded
+          @saved="previewRevision++"
+          @pending="blocksPending = $event"
+        />
         <UiLoadingState
           v-else-if="pages.loading.value || selectedLoading"
           label="Загрузка страницы…"
@@ -330,6 +338,7 @@ onMounted(() => pages.load())
             {{ selectedPage.body }}
           </p>
           <PageBlocksEditor
+            :key="selectedPage.id"
             :page="selectedPage"
             @saved="blocksSaved"
             @pending="blocksPending = $event"
@@ -354,17 +363,11 @@ onMounted(() => pages.load())
           label="Выберите страницу слева, чтобы увидеть её настройки."
         />
       </div>
-      <UiCard
-        class="content-preview-panel min-w-0 self-start p-4 sm:p-6"
-        aria-label="Предпросмотр страницы"
-      >
-        <h2 class="text-lg font-semibold">Предпросмотр</h2>
-        <p class="mt-2 text-sm text-gray-600" role="status">
-          Точный просмотр сохранённого черновика будет подключён на следующем
-          этапе. Сохранение меняет только черновик; сайт обновляется после
-          отдельной публикации.
-        </p>
-      </UiCard>
+      <DraftPreview
+        :slug="isHomeSelected ? 'home' : selectedPage?.slug"
+        :revision="previewRevision"
+        :pending="blocksPending || pages.editorOpen.value"
+      />
     </div>
     <PageFormDialog
       :open="pages.editorOpen.value"

@@ -86,6 +86,15 @@ export const test = base.extend<{ browserIssueGuard: BrowserIssueGuard }>({
       context.pages().forEach(observe)
       context.on('page', observe)
 
+      // Admin tests isolate the external Nuxt surface; its real draft/auth renderer
+      // is exercised by the client suite. More specific page routes can override this.
+      await context.route('http://localhost:3000/preview/**', (route) =>
+        route.fulfill({
+          contentType: 'text/html; charset=utf-8',
+          body: '<!doctype html><html lang="ru"><head><title>Черновик сайта</title></head><body><main aria-label="Содержимое предпросмотра сайта"><h1>Сохранённый черновик</h1></main></body></html>',
+        }),
+      )
+
       await use({
         allowApiError(status, path) {
           expectedApiErrors.push({ status, path })

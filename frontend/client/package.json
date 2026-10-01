@@ -10,6 +10,7 @@
     "dev": "nuxt dev",
     "typecheck": "nuxt typecheck",
     "test:e2e": "playwright test",
+    "test:e2e:dev": "playwright test --config playwright.dev.config.ts",
     "format": "prettier --write \"app/**/*.{vue,ts,css}\" nuxt.config.ts",
     "format:check": "prettier --check \"app/**/*.{vue,ts,css}\" nuxt.config.ts",
     "generate": "nuxt generate",

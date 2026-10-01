@@ -129,7 +129,18 @@ lint/format checks, когда они добавлены в `package.json`. Пр
 Admin: `/login`, `/forgot-password`, `/reset-password`, `/`, `/profile`, `/products`, `/categories`, `/brands`, `/attribute-groups`, `/attributes`, `/employees`, `/roles`, `/permissions`, `/audit-log`, `/orders`, `/contacts`, `/content`, `/settings`.
 UI-kit: `/ui-kit` — проверять при изменении `components/ui`, `components/shared` или design tokens.
 
-Client: `/` и все изменённые или новые маршруты.
+Client: `/` и все изменённые или новые маршруты. Для сохранённого предпросмотра
+проверять `/preview/home`, `/preview/about`, `/preview/contacts`, `/preview/catalog`
+как отдельно, так и внутри Admin iframe: различимость landmarks, клавиатуру меню,
+loading/error/denied/retry, очистку после отзыва доступа и reduced motion.
+Admin: `/content?page=home` и `/content?section=appearance` с режимами просмотра,
+unsaved notice и обновлением после сохранения. Не считать placeholder в тестовом
+iframe доказательством проверки реального Nuxt — его рендер проверяется отдельно.
+
+Development iframe также проверяется через `npm run test:e2e:dev` в Client:
+реальная HTTP-страница редактора на другом origin, session cookie, Origin/Referer
+и отсутствие console/page errors. Production-проверка не обнаруживает ошибки
+Nuxt DevTools, поскольку DevTools работает только в development.
 
 Для ручной проверки запустить `npm run dev -- --host 127.0.0.1 --port 5173` из
 `frontend/admin/` либо `npm run dev -- --host 127.0.0.1 --port 3000` из `frontend/client/`.

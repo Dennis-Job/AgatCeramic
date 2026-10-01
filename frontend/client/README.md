@@ -46,6 +46,40 @@ For an existing local Laravel installation, include `http://localhost:3000` and
 the backend process. The updated `backend/.env.example` contains both origins.
 If Laravel is unavailable, the homepage shows a visible retryable error instead of stale content.
 
+## Saved draft preview
+
+`/preview/<slug>` (`/preview/home` for the homepage) is embedded by the Admin content
+workspace. It uses the same storefront bodies, blocks, header/footer and animations.
+The browser requests `GET /api/v1/admin/content-preview/{slug}` with credentials;
+only an active employee with `content.manage` can read saved page and appearance drafts.
+No draft enters the server HTML/payload, persistent storage, URL, or public API.
+The document and API prohibit caching/indexing; the document suppresses referrers.
+The API fetch sends only the origin as Referer for same-origin Sanctum session recognition.
+
+Include the exact Client hostname/port in `SANCTUM_STATEFUL_DOMAINS` and the origin in
+`CORS_ALLOWED_ORIGINS` for an existing backend `.env`, then clear config/restart Laravel.
+Use the same hostname consistently (`localhost` and `127.0.0.1` have different cookies).
+Production Admin, API and Client must share the configured cookie site/domain; unrelated
+sites with blocked third-party cookies cannot reuse this session. Do not enable wildcard
+credentialed CORS or expose a preview token to bypass configuration.
+
+While visible, the preview rechecks access every 15 seconds and clears content on failures.
+Hidden/pagehide views clear drafts immediately; returning performs a new check.
+Unchanged responses preserve slider state. Loading/401/403/404/network failures have
+accessible retry controls. The E2E suite covers these states, actual iframe keyboard/axe,
+responsive widths and both normal/reduced motion with synthetic authenticated fixtures.
+
+Run `npm run test:e2e:dev` separately to check the development build in a
+cross-origin editor iframe on ports 8015/3016. The test checks credentialed
+requests, origin-only Referer and console errors. Nuxt DevTools stays enabled
+in standalone windows; embedded `/preview/` views disable its client before
+it attempts to read the editor's cross-origin window.
+
+After changing `.env`, `php artisan serve --no-reload` must be restarted even
+if a fresh CLI config check already shows the updated values. For Docker use
+`docker compose exec backend php artisan config:clear` and
+`docker compose restart backend`; session data remains in the database.
+
 ## Runtime compatibility
 
 The scaffold uses Nuxt 4.5.2. It requires Node 22.19+, Node 24.11+, or Node 26+; the supported Node version must be used in development, CI, and production.

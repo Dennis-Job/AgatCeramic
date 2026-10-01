@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureActiveAdmin;
+use App\Http\Middleware\ProtectContentPreviewResponse;
 use App\Http\Responses\ApiErrorResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->api(prepend: [ProtectContentPreviewResponse::class]);
         $middleware->throttleApi('api');
         $middleware->alias([
             'active_admin' => EnsureActiveAdmin::class,

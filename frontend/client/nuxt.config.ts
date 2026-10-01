@@ -3,6 +3,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-08-12',
   ssr: true,
   devtools: { enabled: true },
+  routeRules: {
+    '/preview/**': {
+      headers: {
+        'Cache-Control': 'private, no-store, max-age=0',
+        'X-Robots-Tag': 'noindex, nofollow, noarchive',
+        'Referrer-Policy': 'no-referrer',
+      },
+    },
+  },
   runtimeConfig: {
     apiBaseInternal: '',
     public: {

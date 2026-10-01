@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { setResponseStatus } from 'h3'
-import PageBlocks from './PageBlocks.vue'
+import ContentPageBody from './ContentPageBody.vue'
 import PageState from '~/components/shared/PageState.vue'
 
 const props = defineProps<{
@@ -21,9 +21,6 @@ const route = useRoute()
 const origin = useRuntimeConfig().public.siteUrl || useRequestURL().origin
 const canonical = new URL(`/${props.slug}`, origin).toString()
 const seo = computed(() => content.value?.seo)
-const hasHero = computed(() =>
-  content.value?.blocks.some((block) => block.enabled && block.type === 'hero'),
-)
 useSeoMeta({
   title: () => seo.value?.title || `${props.fallbackTitle} — AgatCeramic`,
   description: () => seo.value?.description || undefined,
@@ -68,27 +65,11 @@ useHead(() => ({
 </script>
 
 <template>
-  <div v-if="!content || !hasHero" class="container page-intro">
+  <div v-if="!content" class="container page-intro">
     <NuxtLink to="/" class="eyebrow">AgatCeramic</NuxtLink>
-    <h1>{{ content?.title || fallbackTitle }}</h1>
-    <p v-if="content?.seo.description">{{ content.seo.description }}</p>
+    <h1>{{ fallbackTitle }}</h1>
   </div>
-  <template v-if="content">
-    <PageBlocks
-      :blocks="content.blocks"
-      :title="content.title"
-      :description="content.seo.description"
-    />
-    <div
-      v-if="!content.blocks.some((block) => block.enabled)"
-      class="container"
-    >
-      <PageState
-        title="Содержимое пока не добавлено"
-        message="Информация появится после публикации."
-      />
-    </div>
-  </template>
+  <ContentPageBody v-if="content" :content="content" />
   <div v-else class="container">
     <PageState
       :title="

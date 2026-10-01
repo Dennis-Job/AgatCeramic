@@ -123,6 +123,14 @@ app/layouts -> app/components/shared -> app/components/ui -> design tokens
   и первой клиентской разметки. `useState` и async payload должны быть
   сериализуемыми.
 
+Защищённый `/preview/<slug>` — неиндексируемый служебный маршрут: он загружает
+сохранённый черновик только в браузерном lifecycle через отдельный feature/service
+с Sanctum cookie-сессией и актуальным `content.manage`. Не включать черновик в SSR
+payload, shared state или storage и не создавать токен/данные в URL. Сохранять
+no-store/noindex и no-referrer для документа, повторную проверку доступа и очистку
+на visibility/pagehide. Тела и chrome переиспользуются с публичными страницами;
+не копировать клиентский renderer в Admin. Это правило не меняет SSR публичных маршрутов.
+
 ## Дизайн, адаптивность и доступность
 
 Визуальная реализация обязана соответствовать
