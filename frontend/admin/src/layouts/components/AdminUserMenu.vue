@@ -16,7 +16,7 @@ async function signOut(): Promise<void> {
 
 <template>
   <div class="flex items-center gap-3" aria-label="Меню пользователя">
-    <div class="hidden min-w-0 text-right sm:block">
+    <div class="hidden min-w-0 max-w-48 text-right sm:block">
       <p class="truncate text-sm font-semibold text-gray-700">
         {{ auth.user?.name }}
       </p>

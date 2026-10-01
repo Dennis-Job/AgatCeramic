@@ -149,18 +149,26 @@ test('catalog route guards require an authenticated user with catalog permission
   await forbidden.close()
 })
 
-test('mobile sidebar leaves the accessibility and keyboard flow while closed', async ({
+test('compact navigation leaves the keyboard flow while closed and restores focus after dismissal', async ({
   page,
 }) => {
   await mockCatalogApi(page)
 
-  for (const width of [320, 640, 768]) {
+  for (const width of [320, 640, 768, 1023]) {
     await page.setViewportSize({ width, height: 720 })
     await page.goto('/products')
 
-    const sidebar = page.locator('#admin-sidebar')
-    const openButton = page.getByRole('button', { name: 'Открыть меню' })
-    await expect(sidebar).toBeHidden()
+    const panel = page.locator('#admin-navigation-panel')
+    const openButton = page.getByRole('button', {
+      name: 'Открыть меню',
+      includeHidden: true,
+    })
+    await expect(panel).toBeHidden()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'false')
+    await expect(openButton).toHaveAttribute(
+      'aria-controls',
+      'admin-navigation-panel',
+    )
     await expect(
       page.getByRole('navigation', { name: 'Основная навигация' }),
     ).toHaveCount(0)
@@ -168,17 +176,19 @@ test('mobile sidebar leaves the accessibility and keyboard flow while closed', a
     await openButton.focus()
     await page.keyboard.press('Tab')
     expect(
-      await sidebar.evaluate(
-        (element) => !element.contains(document.activeElement),
-      ),
+      (await panel.count()) === 0 ||
+        (await panel.evaluate(
+          (element) => !element.contains(document.activeElement),
+        )),
     ).toBe(true)
 
     await openButton.click()
-    await expect(sidebar).toBeVisible()
+    await expect(panel).toBeVisible()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'true')
     const closeButton = page.getByRole('button', { name: 'Закрыть меню' })
     await expect(closeButton).toBeFocused()
 
-    const focusable = sidebar.locator(
+    const focusable = panel.locator(
       'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
     )
     await focusable.first().focus()
@@ -188,54 +198,86 @@ test('mobile sidebar leaves the accessibility and keyboard flow while closed', a
     await expect(focusable.first()).toBeFocused()
 
     await page.keyboard.press('Escape')
-    await expect(sidebar).toBeHidden()
+    await expect(panel).toBeHidden()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'false')
     await expect(openButton).toBeFocused()
 
     await openButton.click()
     await page
-      .getByTestId('sidebar-backdrop')
+      .getByTestId('navigation-backdrop')
       .click({ position: { x: width - 10, y: 10 } })
-    await expect(sidebar).toBeHidden()
+    await expect(panel).toBeHidden()
     await expect(openButton).toBeFocused()
-  }
 
-  for (const width of [1024, 1280]) {
-    await page.setViewportSize({ width, height: 720 })
-    await page.goto('/products')
-    await expect(page.locator('#admin-sidebar')).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: 'Товары', exact: true }),
-    ).toBeVisible()
+    await openButton.click()
+    await panel.getByRole('link', { name: 'Бренды', exact: true }).click()
+    await expect(page).toHaveURL('/brands')
+    await expect(panel).toBeHidden()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'false')
+    await expect(openButton).toBeFocused()
   }
 })
 
-test('desktop sidebar scrolls to navigation links below the viewport', async ({
+test('desktop grouped navigation supports keyboard selection, active links, and dismissal', async ({
   page,
 }) => {
   await mockCatalogApi(page)
   await page.setViewportSize({ width: 1280, height: 480 })
   await page.goto('/products')
 
-  const sidebar = page.locator('#admin-sidebar')
-  await expect(sidebar).toBeVisible()
-  expect(
-    await sidebar.evaluate(
-      (element) => element.scrollHeight > element.clientHeight,
-    ),
-  ).toBe(true)
+  const navigation = page.getByRole('navigation', {
+    name: 'Основная навигация',
+  })
+  const products = navigation.getByRole('button', {
+    name: 'Товары',
+    exact: true,
+  })
+  const management = navigation.getByRole('button', { name: 'Управление' })
+  const panel = page.locator('#admin-navigation-panel')
+  await expect(page.locator('#admin-sidebar')).toHaveCount(0)
+  await expect(products).toHaveAttribute('aria-expanded', 'false')
+  await expect(products).toHaveAttribute(
+    'aria-controls',
+    'admin-navigation-panel',
+  )
+  await products.focus()
+  await page.keyboard.press('Enter')
+  await expect(panel).toBeVisible()
+  await expect(products).toHaveAttribute('aria-expanded', 'true')
+  const activeProduct = panel.getByRole('link', { name: 'Список товаров' })
+  await expect(activeProduct).toHaveAttribute('aria-current', 'page')
+  await expect(panel.locator('a svg')).toHaveCount(0)
+  await panel.getByRole('link', { name: 'Бренды', exact: true }).click()
+  await expect(page).toHaveURL('/brands')
+  await expect(panel).toBeHidden()
 
-  await sidebar.hover()
-  await page.mouse.wheel(0, 1200)
-  await expect
-    .poll(() => sidebar.evaluate((element) => element.scrollTop))
-    .toBeGreaterThan(0)
-  await page.mouse.wheel(0, 1200)
-  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  await products.click()
+  await expect(panel.getByRole('link', { name: 'Бренды' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  await expect(activeProduct).not.toHaveAttribute('aria-current', 'page')
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
+  await expect(products).toBeFocused()
 
-  const uiKitLink = page.getByRole('link', { name: 'UI-kit', exact: true })
+  await products.click()
+  await page.mouse.click(1270, 470)
+  await expect(panel).toBeHidden()
+  await expect(products).toBeFocused()
+
+  await products.click()
+  await management.click()
+  await expect(products).toHaveAttribute('aria-expanded', 'false')
+  await expect(management).toHaveAttribute('aria-expanded', 'true')
+  await expect(panel.getByRole('link', { name: 'Список товаров' })).toHaveCount(
+    0,
+  )
+  const uiKitLink = panel.getByRole('link', { name: 'UI-kit', exact: true })
   await expect(uiKitLink).toBeVisible()
   await uiKitLink.click()
   await expect(page).toHaveURL('/ui-kit')
+  await expect(panel).toBeHidden()
   await expect(
     page.getByRole('heading', { level: 1, name: 'UI-kit' }),
   ).toBeVisible()

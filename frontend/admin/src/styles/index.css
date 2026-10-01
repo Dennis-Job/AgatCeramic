@@ -3,6 +3,7 @@
 @import './typography.css';
 @import './reset.css';
 @import './utilities.css';
+@import './navigation.css';
 
 @theme {
   --font-sans: var(--admin-font-sans);

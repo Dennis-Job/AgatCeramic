@@ -180,6 +180,10 @@ const radiusTokens = ['md', 'lg', 'xl', '2xl']
 const controlHeightTokens = ['sm', 'md', 'lg']
 const shadowTokens = ['card', 'input', 'dialog', 'dropdown', 'sm', 'xl']
 const foundationMetaTokens = [
+  '--admin-shell-max-width',
+  '--admin-shell-top-height',
+  '--admin-shell-navigation-height',
+  '--admin-shell-height',
   '--admin-logo-filter',
   '--admin-spacing-unit',
   '--admin-border-width',

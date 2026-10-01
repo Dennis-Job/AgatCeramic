@@ -97,6 +97,14 @@
   --admin-spacing-5: calc(var(--admin-spacing-unit) * 5);
   --admin-spacing-6: calc(var(--admin-spacing-unit) * 6);
 
+  --admin-shell-max-width: 1280px;
+  --admin-shell-top-height: 64px;
+  --admin-shell-navigation-height: 44px;
+  --admin-shell-height: calc(
+    var(--admin-shell-top-height) + var(--admin-shell-navigation-height) +
+      var(--admin-border-width)
+  );
+
   --admin-radius-md: 0.375rem;
   --admin-radius-lg: 0.5rem;
   --admin-radius-xl: 1rem;

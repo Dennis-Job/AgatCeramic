@@ -1,37 +1,45 @@
 <script setup lang="ts">
-import { Menu } from '@lucide/vue'
+import { ref } from 'vue'
 import UiInput from '../../components/ui/UiInput.vue'
+import AdminNavigation from './AdminNavigation.vue'
 import AdminNotifications from './AdminNotifications.vue'
 import AdminUserMenu from './AdminUserMenu.vue'
 
-defineProps<{ isNavigationOpen: boolean }>()
-defineEmits<{ 'open-navigation': [] }>()
+const compactOpen = ref(false)
 </script>
 
 <template>
   <header
-    class="sticky top-0 z-20 flex admin-header items-center gap-4 border-b border-gray-200 bg-white px-4 sm:px-6 lg:px-8"
+    class="sticky top-0 z-30 border-b border-gray-200 bg-white admin-header"
   >
-    <button
-      type="button"
-      class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 lg:hidden"
-      aria-label="Открыть меню"
-      aria-controls="admin-sidebar"
-      :aria-expanded="isNavigationOpen"
-      @click="$emit('open-navigation')"
-    >
-      <Menu :size="20" aria-hidden="true" />
-    </button>
-    <UiInput
-      class="hidden admin-header-search flex-1 md:flex"
-      searchable
-      placeholder="Поиск…"
-      type="search"
-      aria-label="Поиск"
-    />
-    <div class="ml-auto flex min-w-0 items-center gap-3">
-      <AdminNotifications />
-      <AdminUserMenu />
+    <div class="admin-header-inner">
+      <div
+        class="admin-header-top flex min-w-0 items-center gap-3"
+        :inert="compactOpen"
+      >
+        <RouterLink
+          to="/"
+          class="admin-brand shrink-0"
+          aria-label="AgatCeramic — главная"
+        >
+          <span class="font-bold text-gray-800"
+            >Agat<span class="text-primary-500">Ceramic</span></span
+          >
+          <span class="block text-xs text-gray-500">Админ-панель</span>
+        </RouterLink>
+        <UiInput
+          class="hidden admin-header-search min-w-0 flex-1 md:flex"
+          searchable
+          placeholder="Поиск…"
+          type="search"
+          aria-label="Поиск"
+        />
+        <div class="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
+          <AdminNotifications />
+          <AdminUserMenu />
+        </div>
+      </div>
+      <AdminNavigation @compact-open="compactOpen = $event" />
     </div>
   </header>
 </template>

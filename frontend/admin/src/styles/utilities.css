@@ -5,15 +5,6 @@
 .admin-page > .grid > * {
   min-width: 0;
 }
-.admin-sidebar {
-  width: 290px;
-}
-.admin-nav-heading {
-  letter-spacing: 0.08em;
-}
-.admin-header {
-  height: 76px;
-}
 .admin-dialog-content {
   max-height: 90vh;
 }
@@ -52,11 +43,6 @@
 @media (min-width: 768px) {
   .admin-header-search {
     max-width: 360px;
-  }
-}
-@media (min-width: 1024px) {
-  .admin-layout-main {
-    padding-left: 290px;
   }
 }
 @media (min-width: 1280px) {
