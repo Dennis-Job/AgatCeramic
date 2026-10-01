@@ -69,6 +69,89 @@ test('responsive routes, accessible states and navigation', async ({
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
+test('global shell renders independently of an unpublished homepage and hydrates once', async ({
+  page,
+  request,
+}) => {
+  await request.get('http://127.0.0.1:8015/__scenario?name=missing')
+  for (const route of ['/', '/contacts', '/about', '/catalog']) {
+    const html = await (await request.get(route)).text()
+    expect(html).toContain('Общее оформление сайта')
+    expect(html).toContain('Материалы для дома')
+  }
+  let requests = 0
+  const issues: string[] = []
+  page.on('request', (req) => {
+    if (req.url().includes('/site-appearance')) requests++
+  })
+  page.on('console', (message) => {
+    if (/hydration/i.test(message.text())) issues.push(message.text())
+  })
+  page.on('pageerror', (error) => issues.push(error.message))
+  await page.goto('/about')
+  await expect(page.getByText('Общее оформление сайта')).toBeVisible()
+  await page.getByRole('link', { name: 'Каталог', exact: true }).first().click()
+  await expect(page).toHaveURL(/\/catalog$/)
+  expect(requests).toBe(0)
+  expect(issues).toEqual([])
+})
+
+test('global appearance failure retains usable navigation', async ({
+  page,
+  request,
+}) => {
+  await request.get('http://127.0.0.1:8015/__scenario?name=appearance-error')
+  await page.goto('/about')
+  await expect(page.locator('main h1')).toHaveText('О нас')
+  await expect(
+    page
+      .getByRole('banner')
+      .getByRole('link', { name: 'AgatCeramic — на главную' }),
+  ).toBeVisible()
+})
+
+test('long Russian navigation and all sixteen links stay usable without page overflow', async ({
+  page,
+  request,
+}, testInfo) => {
+  for (const scenario of ['long-navigation', 'max-navigation']) {
+    await request.get(`http://127.0.0.1:8015/__scenario?name=${scenario}`)
+    await page.goto('/about')
+    for (const width of [320, 640, 768, 1024, 1280]) {
+      await page.setViewportSize({ width, height: 900 })
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true)
+      await page.getByRole('button', { name: 'Открыть меню' }).click()
+      const menu = page.getByRole('dialog', { name: 'Меню сайта' })
+      await expect(menu.getByRole('link')).toHaveCount(
+        scenario === 'max-navigation' ? 16 : 4,
+      )
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true)
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+      await page.screenshot({
+        path: testInfo.outputPath(`${scenario}-menu-${width}.png`),
+        fullPage: true,
+      })
+      await page.keyboard.press('Escape')
+      await expect(
+        page.getByRole('button', { name: 'Открыть меню' }),
+      ).toBeFocused()
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+      await page.screenshot({
+        path: testInfo.outputPath(`${scenario}-${width}.png`),
+        fullPage: true,
+      })
+    }
+  }
+})
+
 test('catalog pagination uses URL and API page', async ({ page }) => {
   await page.goto('/catalog')
   await expect(page.getByText(/1.*234,50/)).toBeVisible()

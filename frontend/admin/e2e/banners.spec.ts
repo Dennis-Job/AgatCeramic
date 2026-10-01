@@ -65,8 +65,7 @@ test('content manager creates and publishes a banner', async ({ page }) => {
     })
   })
 
-  await page.goto('/content')
-  await page.getByRole('button', { name: 'Баннеры' }).click()
+  await page.goto('/content?section=banners')
   await expect(page.getByText('Баннеров пока нет.')).toBeVisible()
   await page.getByRole('button', { name: 'Добавить баннер' }).click()
   await expect(page.getByText('Изображение не задано')).toBeVisible()

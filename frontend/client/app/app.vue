@@ -1,10 +1,6 @@
-<script setup lang="ts">
-const { data: homePage } = await useHomePageContent()
-</script>
-
 <template>
   <NuxtRouteAnnouncer />
-  <NuxtLayout :home-page="homePage">
+  <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
 </template>

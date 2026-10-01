@@ -86,8 +86,7 @@ test('content manager composes and publishes an ordered slider', async ({
     })
   })
 
-  await page.goto('/content')
-  await page.getByRole('button', { name: 'Слайдеры' }).click()
+  await page.goto('/content?section=sliders')
   await expect(page.getByText('Слайдеров пока нет.')).toBeVisible()
   await page.getByRole('button', { name: 'Добавить слайдер' }).click()
   await page.getByLabel('Название').fill('Главная')

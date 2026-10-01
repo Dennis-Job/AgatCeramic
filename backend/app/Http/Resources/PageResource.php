@@ -24,7 +24,7 @@ class PageResource extends ApiResource
             'blocks' => $this->blocks,
             'seo' => $this->seo,
             'is_published' => $this->is_published,
-            'has_unpublished_changes' => $this->published_snapshot !== PageBlocks::snapshot($page),
+            'has_unpublished_changes' => PageBlocks::hasUnpublishedChanges($page),
             'published_at' => $this->published_at?->toAtomString(),
             'created_at' => $this->created_at?->toAtomString(),
             'updated_at' => $this->updated_at?->toAtomString(),

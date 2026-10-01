@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v4.0",
+        "version": "v4.1",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -64,7 +64,7 @@
             "patch": {
                 "operationId": "updateHomePage",
                 "summary": "Update homepage sections",
-                "description": "Requires content.manage. Saves legacy section edits, including shared header/footer, to the home draft. Publication requires POST /admin/home-page/publish.",
+                "description": "Requires content.manage. Saves legacy section edits to the home draft. Shared header/footer edits are compatible aliases for the global appearance draft, published only with POST /admin/site-appearance/publish. Other home content is published with POST /admin/home-page/publish.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -5212,7 +5212,7 @@
             "post": {
                 "operationId": "publishHomePage",
                 "summary": "Publish the saved page draft",
-                "description": "Requires content.manage. Explicitly copies the saved draft into the published snapshot and records page.published. Unsaved editor values are not included.",
+                "description": "Requires content.manage. Publishes saved home page content and SEO, preserving the previously published global header/footer. Global appearance publication uses POST /admin/site-appearance/publish. Unsaved editor values are not included.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -5269,6 +5269,126 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/site-appearance": {
+            "get": {
+                "operationId": "getPublicSiteAppearance",
+                "summary": "Get published global site appearance",
+                "description": "Shared header, navigation and footer. Independent of home page publication. Never exposes the appearance draft or page content.",
+                "responses": {
+                    "200": {
+                        "description": "Published global appearance",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SiteAppearanceResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/site-appearance": {
+            "get": {
+                "operationId": "getAdminSiteAppearance",
+                "summary": "Get global appearance draft",
+                "description": "Requires content.manage.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Editable global appearance",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSiteAppearanceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "updateSiteAppearance",
+                "summary": "Save global appearance draft",
+                "description": "Requires content.manage. Saves header/footer independently of page content; does not publish. Referenced public image media remain protected in draft and publication.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSiteAppearanceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Saved global appearance draft",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSiteAppearanceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
+        "/admin/site-appearance/publish": {
+            "post": {
+                "operationId": "publishSiteAppearance",
+                "summary": "Publish saved global appearance",
+                "description": "Requires content.manage. Publishes only the saved header/footer, retaining home page content, SEO, publication timestamp/status and page draft state. Publication is audited.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Published global appearance",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AdminSiteAppearanceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
                     }
                 }
             }
@@ -12215,6 +12335,492 @@
                     "categories",
                     "links",
                     "meta"
+                ],
+                "additionalProperties": false
+            },
+            "SiteAppearance": {
+                "type": "object",
+                "properties": {
+                    "header": {
+                        "type": "object",
+                        "properties": {
+                            "topbar_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "topbar_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "logo_alt": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_url": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "readOnly": true
+                            },
+                            "navigation": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 16
+                            }
+                        },
+                        "required": [
+                            "topbar_left",
+                            "topbar_right",
+                            "logo_media_id",
+                            "logo_alt",
+                            "logo_url",
+                            "navigation"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "footer": {
+                        "type": "object",
+                        "properties": {
+                            "tagline": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "explore_links": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12
+                            },
+                            "message": {
+                                "type": "object",
+                                "properties": {
+                                    "eyebrow": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "text": {
+                                        "type": "string",
+                                        "maxLength": 2000
+                                    },
+                                    "link_label": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "link_url": {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    }
+                                },
+                                "required": [
+                                    "eyebrow",
+                                    "text",
+                                    "link_label",
+                                    "link_url"
+                                ],
+                                "additionalProperties": false
+                            },
+                            "bottom_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "bottom_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            }
+                        },
+                        "required": [
+                            "tagline",
+                            "explore_links",
+                            "message",
+                            "bottom_left",
+                            "bottom_right"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "required": [
+                    "header",
+                    "footer"
+                ],
+                "additionalProperties": false
+            },
+            "AdminSiteAppearance": {
+                "type": "object",
+                "properties": {
+                    "header": {
+                        "type": "object",
+                        "properties": {
+                            "topbar_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "topbar_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "logo_alt": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_url": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ],
+                                "readOnly": true
+                            },
+                            "navigation": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 16
+                            }
+                        },
+                        "required": [
+                            "topbar_left",
+                            "topbar_right",
+                            "logo_media_id",
+                            "logo_alt",
+                            "logo_url",
+                            "navigation"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "footer": {
+                        "type": "object",
+                        "properties": {
+                            "tagline": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "explore_links": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12
+                            },
+                            "message": {
+                                "type": "object",
+                                "properties": {
+                                    "eyebrow": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "text": {
+                                        "type": "string",
+                                        "maxLength": 2000
+                                    },
+                                    "link_label": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "link_url": {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    }
+                                },
+                                "required": [
+                                    "eyebrow",
+                                    "text",
+                                    "link_label",
+                                    "link_url"
+                                ],
+                                "additionalProperties": false
+                            },
+                            "bottom_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "bottom_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            }
+                        },
+                        "required": [
+                            "tagline",
+                            "explore_links",
+                            "message",
+                            "bottom_left",
+                            "bottom_right"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "has_unpublished_changes": {
+                        "type": "boolean",
+                        "description": "Global appearance draft differs from its independent published version."
+                    }
+                },
+                "required": [
+                    "header",
+                    "footer",
+                    "has_unpublished_changes"
+                ],
+                "additionalProperties": false
+            },
+            "UpdateSiteAppearanceRequest": {
+                "type": "object",
+                "properties": {
+                    "header": {
+                        "type": "object",
+                        "properties": {
+                            "topbar_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "topbar_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "logo_media_id": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 1
+                            },
+                            "logo_alt": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "navigation": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 1,
+                                "maxItems": 16
+                            }
+                        },
+                        "required": [
+                            "topbar_left",
+                            "topbar_right",
+                            "logo_media_id",
+                            "logo_alt",
+                            "navigation"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "footer": {
+                        "type": "object",
+                        "properties": {
+                            "tagline": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "explore_links": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "label": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "to": {
+                                            "type": "string",
+                                            "maxLength": 2048,
+                                            "description": "Root-relative internal path or HTTPS URL without credentials."
+                                        }
+                                    },
+                                    "required": [
+                                        "label",
+                                        "to"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12
+                            },
+                            "message": {
+                                "type": "object",
+                                "properties": {
+                                    "eyebrow": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "text": {
+                                        "type": "string",
+                                        "maxLength": 2000
+                                    },
+                                    "link_label": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "link_url": {
+                                        "type": "string",
+                                        "maxLength": 2048,
+                                        "description": "Root-relative internal path or HTTPS URL without credentials."
+                                    }
+                                },
+                                "required": [
+                                    "eyebrow",
+                                    "text",
+                                    "link_label",
+                                    "link_url"
+                                ],
+                                "additionalProperties": false
+                            },
+                            "bottom_left": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "bottom_right": {
+                                "type": "string",
+                                "maxLength": 255
+                            }
+                        },
+                        "required": [
+                            "tagline",
+                            "explore_links",
+                            "message",
+                            "bottom_left",
+                            "bottom_right"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Each supplied section replaces that section in full. Omitted sections remain unchanged. Computed logo_url is not accepted."
+            },
+            "SiteAppearanceResponse": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/SiteAppearance"
+                    }
+                },
+                "required": [
+                    "data"
+                ],
+                "additionalProperties": false
+            },
+            "AdminSiteAppearanceResponse": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/AdminSiteAppearance"
+                    }
+                },
+                "required": [
+                    "data"
                 ],
                 "additionalProperties": false
             }

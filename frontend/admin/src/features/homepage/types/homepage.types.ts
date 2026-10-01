@@ -1,3 +1,5 @@
+import type { SiteAppearance } from '../../appearance/types/appearance.types'
+
 export type SiteLink = { label: string; to: string }
 export type HomeImage = {
   image_url: string
@@ -27,21 +29,8 @@ export type HomePageContent = {
     link_label: string
     link_url: string
   }[]
-  header: {
-    topbar_left: string
-    topbar_right: string
-    logo_media_id: number | null
-    logo_alt: string
-    logo_url: string | null
-    navigation: SiteLink[]
-  }
-  footer: {
-    tagline: string
-    explore_links: SiteLink[]
-    message: { eyebrow: string; text: string } & HomeCta
-    bottom_left: string
-    bottom_right: string
-  }
+  header: SiteAppearance['header']
+  footer: SiteAppearance['footer']
   marquee: { topics: string[] }
   categories: HomeHeading & {
     items: ({
@@ -69,6 +58,8 @@ export type HomePageContent = {
 
 export type EditableSection = Exclude<
   keyof HomePageContent,
+  | 'header'
+  | 'footer'
   | 'hero_slides'
   | 'page_id'
   | 'is_published'

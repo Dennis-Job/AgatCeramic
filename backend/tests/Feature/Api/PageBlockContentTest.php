@@ -121,15 +121,15 @@ class PageBlockContentTest extends TestCase
         unset($header['logo_url']);
         $header['logo_media_id'] = $first->id;
         $this->patchJson('/api/v1/admin/home-page', ['header' => $header])->assertOk();
-        $this->postJson('/api/v1/admin/home-page/publish')->assertOk();
+        $this->postJson('/api/v1/admin/site-appearance/publish')->assertOk();
         $header['logo_media_id'] = $second->id;
         $footer = $this->getJson('/api/v1/admin/home-page')->json('data.footer');
         $oldTagline = $footer['tagline'];
         $footer['tagline'] = 'Новый черновик подвала';
-        $this->patchJson('/api/v1/admin/home-page', ['header' => $header, 'footer' => $footer])->assertOk()->assertJsonPath('data.has_unpublished_changes', true);
+        $this->patchJson('/api/v1/admin/home-page', ['header' => $header, 'footer' => $footer])->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
         $this->getJson('/api/v1/home-page')->assertJsonPath('data.footer.tagline', $oldTagline)->assertJsonPath('data.header.logo_media_id', $first->id);
         $this->assertMediaProtected($actor, $first);
-        $this->postJson('/api/v1/admin/home-page/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
+        $this->postJson('/api/v1/admin/site-appearance/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
         $this->getJson('/api/v1/home-page')->assertJsonPath('data.footer.tagline', 'Новый черновик подвала')->assertJsonPath('data.header.logo_media_id', $second->id);
         app(MediaManagementService::class)->delete($actor, $first);
         $this->assertDatabaseMissing('media', ['id' => $first->id]);

@@ -80,7 +80,11 @@ defineProps<{
 }
 .site-footer__grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(
+      0,
+      1.2fr
+    );
+  overflow-wrap: anywhere;
   gap: 40px;
   margin-bottom: 70px;
 }
@@ -157,6 +161,7 @@ defineProps<{
 }
 .site-footer__bottom {
   display: flex;
+  overflow-wrap: anywhere;
   justify-content: space-between;
   gap: 16px;
   border-top: 1px solid var(--color-line);

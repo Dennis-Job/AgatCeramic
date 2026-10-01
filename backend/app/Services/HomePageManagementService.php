@@ -14,9 +14,9 @@ class HomePageManagementService
     public function __construct(private readonly AuditLogService $auditLogService, private readonly PageManagementService $pages) {}
 
     /** @param array<string, mixed> $attributes */
-    public function update(User $actor, array $attributes): HomePage
+    public function update(User $actor, array $attributes, string $auditAction = 'home-page.updated'): HomePage
     {
-        return DB::transaction(function () use ($actor, $attributes): HomePage {
+        return DB::transaction(function () use ($actor, $attributes, $auditAction): HomePage {
             $page = HomePage::query()->lockForUpdate()->findOrFail(1);
             $content = $page->content;
             foreach ($attributes as $key => $value) {
@@ -58,7 +58,7 @@ class HomePageManagementService
             }
             $draft->save();
             $this->pages->syncMedia($draft);
-            $this->auditLogService->record($actor, 'home-page.updated', $page, ['fields' => array_keys($attributes), 'columns' => $changed]);
+            $this->auditLogService->record($actor, $auditAction, $page, ['fields' => array_keys($attributes), 'columns' => $changed]);
 
             return $page;
         });

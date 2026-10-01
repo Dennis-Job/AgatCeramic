@@ -168,7 +168,11 @@ test('content manager edits the homepage and reaches banner management', async (
     })
   })
 
-  await page.goto('/content?page=home')
+  await page.goto('/home-page')
+  await expect(page).toHaveURL(/\/content\?section=pages&page=home/)
+  await expect(
+    page.getByRole('link', { name: 'Главная сайта', exact: true }),
+  ).toHaveCount(0)
   await expect(
     page.getByRole('heading', { name: 'Главная страница' }),
   ).toBeVisible()
@@ -176,8 +180,8 @@ test('content manager edits the homepage and reaches banner management', async (
   await page.getByRole('button', { name: 'Бегущая строка' }).click()
   await page.getByLabel('Тема 1: Плитка').fill('Керамогранит')
   page.once('dialog', (dialog) => dialog.dismiss())
-  await page.getByRole('button', { name: 'Баннеры', exact: true }).click()
-  await expect(page).toHaveURL(/\/content\?page=home/)
+  await page.getByRole('button', { name: 'Магазины', exact: true }).click()
+  await expect(page).toHaveURL(/\/content\?section=pages&page=home/)
   await page.getByRole('button', { name: 'Промо' }).click()
   await page.getByLabel('Заголовок').fill('Новый заголовок')
   await expect(

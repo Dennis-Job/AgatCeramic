@@ -85,7 +85,12 @@ class PageManagementService
                 HomePage::query()->lockForUpdate()->findOrFail(1);
             }
             $page = Page::query()->whereKey($page->id)->lockForUpdate()->firstOrFail();
-            $page->published_snapshot = $this->snapshot($page);
+            $snapshot = $this->snapshot($page);
+            // Publishing page content never publishes a global appearance draft.
+            if ($page->slug === 'home') {
+                $snapshot['site_layout'] = $page->published_snapshot['site_layout'] ?? [];
+            }
+            $page->published_snapshot = $snapshot;
             $page->is_published = true;
             $page->published_slug = $page->slug;
             $page->published_at = now();

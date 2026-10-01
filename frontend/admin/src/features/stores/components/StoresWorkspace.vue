@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { Clock3, Pencil, Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
@@ -29,6 +30,17 @@ function confirmDelete(store: Store): void {
 }
 
 onMounted(() => stores.load())
+onBeforeRouteLeave(stores.confirmDiscard)
+onBeforeRouteUpdate((to, from) =>
+  to.query.section === from.query.section ? true : stores.confirmDiscard(),
+)
+function beforeUnload(event: BeforeUnloadEvent): void {
+  if (!stores.dirty.value && !stores.busy.value) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+onMounted(() => window.addEventListener('beforeunload', beforeUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
 </script>
 
 <template>

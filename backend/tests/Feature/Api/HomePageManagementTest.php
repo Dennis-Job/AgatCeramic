@@ -54,9 +54,11 @@ class HomePageManagementTest extends TestCase
         $header = $this->actingAs($manager)->getJson('/api/v1/admin/home-page')->json('data.header');
         unset($header['logo_url']);
         $header['logo_media_id'] = $media->id;
-        $this->actingAs($manager)->patchJson('/api/v1/admin/home-page', ['header' => $header])->assertOk()->assertJsonPath('data.has_unpublished_changes', true);
+        $this->actingAs($manager)->patchJson('/api/v1/admin/home-page', ['header' => $header])->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
         $this->getJson('/api/v1/home-page')->assertJsonPath('data.header.logo_url', null);
         $this->actingAs($manager)->postJson('/api/v1/admin/home-page/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
+        $this->getJson('/api/v1/home-page')->assertJsonPath('data.header.logo_url', null);
+        $this->actingAs($manager)->postJson('/api/v1/admin/site-appearance/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
         $this->getJson('/api/v1/home-page')->assertJsonPath('data.header.logo_url', Storage::disk('public')->url('media/about.webp'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'home-page.updated', 'entity_id' => 1]);
 

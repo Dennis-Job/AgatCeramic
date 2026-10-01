@@ -14,9 +14,14 @@ npm run build
 
 The storefront follows `docs/CLIENT_UI_KIT.md` and fetches
 managed content from Laravel `GET /api/v1/home-page` during SSR. Text, section images, the selected
-published slider, header, footer, and homepage SEO are edited in Admin → «Главная сайта». Banner
-content and order are edited in Admin → «Контент» → «Баннеры» / «Слайдеры». Saving changes updates a
-draft; explicit publication updates the public snapshot, including the shared header/footer.
+published slider and homepage SEO are edited in Admin → «Контент» → «Страницы» → «Главная».
+Banner content and order are edited in the page's slider block. Saving changes updates a
+draft; explicit page publication updates its public snapshot. The shared header, navigation and
+footer use `GET /api/v1/site-appearance` in the persistent Nuxt layout and are edited/published
+separately in «Контент» → «Общее оформление». They remain available when the homepage is unpublished.
+Up to four navigation items appear in the desktop header with wrapping for long labels; longer
+menus use the existing drawer with every configured link. Publication of a page preserves the
+published appearance, and publication of appearance preserves all page drafts and snapshots.
 The homepage renders the ordered typed `blocks` instead of a fixed section order. Local optimized images
 remain as initial values until replaced through the media library. Homepage category cards are editorial
 tabs; they become noninteractive when their materials block is disabled. `/about`, `/contacts`, and

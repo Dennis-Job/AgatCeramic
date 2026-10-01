@@ -16,7 +16,6 @@ import { useHomePage } from '../composables/useHomePage'
 import type { EditableSection } from '../types/homepage.types'
 import HomePageHeroEditor from './HomePageHeroEditor.vue'
 import HomePageBodyEditor from './HomePageBodyEditor.vue'
-import HomePageChromeEditor from './HomePageChromeEditor.vue'
 import HomePageSeoEditor from './HomePageSeoEditor.vue'
 import PageBlocksEditor from '../../pages/components/PageBlocksEditor.vue'
 import { getPage } from '../../pages/services/pages'
@@ -44,8 +43,6 @@ const sections: { key: EditableSection; label: string }[] = [
   { key: 'promo', label: 'Промо' },
   { key: 'about', label: 'О проекте' },
   { key: 'guide', label: 'Советы' },
-  { key: 'header', label: 'Шапка' },
-  { key: 'footer', label: 'Подвал' },
   { key: 'seo', label: 'SEO' },
 ]
 
@@ -315,11 +312,6 @@ onBeforeUnmount(() =>
             section === 'about' ||
             section === 'guide'
           "
-          :content="workspace.content.value"
-          :section="section"
-        />
-        <HomePageChromeEditor
-          v-else-if="section === 'header' || section === 'footer'"
           :content="workspace.content.value"
           :section="section"
         />

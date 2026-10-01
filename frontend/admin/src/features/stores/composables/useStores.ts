@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { usePaginatedCollection } from '../../../composables/usePaginatedCollection'
 import {
   deleteStore,
@@ -27,6 +27,21 @@ export function useStores() {
   const hoursError = ref('')
   const deleteError = ref('')
   const success = ref('')
+  const initialForm = ref('')
+  const initialHours = ref('')
+  const dirty = computed(
+    () =>
+      (editorOpen.value && JSON.stringify(form.value) !== initialForm.value) ||
+      (hoursStore.value !== null &&
+        JSON.stringify(hours.value) !== initialHours.value),
+  )
+  function confirmDiscard(): boolean {
+    return (
+      !busy.value &&
+      (!dirty.value ||
+        window.confirm('Есть несохранённые изменения магазина. Отменить их?'))
+    )
+  }
 
   async function load(
     page = list.pagination.value?.current_page ?? 1,
@@ -45,6 +60,7 @@ export function useStores() {
         }
       : blankForm()
     formError.value = ''
+    initialForm.value = JSON.stringify(form.value)
     editorOpen.value = true
   }
 
@@ -52,6 +68,7 @@ export function useStores() {
     hoursStore.value = store
     hours.value = store.working_hours.map((day) => ({ ...day }))
     hoursError.value = ''
+    initialHours.value = JSON.stringify(hours.value)
   }
 
   async function submit(): Promise<void> {
@@ -124,13 +141,15 @@ export function useStores() {
     hoursError,
     deleteError,
     success,
+    dirty,
+    confirmDiscard,
     openEditor,
     openHours,
     closeEditor: () => {
-      if (!busy.value) editorOpen.value = false
+      if (confirmDiscard()) editorOpen.value = false
     },
     closeHours: () => {
-      if (!busy.value) hoursStore.value = null
+      if (confirmDiscard()) hoursStore.value = null
     },
     submit,
     submitHours,

@@ -94,7 +94,39 @@ createServer(async (request, response) => {
     response.end(JSON.stringify({ message: 'Test response' }))
   }
   const send = (payload) => response.end(JSON.stringify(payload))
+  if (url.pathname === '/api/v1/site-appearance') {
+    if (scenario === 'appearance-error') return fail(503)
+    const longNavigation = [
+      { label: 'Каталог керамической плитки и керамогранита', to: '/catalog' },
+      { label: 'Условия доставки и обслуживания покупателей', to: '/about' },
+      { label: 'Контакты наших магазинов и салонов', to: '/contacts' },
+      { label: 'Советы по выбору материалов для ремонта', to: '/' },
+    ]
+    const navigation =
+      scenario === 'long-navigation'
+        ? longNavigation
+        : scenario === 'max-navigation'
+          ? [
+              ...longNavigation,
+              ...Array.from({ length: 12 }, (_, index) => ({
+                label: 'ДлиннаяРусскаяСтрока'.repeat(12),
+                to: `/about#section-${index}`,
+              })),
+            ]
+          : home.header.navigation
+    return send({
+      data: {
+        header: {
+          ...home.header,
+          topbar_left: 'Общее оформление сайта',
+          navigation,
+        },
+        footer: home.footer,
+      },
+    })
+  }
   if (url.pathname === '/api/v1/home-page') {
+    if (scenario === 'missing') return fail(404)
     if (scenario === 'standalone-categories')
       return send({
         data: {

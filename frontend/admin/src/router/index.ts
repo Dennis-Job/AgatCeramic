@@ -20,7 +20,6 @@ import UiKitView from '../views/UiKitView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ContentView from '../views/ContentView.vue'
 import MediaView from '../views/MediaView.vue'
-import HomePageView from '../views/HomePageView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -174,7 +173,10 @@ const router = createRouter({
     {
       path: '/home-page',
       name: 'home-page',
-      component: HomePageView,
+      redirect: (to) => ({
+        path: '/content',
+        query: { ...to.query, section: 'pages', page: 'home' },
+      }),
       meta: {
         requiresAuth: true,
         requiredPermission: 'content.manage',

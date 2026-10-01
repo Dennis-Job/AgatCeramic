@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductPriceStatusImportController;
 use App\Http\Controllers\Api\V1\Admin\ProductRelationController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
+use App\Http\Controllers\Api\V1\Admin\SiteAppearanceController;
 use App\Http\Controllers\Api\V1\Admin\SiteSettingController;
 use App\Http\Controllers\Api\V1\Admin\SliderController;
 use App\Http\Controllers\Api\V1\Admin\StoreController;
@@ -55,6 +56,9 @@ Route::post('pages/{page}/publish', [PageController::class, 'publish'])->name('p
 Route::get('home-page', [HomePageController::class, 'show'])->name('home-page.show');
 Route::patch('home-page', [HomePageController::class, 'update'])->name('home-page.update');
 Route::post('home-page/publish', [HomePageController::class, 'publish'])->name('home-page.publish');
+Route::get('site-appearance', [SiteAppearanceController::class, 'show'])->name('site-appearance.show');
+Route::patch('site-appearance', [SiteAppearanceController::class, 'update'])->name('site-appearance.update');
+Route::post('site-appearance/publish', [SiteAppearanceController::class, 'publish'])->name('site-appearance.publish');
 Route::apiResource('banners', BannerController::class);
 Route::apiResource('media', MediaController::class)->parameters(['media' => 'media']);
 Route::get('sliders/banner-options', [SliderController::class, 'bannerOptions'])->name('sliders.banner-options');

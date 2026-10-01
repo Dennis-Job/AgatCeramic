@@ -7,6 +7,23 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v4.1 — independent global appearance publication
+
+Date: 2026-09-30. TASK-C004. Additive `/site-appearance` and `/admin/site-appearance`
+GET/PATCH plus `/admin/site-appearance/publish` expose the global header/footer draft
+and its separate publication. Existing homepage payloads retain their fields.
+
+Homepage publication now retains the previously published global header/footer.
+Legacy homepage header/footer updates still save the same appearance draft; callers
+must publish it using the dedicated endpoint. Page `has_unpublished_changes` describes
+page content and SEO only; the appearance endpoint has its own flag. Nuxt shell callers
+should fetch `/site-appearance`, which remains available after home unpublication.
+
+No migration is required: existing home `site_layout` and snapshot fields are retained.
+Deploy backend/Admin/Client together to expose the independent publish action. Application
+rollback may retain all schema/content, but restores the previous coupled publication
+behavior; review outstanding appearance/page drafts before using that older editor.
+
 ## v4.0 — typed page drafts and explicit publication
 
 Date: 2026-09-30. TASK-C002; the OpenAPI version is independent of `/api/v1`.

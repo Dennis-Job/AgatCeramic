@@ -93,7 +93,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="content?.topbarLeft || content?.topbarRight" class="topbar">
+  <div
+    v-if="content?.topbarLeft || content?.topbarRight"
+    class="topbar"
+    role="region"
+    aria-label="Информация магазина"
+  >
     <div class="container topbar__inner">
       <span v-if="content?.topbarLeft">{{ content.topbarLeft }}</span>
       <span v-if="content?.topbarRight">{{ content.topbarRight }}</span>
@@ -118,7 +123,7 @@ onUnmounted(() => {
       </NuxtLink>
 
       <nav
-        v-if="navigation.length"
+        v-if="navigation.length && navigation.length <= 4"
         class="site-nav"
         aria-label="Основная навигация"
       >
@@ -157,7 +162,7 @@ onUnmounted(() => {
     @click="closePanel"
   />
 
-  <aside
+  <div
     v-if="panel === 'menu'"
     id="site-menu"
     ref="menuPanel"
@@ -200,14 +205,14 @@ onUnmounted(() => {
     <button
       class="menu-panel__search"
       type="button"
-      aria-controls="site-search"
+      aria-haspopup="dialog"
       @click="openPanel('search')"
     >
       <Search :size="18" :stroke-width="1.6" aria-hidden="true" />
       Поиск по разделам страницы
     </button>
     <p v-if="tagline" class="menu-panel__note">{{ tagline }}</p>
-  </aside>
+  </div>
 
   <div
     v-if="panel === 'search'"
@@ -272,6 +277,10 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 20px;
 }
+.topbar__inner span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .site-header {
   position: sticky;
   z-index: 50;
@@ -322,6 +331,9 @@ onUnmounted(() => {
 }
 .site-nav {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
   gap: clamp(18px, 3vw, 44px);
 }
 .site-nav a {
@@ -329,7 +341,9 @@ onUnmounted(() => {
   padding-block: 8px;
   font-size: 13px;
   letter-spacing: 0.04em;
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .site-nav a::after {
   position: absolute;
@@ -350,6 +364,7 @@ onUnmounted(() => {
 }
 .site-header__actions {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 4px;
 }
@@ -425,6 +440,8 @@ onUnmounted(() => {
 }
 .menu-panel__nav a {
   display: flex;
+  min-width: 0;
+  overflow-wrap: anywhere;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -438,6 +455,7 @@ onUnmounted(() => {
   color: var(--color-muted);
 }
 .menu-panel__nav span {
+  flex-shrink: 0;
   color: var(--color-muted);
   font-size: 11px;
   letter-spacing: 0.2em;
@@ -502,6 +520,8 @@ onUnmounted(() => {
 }
 .search-panel__results a {
   display: flex;
+  min-width: 0;
+  overflow-wrap: anywhere;
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid var(--color-line);

@@ -40,7 +40,7 @@ class HomePageContentQuery
 
         return [...$result, 'blocks' => $draft->blocks, 'page_id' => $draft->id,
             'is_published' => $draft->is_published, 'published_at' => $draft->published_at?->toAtomString(),
-            'has_unpublished_changes' => $draft->published_snapshot !== PageBlocks::snapshot($draft)];
+            'has_unpublished_changes' => PageBlocks::hasUnpublishedChanges($draft)];
     }
 
     /** @return array<string, mixed> */

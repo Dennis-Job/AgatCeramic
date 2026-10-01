@@ -4,9 +4,17 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
-import type { HomePageContent, SiteLink } from '../types/homepage.types'
+import type { SiteAppearance, SiteLink } from '../types/appearance.types'
 
-defineProps<{ content: HomePageContent; section: 'header' | 'footer' }>()
+defineProps<{
+  content: SiteAppearance
+  section: 'header' | 'footer'
+  disabled?: boolean
+}>()
+const emit = defineEmits<{
+  pending: [value: boolean]
+  uploading: [value: boolean]
+}>()
 
 function move(items: SiteLink[], index: number, offset: -1 | 1): void {
   const next = index + offset
@@ -33,7 +41,12 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
     <MediaReferenceField
       kind="image"
       label="Логотип сайта"
+      inline-upload
+      require-manage-permission
+      :disabled="disabled"
       :model-value="content.header.logo_media_id"
+      @pending="emit('pending', $event)"
+      @uploading="emit('uploading', $event)"
       @update:model-value="
         content.header.logo_media_id = Array.isArray($event) ? null : $event
       "

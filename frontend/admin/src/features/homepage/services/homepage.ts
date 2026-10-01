@@ -29,19 +29,11 @@ export async function saveHomePageSection<K extends EditableSection>(
   value: HomePageContent[K],
 ): Promise<HomePageContent> {
   await requestCsrfCookie()
-  const sectionValue =
-    section === 'header'
-      ? Object.fromEntries(
-          Object.entries(value as HomePageContent['header']).filter(
-            ([key]) => key !== 'logo_url',
-          ),
-        )
-      : value
   return decode(
     await apiFetch('/admin/home-page', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [section]: sectionValue }),
+      body: JSON.stringify({ [section]: value }),
     }),
   )
 }

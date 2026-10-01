@@ -120,21 +120,11 @@ export function imageUrl(
   }
 }
 
-function mapHomePage(dto: HomePageDto, apiBase: string): HomePageContent {
+export function mapSiteAppearance(
+  dto: Pick<HomePageDto, 'header' | 'footer'>,
+  apiBase: string,
+): Pick<HomePageContent, 'header' | 'footer'> {
   return {
-    blocks: dto.blocks.map((block) => mapContentBlock(block, apiBase)),
-    heroSlides: mapSlides(dto.hero_slides, apiBase),
-    marqueeTopics: dto.marquee.topics,
-    categories: mapCategories(dto.categories, apiBase),
-    materials: {
-      eyebrow: dto.materials.eyebrow,
-      title: dto.materials.title,
-      description: dto.materials.description,
-      note: dto.materials.note,
-    },
-    promo: mapPromo(dto.promo),
-    about: mapAbout(dto.about, apiBase),
-    guide: dto.guide,
     header: {
       topbarLeft: dto.header.topbar_left,
       topbarRight: dto.header.topbar_right,
@@ -154,6 +144,25 @@ function mapHomePage(dto: HomePageDto, apiBase: string): HomePageContent {
       bottomLeft: dto.footer.bottom_left,
       bottomRight: dto.footer.bottom_right,
     },
+  }
+}
+
+function mapHomePage(dto: HomePageDto, apiBase: string): HomePageContent {
+  return {
+    blocks: dto.blocks.map((block) => mapContentBlock(block, apiBase)),
+    heroSlides: mapSlides(dto.hero_slides, apiBase),
+    marqueeTopics: dto.marquee.topics,
+    categories: mapCategories(dto.categories, apiBase),
+    materials: {
+      eyebrow: dto.materials.eyebrow,
+      title: dto.materials.title,
+      description: dto.materials.description,
+      note: dto.materials.note,
+    },
+    promo: mapPromo(dto.promo),
+    about: mapAbout(dto.about, apiBase),
+    guide: dto.guide,
+    ...mapSiteAppearance(dto, apiBase),
     seo: {
       title: dto.seo.title,
       description: dto.seo.description,

@@ -1,17 +1,21 @@
 # Текущее состояние проекта
 
-На 2026-09-30 Nuxt Client (`TASK-119`, `TASK-C002`) подключён к управляемому
+На 2026-10-01 Nuxt Client (`TASK-119`, `TASK-C002`–`TASK-C004`) подключён к управляемому
 контенту Phase 7: типизированным упорядоченным блокам страниц, опубликованному слайдеру,
 общим шапке/подвалу и SEO. Черновики отделены от опубликованных snapshots;
 публикация выполняется отдельным действием. Сайт сохраняет визуальный язык
 [`CLIENT_UI_KIT.md`](CLIENT_UI_KIT.md), адаптивные секции и локальные изображения
-как начальные значения. Редактор доступен в Admin → «Контент» → «Страницы».
+как начальные значения. Редактор блоков доступен в Admin → «Контент» → «Страницы».
+Общие шапка, навигация и подвал редактируются и публикуются независимо во вкладке
+«Общее оформление»; Nuxt получает их отдельным SSR-запросом. Магазины находятся
+в той же рабочей области. Панель «Вид фильтров» отделена от данных каталога;
+её настройки появятся с клиентскими фильтрами в `TASK-120`.
 `/contacts`, `/about`, `/catalog` получают опубликованные блоки при SSR; контакты
 используют реквизиты/магазины, каталог — публичную проекцию реальных товаров с ценами
-и единицами продажи. Редактор блоков, точный предпросмотр и полные товарные сценарии
+и единицами продажи. Точный предпросмотр и полные товарные сценарии
 остаются последующими задачами.
 
-Базовый срез после закрытия `TASK-A042` обновлён состоянием `TASK-119` и `TASK-C002`. Исторические результаты
+Базовый срез после закрытия `TASK-A042` обновлён состоянием `TASK-119` и `TASK-C002`–`TASK-C004`. Исторические результаты
 аудитов и их числовые срезы не обновляются задним числом; текущий набор обязательных проверок
 описан в [`CI.md`](CI.md), завершённые задачи — в [`tasks/DONE.md`](../tasks/DONE.md).
 
@@ -36,7 +40,7 @@ architecture gate.
 | Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. Workbook I/O, parsing/validation, planning, mutation и report/template generation разделены на небольшие сервисы; orchestration сохраняет прежние transaction, locking и checkpoint contracts. Queue entry points получают обязательные сервисы через container injection; только прямые Laravel `failed()` callbacks используют документированный узкий adapter. |
 | Cart and orders | Public guest cart with HMAC-only bearer lookup, configurable TTL and lock-safe cleanup; locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
-| Content and Client | Типизированные блоки, изолированные snapshots публикаций и защита медиа обеих версий; явная публикация из Admin. Nuxt `/`, `/contacts`, `/about`, `/catalog` используют API при SSR с SEO, адаптивностью и состояниями ошибок/пустых данных. |
+| Content and Client | Типизированные блоки, изолированные snapshots публикаций и защита медиа обеих версий; явная публикация из Admin. Общее оформление имеет отдельный черновик и публикацию; магазины объединены с редактором в «Контенте». Nuxt `/`, `/contacts`, `/about`, `/catalog` используют API при SSR с SEO, адаптивностью и состояниями ошибок/пустых данных. |
 | Admin frontend | Route views и feature-слои выделены, compatibility adapters удалены, source-of-truth UI-kit и обязательные lint, unit, production E2E, accessibility, responsive и visual gates действуют. Orders и contacts имеют рабочие list/detail/workflow экраны. |
 | Production-like проверки | Полный Laravel feature suite выполняется на PostgreSQL; отдельные CI profiles проверяют реальную Redis queue delivery, Admin SPA → Sanctum/Laravel API и lock-aware bootstrap dependency volumes. |
 | Repository security | Database exports удалены из current tree/public branches/tags; ignore, history artifact gate и полный Gitleaks scan обнаруживают повторное добавление. Остаточная доступность test-only объектов через четыре GitHub-managed PR refs принята владельцем без удаления PR. GitHub ruleset/branch protection пока не настроен, поэтому CI не является pre-receive запретом. |
@@ -67,7 +71,7 @@ architecture gate.
 
 | Phase | Не реализовано | Зависимость |
 | --- | --- | --- |
-| 7 — Content | `TASK-090`–`TASK-096`, `TASK-C001`–`TASK-C003` реализованы. Страницы имеют редактор блоков и контекстных медиа/баннеров/слайдеров. Отдельное общее оформление и точный Nuxt-предпросмотр остаются в `TASK-C004`–`TASK-C005`. | Категории и бренды используют managed media FK, документы — отдельные ordered associations. Внешние URL старых баннеров остаются fallback до явной замены. |
+| 7 — Content | `TASK-090`–`TASK-096`, `TASK-C001`–`TASK-C004` реализованы. Страницы имеют редактор блоков и контекстных медиа/баннеров/слайдеров. Общее оформление и магазины объединены в «Контенте»; точный Nuxt-предпросмотр остаётся в `TASK-C005`. | Категории и бренды используют managed media FK, документы — отдельные ordered associations. Внешние URL старых баннеров остаются fallback до явной замены. |
 | 8 — SEO | Managed metadata, canonical, sitemap, robots, redirects, structured data и AI drafts. | SEO использует managed media для OG image; slug остаётся Catalog-owned. |
 | 9 — Analytics | Orders/paid sales dashboards и reports. | Использует order `paid_at`, не только `created_at`. |
 | 10 — Client | Страницы категорий/товаров, cart, checkout, confirmation и полный managed SEO. Главная, контакты, о нас и первая публичная страница каталога с реальными товарами уже готовы. | Использует существующие API contracts без дублирования business logic. |

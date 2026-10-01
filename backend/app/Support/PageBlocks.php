@@ -17,6 +17,15 @@ class PageBlocks
         return $snapshot;
     }
 
+    public static function hasUnpublishedChanges(Page $page): bool
+    {
+        $published = $page->published_snapshot;
+        $draft = self::snapshot($page);
+        unset($published['site_layout'], $draft['site_layout']);
+
+        return $published !== $draft;
+    }
+
     public const HOME_TYPES = ['hero', 'marquee', 'categories', 'materials', 'promo', 'about', 'guide'];
 
     public const TYPES = [...self::HOME_TYPES, 'text', 'stores', 'catalog'];

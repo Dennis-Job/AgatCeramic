@@ -2,18 +2,22 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import UiButton from '../components/ui/UiButton.vue'
+import AppearanceWorkspace from '../features/appearance/components/AppearanceWorkspace.vue'
 import BannersWorkspace from '../features/banners/components/BannersWorkspace.vue'
 import PagesWorkspace from '../features/pages/components/PagesWorkspace.vue'
 import SlidersWorkspace from '../features/sliders/components/SlidersWorkspace.vue'
 import StoresWorkspace from '../features/stores/components/StoresWorkspace.vue'
 
-type Section = 'pages' | 'banners' | 'sliders' | 'stores'
+type Section = 'pages' | 'appearance' | 'banners' | 'sliders' | 'stores'
 const route = useRoute()
 const router = useRouter()
 const section = computed<Section>({
   get: () => {
     const value = route.query.section
-    return value === 'banners' || value === 'sliders' || value === 'stores'
+    return value === 'appearance' ||
+      value === 'banners' ||
+      value === 'sliders' ||
+      value === 'stores'
       ? value
       : 'pages'
   },
@@ -33,16 +37,10 @@ const section = computed<Section>({
         >Страницы</UiButton
       >
       <UiButton
-        :aria-pressed="section === 'banners'"
-        :variant="section === 'banners' ? 'primary' : 'secondary'"
-        @click="section = 'banners'"
-        >Баннеры</UiButton
-      >
-      <UiButton
-        :aria-pressed="section === 'sliders'"
-        :variant="section === 'sliders' ? 'primary' : 'secondary'"
-        @click="section = 'sliders'"
-        >Слайдеры</UiButton
+        :aria-pressed="section === 'appearance'"
+        :variant="section === 'appearance' ? 'primary' : 'secondary'"
+        @click="section = 'appearance'"
+        >Общее оформление</UiButton
       >
       <UiButton
         :aria-pressed="section === 'stores'"
@@ -56,14 +54,17 @@ const section = computed<Section>({
       :aria-label="
         section === 'pages'
           ? 'Страницы'
-          : section === 'banners'
-            ? 'Баннеры'
-            : section === 'sliders'
-              ? 'Слайдеры'
-              : 'Магазины'
+          : section === 'appearance'
+            ? 'Общее оформление'
+            : section === 'banners'
+              ? 'Баннеры'
+              : section === 'sliders'
+                ? 'Слайдеры'
+                : 'Магазины'
       "
     >
       <PagesWorkspace v-if="section === 'pages'" />
+      <AppearanceWorkspace v-else-if="section === 'appearance'" />
       <BannersWorkspace v-else-if="section === 'banners'" />
       <SlidersWorkspace v-else-if="section === 'sliders'" />
       <StoresWorkspace v-else />
