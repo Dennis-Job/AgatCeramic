@@ -102,7 +102,26 @@ feature tests. PostgreSQL — временный контейнер с отде�
 и отдельную рабочую копию/сборку; временный контейнер также удалён.
 Evidence остаётся в игнорируемых `.tmp/c004-ui/`, `.tmp/c004-linux/`,
 `.tmp/c004-windows-baseline/`, `.tmp/client-e2e/` и test-results; generated artifacts
-в tracked files не добавлялись. Commit не создавался.
+в tracked files не добавлялись. На момент завершения реализации commit не создавался.
+
+## Проверка после отправки в репозиторий
+
+По отдельному запросу владельца создан и отправлен в `main` commit
+[`7b7bad0`](https://github.com/Dennis-Job/AgatCeramic/commit/7b7bad017d93a3fdad479305bb9dd0c3539c86c1).
+[Первый CI run](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36827398873)
+завершил семь из восьми jobs успешно: Repository security, PostgreSQL feature suite,
+Redis queue delivery, Admin checks (включая format gate и полный E2E), Client checks,
+Compose bootstrap и Admin full-stack smoke. Это отдельное evidence чистого Linux checkout;
+оно не подменяет описанные выше результаты локальных Windows-копий.
+
+Backend checks остановился на `composer audit --locked`: обнаружены
+`GHSA-97jj-33gv-5xf9` и `GHSA-3q6v-r5mr-hxv8` в прежнем `league/commonmark 2.10.1`.
+Совместимый security release и исправление lock-файла описаны в [CI.md](CI.md).
+После обновления только `league/commonmark` до `2.10.2` Composer validate и установка
+прошли; повторный полный SQLite suite — 349 tests / 4828 assertions, PASS.
+Встроенный audit partial update не обнаружил advisories; отдельный локальный audit
+по-прежнему ограничен Packagist timeout, поэтому для окончательной приёмки требуется
+успешный обязательный audit gate следующего CI run.
 
 ## Изменённые файлы
 

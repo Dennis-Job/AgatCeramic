@@ -38,6 +38,32 @@ npm run build
 Чистые `npm ci`, audit (0 vulnerabilities), Nuxt typecheck и SSR build проверены в отдельном
 Linux-контейнере на Node `24.19.0`, без использования локальных `node_modules`.
 
+2026-10-01 первый [CI run TASK-C004](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36827398873)
+остановил `Backend checks` на `composer audit --locked`: прежний `league/commonmark 2.10.1`
+попал под [GHSA-97jj-33gv-5xf9](https://github.com/thephpleague/commonmark/security/advisories/GHSA-97jj-33gv-5xf9)
+и [GHSA-3q6v-r5mr-hxv8](https://github.com/thephpleague/commonmark/security/advisories/GHSA-3q6v-r5mr-hxv8).
+Оба advisories указывают исправленную версию
+[2.10.2](https://github.com/thephpleague/commonmark/releases/tag/2.10.2), совместимую
+с текущим Laravel constraint. Остальные семь jobs прошли, в том числе Admin format gate,
+полный E2E, full-stack smoke и PostgreSQL feature suite. Audit gate не отключается;
+исправление выполняется частичным обновлением одной зависимости в lock-файле:
+
+```bash
+cd backend
+composer update league/commonmark:2.10.2 --minimal-changes --no-scripts --no-interaction
+composer validate --strict
+composer audit --locked
+composer test
+```
+
+В исправленном lock-файле меняется только `league/commonmark` на `2.10.2` (официальный
+commit `692e90b901877bdfd727e51270ce4394633c6e74`); `composer.json`, content hash,
+остальные packages и plugin API version сохранены. Composer partial update в Docker
+сообщил `No security vulnerability advisories found`. Установка, `composer validate --strict`
+и полный PHPUnit SQLite suite прошли: 349 tests / 4828 assertions на PHP 8.3.33.
+Отдельные локальные `composer audit --locked` (включая IPv4 retry) завершились Packagist
+security-advisories timeout curl 28; итоговый audit проверяется обязательным GitHub CI gate.
+
 Backend architecture guard локально запускается после установки Composer dependencies:
 
 ```bash
