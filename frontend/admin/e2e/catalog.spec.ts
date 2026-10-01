@@ -602,9 +602,15 @@ test('product table sorts through the API and remains usable at supported widths
     expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(
       regionBox!.x + regionBox!.width,
     )
-    expect(initialActionBox!.x).toBeGreaterThanOrEqual(
-      regionBox!.x + regionBox!.width,
-    )
+    if (width < 1280) {
+      expect(initialActionBox!.x).toBeGreaterThanOrEqual(
+        regionBox!.x + regionBox!.width,
+      )
+    } else {
+      expect(initialActionBox!.x + initialActionBox!.width).toBeLessThanOrEqual(
+        regionBox!.x + regionBox!.width,
+      )
+    }
     await page
       .getByRole('radio', { name: 'Не распродажа', exact: true })
       .focus()
@@ -626,12 +632,11 @@ test('product table sorts through the API and remains usable at supported widths
   }
 })
 
-test('product table limits long displayed names to 50 characters without losing the full name', async ({
+test('product table wraps the full product name without truncation', async ({
   page,
 }) => {
   const longName =
     'Керамогранит коллекционный полированный с декоративной фактурой белого мрамора'
-  const preview = `${Array.from(longName).slice(0, 49).join('')}…`
   await mockCatalogApi(page, { sourceProduct: { name: longName } })
   await page.goto('/products')
 
@@ -642,12 +647,14 @@ test('product table limits long displayed names to 50 characters without losing 
     .first()
     .locator('p')
     .first()
-  const visiblePreview = productName.getByTestId('product-name-preview')
-  await expect(visiblePreview).toHaveText(preview)
-  await expect(visiblePreview).toHaveAttribute('aria-hidden', 'true')
-  await expect(productName).toHaveAttribute('title', longName)
-  await expect(productName.locator('.sr-only')).toHaveText(longName)
-  expect(Array.from(await visiblePreview.innerText())).toHaveLength(50)
+  await expect(productName).toHaveText(longName)
+  const metrics = await productName.evaluate((element) => ({
+    height: element.clientHeight,
+    lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+    overflow: element.scrollWidth > element.clientWidth,
+  }))
+  expect(metrics.height).toBeGreaterThan(metrics.lineHeight)
+  expect(metrics.overflow).toBe(false)
 
   const accessibility = await new AxeBuilder({ page })
     .include('[aria-label="Таблица товаров"]')
@@ -978,7 +985,9 @@ test('published product can be hidden without changing its stock', async ({
     .filter({ hasText: 'Монте Тиберио' })
     .first()
   await expect(productRow.getByText('Активен', { exact: true })).toBeVisible()
-  await expect(productRow.getByText('12', { exact: true })).toBeVisible()
+  await expect(
+    productRow.getByRole('cell', { name: '12 м²', exact: true }),
+  ).toBeVisible()
   await productRow
     .getByRole('button', { name: 'Редактировать товар Монте Тиберио' })
     .click()
@@ -997,7 +1006,9 @@ test('published product can be hidden without changing its stock', async ({
     dialog.getByRole('button', { name: 'Опубликовать товар' }),
   ).toBeVisible()
   await expect(productRow.getByText('Скрыт', { exact: true })).toBeVisible()
-  await expect(productRow.getByText('12', { exact: true })).toBeVisible()
+  await expect(
+    productRow.getByRole('cell', { name: '12 м²', exact: true }),
+  ).toBeVisible()
 })
 
 test('product list thumbnail updates immediately when the primary image changes', async ({

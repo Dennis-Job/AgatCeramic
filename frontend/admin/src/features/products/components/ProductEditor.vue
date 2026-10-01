@@ -6,7 +6,6 @@ import {
   Copy,
   Download,
   EyeOff,
-  Package,
   Pencil,
   Plus,
   Save,
@@ -15,15 +14,16 @@ import {
   X,
 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
+import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import UiRadio from '../../../components/ui/UiRadio.vue'
@@ -41,6 +41,7 @@ import ProductRelationsSection from './ProductRelationsSection.vue'
 import ProductReviewSection from './ProductReviewSection.vue'
 import { provideProductEditorContext } from '../composables/useProductEditorContext'
 import { useProductEditor } from '../composables/useProductEditor'
+import { productUnitLabel } from '../productPresentation'
 
 const editor = useProductEditor()
 provideProductEditorContext(editor)
@@ -82,8 +83,6 @@ const {
   productCountLabel,
   ariaSort,
   formatDate,
-  isProductNameTruncated,
-  productNamePreview,
   load,
   resetFilters,
   changeSort,
@@ -129,47 +128,49 @@ function closeGroupDeletion(): void {
 </script>
 
 <template>
-  <section class="mx-auto" :aria-busy="loading">
-    <PageHeader class="mb-7" eyebrow="Каталог" title="Товары">
-      <template #actions>
-        <UiButton
-          v-if="canManageImports"
-          type="button"
-          variant="secondary"
-          @click="importOpened = true"
-          ><Upload :size="18" aria-hidden="true" />Загрузить массово</UiButton
-        >
-        <UiButton
-          v-if="canManageImports"
-          type="button"
-          variant="secondary"
-          @click="priceStatusImportOpened = true"
-          ><Upload :size="18" aria-hidden="true" />Цены и статусы</UiButton
-        >
-        <UiButton
-          v-if="canManageImports && canManage"
-          type="button"
-          variant="secondary"
-          @click="groupImportOpened = true"
-          ><Upload :size="18" aria-hidden="true" />Группы вариантов</UiButton
-        >
-        <UiButton
-          v-if="canManageImports"
-          type="button"
-          variant="secondary"
-          :loading="exporting"
-          :disabled="exporting"
-          :aria-busy="exporting"
-          @click="exportFilteredProducts"
-          ><Download :size="18" aria-hidden="true" />{{
-            exporting ? 'Экспорт…' : 'Скачать Excel'
-          }}</UiButton
-        >
-        <UiButton v-if="canManage" type="button" @click="open()"
-          ><Plus :size="18" aria-hidden="true" />Добавить товар</UiButton
-        >
-      </template>
-    </PageHeader>
+  <AdminWorkspace mode="list" :aria-busy="loading">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Каталог" title="Товары">
+        <template #actions>
+          <UiButton
+            v-if="canManageImports"
+            type="button"
+            variant="secondary"
+            @click="importOpened = true"
+            ><Upload :size="18" aria-hidden="true" />Загрузить массово</UiButton
+          >
+          <UiButton
+            v-if="canManageImports"
+            type="button"
+            variant="secondary"
+            @click="priceStatusImportOpened = true"
+            ><Upload :size="18" aria-hidden="true" />Цены и статусы</UiButton
+          >
+          <UiButton
+            v-if="canManageImports && canManage"
+            type="button"
+            variant="secondary"
+            @click="groupImportOpened = true"
+            ><Upload :size="18" aria-hidden="true" />Группы вариантов</UiButton
+          >
+          <UiButton
+            v-if="canManageImports"
+            type="button"
+            variant="secondary"
+            :loading="exporting"
+            :disabled="exporting"
+            :aria-busy="exporting"
+            @click="exportFilteredProducts"
+            ><Download :size="18" aria-hidden="true" />{{
+              exporting ? 'Экспорт…' : 'Скачать Excel'
+            }}</UiButton
+          >
+          <UiButton v-if="canManage" type="button" @click="open()"
+            ><Plus :size="18" aria-hidden="true" />Добавить товар</UiButton
+          >
+        </template>
+      </PageHeader>
+    </template>
 
     <UiAlert v-if="error && !opened" class="mb-4">{{ error }}</UiAlert>
     <UiAlert v-if="exportStatus" class="mb-4" tone="success" live="polite">{{
@@ -192,7 +193,7 @@ function closeGroupDeletion(): void {
     />
 
     <form
-      class="rounded-xl border border-gray-200 bg-white p-5 shadow-card"
+      class="rounded-xl bg-gray-50 p-4 sm:p-5"
       role="search"
       @submit.prevent
     >
@@ -276,12 +277,15 @@ function closeGroupDeletion(): void {
     </p>
     <p class="sr-only" role="status" aria-live="polite">{{ sortStatus }}</p>
 
-    <UiCard class="mt-6 overflow-hidden" :padded="false">
+    <div class="mt-6 min-w-0">
       <UiLoadingState v-if="loading" label="Загрузка товаров…" />
       <UiEmptyState v-else-if="!products.length" label="Товары не найдены." />
       <UiTable
         v-else
-        min-width="min-w-[1180px]"
+        min-width="min-w-[1560px]"
+        table-class="product-table"
+        sticky-header
+        sticky-edges
         label="Таблица товаров"
         role="region"
         tabindex="0"
@@ -290,6 +294,18 @@ function closeGroupDeletion(): void {
           Товары каталога. Заголовки SKU, Наименование, Создан и Изменён
           управляют сортировкой.
         </caption>
+        <colgroup>
+          <col class="product-table-name-column" />
+          <col style="width: 130px" />
+          <col style="width: 130px" />
+          <col style="width: 160px" />
+          <col style="width: 130px" />
+          <col style="width: 100px" />
+          <col style="width: 130px" />
+          <col style="width: 130px" />
+          <col style="width: 130px" />
+          <col style="width: 140px" />
+        </colgroup>
         <thead
           class="border-b border-gray-200 bg-gray-50 text-xs font-semibold tracking-wide text-gray-500"
         >
@@ -388,39 +404,18 @@ function closeGroupDeletion(): void {
             class="group transition hover:bg-gray-50"
           >
             <td class="px-4 py-3">
-              <div class="flex min-w-[240px] items-center gap-3">
-                <img
-                  v-if="product.primary_image"
-                  :src="product.primary_image.url"
-                  :alt="product.primary_image.alt || product.name"
-                  class="h-11 w-11 shrink-0 rounded-lg object-cover"
-                /><span
-                  v-else
-                  class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"
-                  ><Package :size="19" aria-hidden="true"
-                /></span>
+              <div class="flex items-center gap-3">
+                <UiImagePreview
+                  compact
+                  :url="product.primary_image?.url || null"
+                  :alt="product.primary_image?.alt || product.name"
+                />
                 <div class="min-w-0">
                   <p
                     class="font-semibold text-gray-800"
-                    :title="
-                      isProductNameTruncated(product.name)
-                        ? product.name
-                        : undefined
-                    "
+                    data-testid="product-name-preview"
                   >
-                    <span
-                      data-testid="product-name-preview"
-                      :aria-hidden="
-                        isProductNameTruncated(product.name)
-                          ? 'true'
-                          : undefined
-                      "
-                      >{{ productNamePreview(product.name) }}</span
-                    ><span
-                      v-if="isProductNameTruncated(product.name)"
-                      class="sr-only"
-                      >{{ product.name }}</span
-                    >
+                    {{ product.name }}
                   </p>
                   <p class="mt-0.5 text-xs text-gray-500">
                     {{ product.brand?.name || 'Без бренда' }}
@@ -428,22 +423,26 @@ function closeGroupDeletion(): void {
                 </div>
               </div>
             </td>
-            <td class="whitespace-nowrap px-4 py-3 font-mono text-gray-700">
+            <td class="px-4 py-3 font-mono text-gray-700">
               {{ product.sku }}
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+            <td class="px-4 py-3 text-gray-600">
               {{ product.article_number || '—' }}
             </td>
             <td class="max-w-48 px-4 py-3">
               <UiBadge tone="primary">{{ product.category.name }}</UiBadge>
             </td>
-            <td
-              class="whitespace-nowrap px-4 py-3 text-right font-medium text-gray-800"
-            >
+            <td class="px-4 py-3 text-right font-medium text-gray-800">
               {{ product.price }} ₽
+              <p class="mt-0.5 text-xs font-normal text-gray-500">
+                за {{ productUnitLabel(product.unit) }}
+              </p>
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+            <td class="px-4 py-3 text-right text-gray-700">
               {{ product.stock_quantity }}
+              <p class="mt-0.5 text-xs text-gray-500">
+                {{ productUnitLabel(product.unit) }}
+              </p>
             </td>
             <td class="px-4 py-3">
               <div class="flex min-w-24 flex-col items-start gap-1">
@@ -455,12 +454,12 @@ function closeGroupDeletion(): void {
                 >
               </div>
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+            <td class="px-4 py-3 text-gray-600">
               <time :datetime="product.created_at">{{
                 formatDate(product.created_at)
               }}</time>
             </td>
-            <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+            <td class="px-4 py-3 text-gray-600">
               <time :datetime="product.updated_at">{{
                 formatDate(product.updated_at)
               }}</time>
@@ -495,7 +494,7 @@ function closeGroupDeletion(): void {
           </tr>
         </tbody>
       </UiTable>
-    </UiCard>
+    </div>
     <UiPagination
       v-if="pagination"
       :meta="pagination"
@@ -664,5 +663,18 @@ function closeGroupDeletion(): void {
       @close="closeGroupDeletion"
       @confirm="ungroup"
     />
-  </section>
+  </AdminWorkspace>
 </template>
+
+<style scoped>
+:deep(.product-table) {
+  table-layout: fixed;
+}
+:deep(.product-table td) {
+  overflow-wrap: anywhere;
+}
+.product-table-name-column {
+  /* The name receives all remaining width beyond the fixed detail columns. */
+  width: auto;
+}
+</style>

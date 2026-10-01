@@ -198,6 +198,12 @@ export async function mockCatalogApi(
   pageContext: Page,
   options: ApiOptions = {},
 ): Promise<void> {
+  await pageContext.route('**/*.jpg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60"><path fill="#ddd" d="M0 0h120v60H0z"/></svg>',
+    }),
+  )
   let catalogProduct = { ...product, ...options.sourceProduct }
   const createdProducts: Array<typeof product> = []
   const productImages = new Map<

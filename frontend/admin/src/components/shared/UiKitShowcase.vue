@@ -181,6 +181,10 @@ const controlHeightTokens = ['sm', 'md', 'lg']
 const shadowTokens = ['card', 'input', 'dialog', 'dropdown', 'sm', 'xl']
 const foundationMetaTokens = [
   '--admin-shell-max-width',
+  '--admin-workspace-overview-max-width',
+  '--admin-workspace-form-max-width',
+  '--admin-workspace-gutter',
+  '--admin-workspace-gutter-compact',
   '--admin-shell-top-height',
   '--admin-shell-navigation-height',
   '--admin-shell-height',

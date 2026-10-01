@@ -448,13 +448,6 @@ export function useProductEditor() {
   function formatDate(value: string): string {
     return productDateFormatter.format(new Date(value))
   }
-  function isProductNameTruncated(value: string): boolean {
-    return Array.from(value).length > 50
-  }
-  function productNamePreview(value: string): string {
-    const symbols = Array.from(value)
-    return symbols.length > 50 ? `${symbols.slice(0, 49).join('')}…` : value
-  }
   function resetFilters() {
     filters.value = {
       search: '',
@@ -1165,8 +1158,6 @@ export function useProductEditor() {
     relationOptions,
     ariaSort,
     formatDate,
-    isProductNameTruncated,
-    productNamePreview,
     slugify,
     normalizedName,
     emptyProduct,

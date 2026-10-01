@@ -6,9 +6,21 @@ import AdminHeader from './components/AdminHeader.vue'
   <div class="min-h-screen bg-page text-gray-800">
     <AdminHeader />
     <main id="admin-main" class="min-w-0 admin-layout-main">
-      <div class="p-4 sm:p-6 lg:p-8">
+      <div class="admin-layout-content">
         <slot />
       </div>
     </main>
   </div>
 </template>
+
+<style scoped>
+.admin-layout-content {
+  min-width: 0;
+  padding: var(--admin-workspace-gutter-compact);
+}
+@media (min-width: 640px) {
+  .admin-layout-content {
+    padding: var(--admin-workspace-gutter);
+  }
+}
+</style>
