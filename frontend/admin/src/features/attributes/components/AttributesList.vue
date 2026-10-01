@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ListFilter, Pencil, Trash2 } from '@lucide/vue'
+import UiTable from '../../../components/ui/UiTable.vue'
+import { Pencil, Trash2 } from '@lucide/vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
@@ -26,51 +27,66 @@ function groupName(
 }
 </script>
 <template>
-  <div v-if="attributes.length" class="divide-y divide-gray-100">
-    <article
-      v-for="attribute in attributes"
-      :key="attribute.id"
-      class="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center sm:gap-4"
-    >
-      <span
-        class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"
-        ><ListFilter :size="20"
-      /></span>
-      <div class="min-w-0 flex-[1_1_calc(100%-52px)] sm:flex-1">
-        <div class="flex flex-wrap items-center gap-2">
+  <UiTable
+    v-if="attributes.length"
+    label="Список характеристик"
+    min-width="min-w-[960px]"
+    table-class="seller-table"
+    sticky-header
+    :sticky-edges="canManage"
+  >
+    <thead>
+      <tr>
+        <th scope="col">Характеристика</th>
+        <th scope="col" class="w-52">Группа</th>
+        <th scope="col" class="w-52">Тип / значения</th>
+        <th scope="col" class="w-32">В фильтрах</th>
+        <th v-if="canManage" scope="col" class="w-40">
+          <span class="sr-only">Действия</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="attribute in attributes" :key="attribute.id">
+        <td>
           <h2 class="font-semibold text-gray-800">
             {{ attribute.name
             }}<span v-if="attribute.unit" class="font-medium text-gray-500">
               ({{ attribute.unit }})</span
             >
           </h2>
-          <UiBadge v-if="groupName(attribute, groups)" tone="primary"
-            >Группа: {{ groupName(attribute, groups) }}</UiBadge
-          ><UiBadge v-if="attribute.is_filterable" tone="success"
-            >В фильтрах</UiBadge
-          >
-        </div>
-        <p class="mt-0.5 text-sm text-gray-500">
-          {{ attributeTypeLabel(attribute.type) }} · /{{ attribute.slug }} ·
-          значений: {{ attribute.options.length }}
-        </p>
-      </div>
-      <div v-if="canManage" class="ml-[52px] flex gap-1 sm:ml-0">
-        <UiButton
-          variant="ghost"
-          size="sm"
-          :aria-label="`Редактировать характеристику ${attribute.name}`"
-          @click="emit('edit', attribute)"
-          ><Pencil :size="17" /></UiButton
-        ><UiButton
-          variant="ghost"
-          size="sm"
-          :aria-label="`Удалить характеристику ${attribute.name}`"
-          @click="emit('remove', attribute)"
-          ><Trash2 :size="17"
-        /></UiButton>
-      </div>
-    </article>
-  </div>
+          <p class="mt-1 text-xs text-gray-500">/{{ attribute.slug }}</p>
+        </td>
+        <td>{{ groupName(attribute, groups) ?? 'Без группы' }}</td>
+        <td>
+          <p>{{ attributeTypeLabel(attribute.type) }}</p>
+          <p class="mt-1 text-xs text-gray-500">
+            значений: {{ attribute.options.length }}
+          </p>
+        </td>
+        <td>
+          <UiBadge :tone="attribute.is_filterable ? 'success' : 'neutral'">{{
+            attribute.is_filterable ? 'В фильтрах' : 'Нет'
+          }}</UiBadge>
+        </td>
+        <td v-if="canManage">
+          <div class="flex justify-end gap-1">
+            <UiButton
+              variant="ghost"
+              size="sm"
+              :aria-label="`Редактировать характеристику ${attribute.name}`"
+              @click="emit('edit', attribute)"
+              ><Pencil :size="17" /></UiButton
+            ><UiButton
+              variant="ghost"
+              size="sm"
+              :aria-label="`Удалить характеристику ${attribute.name}`"
+              @click="emit('remove', attribute)"
+              ><Trash2 :size="17"
+            /></UiButton>
+          </div>
+        </td>
+      </tr></tbody
+  ></UiTable>
   <UiEmptyState v-else label="Характеристик пока нет." />
 </template>

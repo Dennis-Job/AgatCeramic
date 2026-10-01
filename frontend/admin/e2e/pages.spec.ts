@@ -133,7 +133,9 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   await expect(
     page.getByRole('button', { name: 'Опубликовать черновик' }),
   ).toBeDisabled()
-  expect(publishedBody).toBe('Новая история компании.')
+  // The published badge is already visible and busy also disables this button;
+  // wait for the publication request to apply before asserting its snapshot.
+  await expect.poll(() => publishedBody).toBe('Новая история компании.')
   expect(submittedPublicationStates).toEqual([undefined, undefined])
   await page.screenshot({
     path: test.info().outputPath('page-published.png'),

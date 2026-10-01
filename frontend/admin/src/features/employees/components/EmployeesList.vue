@@ -71,17 +71,19 @@ const lastLogin = (value: string | null): string =>
     </div>
     <UiTable
       class="hidden xl:block"
-      min-width="min-w-[680px]"
-      table-class="admin-table-employees"
+      min-width="min-w-[960px]"
+      table-class="seller-table"
       label="Список сотрудников"
+      sticky-header
+      :sticky-edges="canManage"
     >
       <thead class="bg-gray-25 text-xs font-medium text-gray-500">
         <tr>
-          <th class="px-6 py-3">Сотрудник</th>
-          <th class="px-6 py-3">Роли</th>
-          <th class="px-6 py-3">Статус</th>
-          <th class="px-6 py-3">Последний вход</th>
-          <th v-if="canManage" class="px-6 py-3">
+          <th scope="col" class="px-6 py-3">Сотрудник</th>
+          <th scope="col" class="px-6 py-3">Роли</th>
+          <th scope="col" class="w-40 px-6 py-3">Статус</th>
+          <th scope="col" class="w-48 px-6 py-3">Последний вход</th>
+          <th v-if="canManage" scope="col" class="w-28 px-6 py-3">
             <span class="sr-only">Действия</span>
           </th>
         </tr>
@@ -97,12 +99,17 @@ const lastLogin = (value: string | null): string =>
             <p class="mt-0.5 text-xs text-gray-500">{{ employee.email }}</p>
           </td>
           <td class="px-6 py-4">
-            <UiBadge
-              v-for="role in employee.roles"
-              :key="role.id"
-              class="mr-1"
-              tone="primary"
-              >{{ role.name }}</UiBadge
+            <div class="flex flex-wrap gap-1">
+              <UiBadge
+                v-for="role in employee.roles"
+                :key="role.id"
+                class="mr-1"
+                tone="primary"
+                >{{ role.name }}</UiBadge
+              >
+            </div>
+            <span v-if="!employee.roles.length" class="text-sm text-gray-500"
+              >Роли не назначены</span
             >
           </td>
           <td class="px-6 py-4">
@@ -114,7 +121,11 @@ const lastLogin = (value: string | null): string =>
             >
           </td>
           <td class="px-6 py-4 text-gray-500">
-            {{ lastLogin(employee.last_login_at) }}
+            <time
+              v-if="employee.last_login_at"
+              :datetime="employee.last_login_at"
+              >{{ lastLogin(employee.last_login_at) }}</time
+            ><span v-else>—</span>
           </td>
           <td v-if="canManage" class="px-6 py-4">
             <div class="flex justify-end gap-1">

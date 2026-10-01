@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
@@ -10,7 +11,6 @@ import { getPage } from '../../pages/services/pages'
 import type { ContentPage } from '../../pages/types/page.types'
 import { getHomePage } from '../services/homepage'
 
-withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
 const emit = defineEmits<{
   saved: [page: ContentPage]
   pending: [value: boolean]
@@ -42,7 +42,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section :class="embedded ? 'min-w-0' : 'admin-page mx-auto'">
+  <AdminWorkspace mode="editor">
     <PageHeader
       class="mb-6"
       eyebrow="Управление сайтом"
@@ -74,5 +74,5 @@ onMounted(load)
         @pending="emit('pending', $event)"
       />
     </template>
-  </section>
+  </AdminWorkspace>
 </template>

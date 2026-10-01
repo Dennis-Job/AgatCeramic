@@ -21,7 +21,7 @@ defineEmits<{ select: [order: Order] }>()
   <UiLoadingState v-if="loading" label="Загрузка заказов…" />
   <UiEmptyState v-else-if="!orders.length" label="Заказы не найдены." />
   <template v-else>
-    <div class="divide-y divide-gray-100 md:hidden xl:block">
+    <div class="divide-y divide-gray-100 md:hidden">
       <article
         v-for="order in orders"
         :key="order.id"
@@ -40,9 +40,11 @@ defineEmits<{ select: [order: Order] }>()
               <span class="block break-all font-semibold text-gray-800">{{
                 order.order_number
               }}</span
-              ><span class="mt-1 block text-xs text-gray-500">{{
-                date(order.created_at)
-              }}</span>
+              ><time
+                class="mt-1 block text-xs text-gray-500"
+                :datetime="order.created_at"
+                >{{ date(order.created_at) }}</time
+              >
             </div>
             <strong class="text-gray-700">{{
               amount(order.total_amount)
@@ -63,17 +65,19 @@ defineEmits<{ select: [order: Order] }>()
         </button>
       </article>
     </div>
-    <div class="xl:hidden">
+    <div class="min-w-0">
       <UiTable
         class="hidden md:block"
-        min-width="min-w-[680px]"
+        min-width="min-w-[760px]"
+        table-class="seller-table"
+        sticky-header
         label="Список заказов"
         ><thead class="bg-gray-25 text-xs font-medium text-gray-500">
           <tr>
-            <th class="px-5 py-3">Заказ</th>
-            <th class="px-5 py-3">Клиент</th>
-            <th class="px-5 py-3">Статус</th>
-            <th class="px-5 py-3">Сумма</th>
+            <th scope="col" class="w-56 px-5 py-3">Заказ</th>
+            <th scope="col" class="px-5 py-3">Клиент</th>
+            <th scope="col" class="w-40 px-5 py-3">Статус</th>
+            <th scope="col" class="w-44 text-right px-5 py-3">Сумма</th>
           </tr>
         </thead>
         <tbody>
@@ -94,9 +98,11 @@ defineEmits<{ select: [order: Order] }>()
                 <span class="block font-semibold text-gray-800">{{
                   order.order_number
                 }}</span
-                ><span class="mt-1 block text-xs text-gray-500">{{
-                  date(order.created_at)
-                }}</span>
+                ><time
+                  class="mt-1 block text-xs text-gray-500"
+                  :datetime="order.created_at"
+                  >{{ date(order.created_at) }}</time
+                >
               </button>
             </td>
             <td class="px-5 py-4">
@@ -111,7 +117,7 @@ defineEmits<{ select: [order: Order] }>()
                 {{ paymentName(order.payment_status) }}
               </p>
             </td>
-            <td class="px-5 py-4 font-semibold text-gray-700">
+            <td class="px-5 py-4 text-right font-semibold text-gray-700">
               {{ amount(order.total_amount) }}
             </td>
           </tr>

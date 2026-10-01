@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
@@ -97,7 +98,7 @@ async function confirmPublish(): Promise<void> {
 </script>
 
 <template>
-  <section class="mx-auto admin-page space-y-6">
+  <AdminWorkspace mode="form" class="space-y-6">
     <PageHeader
       eyebrow="Контент"
       title="Настройки сайта"
@@ -463,5 +464,5 @@ async function confirmPublish(): Promise<void> {
         />
       </UiCard>
     </template>
-  </section>
+  </AdminWorkspace>
 </template>

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { BadgeCheck, Pencil, Plus, Trash2 } from '@lucide/vue'
+import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
+import UiTable from '../../../components/ui/UiTable.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { countryName } from '../../../constants/countries'
 import { useAuthStore } from '../../../stores/auth'
@@ -61,53 +62,66 @@ async function remove() {
 onMounted(load)
 </script>
 <template>
-  <section class="mx-auto admin-page">
-    <PageHeader class="mb-7" eyebrow="Каталог" title="Бренды"
-      ><template #actions
-        ><UiButton v-if="canManage" @click="show()"
-          ><Plus :size="18" />Добавить бренд</UiButton
-        ></template
-      ></PageHeader
-    ><UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
-    ><UiCard class="overflow-hidden"
-      ><UiLoadingState v-if="loading" label="Загрузка брендов…" />
-      <div v-else-if="brands.length" class="divide-y">
-        <article
-          v-for="brand in brands"
-          :key="brand.id"
-          class="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center"
-        >
-          <BadgeCheck class="shrink-0 text-primary-600" />
-          <div class="min-w-0 flex-[1_1_calc(100%-52px)] sm:flex-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <h2 class="break-words font-semibold">{{ brand.name }}</h2>
-              <UiBadge :tone="brand.is_active ? 'success' : 'neutral'">{{
-                brand.is_active ? 'Активен' : 'Скрыт'
-              }}</UiBadge>
+  <AdminWorkspace mode="list">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Каталог" title="Бренды"
+        ><template #actions
+          ><UiButton v-if="canManage" @click="show()"
+            ><Plus :size="18" />Добавить бренд</UiButton
+          ></template
+        ></PageHeader
+      >
+    </template>
+    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
+    ><UiLoadingState v-if="loading" label="Загрузка брендов…" /><UiTable
+      v-else-if="brands.length"
+      label="Список брендов"
+      min-width="min-w-[880px]"
+      table-class="seller-table"
+      sticky-header
+      :sticky-edges="canManage"
+    >
+      <thead>
+        <tr>
+          <th scope="col">Бренд</th>
+          <th scope="col" class="w-64">Страна</th>
+          <th scope="col" class="w-32">Статус</th>
+          <th v-if="canManage" scope="col" class="w-40">
+            <span class="sr-only">Действия</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="brand in brands" :key="brand.id">
+          <td>
+            <h2 class="font-semibold text-gray-800">{{ brand.name }}</h2>
+            <p class="mt-1 text-xs text-gray-500">/{{ brand.slug }}</p>
+          </td>
+          <td>{{ countryName(brand.country_code ?? '') }}</td>
+          <td>
+            <UiBadge :tone="brand.is_active ? 'success' : 'neutral'">{{
+              brand.is_active ? 'Активен' : 'Скрыт'
+            }}</UiBadge>
+          </td>
+          <td v-if="canManage">
+            <div class="flex justify-end gap-1">
+              <UiButton
+                variant="ghost"
+                size="sm"
+                :aria-label="`Редактировать бренд ${brand.name}`"
+                @click="show(brand)"
+                ><Pencil :size="17" /></UiButton
+              ><UiButton
+                variant="ghost"
+                size="sm"
+                :aria-label="`Удалить бренд ${brand.name}`"
+                @click="deleting = brand"
+                ><Trash2 :size="17"
+              /></UiButton>
             </div>
-            <p class="break-words text-sm text-gray-500">
-              /{{ brand.slug }} · {{ countryName(brand.country_code ?? '') }}
-            </p>
-          </div>
-          <div v-if="canManage" class="ml-[52px] flex sm:ml-0">
-            <UiButton
-              variant="ghost"
-              size="sm"
-              :aria-label="`Редактировать бренд ${brand.name}`"
-              @click="show(brand)"
-              ><Pencil :size="17" /></UiButton
-            ><UiButton
-              variant="ghost"
-              size="sm"
-              :aria-label="`Удалить бренд ${brand.name}`"
-              @click="deleting = brand"
-              ><Trash2 :size="17"
-            /></UiButton>
-          </div>
-        </article>
-      </div>
-      <UiEmptyState v-else label="Брендов пока нет." /></UiCard
-    ><UiPagination
+          </td>
+        </tr></tbody></UiTable
+    ><UiEmptyState v-else label="Брендов пока нет." /><UiPagination
       v-if="pagination"
       :meta="pagination"
       :loading="loading"
@@ -130,5 +144,5 @@ onMounted(load)
       @close="deleting = null"
       @confirm="remove"
     />
-  </section>
+  </AdminWorkspace>
 </template>

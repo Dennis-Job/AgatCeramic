@@ -582,12 +582,21 @@ API behaviour без migration plan и синхронного обновлени
   - Завершено 2026-10-01: UI Design Guard Windows/Linux принят; lint/build,
     64 unit, 198 E2E и 77 baseline в каждой OS. Проверки, файлы и ограничения —
     в [`TASK_A059_REPORT.md`](../docs/TASK_A059_REPORT.md).
-- [ ] TASK-A060 Перенести остальные списки и list/detail рабочие области
+- [x] TASK-A060 Перенести остальные списки и list/detail рабочие области
   - Каталог, заказы, обращения, сотрудники, роли, права, аудит и медиатека;
     переиспользовать общий табличный паттерн и сохранить permissions/состояния.
-- [ ] TASK-A061 Адаптировать контент, dashboard и простые формы
+  - Завершено 2026-10-01: UI Design Guard принят; lint/format/build,
+    64 unit, 214 Linux E2E (включая 82 baseline), responsive 320–2560 px.
+    Результат, файлы и ограничения — в
+    [`TASK_A060_REPORT.md`](../docs/TASK_A060_REPORT.md).
+- [x] TASK-A061 Адаптировать контент, dashboard и простые формы
   - Раскрыть зоны редактора и настоящий Nuxt-preview по доступной ширине;
     сохранить dirty guards/публикацию; ограничить ширину обзорных и коротких форм.
+  - Завершено 2026-10-01: UI Design Guard принят; lint/format/build,
+    64 unit, 221 Linux E2E (82 strict baseline), real Admin/Nuxt 3/3,
+    Client preview production 6/6 и development 2/2; responsive 320–2560 px.
+    Результат, файлы и ограничения — в
+    [`TASK_A061_REPORT.md`](../docs/TASK_A061_REPORT.md).
 - [ ] TASK-A062 Выполнить финальную приёмку Seller-редизайна
   - Полный lint/format/build/unit/E2E, axe, визуальная сверка и все маршруты;
     размеры 320–2560 px, UI Design Guard и актуальная документация результата.

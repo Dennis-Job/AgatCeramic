@@ -115,6 +115,7 @@ const links = computed(() => {
 }
 .preview-mobile {
   width: 375px;
+  margin-inline: auto;
 }
 .preview-desktop {
   width: 1280px;

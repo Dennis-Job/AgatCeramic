@@ -39,6 +39,28 @@ withDefaults(
 </template>
 
 <style scoped>
+/* Shared Seller list pattern. Features own columns and domain content. */
+.seller-table {
+  table-layout: fixed;
+}
+.seller-table :deep(th),
+.seller-table :deep(td) {
+  padding: var(--admin-spacing-4);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.seller-table :deep(th) {
+  background: var(--admin-color-gray-50);
+  color: var(--admin-color-gray-500);
+  font-weight: 600;
+}
+.seller-table :deep(td) {
+  border-bottom: 1px solid var(--admin-color-gray-100);
+  color: var(--admin-color-gray-700);
+}
+.seller-table :deep(tbody tr:hover) {
+  background: var(--admin-color-gray-50);
+}
 .ui-table-sticky-header {
   max-height: calc(
     100dvh - var(--admin-shell-height) - var(--admin-spacing-6) * 2

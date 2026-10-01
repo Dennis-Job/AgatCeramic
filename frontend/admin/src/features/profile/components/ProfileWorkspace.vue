@@ -4,6 +4,7 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { useProfileEditor } from '../composables/useProfileEditor'
 
@@ -20,7 +21,7 @@ const {
 </script>
 
 <template>
-  <section class="mx-auto max-w-2xl">
+  <AdminWorkspace mode="form">
     <PageHeader
       class="mb-7"
       eyebrow="Учётная запись"
@@ -95,5 +96,5 @@ const {
         </div>
       </UiCard>
     </form>
-  </section>
+  </AdminWorkspace>
 </template>

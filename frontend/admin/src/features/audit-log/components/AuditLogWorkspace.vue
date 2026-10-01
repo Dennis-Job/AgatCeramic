@@ -2,11 +2,11 @@
 import { onMounted } from 'vue'
 import { ScrollText } from '@lucide/vue'
 import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
@@ -28,20 +28,23 @@ onMounted(audit.load)
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
-    <PageHeader
-      class="mb-7"
-      eyebrow="Безопасность"
-      title="Журнал аудита"
-      description="История важных действий в административной панели."
-    />
+  <AdminWorkspace mode="list">
+    <template #intro>
+      <PageHeader
+        class="mb-7"
+        eyebrow="Безопасность"
+        title="Журнал аудита"
+        description="История важных действий в административной панели."
+      />
+    </template>
+
     <UiAlert v-if="audit.error.value" class="mb-4">{{
       audit.error.value
     }}</UiAlert>
-    <UiCard :padded="false">
+    <div class="min-w-0">
       <form
         role="search"
-        class="grid gap-3 border-b border-gray-100 p-4 md:grid-cols-2 admin-audit-log-filter-grid"
+        class="grid gap-3 border-b border-gray-100 py-4 md:grid-cols-2 admin-audit-log-filter-grid"
         @submit.prevent="audit.load()"
       >
         <UiInput
@@ -82,17 +85,21 @@ onMounted(audit.load)
         <div class="divide-y divide-gray-100 xl:hidden">
           <article v-for="log in audit.logs.value" :key="log.id" class="p-4">
             <div class="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <UiBadge tone="primary"
-                  ><ScrollText :size="14" aria-hidden="true" class="mr-1" />{{
+              <div class="min-w-0 max-w-full">
+                <UiBadge tone="primary" class="max-w-full"
+                  ><ScrollText
+                    :size="14"
+                    aria-hidden="true"
+                    class="mr-1 shrink-0"
+                  /><span class="min-w-0 [overflow-wrap:anywhere]">{{
                     auditActionName(log.action)
-                  }}</UiBadge
+                  }}</span></UiBadge
                 >
                 <p class="mt-1 break-all text-xs text-gray-400">
                   {{ log.action }}
                 </p>
               </div>
-              <time class="text-xs text-gray-500">{{
+              <time :datetime="log.occurred_at" class="text-xs text-gray-500">{{
                 date(log.occurred_at)
               }}</time>
             </div>
@@ -118,7 +125,7 @@ onMounted(audit.load)
               <p
                 v-for="detail in log.details"
                 :key="detail.label"
-                class="break-words"
+                class="[overflow-wrap:anywhere]"
               >
                 <span class="text-gray-500">{{ detail.label }}:</span>
                 <span class="font-medium text-gray-700">{{
@@ -131,15 +138,17 @@ onMounted(audit.load)
         <div class="hidden xl:block">
           <UiTable
             class="hidden md:block"
-            table-class="admin-table-audit-log"
+            table-class="seller-table"
             label="Записи журнала аудита"
+            min-width="min-w-[960px]"
+            sticky-header
             ><thead class="bg-gray-25 text-xs font-medium text-gray-500">
               <tr>
-                <th class="px-6 py-3">Действие</th>
-                <th class="px-6 py-3">Сотрудник</th>
-                <th class="px-6 py-3">Объект</th>
-                <th class="px-6 py-3">Время</th>
-                <th class="px-6 py-3">Детали</th>
+                <th scope="col" class="w-60 px-6 py-3">Действие</th>
+                <th scope="col" class="px-6 py-3">Сотрудник</th>
+                <th scope="col" class="px-6 py-3">Объект</th>
+                <th scope="col" class="w-44 px-6 py-3">Время</th>
+                <th scope="col" class="px-6 py-3">Детали</th>
               </tr>
             </thead>
             <tbody>
@@ -149,10 +158,14 @@ onMounted(audit.load)
                 class="border-t border-gray-100 text-gray-600"
               >
                 <td class="px-6 py-4">
-                  <UiBadge tone="primary"
-                    ><ScrollText :size="14" aria-hidden="true" class="mr-1" />{{
+                  <UiBadge tone="primary" class="max-w-full"
+                    ><ScrollText
+                      :size="14"
+                      aria-hidden="true"
+                      class="mr-1 shrink-0"
+                    /><span class="min-w-0 [overflow-wrap:anywhere]">{{
                       auditActionName(log.action)
-                    }}</UiBadge
+                    }}</span></UiBadge
                   >
                   <p class="mt-1 text-xs text-gray-400">{{ log.action }}</p>
                 </td>
@@ -165,10 +178,12 @@ onMounted(audit.load)
                     {{ log.entity.email }}
                   </p>
                 </td>
-                <td class="whitespace-nowrap px-6 py-4 text-gray-500">
-                  {{ date(log.occurred_at) }}
+                <td class="px-6 py-4 text-gray-500">
+                  <time :datetime="log.occurred_at">{{
+                    date(log.occurred_at)
+                  }}</time>
                 </td>
-                <td class="max-w-72 px-6 py-4">
+                <td class="px-6 py-4">
                   <div v-if="log.details.length" class="space-y-1.5 text-sm">
                     <p v-for="detail in log.details" :key="detail.label">
                       <span class="text-gray-500">{{ detail.label }}:</span>
@@ -212,6 +227,6 @@ onMounted(audit.load)
           >
         </nav>
       </div>
-    </UiCard>
-  </section>
+    </div>
+  </AdminWorkspace>
 </template>

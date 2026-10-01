@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Layers3, Pencil, Plus, Trash2 } from '@lucide/vue'
+import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
+import UiTable from '../../../components/ui/UiTable.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useAttributeGroupsCatalog } from '../composables/useAttributeGroupsCatalog'
@@ -49,59 +50,65 @@ async function confirmDelete(): Promise<void> {
 onMounted(load)
 </script>
 <template>
-  <section class="mx-auto admin-page" :aria-busy="loading">
-    <PageHeader class="mb-7" eyebrow="Каталог" title="Группы характеристик"
-      ><template #actions
-        ><UiButton v-if="canManage" @click="show()"
-          ><Plus :size="18" />Добавить группу</UiButton
-        ></template
-      ></PageHeader
-    ><UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
-    ><UiCard class="overflow-hidden"
-      ><UiLoadingState v-if="loading" label="Загрузка групп характеристик…" />
-      <div v-else-if="groups.length" class="divide-y divide-gray-100">
-        <article
-          v-for="group in groups"
-          :key="group.id"
-          class="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center sm:gap-4"
-        >
-          <span
-            class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"
-            ><Layers3 :size="20"
-          /></span>
-          <div class="min-w-0 flex-[1_1_calc(100%-52px)] sm:flex-1">
-            <h2 class="break-words font-semibold text-gray-800">
-              {{ group.name }}
-            </h2>
-            <p class="mt-1 break-words text-sm text-gray-500">
-              /{{ group.slug }} · Порядок: {{ group.sort_order }}
-            </p>
-            <p
-              v-if="group.description"
-              class="mt-1 break-words text-sm text-gray-500"
-            >
-              {{ group.description }}
-            </p>
-          </div>
-          <div v-if="canManage" class="ml-[52px] flex gap-1 sm:ml-0">
-            <UiButton
-              variant="ghost"
-              size="sm"
-              :aria-label="`Редактировать группу ${group.name}`"
-              @click="show(group)"
-              ><Pencil :size="17" /></UiButton
-            ><UiButton
-              variant="ghost"
-              size="sm"
-              :aria-label="`Удалить группу ${group.name}`"
-              @click="deleting = group"
-              ><Trash2 :size="17"
-            /></UiButton>
-          </div>
-        </article>
-      </div>
-      <UiEmptyState v-else label="Групп пока нет." /></UiCard
-    ><UiPagination
+  <AdminWorkspace mode="list" :aria-busy="loading">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Каталог" title="Группы характеристик"
+        ><template #actions
+          ><UiButton v-if="canManage" @click="show()"
+            ><Plus :size="18" />Добавить группу</UiButton
+          ></template
+        ></PageHeader
+      >
+    </template>
+    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
+    ><UiLoadingState
+      v-if="loading"
+      label="Загрузка групп характеристик…"
+    /><UiTable
+      v-else-if="groups.length"
+      label="Список групп характеристик"
+      min-width="min-w-[880px]"
+      table-class="seller-table"
+      sticky-header
+      :sticky-edges="canManage"
+    >
+      <thead>
+        <tr>
+          <th scope="col" class="w-72">Группа</th>
+          <th scope="col">Описание</th>
+          <th scope="col" class="w-28 text-right">Порядок</th>
+          <th v-if="canManage" scope="col" class="w-40">
+            <span class="sr-only">Действия</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="group in groups" :key="group.id">
+          <td>
+            <h2 class="font-semibold text-gray-800">{{ group.name }}</h2>
+            <p class="mt-1 text-xs text-gray-500">/{{ group.slug }}</p>
+          </td>
+          <td>{{ group.description || 'Без описания' }}</td>
+          <td class="text-right">{{ group.sort_order }}</td>
+          <td v-if="canManage">
+            <div class="flex justify-end gap-1">
+              <UiButton
+                variant="ghost"
+                size="sm"
+                :aria-label="`Редактировать группу ${group.name}`"
+                @click="show(group)"
+                ><Pencil :size="17" /></UiButton
+              ><UiButton
+                variant="ghost"
+                size="sm"
+                :aria-label="`Удалить группу ${group.name}`"
+                @click="deleting = group"
+                ><Trash2 :size="17"
+              /></UiButton>
+            </div>
+          </td>
+        </tr></tbody></UiTable
+    ><UiEmptyState v-else label="Групп пока нет." /><UiPagination
       v-if="pagination"
       :meta="pagination"
       :loading="loading"
@@ -124,5 +131,5 @@ onMounted(load)
       @close="deleting = null"
       @confirm="confirmDelete"
     />
-  </section>
+  </AdminWorkspace>
 </template>

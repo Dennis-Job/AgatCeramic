@@ -4,6 +4,7 @@ import { Plus } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useCategoryAssignments } from '../composables/useCategoryAssignments'
@@ -69,14 +70,17 @@ const canManage = computed(() => auth.hasPermission('catalog.manage'))
 onMounted(load)
 </script>
 <template>
-  <section class="mx-auto admin-page" :aria-busy="loading">
-    <PageHeader class="mb-7" eyebrow="Каталог" title="Категории"
-      ><template #actions
-        ><UiButton v-if="canManage" @click="showEditor()"
-          ><Plus :size="18" />Добавить категорию</UiButton
-        ></template
-      ></PageHeader
-    ><UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
+  <AdminWorkspace mode="list" :aria-busy="loading">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Каталог" title="Категории"
+        ><template #actions
+          ><UiButton v-if="canManage" @click="showEditor()"
+            ><Plus :size="18" />Добавить категорию</UiButton
+          ></template
+        ></PageHeader
+      >
+    </template>
+    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
     ><CategoriesList
       :categories="categories"
       :loading="loading"
@@ -128,5 +132,5 @@ onMounted(load)
       @close="deleting = null"
       @confirm="confirmDelete"
     />
-  </section>
+  </AdminWorkspace>
 </template>

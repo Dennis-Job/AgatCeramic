@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import AdminWorkspace from './AdminWorkspace.vue'
 import AuthCard from './AuthCard.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import PageHeader from './PageHeader.vue'
@@ -183,6 +184,8 @@ const foundationMetaTokens = [
   '--admin-shell-max-width',
   '--admin-workspace-overview-max-width',
   '--admin-workspace-form-max-width',
+  '--admin-editor-navigation-width',
+  '--admin-editor-preview-min-width',
   '--admin-workspace-gutter',
   '--admin-workspace-gutter-compact',
   '--admin-shell-top-height',
@@ -267,7 +270,7 @@ function submitAuthPreview(): void {
 </script>
 
 <template>
-  <section class="mx-auto admin-page space-y-6">
+  <AdminWorkspace mode="overview" class="space-y-6">
     <PageHeader
       eyebrow="Разработка"
       title="UI-kit"
@@ -1040,5 +1043,5 @@ function submitAuthPreview(): void {
       @close="closeConfirm"
       @confirm="confirmAction"
     />
-  </section>
+  </AdminWorkspace>
 </template>

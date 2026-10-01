@@ -20,7 +20,7 @@ defineEmits<{ select: [contact: Contact] }>()
   <UiLoadingState v-if="loading" label="Загрузка обращений…" />
   <UiEmptyState v-else-if="!contacts.length" label="Обращения не найдены." />
   <template v-else>
-    <div class="divide-y divide-gray-100 md:hidden xl:block">
+    <div class="divide-y divide-gray-100 md:hidden">
       <article
         v-for="contact in contacts"
         :key="contact.id"
@@ -39,9 +39,11 @@ defineEmits<{ select: [contact: Contact] }>()
               <span class="block font-semibold text-gray-800">{{
                 typeName(contact.type)
               }}</span
-              ><span class="mt-1 block text-xs text-gray-500">{{
-                date(contact.created_at)
-              }}</span>
+              ><time
+                class="mt-1 block text-xs text-gray-500"
+                :datetime="contact.created_at"
+                >{{ date(contact.created_at) }}</time
+              >
             </div>
             <UiBadge tone="primary">{{ statusName(contact.status) }}</UiBadge>
           </div>
@@ -57,18 +59,20 @@ defineEmits<{ select: [contact: Contact] }>()
         </button>
       </article>
     </div>
-    <div class="xl:hidden">
+    <div class="min-w-0">
       <UiTable
         class="hidden md:block"
-        min-width="min-w-[680px]"
+        min-width="min-w-[760px]"
+        table-class="seller-table"
+        sticky-header
         label="Список обращений"
       >
         <thead class="bg-gray-25 text-xs text-gray-500">
           <tr>
-            <th class="px-5 py-3">Обращение</th>
-            <th class="px-5 py-3">Контакт</th>
-            <th class="px-5 py-3">Статус</th>
-            <th class="px-5 py-3">Ответственный</th>
+            <th scope="col" class="w-48 px-5 py-3">Обращение</th>
+            <th scope="col" class="px-5 py-3">Контакт</th>
+            <th scope="col" class="w-40 px-5 py-3">Статус</th>
+            <th scope="col" class="w-44 px-5 py-3">Ответственный</th>
           </tr>
         </thead>
         <tbody>
@@ -89,9 +93,11 @@ defineEmits<{ select: [contact: Contact] }>()
                 <span class="block font-semibold text-gray-800">{{
                   typeName(contact.type)
                 }}</span
-                ><span class="mt-1 block text-xs text-gray-500">{{
-                  date(contact.created_at)
-                }}</span>
+                ><time
+                  class="mt-1 block text-xs text-gray-500"
+                  :datetime="contact.created_at"
+                  >{{ date(contact.created_at) }}</time
+                >
               </button>
             </td>
             <td class="px-5 py-4">

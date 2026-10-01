@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { Pencil, Plus, ShieldCheck, Trash2 } from '@lucide/vue'
+import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
+import UiTable from '../../../components/ui/UiTable.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import { useRolesWorkspace } from '../composables/useRolesWorkspace'
@@ -17,17 +18,20 @@ onMounted(workspace.load)
 </script>
 
 <template>
-  <section class="mx-auto admin-page" :aria-busy="workspace.loading.value">
-    <PageHeader class="mb-7" eyebrow="Управление доступом" title="Роли"
-      ><template #actions
-        ><UiButton
-          v-if="workspace.canManage.value"
-          :disabled="!workspace.canEdit.value"
-          @click="workspace.open()"
-          ><Plus :size="18" aria-hidden="true" />Добавить роль</UiButton
-        ></template
-      ></PageHeader
-    >
+  <AdminWorkspace mode="list" :aria-busy="workspace.loading.value">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Управление доступом" title="Роли"
+        ><template #actions
+          ><UiButton
+            v-if="workspace.canManage.value"
+            :disabled="!workspace.canEdit.value"
+            @click="workspace.open()"
+            ><Plus :size="18" aria-hidden="true" />Добавить роль</UiButton
+          ></template
+        ></PageHeader
+      >
+    </template>
+
     <UiAlert v-if="workspace.error.value" class="mb-4">{{
       workspace.error.value
     }}</UiAlert>
@@ -42,58 +46,59 @@ onMounted(workspace.load)
       v-else-if="!workspace.error.value && workspace.roles.value.length === 0"
       label="Роли не найдены."
     />
-    <div
+    <UiTable
       v-else-if="!workspace.error.value"
-      class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+      label="Список ролей"
+      min-width="min-w-[960px]"
+      table-class="seller-table"
+      sticky-header
+      :sticky-edges="workspace.canManage.value"
     >
-      <UiCard v-for="role in workspace.roles.value" :key="role.id">
-        <div class="flex gap-3">
-          <span
-            class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"
-            ><ShieldCheck :size="20" aria-hidden="true"
-          /></span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <div class="min-w-0">
-                <h2 class="break-words font-semibold text-gray-700">
-                  {{ role.name }}
-                </h2>
-                <p class="mt-0.5 break-all text-xs text-gray-400">
-                  {{ role.slug }}
-                </p>
-              </div>
-              <UiBadge v-if="role.is_system" tone="neutral">Системная</UiBadge>
+      <thead>
+        <tr>
+          <th scope="col" class="w-72">Роль</th>
+          <th scope="col">Описание</th>
+          <th scope="col" class="w-28 text-right">Прав</th>
+          <th scope="col" class="w-40">Тип</th>
+          <th v-if="workspace.canManage.value" scope="col" class="w-40">
+            <span class="sr-only">Действия</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="role in workspace.roles.value" :key="role.id">
+          <td>
+            <h2 class="font-semibold text-gray-700">{{ role.name }}</h2>
+            <p class="mt-1 text-xs text-gray-500">{{ role.slug }}</p>
+          </td>
+          <td>{{ role.description || 'Без описания' }}</td>
+          <td class="text-right">{{ role.permissions.length }}</td>
+          <td>
+            <UiBadge tone="neutral">{{
+              role.is_system ? 'Системная' : 'Пользовательская'
+            }}</UiBadge>
+          </td>
+          <td v-if="workspace.canManage.value">
+            <div class="flex justify-end gap-1">
+              <UiButton
+                variant="ghost"
+                size="sm"
+                :disabled="!workspace.canEdit.value"
+                :aria-label="`Редактировать роль ${role.name}`"
+                @click="workspace.open(role)"
+                ><Pencil :size="17" /></UiButton
+              ><UiButton
+                v-if="!role.is_system"
+                variant="danger-ghost"
+                size="sm"
+                :aria-label="`Удалить роль ${role.name}`"
+                @click="workspace.deleting.value = role"
+                ><Trash2 :size="17"
+              /></UiButton>
             </div>
-            <p class="mt-3 min-h-10 break-words text-sm text-gray-500">
-              {{ role.description || 'Без описания' }}
-            </p>
-          </div>
-        </div>
-        <p class="mt-4 text-sm font-medium text-gray-600">
-          Прав: {{ role.permissions.length }}
-        </p>
-        <div
-          v-if="workspace.canManage.value"
-          class="mt-4 flex justify-end gap-1 border-t border-gray-100 pt-4"
-        >
-          <UiButton
-            variant="ghost"
-            size="sm"
-            :disabled="!workspace.canEdit.value"
-            :aria-label="`Редактировать роль ${role.name}`"
-            @click="workspace.open(role)"
-            ><Pencil :size="17" /></UiButton
-          ><UiButton
-            v-if="!role.is_system"
-            variant="danger-ghost"
-            size="sm"
-            :aria-label="`Удалить роль ${role.name}`"
-            @click="workspace.deleting.value = role"
-            ><Trash2 :size="17"
-          /></UiButton>
-        </div>
-      </UiCard>
-    </div>
+          </td>
+        </tr></tbody
+    ></UiTable>
     <RoleFormDialog
       v-model:form="workspace.form.value"
       :open="workspace.opened.value"
@@ -114,5 +119,5 @@ onMounted(workspace.load)
       @close="workspace.cancelDelete"
       @confirm="workspace.remove"
     />
-  </section>
+  </AdminWorkspace>
 </template>

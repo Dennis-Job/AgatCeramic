@@ -3,10 +3,10 @@ import { computed, onMounted, ref } from 'vue'
 import { Plus } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { attributeTypeOptions } from '../../../utils/attributeTypes'
@@ -55,25 +55,31 @@ async function confirmDelete(): Promise<void> {
 onMounted(load)
 </script>
 <template>
-  <section class="mx-auto admin-page" :aria-busy="loading">
-    <PageHeader class="mb-7" eyebrow="Каталог" title="Характеристики"
-      ><template #actions
-        ><UiButton v-if="canManage" @click="show()"
-          ><Plus :size="18" />Добавить</UiButton
-        ></template
-      ></PageHeader
-    ><UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
-    ><UiCard class="overflow-hidden"
-      ><UiLoadingState
+  <AdminWorkspace mode="list" :aria-busy="loading">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Каталог" title="Характеристики"
+        ><template #actions
+          ><UiButton v-if="canManage" @click="show()"
+            ><Plus :size="18" />Добавить</UiButton
+          ></template
+        ></PageHeader
+      >
+    </template>
+    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert>
+    <div>
+      <UiLoadingState
         v-if="loading"
-        label="Загрузка характеристик…" /><AttributesList
+        label="Загрузка характеристик…"
+      /><AttributesList
         v-else
         :attributes="attributes"
         :groups="groups"
         :can-manage="canManage"
         @edit="show"
-        @remove="deleting = $event" /></UiCard
-    ><UiPagination
+        @remove="deleting = $event"
+      />
+    </div>
+    <UiPagination
       v-if="pagination"
       :meta="pagination"
       :loading="loading"
@@ -100,5 +106,5 @@ onMounted(load)
       @close="deleting = null"
       @confirm="confirmDelete"
     />
-  </section>
+  </AdminWorkspace>
 </template>

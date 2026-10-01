@@ -131,6 +131,16 @@ test('home route uses typed blocks with saved preview, pending notice and separa
   await expect(
     page.getByRole('link', { name: 'Открыть опубликованную страницу' }),
   ).toHaveAttribute('href', 'http://localhost:3000/')
+  // Audit the settled size control, after its secondary → primary transition.
+  await page
+    .getByRole('group', { name: 'Размер предпросмотра' })
+    .evaluate(async (element) => {
+      await Promise.all(
+        element
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished),
+      )
+    })
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })

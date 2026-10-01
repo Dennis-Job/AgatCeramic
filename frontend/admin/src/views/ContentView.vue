@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AdminWorkspace from '../components/shared/AdminWorkspace.vue'
 import UiButton from '../components/ui/UiButton.vue'
 import AppearanceWorkspace from '../features/appearance/components/AppearanceWorkspace.vue'
 import PagesWorkspace from '../features/pages/components/PagesWorkspace.vue'
@@ -29,7 +30,7 @@ watch(
 </script>
 
 <template>
-  <div class="min-w-0">
+  <AdminWorkspace :mode="section === 'stores' ? 'overview' : 'editor'">
     <nav class="mb-4 flex flex-wrap gap-2" aria-label="Разделы контента">
       <UiButton
         :aria-pressed="section === 'pages'"
@@ -64,5 +65,5 @@ watch(
       <AppearanceWorkspace v-else-if="section === 'appearance'" />
       <StoresWorkspace v-else />
     </div>
-  </div>
+  </AdminWorkspace>
 </template>
