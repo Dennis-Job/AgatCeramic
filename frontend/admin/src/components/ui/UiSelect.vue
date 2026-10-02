@@ -204,7 +204,7 @@ onBeforeUnmount(() => {
     <button
       ref="triggerButton"
       type="button"
-      class="flex min-h-[var(--admin-control-height-md)] w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
+      class="flex min-h-[var(--admin-control-height-md)] w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 admin-control-focus disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
       :aria-expanded="isOpen"
       :aria-controls="isOpen ? menuId : undefined"
       :aria-label="accessibleName"
@@ -229,7 +229,7 @@ onBeforeUnmount(() => {
     <button
       v-if="clearable && modelValue"
       type="button"
-      class="absolute right-9 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+      class="absolute right-9 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
       :aria-label="`Очистить выбор: ${accessibleName}`"
       :disabled="disabled"
       @click="clear"
@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
             ref="searchInput"
             v-model="search"
             type="search"
-            class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-500"
+            class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none admin-control-focus"
             :placeholder="searchPlaceholder"
             :aria-label="`Поиск: ${accessibleName}`"
           />

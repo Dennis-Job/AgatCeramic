@@ -30,7 +30,7 @@ defineExpose({ showDetail })
     <div class="min-w-0"><slot name="list" /></div>
     <section
       ref="detail"
-      class="admin-container admin-list-detail-panel"
+      class="admin-container admin-list-detail-panel admin-focus"
       tabindex="-1"
       aria-label="Детали выбранной записи"
     >
@@ -55,9 +55,5 @@ defineExpose({ showDetail })
 }
 .admin-list-detail-panel {
   scroll-margin-top: calc(var(--admin-shell-height) + var(--admin-spacing-4));
-}
-.admin-list-detail-panel:focus-visible {
-  outline: var(--admin-focus-outline-width) solid var(--admin-color-primary-500);
-  outline-offset: var(--admin-focus-outline-offset);
 }
 </style>

@@ -65,7 +65,7 @@ const links = computed(() => {
           target="_blank"
           rel="noopener noreferrer"
           referrerpolicy="no-referrer"
-          class="text-primary-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          class="text-primary-700 underline admin-focus"
           >Открыть полноразмерный просмотр</a
         >
         <a
@@ -73,7 +73,7 @@ const links = computed(() => {
           target="_blank"
           rel="noopener noreferrer"
           referrerpolicy="no-referrer"
-          class="text-primary-700 underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          class="text-primary-700 underline admin-focus"
           >Открыть опубликованную страницу</a
         >
       </div>
@@ -82,7 +82,7 @@ const links = computed(() => {
         контентом. Если сессия истекла, войдите в админку и обновите просмотр.
       </p>
       <div
-        class="preview-viewport mt-4 rounded-lg border border-gray-200 bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        class="preview-viewport mt-4 rounded-lg border border-gray-200 bg-gray-50 admin-focus"
         tabindex="0"
         role="region"
         aria-label="Область просмотра сайта"

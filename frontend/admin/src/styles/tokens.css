@@ -138,8 +138,11 @@
 
   --admin-transition-duration: 150ms;
   --admin-transition-timing: ease;
-  --admin-focus-outline-width: 2px;
-  --admin-focus-outline-offset: 2px;
-  --admin-focus-ring:
-    0 0 0 2px var(--admin-color-white), 0 0 0 4px var(--admin-color-primary-500);
+  --admin-focus-color: #647dd1;
+  --admin-focus-halo-color: rgb(100 125 209 / 0.14);
+  --admin-focus-halo-width: 4px;
+  --admin-focus-outline-width: 1px;
+  --admin-focus-outline-offset: 0px;
+  --admin-focus-ring: 0 0 0 var(--admin-focus-halo-width)
+    var(--admin-focus-halo-color);
 }

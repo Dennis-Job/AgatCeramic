@@ -79,6 +79,14 @@ Windows остаётся непроверенным.
 пройдены. 112 platform baseline приняты до обновления; Windows не проверен.
 [Изменения, evidence и ограничения](ADMIN_HEADER_REFINEMENT_REPORT.md).
 
+Доработка active/focus от 2026-10-02 завершена: общие controls используют
+тонкий край 1 px и прозрачный halo, selected radio/checkbox — спокойную рамку
+и фон. Клавиатурный фокус, ошибки и системный forced-colors outline сохранены;
+unselected glyph скрыт независимо от system colors. UI Design Guard принят,
+16 platform baseline согласованы до замены. Lint/format/build, 64 unit,
+255 строгих E2E каждой macOS/Linux и 3 real Nuxt пройдены.
+[Результат, файлы и ограничения](ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).
+
 ## Реализовано
 
 | Область | Фактическое состояние |

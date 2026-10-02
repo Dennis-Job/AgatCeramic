@@ -38,7 +38,7 @@ defineEmits<{ select: [order: Order] }>()
       >
         <button
           type="button"
-          class="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          class="w-full rounded-lg text-left admin-focus"
           :aria-label="`Открыть заказ ${order.order_number}`"
           :aria-current="selectedId === order.id ? 'true' : undefined"
           @click="$emit('select', order)"
@@ -98,7 +98,7 @@ defineEmits<{ select: [order: Order] }>()
             <td class="px-5 py-4">
               <button
                 type="button"
-                class="-m-2 rounded-lg p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                class="-m-2 rounded-lg p-2 text-left admin-focus"
                 :aria-label="`Открыть заказ ${order.order_number}`"
                 :aria-current="selectedId === order.id ? 'true' : undefined"
                 @click="$emit('select', order)"

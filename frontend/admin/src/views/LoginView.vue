@@ -67,7 +67,7 @@ async function submit(): Promise<void> {
         required
     /></UiField>
     <RouterLink
-      class="mt-3 inline-block rounded text-sm font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+      class="mt-3 inline-block rounded text-sm font-semibold text-primary-600 hover:text-primary-700 admin-focus"
       :to="{ name: 'forgot-password' }"
       >Забыли пароль?</RouterLink
     >

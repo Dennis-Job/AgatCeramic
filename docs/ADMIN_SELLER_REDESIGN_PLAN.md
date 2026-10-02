@@ -225,3 +225,12 @@ table/card overflow.
 
 Доработка единого контейнера по уточнению от 2026-10-02 и её актуальные проверки —
 [`ADMIN_CONTAINER_REFINEMENT_REPORT.md`](ADMIN_CONTAINER_REFINEMENT_REPORT.md).
+
+## Уточнение active/focus от 2026-10-02
+
+По третьему референсу владельца активные поля и focus состояния становятся
+мягче: один тонкий край 1 px и прозрачный halo 4 px через semantic tokens.
+У переключателей/флажков спокойная выбранная обёртка, контрастный индикатор;
+дополнительный focus появляется с клавиатуры. UI-kit централизует правила
+в `styles/controls.css`, сохраняет error/disabled и forced-colors.
+[Результаты доработки](ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).

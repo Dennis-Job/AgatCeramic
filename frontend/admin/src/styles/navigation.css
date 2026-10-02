@@ -65,14 +65,7 @@
 .admin-brand > span:last-child {
   margin-top: var(--admin-spacing-1);
 }
-.admin-header-icon:focus-visible,
-.admin-account-action:focus-visible,
-.admin-brand:focus-visible,
-.admin-nav-trigger:focus-visible,
-.admin-nav-link:focus-visible {
-  outline: var(--admin-focus-outline-width) solid var(--admin-color-primary-500);
-  outline-offset: var(--admin-focus-outline-offset);
-}
+
 .admin-navigation {
   height: var(--admin-shell-navigation-height);
 }

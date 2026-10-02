@@ -88,7 +88,7 @@ const {
             "
             required
             :disabled="busy"
-            class="mt-1.5 block w-full min-w-0 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary-700 focus-visible:outline-2 focus-visible:outline-primary-500"
+            class="mt-1.5 block w-full min-w-0 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary-700 admin-focus"
             @change="chooseFile"
           />
         </UiField>
@@ -168,7 +168,7 @@ const {
                     :href="item.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="font-medium text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
+                    class="font-medium text-primary-700 underline admin-focus"
                     >{{ item.title }}</a
                   >
                   <p class="mt-1 text-xs text-gray-500">#{{ item.id }}</p>

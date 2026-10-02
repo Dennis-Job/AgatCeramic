@@ -186,7 +186,7 @@ function toggle(id: number, checked: boolean) {
           target="_blank"
           rel="noopener noreferrer"
           :aria-label="`Открыть документ ${item.title}, файл ${item.id}`"
-          class="text-sm text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
+          class="text-sm text-primary-700 underline admin-focus"
           >Открыть</a
         >
       </div>

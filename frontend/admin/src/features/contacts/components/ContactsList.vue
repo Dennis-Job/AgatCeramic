@@ -37,7 +37,7 @@ defineEmits<{ select: [contact: Contact] }>()
       >
         <button
           type="button"
-          class="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          class="w-full rounded-lg text-left admin-focus"
           :aria-label="`Открыть обращение ${contact.id}`"
           :aria-current="selectedId === contact.id ? 'true' : undefined"
           @click="$emit('select', contact)"
@@ -93,7 +93,7 @@ defineEmits<{ select: [contact: Contact] }>()
             <td class="px-5 py-4">
               <button
                 type="button"
-                class="-m-2 rounded-lg p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                class="-m-2 rounded-lg p-2 text-left admin-focus"
                 :aria-label="`Открыть обращение ${contact.id}`"
                 :aria-current="selectedId === contact.id ? 'true' : undefined"
                 @click="$emit('select', contact)"

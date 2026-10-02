@@ -663,3 +663,10 @@ API behaviour без migration plan и синхронного обновлени
   удалён глобальный поиск, разделитель внутри контейнера. UI Design Guard принят;
   lint/format/build, 64 unit, 250 E2E каждой macOS/Linux, real Nuxt3.
   [Отчёт](../docs/ADMIN_HEADER_REFINEMENT_REPORT.md).
+
+- [x] Доработка TASK-A057/A062 от 2026-10-02: мягкие active/focus состояния.
+  Общие tokens/styles, спокойные selected wrappers, один прозрачный halo;
+  keyboard/error/disabled/forced-colors сохранены. UI Design Guard принят,
+  16 platform baseline согласованы до замены; lint/format/build, 64 unit,
+  255 строгих E2E каждой macOS/Linux, real Nuxt3.
+  [Отчёт](../docs/ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).

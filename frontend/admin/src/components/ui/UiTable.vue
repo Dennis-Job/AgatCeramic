@@ -19,7 +19,7 @@ withDefaults(
 
 <template>
   <div
-    class="min-w-0 max-w-full overflow-x-auto [contain:paint] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
+    class="min-w-0 max-w-full overflow-x-auto [contain:paint] admin-focus-inset"
     :class="{
       'ui-table-sticky-header': stickyHeader,
       'ui-table-sticky-edges': stickyEdges,

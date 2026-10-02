@@ -1,0 +1,53 @@
+/* One thin edge and translucent halo; composite fields own their focus. */
+:where(button, a[href], select):not(:disabled):focus-visible,
+input:not([data-composite-control], .sr-only, .admin-control-focus):not(
+    :disabled
+  ):focus-visible,
+textarea:not(.admin-control-focus):not(:disabled):focus-visible,
+.admin-focus:focus-visible {
+  outline: var(--admin-focus-outline-width) solid var(--admin-focus-color);
+  outline-offset: var(--admin-focus-outline-offset);
+  box-shadow: var(--admin-focus-ring);
+}
+.admin-control-focus:not(:disabled):is(:focus, :focus-within) {
+  border-color: var(--admin-focus-color);
+  outline: none;
+  box-shadow: var(--admin-focus-ring);
+}
+.admin-control-focus:is(
+    [aria-invalid='true'],
+    .border-error-500,
+    :has([aria-invalid='true'])
+  ):is(:focus, :focus-within) {
+  border-color: var(--admin-color-error-500);
+}
+.admin-choice-focus:has(input:not(:disabled):focus-visible) {
+  border-color: var(--admin-focus-color);
+  outline: none;
+  box-shadow: var(--admin-focus-ring);
+}
+/* Paint containment keeps table focus inside its scroll region. */
+.admin-focus-inset:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 var(--admin-focus-outline-width) var(--admin-focus-color),
+    inset 0 0 0
+      calc(var(--admin-focus-outline-width) + var(--admin-focus-halo-width))
+      var(--admin-focus-halo-color);
+}
+@media (forced-colors: active) {
+  :where(button, a[href], select):not(:disabled):focus-visible,
+  input:not([data-composite-control], .sr-only):not(:disabled):focus-visible,
+  textarea:not(:disabled):focus-visible,
+  .admin-focus:focus-visible,
+  .admin-control-focus:not(:disabled):is(:focus, :focus-within),
+  .admin-choice-focus:has(input:not(:disabled):focus-visible),
+  .admin-focus-inset:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+  .admin-focus-inset:focus-visible {
+    outline-offset: -2px;
+  }
+}

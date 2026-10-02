@@ -33,7 +33,7 @@ function clear(): void {
       containerClass,
       isDisabled
         ? 'cursor-not-allowed border-gray-200 bg-gray-50'
-        : 'border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2',
+        : 'border-gray-300 bg-white admin-control-focus',
     ]"
     class="flex min-h-[var(--admin-control-height-md)] w-full min-w-0 items-center gap-2 rounded-lg border px-3 shadow-input transition"
   >
@@ -55,7 +55,7 @@ function clear(): void {
     <button
       v-if="hasValue"
       type="button"
-      class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-400 transition hover:bg-gray-50 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+      class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-400 transition hover:bg-gray-50 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
       aria-label="Очистить поле"
       :disabled="isDisabled"
       @click="clear"

@@ -228,7 +228,7 @@ const trigger = computed(() => ({
       v-if="open"
       :id="panelId"
       ref="panel"
-      class="ui-popover-panel"
+      class="ui-popover-panel admin-focus"
       :class="panelClass"
       :style="{
         left: `${offset}px`,
@@ -266,9 +266,5 @@ const trigger = computed(() => ({
   border-radius: var(--admin-radius-xl);
   background: var(--admin-color-white);
   box-shadow: var(--admin-shadow-dropdown);
-}
-.ui-popover-panel:focus-visible {
-  outline: var(--admin-focus-outline-width) solid var(--admin-color-primary-500);
-  outline-offset: var(--admin-focus-outline-offset);
 }
 </style>

@@ -14,7 +14,7 @@ const labelClasses = computed(() =>
   props.disabled
     ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-200 hover:bg-gray-50'
     : selected.value
-      ? 'border-primary-500 bg-primary-50 text-primary-600'
+      ? 'border-primary-200 bg-primary-25 text-primary-600'
       : '',
 )
 const indicatorClasses = computed(() =>
@@ -30,7 +30,7 @@ const indicatorClasses = computed(() =>
 
 <template>
   <label
-    class="flex min-h-[var(--admin-control-height-md)] cursor-pointer items-center gap-2 rounded-lg border border-gray-100 px-3 py-1.5 text-sm text-gray-600 transition hover:border-primary-200 hover:bg-primary-25 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2"
+    class="flex min-h-[var(--admin-control-height-md)] cursor-pointer items-center gap-2 rounded-lg border border-gray-100 px-3 py-1.5 text-sm text-gray-600 transition hover:border-primary-200 hover:bg-primary-25 admin-choice-focus"
     :class="labelClasses"
   >
     <input
@@ -45,7 +45,11 @@ const indicatorClasses = computed(() =>
     <span
       class="grid h-5 w-5 shrink-0 place-items-center rounded-full border transition"
       :class="indicatorClasses"
-      ><Circle :size="10" fill="currentColor"
+      ><Circle
+        :size="10"
+        fill="currentColor"
+        :class="{ invisible: !selected }"
+        aria-hidden="true"
     /></span>
     <span><slot /></span>
   </label>

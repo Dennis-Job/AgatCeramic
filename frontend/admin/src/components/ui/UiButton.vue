@@ -12,7 +12,7 @@ const props = withDefaults(
 )
 const attrs = useAttrs()
 const classes = computed(() => [
-  'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
+  'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition disabled:cursor-not-allowed admin-focus',
   props.size === 'sm'
     ? 'min-h-[var(--admin-control-height-sm)] px-3 py-1.5 text-xs'
     : props.size === 'lg'

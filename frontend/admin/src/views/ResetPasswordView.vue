@@ -88,7 +88,7 @@ async function submit(): Promise<void> {
       >{{ isSubmitting ? 'Сброс пароля…' : 'Сбросить пароль' }}</UiButton
     >
     <RouterLink
-      class="mt-5 block rounded text-center text-sm font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+      class="mt-5 block rounded text-center text-sm font-semibold text-primary-600 hover:text-primary-700 admin-focus"
       :to="{ name: 'login' }"
       >Вернуться ко входу</RouterLink
     >

@@ -203,6 +203,9 @@ const foundationMetaTokens = [
   '--admin-focus-outline-width',
   '--admin-focus-outline-offset',
   '--admin-focus-ring',
+  '--admin-focus-color',
+  '--admin-focus-halo-color',
+  '--admin-focus-halo-width',
   '--admin-transition-duration',
   '--admin-transition-timing',
 ]

@@ -18,13 +18,7 @@ button:disabled,
 select:disabled {
   cursor: not-allowed;
 }
-button:focus-visible,
-input:not([data-composite-control]):focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: var(--admin-focus-outline-width) solid var(--admin-color-primary-500);
-  outline-offset: var(--admin-focus-outline-offset);
-}
+
 button.bg-primary-500:not(:disabled):hover {
   background-color: var(--admin-color-primary-600);
 }

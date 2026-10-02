@@ -99,6 +99,24 @@ attribute forwarding на корневой `nav`). Showcase подписывае
 Прозрачные shadow tokens у карточек/полей используют валидную zero-shadow запись вместо
 `none`, чтобы Tailwind корректно совмещал её с focus ring.
 
+Уточнение владельца от 2026-10-02 смягчает active/focus состояния по новому
+референсу. Общий `styles/controls.css` задаёт тонкий край 1 px без белого offset
+и прозрачный halo 4 px. Semantic tokens: `--admin-focus-color: #647dd1`,
+`--admin-focus-halo-color: rgb(100 125 209 / 0.14)`, `--admin-focus-halo-width`,
+`--admin-focus-outline-width/offset` и `--admin-focus-ring`.
+
+`admin-focus` служит кнопкам, ссылкам и фокусируемым регионам;
+`admin-control-focus` — полям/select и composite wrappers. Native input внутри
+wrapper не рисует второй outline. Error+focus сохраняет красную границу и alert;
+disabled не получает halo. `admin-choice-focus` использует
+`:has(input:focus-visible)`: мышь выбирает спокойный wrapper `primary-200/25`,
+клавиатура добавляет мягкий halo. Выбранный dot/check остаётся контрастным.
+Невыбранный glyph скрывается через visibility, поэтому system colors не делают
+его видимым. `admin-focus-inset` удерживает фокус таблицы внутри paint containment.
+Forced colors использует системный Highlight outline; контраст края обычного
+фокуса проверен на белых/серых/выбранных поверхностях, включая прилегающий halo.
+Первичный акцент, размеры контролов и бизнес-состояния не меняются.
+
 | Компонент                                        | Варианты / состояния                                                                                                               |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `UiButton`                                       | `primary`, `secondary`, `danger`, `ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                                           |

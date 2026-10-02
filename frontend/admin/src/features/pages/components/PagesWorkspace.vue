@@ -160,7 +160,7 @@ onMounted(() => pages.load())
                 path: '/content',
                 query: { ...route.query, page: 'home' },
               }"
-              class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-50 admin-focus"
               :class="
                 isHomeSelected
                   ? 'bg-primary-50 text-primary-700'
@@ -186,7 +186,7 @@ onMounted(() => pages.load())
                   path: '/content',
                   query: { ...route.query, page: String(fetchedPage.id) },
                 }"
-                class="block min-w-0 break-words rounded-lg bg-primary-50 px-3 py-2 text-sm text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                class="block min-w-0 break-words rounded-lg bg-primary-50 px-3 py-2 text-sm text-primary-700 admin-focus"
                 aria-current="page"
                 >{{ fetchedPage.title
                 }}<span class="block break-all text-xs text-gray-500"
@@ -200,7 +200,7 @@ onMounted(() => pages.load())
                   path: '/content',
                   query: { ...route.query, page: String(page.id) },
                 }"
-                class="block min-w-0 rounded-lg px-3 py-2 text-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                class="block min-w-0 rounded-lg px-3 py-2 text-sm hover:bg-gray-50 admin-focus"
                 :class="
                   selectedId === page.id
                     ? 'bg-primary-50 text-primary-700'

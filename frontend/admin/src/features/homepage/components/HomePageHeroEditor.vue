@@ -66,12 +66,12 @@ onMounted(load)
     <div class="flex flex-wrap gap-3">
       <RouterLink
         to="/content?section=banners"
-        class="text-sm font-medium text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
+        class="text-sm font-medium text-primary-700 underline admin-focus"
         >Управлять баннерами</RouterLink
       >
       <RouterLink
         to="/content?section=sliders"
-        class="text-sm font-medium text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
+        class="text-sm font-medium text-primary-700 underline admin-focus"
         >Управлять слайдерами</RouterLink
       >
       <UiButton variant="secondary" size="sm" @click="load"

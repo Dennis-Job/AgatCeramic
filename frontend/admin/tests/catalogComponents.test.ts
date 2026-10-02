@@ -200,10 +200,7 @@ describe('shared page patterns', () => {
       '[contain:paint]',
     )
     expect(wrapper.get('[role="region"]').classes()).toContain(
-      'focus-visible:ring-2',
-    )
-    expect(wrapper.get('[role="region"]').classes()).toContain(
-      'focus-visible:ring-inset',
+      'admin-focus-inset',
     )
     expect(wrapper.get('table').classes()).toContain('min-w-[680px]')
     expect(wrapper.get('table').classes()).toContain('admin-table-employees')
