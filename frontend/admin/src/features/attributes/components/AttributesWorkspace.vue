@@ -65,10 +65,11 @@ onMounted(load)
         ></PageHeader
       >
     </template>
-    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert>
+    <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert>
     <div>
       <UiLoadingState
         v-if="loading"
+        class="admin-container"
         label="Загрузка характеристик…"
       /><AttributesList
         v-else
@@ -81,6 +82,7 @@ onMounted(load)
     </div>
     <UiPagination
       v-if="pagination"
+      class="admin-container"
       :meta="pagination"
       :loading="loading"
       @change="load"

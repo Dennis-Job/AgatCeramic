@@ -20,7 +20,11 @@ const emit = defineEmits<{
 }>()
 </script>
 <template>
-  <UiLoadingState v-if="loading" label="Загрузка категорий…" />
+  <UiLoadingState
+    v-if="loading"
+    class="admin-container"
+    label="Загрузка категорий…"
+  />
   <UiTable
     v-else-if="categories.length"
     label="Список категорий"
@@ -89,5 +93,5 @@ const emit = defineEmits<{
         </td>
       </tr></tbody
   ></UiTable>
-  <UiEmptyState v-else label="Категорий пока нет." />
+  <UiEmptyState v-else class="admin-container" label="Категорий пока нет." />
 </template>

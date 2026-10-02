@@ -26,13 +26,13 @@ onMounted(catalogue.load)
       />
     </template>
 
-    <UiAlert v-if="catalogue.error.value" class="mb-4">{{
+    <UiAlert v-if="catalogue.error.value" class="admin-container mb-4">{{
       catalogue.error.value
     }}</UiAlert>
     <div class="min-w-0">
       <form
         role="search"
-        class="grid gap-3 border-b border-gray-100 p-4 admin-permissions-filter-grid"
+        class="admin-container grid gap-3 border-b border-gray-100 p-4 admin-permissions-filter-grid"
         @submit.prevent
       >
         <UiInput
@@ -50,12 +50,14 @@ onMounted(catalogue.load)
       </form>
       <UiLoadingState
         v-if="catalogue.loading.value"
+        class="admin-container"
         label="Загрузка каталога прав…"
       />
       <UiEmptyState
         v-else-if="
           !catalogue.error.value && catalogue.permissions.value.length === 0
         "
+        class="admin-container"
         label="Каталог прав пока пуст."
       />
       <UiTable
@@ -107,6 +109,7 @@ onMounted(catalogue.load)
         </tbody></UiTable
       ><UiEmptyState
         v-else-if="!catalogue.error.value"
+        class="admin-container"
         label="По выбранным условиям права не найдены."
       />
     </div>

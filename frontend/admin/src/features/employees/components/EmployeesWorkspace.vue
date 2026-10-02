@@ -36,19 +36,19 @@ onMounted(workspace.initialize)
       >
     </template>
 
-    <UiAlert v-if="workspace.error.value" class="mb-4">{{
+    <UiAlert v-if="workspace.error.value" class="admin-container mb-4">{{
       workspace.error.value
     }}</UiAlert>
     <UiAlert
       v-if="!workspace.error.value && workspace.rolesError.value"
-      class="mb-4"
+      class="admin-container mb-4"
       >{{ workspace.rolesError.value }} Редактирование сотрудников временно
       недоступно.</UiAlert
     >
     <div class="min-w-0">
       <form
         role="search"
-        class="grid grid-cols-2 gap-3 border-b border-gray-100 py-4 admin-employees-filter-grid"
+        class="admin-container grid grid-cols-2 gap-3 border-b border-gray-100 py-4 admin-employees-filter-grid"
         @submit.prevent="workspace.load()"
       >
         <UiInput

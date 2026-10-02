@@ -72,8 +72,12 @@ onMounted(load)
         ></PageHeader
       >
     </template>
-    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
-    ><UiLoadingState v-if="loading" label="Загрузка брендов…" /><UiTable
+    <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert
+    ><UiLoadingState
+      v-if="loading"
+      class="admin-container"
+      label="Загрузка брендов…"
+    /><UiTable
       v-else-if="brands.length"
       label="Список брендов"
       min-width="min-w-[880px]"
@@ -121,8 +125,13 @@ onMounted(load)
             </div>
           </td>
         </tr></tbody></UiTable
-    ><UiEmptyState v-else label="Брендов пока нет." /><UiPagination
+    ><UiEmptyState
+      v-else
+      class="admin-container"
+      label="Брендов пока нет."
+    /><UiPagination
       v-if="pagination"
+      class="admin-container"
       :meta="pagination"
       :loading="loading"
       @change="load"

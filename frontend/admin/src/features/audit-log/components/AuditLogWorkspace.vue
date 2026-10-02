@@ -38,13 +38,13 @@ onMounted(audit.load)
       />
     </template>
 
-    <UiAlert v-if="audit.error.value" class="mb-4">{{
+    <UiAlert v-if="audit.error.value" class="admin-container mb-4">{{
       audit.error.value
     }}</UiAlert>
     <div class="min-w-0">
       <form
         role="search"
-        class="grid gap-3 border-b border-gray-100 py-4 md:grid-cols-2 admin-audit-log-filter-grid"
+        class="admin-container grid gap-3 border-b border-gray-100 py-4 md:grid-cols-2 admin-audit-log-filter-grid"
         @submit.prevent="audit.load()"
       >
         <UiInput
@@ -75,14 +75,16 @@ onMounted(audit.load)
       </form>
       <UiLoadingState
         v-if="audit.loading.value"
+        class="admin-container"
         label="Загрузка журнала аудита…"
       />
       <UiEmptyState
         v-else-if="!audit.error.value && !audit.logs.value.length"
+        class="admin-container"
         label="Записи не найдены."
       />
       <template v-else-if="!audit.error.value">
-        <div class="divide-y divide-gray-100 xl:hidden">
+        <div class="admin-container divide-y divide-gray-100 xl:hidden">
           <article v-for="log in audit.logs.value" :key="log.id" class="p-4">
             <div class="flex flex-wrap items-start justify-between gap-2">
               <div class="min-w-0 max-w-full">
@@ -201,7 +203,7 @@ onMounted(audit.load)
       </template>
       <div
         v-if="!audit.error.value"
-        class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 text-sm text-gray-500"
+        class="admin-container flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 text-sm text-gray-500"
       >
         <span>Всего: {{ audit.total.value }}</span>
         <nav

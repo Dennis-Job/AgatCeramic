@@ -1,17 +1,33 @@
 <script setup lang="ts">
 import { Bell } from '@lucide/vue'
+import UiPopover from '../../components/ui/UiPopover.vue'
+import UiEmptyState from '../../components/ui/UiEmptyState.vue'
+const open = defineModel<boolean>('open', { default: false })
 </script>
 
 <template>
-  <button
-    type="button"
-    class="grid h-10 w-10 place-items-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-    aria-label="Уведомления"
-    aria-describedby="admin-notifications-status"
+  <UiPopover
+    id="admin-notifications-panel"
+    v-model:open="open"
+    align="end"
+    label="Уведомления"
   >
-    <Bell :size="20" aria-hidden="true" />
-    <span id="admin-notifications-status" class="sr-only"
-      >Новых уведомлений нет</span
-    >
-  </button>
+    <template #trigger="{ trigger }">
+      <button
+        v-bind="trigger"
+        type="button"
+        class="admin-header-icon"
+        aria-label="Уведомления"
+      >
+        <Bell
+          :size="24"
+          fill="currentColor"
+          :stroke-width="1.5"
+          aria-hidden="true"
+        />
+      </button>
+    </template>
+    <h2 class="text-base font-bold text-gray-900">Уведомления</h2>
+    <UiEmptyState label="Новых уведомлений нет" />
+  </UiPopover>
 </template>

@@ -19,10 +19,18 @@ const lastLogin = (value: string | null): string =>
 </script>
 
 <template>
-  <UiLoadingState v-if="loading" label="Загрузка сотрудников…" />
-  <UiEmptyState v-else-if="!employees.length" label="Сотрудники не найдены." />
+  <UiLoadingState
+    v-if="loading"
+    class="admin-container"
+    label="Загрузка сотрудников…"
+  />
+  <UiEmptyState
+    v-else-if="!employees.length"
+    class="admin-container"
+    label="Сотрудники не найдены."
+  />
   <template v-else>
-    <div class="divide-y divide-gray-100 xl:hidden">
+    <div class="admin-container divide-y divide-gray-100 xl:hidden">
       <article v-for="employee in employees" :key="employee.id" class="p-4">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">

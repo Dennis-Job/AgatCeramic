@@ -158,7 +158,9 @@ test('compact navigation leaves the keyboard flow while closed and restores focu
     await page.setViewportSize({ width, height: 720 })
     await page.goto('/products')
 
-    const panel = page.locator('#admin-navigation-panel')
+    const panel = page.locator(
+      '.admin-navigation-panel, #admin-navigation-panel',
+    )
     const openButton = page.getByRole('button', {
       name: 'Открыть меню',
       includeHidden: true,
@@ -233,12 +235,12 @@ test('desktop grouped navigation supports keyboard selection, active links, and 
     exact: true,
   })
   const management = navigation.getByRole('button', { name: 'Управление' })
-  const panel = page.locator('#admin-navigation-panel')
+  const panel = page.locator('.admin-navigation-panel, #admin-navigation-panel')
   await expect(page.locator('#admin-sidebar')).toHaveCount(0)
   await expect(products).toHaveAttribute('aria-expanded', 'false')
   await expect(products).toHaveAttribute(
     'aria-controls',
-    'admin-navigation-panel',
+    'admin-navigation-products-panel',
   )
   await products.focus()
   await page.keyboard.press('Enter')

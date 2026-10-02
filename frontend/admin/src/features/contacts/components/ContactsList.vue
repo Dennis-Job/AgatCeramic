@@ -17,10 +17,18 @@ defineEmits<{ select: [contact: Contact] }>()
 </script>
 
 <template>
-  <UiLoadingState v-if="loading" label="Загрузка обращений…" />
-  <UiEmptyState v-else-if="!contacts.length" label="Обращения не найдены." />
+  <UiLoadingState
+    v-if="loading"
+    class="admin-container"
+    label="Загрузка обращений…"
+  />
+  <UiEmptyState
+    v-else-if="!contacts.length"
+    class="admin-container"
+    label="Обращения не найдены."
+  />
   <template v-else>
-    <div class="divide-y divide-gray-100 md:hidden">
+    <div class="admin-container divide-y divide-gray-100 md:hidden">
       <article
         v-for="contact in contacts"
         :key="contact.id"

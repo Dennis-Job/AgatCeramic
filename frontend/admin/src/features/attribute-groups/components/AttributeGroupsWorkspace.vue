@@ -60,9 +60,10 @@ onMounted(load)
         ></PageHeader
       >
     </template>
-    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
+    <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert
     ><UiLoadingState
       v-if="loading"
+      class="admin-container"
       label="Загрузка групп характеристик…"
     /><UiTable
       v-else-if="groups.length"
@@ -108,8 +109,13 @@ onMounted(load)
             </div>
           </td>
         </tr></tbody></UiTable
-    ><UiEmptyState v-else label="Групп пока нет." /><UiPagination
+    ><UiEmptyState
+      v-else
+      class="admin-container"
+      label="Групп пока нет."
+    /><UiPagination
       v-if="pagination"
+      class="admin-container"
       :meta="pagination"
       :loading="loading"
       @change="load"

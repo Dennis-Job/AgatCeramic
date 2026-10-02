@@ -4,7 +4,7 @@ defineProps<{ mode: 'overview' | 'list' | 'editor' | 'form' }>()
 
 <template>
   <section class="admin-workspace" :class="`admin-workspace--${mode}`">
-    <div v-if="$slots.intro" class="admin-workspace-intro">
+    <div v-if="$slots.intro" class="admin-workspace-intro admin-container">
       <slot name="intro" />
     </div>
     <slot />
@@ -17,13 +17,8 @@ defineProps<{ mode: 'overview' | 'list' | 'editor' | 'form' }>()
   min-width: 0;
   margin-inline: auto;
 }
-.admin-workspace--overview,
-.admin-workspace-intro {
-  max-width: var(--admin-workspace-overview-max-width);
-  margin-inline: auto;
-}
-.admin-workspace--form {
-  max-width: var(--admin-workspace-form-max-width);
+.admin-workspace:not(.admin-workspace--list) {
+  max-width: var(--admin-container-max-width);
 }
 .admin-workspace :deep(.grid),
 .admin-workspace :deep(.grid > *) {

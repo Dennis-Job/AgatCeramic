@@ -18,7 +18,7 @@ describe('UiKitShowcase', () => {
     for (const component of [...uiComponents, ...sharedComponents]) {
       expect(inventory, component).toContain(component)
     }
-    expect(uiComponents).toHaveLength(17)
+    expect(uiComponents).toHaveLength(18)
     expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(11)
     expect(wrapper.findAll('input[required]')).toHaveLength(2)
     wrapper.unmount()

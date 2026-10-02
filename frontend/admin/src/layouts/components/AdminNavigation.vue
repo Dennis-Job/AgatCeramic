@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
+import UiPopover from '../../components/ui/UiPopover.vue'
 import AdminNavigationLinks from './AdminNavigationLinks.vue'
 import { useAuthStore } from '../../stores/auth'
 import { isNavigationLinkActive, visibleNavigation } from '../navigation'
 
 const emit = defineEmits<{ 'compact-open': [open: boolean] }>()
+const openId = defineModel<string | null>('openId', { default: null })
 const auth = useAuthStore()
 const route = useRoute()
-const root = ref<HTMLElement | null>(null)
-const panel = ref<HTMLElement | null>(null)
-const openId = ref<string | null>(null)
 const compact = ref(false)
 const sections = computed(() => visibleNavigation(auth.hasPermission))
 const activeSection = computed(() =>
@@ -24,105 +23,37 @@ const activeSection = computed(() =>
         ),
   ),
 )
-const openSection = computed(() =>
-  sections.value.find((section) => section.id === openId.value),
+const compactGroups = computed(() =>
+  sections.value.flatMap((section) =>
+    section.link
+      ? [{ label: '', links: [section.link] }]
+      : (section.groups ?? []),
+  ),
 )
-const panelGroups = computed(() =>
-  openId.value === 'compact'
-    ? sections.value.flatMap((section) =>
-        section.link
-          ? [{ label: '', links: [section.link] }]
-          : (section.groups ?? []),
-      )
-    : (openSection.value?.groups ?? []),
-)
-let opener: HTMLElement | null = null
 let media: MediaQueryList | null = null
 let previousMainInert = false
 
-function focusables(): HTMLElement[] {
-  return Array.from(
-    panel.value?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), a[href]',
-    ) ?? [],
-  )
-}
-
-async function close(restoreFocus = true): Promise<void> {
-  if (!openId.value) return
-  openId.value = null
-  const target = opener
-  opener = null
-  await nextTick()
-  if (restoreFocus && target?.isConnected) target.focus()
-}
-
-async function toggle(id: string, event: Event): Promise<void> {
-  if (openId.value === id) {
-    await close()
-    return
-  }
-  opener = event.currentTarget as HTMLElement
-  openId.value = id
-  await nextTick()
-  focusables()[0]?.focus()
-}
-
-function handleKeydown(event: KeyboardEvent): void {
-  if (!openId.value || compact.value) return
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    void close()
-    return
-  }
-  const elements = focusables()
-  const index = elements.indexOf(document.activeElement as HTMLElement)
-  if (
-    ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) &&
-    panel.value?.contains(event.target as Node)
-  ) {
-    event.preventDefault()
-    const next =
-      event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-          ? elements.length - 1
-          : (index + (event.key === 'ArrowDown' ? 1 : -1) + elements.length) %
-            elements.length
-    elements[next]?.focus()
-  }
-}
-
-function outside(event: MouseEvent): void {
-  if (
-    !compact.value &&
-    openId.value &&
-    !root.value?.contains(event.target as Node)
-  )
-    void close()
-}
-function focusOutside(event: FocusEvent): void {
-  if (
-    !compact.value &&
-    openId.value &&
-    !root.value?.contains(event.target as Node)
-  )
-    void close(false)
+function updatePopup(id: string, open: boolean): void {
+  if (open) openId.value = id
+  else if (openId.value === id) openId.value = null
 }
 function resize(): void {
-  void close(false)
+  openId.value = null
   compact.value = !media?.matches
 }
-
-watch(
-  () => route.fullPath,
-  () => {
-    void close()
-  },
-)
+function columns(count: number): Record<string, string> {
+  return {
+    '--admin-navigation-columns': String(count),
+    '--ui-popover-width': `calc(var(--admin-popover-column-width) * ${count} + var(--admin-spacing-6) * ${count + 1})`,
+  }
+}
 watch(sections, () => {
-  if (openId.value && openId.value !== 'compact' && !openSection.value)
-    void close()
+  if (
+    openId.value &&
+    !['compact', 'notifications', 'user'].includes(openId.value) &&
+    !sections.value.some((section) => section.id === openId.value)
+  )
+    openId.value = null
 })
 watch(
   () => openId.value === 'compact',
@@ -141,15 +72,9 @@ onMounted(() => {
   media = window.matchMedia('(min-width: 1024px)')
   compact.value = !media.matches
   media.addEventListener('change', resize)
-  document.addEventListener('click', outside)
-  document.addEventListener('focusin', focusOutside)
-  document.addEventListener('keydown', handleKeydown)
 })
 onBeforeUnmount(() => {
   media?.removeEventListener('change', resize)
-  document.removeEventListener('click', outside)
-  document.removeEventListener('focusin', focusOutside)
-  document.removeEventListener('keydown', handleKeydown)
   if (openId.value === 'compact') {
     const main = document.getElementById('admin-main')
     if (main) main.inert = previousMainInert
@@ -158,7 +83,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="admin-navigation">
+  <div class="admin-navigation">
     <nav
       v-if="!compact"
       class="flex items-stretch gap-6"
@@ -173,21 +98,36 @@ onBeforeUnmount(() => {
           :aria-current="activeSection?.id === section.id ? 'page' : undefined"
           >{{ section.label }}</RouterLink
         >
-        <button
+        <UiPopover
           v-else
-          type="button"
-          class="admin-nav-trigger"
-          :class="{
-            'is-active': activeSection?.id === section.id,
-            'is-open': openId === section.id,
-          }"
-          :aria-expanded="openId === section.id"
-          aria-controls="admin-navigation-panel"
-          @click="toggle(section.id, $event)"
-          @keydown.down.prevent="toggle(section.id, $event)"
+          :id="`admin-navigation-${section.id}-panel`"
+          :open="openId === section.id"
+          :label="`${section.label} — подразделы`"
+          panel-class="admin-navigation-panel"
+          :style="columns(section.groups?.length ?? 1)"
+          @update:open="updatePopup(section.id, $event)"
         >
-          {{ section.label }}
-        </button>
+          <template #trigger="{ trigger, open }">
+            <button
+              v-bind="trigger"
+              type="button"
+              class="admin-nav-trigger"
+              :class="{
+                'is-active': activeSection?.id === section.id,
+                'is-open': open,
+              }"
+            >
+              {{ section.label }}
+            </button>
+          </template>
+          <template #default="{ close }">
+            <AdminNavigationLinks
+              :groups="section.groups ?? []"
+              label="Подразделы"
+              @select="close()"
+            />
+          </template>
+        </UiPopover>
       </template>
     </nav>
     <div
@@ -202,7 +142,7 @@ onBeforeUnmount(() => {
         aria-label="Открыть меню"
         :aria-expanded="openId === 'compact'"
         aria-controls="admin-navigation-panel"
-        @click="toggle('compact', $event)"
+        @click="updatePopup('compact', openId !== 'compact')"
         >Меню</UiButton
       >
       <span class="truncate text-sm text-gray-500">{{
@@ -215,9 +155,9 @@ onBeforeUnmount(() => {
       data-testid="navigation-backdrop"
       overlay-class="admin-navigation-dialog-overlay z-40 flex items-start justify-center px-4 py-2 sm:px-6"
       panel-class="admin-navigation-dialog-panel"
-      @close="close()"
+      @close="updatePopup('compact', false)"
     >
-      <div id="admin-navigation-panel">
+      <div id="admin-navigation-panel" class="admin-navigation-panel-compact">
         <div class="mb-4 flex items-center justify-between gap-3">
           <h2 id="admin-navigation-title" class="text-base font-bold">
             Разделы панели
@@ -227,28 +167,16 @@ onBeforeUnmount(() => {
             variant="ghost"
             size="sm"
             aria-label="Закрыть меню"
-            @click="close()"
+            @click="updatePopup('compact', false)"
             >Закрыть</UiButton
           >
         </div>
         <AdminNavigationLinks
-          :groups="panelGroups"
+          :groups="compactGroups"
           label="Основная навигация"
-          @select="close()"
+          @select="updatePopup('compact', false)"
         />
       </div>
     </UiDialog>
-    <section
-      v-if="openId && !compact"
-      id="admin-navigation-panel"
-      ref="panel"
-      class="admin-navigation-panel"
-    >
-      <AdminNavigationLinks
-        :groups="panelGroups"
-        label="Подразделы"
-        @select="close()"
-      />
-    </section>
   </div>
 </template>

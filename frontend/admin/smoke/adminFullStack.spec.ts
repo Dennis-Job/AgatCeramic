@@ -31,6 +31,7 @@ async function logout(page: Page): Promise<void> {
       response.request().method() === 'POST' &&
       new URL(response.url()).pathname === '/api/v1/admin/auth/logout',
   )
+  await page.getByRole('button', { name: 'Меню пользователя' }).click()
   await page.getByRole('button', { name: 'Выйти' }).click()
   expect((await responsePromise).status()).toBe(204)
   await expect(page).toHaveURL('/login')

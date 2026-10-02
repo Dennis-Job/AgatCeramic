@@ -127,3 +127,10 @@ API 8015; обычная production Admin suite использует 4173 и moc
 - `frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-{profile,settings,content,content-loading,content-empty,content-error}-chromium-linux.png`;
 - `docs/ADMIN_SELLER_REDESIGN_PLAN.md`, `CONTENT_WORKSPACE_UX.md`, `CURRENT_STATE.md`, этот отчёт;
 - `tasks/TODO.md`, `IN_PROGRESS.md`, `DONE.md`.
+
+## Последующая доработка 2026-10-02
+
+Уточнение владельца: единый контейнер меню и нетабличных блоков всех страниц,
+широкие рабочие таблицы. Итог и актуальные проверки описаны в
+[отчёте доработки](ADMIN_CONTAINER_REFINEMENT_REPORT.md).
+Результаты выше относятся к первоначальной приёмке и сохранены как история.

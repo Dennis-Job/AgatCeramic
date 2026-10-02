@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import AdminListDetail from '../../../components/shared/AdminListDetail.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
@@ -16,12 +16,13 @@ import {
 import ContactDetails from './ContactDetails.vue'
 import ContactsList from './ContactsList.vue'
 
+const listDetail = ref<InstanceType<typeof AdminListDetail> | null>(null)
 const workspace = useContactsWorkspace()
 onMounted(workspace.initialize)
 </script>
 
 <template>
-  <AdminWorkspace mode="editor">
+  <AdminWorkspace mode="list">
     <template #intro>
       <PageHeader
         class="mb-7"
@@ -31,27 +32,27 @@ onMounted(workspace.initialize)
       />
     </template>
 
-    <UiAlert v-if="workspace.error.value" class="mb-4">{{
+    <UiAlert v-if="workspace.error.value" class="admin-container mb-4">{{
       workspace.error.value
     }}</UiAlert>
     <UiAlert
       v-if="!workspace.error.value && workspace.statusError.value"
-      class="mb-4"
+      class="admin-container mb-4"
       >{{ workspace.statusError.value }} Смена статуса обращения временно
       недоступна.</UiAlert
     >
     <UiAlert
       v-if="!workspace.error.value && workspace.assigneeError.value"
-      class="mb-4"
+      class="admin-container mb-4"
       >{{ workspace.assigneeError.value }} Назначение ответственного временно
       недоступно.</UiAlert
     >
-    <AdminListDetail>
+    <AdminListDetail ref="listDetail">
       <template #list>
         <div class="min-w-0">
           <form
             role="search"
-            class="grid gap-3 border-b border-gray-100 py-4 sm:grid-cols-2"
+            class="admin-container grid gap-3 border-b border-gray-100 py-4 sm:grid-cols-2"
             @submit.prevent="workspace.load()"
           >
             <UiInput
@@ -86,13 +87,15 @@ onMounted(workspace.initialize)
             :date="workspace.date"
             :status-name="workspace.statusName"
             :type-name="workspace.typeName"
-            @select="workspace.select"
+            @select="
+              (item) => listDetail?.showDetail(() => workspace.select(item))
+            "
           />
           <UiPagination
             v-if="!workspace.error.value"
             :meta="workspace.meta.value"
             :loading="workspace.loading.value"
-            class="border-t border-gray-100 pb-4"
+            class="admin-container border-t border-gray-100 pb-4"
             @change="workspace.load"
           />
         </div>

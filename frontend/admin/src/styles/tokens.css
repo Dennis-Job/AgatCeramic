@@ -97,13 +97,18 @@
   --admin-spacing-5: calc(var(--admin-spacing-unit) * 5);
   --admin-spacing-6: calc(var(--admin-spacing-unit) * 6);
 
-  --admin-shell-max-width: 1280px;
-  --admin-workspace-overview-max-width: 1280px;
+  --admin-container-max-width: 1280px;
+  --admin-shell-max-width: calc(
+    var(--admin-container-max-width) + 2 * var(--admin-workspace-gutter)
+  );
+  --admin-workspace-overview-max-width: var(--admin-container-max-width);
   --admin-workspace-form-max-width: 960px;
   --admin-editor-navigation-width: 240px;
   --admin-editor-preview-min-width: 420px;
   --admin-workspace-gutter: var(--admin-spacing-6);
   --admin-workspace-gutter-compact: var(--admin-spacing-4);
+  --admin-popover-width: 320px;
+  --admin-popover-column-width: 216px;
   --admin-shell-top-height: 64px;
   --admin-shell-navigation-height: 44px;
   --admin-shell-height: calc(

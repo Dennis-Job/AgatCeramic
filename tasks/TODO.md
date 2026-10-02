@@ -653,3 +653,13 @@ API behaviour без migration plan и синхронного обновлени
     retention, backup/KMS, primary storage location и records schedule.
   - Только после pre-production проверки задавать `PII_RETENTION_POLICY_STATUS=accepted`; apply
     дополнительно требует `PII_RETENTION_APPLY_ENABLED=true`, выбранный disposition и versioned key.
+
+- [x] Доработка TASK-A057–TASK-A062 от 2026-10-02: единый контейнер меню и всех
+нетабличных блоков, широкие рабочие таблицы. Актуальный результат доработки —
+[отчёт](../docs/ADMIN_CONTAINER_REFINEMENT_REPORT.md).
+
+- [x] Доработка TASK-A058/A062 от 2026-10-02: шапка по второму референсу.
+  Серые иконки с hover popup, подменю по наведению с шириной 1/2/3 колонок,
+  удалён глобальный поиск, разделитель внутри контейнера. UI Design Guard принят;
+  lint/format/build, 64 unit, 250 E2E каждой macOS/Linux, real Nuxt3.
+  [Отчёт](../docs/ADMIN_HEADER_REFINEMENT_REPORT.md).

@@ -44,10 +44,14 @@ const {
       <PageHeader class="mb-7" eyebrow="Контент" title="Медиатека" />
     </template>
 
-    <UiAlert v-if="success" class="mb-4" tone="success" role="status">{{
-      success
-    }}</UiAlert>
-    <UiCard class="mb-6 media-upload">
+    <UiAlert
+      v-if="success"
+      class="admin-container mb-4"
+      tone="success"
+      role="status"
+      >{{ success }}</UiAlert
+    >
+    <UiCard class="admin-container mb-6">
       <form
         class="grid gap-4 p-5 sm:grid-cols-2"
         @submit.prevent="editing ? saveEdit() : upload()"
@@ -94,7 +98,7 @@ const {
           help="Кратко опишите изображение для доступности."
           ><UiInput v-model="alt" maxlength="255" :disabled="busy"
         /></UiField>
-        <UiAlert v-if="formError" class="sm:col-span-2">{{
+        <UiAlert v-if="formError" class="admin-container sm:col-span-2">{{
           formError
         }}</UiAlert>
         <div class="flex flex-wrap gap-2 sm:col-span-2">
@@ -112,18 +116,20 @@ const {
         </div>
       </form>
     </UiCard>
-    <UiAlert v-if="list.error.value" class="mb-4">{{
+    <UiAlert v-if="list.error.value" class="admin-container mb-4">{{
       list.error.value
     }}</UiAlert>
-    <UiButton
-      v-if="list.error.value"
-      class="mb-4"
-      variant="secondary"
-      @click="load()"
-      >Повторить загрузку</UiButton
-    >
+    <div v-if="list.error.value" class="admin-container mb-4">
+      <UiButton variant="secondary" @click="load()"
+        >Повторить загрузку</UiButton
+      >
+    </div>
     <div v-if="!list.error.value || list.items.value.length">
-      <UiLoadingState v-if="list.loading.value" label="Загрузка файлов…" />
+      <UiLoadingState
+        v-if="list.loading.value"
+        class="admin-container"
+        label="Загрузка файлов…"
+      />
       <UiTable
         v-else-if="list.items.value.length"
         label="Список файлов"
@@ -196,10 +202,11 @@ const {
             </td>
           </tr></tbody
       ></UiTable>
-      <UiEmptyState v-else label="Файлов пока нет." />
+      <UiEmptyState v-else class="admin-container" label="Файлов пока нет." />
     </div>
     <UiPagination
       v-if="list.pagination.value"
+      class="admin-container"
       :meta="list.pagination.value"
       :loading="list.loading.value"
       @change="load"
@@ -215,9 +222,3 @@ const {
     />
   </AdminWorkspace>
 </template>
-
-<style scoped>
-.media-upload {
-  max-width: var(--admin-workspace-form-max-width);
-}
-</style>

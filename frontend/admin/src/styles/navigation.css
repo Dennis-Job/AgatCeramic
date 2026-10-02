@@ -1,8 +1,59 @@
 .admin-header-inner {
   position: relative;
-  max-width: var(--admin-shell-max-width);
+  max-width: calc(
+    var(--admin-container-max-width) + 2 * var(--admin-workspace-gutter-compact)
+  );
   margin-inline: auto;
   padding-inline: var(--admin-spacing-4);
+}
+.admin-header-inner::after {
+  content: '';
+  display: block;
+  height: var(--admin-border-width);
+  background: var(--admin-color-gray-200);
+}
+.admin-header-icon {
+  display: grid;
+  width: var(--admin-control-height-lg);
+  height: var(--admin-control-height-lg);
+  place-items: center;
+  border-radius: var(--admin-radius-lg);
+  color: var(--admin-color-gray-400);
+  cursor: pointer;
+}
+.admin-header-icon:hover,
+.admin-header-icon[aria-expanded='true'] {
+  background: var(--admin-color-gray-50);
+  color: var(--admin-color-gray-600);
+}
+.admin-user-symbol {
+  display: grid;
+  width: var(--admin-spacing-6);
+  height: var(--admin-spacing-6);
+  place-items: center;
+  border-radius: 50%;
+  background: currentColor;
+}
+.admin-user-symbol svg {
+  color: var(--admin-color-white);
+}
+.admin-account-action {
+  display: flex;
+  min-height: var(--admin-control-height-lg);
+  align-items: center;
+  justify-content: start;
+  gap: var(--admin-spacing-3);
+  padding: var(--admin-spacing-2) var(--admin-spacing-3);
+  border-radius: var(--admin-radius-lg);
+  color: var(--admin-color-gray-900);
+  font-size: 0.875rem;
+}
+.admin-account-action svg {
+  flex-shrink: 0;
+  color: var(--admin-color-gray-400);
+}
+.admin-account-action:hover {
+  background: var(--admin-color-gray-50);
 }
 .admin-header-top {
   height: var(--admin-shell-top-height);
@@ -14,6 +65,8 @@
 .admin-brand > span:last-child {
   margin-top: var(--admin-spacing-1);
 }
+.admin-header-icon:focus-visible,
+.admin-account-action:focus-visible,
 .admin-brand:focus-visible,
 .admin-nav-trigger:focus-visible,
 .admin-nav-link:focus-visible {
@@ -43,7 +96,6 @@
   color: var(--admin-color-primary-500);
   border-bottom-color: currentColor;
 }
-.admin-navigation-panel,
 .admin-navigation-dialog-panel {
   max-height: calc(100dvh - var(--admin-shell-height) - var(--admin-spacing-6));
   overflow-y: auto;
@@ -54,11 +106,11 @@
   background: var(--admin-color-white);
   box-shadow: var(--admin-shadow-dropdown);
 }
-.admin-navigation-panel {
-  position: absolute;
-  z-index: 2;
-  top: calc(100% + var(--admin-spacing-2));
-  inset-inline: var(--admin-spacing-4);
+.admin-navigation-panel .admin-navigation-groups {
+  grid-template-columns: repeat(
+    var(--admin-navigation-columns),
+    minmax(0, 1fr)
+  );
 }
 .admin-navigation-dialog-overlay {
   top: var(--admin-shell-height);
@@ -102,10 +154,8 @@
 }
 @media (min-width: 640px) {
   .admin-header-inner {
-    padding-inline: var(--admin-spacing-6);
-  }
-  .admin-navigation-panel {
-    inset-inline: var(--admin-spacing-6);
+    max-width: var(--admin-shell-max-width);
+    padding-inline: var(--admin-workspace-gutter);
   }
   .admin-navigation-groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));

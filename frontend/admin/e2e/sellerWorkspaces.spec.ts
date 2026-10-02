@@ -173,8 +173,7 @@ for (const [path, label, cardsBelow] of [
           ).filter((cell) => cell.scrollWidth > cell.clientWidth).length,
         }))
         expect(dimensions.cellsOverflow, `${path} cells at ${width}`).toBe(0)
-        if (!['/orders', '/contacts'].includes(path))
-          expect(dimensions.width).toBe(width - (width < 640 ? 32 : 48))
+        expect(dimensions.width).toBe(width - (width < 640 ? 32 : 48))
         await region.evaluate((element) => {
           element.scrollTop = 500
           element.scrollLeft = 500
@@ -258,11 +257,21 @@ for (const [path, label, cardsBelow] of [
     await region.focus()
     await expect(region).toBeFocused()
     if (['/orders', '/contacts'].includes(path)) {
-      await region.getByRole('button').first().focus()
+      const opener = region.getByRole('button').first()
+      await opener.focus()
       await page.keyboard.press('Enter')
+      const detailPanel = page.getByRole('region', {
+        name: 'Детали выбранной записи',
+      })
+      await expect(detailPanel).toBeFocused()
       await expect(
         page.locator('aside').getByRole('heading').first(),
-      ).toBeVisible()
+      ).toBeInViewport()
+      await detailPanel
+        .getByRole('button', { name: 'Вернуться к списку' })
+        .click()
+      await expect(opener).toBeFocused()
+      await expect(opener).toBeInViewport()
       for (const width of widths) {
         await page.setViewportSize({ width, height: 900 })
         await page.evaluate(
@@ -310,12 +319,11 @@ for (const [path, label, cardsBelow] of [
               },
             }
           })
-        if (width >= 1280) {
-          expect(zones.detail.top).toBeCloseTo(zones.list.top, 0)
-          expect(zones.detail.left).toBeGreaterThan(zones.list.right)
-          expect(zones.detail.width).toBeLessThanOrEqual(720)
-        } else
-          expect(zones.detail.top).toBeGreaterThanOrEqual(zones.list.bottom)
+        expect(zones.detail.top).toBeGreaterThanOrEqual(zones.list.bottom)
+        expect(zones.detail.width).toBe(
+          Math.min(1280, width - (width < 640 ? 32 : 48)),
+        )
+        expect(zones.detail.left).toBe((width - zones.detail.width) / 2)
         await page.locator('aside').screenshot({
           path: `.tmp/a060-visual/${path.slice(1)}-selected-${width}.png`,
           // Exclude the global sticky shell from a tall detail-only crop.

@@ -7,16 +7,16 @@ const widths = [320, 640, 768, 1024, 1280, 1440, 1920, 2560]
 
 for (const [path, title, mode, maxWidth, editor] of [
   ['/', 'Обзор магазина', 'overview', 1280, ''],
-  ['/profile', 'Мой профиль', 'form', 960, ''],
-  ['/settings', 'Настройки сайта', 'form', 960, ''],
+  ['/profile', 'Мой профиль', 'form', 1280, ''],
+  ['/settings', 'Настройки сайта', 'form', 1280, ''],
   ['/content?section=stores', 'Магазины', 'overview', 1280, ''],
-  ['/content?page=home', 'Главная страница', 'editor', Infinity, 'navigation'],
-  ['/content?page=2', 'Страницы', 'editor', Infinity, 'navigation'],
+  ['/content?page=home', 'Главная страница', 'editor', 1280, 'navigation'],
+  ['/content?page=2', 'Страницы', 'editor', 1280, 'navigation'],
   [
     '/content?section=appearance',
     'Общее оформление',
     'editor',
-    Infinity,
+    1280,
     'appearance',
   ],
 ] as const) {

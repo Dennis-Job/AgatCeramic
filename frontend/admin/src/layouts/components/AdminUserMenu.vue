@@ -1,42 +1,82 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { LogOut } from '@lucide/vue'
+import { ref } from 'vue'
+import { LogOut, Settings, UserRound } from '@lucide/vue'
 import { useRouter } from 'vue-router'
+import UiPopover from '../../components/ui/UiPopover.vue'
+import UiAlert from '../../components/ui/UiAlert.vue'
+import UiButton from '../../components/ui/UiButton.vue'
 import { useAuthStore } from '../../stores/auth'
-
+const open = defineModel<boolean>('open', { default: false })
 const auth = useAuthStore()
 const router = useRouter()
-const initial = computed(() => auth.user?.name.slice(0, 1).toUpperCase() ?? 'А')
-
+const signingOut = ref(false)
+const error = ref('')
 async function signOut(): Promise<void> {
-  await auth.logout()
-  await router.replace('/login')
+  signingOut.value = true
+  error.value = ''
+  try {
+    await auth.logout()
+    await router.replace('/login')
+  } catch (cause) {
+    error.value =
+      cause instanceof Error
+        ? cause.message
+        : 'Не удалось выйти. Попробуйте ещё раз.'
+  } finally {
+    signingOut.value = false
+  }
 }
 </script>
 
 <template>
-  <div class="flex items-center gap-3" aria-label="Меню пользователя">
-    <div class="hidden min-w-0 max-w-48 text-right sm:block">
-      <p class="truncate text-sm font-semibold text-gray-700">
-        {{ auth.user?.name }}
-      </p>
-      <p class="truncate text-xs text-gray-400">{{ auth.user?.email }}</p>
-    </div>
-    <button
-      type="button"
-      class="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full bg-primary-500 text-sm font-bold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-      aria-label="Мой профиль"
-      @click="router.push({ name: 'profile' })"
-    >
-      {{ initial }}
-    </button>
-    <button
-      type="button"
-      class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-      aria-label="Выйти"
-      @click="signOut"
-    >
-      <LogOut :size="19" aria-hidden="true" />
-    </button>
-  </div>
+  <UiPopover
+    id="admin-user-panel"
+    v-model:open="open"
+    align="end"
+    label="Меню пользователя"
+  >
+    <template #trigger="{ trigger }">
+      <button
+        v-bind="trigger"
+        type="button"
+        class="admin-header-icon"
+        aria-label="Меню пользователя"
+      >
+        <span class="admin-user-symbol"
+          ><UserRound :size="17" :stroke-width="2.4" aria-hidden="true"
+        /></span>
+      </button>
+    </template>
+    <template #default="{ close }">
+      <div class="border-b border-gray-200 pb-4">
+        <p class="break-words text-base font-bold text-gray-900">
+          {{ auth.user?.name }}
+        </p>
+        <p class="mt-1 break-all text-sm text-gray-500">
+          {{ auth.user?.email }}
+        </p>
+      </div>
+      <div class="mt-3 grid gap-1">
+        <RouterLink to="/profile" class="admin-account-action" @click="close()"
+          ><UserRound :size="20" aria-hidden="true" />Мой профиль</RouterLink
+        >
+        <RouterLink
+          v-if="auth.hasPermission('settings.manage')"
+          to="/settings"
+          class="admin-account-action"
+          @click="close()"
+          ><Settings :size="20" aria-hidden="true" />Настройки</RouterLink
+        >
+        <UiButton
+          class="admin-account-action"
+          variant="ghost"
+          :loading="signingOut"
+          :disabled="signingOut"
+          @click="signOut"
+          ><LogOut :size="20" aria-hidden="true" />Выйти</UiButton
+        >
+      </div>
+      <UiAlert v-if="error" class="mt-3">{{ error }}</UiAlert>
+    </template>
+  </UiPopover>
 </template>

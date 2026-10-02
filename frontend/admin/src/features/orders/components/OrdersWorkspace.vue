@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { RefreshCw } from '@lucide/vue'
 import AdminListDetail from '../../../components/shared/AdminListDetail.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
@@ -16,12 +16,13 @@ import {
 import OrderDetails from './OrderDetails.vue'
 import OrdersList from './OrdersList.vue'
 
+const listDetail = ref<InstanceType<typeof AdminListDetail> | null>(null)
 const workspace = useOrdersWorkspace()
 onMounted(workspace.initialize)
 </script>
 
 <template>
-  <AdminWorkspace mode="editor">
+  <AdminWorkspace mode="list">
     <template #intro>
       <PageHeader
         class="mb-7"
@@ -31,21 +32,21 @@ onMounted(workspace.initialize)
       />
     </template>
 
-    <UiAlert v-if="workspace.error.value" class="mb-4">{{
+    <UiAlert v-if="workspace.error.value" class="admin-container mb-4">{{
       workspace.error.value
     }}</UiAlert>
     <UiAlert
       v-if="!workspace.error.value && workspace.statusError.value"
-      class="mb-4"
+      class="admin-container mb-4"
       >{{ workspace.statusError.value }} Смена статуса заказа временно
       недоступна.</UiAlert
     >
-    <AdminListDetail>
+    <AdminListDetail ref="listDetail">
       <template #list>
         <div class="min-w-0">
           <form
             role="search"
-            class="grid gap-3 border-b border-gray-100 py-4 sm:grid-cols-2"
+            class="admin-container grid gap-3 border-b border-gray-100 py-4 sm:grid-cols-2"
             @submit.prevent="workspace.load()"
           >
             <UiInput
@@ -78,13 +79,16 @@ onMounted(workspace.initialize)
             :amount="workspace.amount"
             :status-name="workspace.statusName"
             :payment-name="workspace.paymentName"
-            @select="workspace.selectOrder"
+            @select="
+              (item) =>
+                listDetail?.showDetail(() => workspace.selectOrder(item))
+            "
           />
           <UiPagination
             v-if="!workspace.error.value"
             :meta="workspace.meta.value"
             :loading="workspace.loading.value"
-            class="border-t border-gray-100 pb-4"
+            class="admin-container border-t border-gray-100 pb-4"
             @change="workspace.load"
           />
         </div>

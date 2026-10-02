@@ -17,6 +17,7 @@ import UiImagePreview from '../ui/UiImagePreview.vue'
 import UiInput from '../ui/UiInput.vue'
 import UiLoadingState from '../ui/UiLoadingState.vue'
 import UiPagination from '../ui/UiPagination.vue'
+import UiPopover from '../ui/UiPopover.vue'
 import UiRadio from '../ui/UiRadio.vue'
 import UiSelect from '../ui/UiSelect.vue'
 import UiTable from '../ui/UiTable.vue'
@@ -41,6 +42,7 @@ const checkboxValues = ref<Array<number | string>>(['porcelain'])
 const radio = ref('standard')
 const disabledRadio = ref('disabled-selected')
 const isDialogOpen = ref(false)
+const isPopoverOpen = ref(false)
 const confirmMode = ref<ConfirmMode | null>(null)
 const confirmBusy = ref(false)
 const notice = ref('')
@@ -67,6 +69,7 @@ const uiComponents = [
   'UiInput',
   'UiLoadingState',
   'UiPagination',
+  'UiPopover',
   'UiRadio',
   'UiSelect',
   'UiTable',
@@ -181,6 +184,7 @@ const radiusTokens = ['md', 'lg', 'xl', '2xl']
 const controlHeightTokens = ['sm', 'md', 'lg']
 const shadowTokens = ['card', 'input', 'dialog', 'dropdown', 'sm', 'xl']
 const foundationMetaTokens = [
+  '--admin-container-max-width',
   '--admin-shell-max-width',
   '--admin-workspace-overview-max-width',
   '--admin-workspace-form-max-width',
@@ -188,6 +192,8 @@ const foundationMetaTokens = [
   '--admin-editor-preview-min-width',
   '--admin-workspace-gutter',
   '--admin-workspace-gutter-compact',
+  '--admin-popover-width',
+  '--admin-popover-column-width',
   '--admin-shell-top-height',
   '--admin-shell-navigation-height',
   '--admin-shell-height',
@@ -798,6 +804,21 @@ function submitAuthPreview(): void {
             Confirm: error
           </UiButton>
         </div>
+        <UiPopover
+          v-model:open="isPopoverOpen"
+          class="mt-4"
+          label="Пример всплывающего окна"
+        >
+          <template #trigger="{ trigger }"
+            ><UiButton v-bind="trigger" variant="secondary"
+              >Всплывающее окно</UiButton
+            ></template
+          >
+          <p class="text-sm text-gray-700">
+            Наведите курсор или откройте окно с клавиатуры. Escape закроет его и
+            вернёт фокус.
+          </p>
+        </UiPopover>
         <p class="mt-3 text-xs text-gray-500">
           Busy-пример разблокируется через 1,2 секунды, чтобы из него можно было
           выйти.

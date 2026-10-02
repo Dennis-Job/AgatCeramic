@@ -100,7 +100,9 @@ for (const width of [320, 640, 768, 1023, 1024, 1280, 1440, 1920, 2560]) {
     await mockNavigation(page)
     await page.goto('/products')
     await expect(page.locator('#admin-sidebar')).toHaveCount(0)
-    const panel = page.locator('#admin-navigation-panel')
+    const panel = page.locator(
+      '.admin-navigation-panel, #admin-navigation-panel',
+    )
     const expectedGroups = [
       {
         label: 'Товары',
@@ -206,7 +208,9 @@ for (const profile of [
       const navigation = page.getByRole('navigation', {
         name: 'Основная навигация',
       })
-      const panel = page.locator('#admin-navigation-panel')
+      const panel = page.locator(
+        '.admin-navigation-panel, #admin-navigation-panel',
+      )
       if (width >= 1024) {
         if (profile.content || profile.media)
           await navigation
@@ -269,7 +273,7 @@ test('content navigation marks only the active query section and passes accessib
 }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
   await mockNavigation(page)
-  const panel = page.locator('#admin-navigation-panel')
+  const panel = page.locator('.admin-navigation-panel, #admin-navigation-panel')
   for (const section of [
     { path: '/content', label: 'Страницы' },
     { path: '/content?section=appearance', label: 'Общее оформление' },
@@ -304,7 +308,7 @@ test('navigation respects cancellation and acceptance of unsaved content edits',
   const content = page
     .getByRole('navigation', { name: 'Основная навигация' })
     .getByRole('button', { name: 'Контент', exact: true })
-  const panel = page.locator('#admin-navigation-panel')
+  const panel = page.locator('.admin-navigation-panel, #admin-navigation-panel')
   await content.click()
   page.once('dialog', (dialog) => dialog.dismiss())
   await panel.getByRole('link', { name: 'Магазины', exact: true }).click()
@@ -333,7 +337,7 @@ test('compact navigation passes axe and ignores a drag from its panel onto the b
   await mockNavigation(page)
   await page.goto('/products')
   await page.getByRole('button', { name: 'Открыть меню' }).click()
-  const panel = page.locator('#admin-navigation-panel')
+  const panel = page.locator('.admin-navigation-panel, #admin-navigation-panel')
   await expect(panel).toBeVisible()
   const results = await new AxeBuilder({ page }).analyze()
   expect(

@@ -172,10 +172,16 @@ function closeGroupDeletion(): void {
       </PageHeader>
     </template>
 
-    <UiAlert v-if="error && !opened" class="mb-4">{{ error }}</UiAlert>
-    <UiAlert v-if="exportStatus" class="mb-4" tone="success" live="polite">{{
-      exportStatus
+    <UiAlert v-if="error && !opened" class="admin-container mb-4">{{
+      error
     }}</UiAlert>
+    <UiAlert
+      v-if="exportStatus"
+      class="admin-container mb-4"
+      tone="success"
+      live="polite"
+      >{{ exportStatus }}</UiAlert
+    >
     <ProductImportDialog
       :open="importOpened"
       @close="importOpened = false"
@@ -193,7 +199,7 @@ function closeGroupDeletion(): void {
     />
 
     <form
-      class="rounded-xl bg-gray-50 p-4 sm:p-5"
+      class="admin-container rounded-xl bg-gray-50 p-4 sm:p-5"
       role="search"
       @submit.prevent
     >
@@ -278,8 +284,16 @@ function closeGroupDeletion(): void {
     <p class="sr-only" role="status" aria-live="polite">{{ sortStatus }}</p>
 
     <div class="mt-6 min-w-0">
-      <UiLoadingState v-if="loading" label="Загрузка товаров…" />
-      <UiEmptyState v-else-if="!products.length" label="Товары не найдены." />
+      <UiLoadingState
+        v-if="loading"
+        class="admin-container"
+        label="Загрузка товаров…"
+      />
+      <UiEmptyState
+        v-else-if="!products.length"
+        class="admin-container"
+        label="Товары не найдены."
+      />
       <UiTable
         v-else
         min-width="min-w-[1560px]"
@@ -497,6 +511,7 @@ function closeGroupDeletion(): void {
     </div>
     <UiPagination
       v-if="pagination"
+      class="admin-container"
       :meta="pagination"
       :loading="loading"
       :announce="false"
@@ -538,10 +553,14 @@ function closeGroupDeletion(): void {
         data-testid="product-editor-body"
         class="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6"
       >
-        <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert>
-        <UiAlert v-if="success" class="mb-4" tone="success" live="polite">{{
-          success
-        }}</UiAlert>
+        <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert>
+        <UiAlert
+          v-if="success"
+          class="admin-container mb-4"
+          tone="success"
+          live="polite"
+          >{{ success }}</UiAlert
+        >
         <ProductMainSection v-if="activeStep === 'main'" />
         <ProductAttributesSection v-else-if="activeStep === 'attributes'" />
         <ProductImagesSection v-else-if="activeStep === 'images'" />

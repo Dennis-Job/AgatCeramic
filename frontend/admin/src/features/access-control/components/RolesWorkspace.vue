@@ -32,18 +32,23 @@ onMounted(workspace.load)
       >
     </template>
 
-    <UiAlert v-if="workspace.error.value" class="mb-4">{{
+    <UiAlert v-if="workspace.error.value" class="admin-container mb-4">{{
       workspace.error.value
     }}</UiAlert>
     <UiAlert
       v-if="!workspace.error.value && workspace.permissionsError.value"
-      class="mb-4"
+      class="admin-container mb-4"
       >{{ workspace.permissionsError.value }} Редактирование ролей временно
       недоступно.</UiAlert
     >
-    <UiLoadingState v-if="workspace.loading.value" label="Загрузка ролей…" />
+    <UiLoadingState
+      v-if="workspace.loading.value"
+      class="admin-container"
+      label="Загрузка ролей…"
+    />
     <UiEmptyState
       v-else-if="!workspace.error.value && workspace.roles.value.length === 0"
+      class="admin-container"
       label="Роли не найдены."
     />
     <UiTable

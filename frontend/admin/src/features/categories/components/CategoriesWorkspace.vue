@@ -80,7 +80,7 @@ onMounted(load)
         ></PageHeader
       >
     </template>
-    <UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
+    <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert
     ><CategoriesList
       :categories="categories"
       :loading="loading"

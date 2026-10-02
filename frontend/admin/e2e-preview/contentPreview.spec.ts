@@ -57,6 +57,16 @@ for (const [path, slug] of [
     }
     for (const width of [320, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
       await page.setViewportSize({ width, height: 900 })
+      // Wait for MediaQueryList/Vue to replace the desktop menu after resize.
+      const compactMenu = page.getByRole('button', { name: 'Открыть меню' })
+      if (width < 1024) await expect(compactMenu).toBeVisible()
+      else await expect(compactMenu).toHaveCount(0)
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      )
       await expect(iframe).toHaveCSS('width', '1280px')
       expect(
         await page.evaluate(

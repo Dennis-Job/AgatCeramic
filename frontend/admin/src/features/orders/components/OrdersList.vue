@@ -18,10 +18,18 @@ defineEmits<{ select: [order: Order] }>()
 </script>
 
 <template>
-  <UiLoadingState v-if="loading" label="Загрузка заказов…" />
-  <UiEmptyState v-else-if="!orders.length" label="Заказы не найдены." />
+  <UiLoadingState
+    v-if="loading"
+    class="admin-container"
+    label="Загрузка заказов…"
+  />
+  <UiEmptyState
+    v-else-if="!orders.length"
+    class="admin-container"
+    label="Заказы не найдены."
+  />
   <template v-else>
-    <div class="divide-y divide-gray-100 md:hidden">
+    <div class="admin-container divide-y divide-gray-100 md:hidden">
       <article
         v-for="order in orders"
         :key="order.id"

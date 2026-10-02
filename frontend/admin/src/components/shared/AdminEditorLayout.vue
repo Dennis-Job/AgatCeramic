@@ -41,7 +41,7 @@
       );
   }
 }
-@container (min-width: 1360px) {
+@container (min-width: 1240px) {
   .admin-editor-grid--navigation {
     grid-template-columns:
       var(--admin-editor-navigation-width) minmax(0, 1fr)

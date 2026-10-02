@@ -88,5 +88,9 @@ function groupName(
         </td>
       </tr></tbody
   ></UiTable>
-  <UiEmptyState v-else label="Характеристик пока нет." />
+  <UiEmptyState
+    v-else
+    class="admin-container"
+    label="Характеристик пока нет."
+  />
 </template>
