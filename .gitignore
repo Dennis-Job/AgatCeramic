@@ -49,3 +49,7 @@ coverage/
 *.backup.*
 *.bak
 *.bak.*
+
+.DS_Store
+.fleet
+.idea
