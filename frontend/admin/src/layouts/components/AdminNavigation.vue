@@ -145,9 +145,6 @@ onBeforeUnmount(() => {
         @click="updatePopup('compact', openId !== 'compact')"
         >Меню</UiButton
       >
-      <span class="truncate text-sm text-gray-500">{{
-        activeSection?.label ?? route.meta.title
-      }}</span>
     </div>
     <UiDialog
       :open="openId === 'compact'"

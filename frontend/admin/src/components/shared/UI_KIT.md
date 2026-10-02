@@ -199,3 +199,9 @@ teleport menu, confirm busy/error, disabled-контракт, keyboard/focus, ax
 `UiButton variant="surface"` — белая поверхность без border,
 hover primary50/primary600, обычный общий keyboard focus. Disabled состояние
 прозрачное и не принимает hover-оформление. Применяется к сбросу фильтров.
+
+Уточнение компактной шапки от 2026-10-02: рядом с «Меню» нет дублирующей
+подписи текущего раздела; он обозначен заголовком страницы и активной ссылкой
+внутри меню. `AdminLayout` локально задаёт базовый inline gutter 16 px,
+а от 640 px — 24 px; padding содержимого и full-bleed таблицы используют
+одну переменную, наследуемую от layout.

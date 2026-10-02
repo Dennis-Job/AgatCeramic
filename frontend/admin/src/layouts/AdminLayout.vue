@@ -15,6 +15,7 @@ import AdminHeader from './components/AdminHeader.vue'
 
 <style scoped>
 .admin-layout-content {
+  --admin-workspace-inline-gutter: var(--admin-workspace-gutter-compact);
   min-width: 0;
   padding: var(--admin-workspace-inline-gutter);
 }

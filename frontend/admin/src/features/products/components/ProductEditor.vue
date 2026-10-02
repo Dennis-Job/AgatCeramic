@@ -124,7 +124,7 @@ function closeGroupDeletion(): void {
 <template>
   <AdminWorkspace mode="list" :aria-busy="loading">
     <template #intro>
-      <PageHeader class="mb-7" eyebrow="Каталог" title="Товары">
+      <PageHeader class="mb-6" eyebrow="Каталог" title="Товары">
         <template #actions>
           <UiButton
             v-if="canManageImports"
