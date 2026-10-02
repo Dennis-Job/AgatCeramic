@@ -5,7 +5,6 @@
 @import './controls.css';
 @import './notifications.css';
 @import './utilities.css';
-@import './navigation.css';
 
 @theme {
   --font-sans: var(--admin-font-sans);
