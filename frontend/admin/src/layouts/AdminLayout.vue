@@ -1,10 +1,20 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import AdminHeader from './components/AdminHeader.vue'
+
+const condensed = ref(false)
 </script>
 
 <template>
-  <div class="min-h-screen bg-page text-gray-800">
-    <AdminHeader />
+  <div
+    class="min-h-screen bg-page text-gray-800 admin-layout"
+    :style="{
+      '--admin-shell-height': condensed
+        ? 'calc(var(--admin-shell-top-height) + var(--admin-border-width))'
+        : undefined,
+    }"
+  >
+    <AdminHeader @condensed-change="condensed = $event" />
     <main id="admin-main" class="min-w-0 admin-layout-main">
       <div class="admin-layout-content">
         <slot />

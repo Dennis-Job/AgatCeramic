@@ -1,5 +1,8 @@
 .admin-header-inner {
   position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: var(--admin-spacing-3);
   max-width: calc(
     var(--admin-container-max-width) + 2 * var(--admin-workspace-gutter-compact)
   );
@@ -9,6 +12,7 @@
 .admin-header-inner::after {
   content: '';
   display: block;
+  grid-column: 1 / -1;
   height: var(--admin-border-width);
   background: var(--admin-color-gray-200);
 }
@@ -55,18 +59,49 @@
 .admin-account-action:hover {
   background: var(--admin-color-gray-50);
 }
-.admin-header-top {
+.admin-brand,
+.admin-header-actions {
   height: var(--admin-shell-top-height);
 }
 .admin-brand {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   font-size: 1.25rem;
   line-height: 1.25;
+}
+.admin-header-actions {
+  grid-column: 3;
+  grid-row: 1;
 }
 .admin-brand > span:last-child {
   margin-top: var(--admin-spacing-1);
 }
 
 .admin-navigation {
+  min-width: 0;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: var(--admin-shell-navigation-height);
+}
+.admin-header.is-condensed .admin-navigation {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  height: var(--admin-shell-top-height);
+}
+.admin-header.is-condensed .admin-nav-trigger {
+  min-height: var(--admin-shell-top-height);
+}
+.admin-header.is-condensed .admin-navigation > nav {
+  justify-content: center;
+}
+.admin-header-spacer {
+  height: 0;
+}
+.admin-header.is-condensed + .admin-header-spacer {
   height: var(--admin-shell-navigation-height);
 }
 .admin-navigation-compact {
@@ -145,10 +180,35 @@
 .admin-layout-main :is([id], h1, h2, h3) {
   scroll-margin-top: calc(var(--admin-shell-height) + var(--admin-spacing-4));
 }
+/* Match the compact navigation breakpoint while Vue handles the media event. */
+@media (max-width: 1023px) {
+  .admin-layout {
+    --admin-shell-height: calc(
+      var(--admin-shell-top-height) + var(--admin-border-width)
+    );
+  }
+  .admin-header-inner {
+    column-gap: var(--admin-spacing-2);
+  }
+  .admin-header .admin-navigation {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    height: var(--admin-shell-top-height);
+  }
+  .admin-header.is-condensed + .admin-header-spacer {
+    height: 0;
+  }
+  .admin-navigation > nav {
+    display: none;
+  }
+}
 @media (min-width: 640px) {
   .admin-header-inner {
     max-width: var(--admin-shell-max-width);
     padding-inline: var(--admin-workspace-gutter);
+    column-gap: var(--admin-spacing-3);
   }
   .admin-navigation-groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));

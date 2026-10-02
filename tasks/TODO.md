@@ -723,3 +723,18 @@ API behaviour без migration plan и синхронного обновлени
   build/lint/source format, 73 unit, 4 профильных E2E passed.
   Полный macOS E2E: 266/271, пять несовпадений прежних product visual baseline.
   [Отчёт, проверки и файлы](../docs/ADMIN_PRODUCT_PAGE_SCROLL_REPORT.md).
+
+- [x] Шапка при прокрутке от 2026-10-02: меню перемещается между логотипом
+  и иконками; высота уменьшается 109 → 65 px, таблица следует новой границе,
+  положение документа сохраняется. UI Design Guard accepted; build/lint/source
+  format, 73 unit, 27 профильных E2E passed. Итоговый полный macOS E2E 268/273:
+  только пять прежних product baseline mismatch. Исправлено прямое подключение
+  navigation CSS для dev/HMR; одна строка подтверждена на открытой странице
+  и повторным независимым ревью. [Отчёт и файлы](../docs/ADMIN_SCROLL_HEADER_REPORT.md).
+
+- [x] Центрирование меню и мобильный бургер от 2026-10-02: перенесённое desktop
+  меню центрируется между брендом и действиями; mobile всегда однострочный,
+  бургер рядом с уведомлениями/профилем использует общий стиль иконок. Build/lint/
+  source format, 73 unit passed; полный macOS E2E 268/273 с пятью прежними
+  product baseline mismatch. UI Design Guard accepted, live и production
+  проверены. [Результат и проверки](../docs/ADMIN_SCROLL_HEADER_REPORT.md).

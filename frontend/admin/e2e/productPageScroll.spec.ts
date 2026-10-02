@@ -26,6 +26,7 @@ test('products use document scrolling and the original header follows the menu a
   for (const width of [320, 640, 768, 1024, 1280, 1920]) {
     await page.setViewportSize({ width, height: 900 })
     await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(page.locator('.admin-header')).not.toHaveClass(/is-condensed/)
     await region.evaluate((element) => {
       element.scrollLeft = 0
     })
@@ -33,7 +34,7 @@ test('products use document scrolling and the original header follows the menu a
       (element) =>
         element.querySelector('thead')!.getBoundingClientRect().top + scrollY,
     )
-    const menuBottom = await page
+    let menuBottom = await page
       .locator('.admin-header')
       .evaluate((element) => element.getBoundingClientRect().bottom)
     const headerTop = () =>
@@ -46,6 +47,10 @@ test('products use document scrolling and the original header follows the menu a
       naturalTop - menuBottom - 40,
     )
     await expect.poll(headerTop).toBeCloseTo(menuBottom + 40, 0)
+    await expect(page.locator('.admin-header')).toHaveClass(/is-condensed/)
+    menuBottom = await page
+      .locator('.admin-header')
+      .evaluate((element) => element.getBoundingClientRect().bottom)
     await page.evaluate(
       (y) => window.scrollTo(0, y),
       naturalTop - menuBottom + 350,

@@ -47,8 +47,19 @@ for (const path of routes) {
       const expectedWidth = Math.min(1280, width - (width < 640 ? 32 : 48))
       const expectedLeft = (width - expectedWidth) / 2
       const menu = await page.locator('.admin-navigation').boundingBox()
-      expect(menu!.x, `${path} menu left at ${width}`).toBe(expectedLeft)
-      expect(menu!.width, `${path} menu width at ${width}`).toBe(expectedWidth)
+      if (width >= 1024) {
+        expect(menu!.x, `${path} menu left at ${width}`).toBe(expectedLeft)
+        expect(menu!.width, `${path} menu width at ${width}`).toBe(
+          expectedWidth,
+        )
+      } else {
+        const icons = (await page
+          .locator('.admin-header-actions')
+          .boundingBox())!
+        expect(menu!.x + menu!.width).toBe(icons.x - (width < 640 ? 8 : 12))
+        expect(menu!.width).toBe(40)
+        await expect(page.getByRole('banner')).toHaveCSS('height', '65px')
+      }
       const header = await page
         .getByRole('heading', { level: 1 })
         .first()

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { Menu } from '@lucide/vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
 import UiPopover from '../../components/ui/UiPopover.vue'
@@ -135,16 +136,16 @@ onBeforeUnmount(() => {
       class="admin-navigation-compact flex min-w-0 items-center gap-3"
       :inert="openId === 'compact'"
     >
-      <UiButton
+      <button
         type="button"
-        variant="ghost"
-        size="sm"
+        class="admin-header-icon"
         aria-label="Открыть меню"
         :aria-expanded="openId === 'compact'"
         aria-controls="admin-navigation-panel"
         @click="updatePopup('compact', openId !== 'compact')"
-        >Меню</UiButton
       >
+        <Menu :size="24" :stroke-width="1.5" aria-hidden="true" />
+      </button>
     </div>
     <UiDialog
       :open="openId === 'compact'"

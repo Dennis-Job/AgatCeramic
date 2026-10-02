@@ -175,7 +175,7 @@ test('keyboard disclosures support arrows, Escape, focus return and Tab dismissa
   await page.keyboard.press('Tab')
   await expect(panel).toBeHidden()
   await expect(
-    page.getByRole('link', { name: 'Главная', exact: true }),
+    page.getByRole('button', { name: 'Скачать Excel', exact: true }),
   ).toBeFocused()
 })
 
