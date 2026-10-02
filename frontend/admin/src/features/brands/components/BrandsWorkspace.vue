@@ -79,6 +79,7 @@ onMounted(load)
       label="Загрузка брендов…"
     /><UiTable
       v-else-if="brands.length"
+      full-bleed
       label="Список брендов"
       min-width="min-w-[880px]"
       table-class="seller-table"

@@ -78,6 +78,7 @@ const lastLogin = (value: string | null): string =>
       </article>
     </div>
     <UiTable
+      full-bleed
       class="hidden xl:block"
       min-width="min-w-[960px]"
       table-class="seller-table"

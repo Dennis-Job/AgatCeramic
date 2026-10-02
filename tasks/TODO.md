@@ -677,3 +677,10 @@ API behaviour без migration plan и синхронного обновлени
   28 platform baseline согласованы до замены; lint/format/build, 69 unit,
   258 строгих E2E каждой macOS/Linux, real Nuxt3.
   [Отчёт](../docs/ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
+
+- [x] Доработка TASK-A059/A060/A062 от 2026-10-02: рабочие таблицы без
+  боковых отступов, controls и пагинация в контейнере. UI Design Guard принят,
+  24 platform baseline согласованы до замены; lint/format/build, 69 unit,
+  258 строгих E2E каждой macOS/Linux, real Nuxt3.
+  [Отчёт](../docs/ADMIN_TABLE_FULL_BLEED_REPORT.md).
+

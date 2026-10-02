@@ -57,6 +57,15 @@ Dashboard и магазины используют `overview`, профиль и
 редакторов/диалогов, но не ограничивает page-level контейнер.
 Layout-компоненты не входят в инвентарь primitives.
 
+Рабочие таблицы списков используют opt-in `UiTable fullBleed`: scroll shell
+расширяется до левого и правого краёв layout viewport, компенсируя реальный
+padding AdminLayout через `--admin-workspace-inline-gutter` (16/24 px).
+Ширина рассчитывается от родителя без `100vw`; `max-width: none` разрешает
+расширение, отрицательные margin компенсируют gutter. Controls, filters,
+pagination, loading/empty, mobile cards и detail panels сохраняют контейнер.
+Dashboard, UI-kit и вложенные таблицы редакторов/диалогов не включают fullBleed.
+Padding ячеек, sticky columns/header, локальный scroll и inset focus сохранены.
+
 `UiTable` по умолчанию сохраняет прежнюю локальную горизонтальную прокрутку.
 Опциональные `stickyHeader`/`stickyEdges` задают ограниченный по высоте scroll
 region с закреплёнными заголовками и крайними колонками от 1280 px. На узких

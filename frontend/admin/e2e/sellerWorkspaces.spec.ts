@@ -3,7 +3,7 @@ import { expect, test } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
 import { attribute, attributeGroup, brand, category } from './catalogApi'
 
-const widths = [320, 640, 768, 1024, 1280, 1440, 1920, 2560]
+const widths = [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]
 const longName =
   'Керамогранит коллекционный с декоративной фактурой белого мрамора и длинным русским названием'
 const longCode =
@@ -168,12 +168,13 @@ for (const [path, label, cardsBelow] of [
         await expect(region).toBeVisible()
         const dimensions = await region.evaluate((element) => ({
           width: element.clientWidth,
+          viewportWidth: document.documentElement.clientWidth,
           cellsOverflow: Array.from(
             element.querySelectorAll('tbody td'),
           ).filter((cell) => cell.scrollWidth > cell.clientWidth).length,
         }))
         expect(dimensions.cellsOverflow, `${path} cells at ${width}`).toBe(0)
-        expect(dimensions.width).toBe(width - (width < 640 ? 32 : 48))
+        expect(dimensions.width).toBe(dimensions.viewportWidth)
         await region.evaluate((element) => {
           element.scrollTop = 500
           element.scrollLeft = 500

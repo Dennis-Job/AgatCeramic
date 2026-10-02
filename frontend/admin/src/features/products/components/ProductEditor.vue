@@ -290,6 +290,7 @@ function closeGroupDeletion(): void {
       />
       <UiTable
         v-else
+        full-bleed
         min-width="min-w-[1560px]"
         table-class="product-table"
         sticky-header

@@ -219,6 +219,7 @@ const foundationMetaTokens = [
   '--admin-editor-preview-min-width',
   '--admin-workspace-gutter',
   '--admin-workspace-gutter-compact',
+  '--admin-workspace-inline-gutter',
   '--admin-popover-width',
   '--admin-popover-column-width',
   '--admin-shell-top-height',

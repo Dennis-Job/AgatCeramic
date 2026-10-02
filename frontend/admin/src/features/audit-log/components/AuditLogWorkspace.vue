@@ -139,6 +139,7 @@ onMounted(audit.load)
         </div>
         <div class="hidden xl:block">
           <UiTable
+            full-bleed
             class="hidden md:block"
             table-class="seller-table"
             label="Записи журнала аудита"

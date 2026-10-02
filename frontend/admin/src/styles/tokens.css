@@ -107,6 +107,7 @@
   --admin-editor-preview-min-width: 420px;
   --admin-workspace-gutter: var(--admin-spacing-6);
   --admin-workspace-gutter-compact: var(--admin-spacing-4);
+  --admin-workspace-inline-gutter: var(--admin-workspace-gutter-compact);
   --admin-popover-width: 320px;
   --admin-popover-column-width: 216px;
   --admin-shell-top-height: 64px;

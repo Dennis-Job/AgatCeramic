@@ -124,6 +124,7 @@ const {
       />
       <UiTable
         v-else-if="list.items.value.length"
+        full-bleed
         label="Список файлов"
         min-width="min-w-[880px]"
         table-class="seller-table"

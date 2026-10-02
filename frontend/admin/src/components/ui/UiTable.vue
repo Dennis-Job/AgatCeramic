@@ -6,6 +6,7 @@ withDefaults(
     tableClass?: string
     stickyHeader?: boolean
     stickyEdges?: boolean
+    fullBleed?: boolean
   }>(),
   {
     minWidth: undefined,
@@ -13,6 +14,7 @@ withDefaults(
     tableClass: undefined,
     stickyHeader: false,
     stickyEdges: false,
+    fullBleed: false,
   },
 )
 </script>
@@ -23,6 +25,7 @@ withDefaults(
     :class="{
       'ui-table-sticky-header': stickyHeader,
       'ui-table-sticky-edges': stickyEdges,
+      'ui-table-full-bleed': fullBleed,
     }"
     role="region"
     :aria-label="label"
@@ -39,6 +42,12 @@ withDefaults(
 </template>
 
 <style scoped>
+/* Opt in only for page-level list tables within the padded Admin layout. */
+.ui-table-full-bleed {
+  width: calc(100% + 2 * var(--admin-workspace-inline-gutter));
+  max-width: none;
+  margin-inline: calc(-1 * var(--admin-workspace-inline-gutter));
+}
 /* Shared Seller list pattern. Features own columns and domain content. */
 .seller-table {
   table-layout: fixed;

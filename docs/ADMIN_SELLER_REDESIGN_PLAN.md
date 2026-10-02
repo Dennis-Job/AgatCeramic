@@ -242,3 +242,11 @@ table/card overflow.
 стек правого верхнего угла: UiNotification/UiNotificationHost, ручное закрытие,
 пауза auto-dismiss и доступность внутри активного модального окна.
 [Результаты доработки](ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
+
+
+## Уточнение ширины таблиц от 2026-10-02
+
+Рабочие таблицы списков заполняют экран без левого/правого gutter.
+UiTable fullBleed компенсирует реальный padding layout; шапка, controls,
+фильтры, пагинация и детали остаются в контейнере1280.
+[Результаты доработки](ADMIN_TABLE_FULL_BLEED_REPORT.md).

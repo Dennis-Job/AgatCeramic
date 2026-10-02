@@ -29,6 +29,7 @@ function groupName(
 <template>
   <UiTable
     v-if="attributes.length"
+    full-bleed
     label="Список характеристик"
     min-width="min-w-[960px]"
     table-class="seller-table"

@@ -16,11 +16,11 @@ import AdminHeader from './components/AdminHeader.vue'
 <style scoped>
 .admin-layout-content {
   min-width: 0;
-  padding: var(--admin-workspace-gutter-compact);
+  padding: var(--admin-workspace-inline-gutter);
 }
 @media (min-width: 640px) {
   .admin-layout-content {
-    padding: var(--admin-workspace-gutter);
+    --admin-workspace-inline-gutter: var(--admin-workspace-gutter);
   }
 }
 </style>

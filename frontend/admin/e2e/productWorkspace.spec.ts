@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from './fixtures'
 import { mockCatalogApi, product } from './catalogApi'
 
-const widths = [320, 640, 768, 1024, 1280, 1440, 1920, 2560]
+const widths = [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]
 const name =
   'Керамогранит коллекционный полированный с декоративной фактурой белого мрамора 60×120 см'
 
@@ -46,6 +46,7 @@ test('wide product workspace keeps details, sticky headers and actions inside it
     )
     const dimensions = await region.evaluate((element) => ({
       regionWidth: element.clientWidth,
+      viewportWidth: document.documentElement.clientWidth,
       pageOverflow: document.documentElement.scrollWidth > innerWidth,
       nameWidth: element.querySelector('td')!.getBoundingClientRect().width,
       headerTop:
@@ -57,7 +58,7 @@ test('wide product workspace keeps details, sticky headers and actions inside it
     }))
     expect(dimensions.pageOverflow, `page overflow at ${width}`).toBe(false)
     expect(dimensions.overflowingCells, `cell overflow at ${width}`).toBe(0)
-    expect(dimensions.regionWidth).toBe(width - (width < 640 ? 32 : 48))
+    expect(dimensions.regionWidth).toBe(dimensions.viewportWidth)
     if (width >= 1920) expect(dimensions.nameWidth).toBeGreaterThan(650)
     await region.evaluate((element) => {
       element.scrollTop = 500
@@ -86,14 +87,16 @@ test('wide product workspace keeps details, sticky headers and actions inside it
       window.scrollTo(0, 0)
     })
     await page.screenshot({ path: `.tmp/a059-visual/products-${width}.png` })
-    if (width === 320) {
+    if (width === 320 || width === 602) {
       await region.scrollIntoViewIfNeeded()
-      await page.screenshot({ path: '.tmp/a059-visual/products-320-table.png' })
+      await page.screenshot({
+        path: `.tmp/a059-visual/products-${width}-table.png`,
+      })
       await region.evaluate((element) => {
         element.scrollLeft = element.scrollWidth
       })
       await page.screenshot({
-        path: '.tmp/a059-visual/products-320-actions.png',
+        path: `.tmp/a059-visual/products-${width}-actions.png`,
       })
     }
   }

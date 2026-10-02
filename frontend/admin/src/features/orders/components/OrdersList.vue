@@ -75,6 +75,7 @@ defineEmits<{ select: [order: Order] }>()
     </div>
     <div class="min-w-0">
       <UiTable
+        full-bleed
         class="hidden md:block"
         min-width="min-w-[760px]"
         table-class="seller-table"

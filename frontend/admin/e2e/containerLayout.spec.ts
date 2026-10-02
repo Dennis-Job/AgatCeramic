@@ -33,7 +33,7 @@ for (const path of routes) {
     await page.goto(path)
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
     await page.waitForLoadState('networkidle')
-    for (const width of [320, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
+    for (const width of [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
       await page.setViewportSize({ width, height: 900 })
       const compact = page.getByRole('button', { name: 'Открыть меню' })
       if (width < 1024) await expect(compact).toBeVisible()
@@ -69,14 +69,40 @@ for (const path of routes) {
           expectedWidth,
         )
       }
+      for (const table of await page.locator('.ui-table-full-bleed').all()) {
+        if (!(await table.isVisible())) continue
+        const box = await table.boundingBox()
+        const viewportWidth = await page.evaluate(
+          () => document.documentElement.clientWidth,
+        )
+        expect(box!.x, `${path} table left at ${width}`).toBe(0)
+        expect(box!.width, `${path} table width at ${width}`).toBe(
+          viewportWidth,
+        )
+        expect(box!.x + box!.width, `${path} table right at ${width}`).toBe(
+          viewportWidth,
+        )
+      }
+      if (path === '/') {
+        const recentOrders = page.getByRole('region', {
+          name: 'Последние заказы',
+          exact: true,
+        })
+        const embedded = await recentOrders.boundingBox()
+        expect(embedded!.x).toBeGreaterThanOrEqual(expectedLeft)
+        expect(embedded!.x + embedded!.width).toBeLessThanOrEqual(
+          expectedLeft + expectedWidth,
+        )
+        await expect(recentOrders).not.toHaveClass(/ui-table-full-bleed/)
+      }
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true)
-      if (width === 1920)
+      if (width === 1920 || (path === '/products' && width === 602))
         await page.screenshot({
-          path: `.tmp/container-layout/${path.replace(/\W+/g, '-')}-1920.png`,
+          path: `.tmp/container-layout/${path.replace(/\W+/g, '-')}-${width}.png`,
         })
     }
   })

@@ -67,6 +67,7 @@ onMounted(load)
       label="Загрузка групп характеристик…"
     /><UiTable
       v-else-if="groups.length"
+      full-bleed
       label="Список групп характеристик"
       min-width="min-w-[880px]"
       table-class="seller-table"

@@ -64,6 +64,7 @@ onMounted(catalogue.load)
         v-else-if="
           !catalogue.error.value && catalogue.filteredPermissions.value.length
         "
+        full-bleed
         label="Каталог прав"
         min-width="min-w-[960px]"
         table-class="seller-table"

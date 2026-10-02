@@ -27,6 +27,7 @@ const emit = defineEmits<{
   />
   <UiTable
     v-else-if="categories.length"
+    full-bleed
     label="Список категорий"
     min-width="min-w-[960px]"
     table-class="seller-table"

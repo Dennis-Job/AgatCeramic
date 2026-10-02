@@ -52,6 +52,7 @@ onMounted(workspace.load)
     />
     <UiTable
       v-else-if="!workspace.error.value"
+      full-bleed
       label="Список ролей"
       min-width="min-w-[960px]"
       table-class="seller-table"
