@@ -710,30 +710,51 @@ function submitAuthPreview(): void {
             </tr>
           </tbody>
         </UiTable>
-        <UiPagination :meta="pagination" @change="currentPage = $event" />
+        <UiPagination
+          :meta="pagination"
+          aria-label="Пагинация: интерактивный пример"
+          @change="currentPage = $event"
+        />
       </div>
 
       <div class="mt-6 grid gap-4 xl:grid-cols-2">
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
           <h3 class="text-sm font-semibold text-gray-700">Первая страница</h3>
-          <UiPagination :meta="firstPage" :announce="false" />
+          <UiPagination
+            :meta="firstPage"
+            aria-label="Пагинация: первая страница"
+            :announce="false"
+          />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
           <h3 class="text-sm font-semibold text-gray-700">
             Последняя страница
           </h3>
-          <UiPagination :meta="lastPage" :announce="false" />
+          <UiPagination
+            :meta="lastPage"
+            aria-label="Пагинация: последняя страница"
+            :announce="false"
+          />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
           <h3 class="text-sm font-semibold text-gray-700">Загрузка</h3>
-          <UiPagination :meta="pagination" loading :announce="false" />
+          <UiPagination
+            :meta="pagination"
+            aria-label="Пагинация: загрузка"
+            loading
+            :announce="false"
+          />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
           <h3 class="text-sm font-semibold text-gray-700">Нулевой total</h3>
           <p class="mt-2 text-sm text-gray-500">
             При <code>total=0</code> компонент не рендерит navigation.
           </p>
-          <UiPagination :meta="emptyPage" :announce="false" />
+          <UiPagination
+            :meta="emptyPage"
+            aria-label="Пагинация: пустой список"
+            :announce="false"
+          />
         </div>
       </div>
     </UiCard>

@@ -32,7 +32,7 @@ layer декомпозирован, production dependencies сделаны яв�
 вынесены из Controllers, а направления зависимостей и тонкие Controllers защищены blocking
 architecture gate.
 
-Seller-редизайн Admin идёт по `TASK-A057`–`TASK-A062`.
+Seller-редизайн Admin `TASK-A057`–`TASK-A062` завершён с финальной приёмкой Linux/macOS.
 TASK-A058 реализует две строки верхней шапки с текстовыми группами
 «Товары», «Контент», «Управление» и компактным меню; глобальная боковая панель
 удалена. Конфигурация ссылок общая, доступ фильтруется по permissions,
@@ -53,6 +53,11 @@ viewport с локальным scroll; dirty guards и публикация со
 [`TASK_A059_REPORT.md`](TASK_A059_REPORT.md),
 [`TASK_A060_REPORT.md`](TASK_A060_REPORT.md) и
 [`TASK_A061_REPORT.md`](TASK_A061_REPORT.md).
+TASK-A062 закрепляет полную матрицу 20 маршрутов × восемь ширин с axe без
+исключений; 223 E2E прошли на каждой Linux/macOS. Darwin baseline приведён
+к текущему UI после независимого review, Linux baseline совпадает без замены.
+Актуальная Windows-проверка не выполнялась; CI использует канонический Linux
+Docker. Итог и ограничения — [`TASK_A062_REPORT.md`](TASK_A062_REPORT.md).
 
 ## Реализовано
 

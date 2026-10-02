@@ -5,6 +5,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
+  // Baselines are adopted only after independent review of actual screenshots.
+  updateSnapshots: 'none',
   reporter: process.env.CI ? 'github' : 'list',
   expect: {
     // Browser rasterization differs slightly between local macOS and Linux CI.

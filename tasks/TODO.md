@@ -597,9 +597,14 @@ API behaviour без migration plan и синхронного обновлени
     Client preview production 6/6 и development 2/2; responsive 320–2560 px.
     Результат, файлы и ограничения — в
     [`TASK_A061_REPORT.md`](../docs/TASK_A061_REPORT.md).
-- [ ] TASK-A062 Выполнить финальную приёмку Seller-редизайна
+- [x] TASK-A062 Выполнить финальную приёмку Seller-редизайна
   - Полный lint/format/build/unit/E2E, axe, визуальная сверка и все маршруты;
     размеры 320–2560 px, UI Design Guard и актуальная документация результата.
+  - Завершено 2026-10-01: UI Design Guard принят для Linux/macOS;
+    lint/format/build, 64 unit, 223 E2E каждой OS (83 baseline/UI-kit/responsive),
+    20 маршрутов × восемь ширин с axe, real Admin/Nuxt 3/3, Client preview 6/6 + dev 2/2.
+    Windows baseline не проверен; файлы, evidence и ограничения — в
+    [`TASK_A062_REPORT.md`](../docs/TASK_A062_REPORT.md).
 
 ## Phase 8 — SEO
 

@@ -301,10 +301,11 @@ test('Admin UI-kit field disabled contract remains accessible and usable at all 
     await disabledFields.evaluate((element) =>
       element.scrollIntoView({ block: 'center' }),
     )
-    await expect(disabledFields).toHaveScreenshot(
-      `ui-kit-disabled-fields-${width}.png`,
-      { animations: 'disabled' },
-    )
+    await expect
+      .soft(disabledFields)
+      .toHaveScreenshot(`ui-kit-disabled-fields-${width}.png`, {
+        animations: 'disabled',
+      })
 
     const accessibility = await new AxeBuilder({ page })
       .include('[data-ui-kit-disabled-fields]')
@@ -321,10 +322,11 @@ test('Admin UI-kit field disabled contract remains accessible and usable at all 
       name: 'Дата публикации: выбор даты',
     })
     await expect(dateDialog).toBeVisible()
-    await expect(dateDialog).toHaveScreenshot(
-      `ui-kit-date-picker-open-${width}.png`,
-      { animations: 'disabled' },
-    )
+    await expect
+      .soft(dateDialog)
+      .toHaveScreenshot(`ui-kit-date-picker-open-${width}.png`, {
+        animations: 'disabled',
+      })
     const openDateAccessibility = await new AxeBuilder({ page })
       .include('[role="dialog"]')
       .analyze()
@@ -375,6 +377,7 @@ for (const path of [
   '/login',
   '/forgot-password',
   '/reset-password',
+  '/ui-kit',
 ]) {
   test(`Admin baseline: ${path} remains usable at all supported widths`, async ({
     page,
@@ -386,14 +389,36 @@ for (const path of [
       path.startsWith('/reset')
     if (guest) browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
     await mockAdminBaseline(page, guest)
-    for (const width of [320, 640, 768, 1024, 1280]) {
+    for (const width of [320, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
       await page.setViewportSize({ width, height: 800 })
       await page.goto(path)
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+      // UIKit intentionally demonstrates a permanent loading state.
+      if (path !== '/ui-kit')
+        await expect(
+          page.getByRole('status').filter({ hasText: 'Загрузка' }),
+        ).toHaveCount(0)
+      await page.evaluate(async () => {
+        await document.fonts.ready
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        )
+      })
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,
         ),
+        `${path} page overflow at ${width}px`,
       ).toBe(true)
+      const accessibility = await new AxeBuilder({ page }).analyze()
+      expect(
+        accessibility.violations,
+        `${path} accessibility at ${width}px`,
+      ).toEqual([])
+      await page.screenshot({
+        path: `.tmp/a062-visual/${path === '/' ? 'dashboard' : path.slice(1)}-${width}.png`,
+        animations: 'disabled',
+      })
     }
   })
 }

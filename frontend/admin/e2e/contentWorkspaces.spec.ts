@@ -35,6 +35,16 @@ for (const [path, title, mode, maxWidth, editor] of [
     await page.evaluate(() => document.fonts.ready)
     for (const width of widths) {
       await page.setViewportSize({ width, height: 900 })
+      // MediaQueryList change and Vue rendering occur after the viewport resize.
+      const compactMenu = page.getByRole('button', { name: 'Открыть меню' })
+      if (width < 1024) await expect(compactMenu).toBeVisible()
+      else await expect(compactMenu).toHaveCount(0)
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      )
       const workspace = page.locator(`.admin-workspace--${mode}`).first()
       await expect
         .poll(async () => (await workspace.boundingBox())?.width)
@@ -45,7 +55,7 @@ for (const [path, title, mode, maxWidth, editor] of [
       ).toBeLessThan(1)
       expect(
         await page.evaluate(
-          () => document.documentElement.scrollWidth <= window.innerWidth,
+          () => document.documentElement.scrollWidth <= innerWidth,
         ),
         `page overflow at ${width}`,
       ).toBe(true)
