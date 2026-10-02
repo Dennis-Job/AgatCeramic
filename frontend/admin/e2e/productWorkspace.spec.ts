@@ -72,7 +72,7 @@ test('product segmented filters support keyboard, reset and compact layouts', as
     .screenshot({ path: '.tmp/product-filter-review/segmented-disabled.png' })
 })
 
-test('wide product workspace keeps details, sticky headers and actions inside its scroll region', async ({
+test('wide product workspace keeps details, page sticky headers and horizontal actions usable', async ({
   page,
 }) => {
   await mockCatalogApi(page)
@@ -103,6 +103,7 @@ test('wide product workspace keeps details, sticky headers and actions inside it
   await page.evaluate(() => document.fonts.ready)
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 })
+    await page.evaluate(() => window.scrollTo(0, 0))
     await region.evaluate((element) => {
       element.scrollTop = 0
       element.scrollLeft = 0
@@ -130,17 +131,31 @@ test('wide product workspace keeps details, sticky headers and actions inside it
       element.scrollTop = 500
       element.scrollLeft = 500
     })
+    expect(await region.evaluate((element) => element.scrollTop)).toBe(0)
+    await region.evaluate((element) => {
+      window.scrollTo(0, element.getBoundingClientRect().top + scrollY)
+    })
+    await expect
+      .poll(() =>
+        region.evaluate(
+          (element) =>
+            element.querySelector('th')!.getBoundingClientRect().top -
+            document.querySelector('.admin-header')!.getBoundingClientRect()
+              .bottom,
+        ),
+      )
+      .toBeCloseTo(0, 0)
     const sticky = await region.evaluate((element) => {
       const rect = element.getBoundingClientRect()
       const header = element.querySelector('th')!.getBoundingClientRect()
       const row = element.querySelector('tbody tr')!
       return {
-        top: header.top - rect.top,
+        top: header.top,
         first: row.firstElementChild!.getBoundingClientRect().left - rect.left,
         last: rect.right - row.lastElementChild!.getBoundingClientRect().right,
       }
     })
-    expect(sticky.top).toBeCloseTo(dimensions.headerTop, 0)
+    expect(sticky.top).toBeGreaterThan(0)
     if (width >= 1280) {
       expect(sticky.first).toBeCloseTo(0, 0)
       expect(sticky.last).toBeCloseTo(0, 0)
@@ -167,6 +182,7 @@ test('wide product workspace keeps details, sticky headers and actions inside it
     }
   }
   await page.setViewportSize({ width: 1280, height: 900 })
+  await page.evaluate(() => window.scrollTo(0, 0))
   await region.focus()
   await page.keyboard.press('ArrowRight')
   await expect

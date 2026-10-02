@@ -240,7 +240,7 @@ function closeGroupDeletion(): void {
         full-bleed
         min-width="min-w-[1560px]"
         table-class="product-table"
-        sticky-header
+        sticky-header="page"
         sticky-edges
         label="Таблица товаров"
         role="region"
