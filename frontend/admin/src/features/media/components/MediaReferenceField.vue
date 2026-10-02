@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import { computed, onBeforeUnmount, watch } from 'vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
@@ -90,9 +91,9 @@ function toggle(id: number, checked: boolean) {
       >
         Загрузка выбранного изображения…
       </p>
-      <p v-else-if="error" class="mt-1 text-sm text-error-600" role="alert">
+      <UiNotification v-else-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <UiImagePreview
         v-if="kind === 'image' && modelValue && !loading"
         :url="preview?.thumbnail_url || preview?.url || null"
@@ -104,7 +105,7 @@ function toggle(id: number, checked: boolean) {
       Загрузка файлов…
     </p>
     <div v-else-if="error" class="mt-1">
-      <p class="text-sm text-error-600" role="alert">{{ error }}</p>
+      <UiNotification>{{ error }}</UiNotification>
       <UiButton
         type="button"
         variant="secondary"
@@ -244,16 +245,12 @@ function toggle(id: number, checked: boolean) {
           >Отменить выбор файла</UiButton
         >
       </template>
-      <p v-if="upload.error.value" class="text-sm text-error-600" role="alert">
+      <UiNotification v-if="upload.error.value">
         {{ upload.error.value }}
-      </p>
-      <p
-        v-if="upload.success.value"
-        class="text-sm text-gray-600"
-        role="status"
-      >
+      </UiNotification>
+      <UiNotification v-if="upload.success.value" tone="success">
         {{ upload.success.value }}
-      </p>
+      </UiNotification>
     </div>
     <p v-else-if="canManage" class="mt-1 text-xs text-gray-500">
       Загрузка новых файлов доступна в разделе «Медиатека».

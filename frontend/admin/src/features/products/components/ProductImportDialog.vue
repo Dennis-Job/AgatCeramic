@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import { CheckCircle2, Download, ImagePlus, Upload, X } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
@@ -222,7 +222,7 @@ function changeTab(event: KeyboardEvent) {
             class="mt-3"
             label="Загружаем категории…"
           />
-          <UiAlert v-else-if="categoryError" class="mt-3"
+          <UiNotification v-else-if="categoryError"
             >{{ categoryError }}
             <UiButton
               type="button"
@@ -230,7 +230,7 @@ function changeTab(event: KeyboardEvent) {
               size="sm"
               @click="loadCategories"
               >Повторить</UiButton
-            ></UiAlert
+            ></UiNotification
           >
           <UiEmptyState
             v-else-if="!categoryOptions.length"
@@ -327,10 +327,10 @@ function changeTab(event: KeyboardEvent) {
             >
           </div>
         </form>
-        <UiAlert v-if="error">{{ error }}</UiAlert>
-        <UiAlert v-if="notice" tone="success" live="polite">{{
+        <UiNotification v-if="error">{{ error }}</UiNotification>
+        <UiNotification v-if="notice" tone="success" live="polite">{{
           notice
-        }}</UiAlert>
+        }}</UiNotification>
         <div
           class="min-h-32 rounded-xl border p-4 sm:p-5"
           :class="
@@ -429,7 +429,7 @@ function changeTab(event: KeyboardEvent) {
               Можно закрыть окно — обработка продолжится. Откройте «Загрузить
               массово», чтобы посмотреть результат.
             </p>
-            <UiAlert v-if="pollingError && result" class="mt-3"
+            <UiNotification v-if="pollingError && result"
               >Не удалось получить статус. Обработка на сервере продолжается.
               <UiButton
                 type="button"
@@ -437,7 +437,7 @@ function changeTab(event: KeyboardEvent) {
                 size="sm"
                 @click="poll(result.id)"
                 >Обновить статус</UiButton
-              ></UiAlert
+              ></UiNotification
             >
           </template>
         </div>
@@ -560,7 +560,7 @@ images.zip
           </div>
         </form>
 
-        <UiAlert v-if="imageError">{{ imageError }}</UiAlert>
+        <UiNotification v-if="imageError">{{ imageError }}</UiNotification>
 
         <section
           class="min-h-32 rounded-xl border p-4 sm:p-5"
@@ -708,7 +708,7 @@ images.zip
               Можно закрыть окно — обработка продолжится. Откройте «Загрузить
               массово», чтобы посмотреть результат.
             </p>
-            <UiAlert v-if="imagePollingError && imageResult" class="mt-3"
+            <UiNotification v-if="imagePollingError && imageResult"
               >Не удалось получить статус. Обработка на сервере продолжается.
               <UiButton
                 type="button"
@@ -716,7 +716,7 @@ images.zip
                 size="sm"
                 @click="pollImageImport(imageResult.id)"
                 >Обновить статус</UiButton
-              ></UiAlert
+              ></UiNotification
             >
           </template>
         </section>

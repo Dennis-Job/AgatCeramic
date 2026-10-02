@@ -1,6 +1,10 @@
 <script setup lang="ts">
 // Source-of-truth dialog primitive.
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {
+  registerNotificationDialog,
+  unregisterNotificationDialog,
+} from '../../composables/useNotificationContext'
 
 const props = withDefaults(
   defineProps<{
@@ -23,6 +27,16 @@ const props = withDefaults(
 
 const emit = defineEmits<{ close: [] }>()
 const panel = ref<HTMLElement | null>(null)
+const notificationOwner = Symbol('dialog')
+watch(
+  [() => props.open, () => props.suspended, panel],
+  () => {
+    if (props.open && !props.suspended && panel.value)
+      registerNotificationDialog(notificationOwner, panel.value)
+    else unregisterNotificationDialog(notificationOwner)
+  },
+  { flush: 'post' },
+)
 let opener: HTMLElement | null = null
 let backdropPointerId: number | null = null
 
@@ -41,17 +55,22 @@ function focusableElements(): HTMLElement[] {
     ...Array.from(
       document.querySelectorAll<HTMLElement>('[data-floating-select-menu]'),
     ),
+    ...Array.from(
+      document.querySelectorAll<HTMLElement>('[data-floating-notifications]'),
+    ),
   ].filter((element): element is HTMLElement => element !== null)
-  return roots
-    .flatMap((root) =>
-      Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)),
-    )
-    .filter(
-      (element) =>
-        !element.matches(':disabled') &&
-        element.tabIndex >= 0 &&
-        element.getClientRects().length > 0,
-    )
+  return Array.from(
+    new Set(
+      roots.flatMap((root) =>
+        Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)),
+      ),
+    ),
+  ).filter(
+    (element) =>
+      !element.matches(':disabled') &&
+      element.tabIndex >= 0 &&
+      element.getClientRects().length > 0,
+  )
 }
 
 function requestClose(): void {
@@ -81,6 +100,11 @@ function handleKeydown(event: KeyboardEvent): void {
   if (!props.open) return
   if (props.suspended) return
   if (event.key === 'Escape') {
+    if (
+      event.target instanceof Element &&
+      event.target.closest('[data-notification]')
+    )
+      return
     event.preventDefault()
     requestClose()
     return
@@ -127,6 +151,7 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  unregisterNotificationDialog(notificationOwner)
   document.removeEventListener('keydown', handleKeydown, true)
   if (opener?.isConnected) opener.focus()
 })

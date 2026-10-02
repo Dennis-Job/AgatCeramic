@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { Plus } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
@@ -80,7 +80,7 @@ onMounted(load)
         ></PageHeader
       >
     </template>
-    <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert
+    <UiNotification v-if="error">{{ error }}</UiNotification
     ><CategoriesList
       :categories="categories"
       :loading="loading"

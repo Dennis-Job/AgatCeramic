@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
@@ -26,9 +26,9 @@ onMounted(catalogue.load)
       />
     </template>
 
-    <UiAlert v-if="catalogue.error.value" class="admin-container mb-4">{{
+    <UiNotification v-if="catalogue.error.value">{{
       catalogue.error.value
-    }}</UiAlert>
+    }}</UiNotification>
     <div class="min-w-0">
       <form
         role="search"

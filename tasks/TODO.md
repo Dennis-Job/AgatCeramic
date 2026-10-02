@@ -670,3 +670,10 @@ API behaviour без migration plan и синхронного обновлени
   16 platform baseline согласованы до замены; lint/format/build, 64 unit,
   255 строгих E2E каждой macOS/Linux, real Nuxt3.
   [Отчёт](../docs/ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).
+
+- [x] Доработка TASK-A057/A062 от 2026-10-02: уведомления справа сверху.
+  Общие UiNotification/Host для сообщений страниц и диалогов, paused auto-dismiss,
+  ручное закрытие и focus/modal accessibility. UI Design Guard принят,
+  28 platform baseline согласованы до замены; lint/format/build, 69 unit,
+  258 строгих E2E каждой macOS/Linux, real Nuxt3.
+  [Отчёт](../docs/ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).

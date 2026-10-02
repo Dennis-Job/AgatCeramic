@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Shared destructive action flow.
 import UiDialog from '../ui/UiDialog.vue'
-import UiAlert from '../ui/UiAlert.vue'
+import UiNotification from '../ui/UiNotification.vue'
 import UiButton from '../ui/UiButton.vue'
 
 withDefaults(
@@ -41,7 +41,7 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
     >
       {{ description }}
     </p>
-    <UiAlert v-if="error" class="mt-4">{{ error }}</UiAlert>
+    <UiNotification v-if="error">{{ error }}</UiNotification>
     <div class="mt-6 flex flex-wrap justify-end gap-3">
       <UiButton
         type="button"

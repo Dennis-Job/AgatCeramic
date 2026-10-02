@@ -265,7 +265,7 @@ for (const [path, label, cardsBelow] of [
       })
       await expect(detailPanel).toBeFocused()
       await expect(
-        page.locator('aside').getByRole('heading').first(),
+        detailPanel.locator('aside').getByRole('heading').first(),
       ).toBeInViewport()
       await detailPanel
         .getByRole('button', { name: 'Вернуться к списку' })
@@ -324,11 +324,14 @@ for (const [path, label, cardsBelow] of [
           Math.min(1280, width - (width < 640 ? 32 : 48)),
         )
         expect(zones.detail.left).toBe((width - zones.detail.width) / 2)
-        await page.locator('aside').screenshot({
-          path: `.tmp/a060-visual/${path.slice(1)}-selected-${width}.png`,
-          // Exclude the global sticky shell from a tall detail-only crop.
-          style: '.admin-header { visibility: hidden !important; }',
-        })
+        await page
+          .getByRole('region', { name: 'Детали выбранной записи', exact: true })
+          .locator('aside')
+          .screenshot({
+            path: `.tmp/a060-visual/${path.slice(1)}-selected-${width}.png`,
+            // Exclude the global sticky shell from a tall detail-only crop.
+            style: '.admin-header { visibility: hidden !important; }',
+          })
       }
     }
     await page.setViewportSize({ width: 1280, height: 900 })

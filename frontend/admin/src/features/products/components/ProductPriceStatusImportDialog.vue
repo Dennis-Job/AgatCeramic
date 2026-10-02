@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import { CheckCircle2, Download, Upload, X } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import { useProductPriceStatusImport } from '../composables/useProductPriceStatusImport'
@@ -156,18 +156,14 @@ watch([busy, downloading], async () => {
                 ? 'Обработка…'
                 : 'Запустить обработку'
           }}</UiButton
-        ><UiAlert
-          v-if="busy && !uploading"
-          class="mt-3"
-          tone="info"
-          live="polite"
-          >Файл обрабатывается в фоне. Окно можно закрыть.</UiAlert
+        ><UiNotification v-if="busy && !uploading" tone="info" live="polite"
+          >Файл обрабатывается в фоне. Окно можно закрыть.</UiNotification
         >
       </form>
-      <UiAlert v-if="error">{{ error }}</UiAlert
-      ><UiAlert v-if="notice" tone="success" live="polite">{{
+      <UiNotification v-if="error">{{ error }}</UiNotification
+      ><UiNotification v-if="notice" tone="success" live="polite">{{
         notice
-      }}</UiAlert>
+      }}</UiNotification>
       <section
         v-if="result"
         class="rounded-xl border p-4 sm:p-5"
@@ -197,10 +193,9 @@ watch([busy, downloading], async () => {
           Обработано: {{ result.processed_rows }} из {{ result.total_rows }}.
           Изменено: {{ result.updated_rows }}. Ошибок: {{ result.failed_rows }}.
         </p>
-        <UiAlert
+        <UiNotification
           v-if="result.status === 'failed' && result.error_message"
-          class="mt-3"
-          >{{ result.error_message }}</UiAlert
+          >{{ result.error_message }}</UiNotification
         ><progress
           v-if="progress !== null"
           class="mt-3 h-2 w-full overflow-hidden rounded-full"
@@ -209,7 +204,7 @@ watch([busy, downloading], async () => {
           aria-label="Ход обработки файла"
         >
           {{ progress }}%</progress
-        ><UiAlert v-if="pollingError" class="mt-3"
+        ><UiNotification v-if="pollingError"
           >Не удалось обновить статус.
           <UiButton
             type="button"
@@ -217,7 +212,7 @@ watch([busy, downloading], async () => {
             size="sm"
             @click="poll(result!.id)"
             >Повторить</UiButton
-          ></UiAlert
+          ></UiNotification
         ><UiButton
           v-if="finished && result.failed_rows"
           type="button"

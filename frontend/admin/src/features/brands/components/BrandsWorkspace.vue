@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Pencil, Plus, Trash2 } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
@@ -72,7 +72,7 @@ onMounted(load)
         ></PageHeader
       >
     </template>
-    <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert
+    <UiNotification v-if="error">{{ error }}</UiNotification
     ><UiLoadingState
       v-if="loading"
       class="admin-container"

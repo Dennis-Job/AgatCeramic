@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import type { Attribute } from '../../attributes/types/attribute.types'
@@ -66,7 +66,7 @@ const emit = defineEmits<{
           ><X :size="20"
         /></UiButton>
       </div>
-      <UiAlert v-if="error" class="mt-4">{{ error }}</UiAlert>
+      <UiNotification v-if="error">{{ error }}</UiNotification>
       <div class="mt-6 max-h-80 space-y-4 overflow-y-auto">
         <section class="rounded-xl border border-gray-200 p-3">
           <h3 class="mb-2 text-sm font-semibold text-gray-800">

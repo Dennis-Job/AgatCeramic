@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import { X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
@@ -43,9 +44,9 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           ><X :size="20"
         /></UiButton>
       </div>
-      <p v-if="error" role="alert" class="mt-3 text-sm text-error-600">
+      <UiNotification v-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <div class="mt-6 grid gap-4">
         <UiField label="Название" required>
           <UiInput

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { MessageSquare } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
@@ -37,9 +37,9 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
 
 <template>
   <aside class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-card">
-    <UiAlert v-if="actionError && !selected" class="m-5 mb-0">{{
+    <UiNotification v-if="actionError && !selected">{{
       actionError
-    }}</UiAlert>
+    }}</UiNotification>
     <UiLoadingState v-if="detailLoading" label="Загрузка деталей заказа…" />
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
       Выберите заказ в списке, чтобы открыть рабочее место менеджера.
@@ -56,7 +56,7 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
           amount(selected.total_amount)
         }}</strong>
       </div>
-      <UiAlert v-if="actionError">{{ actionError }}</UiAlert>
+      <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
       <section>
         <h3 class="text-sm font-semibold text-gray-900">Клиент и доставка</h3>
         <dl class="mt-3 space-y-2 text-sm text-gray-600">

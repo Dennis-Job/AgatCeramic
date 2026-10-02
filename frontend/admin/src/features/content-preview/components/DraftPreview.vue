@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
@@ -96,8 +97,9 @@ const links = computed(() => {
         />
       </div>
     </template>
-    <UiAlert v-else-if="slug" class="mt-4" role="alert"
-      >Не удалось настроить предпросмотр. Проверьте VITE_CLIENT_URL.</UiAlert
+    <UiNotification v-else-if="slug"
+      >Не удалось настроить предпросмотр. Проверьте
+      VITE_CLIENT_URL.</UiNotification
     >
     <UiEmptyState v-else label="Выберите страницу для предпросмотра." />
   </UiCard>

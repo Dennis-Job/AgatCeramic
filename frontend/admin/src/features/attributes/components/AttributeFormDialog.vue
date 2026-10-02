@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import { computed } from 'vue'
 import { Trash2, X } from '@lucide/vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
@@ -86,13 +87,9 @@ function removeOption(index: number): void {
           ><X :size="20"
         /></UiButton>
       </div>
-      <p
-        v-if="error"
-        class="mt-4 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-500"
-        role="alert"
-      >
+      <UiNotification v-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <div class="mt-6 grid gap-4">
         <label class="text-sm font-medium text-gray-700"
           >Название<UiInput

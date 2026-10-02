@@ -228,6 +228,7 @@ const trigger = computed(() => ({
       v-if="open"
       :id="panelId"
       ref="panel"
+      data-floating-popover
       class="ui-popover-panel admin-focus"
       :class="panelClass"
       :style="{

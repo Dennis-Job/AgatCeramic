@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
@@ -51,13 +51,13 @@ onMounted(load)
     />
     <UiLoadingState v-if="loading" label="Загрузка главной страницы…" />
     <template v-else-if="error && !page">
-      <UiAlert role="alert">{{ error }}</UiAlert>
+      <UiNotification>{{ error }}</UiNotification>
       <UiButton class="mt-3" variant="secondary" @click="load"
         >Повторить загрузку</UiButton
       >
     </template>
     <template v-else-if="page">
-      <UiAlert v-if="error" class="mb-3" role="alert">{{ error }}</UiAlert>
+      <UiNotification v-if="error">{{ error }}</UiNotification>
       <UiBadge :tone="page.is_published ? 'success' : 'neutral'">{{
         page.is_published ? 'Опубликована' : 'Черновик'
       }}</UiBadge>

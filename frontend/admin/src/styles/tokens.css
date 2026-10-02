@@ -139,6 +139,10 @@
   --admin-transition-duration: 150ms;
   --admin-transition-timing: ease;
   --admin-focus-color: #647dd1;
+  --admin-notification-width: 360px;
+  --admin-notification-offset: var(--admin-spacing-4);
+  --admin-notification-gap: var(--admin-spacing-3);
+  --admin-notification-z-index: 80;
   --admin-focus-halo-color: rgb(100 125 209 / 0.14);
   --admin-focus-halo-width: 4px;
   --admin-focus-outline-width: 1px;

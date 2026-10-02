@@ -234,3 +234,11 @@ table/card overflow.
 дополнительный focus появляется с клавиатуры. UI-kit централизует правила
 в `styles/controls.css`, сохраняет error/disabled и forced-colors.
 [Результаты доработки](ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).
+
+
+## Уточнение уведомлений от 2026-10-02
+
+Операционные сообщения всех страниц и диалогов перенесены из layout в общий
+стек правого верхнего угла: UiNotification/UiNotificationHost, ручное закрытие,
+пауза auto-dismiss и доступность внутри активного модального окна.
+[Результаты доработки](ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).

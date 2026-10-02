@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import type { CategoryPayload } from '../types/category.types'
@@ -54,7 +54,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           ><X :size="20"
         /></UiButton>
       </div>
-      <UiAlert v-if="error" class="mt-4">{{ error }}</UiAlert
+      <UiNotification v-if="error">{{ error }}</UiNotification
       ><CategoryMainSection
         :form="form"
         :parent-options="parentOptions"

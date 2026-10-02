@@ -6,7 +6,7 @@ import {
   useRoute,
   useRouter,
 } from 'vue-router'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -128,16 +128,12 @@ onBeforeUnmount(() => {
       Порядок в списке соответствует порядку на сайте. Выключенный блок
       сохранится в черновике.
     </p>
-    <UiAlert v-if="editor.error.value" class="mt-4" role="alert">{{
+    <UiNotification v-if="editor.error.value">{{
       editor.error.value
-    }}</UiAlert>
-    <UiAlert
-      v-if="editor.success.value"
-      class="mt-4"
-      tone="success"
-      role="status"
-      >{{ editor.success.value }}</UiAlert
-    >
+    }}</UiNotification>
+    <UiNotification v-if="editor.success.value" tone="success">{{
+      editor.success.value
+    }}</UiNotification>
     <div class="mt-5 space-y-2" role="group" aria-label="Порядок блоков">
       <div
         v-for="(block, index) in blocks"

@@ -289,9 +289,23 @@ test('account links navigate and logout reports errors, prevents duplicate reque
   const panel = page.locator('#admin-user-panel')
   const logout = panel.getByRole('button', { name: 'Выйти', exact: true })
   await logout.click()
-  await expect(panel.getByRole('alert')).toContainText('Не удалось выйти')
+  await expect(
+    page.locator('#admin-notifications').getByRole('alert'),
+  ).toContainText('Не удалось выйти')
   await expect(page).toHaveURL('/settings')
+  await page.mouse.move(16, 650)
+  await expect(panel).toBeHidden()
+  await expect(
+    page.locator('#admin-notifications').getByRole('alert'),
+  ).toContainText('Не удалось выйти')
   await page.screenshot({ path: '.tmp/header-popovers/logout-error.png' })
+  await page
+    .locator('#admin-notifications')
+    .getByRole('button', { name: 'Закрыть уведомление' })
+    .focus()
+  await page.keyboard.press('Escape')
+  await expect(user).toBeFocused()
+  await user.hover()
   await logout.click()
   await expect(logout).toBeDisabled()
   await expect.poll(() => calls).toBe(2)

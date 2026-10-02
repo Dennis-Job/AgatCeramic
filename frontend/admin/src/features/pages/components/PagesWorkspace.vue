@@ -5,7 +5,7 @@ import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminEditorLayout from '../../../components/shared/AdminEditorLayout.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -131,13 +131,9 @@ onMounted(() => pages.load())
       title="Страницы"
       description="Выберите страницу слева, чтобы настроить её содержимое."
     />
-    <UiAlert
-      v-if="pages.success.value"
-      class="mb-4"
-      tone="success"
-      role="status"
-      >{{ pages.success.value }}</UiAlert
-    >
+    <UiNotification v-if="pages.success.value" tone="success">{{
+      pages.success.value
+    }}</UiNotification>
     <AdminEditorLayout>
       <template #navigation>
         <UiCard class="min-w-0 self-start p-3" aria-label="Страницы сайта">
@@ -231,9 +227,9 @@ onMounted(() => pages.load())
               </p>
             </template>
           </nav>
-          <UiAlert v-if="pages.error.value" class="mt-3" role="alert">{{
+          <UiNotification v-if="pages.error.value">{{
             pages.error.value
-          }}</UiAlert>
+          }}</UiNotification>
           <UiButton
             v-if="pages.error.value"
             class="mt-2"
@@ -337,12 +333,9 @@ onMounted(() => pages.load())
                 /></UiButton>
               </div>
             </div>
-            <UiAlert
-              v-if="pages.publishError.value"
-              class="mt-4"
-              role="alert"
-              >{{ pages.publishError.value }}</UiAlert
-            >
+            <UiNotification v-if="pages.publishError.value">{{
+              pages.publishError.value
+            }}</UiNotification>
             <p
               v-if="!selectedPage.blocks?.length"
               class="mt-5 whitespace-pre-wrap break-words text-sm text-gray-700"
@@ -357,7 +350,7 @@ onMounted(() => pages.load())
             />
           </UiCard>
           <div v-else-if="selectedError">
-            <UiAlert role="alert">{{ selectedError }}</UiAlert>
+            <UiNotification>{{ selectedError }}</UiNotification>
             <UiButton
               class="mt-2"
               size="sm"

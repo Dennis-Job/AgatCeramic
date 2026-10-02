@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -39,9 +39,9 @@ onMounted(() => sliders.load())
         >
       </template>
     </PageHeader>
-    <UiAlert v-if="sliders.error.value" class="mb-4">{{
+    <UiNotification v-if="sliders.error.value">{{
       sliders.error.value
-    }}</UiAlert>
+    }}</UiNotification>
     <UiButton
       v-if="sliders.error.value"
       class="mb-4"
@@ -49,9 +49,9 @@ onMounted(() => sliders.load())
       @click="sliders.load()"
       >Повторить загрузку</UiButton
     >
-    <UiAlert v-if="sliders.success.value" class="mb-4" tone="success">{{
+    <UiNotification v-if="sliders.success.value" tone="success">{{
       sliders.success.value
-    }}</UiAlert>
+    }}</UiNotification>
     <UiCard
       v-if="!sliders.error.value || sliders.loading.value"
       class="overflow-hidden"

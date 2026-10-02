@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -39,9 +39,9 @@ defineEmits<{
 
 <template>
   <aside class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-card">
-    <UiAlert v-if="actionError && !selected" class="m-5 mb-0">{{
+    <UiNotification v-if="actionError && !selected">{{
       actionError
-    }}</UiAlert>
+    }}</UiNotification>
     <UiLoadingState v-if="detailLoading" label="Загрузка деталей обращения…" />
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
       Выберите обращение в списке.
@@ -53,7 +53,7 @@ defineEmits<{
           Обращение #{{ selected.id }}
         </h2>
       </div>
-      <UiAlert v-if="actionError">{{ actionError }}</UiAlert>
+      <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
       <section>
         <h3 class="text-sm font-semibold text-gray-900">Контакт</h3>
         <p class="mt-2 break-words text-sm text-gray-700">

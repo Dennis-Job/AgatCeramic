@@ -4,7 +4,7 @@ import { Plus } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -36,14 +36,12 @@ onMounted(workspace.initialize)
       >
     </template>
 
-    <UiAlert v-if="workspace.error.value" class="admin-container mb-4">{{
+    <UiNotification v-if="workspace.error.value">{{
       workspace.error.value
-    }}</UiAlert>
-    <UiAlert
-      v-if="!workspace.error.value && workspace.rolesError.value"
-      class="admin-container mb-4"
+    }}</UiNotification>
+    <UiNotification v-if="!workspace.error.value && workspace.rolesError.value"
       >{{ workspace.rolesError.value }} Редактирование сотрудников временно
-      недоступно.</UiAlert
+      недоступно.</UiNotification
     >
     <div class="min-w-0">
       <form

@@ -16,7 +16,7 @@ import {
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
@@ -172,16 +172,10 @@ function closeGroupDeletion(): void {
       </PageHeader>
     </template>
 
-    <UiAlert v-if="error && !opened" class="admin-container mb-4">{{
-      error
-    }}</UiAlert>
-    <UiAlert
-      v-if="exportStatus"
-      class="admin-container mb-4"
-      tone="success"
-      live="polite"
-      >{{ exportStatus }}</UiAlert
-    >
+    <UiNotification v-if="error && !opened">{{ error }}</UiNotification>
+    <UiNotification v-if="exportStatus" tone="success" live="polite">{{
+      exportStatus
+    }}</UiNotification>
     <ProductImportDialog
       :open="importOpened"
       @close="importOpened = false"
@@ -553,14 +547,10 @@ function closeGroupDeletion(): void {
         data-testid="product-editor-body"
         class="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6"
       >
-        <UiAlert v-if="error" class="admin-container mb-4">{{ error }}</UiAlert>
-        <UiAlert
-          v-if="success"
-          class="admin-container mb-4"
-          tone="success"
-          live="polite"
-          >{{ success }}</UiAlert
-        >
+        <UiNotification v-if="error">{{ error }}</UiNotification>
+        <UiNotification v-if="success" tone="success" live="polite">{{
+          success
+        }}</UiNotification>
         <ProductMainSection v-if="activeStep === 'main'" />
         <ProductAttributesSection v-else-if="activeStep === 'attributes'" />
         <ProductImagesSection v-else-if="activeStep === 'images'" />

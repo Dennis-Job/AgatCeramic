@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -30,10 +30,10 @@ const {
     />
     <form @submit.prevent="submit">
       <UiCard class="p-5 sm:p-6">
-        <UiAlert v-if="error" class="mb-5">{{ error }}</UiAlert>
-        <UiAlert v-if="success" class="mb-5" tone="success" live="polite">{{
+        <UiNotification v-if="error">{{ error }}</UiNotification>
+        <UiNotification v-if="success" tone="success" live="polite">{{
           success
-        }}</UiAlert>
+        }}</UiNotification>
         <div class="grid gap-4">
           <UiField label="Имя" required
             ><UiInput

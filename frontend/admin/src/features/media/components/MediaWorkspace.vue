@@ -3,7 +3,7 @@ import { FileText, Pencil, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
@@ -44,13 +44,7 @@ const {
       <PageHeader class="mb-7" eyebrow="Контент" title="Медиатека" />
     </template>
 
-    <UiAlert
-      v-if="success"
-      class="admin-container mb-4"
-      tone="success"
-      role="status"
-      >{{ success }}</UiAlert
-    >
+    <UiNotification v-if="success" tone="success">{{ success }}</UiNotification>
     <UiCard class="admin-container mb-6">
       <form
         class="grid gap-4 p-5 sm:grid-cols-2"
@@ -98,9 +92,7 @@ const {
           help="Кратко опишите изображение для доступности."
           ><UiInput v-model="alt" maxlength="255" :disabled="busy"
         /></UiField>
-        <UiAlert v-if="formError" class="admin-container sm:col-span-2">{{
-          formError
-        }}</UiAlert>
+        <UiNotification v-if="formError">{{ formError }}</UiNotification>
         <div class="flex flex-wrap gap-2 sm:col-span-2">
           <UiButton :loading="busy">{{
             editing ? 'Сохранить' : 'Загрузить'
@@ -116,9 +108,9 @@ const {
         </div>
       </form>
     </UiCard>
-    <UiAlert v-if="list.error.value" class="admin-container mb-4">{{
+    <UiNotification v-if="list.error.value">{{
       list.error.value
-    }}</UiAlert>
+    }}</UiNotification>
     <div v-if="list.error.value" class="admin-container mb-4">
       <UiButton variant="secondary" @click="load()"
         >Повторить загрузку</UiButton

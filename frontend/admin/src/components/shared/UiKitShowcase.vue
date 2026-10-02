@@ -5,6 +5,7 @@ import AuthCard from './AuthCard.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import PageHeader from './PageHeader.vue'
 import UiAlert from '../ui/UiAlert.vue'
+import UiNotification from '../ui/UiNotification.vue'
 import UiBadge from '../ui/UiBadge.vue'
 import UiButton from '../ui/UiButton.vue'
 import UiCard from '../ui/UiCard.vue'
@@ -46,6 +47,30 @@ const isPopoverOpen = ref(false)
 const confirmMode = ref<ConfirmMode | null>(null)
 const confirmBusy = ref(false)
 const notice = ref('')
+type NotificationTone = 'success' | 'error' | 'warning' | 'info'
+const demoNotifications = ref<
+  Array<{ id: number; tone: NotificationTone; message: string }>
+>([])
+let notificationId = 0
+function showNotification(tone: NotificationTone): void {
+  const messages = {
+    success: 'Изменения сохранены.',
+    error:
+      'Не удалось сохранить изменения. Проверьте подключение и повторите действие. Сообщение с длинным названием: керамогранит для облицовки внутренних стен и пола.',
+    warning: 'Проверьте данные перед публикацией.',
+    info: 'Обработка файла продолжается в фоне.',
+  }
+  demoNotifications.value.push({
+    id: ++notificationId,
+    tone,
+    message: messages[tone],
+  })
+}
+function removeNotification(id: number): void {
+  demoNotifications.value = demoNotifications.value.filter(
+    (item) => item.id !== id,
+  )
+}
 const currentPage = ref(2)
 const isButtonLoading = ref(false)
 
@@ -68,6 +93,8 @@ const uiComponents = [
   'UiImagePreview',
   'UiInput',
   'UiLoadingState',
+  'UiNotification',
+  'UiNotificationHost',
   'UiPagination',
   'UiPopover',
   'UiRadio',
@@ -206,6 +233,10 @@ const foundationMetaTokens = [
   '--admin-focus-color',
   '--admin-focus-halo-color',
   '--admin-focus-halo-width',
+  '--admin-notification-width',
+  '--admin-notification-offset',
+  '--admin-notification-gap',
+  '--admin-notification-z-index',
   '--admin-transition-duration',
   '--admin-transition-timing',
 ]
@@ -279,6 +310,14 @@ function submitAuthPreview(): void {
 </script>
 
 <template>
+  <UiNotification
+    v-for="item in demoNotifications"
+    :key="item.id"
+    :tone="item.tone"
+    @dismiss="removeNotification(item.id)"
+  >
+    {{ item.message }}
+  </UiNotification>
   <AdminWorkspace mode="overview" class="space-y-6">
     <PageHeader
       eyebrow="Разработка"
@@ -301,7 +340,9 @@ function submitAuthPreview(): void {
       <code>src/components/shared/</code>. Витрина использует сами компоненты,
       поэтому их вид и поведение не дублируются.
     </UiAlert>
-    <UiAlert v-if="notice" tone="success" live="polite">{{ notice }}</UiAlert>
+    <UiNotification v-if="notice" tone="success" live="polite">{{
+      notice
+    }}</UiNotification>
 
     <UiCard data-ui-kit-section="inventory">
       <h2 class="text-lg font-semibold text-gray-900">Состав UI-kit</h2>
@@ -385,6 +426,25 @@ function submitAuthPreview(): void {
           <UiBadge tone="danger">Ошибка</UiBadge>
         </div>
         <div class="mt-4 space-y-2">
+          <UiButton
+            variant="secondary"
+            @click="notice = 'Демонстрационное уведомление.'"
+            >Показать уведомление</UiButton
+          >
+          <div class="flex flex-wrap gap-2">
+            <UiButton variant="secondary" @click="showNotification('success')"
+              >Уведомление об успехе</UiButton
+            >
+            <UiButton variant="secondary" @click="showNotification('error')"
+              >Уведомление об ошибке</UiButton
+            >
+            <UiButton variant="secondary" @click="showNotification('warning')"
+              >Уведомление с предупреждением</UiButton
+            >
+            <UiButton variant="secondary" @click="showNotification('info')"
+              >Информационное уведомление</UiButton
+            >
+          </div>
           <UiAlert tone="info" live="polite">Информационное сообщение.</UiAlert>
           <UiAlert tone="success" live="polite"
             >Операция выполнена успешно.</UiAlert

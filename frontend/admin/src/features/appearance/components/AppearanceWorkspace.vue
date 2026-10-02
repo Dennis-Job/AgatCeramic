@@ -8,7 +8,7 @@ import {
 } from 'vue-router'
 import AdminEditorLayout from '../../../components/shared/AdminEditorLayout.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -77,16 +77,12 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
       title="Общее оформление"
       description="Шапка, навигация и подвал едины для всех страниц сайта. Публикация оформления не публикует черновики страниц."
     />
-    <UiAlert v-if="workspace.error.value" class="mb-4" role="alert">{{
+    <UiNotification v-if="workspace.error.value">{{
       workspace.error.value
-    }}</UiAlert>
-    <UiAlert
-      v-if="workspace.success.value"
-      class="mb-4"
-      tone="success"
-      role="status"
-      >{{ workspace.success.value }}</UiAlert
-    >
+    }}</UiNotification>
+    <UiNotification v-if="workspace.success.value" tone="success">{{
+      workspace.success.value
+    }}</UiNotification>
     <UiButton
       v-if="workspace.error.value && !workspace.content.value"
       class="mb-4"

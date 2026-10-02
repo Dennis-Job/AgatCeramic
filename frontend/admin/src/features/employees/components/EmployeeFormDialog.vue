@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
@@ -64,7 +64,7 @@ const statusOptions = [
           ><X :size="20"
         /></UiButton>
       </div>
-      <UiAlert v-if="error" class="mt-4">{{ error }}</UiAlert>
+      <UiNotification v-if="error">{{ error }}</UiNotification>
       <div class="mt-6 grid gap-4">
         <UiField label="Имя" required
           ><UiInput

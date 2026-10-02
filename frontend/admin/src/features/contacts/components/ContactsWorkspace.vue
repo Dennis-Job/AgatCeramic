@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import AdminListDetail from '../../../components/shared/AdminListDetail.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
@@ -32,20 +32,17 @@ onMounted(workspace.initialize)
       />
     </template>
 
-    <UiAlert v-if="workspace.error.value" class="admin-container mb-4">{{
+    <UiNotification v-if="workspace.error.value">{{
       workspace.error.value
-    }}</UiAlert>
-    <UiAlert
-      v-if="!workspace.error.value && workspace.statusError.value"
-      class="admin-container mb-4"
+    }}</UiNotification>
+    <UiNotification v-if="!workspace.error.value && workspace.statusError.value"
       >{{ workspace.statusError.value }} Смена статуса обращения временно
-      недоступна.</UiAlert
+      недоступна.</UiNotification
     >
-    <UiAlert
+    <UiNotification
       v-if="!workspace.error.value && workspace.assigneeError.value"
-      class="admin-container mb-4"
       >{{ workspace.assigneeError.value }} Назначение ответственного временно
-      недоступно.</UiAlert
+      недоступно.</UiNotification
     >
     <AdminListDetail ref="listDetail">
       <template #list>

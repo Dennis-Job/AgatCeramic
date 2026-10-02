@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AuthCard from '../components/shared/AuthCard.vue'
-import UiAlert from '../components/ui/UiAlert.vue'
+import UiNotification from '../components/ui/UiNotification.vue'
 import UiButton from '../components/ui/UiButton.vue'
 import UiField from '../components/ui/UiField.vue'
 import UiInput from '../components/ui/UiInput.vue'
@@ -51,7 +51,7 @@ async function submit(): Promise<void> {
     description="Используйте надёжный пароль длиной не менее 12 символов."
     @submit="submit"
   >
-    <UiAlert v-if="error" class="mt-5">{{ error }}</UiAlert>
+    <UiNotification v-if="error">{{ error }}</UiNotification>
     <UiField class="mt-6" label="Email" required
       ><UiInput
         v-model="email"

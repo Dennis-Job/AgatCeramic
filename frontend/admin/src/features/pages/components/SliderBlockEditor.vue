@@ -2,6 +2,7 @@
 import { computed, onMounted, watch } from 'vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -41,11 +42,11 @@ onMounted(() => state.load())
       опубликованного ресурса сразу меняет его во всех местах использования,
       независимо от публикации страницы.
     </UiAlert>
-    <UiAlert v-if="state.success.value" tone="success" live="polite">
+    <UiNotification v-if="state.success.value" tone="success" live="polite">
       {{ state.success.value }}
-    </UiAlert>
+    </UiNotification>
     <div v-if="state.error.value" class="space-y-2">
-      <UiAlert>{{ state.error.value }}</UiAlert>
+      <UiNotification>{{ state.error.value }}</UiNotification>
       <UiButton
         type="button"
         variant="secondary"

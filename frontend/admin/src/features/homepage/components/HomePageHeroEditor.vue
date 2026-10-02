@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import { loadAllPages } from '../../../services/pagination'
@@ -41,7 +41,7 @@ onMounted(load)
         Затем выберите этот слайдер здесь.
       </p>
     </div>
-    <UiAlert v-if="error" role="alert">{{ error }}</UiAlert>
+    <UiNotification v-if="error">{{ error }}</UiNotification>
     <UiButton v-if="error" variant="secondary" size="sm" @click="load"
       >Повторить загрузку</UiButton
     >

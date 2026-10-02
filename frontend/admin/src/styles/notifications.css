@@ -1,0 +1,37 @@
+.admin-notifications {
+  position: fixed;
+  top: var(--admin-notification-offset);
+  right: var(--admin-notification-offset);
+  z-index: var(--admin-notification-z-index);
+  display: flex;
+  flex-direction: column;
+  gap: var(--admin-notification-gap);
+  width: min(
+    var(--admin-notification-width),
+    calc(100% - 2 * var(--admin-notification-offset))
+  );
+  max-height: calc(100dvh - 2 * var(--admin-notification-offset));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: none;
+  scrollbar-width: thin;
+}
+.admin-notification {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--admin-spacing-3);
+  margin: 0;
+  pointer-events: auto;
+  box-shadow: var(--admin-shadow-dropdown);
+}
+.admin-notification-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-notification-close {
+  flex: none;
+  min-height: var(--admin-control-height-sm);
+  padding: var(--admin-spacing-1);
+}

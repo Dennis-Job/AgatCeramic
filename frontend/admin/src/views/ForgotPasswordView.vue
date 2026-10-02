@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AuthCard from '../components/shared/AuthCard.vue'
-import UiAlert from '../components/ui/UiAlert.vue'
+import UiNotification from '../components/ui/UiNotification.vue'
 import UiButton from '../components/ui/UiButton.vue'
 import UiField from '../components/ui/UiField.vue'
 import UiInput from '../components/ui/UiInput.vue'
@@ -36,10 +36,10 @@ async function submit(): Promise<void> {
     description="Укажите email сотрудника, и мы отправим ссылку для сброса пароля."
     @submit="submit"
   >
-    <UiAlert v-if="error" class="mt-5">{{ error }}</UiAlert>
-    <UiAlert v-if="isSent" class="mt-5" tone="success" live="polite"
+    <UiNotification v-if="error">{{ error }}</UiNotification>
+    <UiNotification v-if="isSent" tone="success" live="polite"
       >Если такая учётная запись существует, ссылка для сброса пароля
-      отправлена.</UiAlert
+      отправлена.</UiNotification
     >
     <UiField class="mt-6" label="Email" required
       ><UiInput

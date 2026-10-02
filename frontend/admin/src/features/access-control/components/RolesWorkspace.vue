@@ -4,7 +4,7 @@ import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
@@ -32,14 +32,13 @@ onMounted(workspace.load)
       >
     </template>
 
-    <UiAlert v-if="workspace.error.value" class="admin-container mb-4">{{
+    <UiNotification v-if="workspace.error.value">{{
       workspace.error.value
-    }}</UiAlert>
-    <UiAlert
+    }}</UiNotification>
+    <UiNotification
       v-if="!workspace.error.value && workspace.permissionsError.value"
-      class="admin-container mb-4"
       >{{ workspace.permissionsError.value }} Редактирование ролей временно
-      недоступно.</UiAlert
+      недоступно.</UiNotification
     >
     <UiLoadingState
       v-if="workspace.loading.value"

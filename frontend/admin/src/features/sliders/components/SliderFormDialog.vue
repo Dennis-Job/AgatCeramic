@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import { ref, watch } from 'vue'
 import { ArrowDown, ArrowUp, X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
@@ -66,9 +67,9 @@ watch(
           ><X :size="20"
         /></UiButton>
       </div>
-      <p v-if="error" role="alert" class="mt-3 text-sm text-error-600">
+      <UiNotification v-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <div class="mt-6 grid gap-4">
         <UiField label="Название" required>
           <UiInput
@@ -167,9 +168,9 @@ watch(
           >Найти</UiButton
         >
       </div>
-      <p v-if="optionsError" role="alert" class="mt-2 text-sm text-error-600">
+      <UiNotification v-if="optionsError">
         {{ optionsError }}
-      </p>
+      </UiNotification>
       <p v-else-if="optionsLoading" role="status" class="mt-2 text-sm">
         Поиск баннеров…
       </p>

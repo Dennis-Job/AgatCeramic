@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -104,15 +104,13 @@ async function confirmPublish(): Promise<void> {
       title="Настройки сайта"
       description="Публичные реквизиты, юридические документы и внутренние согласования."
     />
-    <UiAlert v-if="error" role="alert"
+    <UiNotification v-if="error"
       >{{ error }}
       <UiButton v-if="!loaded" variant="ghost" size="sm" @click="load"
         >Повторить загрузку</UiButton
-      ></UiAlert
+      ></UiNotification
     >
-    <p v-if="success" class="text-sm text-success-700" role="status">
-      {{ success }}
-    </p>
+    <UiNotification v-if="success" tone="success">{{ success }}</UiNotification>
     <UiLoadingState v-if="loading" label="Загрузка настроек…" />
     <template v-else-if="loaded">
       <UiCard>

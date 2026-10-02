@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { LogOut, Settings, UserRound } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 import UiPopover from '../../components/ui/UiPopover.vue'
-import UiAlert from '../../components/ui/UiAlert.vue'
+import UiNotification from '../../components/ui/UiNotification.vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import { useAuthStore } from '../../stores/auth'
 const open = defineModel<boolean>('open', { default: false })
@@ -29,6 +29,7 @@ async function signOut(): Promise<void> {
 </script>
 
 <template>
+  <UiNotification v-if="error">{{ error }}</UiNotification>
   <UiPopover
     id="admin-user-panel"
     v-model:open="open"
@@ -76,7 +77,6 @@ async function signOut(): Promise<void> {
           ><LogOut :size="20" aria-hidden="true" />Выйти</UiButton
         >
       </div>
-      <UiAlert v-if="error" class="mt-3">{{ error }}</UiAlert>
     </template>
   </UiPopover>
 </template>
