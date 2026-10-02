@@ -678,9 +678,15 @@ API behaviour без migration plan и синхронного обновлени
   258 строгих E2E каждой macOS/Linux, real Nuxt3.
   [Отчёт](../docs/ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
 
+- [x] Доработка товаров от 2026-10-02: «Добавить массово товары», «Цены и статусы»
+  и «Объединить товары» перенесены в меню «Товары» и отдельные страницы вместо
+  модальных окон. Сохранены import contracts, permissions и состояние при
+  SPA-переходах. UI Design Guard accepted; lint/format/build, 69 unit,
+  полный macOS E2E 267/267; Linux imports/navigation 37/37 и product baseline 6/6.
+  [Отчёт и изменённые файлы](../docs/ADMIN_PRODUCT_IMPORT_PAGES_REPORT.md).
+
 - [x] Доработка TASK-A059/A060/A062 от 2026-10-02: рабочие таблицы без
   боковых отступов, controls и пагинация в контейнере. UI Design Guard принят,
   24 platform baseline согласованы до замены; lint/format/build, 69 unit,
   258 строгих E2E каждой macOS/Linux, real Nuxt3.
   [Отчёт](../docs/ADMIN_TABLE_FULL_BLEED_REPORT.md).
-

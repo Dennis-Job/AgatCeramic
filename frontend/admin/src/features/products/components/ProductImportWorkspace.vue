@@ -1,18 +1,32 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import { CheckCircle2, Download, ImagePlus, Upload, X } from '@lucide/vue'
+import {
+  nextTick,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+import { CheckCircle2, Download, ImagePlus, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiDialog from '../../../components/ui/UiDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
+import PageHeader from '../../../components/shared/PageHeader.vue'
+import { RouterLink } from 'vue-router'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiRadio from '../../../components/ui/UiRadio.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import { useProductImportDialog } from '../composables/useProductImportDialog'
+import { useProductImport } from '../composables/useProductImport'
 
-const props = defineProps<{ open: boolean }>()
-const emit = defineEmits<{ close: []; completed: [] }>()
+const active = ref(true)
+onActivated(() => {
+  active.value = true
+})
+onDeactivated(() => {
+  active.value = false
+})
 const input = ref<HTMLInputElement | null>(null)
 const imageInput = ref<HTMLInputElement | null>(null)
 const {
@@ -32,7 +46,7 @@ const {
   downloadTemplate,
   uploadProducts,
   downloadImageErrors,
-} = useProductImportDialog(() => emit('completed'))
+} = useProductImport(() => {})
 const {
   file,
   result,
@@ -59,16 +73,13 @@ const {
   poll: pollImageImport,
 } = imageImport
 
-watch(
-  () => props.open,
-  (open) => {
-    if (open && !categoryOptions.value.length) void loadCategories()
-  },
-)
+onMounted(() => {
+  void loadCategories()
+})
 watch([busy, downloading], async () => {
   await nextTick()
   if (
-    props.open &&
+    active.value &&
     tab.value === 'products' &&
     (document.activeElement === document.body ||
       document.activeElement?.matches(':disabled'))
@@ -108,39 +119,24 @@ function changeTab(event: KeyboardEvent) {
 </script>
 
 <template>
-  <UiDialog
-    :open="open"
-    labelledby="product-import-title"
-    describedby="product-import-description"
-    panel-class="flex w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-card"
-    @close="emit('close')"
-  >
-    <header
-      class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7"
+  <AdminWorkspace mode="form">
+    <PageHeader
+      class="mb-7"
+      eyebrow="Товары"
+      title="Добавить массово товары"
+      description="Добавление и массовое редактирование товаров из Excel, загрузка изображений из ZIP."
     >
-      <div class="min-w-0">
-        <h2 id="product-import-title" class="text-xl font-bold text-gray-900">
-          Массовая загрузка
-        </h2>
-        <p id="product-import-description" class="mt-1 text-sm text-gray-500">
-          {{
-            tab === 'products'
-              ? 'Добавление и массовое редактирование товаров из Excel'
-              : 'Массовая загрузка изображений товаров из ZIP-архива'
-          }}
-        </p>
-      </div>
-      <UiButton
-        type="button"
-        class="shrink-0"
-        variant="ghost"
-        size="sm"
-        aria-label="Закрыть массовую загрузку"
-        @click="emit('close')"
-        ><X :size="20" aria-hidden="true"
-      /></UiButton>
-    </header>
-    <div class="min-h-0 overflow-y-auto overscroll-contain px-5 sm:px-7">
+      <template #actions>
+        <RouterLink
+          to="/products"
+          class="text-sm font-medium text-primary-700 underline admin-focus"
+          >К списку товаров</RouterLink
+        >
+      </template>
+    </PageHeader>
+    <div
+      class="min-w-0 rounded-xl border border-gray-200 bg-white px-4 sm:px-6"
+    >
       <div
         class="grid grid-cols-2 gap-2 border-b border-gray-200"
         role="tablist"
@@ -207,9 +203,9 @@ function changeTab(event: KeyboardEvent) {
           >
         </fieldset>
         <div>
-          <h3 class="text-base font-semibold text-gray-900">
+          <h2 class="text-base font-semibold text-gray-900">
             2. Подготовьте шаблон
-          </h3>
+          </h2>
           <p class="mt-1 text-sm text-gray-500">
             {{
               importMode === 'template'
@@ -222,7 +218,7 @@ function changeTab(event: KeyboardEvent) {
             class="mt-3"
             label="Загружаем категории…"
           />
-          <UiNotification v-else-if="categoryError"
+          <UiNotification v-else-if="active && categoryError"
             >{{ categoryError }}
             <UiButton
               type="button"
@@ -277,9 +273,9 @@ function changeTab(event: KeyboardEvent) {
           class="rounded-xl border border-gray-200 p-4 sm:p-5"
           @submit.prevent="upload"
         >
-          <h3 class="text-base font-semibold text-gray-900">
+          <h2 class="text-base font-semibold text-gray-900">
             3. Загрузите заполненный файл
-          </h3>
+          </h2>
           <p id="product-import-file-help" class="mt-1 text-sm text-gray-500">
             XLSX, до 10 МБ. Корректные товары сохранятся, строки с ошибками
             можно будет исправить и загрузить повторно.
@@ -327,8 +323,8 @@ function changeTab(event: KeyboardEvent) {
             >
           </div>
         </form>
-        <UiNotification v-if="error">{{ error }}</UiNotification>
-        <UiNotification v-if="notice" tone="success" live="polite">{{
+        <UiNotification v-if="active && error">{{ error }}</UiNotification>
+        <UiNotification v-if="active && notice" tone="success" live="polite">{{
           notice
         }}</UiNotification>
         <div
@@ -343,7 +339,7 @@ function changeTab(event: KeyboardEvent) {
         >
           <template v-if="finished && result">
             <div role="status" aria-live="polite">
-              <h3 class="flex items-center gap-2 font-semibold text-gray-900">
+              <h2 class="flex items-center gap-2 font-semibold text-gray-900">
                 <CheckCircle2
                   v-if="!result.failed_rows && result.status === 'completed'"
                   :size="20"
@@ -356,7 +352,7 @@ function changeTab(event: KeyboardEvent) {
                       ? 'Загрузка завершена с ошибками'
                       : 'Загрузка завершена'
                 }}
-              </h3>
+              </h2>
               <p class="mt-2 text-sm text-gray-700">
                 Успешно: {{ successful }}. С ошибками:
                 {{ result.failed_rows ?? 0 }}.
@@ -426,10 +422,11 @@ function changeTab(event: KeyboardEvent) {
               aria-hidden="true"
             />
             <p v-if="busy" class="mt-3 text-xs text-gray-500">
-              Можно закрыть окно — обработка продолжится. Откройте «Загрузить
-              массово», чтобы посмотреть результат.
+              Можно перейти на другую страницу — обработка продолжится.
+              Вернитесь в «Товары» → «Добавить массово товары», чтобы посмотреть
+              результат.
             </p>
-            <UiNotification v-if="pollingError && result"
+            <UiNotification v-if="active && pollingError && result"
               >Не удалось получить статус. Обработка на сервере продолжается.
               <UiButton
                 type="button"
@@ -460,12 +457,12 @@ function changeTab(event: KeyboardEvent) {
               aria-hidden="true"
             />
             <div class="min-w-0">
-              <h3
+              <h2
                 id="image-import-preparation-title"
                 class="text-base font-semibold text-gray-900"
               >
                 Подготовьте ZIP-архив
-              </h3>
+              </h2>
               <p class="mt-1 text-sm leading-6 text-gray-600">
                 Для каждого уже созданного товара создайте папку с его SKU.
                 Внутри назовите файлы по схеме
@@ -508,7 +505,7 @@ images.zip
           class="rounded-xl border border-gray-200 p-4 sm:p-5"
           @submit.prevent="uploadImageImport"
         >
-          <h3 class="text-base font-semibold text-gray-900">Загрузите архив</h3>
+          <h2 class="text-base font-semibold text-gray-900">Загрузите архив</h2>
           <p id="image-import-file-help" class="mt-1 text-sm text-gray-500">
             Обработка выполняется в фоне. Ошибка одной папки не помешает
             импортировать остальные товары.
@@ -560,7 +557,9 @@ images.zip
           </div>
         </form>
 
-        <UiNotification v-if="imageError">{{ imageError }}</UiNotification>
+        <UiNotification v-if="active && imageError">{{
+          imageError
+        }}</UiNotification>
 
         <section
           class="min-h-32 rounded-xl border p-4 sm:p-5"
@@ -575,7 +574,7 @@ images.zip
         >
           <template v-if="imageFinished && imageResult">
             <div role="status" aria-live="polite">
-              <h3
+              <h2
                 id="image-import-result-title"
                 class="flex items-center gap-2 font-semibold text-gray-900"
               >
@@ -594,7 +593,7 @@ images.zip
                       ? 'Загрузка завершена с ошибками'
                       : 'Загрузка завершена'
                 }}
-              </h3>
+              </h2>
               <dl class="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div>
                   <dt class="text-gray-500">Папок обработано</dt>
@@ -669,12 +668,12 @@ images.zip
             >
           </template>
           <template v-else>
-            <h3
+            <h2
               id="image-import-result-title"
               class="text-base font-semibold text-gray-900"
             >
               Статус импорта
-            </h3>
+            </h2>
             <p
               role="status"
               aria-live="polite"
@@ -705,10 +704,11 @@ images.zip
               aria-hidden="true"
             />
             <p v-if="imageBusy" class="mt-3 text-xs text-gray-500">
-              Можно закрыть окно — обработка продолжится. Откройте «Загрузить
-              массово», чтобы посмотреть результат.
+              Можно перейти на другую страницу — обработка продолжится.
+              Вернитесь в «Товары» → «Добавить массово товары», чтобы посмотреть
+              результат.
             </p>
-            <UiNotification v-if="imagePollingError && imageResult"
+            <UiNotification v-if="active && imagePollingError && imageResult"
               >Не удалось получить статус. Обработка на сервере продолжается.
               <UiButton
                 type="button"
@@ -722,5 +722,5 @@ images.zip
         </section>
       </div>
     </div>
-  </UiDialog>
+  </AdminWorkspace>
 </template>

@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import { CheckCircle2, CircleAlert, Download, Upload, X } from '@lucide/vue'
+import { nextTick, onActivated, onDeactivated, ref, watch } from 'vue'
+import { CheckCircle2, CircleAlert, Download, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiDialog from '../../../components/ui/UiDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
+import PageHeader from '../../../components/shared/PageHeader.vue'
+import { RouterLink } from 'vue-router'
 import { useProductGroupImport } from '../composables/useProductGroupImport'
 
-const props = defineProps<{ open: boolean }>()
-const emit = defineEmits<{ close: []; completed: [] }>()
+const active = ref(true)
+onActivated(() => {
+  active.value = true
+})
+onDeactivated(() => {
+  active.value = false
+})
 const input = ref<HTMLInputElement | null>(null)
-const workflow = useProductGroupImport(() => emit('completed'))
+const workflow = useProductGroupImport(() => {})
 const {
   file,
   result,
@@ -34,7 +41,7 @@ function selectFile(event: Event) {
 watch([busy, downloading], async () => {
   await nextTick()
   if (
-    props.open &&
+    active.value &&
     (document.activeElement === document.body ||
       document.activeElement?.matches(':disabled'))
   )
@@ -43,46 +50,32 @@ watch([busy, downloading], async () => {
 </script>
 
 <template>
-  <UiDialog
-    :open="open"
-    labelledby="group-import-title"
-    describedby="group-import-description"
-    panel-class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-card"
-    @close="emit('close')"
-  >
-    <header
-      class="flex items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7"
+  <AdminWorkspace mode="form">
+    <PageHeader
+      class="mb-7"
+      eyebrow="Товары"
+      title="Объединить товары"
+      description="Объединение товаров в группы вариантов и управление их составом из Excel."
     >
-      <div>
-        <h2 id="group-import-title" class="text-xl font-bold text-gray-900">
-          Группы вариантов из Excel
-        </h2>
-        <p id="group-import-description" class="mt-1 text-sm text-gray-500">
-          Массовое управление составом и осями групп без изменения товаров.
-        </p>
-      </div>
-      <UiButton
-        type="button"
-        variant="ghost"
-        size="sm"
-        aria-label="Закрыть окно импорта групп"
-        @click="emit('close')"
-        ><X :size="20" aria-hidden="true"
-      /></UiButton>
-    </header>
-    <div
-      class="min-h-0 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7"
-    >
+      <template #actions>
+        <RouterLink
+          to="/products"
+          class="text-sm font-medium text-primary-700 underline admin-focus"
+          >К списку товаров</RouterLink
+        >
+      </template>
+    </PageHeader>
+    <div class="min-w-0 space-y-5">
       <section
         class="rounded-xl border border-gray-200 p-4 sm:p-5"
         aria-labelledby="group-import-preparation"
       >
-        <h3
+        <h2
           id="group-import-preparation"
           class="text-base font-semibold text-gray-900"
         >
           1. Скачайте актуальную выгрузку
-        </h3>
+        </h2>
         <p class="mt-1 text-sm leading-6 text-gray-500">
           На листе «Группы» выберите действие: создать, изменить или
           расформировать. На листе «Состав» укажите полный итоговый список SKU
@@ -106,9 +99,9 @@ watch([busy, downloading], async () => {
         class="rounded-xl border border-gray-200 p-4 sm:p-5"
         @submit.prevent="upload"
       >
-        <h3 class="text-base font-semibold text-gray-900">
+        <h2 class="text-base font-semibold text-gray-900">
           2. Загрузите отредактированный файл
-        </h3>
+        </h2>
         <p id="group-import-file-help" class="mt-1 text-sm text-gray-500">
           XLSX до 10 МБ. Если в файле есть ошибка, изменения из него не
           применяются.
@@ -152,12 +145,16 @@ watch([busy, downloading], async () => {
                 ? 'Обработка…'
                 : 'Запустить обработку'
           }}</UiButton
-        ><UiNotification v-if="busy && !uploading" tone="info" live="polite"
-          >Файл обрабатывается в фоне. Окно можно закрыть.</UiNotification
+        ><UiNotification
+          v-if="active && busy && !uploading"
+          tone="info"
+          live="polite"
+          >Файл обрабатывается в фоне. Можно перейти на другую страницу и
+          вернуться в «Объединить товары» за результатом.</UiNotification
         >
       </form>
-      <UiNotification v-if="error">{{ error }}</UiNotification
-      ><UiNotification v-if="notice" tone="success" live="polite">{{
+      <UiNotification v-if="active && error">{{ error }}</UiNotification
+      ><UiNotification v-if="active && notice" tone="success" live="polite">{{
         notice
       }}</UiNotification>
       <section
@@ -166,7 +163,7 @@ watch([busy, downloading], async () => {
         :class="resultClass"
         aria-live="polite"
       >
-        <h3 class="flex items-center gap-2 font-semibold text-gray-900">
+        <h2 class="flex items-center gap-2 font-semibold text-gray-900">
           <CircleAlert
             v-if="result.status === 'failed'"
             :size="20"
@@ -185,14 +182,14 @@ watch([busy, downloading], async () => {
                   : 'Обработка завершена'
                 : 'Обработка выполняется'
           }}
-        </h3>
+        </h2>
         <p class="mt-2 text-sm text-gray-700">
           Обработано групп: {{ result.processed_rows }} из
           {{ result.total_rows }}. Изменено: {{ result.updated_rows }}. Ошибок:
           {{ result.failed_rows }}.
         </p>
         <UiNotification
-          v-if="result.status === 'failed' && result.error_message"
+          v-if="active && result.status === 'failed' && result.error_message"
           >{{ result.error_message }}</UiNotification
         ><progress
           v-if="progress !== null"
@@ -202,7 +199,7 @@ watch([busy, downloading], async () => {
           aria-label="Ход обработки групп"
         >
           {{ progress }}%</progress
-        ><UiNotification v-if="pollingError"
+        ><UiNotification v-if="active && pollingError"
           >Не удалось обновить статус.
           <UiButton
             type="button"
@@ -223,5 +220,5 @@ watch([busy, downloading], async () => {
         >
       </section>
     </div>
-  </UiDialog>
+  </AdminWorkspace>
 </template>

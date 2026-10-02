@@ -50,3 +50,10 @@
 | Seller мягкие active/focus, доработка 2026-10-02 | TASK-A057/A062 | Общие focus tokens: край1 px и halo14%, selected radio/checkbox primary200/25, без двойного outline; keyboard/error/disabled/forced-colors сохранены. UI Design Guard принят, 16 эталонов согласованы до замены; lint/format/build, 64 unit, 255 строгих E2E каждой macOS/Linux, real Nuxt3. [Отчёт и файлы](../docs/ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md). |
 | Seller всплывающие уведомления, доработка 2026-10-02 | TASK-A057/A062 | Общий правый верхний стек UiNotification/Host для операционных сообщений страниц/dialogs, paused auto-dismiss, manual close, modal ownership и focus к живому source/trigger. UI Design Guard принят, 28 эталонов согласованы до замены; lint/format/build, 69 unit, 258 строгих E2E каждой macOS/Linux, real Nuxt3. [Отчёт и файлы](../docs/ADMIN_NOTIFICATION_REFINEMENT_REPORT.md). |
 | Seller таблицы без боковых отступов, доработка 2026-10-02 | TASK-A059/A060/A062 | Общий UiTable fullBleed компенсирует активный gutter layout для 12 рабочих списков; controls/pagination/details и embedded tables сохраняют контейнер. UI Design Guard принял 24 эталона до замены и реальные 602 px снимки. Lint/format/build, 69 unit и 258 строгих E2E каждой macOS/Linux, real Nuxt3 пройдены на изолированной версии. [Отчёт и файлы](../docs/ADMIN_TABLE_FULL_BLEED_REPORT.md). |
+
+- [x] Доработка товаров от 2026-10-02: «Добавить массово товары», «Цены и статусы»
+  и «Объединить товары» перенесены в меню «Товары» и отдельные страницы вместо
+  модальных окон. Сохранены import contracts, permissions и состояние при
+  SPA-переходах. UI Design Guard accepted; lint/format/build, 69 unit,
+  полный macOS E2E 267/267; Linux imports/navigation 37/37 и product baseline 6/6.
+  [Отчёт и изменённые файлы](../docs/ADMIN_PRODUCT_IMPORT_PAGES_REPORT.md).

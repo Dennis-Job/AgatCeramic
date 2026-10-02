@@ -51,9 +51,9 @@ describe('products feature boundaries', () => {
       'ProductVariantsSection.vue',
       'ProductRelationsSection.vue',
       'ProductReviewSection.vue',
-      'ProductImportDialog.vue',
-      'ProductGroupImportDialog.vue',
-      'ProductPriceStatusImportDialog.vue',
+      'ProductImportWorkspace.vue',
+      'ProductGroupImportWorkspace.vue',
+      'ProductPriceStatusImportWorkspace.vue',
     ]
 
     for (const componentName of componentNames) {

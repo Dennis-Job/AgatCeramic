@@ -77,9 +77,6 @@ export function useProductEditor() {
   const filterResultStatus = ref('')
   const exportStatus = ref('')
   const exporting = ref(false)
-  const importOpened = ref(false)
-  const priceStatusImportOpened = ref(false)
-  const groupImportOpened = ref(false)
   const productCountUnavailable = ref(false)
   const filters = ref({
     search: '',
@@ -1103,9 +1100,6 @@ export function useProductEditor() {
     filterResultStatus,
     exportStatus,
     exporting,
-    importOpened,
-    priceStatusImportOpened,
-    groupImportOpened,
     productCountUnavailable,
     filters,
     sort,

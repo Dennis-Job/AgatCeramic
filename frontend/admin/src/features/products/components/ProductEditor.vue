@@ -10,7 +10,6 @@ import {
   Plus,
   Save,
   Trash2,
-  Upload,
   X,
 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
@@ -29,9 +28,6 @@ import UiPagination from '../../../components/ui/UiPagination.vue'
 import UiRadio from '../../../components/ui/UiRadio.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
-import ProductImportDialog from './ProductImportDialog.vue'
-import ProductPriceStatusImportDialog from './ProductPriceStatusImportDialog.vue'
-import ProductGroupImportDialog from './ProductGroupImportDialog.vue'
 import EditorSteps from './ProductEditorSteps.vue'
 import ProductMainSection from './ProductMainSection.vue'
 import ProductAttributesSection from './ProductAttributesSection.vue'
@@ -61,9 +57,6 @@ const {
   filterResultStatus,
   exportStatus,
   exporting,
-  importOpened,
-  priceStatusImportOpened,
-  groupImportOpened,
   productCountUnavailable,
   filters,
   sort,
@@ -136,27 +129,6 @@ function closeGroupDeletion(): void {
             v-if="canManageImports"
             type="button"
             variant="secondary"
-            @click="importOpened = true"
-            ><Upload :size="18" aria-hidden="true" />Загрузить массово</UiButton
-          >
-          <UiButton
-            v-if="canManageImports"
-            type="button"
-            variant="secondary"
-            @click="priceStatusImportOpened = true"
-            ><Upload :size="18" aria-hidden="true" />Цены и статусы</UiButton
-          >
-          <UiButton
-            v-if="canManageImports && canManage"
-            type="button"
-            variant="secondary"
-            @click="groupImportOpened = true"
-            ><Upload :size="18" aria-hidden="true" />Группы вариантов</UiButton
-          >
-          <UiButton
-            v-if="canManageImports"
-            type="button"
-            variant="secondary"
             :loading="exporting"
             :disabled="exporting"
             :aria-busy="exporting"
@@ -176,21 +148,6 @@ function closeGroupDeletion(): void {
     <UiNotification v-if="exportStatus" tone="success" live="polite">{{
       exportStatus
     }}</UiNotification>
-    <ProductImportDialog
-      :open="importOpened"
-      @close="importOpened = false"
-      @completed="load(1)"
-    />
-    <ProductPriceStatusImportDialog
-      :open="priceStatusImportOpened"
-      @close="priceStatusImportOpened = false"
-      @completed="load(1)"
-    />
-    <ProductGroupImportDialog
-      :open="groupImportOpened"
-      @close="groupImportOpened = false"
-      @completed="load(1)"
-    />
 
     <form
       class="admin-container rounded-xl bg-gray-50 p-4 sm:p-5"

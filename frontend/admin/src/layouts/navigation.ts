@@ -9,6 +9,8 @@ export type NavigationLink = {
   path: string
   section?: 'pages' | 'appearance' | 'stores'
   requiredPermission?: string
+  additionalPermission?: string
+  exact?: boolean
 }
 export type NavigationGroup = { label: string; links: NavigationLink[] }
 export type NavigationSection = {
@@ -35,7 +37,29 @@ export const adminNavigation: NavigationSection[] = [
             label: 'Список товаров',
             to: '/products',
             path: '/products',
+            exact: true,
             requiredPermission: 'catalog.manage',
+          },
+          {
+            label: 'Добавить массово товары',
+            to: '/products/import',
+            path: '/products/import',
+            requiredPermission: 'imports.manage',
+            additionalPermission: 'catalog.manage',
+          },
+          {
+            label: 'Цены и статусы',
+            to: '/products/price-status',
+            path: '/products/price-status',
+            requiredPermission: 'imports.manage',
+            additionalPermission: 'catalog.manage',
+          },
+          {
+            label: 'Объединить товары',
+            to: '/products/combine',
+            path: '/products/combine',
+            requiredPermission: 'imports.manage',
+            additionalPermission: 'catalog.manage',
           },
         ],
       },
@@ -198,7 +222,8 @@ export function visibleNavigation(
   hasPermission: (permission: string) => boolean,
 ): NavigationSection[] {
   const allowed = (link: NavigationLink) =>
-    !link.requiredPermission || hasPermission(link.requiredPermission)
+    (!link.requiredPermission || hasPermission(link.requiredPermission)) &&
+    (!link.additionalPermission || hasPermission(link.additionalPermission))
   return adminNavigation.flatMap((section) => {
     if (section.link) return allowed(section.link) ? [section] : []
     const groups = section.groups
@@ -214,7 +239,7 @@ export function isNavigationLinkActive(
 ): boolean {
   const pathMatches =
     route.path === link.path ||
-    (link.path !== '/' && route.path.startsWith(`${link.path}/`))
+    (!link.exact && link.path !== '/' && route.path.startsWith(`${link.path}/`))
   if (!pathMatches || !link.section) return pathMatches
   const section =
     route.query.section === 'appearance' || route.query.section === 'stores'

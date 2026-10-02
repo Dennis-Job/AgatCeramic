@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
-import { CheckCircle2, Download, Upload, X } from '@lucide/vue'
+import { nextTick, onActivated, onDeactivated, ref, watch } from 'vue'
+import { CheckCircle2, Download, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiDialog from '../../../components/ui/UiDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
+import PageHeader from '../../../components/shared/PageHeader.vue'
+import { RouterLink } from 'vue-router'
 import { useProductPriceStatusImport } from '../composables/useProductPriceStatusImport'
 
-const props = defineProps<{ open: boolean }>()
-const emit = defineEmits<{ close: []; completed: [] }>()
+const active = ref(true)
+onActivated(() => {
+  active.value = true
+})
+onDeactivated(() => {
+  active.value = false
+})
 const input = ref<HTMLInputElement | null>(null)
-const workflow = useProductPriceStatusImport(() => emit('completed'))
+const workflow = useProductPriceStatusImport(() => {})
 const {
   file,
   result,
@@ -33,7 +40,7 @@ function selectFile(event: Event) {
 watch([busy, downloading], async () => {
   await nextTick()
   if (
-    props.open &&
+    active.value &&
     (document.activeElement === document.body ||
       document.activeElement?.matches(':disabled'))
   )
@@ -42,52 +49,32 @@ watch([busy, downloading], async () => {
 </script>
 
 <template>
-  <UiDialog
-    :open="open"
-    labelledby="price-status-import-title"
-    describedby="price-status-import-description"
-    panel-class="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-card"
-    @close="emit('close')"
-  >
-    <header
-      class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 p-5 sm:px-7"
+  <AdminWorkspace mode="form">
+    <PageHeader
+      class="mb-7"
+      eyebrow="Товары"
+      title="Цены и статусы"
+      description="Массовое изменение цены, активности и распродажи из Excel."
     >
-      <div>
-        <h2
-          id="price-status-import-title"
-          class="text-xl font-bold text-gray-900"
+      <template #actions>
+        <RouterLink
+          to="/products"
+          class="text-sm font-medium text-primary-700 underline admin-focus"
+          >К списку товаров</RouterLink
         >
-          Цены и статусы из Excel
-        </h2>
-        <p
-          id="price-status-import-description"
-          class="mt-1 text-sm text-gray-500"
-        >
-          Безопасное массовое изменение только цены, активности и распродажи.
-        </p>
-      </div>
-      <UiButton
-        type="button"
-        variant="ghost"
-        size="sm"
-        aria-label="Закрыть окно импорта цен и статусов"
-        @click="emit('close')"
-        ><X :size="20" aria-hidden="true"
-      /></UiButton>
-    </header>
-    <div
-      class="min-h-0 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-7"
-    >
+      </template>
+    </PageHeader>
+    <div class="min-w-0 space-y-5">
       <section
         class="rounded-xl border border-gray-200 p-4 sm:p-5"
         aria-labelledby="price-status-preparation"
       >
-        <h3
+        <h2
           id="price-status-preparation"
           class="text-base font-semibold text-gray-900"
         >
           1. Скачайте и заполните шаблон
-        </h3>
+        </h2>
         <p class="mt-1 text-sm leading-6 text-gray-500">
           «Цены»: SKU, новая и необязательная старая цена. «Активность» и
           «Распродажа»: SKU и выбор «Да» или «Нет». Листы можно оставлять
@@ -111,9 +98,9 @@ watch([busy, downloading], async () => {
         class="rounded-xl border border-gray-200 p-4 sm:p-5"
         @submit.prevent="upload"
       >
-        <h3 class="text-base font-semibold text-gray-900">
+        <h2 class="text-base font-semibold text-gray-900">
           2. Загрузите заполненный файл
-        </h3>
+        </h2>
         <p id="price-status-file-help" class="mt-1 text-sm text-gray-500">
           XLSX до 10 МБ. Строки с ошибками не помешают обработать остальные.
         </p>
@@ -156,12 +143,16 @@ watch([busy, downloading], async () => {
                 ? 'Обработка…'
                 : 'Запустить обработку'
           }}</UiButton
-        ><UiNotification v-if="busy && !uploading" tone="info" live="polite"
-          >Файл обрабатывается в фоне. Окно можно закрыть.</UiNotification
+        ><UiNotification
+          v-if="active && busy && !uploading"
+          tone="info"
+          live="polite"
+          >Файл обрабатывается в фоне. Можно перейти на другую страницу и
+          вернуться в «Цены и статусы» за результатом.</UiNotification
         >
       </form>
-      <UiNotification v-if="error">{{ error }}</UiNotification
-      ><UiNotification v-if="notice" tone="success" live="polite">{{
+      <UiNotification v-if="active && error">{{ error }}</UiNotification
+      ><UiNotification v-if="active && notice" tone="success" live="polite">{{
         notice
       }}</UiNotification>
       <section
@@ -178,7 +169,7 @@ watch([busy, downloading], async () => {
         "
         aria-live="polite"
       >
-        <h3 class="flex items-center gap-2 font-semibold text-gray-900">
+        <h2 class="flex items-center gap-2 font-semibold text-gray-900">
           <CheckCircle2 v-if="finished" :size="20" aria-hidden="true" />{{
             result.status === 'failed'
               ? 'Обработка не завершена'
@@ -188,13 +179,13 @@ watch([busy, downloading], async () => {
                   : 'Обработка завершена'
                 : 'Обработка выполняется'
           }}
-        </h3>
+        </h2>
         <p class="mt-2 text-sm text-gray-700">
           Обработано: {{ result.processed_rows }} из {{ result.total_rows }}.
           Изменено: {{ result.updated_rows }}. Ошибок: {{ result.failed_rows }}.
         </p>
         <UiNotification
-          v-if="result.status === 'failed' && result.error_message"
+          v-if="active && result.status === 'failed' && result.error_message"
           >{{ result.error_message }}</UiNotification
         ><progress
           v-if="progress !== null"
@@ -204,7 +195,7 @@ watch([busy, downloading], async () => {
           aria-label="Ход обработки файла"
         >
           {{ progress }}%</progress
-        ><UiNotification v-if="pollingError"
+        ><UiNotification v-if="active && pollingError"
           >Не удалось обновить статус.
           <UiButton
             type="button"
@@ -225,5 +216,5 @@ watch([busy, downloading], async () => {
         >
       </section>
     </div>
-  </UiDialog>
+  </AdminWorkspace>
 </template>

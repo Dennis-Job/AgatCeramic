@@ -19,7 +19,7 @@ import {
 } from '../validation/importFiles'
 import { useFileImport } from './useFileImport'
 
-export function useProductImportDialog(onCompleted: () => void) {
+export function useProductImport(onCompleted: () => void) {
   const tab = ref<'products' | 'images'>('products')
   const importMode = ref<'template' | 'edit'>('template')
   const categories = ref<Category[]>([])
