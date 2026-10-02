@@ -148,7 +148,7 @@ test('Admin UI-kit states meet color contrast requirements', async ({
     page.getByRole('heading', { level: 1, name: 'UI-kit' }),
   ).toBeVisible()
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-ui-kit-section]')).toHaveCount(11)
+  await expect(page.locator('[data-ui-kit-section]')).toHaveCount(12)
   await expect(
     page.getByRole('heading', { level: 2, name: 'Пример auth-формы' }),
   ).toBeVisible()

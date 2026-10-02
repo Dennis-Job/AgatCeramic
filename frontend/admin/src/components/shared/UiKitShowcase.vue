@@ -20,6 +20,7 @@ import UiLoadingState from '../ui/UiLoadingState.vue'
 import UiPagination from '../ui/UiPagination.vue'
 import UiPopover from '../ui/UiPopover.vue'
 import UiRadio from '../ui/UiRadio.vue'
+import UiSegmentedControl from '../ui/UiSegmentedControl.vue'
 import UiSelect from '../ui/UiSelect.vue'
 import UiTable from '../ui/UiTable.vue'
 import UiTextarea from '../ui/UiTextarea.vue'
@@ -40,6 +41,12 @@ const message = ref('')
 const checked = ref(false)
 const checkedByDefault = ref(true)
 const checkboxValues = ref<Array<number | string>>(['porcelain'])
+const segmented = ref('')
+const segmentOptions = [
+  { value: '', label: 'Все' },
+  { value: '1', label: 'Активные', count: 124 },
+  { value: '0', label: 'Скрытые', count: 8 },
+]
 const radio = ref('standard')
 const disabledRadio = ref('disabled-selected')
 const isDialogOpen = ref(false)
@@ -98,6 +105,7 @@ const uiComponents = [
   'UiPagination',
   'UiPopover',
   'UiRadio',
+  'UiSegmentedControl',
   'UiSelect',
   'UiTable',
   'UiTextarea',
@@ -384,6 +392,8 @@ function submitAuthPreview(): void {
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton>Основная</UiButton>
           <UiButton variant="secondary">Вторичная</UiButton>
+          <UiButton variant="surface">На белой поверхности</UiButton>
+          <UiButton variant="surface" disabled>Поверхность недоступна</UiButton>
           <UiButton variant="danger">Опасное действие</UiButton>
           <UiButton variant="ghost">Прозрачная</UiButton>
           <UiButton variant="danger-ghost">Удалить</UiButton>
@@ -750,6 +760,30 @@ function submitAuthPreview(): void {
             Недоступный
           </UiRadio>
         </div>
+      </div>
+    </UiCard>
+
+    <UiCard data-ui-kit-section="segmented">
+      <h2 class="text-lg font-semibold text-gray-900">
+        Сегментированные переключатели
+      </h2>
+      <p class="mt-1 text-sm text-gray-500">
+        <code>ui/UiSegmentedControl.vue</code>
+      </p>
+      <div class="mt-4 grid gap-6 lg:grid-cols-2">
+        <UiSegmentedControl
+          v-model="segmented"
+          name="ui-kit-segmented"
+          label="Состояние"
+          :options="segmentOptions"
+        />
+        <UiSegmentedControl
+          model-value="1"
+          name="ui-kit-segmented-disabled"
+          label="Недоступный переключатель"
+          :options="segmentOptions"
+          disabled
+        />
       </div>
     </UiCard>
 

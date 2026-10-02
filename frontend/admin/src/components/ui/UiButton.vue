@@ -3,7 +3,8 @@ import { computed, useAttrs } from 'vue'
 defineOptions({ inheritAttrs: false })
 const props = withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'danger-ghost'
+    variant?:
+      'primary' | 'secondary' | 'surface' | 'danger' | 'ghost' | 'danger-ghost'
     size?: 'sm' | 'md' | 'lg'
     loading?: boolean
     disabled?: boolean
@@ -24,9 +25,11 @@ const classes = computed(() => [
       ? 'bg-error-500 text-white hover:bg-error-700 disabled:bg-gray-500 disabled:hover:bg-gray-500'
       : props.variant === 'danger-ghost'
         ? 'text-error-500 hover:bg-error-50 hover:text-error-700 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
-        : props.variant === 'secondary'
-          ? 'border border-transparent bg-gray-50 text-gray-900 hover:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100 disabled:hover:text-gray-500'
-          : 'text-gray-600 hover:bg-gray-50 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500',
+        : props.variant === 'surface'
+          ? 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
+          : props.variant === 'secondary'
+            ? 'border border-transparent bg-gray-50 text-gray-900 hover:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100 disabled:hover:text-gray-500'
+            : 'text-gray-600 hover:bg-gray-50 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500',
   attrs.class,
 ])
 const forwarded = computed(() => {

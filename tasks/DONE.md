@@ -57,3 +57,19 @@
   SPA-переходах. UI Design Guard accepted; lint/format/build, 69 unit,
   полный macOS E2E 267/267; Linux imports/navigation 37/37 и product baseline 6/6.
   [Отчёт и изменённые файлы](../docs/ADMIN_PRODUCT_IMPORT_PAGES_REPORT.md).
+
+- [x] Доработка фильтров товаров от 2026-10-02: скрыты лейблы поиска/категории/бренда;
+  активность и распродажа представлены общим сегментированным переключателем
+  в Seller UI. Сохранены фильтрация, сброс и доступность. UI Design Guard accepted;
+  lint/format исходников/build, 69 unit и полный strict E2E 268/268 каждой macOS/Linux.
+  [Отчёт и изменённые файлы](../docs/ADMIN_PRODUCT_FILTER_REFINEMENT_REPORT.md).
+
+- [x] Продолжение фильтров товаров от 2026-10-02: скрыты заголовки сегментов,
+  белая активная кнопка сброса с голубым hover, четыре бейджа количества по
+  текущему поиску/категории/бренду. Независимый UI Design Guard accepted;
+  lint/format исходников/build, 73 unit, полный strict E2E 270/270 на macOS и Linux.
+  [Отчёт и изменённые файлы](../docs/ADMIN_PRODUCT_FILTER_COUNTS_REPORT.md).
+
+- [x] Уточнение кнопки «Сбросить» от 2026-10-02: удалён border у surface-варианта.
+  Тесты и сборка после этой правки не запускались по указанию владельца.
+  [Изменённые файлы и ограничения проверки](../docs/ADMIN_PRODUCT_FILTER_COUNTS_REPORT.md).

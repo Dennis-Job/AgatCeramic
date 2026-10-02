@@ -346,6 +346,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('category_id') === '1'
     )
   })
@@ -360,6 +361,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('is_active') === '1'
     )
   })
@@ -373,6 +375,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('is_on_sale') === '1'
     )
   })
@@ -386,6 +389,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('search') === 'монте'
     )
   })
@@ -412,6 +416,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       !url.searchParams.has('search') &&
       !url.searchParams.has('category_id') &&
       !url.searchParams.has('is_active') &&

@@ -20,12 +20,11 @@ import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
-import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
-import UiRadio from '../../../components/ui/UiRadio.vue'
+import UiSegmentedControl from '../../../components/ui/UiSegmentedControl.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
 import EditorSteps from './ProductEditorSteps.vue'
@@ -55,6 +54,8 @@ const {
   success,
   confirmError,
   filterResultStatus,
+  filterCountsLoading,
+  filterCountsError,
   exportStatus,
   exporting,
   productCountUnavailable,
@@ -155,64 +156,53 @@ function closeGroupDeletion(): void {
       @submit.prevent
     >
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <UiField class="xl:col-span-2" label="Поиск"
-          ><UiInput
-            v-model="filters.search"
-            class="mt-1.5"
-            searchable
-            placeholder="Название, SKU, артикул"
-        /></UiField>
-        <UiField label="Категория"
-          ><UiSelect
-            v-model="filters.category_id"
-            class="mt-1.5"
-            :options="filterCategoryOptions"
-            accessible-name="Категория"
-            search-placeholder="Начните вводить название категории"
-            searchable
-        /></UiField>
-        <UiField label="Бренд"
-          ><UiSelect
-            v-model="filters.brand_id"
-            class="mt-1.5"
-            :options="filterBrandOptions"
-            accessible-name="Бренд"
-            search-placeholder="Начните вводить название бренда"
-            searchable
-        /></UiField>
+        <UiInput
+          v-model="filters.search"
+          class="xl:col-span-2"
+          aria-label="Поиск"
+          searchable
+          placeholder="Название, SKU, артикул"
+        />
+        <UiSelect
+          v-model="filters.category_id"
+          :options="filterCategoryOptions"
+          accessible-name="Категория"
+          search-placeholder="Начните вводить название категории"
+          searchable
+        />
+        <UiSelect
+          v-model="filters.brand_id"
+          :options="filterBrandOptions"
+          accessible-name="Бренд"
+          search-placeholder="Начните вводить название бренда"
+          searchable
+        />
       </div>
-      <div class="mt-5 grid gap-4 xl:grid-cols-2">
-        <fieldset>
-          <legend class="text-sm font-semibold text-gray-700">
-            Активность
-          </legend>
-          <div class="mt-2 grid gap-2 sm:grid-cols-3">
-            <UiRadio
-              v-for="option in activityOptions"
-              :key="option.value"
-              v-model="filters.is_active"
-              :value="option.value"
-              name="product-activity-filter"
-              >{{ option.label }}</UiRadio
-            >
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend class="text-sm font-semibold text-gray-700">
-            Распродажа
-          </legend>
-          <div class="mt-2 grid gap-2 sm:grid-cols-3">
-            <UiRadio
-              v-for="option in saleOptions"
-              :key="option.value"
-              v-model="filters.is_on_sale"
-              :value="option.value"
-              name="product-sale-filter"
-              >{{ option.label }}</UiRadio
-            >
-          </div>
-        </fieldset>
+      <div class="mt-4 grid gap-4 xl:grid-cols-2">
+        <UiSegmentedControl
+          v-model="filters.is_active"
+          label="Активность"
+          hide-label
+          :counts-loading="filterCountsLoading"
+          name="product-activity-filter"
+          :options="activityOptions"
+        />
+        <UiSegmentedControl
+          v-model="filters.is_on_sale"
+          label="Распродажа"
+          hide-label
+          :counts-loading="filterCountsLoading"
+          name="product-sale-filter"
+          :options="saleOptions"
+        />
       </div>
+      <p
+        v-if="filterCountsError"
+        class="mt-2 text-xs text-gray-500"
+        role="status"
+      >
+        {{ filterCountsError }}
+      </p>
       <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
         <UiBadge
           data-testid="product-count"
@@ -222,7 +212,7 @@ function closeGroupDeletion(): void {
           >{{ productCountLabel }}</UiBadge
         ><UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           :disabled="!hasActiveFilters"
           @click="resetFilters"
           >Сбросить</UiButton

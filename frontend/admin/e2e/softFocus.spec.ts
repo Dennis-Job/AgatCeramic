@@ -5,7 +5,7 @@ import { mockAdminBaseline } from './adminBaselineApi'
 const widths = [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]
 const edge = 'rgb(100, 125, 209)'
 
-test('product radio selection stays subtle with a pointer and has one soft keyboard halo at every width', async ({
+test('product segment selection stays subtle with a pointer and has one soft keyboard halo at every width', async ({
   page,
 }) => {
   await mockAdminBaseline(page)
@@ -18,7 +18,7 @@ test('product radio selection stays subtle with a pointer and has one soft keybo
     await label.click()
     await expect(radio).toBeChecked()
     await expect(label).toHaveCSS('border-width', '1px')
-    await expect(label).toHaveCSS('border-color', 'rgb(186, 213, 255)')
+    await expect(label).toHaveCSS('border-color', 'rgb(227, 233, 241)')
     await expect(label).toHaveCSS('box-shadow', 'none')
     await page.screenshot({
       path: `.tmp/soft-focus/products-pointer-${width}.png`,
@@ -167,16 +167,20 @@ test('forced colors retain a system keyboard outline for buttons, fields and rad
   await expect(radio.locator('..')).toHaveCSS('outline-width', '2px')
   await expect(radio.locator('..')).toHaveCSS('outline-style', 'solid')
   await expect(radio.locator('..')).toHaveCSS('box-shadow', 'none')
-  await expect(radio.locator('..').locator('svg')).toHaveCSS(
-    'visibility',
-    'visible',
-  )
+  await expect(radio).toBeChecked()
+  await expect(radio.locator('..')).toHaveCSS('forced-color-adjust', 'none')
   const unselected = page
     .getByRole('group', { name: 'Активность', exact: true })
     .getByRole('radio', { name: 'Активные', exact: true })
-  await expect(unselected.locator('..').locator('svg')).toHaveCSS(
-    'visibility',
-    'hidden',
+  await expect(unselected).not.toBeChecked()
+  expect(
+    await radio
+      .locator('..')
+      .evaluate((element) => getComputedStyle(element).backgroundColor),
+  ).not.toBe(
+    await unselected
+      .locator('..')
+      .evaluate((element) => getComputedStyle(element).backgroundColor),
   )
   const button = page.getByRole('button', {
     name: 'Добавить товар',

@@ -179,3 +179,23 @@ opacity. Общий focus outline также задаётся токенами �
 Полнота инвентаря и tokens закреплена `tests/uiKitShowcase.test.ts`. E2E проверяет search/no-results,
 teleport menu, confirm busy/error, disabled-контракт, keyboard/focus, axe и responsive widths
 320/640/768/1024/1280 px.
+
+`UiSegmentedControl` — общий выбор одного значения из нескольких: `modelValue`,
+`options` (`value`, `label`, опциональный `disabled`), `name`, `label` и `disabled`.
+Общая серо-голубая подложка, белый выбранный сегмент с синим текстом; размеры,
+радиусы и focus используют существующие tokens. Native radio сохраняют Tab,
+стрелки, Space и объявление выбранного значения; fieldset/legend именуют группу.
+Длинные подписи переносятся, все сегменты получают одинаковую высоту.
+В фильтрах товаров поиск/категория/бренд используют доступные названия без
+видимых лейблов; activity/sale сохраняют три состояния и существующий API.
+
+У `UiSegmentedControl` `hideLabel` скрывает legend визуально, сохраняя название
+группы. Опция `count` добавляет `UiBadge`, а `countsLoading` показывает «…»;
+`null` отображается как «—», ноль — как 0. Доступное имя radio остаётся подписью
+варианта, число связано через `aria-describedby`. На узком экране бейдж может
+перенестись целиком под подпись. В `/products` счётчики учитывают поиск,
+категорию и бренд; activity/sale не ограничивают цифры соседних вариантов.
+
+`UiButton variant="surface"` — белая поверхность без border,
+hover primary50/primary600, обычный общий keyboard focus. Disabled состояние
+прозрачное и не принимает hover-оформление. Применяется к сбросу фильтров.

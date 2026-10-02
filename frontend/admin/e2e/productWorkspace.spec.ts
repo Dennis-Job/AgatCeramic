@@ -6,6 +6,72 @@ const widths = [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]
 const name =
   'Керамогранит коллекционный полированный с декоративной фактурой белого мрамора 60×120 см'
 
+test('product segmented filters support keyboard, reset and compact layouts', async ({
+  page,
+}) => {
+  await mockCatalogApi(page)
+  await page.goto('/products')
+  const filters = page.getByRole('search')
+  const activity = filters.getByRole('group', { name: 'Активность' })
+  const sale = filters.getByRole('group', { name: 'Распродажа', exact: true })
+  await expect(filters.getByLabel('Поиск', { exact: true })).toBeVisible()
+  for (const label of ['Поиск', 'Категория', 'Бренд']) {
+    await expect(filters.getByText(label, { exact: true })).toHaveCount(0)
+  }
+  await activity.getByRole('radio', { name: 'Все', exact: true }).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(activity.getByRole('radio', { name: 'Активные' })).toBeChecked()
+  await page.keyboard.press('ArrowRight')
+  await expect(activity.getByRole('radio', { name: 'Скрытые' })).toBeChecked()
+  await sale.getByRole('radio', { name: 'Все', exact: true }).focus()
+  await page.keyboard.press('ArrowLeft')
+  await expect(sale.getByRole('radio', { name: 'Не распродажа' })).toBeChecked()
+  await expect(activity.getByRole('radio', { name: 'Скрытые' })).toBeChecked()
+  await filters.getByRole('button', { name: 'Сбросить' }).click()
+  await expect(
+    activity.getByRole('radio', { name: 'Все', exact: true }),
+  ).toBeChecked()
+  await expect(
+    sale.getByRole('radio', { name: 'Все', exact: true }),
+  ).toBeChecked()
+
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.evaluate(() => document.fonts.ready)
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+      )
+      .toBe(true)
+    await filters.screenshot({
+      path: `.tmp/product-filter-review/filters-${width}.png`,
+    })
+  }
+  await activity.getByRole('radio', { name: 'Все', exact: true }).focus()
+  await page.keyboard.press('ArrowRight')
+  const selected = activity.getByRole('radio', { name: 'Активные' })
+  await expect(selected).toBeFocused()
+  await expect(selected.locator('..')).toHaveCSS(
+    'box-shadow',
+    'rgba(100, 125, 209, 0.14) 0px 0px 0px 4px',
+  )
+  await filters.screenshot({
+    path: '.tmp/product-filter-review/filters-focus.png',
+  })
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+
+  await page.goto('/ui-kit')
+  const disabled = page.getByRole('group', {
+    name: 'Недоступный переключатель',
+  })
+  for (const radio of await disabled.getByRole('radio').all())
+    await expect(radio).toBeDisabled()
+  await expect(disabled.getByRole('radio', { name: 'Активные' })).toBeChecked()
+  await page
+    .locator('[data-ui-kit-section="segmented"]')
+    .screenshot({ path: '.tmp/product-filter-review/segmented-disabled.png' })
+})
+
 test('wide product workspace keeps details, sticky headers and actions inside its scroll region', async ({
   page,
 }) => {

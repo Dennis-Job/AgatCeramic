@@ -40,6 +40,7 @@ import {
 } from '../services/products'
 import { useAuthStore } from '../../../stores/auth'
 import { compareAlphabetically, sortByLabel } from '../../../utils/alphabetical'
+import { useProductFilterCounts } from './useProductFilterCounts'
 import { useProductEditorSteps } from './useProductEditorSteps'
 import {
   normalizedProductName,
@@ -85,6 +86,20 @@ export function useProductEditor() {
     is_active: '',
     is_on_sale: '',
   })
+  const {
+    counts: filterCounts,
+    loading: filterCountsLoading,
+    error: filterCountsError,
+    refresh: refreshFilterCounts,
+  } = useProductFilterCounts(() => ({
+    search: filters.value.search.trim() || undefined,
+    category_id: filters.value.category_id
+      ? Number(filters.value.category_id)
+      : undefined,
+    brand_id: filters.value.brand_id
+      ? Number(filters.value.brand_id)
+      : undefined,
+  }))
   const sort = ref<ProductSort>('created_at')
   const direction = ref<SortDirection>('desc')
   const form = ref<ProductPayload>(emptyProduct())
@@ -149,16 +164,16 @@ export function useProductEditor() {
     { value: 'related', label: 'Сопутствующий товар' },
     { value: 'recommended', label: 'Рекомендуемый товар' },
   ])
-  const activityOptions = [
+  const activityOptions = computed(() => [
     { value: '', label: 'Все' },
-    { value: '1', label: 'Активные' },
-    { value: '0', label: 'Скрытые' },
-  ]
-  const saleOptions = [
+    { value: '1', label: 'Активные', count: filterCounts.value.active },
+    { value: '0', label: 'Скрытые', count: filterCounts.value.hidden },
+  ])
+  const saleOptions = computed(() => [
     { value: '', label: 'Все' },
-    { value: '1', label: 'Распродажа' },
-    { value: '0', label: 'Не распродажа' },
-  ]
+    { value: '1', label: 'Распродажа', count: filterCounts.value.sale },
+    { value: '0', label: 'Не распродажа', count: filterCounts.value.regular },
+  ])
   function flatten(
     nodes: Category[],
     depth = 0,
@@ -700,6 +715,7 @@ export function useProductEditor() {
       editing.value = saved
       form.value = toPayload(saved)
       await load()
+      void refreshFilterCounts()
       await loadDetails(saved, copiedAttributes)
       success.value = 'Основные и коммерческие данные сохранены.'
       activeStep.value = 'attributes'
@@ -995,6 +1011,7 @@ export function useProductEditor() {
       await deleteProduct(deleting.value.id)
       deleting.value = null
       await load()
+      void refreshFilterCounts()
     } catch (reason) {
       confirmError.value =
         reason instanceof Error ? reason.message : 'Не удалось удалить товар.'
@@ -1032,6 +1049,7 @@ export function useProductEditor() {
       form.value = toPayload(saved)
       success.value = 'Товар опубликован.'
       await load()
+      void refreshFilterCounts()
     } catch (reason) {
       error.value =
         reason instanceof Error
@@ -1054,6 +1072,7 @@ export function useProductEditor() {
       form.value = toPayload(saved)
       success.value = 'Товар скрыт и перемещён в черновики.'
       await load()
+      void refreshFilterCounts()
     } catch (reason) {
       error.value =
         reason instanceof Error ? reason.message : 'Не удалось скрыть товар.'
@@ -1098,6 +1117,8 @@ export function useProductEditor() {
     success,
     confirmError,
     filterResultStatus,
+    filterCountsLoading,
+    filterCountsError,
     exportStatus,
     exporting,
     productCountUnavailable,

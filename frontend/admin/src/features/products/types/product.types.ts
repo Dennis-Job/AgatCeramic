@@ -33,6 +33,13 @@ export type ProductUnit =
 export type ProductSort = 'sku' | 'name' | 'created_at' | 'updated_at'
 export type SortDirection = 'asc' | 'desc'
 
+export type ProductFilterCounts = {
+  active: number | null
+  hidden: number | null
+  sale: number | null
+  regular: number | null
+}
+
 export type Product = {
   id: number
   category_id: number
