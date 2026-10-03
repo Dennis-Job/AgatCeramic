@@ -19,16 +19,6 @@ const {
 <template>
   <form id="product-attributes-form" @submit.prevent="saveAttributes">
     <h3 class="font-bold text-gray-900">Характеристики этой позиции</h3>
-    <p class="mt-1 text-sm text-gray-500">
-      <template v-if="selectedGroupId"
-        >Различающиеся характеристики изменяются только у этой позиции. Общие
-        характеристики автоматически применяются ко всем товарам
-        группы.</template
-      ><template v-else
-        >Характеристики принадлежат только этой позиции. Черновик можно
-        сохранить незаполненным.</template
-      >
-    </p>
     <div class="mt-5 space-y-4">
       <section
         v-for="section in attributeSections"

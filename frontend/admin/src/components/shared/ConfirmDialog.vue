@@ -3,6 +3,7 @@
 import UiDialog from '../ui/UiDialog.vue'
 import UiNotification from '../ui/UiNotification.vue'
 import UiButton from '../ui/UiButton.vue'
+import UiDialogFooter from '../ui/UiDialogFooter.vue'
 
 withDefaults(
   defineProps<{
@@ -35,14 +36,13 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
     <h2 id="confirm-dialog-title" class="text-lg font-bold text-gray-900">
       {{ title }}
     </h2>
-    <p
-      id="confirm-dialog-description"
-      class="mt-3 text-sm leading-6 text-gray-500"
-    >
-      {{ description }}
-    </p>
     <UiNotification v-if="error">{{ error }}</UiNotification>
-    <div class="mt-6 flex flex-wrap justify-end gap-3">
+    <UiDialogFooter>
+      <template #note
+        ><span id="confirm-dialog-description">{{
+          description
+        }}</span></template
+      >
       <UiButton
         type="button"
         variant="ghost"
@@ -58,6 +58,6 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
         @click="emit('confirm')"
         >{{ busy ? 'Удаление…' : confirmLabel }}</UiButton
       >
-    </div>
+    </UiDialogFooter>
   </UiDialog>
 </template>

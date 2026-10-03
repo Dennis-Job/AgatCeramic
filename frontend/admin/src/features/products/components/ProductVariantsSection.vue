@@ -27,9 +27,6 @@ const {
 <template>
   <form id="product-group-form" @submit.prevent="saveGroup">
     <h3 class="font-bold text-gray-900">Варианты модели</h3>
-    <p class="text-sm text-gray-500">
-      Объедините самостоятельные товары и выберите различающиеся характеристики.
-    </p>
     <UiAlert
       v-if="
         copiedFromProduct &&
@@ -103,10 +100,6 @@ const {
           >{{ saving ? 'Поиск…' : 'Найти' }}</UiButton
         >
       </div>
-      <p class="mb-3 text-xs text-gray-500">
-        Первые 25 совпадений той же категории и бренда. Уточните поиск, если
-        товара нет.
-      </p>
       <div class="grid gap-2 sm:grid-cols-2">
         <UiCheckbox
           v-for="p in groupProducts.filter(

@@ -2,6 +2,7 @@
 import { X } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -36,9 +37,6 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           <h2 id="role-dialog-title" class="text-lg font-bold text-gray-900">
             {{ title }}
           </h2>
-          <p id="role-dialog-description" class="mt-1 text-sm text-gray-500">
-            Настройте роль и доступные ей права.
-          </p>
         </div>
         <UiButton
           type="button"
@@ -89,7 +87,12 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           </div>
         </fieldset>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          ><span id="role-dialog-description"
+            >Настройте роль и доступные ей права.</span
+          ></template
+        >
         <UiButton
           type="button"
           variant="ghost"
@@ -99,7 +102,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         ><UiButton type="submit" :loading="busy" :disabled="busy">{{
           busy ? 'Сохранение…' : 'Сохранить'
         }}</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>

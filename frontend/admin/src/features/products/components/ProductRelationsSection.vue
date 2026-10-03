@@ -29,10 +29,6 @@ const {
       <h3 id="product-relations-title" class="font-bold text-gray-900">
         Сопутствующие товары
       </h3>
-      <p class="text-sm text-gray-500">
-        Добавьте товары, которые стоит предложить покупателю вместе с этой
-        позицией.
-      </p>
     </div>
     <div class="mt-4 flex flex-col gap-2 lg:flex-row">
       <UiInput

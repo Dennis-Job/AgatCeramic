@@ -32,9 +32,6 @@ const {
           <h3 id="product-review-title" class="font-bold text-gray-900">
             Информация о товаре
           </h3>
-          <p class="text-sm text-gray-500">
-            Проверьте основные данные перед завершением.
-          </p>
         </div>
       </div>
       <div class="flex flex-wrap justify-end gap-2">

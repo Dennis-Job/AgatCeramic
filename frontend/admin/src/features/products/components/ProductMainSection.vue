@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -144,9 +143,5 @@ const {
     <UiField class="sm:col-span-2" label="Описание"
       ><UiTextarea v-model="form.description" class="mt-1.5"
     /></UiField>
-    <UiAlert class="sm:col-span-2" tone="info" live="polite"
-      >Новый товар сохранится как черновик. Публикация доступна на шаге
-      «Проверка».</UiAlert
-    >
   </form>
 </template>

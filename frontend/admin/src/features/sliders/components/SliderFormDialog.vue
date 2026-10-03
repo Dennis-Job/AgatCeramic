@@ -3,6 +3,7 @@ import UiNotification from '../../../components/ui/UiNotification.vue'
 import { ref, watch } from 'vue'
 import { ArrowDown, ArrowUp, X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -103,9 +104,6 @@ watch(
       </div>
 
       <h3 class="mt-6 font-semibold">Баннеры в порядке показа</h3>
-      <p class="mt-1 text-sm text-gray-500">
-        В публичном слайдере показываются только опубликованные баннеры.
-      </p>
       <ol v-if="selectedBanners.length" class="mt-3 space-y-2">
         <li
           v-for="(banner, index) in selectedBanners"
@@ -204,7 +202,11 @@ watch(
           Баннеры не найдены.
         </p>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          >В публичном слайдере показываются только опубликованные
+          баннеры.</template
+        >
         <UiButton
           type="button"
           variant="secondary"
@@ -213,7 +215,7 @@ watch(
           >Отмена</UiButton
         >
         <UiButton :loading="busy">Сохранить</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>

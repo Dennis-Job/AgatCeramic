@@ -2,6 +2,7 @@
 import { X } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import type { CategoryPayload } from '../types/category.types'
 import CategoryMainSection from './CategoryMainSection.vue'
@@ -37,12 +38,6 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           >
             {{ title }}
           </h2>
-          <p
-            id="category-dialog-description"
-            class="mt-1 text-sm text-gray-500"
-          >
-            Настройте отображаемое название и адрес страницы категории.
-          </p>
         </div>
         <UiButton
           type="button"
@@ -61,7 +56,12 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         :update-name="updateName"
         :update-slug="updateSlug"
       />
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          ><span id="category-dialog-description"
+            >Настройте отображаемое название и адрес страницы категории.</span
+          ></template
+        >
         <UiButton
           type="button"
           variant="ghost"
@@ -69,7 +69,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           @click="emit('close')"
           >Отмена</UiButton
         ><UiButton :loading="busy">Сохранить</UiButton>
-      </div>
+      </UiDialogFooter>
     </form></UiDialog
   >
 </template>

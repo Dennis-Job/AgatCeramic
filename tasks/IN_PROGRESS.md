@@ -1,4 +1,7 @@
 # IN PROGRESS
 
-Активных задач нет. Текущие результаты зафиксированы в `DONE.md` и
-`docs/ADMIN_PRODUCT_PHOTO_MODAL_REPORT.md`.
+# IN PROGRESS
+
+Активных задач нет. Последняя задача: единый информационный footer модальных
+окон Admin, принята UI Design Guard. Подробности —
+`docs/ADMIN_DIALOG_INFORMATION_REPORT.md`.

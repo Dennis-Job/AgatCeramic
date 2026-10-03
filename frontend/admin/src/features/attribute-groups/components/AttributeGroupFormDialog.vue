@@ -2,6 +2,7 @@
 import { X } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
@@ -41,12 +42,6 @@ const emit = defineEmits<{
           >
             {{ title }}
           </h2>
-          <p
-            id="attribute-group-dialog-description"
-            class="mt-1 text-sm text-gray-500"
-          >
-            Сгруппируйте характеристики для карточек товаров.
-          </p>
         </div>
         <UiButton
           type="button"
@@ -88,7 +83,12 @@ const emit = defineEmits<{
             @update:model-value="form.sort_order = Number($event)"
         /></label>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          ><span id="attribute-group-dialog-description"
+            >Сгруппируйте характеристики для карточек товаров.</span
+          ></template
+        >
         <UiButton
           type="button"
           variant="ghost"
@@ -96,7 +96,7 @@ const emit = defineEmits<{
           @click="emit('close')"
           >Отмена</UiButton
         ><UiButton :loading="busy">Сохранить</UiButton>
-      </div>
+      </UiDialogFooter>
     </form></UiDialog
   >
 </template>

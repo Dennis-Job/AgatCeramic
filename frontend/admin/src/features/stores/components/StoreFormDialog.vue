@@ -2,6 +2,7 @@
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import { X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -81,11 +82,11 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           @update:checked="form.is_published = $event"
           >Опубликовать магазин</UiCheckbox
         >
-        <p class="text-sm text-gray-500">
-          Часы работы можно настроить после сохранения магазина.
-        </p>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          >Часы работы можно настроить после сохранения магазина.</template
+        >
         <UiButton
           type="button"
           variant="secondary"
@@ -94,7 +95,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           >Отмена</UiButton
         >
         <UiButton :loading="busy">Сохранить</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>

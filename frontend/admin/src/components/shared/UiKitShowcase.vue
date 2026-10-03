@@ -9,6 +9,7 @@ import UiAlert from '../ui/UiAlert.vue'
 import UiNotification from '../ui/UiNotification.vue'
 import UiBadge from '../ui/UiBadge.vue'
 import UiButton from '../ui/UiButton.vue'
+import UiDialogFooter from '../ui/UiDialogFooter.vue'
 import UiCard from '../ui/UiCard.vue'
 import UiCheckbox from '../ui/UiCheckbox.vue'
 import UiDialog from '../ui/UiDialog.vue'
@@ -1185,12 +1186,15 @@ function submitAuthPreview(): void {
       <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-900">
         Обычный диалог
       </h2>
-      <p id="ui-kit-dialog-description" class="mt-2 text-sm text-gray-500">
-        Проверьте закрытие через Escape, клик по фону и возврат фокуса.
-      </p>
-      <div class="mt-6 flex justify-end">
+      <UiDialogFooter>
+        <template #note
+          ><span id="ui-kit-dialog-description"
+            >Проверьте закрытие через Escape, клик по фону и возврат
+            фокуса.</span
+          ></template
+        >
         <UiButton @click="isDialogOpen = false">Закрыть</UiButton>
-      </div>
+      </UiDialogFooter>
     </UiDialog>
     <ConfirmDialog
       :open="confirmMode !== null"

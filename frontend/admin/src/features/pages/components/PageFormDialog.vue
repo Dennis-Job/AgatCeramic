@@ -2,6 +2,7 @@
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import { X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
@@ -80,12 +81,12 @@ const emit = defineEmits<{ close: []; submit: [] }>()
             maxlength="100000"
             rows="12"
         /></UiField>
-        <p class="text-sm text-gray-500">
-          Сохранение меняет только черновик. Публикация доступна отдельным
-          действием после сохранения.
-        </p>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          >Сохранение меняет только черновик. Публикация доступна отдельным
+          действием после сохранения.</template
+        >
         <UiButton
           type="button"
           variant="secondary"
@@ -94,7 +95,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           >Отмена</UiButton
         >
         <UiButton :loading="busy">Сохранить черновик</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>

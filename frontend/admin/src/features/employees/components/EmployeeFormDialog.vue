@@ -2,6 +2,7 @@
 import { X } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -47,12 +48,6 @@ const statusOptions = [
           >
             {{ title }}
           </h2>
-          <p
-            id="employee-dialog-description"
-            class="mt-1 text-sm text-gray-500"
-          >
-            Укажите учётные данные, статус и роли.
-          </p>
         </div>
         <UiButton
           type="button"
@@ -128,7 +123,12 @@ const statusOptions = [
           </div>
         </fieldset>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          ><span id="employee-dialog-description"
+            >Укажите учётные данные, статус и роли.</span
+          ></template
+        >
         <UiButton
           type="button"
           variant="ghost"
@@ -138,7 +138,7 @@ const statusOptions = [
         ><UiButton type="submit" :loading="busy" :disabled="busy">{{
           busy ? 'Сохранение…' : 'Сохранить'
         }}</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>

@@ -14,6 +14,7 @@ import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useSettingsWorkspace } from '../composables/useSettingsWorkspace'
 import type {
@@ -327,13 +328,6 @@ async function confirmPublish(): Promise<void> {
           {{ preview ? label(documentOptions, preview.type) : '' }} ·
           {{ preview?.version }}
         </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          {{
-            preview?.published_at
-              ? 'Опубликованная версия'
-              : 'Черновик. Проверьте текст перед публикацией.'
-          }}
-        </p>
         <div
           class="mt-4 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-gray-25 p-4"
         >
@@ -341,7 +335,12 @@ async function confirmPublish(): Promise<void> {
             class="whitespace-pre-wrap break-words font-sans text-sm text-gray-700"
             >{{ preview?.body }}</pre>
         </div>
-        <div class="mt-5 flex flex-wrap justify-end gap-2">
+        <UiDialogFooter>
+          <template #note>{{
+            preview?.published_at
+              ? 'Опубликованная версия'
+              : 'Черновик. Проверьте текст перед публикацией.'
+          }}</template>
           <UiButton
             variant="secondary"
             :disabled="Boolean(busyAction)"
@@ -355,7 +354,7 @@ async function confirmPublish(): Promise<void> {
             @click="confirmPublish"
             >Опубликовать эту версию</UiButton
           >
-        </div>
+        </UiDialogFooter>
       </UiDialog>
 
       <UiCard>

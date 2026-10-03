@@ -7,6 +7,7 @@ import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import type { AttributePayload, AttributeType } from '../types/attribute.types'
 import type { AttributeGroup } from '../../attribute-groups/types/attributeGroup.types'
 import { slugPattern } from '../../catalog/validation/slug'
@@ -70,12 +71,6 @@ function removeOption(index: number): void {
           >
             {{ title }}
           </h2>
-          <p
-            id="attribute-dialog-description"
-            class="mt-1 text-sm text-gray-500"
-          >
-            Укажите тип значения и варианты выбора, если они нужны.
-          </p>
         </div>
         <UiButton
           type="button"
@@ -156,9 +151,6 @@ function removeOption(index: number): void {
           <div class="flex items-center justify-between">
             <div>
               <h3 class="font-semibold text-gray-800">Варианты</h3>
-              <p class="mt-0.5 text-xs text-gray-500">
-                Код должен быть уникален в пределах характеристики.
-              </p>
             </div>
             <UiButton type="button" variant="ghost" size="sm" @click="addOption"
               >Добавить</UiButton
@@ -200,7 +192,15 @@ function removeOption(index: number): void {
             @update:model-value="form.sort_order = Number($event)"
         /></label>
       </div>
-      <div class="mt-6 flex justify-end gap-3">
+      <UiDialogFooter>
+        <template #note>
+          <span id="attribute-dialog-description" class="block"
+            >Укажите тип значения и варианты выбора, если они нужны.</span
+          >
+          <span class="block"
+            >Код варианта должен быть уникален в пределах характеристики.</span
+          >
+        </template>
         <UiButton
           type="button"
           variant="secondary"
@@ -208,7 +208,7 @@ function removeOption(index: number): void {
           @click="emit('close')"
           >Отмена</UiButton
         ><UiButton :loading="busy">Сохранить</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>

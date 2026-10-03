@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { formatMoney } from '../../../utils/formatMoney'
 import {
   ArrowDown,
@@ -19,7 +20,7 @@ import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
@@ -99,6 +100,35 @@ const {
   hideProduct,
 } = editor
 type Step = typeof activeStep.value
+const footerNotes = computed(() => {
+  if (photosOnly.value)
+    return ['Загрузка, удаление и порядок фото сохраняются сразу.']
+  if (activeStep.value === 'main')
+    return editing.value
+      ? []
+      : [
+          'Новый товар сохранится как черновик. Публикация доступна на шаге «Проверка».',
+        ]
+  if (activeStep.value === 'attributes')
+    return [
+      selectedGroupId.value
+        ? 'Различающиеся характеристики изменяются только у этой позиции. Общие характеристики автоматически применяются ко всем товарам группы.'
+        : 'Характеристики принадлежат только этой позиции. Черновик можно сохранить незаполненным.',
+    ]
+  if (activeStep.value === 'images')
+    return ['Загрузка, удаление и порядок фото сохраняются сразу.']
+  if (activeStep.value === 'group')
+    return [
+      'Объедините самостоятельные товары и выберите различающиеся характеристики.',
+      'Первые 25 совпадений той же категории и бренда. Уточните поиск, если товара нет.',
+    ]
+  if (activeStep.value === 'review')
+    return [
+      'Проверьте основные данные перед завершением.',
+      'Добавьте товары, которые стоит предложить покупателю вместе с этой позицией.',
+    ]
+  return []
+})
 
 function requestProductDeletion(
   product: (typeof products.value)[number],
@@ -557,97 +587,92 @@ function closeGroupDeletion(): void {
           <ProductReviewSection /><ProductRelationsSection />
         </div>
       </div>
-      <footer
-        data-testid="product-editor-footer"
-        class="shrink-0 border-t border-gray-200 bg-white px-5 py-4 sm:px-6"
-      >
-        <div
-          class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end"
+      <UiDialogFooter flush data-testid="product-editor-footer">
+        <template v-if="footerNotes.length" #note>
+          <span v-for="note in footerNotes" :key="note" class="block">{{
+            note
+          }}</span>
+        </template>
+        <template v-if="photosOnly">
+          <UiButton type="button" :disabled="saving" @click="close"
+            >Готово</UiButton
+          >
+        </template>
+        <UiButton
+          v-else-if="activeStep === 'main'"
+          type="submit"
+          form="product-main-form"
+          :loading="saving"
+          :disabled="saving"
+          ><Save :size="17" />{{
+            saving ? 'Сохранение…' : 'Сохранить и продолжить'
+          }}</UiButton
         >
-          <template v-if="photosOnly">
-            <UiAlert class="sm:mr-auto" tone="info" live="polite">
-              Загрузка, удаление и порядок фото сохраняются сразу.
-            </UiAlert>
-            <UiButton type="button" :disabled="saving" @click="close"
-              >Готово</UiButton
-            >
-          </template>
-          <UiButton
-            v-else-if="activeStep === 'main'"
-            type="submit"
-            form="product-main-form"
-            :loading="saving"
-            :disabled="saving"
-            ><Save :size="17" />{{
-              saving ? 'Сохранение…' : 'Сохранить и продолжить'
-            }}</UiButton
-          >
-          <UiButton
-            v-else-if="activeStep === 'attributes'"
-            type="submit"
-            form="product-attributes-form"
-            :loading="saving"
-            :disabled="saving"
-            >{{ saving ? 'Сохранение…' : 'Сохранить и продолжить' }}</UiButton
-          >
-          <UiButton
-            v-else-if="activeStep === 'images'"
+        <UiButton
+          v-else-if="activeStep === 'attributes'"
+          type="submit"
+          form="product-attributes-form"
+          :loading="saving"
+          :disabled="saving"
+          >{{ saving ? 'Сохранение…' : 'Сохранить и продолжить' }}</UiButton
+        >
+        <UiButton
+          v-else-if="activeStep === 'images'"
+          type="button"
+          :disabled="saving"
+          @click="activeStep = 'group'"
+          >Продолжить</UiButton
+        >
+        <template v-else-if="activeStep === 'group'"
+          ><UiButton
+            v-if="selectedGroupId"
             type="button"
+            variant="danger-ghost"
+            class="sm:mr-auto"
             :disabled="saving"
-            @click="activeStep = 'group'"
-            >Продолжить</UiButton
-          >
-          <template v-else-if="activeStep === 'group'"
-            ><UiButton
-              v-if="selectedGroupId"
-              type="button"
-              variant="danger-ghost"
-              class="sm:mr-auto"
-              :disabled="saving"
-              @click="requestGroupDeletion"
-              >Удалить группу</UiButton
-            ><UiButton
-              type="button"
-              variant="ghost"
-              :disabled="saving"
-              @click="activeStep = 'review'"
-              >Не объединять</UiButton
-            ><UiButton
-              type="submit"
-              form="product-group-form"
-              :loading="saving"
-              :disabled="saving"
-              >{{ saving ? 'Сохранение…' : 'Сохранить группу' }}</UiButton
-            ></template
-          >
-          <template v-else
-            ><UiButton
-              type="button"
-              variant="ghost"
-              :disabled="saving"
-              @click="close"
-              >Закрыть</UiButton
-            ><UiButton
-              v-if="!form.is_active"
-              type="button"
-              :loading="saving"
-              :disabled="saving"
-              @click="publish"
-              >{{ saving ? 'Публикация…' : 'Опубликовать товар' }}</UiButton
-            ><UiButton
-              v-else
-              type="button"
-              variant="secondary"
-              :loading="saving"
-              :disabled="saving"
-              @click="hideProduct"
-              ><EyeOff :size="17" />{{
-                saving ? 'Скрытие…' : 'Скрыть товар'
-              }}</UiButton
-            ></template
-          >
-        </div>
-      </footer>
+            @click="requestGroupDeletion"
+            >Удалить группу</UiButton
+          ><UiButton
+            type="button"
+            variant="ghost"
+            :disabled="saving"
+            @click="activeStep = 'review'"
+            >Не объединять</UiButton
+          ><UiButton
+            type="submit"
+            form="product-group-form"
+            :loading="saving"
+            :disabled="saving"
+            >{{ saving ? 'Сохранение…' : 'Сохранить группу' }}</UiButton
+          ></template
+        >
+        <template v-else
+          ><UiButton
+            type="button"
+            variant="ghost"
+            :disabled="saving"
+            @click="close"
+            >Закрыть</UiButton
+          ><UiButton
+            v-if="!form.is_active"
+            type="button"
+            :loading="saving"
+            :disabled="saving"
+            @click="publish"
+            >{{ saving ? 'Публикация…' : 'Опубликовать товар' }}</UiButton
+          ><UiButton
+            v-else
+            type="button"
+            variant="secondary"
+            :loading="saving"
+            :disabled="saving"
+            @click="hideProduct"
+            ><EyeOff :size="17" />{{
+              saving ? 'Скрытие…' : 'Скрыть товар'
+            }}</UiButton
+          ></template
+        >
+      </UiDialogFooter>
     </UiDialog>
 
     <ConfirmDialog
