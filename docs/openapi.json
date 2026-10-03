@@ -4280,6 +4280,44 @@
                 }
             }
         },
+        "/admin/products/filter-counts": {
+            "get": {
+                "operationId": "listProductFilterCounts",
+                "summary": "Count products for the selected catalog filters",
+                "description": "Returns the activity and sale facet totals in one request. Activity totals respect the selected sale filter; sale totals respect the selected activity filter. Search, category, brand, stock, and price filters apply to every total.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {"name": "search", "in": "query", "required": false, "schema": {"type": "string", "maxLength": 255}},
+                    {"name": "category_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "brand_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "is_active", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "is_on_sale", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "has_stock", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "price_from", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},
+                    {"name": "price_to", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product filter totals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductFilterCountsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"},
+                    "429": {"$ref": "#/components/responses/TooManyRequests"}
+                }
+            }
+        },
         "/admin/products/export": {
             "get": {
                 "operationId": "exportProducts",
@@ -10180,6 +10218,24 @@
                 },
                 "additionalProperties": false
             },
+            "ProductFilterCountsResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "required": ["active", "hidden", "sale", "regular"],
+                        "properties": {
+                            "active": {"type": "integer", "minimum": 0},
+                            "hidden": {"type": "integer", "minimum": 0},
+                            "sale": {"type": "integer", "minimum": 0},
+                            "regular": {"type": "integer", "minimum": 0}
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            },
             "ProductArrayResponse": {
                 "type": "object",
                 "required": ["data"],
@@ -13057,7 +13113,7 @@
                 }
             },
             "TooManyRequests": {
-                "description": "Too many login attempts.",
+                "description": "Too many requests in the current rate-limit window.",
                 "content": {
                     "application/json": {
                         "schema": {

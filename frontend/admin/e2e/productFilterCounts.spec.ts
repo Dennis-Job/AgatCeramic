@@ -1,42 +1,53 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from './fixtures'
-import { mockCatalogApi, product } from './catalogApi'
+import { mockCatalogApi } from './catalogApi'
 
 test('product badges show scoped totals and reset has surface and hover states', async ({
   page,
 }) => {
   await mockCatalogApi(page)
   const countQueries: URLSearchParams[] = []
-  await page.route('**/api/v1/admin/products?*', (route) => {
+  let brandRequests = 0
+  let categoryRequests = 0
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname
+    if (path.endsWith('/admin/brands')) brandRequests += 1
+    if (path.endsWith('/admin/categories/tree')) categoryRequests += 1
+  })
+  await page.route('**/api/v1/admin/products/filter-counts*', (route) => {
     const query = new URL(route.request().url()).searchParams
-    if (query.get('per_page') !== '1') return route.fallback()
     countQueries.push(query)
     const scoped =
       query.has('category_id') || query.has('brand_id') || query.has('search')
-    const total =
-      query.get('is_active') === '1'
-        ? scoped
-          ? 7
-          : 137
-        : query.get('is_active') === '0'
-          ? scoped
-            ? 0
-            : 21
-          : query.get('is_on_sale') === '1'
-            ? scoped
-              ? 2
-              : 34
-            : scoped
-              ? 5
-              : 124
+    const hasActivity = query.has('is_active')
+    const hasSale = query.has('is_on_sale')
+    const countFor = (activity?: boolean, sale?: boolean) => {
+      if (activity !== undefined && sale !== undefined) {
+        if (activity) {
+          if (sale) return scoped ? 2 : 6
+          return scoped ? 1 : 3
+        }
+        if (sale) return scoped ? 0 : 1
+        return scoped ? 4 : 8
+      }
+      if (activity !== undefined) {
+        if (activity) return scoped ? 7 : 137
+        return scoped ? 0 : 21
+      }
+      if (sale) return scoped ? 2 : 34
+      return scoped ? 5 : 124
+    }
+    const selectedActivity = hasActivity
+      ? query.get('is_active') === '1'
+      : undefined
+    const selectedSale = hasSale ? query.get('is_on_sale') === '1' : undefined
     return route.fulfill({
       json: {
-        data: [product],
-        meta: {
-          total,
-          current_page: 1,
-          last_page: Math.max(1, total),
-          per_page: 1,
+        data: {
+          active: countFor(true, selectedSale),
+          hidden: countFor(false, selectedSale),
+          sale: countFor(selectedActivity, true),
+          regular: countFor(selectedActivity, false),
         },
       },
     })
@@ -59,7 +70,9 @@ test('product badges show scoped totals and reset has surface and hover states',
     ['Не распродажа', '124'],
   ])
     await expect(badge(name!)).toHaveText(value!)
-  expect(countQueries).toHaveLength(4)
+  expect(countQueries).toHaveLength(1)
+  expect(brandRequests).toBe(1)
+  expect(categoryRequests).toBe(1)
   const reset = filters.getByRole('button', { name: 'Сбросить' })
   await expect(reset).toBeDisabled()
   await activity.getByRole('radio', { name: 'Активные' }).locator('..').click()
@@ -69,12 +82,16 @@ test('product badges show scoped totals and reset has surface and hover states',
   await expect(reset).toHaveCSS('background-color', 'rgb(217, 234, 255)')
   await expect(reset).toHaveCSS('color', 'rgb(0, 80, 224)')
   await page.mouse.move(0, 0)
+  await expect(badge('Распродажа')).toHaveText('6')
+  await expect(badge('Не распродажа')).toHaveText('3')
+  expect(countQueries).toHaveLength(2)
   await sale
     .getByRole('radio', { name: 'Распродажа', exact: true })
     .locator('..')
     .click()
-  await expect(badge('Активные')).toHaveText('137')
-  expect(countQueries).toHaveLength(4)
+  await expect(badge('Активные')).toHaveText('6')
+  await expect(badge('Скрытые')).toHaveText('1')
+  expect(countQueries).toHaveLength(3)
 
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
@@ -97,17 +114,15 @@ test('product badges show scoped totals and reset has surface and hover states',
 
   await filters.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
-  await expect(badge('Активные')).toHaveText('7')
+  await expect(badge('Активные')).toHaveText('2')
   await expect(badge('Скрытые')).toHaveText('0')
-  expect(countQueries).toHaveLength(8)
-  for (const query of countQueries.slice(-4)) {
-    expect(query.get('category_id')).toBe('1')
-    expect(query.has('is_active') && query.has('is_on_sale')).toBe(false)
-  }
+  expect(countQueries).toHaveLength(4)
+  expect(countQueries.at(-1)?.get('category_id')).toBe('1')
   await filters.getByLabel('Поиск', { exact: true }).fill('монте')
-  await expect.poll(() => countQueries.length).toBe(12)
-  for (const query of countQueries.slice(-4))
-    expect(query.get('search')).toBe('монте')
+  await expect.poll(() => countQueries.length).toBe(5)
+  expect(countQueries.at(-1)?.get('search')).toBe('монте')
+  expect(brandRequests).toBe(1)
+  expect(categoryRequests).toBe(1)
   await reset.click()
   await expect(badge('Активные')).toHaveText('137')
   await expect(reset).toBeDisabled()
@@ -135,29 +150,24 @@ test('product badges show scoped totals and reset has surface and hover states',
   })
 })
 
-test('counter loading and partial failure preserve usable product results', async ({
+test('a 429 on the counter request preserves usable product results', async ({
   page,
   browserIssueGuard,
 }) => {
   await mockCatalogApi(page)
-  browserIssueGuard.allowApiError(500, '/api/v1/admin/products')
+  browserIssueGuard.allowApiError(429, '/api/v1/admin/products/filter-counts')
   let release!: () => void
   const pending = new Promise<void>((resolve) => {
     release = resolve
   })
-  await page.route('**/api/v1/admin/products?*', async (route) => {
-    const query = new URL(route.request().url()).searchParams
-    if (query.get('per_page') !== '1') return route.fallback()
+  await page.route('**/api/v1/admin/products/filter-counts*', async (route) => {
     await pending
-    if (query.get('is_active') === '0')
-      return route.fulfill({
-        status: 500,
-        json: { error: { message: 'Счётчик недоступен' } },
-      })
     return route.fulfill({
+      status: 429,
       json: {
-        data: [],
-        meta: { total: 0, current_page: 1, last_page: 1, per_page: 1 },
+        error: {
+          message: 'Слишком много запросов. Повторите попытку позже.',
+        },
       },
     })
   })
@@ -174,10 +184,10 @@ test('counter loading and partial failure preserve usable product results', asyn
     path: '.tmp/product-filter-counts-review/counts-loading.png',
   })
   release()
-  await expect(badge('Активные')).toHaveText('0')
+  await expect(badge('Активные')).toHaveText('—')
   await expect(badge('Скрытые')).toHaveText('—')
-  await expect(filters.getByRole('status')).toContainText(
-    'Не удалось обновить некоторые счётчики',
+  await expect(filters.getByRole('alert')).toContainText(
+    'Слишком много запросов',
   )
   await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
   await filters.screenshot({

@@ -308,6 +308,13 @@ export async function mockCatalogApi(
       return
     }
 
+    if (path === '/admin/products/filter-counts') {
+      await route.fulfill({
+        json: { data: { active: 16, hidden: 16, sale: 16, regular: 16 } },
+      })
+      return
+    }
+
     if (path === '/admin/attribute-groups') {
       await route.fulfill({
         json:

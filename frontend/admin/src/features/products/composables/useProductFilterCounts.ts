@@ -13,7 +13,17 @@ const emptyCounts = (): ProductFilterCounts => ({
 })
 
 export function useProductFilterCounts(
-  filters: () => Pick<ProductFilters, 'search' | 'category_id' | 'brand_id'>,
+  filters: () => Pick<
+    ProductFilters,
+    | 'search'
+    | 'category_id'
+    | 'brand_id'
+    | 'is_active'
+    | 'is_on_sale'
+    | 'has_stock'
+    | 'price_from'
+    | 'price_to'
+  >,
 ) {
   const counts = ref(emptyCounts())
   const loading = ref(false)
@@ -27,12 +37,21 @@ export function useProductFilterCounts(
     loading.value = true
     error.value = ''
     counts.value = emptyCounts()
-    const response = await getProductFilterCounts(filters())
-    if (request !== requestId) return
-    counts.value = response
-    loading.value = false
-    if (Object.values(response).some((count) => count === null))
-      error.value = 'Не удалось обновить некоторые счётчики товаров.'
+    try {
+      const response = await getProductFilterCounts(filters())
+      if (request !== requestId) return
+      counts.value = response
+      if (Object.values(response).some((count) => count === null))
+        error.value = 'Не удалось обновить некоторые счётчики товаров.'
+    } catch (reason) {
+      if (request !== requestId) return
+      error.value =
+        reason instanceof Error
+          ? reason.message
+          : 'Не удалось обновить счётчики товаров.'
+    } finally {
+      if (request === requestId) loading.value = false
+    }
   }
 
   watch(
@@ -46,7 +65,7 @@ export function useProductFilterCounts(
       const searchChanged =
         previous !== undefined &&
         JSON.parse(next).search !== JSON.parse(previous).search
-      timer = setTimeout(() => void refresh(), searchChanged ? 350 : 0)
+      timer = setTimeout(() => void refresh(), searchChanged ? 350 : 250)
     },
     { immediate: true },
   )

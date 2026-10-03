@@ -105,6 +105,7 @@ Route::apiResource('categories', CategoryController::class);
 Route::apiResource('attribute-groups', AttributeGroupController::class);
 Route::apiResource('attributes', AttributeController::class);
 Route::apiResource('brands', BrandController::class);
+Route::get('products/filter-counts', [ProductController::class, 'filterCounts'])->name('products.filter-counts');
 Route::get('products/export', ProductExportController::class)->name('products.export');
 Route::get('products/import-template', [ProductImportController::class, 'template'])->name('products.import-template');
 Route::post('products/import', [ProductImportController::class, 'store'])->name('products.import');

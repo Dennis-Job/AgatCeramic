@@ -67,6 +67,8 @@ export function useProductEditor() {
   const { items: products, pagination, error, loading } = list
   const categories = ref<Category[]>([])
   const brands = ref<Brand[]>([])
+  let categoriesRequest: Promise<Category[]> | null = null
+  let brandsRequest: Promise<Brand[]> | null = null
   const candidates = ref<Product[]>([])
   const groupProducts = ref<ProductGroup['products']>([])
   const opened = ref(false)
@@ -104,6 +106,14 @@ export function useProductEditor() {
     brand_id: filters.value.brand_id
       ? Number(filters.value.brand_id)
       : undefined,
+    is_active:
+      filters.value.is_active === ''
+        ? undefined
+        : filters.value.is_active === '1',
+    is_on_sale:
+      filters.value.is_on_sale === ''
+        ? undefined
+        : filters.value.is_on_sale === '1',
   }))
   const sort = ref<ProductSort>('created_at')
   const direction = ref<SortDirection>('desc')
@@ -411,13 +421,25 @@ export function useProductEditor() {
       direction: direction.value,
     }
   }
+  function loadCatalogOptions() {
+    categoriesRequest ??= getCategories().catch((reason: unknown) => {
+      categoriesRequest = null
+      throw reason
+    })
+    brandsRequest ??= getAllBrands().catch((reason: unknown) => {
+      brandsRequest = null
+      throw reason
+    })
+    return Promise.all([categoriesRequest, brandsRequest]).then(
+      ([categoryList, brandList]) => ({ categoryList, brandList }),
+    )
+  }
   async function fetchPage(page: number) {
-    const [productPage, categoryList, brandList] = await Promise.all([
+    const [productPage, catalogOptions] = await Promise.all([
       getProducts({ ...filtersPayload(), page }),
-      getCategories(),
-      getAllBrands(),
+      loadCatalogOptions(),
     ])
-    return { ...productPage, categoryList, brandList }
+    return { ...productPage, ...catalogOptions }
   }
   async function load(
     page = pagination.value?.current_page ?? 1,
@@ -1143,7 +1165,7 @@ export function useProductEditor() {
     filters,
     (next) => {
       if (filterTimer) clearTimeout(filterTimer)
-      const delay = next.search !== previousFilterSearch ? 350 : 0
+      const delay = next.search !== previousFilterSearch ? 350 : 250
       previousFilterSearch = next.search
       filterTimer = setTimeout(() => {
         filterTimer = null

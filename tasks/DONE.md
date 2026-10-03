@@ -1,5 +1,12 @@
 # DONE
 
+- [x] Динамические счётчики фильтров товаров и устранение 429 от 2026-10-03:
+      четыре счётчика загружаются одним запросом, справочники категорий и брендов
+      кешируются на странице, фильтры синхронно debounce-ятся. UI Design Guard
+      accepted; Admin lint/format/build, 90 unit, 2 E2E, Pint и 5 Backend API/OpenAPI
+      tests passed.
+      [Отчёт](../docs/ADMIN_PRODUCT_FILTER_DYNAMIC_COUNTS_REPORT.md).
+
 - [x] Информационный footer фото-модалки, возврат от 2026-10-03: восстановлен
       блок `UiAlert` «Загрузка, удаление и порядок фото сохраняются сразу.» рядом
       с кнопкой «Готово». UI Design Guard accepted; lint, форматирование, build

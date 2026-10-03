@@ -35,6 +35,15 @@ class ProductController extends Controller
         );
     }
 
+    public function filterCounts(ListProductsRequest $request): JsonResponse
+    {
+        Gate::authorize('viewAny', Product::class);
+
+        return response()->json([
+            'data' => $this->productQuery->filterCounts($request->validated()),
+        ]);
+    }
+
     public function store(StoreProductRequest $request): JsonResponse
     {
         Gate::authorize('create', Product::class);

@@ -26,6 +26,7 @@ class OpenApiCatalogContractTest extends TestCase
             '/admin/brands' => ['get', 'post'],
             '/admin/brands/{brand}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products' => ['get', 'post'],
+            '/admin/products/filter-counts' => ['get'],
             '/admin/products/export' => ['get'],
             '/admin/products/import' => ['post'],
             '/admin/products/import-template' => ['get'],
@@ -66,6 +67,10 @@ class OpenApiCatalogContractTest extends TestCase
         $productListParameters = array_column($spec['paths']['/admin/products']['get']['parameters'], null, 'name');
         self::assertArrayHasKey('is_on_sale', $productListParameters);
         self::assertSame('boolean', $productListParameters['is_on_sale']['schema']['type']);
+        self::assertSame(
+            '#/components/schemas/ProductFilterCountsResponse',
+            $spec['paths']['/admin/products/filter-counts']['get']['responses']['200']['content']['application/json']['schema']['$ref'],
+        );
         self::assertArrayNotHasKey('sku', $spec['components']['schemas']['StoreProductRequest']['properties']);
         self::assertArrayNotHasKey('sku', $spec['components']['schemas']['UpdateProductRequest']['properties']);
         $productExport = $spec['paths']['/admin/products/export']['get'];

@@ -206,7 +206,7 @@ function closeGroupDeletion(): void {
       <p
         v-if="filterCountsError"
         class="mt-2 text-xs text-gray-500"
-        role="status"
+        role="alert"
       >
         {{ filterCountsError }}
       </p>

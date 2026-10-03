@@ -697,6 +697,12 @@ API behaviour без migration plan и синхронного обновлени
   lint/format исходников/build, 69 unit и полный strict E2E 268/268 каждой macOS/Linux.
   [Отчёт и изменённые файлы](../docs/ADMIN_PRODUCT_FILTER_REFINEMENT_REPORT.md).
 
+- [x] Устранение 429 и динамические счётчики товаров от 2026-10-03: четыре
+  счётчика объединены в один запрос; категории и бренды кешируются на странице,
+  фильтры debounce-ятся. UI Design Guard accepted; Admin lint/format/build,
+  90 unit, 2 E2E, Pint и 5 Backend API/OpenAPI tests passed.
+  [Отчёт](../docs/ADMIN_PRODUCT_FILTER_DYNAMIC_COUNTS_REPORT.md).
+
 - [x] Продолжение фильтров товаров от 2026-10-02: скрыты заголовки сегментов,
   белая активная кнопка сброса с голубым hover, четыре бейджа количества по
   текущему поиску/категории/бренду. Независимый UI Design Guard accepted;

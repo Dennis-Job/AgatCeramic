@@ -409,6 +409,10 @@ article number, or barcode. It also supports `category_id`, `brand_id`,
 The default order is `created_at desc`, so newly created products appear first. Price and stock
 filters apply directly to products; all filters can be combined.
 
+`GET /admin/products/filter-counts` returns the four activity/sale totals in one request. Activity
+totals respect the selected sale filter, sale totals respect the selected activity filter, and
+search/category/brand/stock/price filters apply to every total.
+
 `GET /admin/products/export` downloads every product matching the same filters and sort order as
 `GET /admin/products`; pagination is deliberately not accepted. The endpoint requires
 `imports.manage` and returns a streaming XLSX attachment. The first sheet, `Товары`, uses the

@@ -8,6 +8,28 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ProductQuery
 {
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{active: int, hidden: int, sale: int, regular: int}
+     */
+    public function filterCounts(array $filters): array
+    {
+        unset($filters['sort'], $filters['direction'], $filters['per_page'], $filters['page']);
+
+        $activityFilters = $filters;
+        unset($activityFilters['is_active']);
+
+        $saleFilters = $filters;
+        unset($saleFilters['is_on_sale']);
+
+        return [
+            'active' => $this->filtered([...$activityFilters, 'is_active' => true])->count(),
+            'hidden' => $this->filtered([...$activityFilters, 'is_active' => false])->count(),
+            'sale' => $this->filtered([...$saleFilters, 'is_on_sale' => true])->count(),
+            'regular' => $this->filtered([...$saleFilters, 'is_on_sale' => false])->count(),
+        ];
+    }
+
     /** @param array<string, mixed> $filters */
     public function maximumImageCount(array $filters): int
     {
