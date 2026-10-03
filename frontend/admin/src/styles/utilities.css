@@ -6,6 +6,60 @@
 }
 .admin-dialog-content {
   max-height: 90vh;
+  max-height: 90dvh;
+}
+.admin-dialog-overlay {
+  background: var(--admin-dialog-backdrop-color);
+  -webkit-backdrop-filter: var(--admin-dialog-backdrop-filter);
+  backdrop-filter: var(--admin-dialog-backdrop-filter);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel) {
+  border-radius: var(--admin-dialog-radius);
+  background: var(--admin-color-white);
+  box-shadow: var(--admin-shadow-dialog);
+}
+.admin-dialog-content > form {
+  border-radius: var(--admin-dialog-radius);
+  background: var(--admin-color-white);
+  padding: var(--admin-dialog-content-padding);
+  box-shadow: none;
+}
+.admin-dialog-content > form > .sticky.bottom-0 {
+  margin-inline: calc(0px - var(--admin-dialog-content-padding));
+  margin-block-end: calc(0px - var(--admin-dialog-content-padding));
+  padding-inline: var(--admin-dialog-content-padding);
+  border-end-start-radius: var(--admin-dialog-radius);
+  border-end-end-radius: var(--admin-dialog-radius);
+}
+.admin-dialog-content > .sticky.bottom-0 {
+  border-end-start-radius: var(--admin-dialog-radius);
+  border-end-end-radius: var(--admin-dialog-radius);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel)
+  button[aria-label^='Закрыть'] {
+  width: var(--admin-dialog-close-size);
+  height: var(--admin-dialog-close-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--admin-color-gray-50);
+  color: var(--admin-color-gray-400);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel)
+  button[aria-label^='Закрыть']:hover:not(:disabled) {
+  background: var(--admin-color-gray-100);
+  color: var(--admin-color-gray-700);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel)
+  button[aria-label^='Закрыть']:disabled {
+  cursor: not-allowed;
+  background: var(--admin-color-gray-100);
+  color: var(--admin-color-gray-500);
+}
+.admin-dialog-overlay.admin-navigation-dialog-overlay {
+  background: rgb(17 24 32 / 0.5);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .dashboard-sales-grid {
   grid-template-columns: 1fr;

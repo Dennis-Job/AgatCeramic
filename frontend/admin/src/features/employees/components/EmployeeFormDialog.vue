@@ -36,7 +36,7 @@ const statusOptions = [
     labelledby="employee-dialog-title"
     describedby="employee-dialog-description"
     :close-disabled="busy"
-    panel-class="w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+    panel-class="w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-xl"
     @close="emit('close')"
   >
     <form @submit.prevent="emit('submit')">

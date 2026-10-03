@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { X } from '@lucide/vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
@@ -329,17 +330,27 @@ async function confirmPublish(): Promise<void> {
       <UiDialog
         :open="Boolean(preview)"
         labelledby="legal-preview-title"
-        panel-class="w-full max-w-2xl rounded-xl bg-white p-5 shadow-xl"
+        panel-class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl"
         :close-disabled="Boolean(busyAction)"
         @close="preview = null"
       >
-        <h2
-          id="legal-preview-title"
-          class="text-lg font-semibold text-gray-800"
-        >
-          {{ preview ? label(documentOptions, preview.type) : '' }} ·
-          {{ preview?.version }}
-        </h2>
+        <div class="flex items-start justify-between gap-4">
+          <h2
+            id="legal-preview-title"
+            class="text-lg font-semibold text-gray-800"
+          >
+            {{ preview ? label(documentOptions, preview.type) : '' }} ·
+            {{ preview?.version }}
+          </h2>
+          <UiButton
+            variant="ghost"
+            aria-label="Закрыть предпросмотр документа"
+            :disabled="Boolean(busyAction)"
+            @click="preview = null"
+          >
+            <X :size="20" />
+          </UiButton>
+        </div>
         <div
           class="mt-4 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-gray-25 p-4"
         >

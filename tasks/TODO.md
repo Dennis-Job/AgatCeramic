@@ -757,3 +757,9 @@ API behaviour без migration plan и синхронного обновлени
     Lint/build/scoped format и diff check прошли; UI Design Guard accepted по
     статическому аудиту. Unit/E2E и мобильные viewport проверки не запускались.
     [Отчёт](../docs/TASK_A064_REPORT.md).
+
+- [x] TASK-A065 Модальные окна Admin с размытым фоном, 2026-10-03:
+    общий `UiDialog` следует референсу владельца: blur заднего плана, светлый
+    полупрозрачный overlay, мягкая белая карточка и круглая кнопка закрытия.
+    UI Design Guard accepted; вручную просмотрены ширины 320–1280 px. Lint,
+    format и build прошли; unit/E2E не запускались. [Результаты](../docs/TASK_A065_REPORT.md).

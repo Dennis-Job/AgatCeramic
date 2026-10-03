@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Copy, Pencil, Trash2 } from '@lucide/vue'
+import { Copy, Pencil, Trash2, X } from '@lucide/vue'
 import AdminWorkspace from './AdminWorkspace.vue'
 import AuthCard from './AuthCard.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -1328,9 +1328,19 @@ function submitAuthPreview(): void {
       panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
       @close="isDialogOpen = false"
     >
-      <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-900">
-        Обычный диалог
-      </h2>
+      <div class="flex items-start justify-between gap-4">
+        <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-900">
+          Обычный диалог
+        </h2>
+        <UiButton
+          type="button"
+          variant="ghost"
+          aria-label="Закрыть обычный диалог"
+          @click="isDialogOpen = false"
+        >
+          <X :size="20" />
+        </UiButton>
+      </div>
       <UiDialogFooter>
         <template #note
           ><span id="ui-kit-dialog-description"

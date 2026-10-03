@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Shared destructive action flow.
+import { X } from '@lucide/vue'
 import UiDialog from '../ui/UiDialog.vue'
 import UiNotification from '../ui/UiNotification.vue'
 import UiButton from '../ui/UiButton.vue'
@@ -33,9 +34,20 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
     panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
     @close="emit('close')"
   >
-    <h2 id="confirm-dialog-title" class="text-lg font-bold text-gray-900">
-      {{ title }}
-    </h2>
+    <div class="flex items-start justify-between gap-4">
+      <h2 id="confirm-dialog-title" class="text-lg font-bold text-gray-900">
+        {{ title }}
+      </h2>
+      <UiButton
+        type="button"
+        variant="ghost"
+        aria-label="Закрыть подтверждение"
+        :disabled="busy"
+        @click="emit('close')"
+      >
+        <X :size="20" />
+      </UiButton>
+    </div>
     <UiNotification v-if="error">{{ error }}</UiNotification>
     <UiDialogFooter>
       <template #note

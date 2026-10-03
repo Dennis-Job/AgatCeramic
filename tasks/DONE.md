@@ -209,3 +209,10 @@
     Design Guard accepted по статическому аудиту; lint, build, scoped format и
     diff check прошли. Unit/E2E и отдельные мобильные viewport проверки не
     запускались. [Отчёт](../docs/TASK_A064_REPORT.md).
+
+- [x] TASK-A065 Модальные окна Admin с размытым фоном (2026-10-03).
+    Общий `UiDialog` получил светлую backdrop-вуаль с blur, радиус 24 px,
+    выразительную тень, круглое закрытие и согласованные края sticky footer.
+    UI Design Guard accepted; ручной viewport review: 320, 640, 768, 1024,
+    1280 px. Lint, format и build прошли; unit/E2E не запускались.
+    [Отчёт](../docs/TASK_A065_REPORT.md).

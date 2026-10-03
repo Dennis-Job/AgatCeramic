@@ -164,7 +164,7 @@ onMounted(() => {
 <template>
   <div
     v-if="open"
-    class="fixed inset-0 bg-gray-900/50"
+    class="admin-dialog-overlay fixed inset-0"
     :class="overlayClass"
     :aria-hidden="suspended ? 'true' : undefined"
     :inert="suspended ? true : undefined"

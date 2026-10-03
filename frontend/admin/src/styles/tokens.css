@@ -123,6 +123,13 @@
   --admin-radius-2xl: 1.25rem;
   --admin-radius-card: 1.5rem;
   --admin-radius-card-inset: 1.25rem;
+  --admin-dialog-radius: var(--admin-radius-card);
+  --admin-dialog-close-size: 2.75rem;
+  --admin-dialog-content-padding: clamp(
+    var(--admin-spacing-6),
+    4vw,
+    calc(var(--admin-spacing-6) + var(--admin-spacing-2))
+  );
 
   --admin-color-card-surface: var(--admin-color-gray-50);
   --admin-color-card-border: var(--admin-color-gray-100);
@@ -139,7 +146,7 @@
   /* Keep Tailwind's composed focus shadows valid while removing surface shadows. */
   --admin-shadow-card: 0 0 0 0 rgb(0 0 0 / 0);
   --admin-shadow-input: 0 0 0 0 rgb(0 0 0 / 0);
-  --admin-shadow-dialog: 0 8px 32px rgb(35 53 72 / 0.1);
+  --admin-shadow-dialog: 0 24px 72px rgb(35 53 72 / 0.18);
   --admin-shadow-dropdown: 0 4px 24px rgb(35 53 72 / 0.12);
   --admin-shadow-sm: 0 2px 8px rgb(35 53 72 / 0.06);
   --admin-shadow-xl: 0 12px 40px rgb(35 53 72 / 0.14);
@@ -157,4 +164,6 @@
   --admin-focus-outline-offset: 0px;
   --admin-focus-ring: 0 0 0 var(--admin-focus-halo-width)
     var(--admin-focus-halo-color);
+  --admin-dialog-backdrop-color: rgb(196 205 219 / 0.72);
+  --admin-dialog-backdrop-filter: blur(12px);
 }
