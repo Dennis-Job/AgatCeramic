@@ -97,6 +97,7 @@ const uiComponents = [
   'UiCheckbox',
   'UiDatePicker',
   'UiDialog',
+  'UiDialogFooter',
   'UiEmptyState',
   'UiField',
   'UiImagePreview',
@@ -358,7 +359,7 @@ function submitAuthPreview(): void {
     <UiCard data-ui-kit-section="inventory">
       <h2 class="text-lg font-semibold text-gray-900">Состав UI-kit</h2>
       <p class="mt-1 text-sm text-gray-500">
-        17 UI primitives и 3 shared-компонента, доступных для повторного
+        22 UI primitives и 3 shared-компонента, доступных для повторного
         использования. Layout- и feature-компоненты в этот каталог не входят.
       </p>
       <div class="mt-4 grid gap-4 lg:grid-cols-2">

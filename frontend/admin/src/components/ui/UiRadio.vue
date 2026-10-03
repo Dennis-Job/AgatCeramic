@@ -51,6 +51,6 @@ const indicatorClasses = computed(() =>
         :class="{ invisible: !selected }"
         aria-hidden="true"
     /></span>
-    <span><slot /></span>
+    <span class="min-w-0 break-words [overflow-wrap:anywhere]"><slot /></span>
   </label>
 </template>

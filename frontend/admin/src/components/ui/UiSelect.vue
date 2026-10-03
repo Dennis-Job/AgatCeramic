@@ -214,7 +214,7 @@ onBeforeUnmount(() => {
       :disabled="disabled"
       @click="toggle"
     >
-      <span class="truncate">{{ selectedLabel }}</span>
+      <span class="min-w-0 flex-1 truncate">{{ selectedLabel }}</span>
       <span class="flex shrink-0 items-center gap-2">
         <span
           v-if="clearable && modelValue"
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
             ref="searchInput"
             v-model="search"
             type="search"
-            class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none admin-control-focus"
+            class="min-h-[var(--admin-control-height-md)] w-full min-w-0 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none admin-control-focus"
             :placeholder="searchPlaceholder"
             :aria-label="`Поиск: ${accessibleName}`"
           />
@@ -281,7 +281,9 @@ onBeforeUnmount(() => {
             }"
             @click="select(option.value)"
           >
-            {{ option.label }}
+            <span class="min-w-0 break-words [overflow-wrap:anywhere]">{{
+              option.label
+            }}</span>
             <Check v-if="option.value === modelValue" :size="17" />
           </button>
           <p
