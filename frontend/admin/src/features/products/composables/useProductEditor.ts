@@ -189,23 +189,17 @@ export function useProductEditor() {
     { value: '1', label: 'Распродажа', count: filterCounts.value.sale },
     { value: '0', label: 'Не распродажа', count: filterCounts.value.regular },
   ])
-  function flatten(
-    nodes: Category[],
-    depth = 0,
-  ): Array<Category & { depth: number }> {
+  function flatten(nodes: Category[]): Category[] {
     return [...nodes]
       .sort((left, right) => compareAlphabetically(left.name, right.name))
-      .flatMap((item) => [
-        { ...item, depth },
-        ...flatten(item.children ?? [], depth + 1),
-      ])
+      .flatMap((item) => [item, ...flatten(item.children ?? [])])
   }
   const categoryOptions = computed(() =>
     flatten(categories.value)
       .filter((item) => item.is_active)
       .map((item) => ({
         value: String(item.id),
-        label: `${'— '.repeat(item.depth)}${item.name}`,
+        label: item.name,
       })),
   )
   const brandOptions = computed(() => [

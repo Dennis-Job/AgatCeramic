@@ -167,3 +167,9 @@
       89 unit, 8 профильных E2E, 282/287 полный macOS (те же пять products baseline),
       15 Linux action/baseline; 7 эталонов на каждой платформе приняты независимым
       UI Design Guard. [Отчёт и файлы](../docs/ADMIN_ACTION_FEEDBACK_REPORT.md).
+
+- [x] Категории товаров, 2026-10-03: убраны ведущие тире у дочерних категорий в
+      фильтре/форме товара и выборе категории для импорта. Lint, build и ручная
+      проверка `/products` прошли; UI Design Guard accepted. Общий format check
+      ограничен существующими предупреждениями в `.tmp`; изменённые файлы прошли
+      scoped format check.

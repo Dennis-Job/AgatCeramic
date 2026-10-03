@@ -162,15 +162,14 @@ export function useProductImport(onCompleted: () => void) {
 
 function flattenCategories(
   nodes: Category[],
-  depth = 0,
 ): { value: string; label: string }[] {
   return [...nodes]
     .sort((a, b) => compareAlphabetically(a.name, b.name))
     .flatMap((item) => [
       {
         value: String(item.id),
-        label: `${'— '.repeat(depth)}${item.name}${item.is_active ? '' : ' (скрыта)'}`,
+        label: `${item.name}${item.is_active ? '' : ' (скрыта)'}`,
       },
-      ...flattenCategories(item.children ?? [], depth + 1),
+      ...flattenCategories(item.children ?? []),
     ])
 }
