@@ -8,6 +8,7 @@
 
 | Этап | Завершённые задачи | Проверяемый итог |
 | --- | --- | --- |
+| Единый формат цен | TASK-A057 | Все существующие цены Admin/Client показываются в ru-RU с неразрывными разделителями тысяч и двумя цифрами копеек. Цена, старая цена и сумма оплаты также группируются в полях ввода; API сохраняет decimal string без пробелов. Проверки и независимое ревью описаны в отчёте. Файлы и ограничения — [`PRICE_FORMAT_REPORT.md`](../docs/PRICE_FORMAT_REPORT.md). |
 | Foundation | TASK-001–017 | Монорепозиторий, Laravel API-only, Vue Admin, Nuxt Client, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned API и OpenAPI. |
 | Access control | TASK-020–029C | Admin authentication, password reset, RBAC, policies, audit trail и неизменяемость журнала PostgreSQL. |
 | Catalog | TASK-030–042Z | CRUD каталога, типизированные характеристики, standalone/grouped products, SKU, изображения, связи, поиск и защита API. |
