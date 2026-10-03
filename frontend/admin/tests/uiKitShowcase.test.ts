@@ -21,6 +21,9 @@ describe('UiKitShowcase', () => {
     expect(uiComponents).toHaveLength(21)
     expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(12)
     expect(wrapper.findAll('input[required]')).toHaveLength(2)
+    expect(
+      wrapper.get('[data-ui-kit-section="collection-states"] button').classes(),
+    ).toContain('bg-blue-light-100')
     wrapper.unmount()
   })
 

@@ -152,22 +152,22 @@ screen-reader и focus trap, после закрытия возвращаетс�
 прогресс задания отображают состояние рабочей области; уведомления о
 результате операций не заменяют эти состояния.
 
-| Компонент                                        | Варианты / состояния                                                                                                               |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `UiButton`                                       | `primary`, `secondary`, `danger`, `ghost`, `primary-ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                          |
-| `UiInput`                                        | default, populated/clear, search, password, focus, error через `UiField`, native disabled; disabled блокирует input и clear-action |
-| `UiSelect`                                       | placeholder, search/no-results, clear, keyboard, teleport menu; disabled блокирует trigger/clear и закрывает открытое menu         |
-| `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                             |
-| `UiDatePicker`                                   | input/calendar, Escape/focus return, responsive popup; disabled блокирует input/clear и закрывает открытый calendar                |
-| `UiCheckbox`, `UiRadio`                          | boolean/array mode, selected/unselected, keyboard focus, disabled через native control                                             |
-| `UiPopover`                                      | hover/tap, open/close, keyboard, Escape/focus return, outside close, viewport clamp/flip/scroll                                    |
-| `UiDialog`, `ConfirmDialog`                      | open/close, Escape, backdrop, focus trap/return, busy, error                                                                       |
-| `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                    |
-| `UiField`                                        | label, required, help, error (`role=alert`)                                                                                        |
-| `UiLoadingState`, `UiEmptyState`, `UiPagination` | status announcement, optional empty-state action; first/middle/last/zero/loading pagination                                        |
-| `UiImagePreview`                                 | изображение, пустое состояние и сообщение об ошибке загрузки                                                                       |
-| `AuthCard`                                       | общий guest-auth form shell: branding, title, description и card surface; `headingTag=h2` только для embedded preview              |
-| `PageHeader`                                     | eyebrow, title, description, actions slot                                                                                          |
+| Компонент                                        | Варианты / состояния                                                                                                                    |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `UiButton`                                       | `primary`, `secondary`, `soft-blue`, `danger`, `ghost`, `primary-ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                  |
+| `UiInput`                                        | default, populated/clear, search, password, focus, error через `UiField`, native disabled; disabled блокирует input и clear-action      |
+| `UiSelect`                                       | placeholder, search/no-results, clear, keyboard, teleport menu; disabled блокирует trigger/clear и закрывает открытое menu              |
+| `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                                  |
+| `UiDatePicker`                                   | input/calendar, Escape/focus return, responsive popup; disabled блокирует input/clear и закрывает открытый calendar                     |
+| `UiCheckbox`, `UiRadio`                          | boolean/array mode, selected/unselected, keyboard focus, disabled через native control                                                  |
+| `UiPopover`                                      | hover/tap, open/close, keyboard, Escape/focus return, outside close, viewport clamp/flip/scroll                                         |
+| `UiDialog`, `ConfirmDialog`                      | open/close, Escape, backdrop, focus trap/return, busy, error                                                                            |
+| `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                         |
+| `UiField`                                        | label, required, help, error (`role=alert`)                                                                                             |
+| `UiLoadingState`, `UiEmptyState`, `UiPagination` | status announcement; borderless pale-blue Seller empty panel and optional `soft-blue` action; first/middle/last/zero/loading pagination |
+| `UiImagePreview`                                 | изображение, пустое состояние и сообщение об ошибке загрузки                                                                            |
+| `AuthCard`                                       | общий guest-auth form shell: branding, title, description и card surface; `headingTag=h2` только для embedded preview                   |
+| `PageHeader`                                     | eyebrow, title, description, actions slot                                                                                               |
 
 Все визуальные константы берутся из `src/styles/tokens.css`; Tailwind theme в
 `styles/index.css` отображает эти значения для общих utility classes. Семантические

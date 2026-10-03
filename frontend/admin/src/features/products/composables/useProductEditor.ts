@@ -46,6 +46,7 @@ import {
   normalizedProductName,
   productSlug,
 } from '../validation/product.schema'
+import { validateProductImageFiles } from '../validation/productImages'
 import type {
   AttributeDraftValue,
   Product,
@@ -69,6 +70,10 @@ export function useProductEditor() {
   const candidates = ref<Product[]>([])
   const groupProducts = ref<ProductGroup['products']>([])
   const opened = ref(false)
+  const photosOnly = ref(false)
+  const photosLoading = ref(false)
+  const photosLoadFailed = ref(false)
+  let photoRequest = 0
   const saving = ref(false)
   const editing = ref<Product | null>(null)
   const deleting = ref<Product | null>(null)
@@ -603,6 +608,11 @@ export function useProductEditor() {
     ]
   }
   async function open(product: Product | null = null) {
+    photoRequest++
+    photosOnly.value = false
+    photosLoading.value = false
+    selectedFile.value = null
+    imageStatus.value = ''
     error.value = ''
     success.value = ''
     copiedFromProduct.value = null
@@ -638,6 +648,42 @@ export function useProductEditor() {
             : 'Не удалось загрузить карточку.'
       }
   }
+  async function loadPhotos() {
+    if (!editing.value || !photosOnly.value) return
+    const productId = editing.value.id
+    const request = ++photoRequest
+    photosLoading.value = true
+    photosLoadFailed.value = false
+    error.value = ''
+    try {
+      const photoList = await getAllProductImages(productId)
+      if (request !== photoRequest) return
+      images.value = photoList
+      syncProductThumbnail()
+    } catch (reason) {
+      if (request !== photoRequest) return
+      photosLoadFailed.value = true
+      error.value =
+        reason instanceof Error
+          ? reason.message
+          : 'Не удалось загрузить фотографии.'
+    } finally {
+      if (request === photoRequest) photosLoading.value = false
+    }
+  }
+  async function openPhotos(product: Product) {
+    if (!canManage.value || opened.value) return
+    photosOnly.value = true
+    editing.value = product
+    form.value = toPayload(product)
+    activeStep.value = 'images'
+    images.value = []
+    selectedFile.value = null
+    imageStatus.value = ''
+    success.value = ''
+    opened.value = true
+    await loadPhotos()
+  }
   async function cloneProduct(product: Product) {
     await open(null)
     copiedFromProduct.value = product
@@ -672,6 +718,9 @@ export function useProductEditor() {
   function close() {
     if (!saving.value) {
       opened.value = false
+      photoRequest++
+      photosLoading.value = false
+      selectedFile.value = null
       editing.value = null
     }
   }
@@ -750,7 +799,15 @@ export function useProductEditor() {
     }
   }
   function selectFile(event: Event) {
-    selectedFile.value = (event.target as HTMLInputElement).files?.[0] ?? null
+    selectImageFiles((event.target as HTMLInputElement).files)
+  }
+  function selectImageFiles(files: FileList | null) {
+    if (saving.value || !canManage.value || !files?.length) return
+    const validationError = validateProductImageFiles(files)
+    error.value = validationError
+    success.value = ''
+    selectedFile.value = validationError ? null : (files[0] ?? null)
+    if (imageInput.value) imageInput.value.value = ''
   }
   function chooseFile() {
     imageInput.value?.click()
@@ -1109,6 +1166,9 @@ export function useProductEditor() {
     candidates,
     groupProducts,
     opened,
+    photosOnly,
+    photosLoading,
+    photosLoadFailed,
     saving,
     editing,
     deleting,
@@ -1192,12 +1252,15 @@ export function useProductEditor() {
     copyAttributeDrafts,
     loadDetails,
     open,
+    openPhotos,
+    loadPhotos,
     cloneProduct,
     close,
     syncProductThumbnail,
     saveMain,
     saveAttributes,
     selectFile,
+    selectImageFiles,
     chooseFile,
     upload,
     reorderImage,

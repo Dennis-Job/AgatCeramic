@@ -22,6 +22,23 @@ Set-Location ..
 
 После этого для Docker development-окружения используйте `docker compose up --build` из корня репозитория.
 
+При запуске backend автоматически выполняется `php artisan storage:link`,
+создающий ссылку `public/storage` на `storage/app/public` внутри Laravel runtime.
+Через неё браузер получает
+публичные фото товаров и медиатеки по URL `/storage/...`; приватный диск не
+публикуется. Созданная в Docker ссылка указывает на путь внутри контейнера.
+Для уже запущенного окружения с отсутствующей ссылкой выполните:
+
+```sh
+docker compose exec backend php artisan storage:link
+```
+
+При запуске без Docker после настройки Laravel также выполните
+`php artisan storage:link` из `backend/`. Ссылку создают в том runtime, где
+работает web server. В production web server
+должен раздавать публичный каталог Laravel (включая эту ссылку) или настроенный
+public storage origin. Создание ссылки не меняет файлы и записи БД.
+
 Изолированный smoke реальной Redis queue запускается отдельно и не использует development data:
 
 ```sh

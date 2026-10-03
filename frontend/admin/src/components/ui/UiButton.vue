@@ -7,6 +7,7 @@ const props = withDefaults(
     variant?:
       | 'primary'
       | 'secondary'
+      | 'soft-blue'
       | 'surface'
       | 'danger'
       | 'ghost'
@@ -43,9 +44,11 @@ const classes = computed(() => [
           ? 'text-primary-600 hover:bg-primary-100 focus-visible:bg-primary-100 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
           : props.variant === 'surface'
             ? 'bg-white text-gray-600 hover:bg-primary-100 hover:text-primary-600 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
-            : props.variant === 'secondary'
-              ? 'border border-transparent bg-gray-50 text-gray-900 hover:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100 disabled:hover:text-gray-500'
-              : 'text-gray-600 hover:bg-primary-100 focus-visible:bg-primary-100 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500',
+            : props.variant === 'soft-blue'
+              ? 'bg-blue-light-100 text-blue-light-700 hover:bg-blue-light-200 focus-visible:bg-blue-light-200 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100'
+              : props.variant === 'secondary'
+                ? 'border border-transparent bg-gray-50 text-gray-900 hover:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100 disabled:hover:text-gray-500'
+                : 'text-gray-600 hover:bg-primary-100 focus-visible:bg-primary-100 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500',
   attrs.class,
 ])
 const forwarded = computed(() => {

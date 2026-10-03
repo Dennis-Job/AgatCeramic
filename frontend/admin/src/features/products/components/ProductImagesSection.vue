@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { GripVertical, ImagePlus, Star } from '@lucide/vue'
+import { GripVertical, Star } from '@lucide/vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
+import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
+import ProductPhotoUpload from './ProductPhotoUpload.vue'
 import { useProductEditorContext } from '../composables/useProductEditorContext'
 const {
-  imageInput,
   images,
-  selectedFile,
   saving,
-  selectFile,
-  chooseFile,
-  upload,
   imageStatus,
   draggedImageId,
   draggedOverImageId,
@@ -25,7 +22,6 @@ const {
   confirmError,
   imageDeleting,
 } = useProductEditorContext()
-void imageInput
 
 function requestImageDeletion(image: (typeof images.value)[number]): void {
   confirmError.value = ''
@@ -36,57 +32,14 @@ function requestImageDeletion(image: (typeof images.value)[number]): void {
 <template>
   <div>
     <h3 class="font-bold text-gray-900">Фото этой позиции</h3>
-    <form
-      class="mt-5 rounded-xl border border-gray-200 bg-gray-25 p-4"
-      @submit.prevent="upload"
-    >
-      <p id="product-image-label" class="text-sm font-medium text-gray-700">
-        Изображение
-      </p>
-      <input
-        ref="imageInput"
-        class="sr-only"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        tabindex="-1"
-        aria-label="Файл изображения"
-        @change="selectFile"
-      />
-      <div class="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
-        <output
-          class="min-h-11 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-input [overflow-wrap:anywhere]"
-          aria-live="polite"
-          >{{ selectedFile?.name ?? 'Файл не выбран' }}</output
-        >
-        <UiButton
-          type="button"
-          class="shrink-0"
-          variant="secondary"
-          :disabled="saving"
-          aria-describedby="product-image-file-help"
-          @click="chooseFile"
-          >Выбрать файл</UiButton
-        >
-      </div>
-      <p id="product-image-file-help" class="mt-2 text-xs text-gray-500">
-        Допустимые форматы: JPG, PNG или WebP. Максимальный размер — 10 МБ.
-      </p>
-      <UiButton
-        class="mt-4 w-fit"
-        :loading="saving"
-        :disabled="saving || !selectedFile"
-        ><ImagePlus :size="17" />{{
-          saving ? 'Загрузка…' : 'Загрузить'
-        }}</UiButton
-      >
-    </form>
+    <ProductPhotoUpload />
     <p class="sr-only" role="status" aria-live="polite">{{ imageStatus }}</p>
     <UiEmptyState
       v-if="!images.length"
-      class="mt-5 rounded-xl border border-dashed border-gray-300"
-      label="Фотографий пока нет."
+      class="mt-5"
+      label="Фото этого товара ещё не добавлены."
     />
-    <div v-else class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div v-else class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <article
         v-for="(image, index) in images"
         :key="image.id"
@@ -101,10 +54,10 @@ function requestImageDeletion(image: (typeof images.value)[number]): void {
         @dragover.prevent="markImageDropTarget(image)"
         @drop="dropImage(index)"
       >
-        <img
-          :src="image.url"
+        <UiImagePreview
+          :url="image.url"
           :alt="image.alt || form.name"
-          class="aspect-[4/3] w-full object-cover"
+          class="product-image-preview"
         /><UiBadge
           v-if="index === 0"
           class="absolute left-3 top-3 z-10 gap-1 shadow-sm"
@@ -153,3 +106,14 @@ function requestImageDeletion(image: (typeof images.value)[number]): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+.product-image-preview {
+  aspect-ratio: 4 / 3;
+  border: 0;
+  border-radius: 0;
+}
+.product-image-preview :deep(img) {
+  object-fit: contain;
+}
+</style>

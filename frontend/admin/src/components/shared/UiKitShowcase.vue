@@ -894,7 +894,7 @@ function submitAuthPreview(): void {
         </p>
         <UiLoadingState label="Загрузка данных для примера…" />
         <UiEmptyState label="В этой коллекции пока нет данных.">
-          <UiButton size="sm" variant="secondary" type="button"
+          <UiButton size="sm" variant="soft-blue" type="button"
             >Добавить элемент</UiButton
           >
         </UiEmptyState>

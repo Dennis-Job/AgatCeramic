@@ -68,7 +68,7 @@ const {
       </section>
       <UiEmptyState
         v-if="!attributes.length"
-        class="rounded-xl border border-dashed border-gray-200"
+        class="mt-4"
         label="Для этой категории характеристики пока не назначены."
       />
     </div>

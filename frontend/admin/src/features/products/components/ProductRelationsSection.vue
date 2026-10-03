@@ -58,7 +58,7 @@ const {
     </div>
     <UiEmptyState
       v-if="!relations.length"
-      class="mt-4 rounded-lg bg-gray-50"
+      class="mt-4"
       label="Сопутствующие товары не добавлены."
     />
     <div

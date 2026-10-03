@@ -19,10 +19,10 @@ import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
-import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import UiSegmentedControl from '../../../components/ui/UiSegmentedControl.vue'
@@ -32,6 +32,7 @@ import EditorSteps from './ProductEditorSteps.vue'
 import ProductMainSection from './ProductMainSection.vue'
 import ProductAttributesSection from './ProductAttributesSection.vue'
 import ProductImagesSection from './ProductImagesSection.vue'
+import ProductPhotoAction from './ProductPhotoAction.vue'
 import ProductVariantsSection from './ProductVariantsSection.vue'
 import ProductRelationsSection from './ProductRelationsSection.vue'
 import ProductReviewSection from './ProductReviewSection.vue'
@@ -47,6 +48,9 @@ const {
   error,
   loading,
   opened,
+  photosOnly,
+  photosLoading,
+  photosLoadFailed,
   saving,
   editing,
   deleting,
@@ -84,6 +88,8 @@ const {
   exportFilteredProducts,
   enabled,
   open,
+  openPhotos,
+  loadPhotos,
   cloneProduct,
   close,
   removeProduct,
@@ -367,10 +373,12 @@ function closeGroupDeletion(): void {
           >
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
-                <UiImagePreview
-                  compact
+                <ProductPhotoAction
                   :url="product.primary_image?.url || null"
                   :alt="product.primary_image?.alt || product.name"
+                  :name="product.name"
+                  :editable="canManage"
+                  @edit="openPhotos(product)"
                 />
                 <div class="min-w-0">
                   <p
@@ -478,22 +486,44 @@ function closeGroupDeletion(): void {
       @close="close"
     >
       <header
-        class="flex shrink-0 justify-between border-b border-gray-200 px-5 py-4"
+        class="flex shrink-0 items-start justify-between gap-3 border-b border-gray-200 px-5 py-4"
       >
-        <h2 id="product-editor-title" class="text-lg font-bold text-gray-900">
-          {{ editing ? editing.name : 'Новый товар' }}
-        </h2>
+        <div class="min-w-0 [overflow-wrap:anywhere]">
+          <h2
+            id="product-editor-title"
+            class="admin-focus text-lg font-bold text-gray-900 focus:outline-none"
+            :data-autofocus="photosOnly ? '' : undefined"
+            :tabindex="photosOnly ? -1 : undefined"
+          >
+            {{
+              photosOnly
+                ? editing?.primary_image
+                  ? 'Редактирование фото'
+                  : 'Добавление фото'
+                : editing
+                  ? editing.name
+                  : 'Новый товар'
+            }}
+          </h2>
+          <p v-if="photosOnly" class="mt-1 text-sm text-gray-500">
+            {{ editing?.name }}
+          </p>
+        </div>
         <UiButton
           type="button"
           variant="ghost"
           size="sm"
+          class="shrink-0"
           :disabled="saving"
-          aria-label="Закрыть карточку товара"
+          :aria-label="
+            photosOnly ? 'Закрыть фотографии товара' : 'Закрыть карточку товара'
+          "
           @click="close"
           ><X :size="20"
         /></UiButton>
       </header>
       <EditorSteps
+        v-if="!photosOnly"
         :steps="steps"
         :active="activeStep"
         :enabled="enabled"
@@ -507,7 +537,19 @@ function closeGroupDeletion(): void {
         <UiNotification v-if="success" tone="success" live="polite">{{
           success
         }}</UiNotification>
-        <ProductMainSection v-if="activeStep === 'main'" />
+        <template v-if="photosOnly">
+          <UiLoadingState v-if="photosLoading" label="Загрузка фотографий…" />
+          <div v-else-if="photosLoadFailed" class="space-y-4">
+            <p class="text-sm text-gray-700" role="status">
+              Не удалось загрузить фотографии товара.
+            </p>
+            <UiButton type="button" variant="secondary" @click="loadPhotos"
+              >Повторить загрузку</UiButton
+            >
+          </div>
+          <ProductImagesSection v-else />
+        </template>
+        <ProductMainSection v-else-if="activeStep === 'main'" />
         <ProductAttributesSection v-else-if="activeStep === 'attributes'" />
         <ProductImagesSection v-else-if="activeStep === 'images'" />
         <ProductVariantsSection v-else-if="activeStep === 'group'" />
@@ -522,8 +564,16 @@ function closeGroupDeletion(): void {
         <div
           class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end"
         >
+          <template v-if="photosOnly">
+            <UiAlert class="sm:mr-auto" tone="info" live="polite">
+              Загрузка, удаление и порядок фото сохраняются сразу.
+            </UiAlert>
+            <UiButton type="button" :disabled="saving" @click="close"
+              >Готово</UiButton
+            >
+          </template>
           <UiButton
-            v-if="activeStep === 'main'"
+            v-else-if="activeStep === 'main'"
             type="submit"
             form="product-main-form"
             :loading="saving"

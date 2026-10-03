@@ -1311,14 +1311,16 @@ for (const width of [320, 640, 768, 1024, 1280]) {
           'очень-длинное-название-фотографии-керамогранита-с-ракурсом-и-деталями-поверхности.jpg'
         await expect(
           dialog.getByText(
-            'Допустимые форматы: JPG, PNG или WebP. Максимальный размер — 10 МБ.',
+            'Формат — JPEG, JPG, PNG, WebP. Размер — не больше 10 МБ.',
           ),
         ).toBeVisible()
         await expect(
-          dialog.getByRole('button', { name: 'Выбрать файл' }),
+          dialog.getByRole('button', {
+            name: /Выберите или перетащите фото|Отпустите фото/,
+          }),
         ).toBeVisible()
         const uploadButton = dialog.getByRole('button', { name: 'Загрузить' })
-        await expect(uploadButton).toBeDisabled()
+        await expect(uploadButton).toHaveCount(0)
         await expect(dialog.getByLabel('Alt-текст')).toHaveCount(0)
         await dialog.getByLabel('Файл изображения').setInputFiles({
           name: longFileName,
@@ -1334,7 +1336,7 @@ for (const width of [320, 640, 768, 1024, 1280]) {
         await expect(uploadButton).toBeEnabled()
         await uploadButton.click()
         await expect(dialog.locator('output')).toHaveText('Файл не выбран')
-        await expect(uploadButton).toBeDisabled()
+        await expect(uploadButton).toHaveCount(0)
       }
       if (step === 'Проверка') {
         await expect(
