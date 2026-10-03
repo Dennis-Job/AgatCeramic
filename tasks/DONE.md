@@ -105,3 +105,5 @@
   source format, 73 unit passed; полный macOS E2E 268/273 с пятью прежними
   product baseline mismatch. UI Design Guard accepted, live и production
   проверены. [Результат и проверки](../docs/ADMIN_SCROLL_HEADER_REPORT.md).
+
+- [x] Единый формат цен, 2026-10-03: все существующие суммы и денежные поля Admin/Client показывают разделители тысяч. Цена, старая цена и сумма оплаты группируются во время ввода; API сохраняет точную decimal string без пробелов. Проверено в запускаемой Docker копии и localhost:5173; 85 unit и функциональные E2E passed, независимый UI Design Guard принял правку. Ограничения полного baseline — [Файлы и проверки](../docs/PRICE_FORMAT_REPORT.md).
