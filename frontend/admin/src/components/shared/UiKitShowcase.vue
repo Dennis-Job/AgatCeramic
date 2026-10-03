@@ -457,6 +457,7 @@ function submitAuthPreview(): void {
         <div class="mt-4 flex flex-wrap gap-2">
           <UiBadge>Нейтральный</UiBadge>
           <UiBadge tone="primary">Основной</UiBadge>
+          <UiBadge tone="additional">Дополнительный</UiBadge>
           <UiBadge tone="success">Успешно</UiBadge>
           <UiBadge tone="warning">Внимание</UiBadge>
           <UiBadge tone="danger">Ошибка</UiBadge>

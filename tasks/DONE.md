@@ -1,5 +1,11 @@
 # DONE
 
+- [x] Голубой вариант бейджа Admin, 2026-10-03: `UiBadge` получил tone
+      `additional` на основе `blue-light-50`/`blue-light-700`, добавленный в
+      витрину и UI-kit; бейдж категории в таблице товаров использует новый тон.
+      UI Design Guard accepted; lint/build, 91 unit, scoped format и diff-check
+      passed. [Файлы и проверки](../docs/ADMIN_BADGE_ADDITIONAL_REPORT.md).
+
 - [x] Единый размер полей Admin, 2026-10-03: стандартные поля согласованы по
       минимальной высоте 36 px и ширине колонки; поле SKU приведено к стандарту,
       длинные значения в SKU/UiSelect обрезаются внутри поля, полный текст

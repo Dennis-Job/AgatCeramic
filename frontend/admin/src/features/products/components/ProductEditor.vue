@@ -430,7 +430,7 @@ function closeGroupDeletion(): void {
               {{ product.article_number || '—' }}
             </td>
             <td class="max-w-48 px-4 py-3">
-              <UiBadge tone="primary">{{ product.category.name }}</UiBadge>
+              <UiBadge tone="additional">{{ product.category.name }}</UiBadge>
             </td>
             <td class="px-4 py-3 text-right font-medium text-gray-800">
               {{ formatMoney(product.price) }}
