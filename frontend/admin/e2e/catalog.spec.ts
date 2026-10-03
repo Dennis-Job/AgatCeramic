@@ -1059,8 +1059,8 @@ test('product list thumbnail updates immediately when the primary image changes'
   const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
   await dialog.getByRole('button', { name: 'Фото', exact: false }).click()
   await dialog
-    .getByRole('button', { name: 'Переместить изображение 1 ниже' })
-    .click()
+    .getByRole('listitem', { name: 'Фото 1, обложка' })
+    .press('ArrowDown')
   await dialog.getByRole('button', { name: 'Закрыть карточку товара' }).click()
 
   await expect(productRow.locator('img')).toHaveAttribute(

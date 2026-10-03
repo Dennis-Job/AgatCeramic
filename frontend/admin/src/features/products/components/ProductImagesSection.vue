@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { GripVertical, Star } from '@lucide/vue'
+import { onBeforeUnmount } from 'vue'
+import { Star, Trash2 } from '@lucide/vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
@@ -27,6 +28,101 @@ function requestImageDeletion(image: (typeof images.value)[number]): void {
   confirmError.value = ''
   imageDeleting.value = image
 }
+
+function handleImageKeydown(event: KeyboardEvent, index: number): void {
+  if (
+    event.target !== event.currentTarget ||
+    saving.value ||
+    !canManage.value
+  ) {
+    return
+  }
+
+  if (event.key === 'ArrowUp' && index > 0) {
+    event.preventDefault()
+    reorderImage(index, -1)
+  } else if (event.key === 'ArrowDown' && index < images.value.length - 1) {
+    event.preventDefault()
+    reorderImage(index, 1)
+  }
+}
+
+let touchDragTimer: ReturnType<typeof setTimeout> | null = null
+let touchDragId: number | null = null
+let touchDragActive = false
+
+function clearTouchDrag(): void {
+  if (touchDragTimer) clearTimeout(touchDragTimer)
+  touchDragTimer = null
+  touchDragId = null
+  touchDragActive = false
+}
+
+function startTouchDrag(
+  image: (typeof images.value)[number],
+  event: TouchEvent,
+) {
+  if (!canManage.value || saving.value || imageDeleting.value) return
+  if (event.target instanceof Element && event.target.closest('button')) return
+  const touch = event.changedTouches[0]
+  if (!touch) return
+  clearTouchDrag()
+  touchDragId = touch.identifier
+  const imageId = image.id
+  touchDragTimer = setTimeout(() => {
+    touchDragActive = true
+    draggedImageId.value = imageId
+  }, 450)
+}
+
+function moveTouchDrag(event: TouchEvent): void {
+  if (touchDragId === null) return
+  const touch = Array.from(event.changedTouches).find(
+    (item) => item.identifier === touchDragId,
+  )
+  if (!touch) return
+  if (!touchDragActive) {
+    if (touchDragTimer) clearTimeout(touchDragTimer)
+    touchDragTimer = null
+    return
+  }
+  if (event.cancelable) event.preventDefault()
+  const target = document
+    .elementFromPoint(touch.clientX, touch.clientY)
+    ?.closest<HTMLElement>('[data-product-image-id]')
+  const targetId = Number(target?.dataset.productImageId)
+  const targetImage = images.value.find((item) => item.id === targetId)
+  if (targetImage) markImageDropTarget(targetImage)
+}
+
+async function endTouchDrag(event: TouchEvent): Promise<void> {
+  if (touchDragId === null) return
+  const touch = Array.from(event.changedTouches).find(
+    (item) => item.identifier === touchDragId,
+  )
+  if (!touch) return
+  if (touchDragTimer) clearTimeout(touchDragTimer)
+  touchDragTimer = null
+  const wasDragging = touchDragActive
+  touchDragActive = false
+  touchDragId = null
+  if (!wasDragging) return
+  const target = document
+    .elementFromPoint(touch.clientX, touch.clientY)
+    ?.closest<HTMLElement>('[data-product-image-id]')
+  const targetId = Number(target?.dataset.productImageId)
+  const targetIndex = images.value.findIndex((item) => item.id === targetId)
+  if (targetIndex >= 0) await dropImage(targetIndex)
+  else endImageDrag()
+}
+
+function cancelTouchDrag(): void {
+  const wasDragging = touchDragActive
+  clearTouchDrag()
+  if (wasDragging) endImageDrag()
+}
+
+onBeforeUnmount(clearTouchDrag)
 </script>
 
 <template>
@@ -39,71 +135,60 @@ function requestImageDeletion(image: (typeof images.value)[number]): void {
       class="mt-5"
       label="Фото этого товара ещё не добавлены."
     />
-    <div v-else class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <article
-        v-for="(image, index) in images"
-        :key="image.id"
-        class="relative overflow-hidden rounded-xl border border-gray-200 transition-colors"
-        :class="{
-          'cursor-grab opacity-50': draggedImageId === image.id,
-          'border-primary-500 bg-primary-50': draggedOverImageId === image.id,
-        }"
-        :draggable="canManage && !saving"
-        @dragstart="startImageDrag(image, $event)"
-        @dragend="endImageDrag"
-        @dragover.prevent="markImageDropTarget(image)"
-        @drop="dropImage(index)"
-      >
-        <UiImagePreview
-          :url="image.url"
-          :alt="image.alt || form.name"
-          class="product-image-preview"
-        /><UiBadge
-          v-if="index === 0"
-          class="absolute left-3 top-3 z-10 gap-1 shadow-sm"
-          tone="warning"
-          ><Star :size="13" />Обложка</UiBadge
+    <template v-else>
+      <p id="product-image-reorder-help" class="sr-only">
+        Перетаскивайте фотографии, чтобы изменить порядок. На сенсорном экране
+        удерживайте фото и переместите его. Сфокусируйте фото и используйте
+        стрелки вверх и вниз для изменения порядка с клавиатуры.
+      </p>
+      <ul class="mt-5 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
+        <li
+          v-for="(image, index) in images"
+          :key="image.id"
+          class="admin-focus relative overflow-hidden rounded-xl border border-gray-200 transition-colors focus:outline-none"
+          :tabindex="canManage && !saving ? 0 : undefined"
+          :aria-label="`Фото ${index + 1}${index === 0 ? ', обложка' : ''}`"
+          aria-describedby="product-image-reorder-help"
+          :data-product-image-id="image.id"
+          :class="{
+            'cursor-grab opacity-50': draggedImageId === image.id,
+            'border-primary-500 bg-primary-50': draggedOverImageId === image.id,
+          }"
+          :draggable="canManage && !saving"
+          @dragstart="startImageDrag(image, $event)"
+          @dragend="endImageDrag"
+          @dragover.prevent="markImageDropTarget(image)"
+          @drop="dropImage(index)"
+          @keydown="handleImageKeydown($event, index)"
+          @touchstart="startTouchDrag(image, $event)"
+          @touchmove="moveTouchDrag"
+          @touchend="endTouchDrag"
+          @touchcancel="cancelTouchDrag"
         >
-        <div class="space-y-3 p-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="inline-flex items-center gap-1 text-xs text-gray-500"
-              ><GripVertical :size="15" />Перетащите для изменения порядка</span
-            ><span class="break-all text-xs text-gray-500">{{
-              image.alt
-            }}</span>
-          </div>
-          <div class="flex flex-wrap gap-1">
-            <UiButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="text-primary-600"
-              :disabled="index === 0 || saving"
-              :aria-label="`Переместить изображение ${index + 1} выше`"
-              @click="reorderImage(index, -1)"
-              >Выше</UiButton
-            ><UiButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="text-primary-600"
-              :disabled="index === images.length - 1 || saving"
-              :aria-label="`Переместить изображение ${index + 1} ниже`"
-              @click="reorderImage(index, 1)"
-              >Ниже</UiButton
-            ><UiButton
-              type="button"
-              variant="danger-ghost"
-              size="sm"
-              :disabled="saving"
-              :aria-label="`Удалить изображение ${index + 1}`"
-              @click="requestImageDeletion(image)"
-              >Удалить</UiButton
-            >
-          </div>
-        </div>
-      </article>
-    </div>
+          <UiImagePreview
+            :url="image.url"
+            :alt="image.alt || form.name"
+            class="product-image-preview"
+          /><UiBadge
+            v-if="index === 0"
+            class="absolute left-3 top-3 z-10 gap-1 shadow-sm"
+            tone="warning"
+            ><Star :size="13" />Обложка</UiBadge
+          >
+          <UiButton
+            type="button"
+            variant="danger-ghost"
+            size="sm"
+            class="absolute right-2 top-2 z-20 h-9 w-9 min-h-9 !p-0 rounded-full bg-white/95 shadow-sm"
+            :disabled="saving"
+            :aria-label="`Удалить изображение ${index + 1}`"
+            tooltip="Удалить фото"
+            @click.stop="requestImageDeletion(image)"
+            ><Trash2 :size="17" aria-hidden="true"
+          /></UiButton>
+        </li>
+      </ul>
+    </template>
   </div>
 </template>
 

@@ -34,6 +34,9 @@ test('table photo action uploads, deletes and updates the thumbnail without open
     dialog.getByText('Фото этого товара ещё не добавлены.'),
   ).toBeVisible()
   await expect(
+    dialog.getByText('Загрузка, удаление и порядок фото сохраняются сразу.'),
+  ).toBeVisible()
+  await expect(
     dialog.getByText('Фото этого товара ещё не добавлены.').locator('..'),
   ).not.toHaveClass(/border/)
   await expect(dialog.locator('.admin-tooltip')).toHaveCount(0)
@@ -55,7 +58,7 @@ test('table photo action uploads, deletes and updates the thumbnail without open
   ).toEqual([])
   await dialog.getByLabel('Файл изображения').setInputFiles(uploadFile)
   await dialog.getByRole('button', { name: 'Загрузить', exact: true }).click()
-  await expect(dialog.locator('article img')).toHaveCount(1)
+  await expect(dialog.locator('li img')).toHaveCount(1)
   await expect(dialog).toHaveAccessibleName('Редактирование фото')
   await dialog.getByRole('button', { name: 'Готово' }).click()
   const edit = page.getByRole('button', { name: editName, exact: true })
@@ -75,7 +78,7 @@ test('table photo action uploads, deletes and updates the thumbnail without open
   await expect(add.locator('img')).toHaveCount(0)
 })
 
-test('photo editor keeps hover, keyboard, cover order and responsive accessibility', async ({
+test('photo editor supports keyboard and touch ordering with responsive accessibility', async ({
   page,
 }) => {
   await mockCatalogApi(page, {
@@ -127,7 +130,7 @@ test('photo editor keeps hover, keyboard, cover order and responsive accessibili
     name: 'Редактирование фото',
     exact: true,
   })
-  await expect(dialog.locator('article img')).toHaveCount(4)
+  await expect(dialog.locator('li img')).toHaveCount(4)
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     expect(
@@ -141,9 +144,9 @@ test('photo editor keeps hover, keyboard, cover order and responsive accessibili
       ),
     ).toBe(true)
     const top = await dialog
-      .locator('article')
-      .evaluateAll((articles) =>
-        articles.map((article) => article.getBoundingClientRect().top),
+      .locator('li')
+      .evaluateAll((images) =>
+        images.map((image) => image.getBoundingClientRect().top),
       )
     expect(top.filter((value) => Math.abs(value - top[0]!) < 1)).toHaveLength(
       width >= 1024 ? 4 : width >= 640 ? 2 : 1,
@@ -158,19 +161,55 @@ test('photo editor keeps hover, keyboard, cover order and responsive accessibili
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   }
   await dialog
-    .getByRole('button', {
-      name: 'Переместить изображение 1 ниже',
-      exact: true,
-    })
-    .click()
-  await expect(dialog.locator('article img').first()).toHaveAttribute(
+    .getByRole('listitem', { name: 'Фото 1, обложка' })
+    .press('ArrowDown')
+  await expect(dialog.locator('li img').first()).toHaveAttribute(
     'src',
     '/second.jpg',
+  )
+  await page.setViewportSize({ width: 320, height: 900 })
+  const firstPhoto = dialog.locator('li').first()
+  const secondPhoto = dialog.locator('li').nth(1)
+  await secondPhoto.scrollIntoViewIfNeeded()
+  const firstBox = await firstPhoto.boundingBox()
+  const secondBox = await secondPhoto.boundingBox()
+  expect(firstBox).not.toBeNull()
+  expect(secondBox).not.toBeNull()
+  const touch = await page.context().newCDPSession(page)
+  await touch.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [
+      {
+        id: 7,
+        x: firstBox!.x + firstBox!.width / 2,
+        y: firstBox!.y + firstBox!.height / 2,
+      },
+    ],
+  })
+  await page.waitForTimeout(500)
+  await touch.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [
+      {
+        id: 7,
+        x: secondBox!.x + secondBox!.width / 2,
+        y: secondBox!.y + secondBox!.height / 2,
+      },
+    ],
+  })
+  await touch.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: [],
+  })
+  await touch.detach()
+  await expect(dialog.locator('li img').first()).toHaveAttribute(
+    'src',
+    '/first.jpg',
   )
   await page.keyboard.press('Escape')
   await expect(dialog).toHaveCount(0)
   await expect(edit).toBeFocused()
-  await expect(edit.locator('img')).toHaveAttribute('src', '/second.jpg')
+  await expect(edit.locator('img')).toHaveAttribute('src', '/first.jpg')
   await page.mouse.move(0, 0)
   await page.keyboard.press('Tab')
   await edit.focus()
@@ -219,7 +258,7 @@ test('photo load and upload failures offer recovery and keep the selected file',
   await expect(dialog.locator('output')).toHaveText('tile.jpg')
   await page.unroute(imagesRoute)
   await dialog.getByRole('button', { name: 'Загрузить', exact: true }).click()
-  await expect(dialog.locator('article img')).toHaveCount(1)
+  await expect(dialog.locator('li img')).toHaveCount(1)
 })
 
 test('closing a loading photo dialog ignores the late response and clears pending file on reopen', async ({
@@ -287,7 +326,7 @@ test('photo upload blocks close while busy and restores controls afterwards', as
   await expect(dialog).toBeVisible()
   await expect.poll(() => typeof release).toBe('function')
   release?.()
-  await expect(dialog.locator('article img')).toHaveCount(1)
+  await expect(dialog.locator('li img')).toHaveCount(1)
   await expect(dialog.getByRole('button', { name: 'Готово' })).toBeEnabled()
 })
 
@@ -313,7 +352,7 @@ test('photo editor shows a fallback for unavailable existing photos', async ({
   await page.goto('/products')
   await page.getByRole('button', { name: editName }).click()
   const dialog = page.getByRole('dialog')
-  await expect(dialog.locator('article').getByRole('status')).toHaveText(
+  await expect(dialog.locator('li').getByRole('status')).toHaveText(
     'Не удалось загрузить изображение',
   )
   await page.screenshot({
@@ -349,12 +388,12 @@ test('photo dropzone accepts file drops, shows selection and rejects unsupported
   })
   await zone.dispatchEvent('drop', { dataTransfer: transfer })
   await expect(dialog.locator('output')).toHaveText('dropped-tile.jpg')
-  await expect(dialog.locator('article')).toHaveCount(0)
+  await expect(dialog.locator('li')).toHaveCount(0)
   await page.screenshot({
     path: '.tmp/product-photo-upload-review/file-selected.png',
   })
   await dialog.getByRole('button', { name: 'Загрузить', exact: true }).click()
-  await expect(dialog.locator('article')).toHaveCount(1)
+  await expect(dialog.locator('li')).toHaveCount(1)
   for (const file of [
     {
       name: 'notes.txt',
@@ -379,7 +418,7 @@ test('photo dropzone accepts file drops, shows selection and rejects unsupported
     await expect(
       dialog.getByRole('button', { name: 'Загрузить', exact: true }),
     ).toHaveCount(0)
-    await expect(dialog.locator('article')).toHaveCount(1)
+    await expect(dialog.locator('li')).toHaveCount(1)
     await invalid.dispose()
   }
   const multiple = await page.evaluateHandle(() => {
