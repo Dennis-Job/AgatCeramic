@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Plus, Trash2 } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -20,17 +21,16 @@ const {
 </script>
 
 <template>
-  <section
+  <UiCard
     id="product-review-relations"
-    class="rounded-xl border border-gray-300 p-5"
     aria-labelledby="product-relations-title"
   >
-    <div>
+    <template #header>
       <h3 id="product-relations-title" class="font-bold text-gray-900">
         Сопутствующие товары
       </h3>
-    </div>
-    <div class="mt-4 flex flex-col gap-2 lg:flex-row">
+    </template>
+    <div class="flex flex-col gap-2 lg:flex-row">
       <UiInput
         v-model="relationSearch"
         class="min-w-0 flex-1"
@@ -60,7 +60,7 @@ const {
     <div
       v-for="(relation, index) in relations"
       :key="index"
-      class="mt-3 rounded-lg border border-gray-200 p-3"
+      class="mt-3 rounded-xl border border-gray-100 bg-gray-25 p-3"
     >
       <div class="grid gap-2 sm:grid-cols-[1fr_160px_90px_auto]">
         <UiSelect
@@ -104,5 +104,5 @@ const {
         >{{ saving ? 'Сохранение…' : 'Сохранить рекомендации' }}</UiButton
       >
     </div>
-  </section>
+  </UiCard>
 </template>

@@ -144,10 +144,7 @@ function removeOption(index: number): void {
             >Показывать на странице товара</UiCheckbox
           >
         </div>
-        <section
-          v-if="hasOptions"
-          class="rounded-xl border border-gray-200 bg-gray-25 p-4"
-        >
+        <section v-if="hasOptions" class="admin-panel--inset p-4">
           <div class="flex items-center justify-between">
             <div>
               <h3 class="font-semibold text-gray-800">Варианты</h3>

@@ -115,7 +115,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     <div
       v-for="(item, index) in content.categories.items"
       :key="itemKey(item)"
-      class="space-y-4 rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset space-y-4 p-4"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h3 class="font-medium text-gray-800">Материал {{ index + 1 }}</h3>
@@ -306,7 +306,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     <div
       v-for="(item, index) in content.guide.items"
       :key="index"
-      class="space-y-3 rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset space-y-3 p-4"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h3 class="font-medium text-gray-800">Совет {{ index + 1 }}</h3>

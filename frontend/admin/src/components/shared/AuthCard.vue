@@ -12,7 +12,7 @@ defineEmits<{ submit: [] }>()
 
 <template>
   <form
-    class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 shadow-dialog"
+    class="admin-panel admin-panel--white admin-panel--elevated w-full max-w-md p-8"
     @submit.prevent="$emit('submit')"
   >
     <p class="text-sm font-semibold text-primary-500">AgatCeramic</p>

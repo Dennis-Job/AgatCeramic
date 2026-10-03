@@ -114,10 +114,13 @@ async function confirmPublish(): Promise<void> {
     <UiNotification v-if="success" tone="success">{{ success }}</UiNotification>
     <UiLoadingState v-if="loading" label="Загрузка настроек…" />
     <template v-else-if="loaded">
-      <UiCard>
-        <form class="space-y-5" @submit.prevent="save">
+      <UiCard aria-labelledby="seller-details-title">
+        <template #header>
           <div>
-            <h2 class="text-lg font-semibold text-gray-800">
+            <h2
+              id="seller-details-title"
+              class="text-lg font-semibold text-gray-800"
+            >
               Реквизиты продавца
             </h2>
             <p class="mt-1 text-sm text-gray-500">
@@ -125,6 +128,8 @@ async function confirmPublish(): Promise<void> {
               реквизиты открываются отдельным переключателем.
             </p>
           </div>
+        </template>
+        <form class="space-y-5" @submit.prevent="save">
           <div
             class="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 [&>*]:min-w-0"
           >
@@ -235,15 +240,22 @@ async function confirmPublish(): Promise<void> {
         </form>
       </UiCard>
 
-      <UiCard>
-        <h2 class="text-lg font-semibold text-gray-800">
-          Юридические документы
-        </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          Новая версия сохраняется черновиком. Публикация делает текст доступным
-          публично.
-        </p>
-        <form class="mt-5 space-y-4" @submit.prevent="addDocument">
+      <UiCard aria-labelledby="legal-documents-title">
+        <template #header>
+          <div>
+            <h2
+              id="legal-documents-title"
+              class="text-lg font-semibold text-gray-800"
+            >
+              Юридические документы
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Новая версия сохраняется черновиком. Публикация делает текст
+              доступным публично.
+            </p>
+          </div>
+        </template>
+        <form class="space-y-4" @submit.prevent="addDocument">
           <div
             class="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 [&>*]:min-w-0"
           >
@@ -357,19 +369,22 @@ async function confirmPublish(): Promise<void> {
         </UiDialogFooter>
       </UiDialog>
 
-      <UiCard>
-        <h2 class="text-lg font-semibold text-gray-800">
-          Согласования ADR-014
-        </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          Внутренний журнал решений. Запись не включает production-сбор ПДн и не
-          заменяет внешнюю юридическую проверку.
-        </p>
-        <form
-          v-if="canApprove"
-          class="mt-5 space-y-4"
-          @submit.prevent="addApproval"
-        >
+      <UiCard aria-labelledby="approvals-title">
+        <template #header>
+          <div>
+            <h2
+              id="approvals-title"
+              class="text-lg font-semibold text-gray-800"
+            >
+              Согласования ADR-014
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Внутренний журнал решений. Запись не включает production-сбор ПДн
+              и не заменяет внешнюю юридическую проверку.
+            </p>
+          </div>
+        </template>
+        <form v-if="canApprove" class="space-y-4" @submit.prevent="addApproval">
           <div
             class="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 [&>*]:min-w-0"
           >

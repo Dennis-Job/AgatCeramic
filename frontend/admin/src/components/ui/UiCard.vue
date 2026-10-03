@@ -1,19 +1,31 @@
 <script setup lang="ts">
 withDefaults(defineProps<{ padded?: boolean; surface?: 'white' | 'muted' }>(), {
   padded: true,
-  surface: 'white',
+  surface: 'muted',
 })
 </script>
 <template>
   <section
-    class="rounded-2xl border shadow-card"
+    class="admin-panel"
     :class="[
-      surface === 'muted'
-        ? 'border-transparent bg-gray-50'
-        : 'border-gray-200 bg-white',
-      { 'p-5': padded },
+      surface === 'white' && 'admin-panel--white',
+      {
+        'p-5': padded && !$slots.header,
+        'flex flex-col overflow-hidden': $slots.header,
+      },
     ]"
   >
-    <slot />
+    <template v-if="$slots.header">
+      <header class="bg-gray-50 px-5 py-4">
+        <slot name="header" />
+      </header>
+      <div
+        class="admin-panel--inset mx-1.5 mb-1.5 flex-1"
+        :class="padded && 'p-4 sm:p-5'"
+      >
+        <slot />
+      </div>
+    </template>
+    <slot v-else />
   </section>
 </template>

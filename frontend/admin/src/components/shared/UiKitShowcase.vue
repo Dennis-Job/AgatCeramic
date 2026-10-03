@@ -209,6 +209,10 @@ const colorGroups = [
 const standaloneColors = [
   { label: 'Page', token: '--admin-color-page' },
   { label: 'White', token: '--admin-color-white' },
+  { label: 'Card surface', token: '--admin-color-card-surface' },
+  { label: 'Card border', token: '--admin-color-card-border' },
+  { label: 'Card inset surface', token: '--admin-color-card-inset-surface' },
+  { label: 'Card inset border', token: '--admin-color-card-inset-border' },
   { label: 'Gray dark', token: '--admin-color-gray-dark' },
   { label: 'Text', token: '--admin-color-text' },
   { label: 'Blue 50', token: '--admin-color-blue-50' },
@@ -218,7 +222,7 @@ const standaloneColors = [
 ]
 
 const spacingTokens = ['1', '2', '3', '4', '5', '6']
-const radiusTokens = ['md', 'lg', 'xl', '2xl']
+const radiusTokens = ['md', 'lg', 'xl', '2xl', 'card', 'card-inset']
 const controlHeightTokens = ['sm', 'md', 'lg']
 const shadowTokens = ['card', 'input', 'dialog', 'dropdown', 'sm', 'xl']
 const foundationMetaTokens = [
@@ -356,13 +360,26 @@ function submitAuthPreview(): void {
       notice
     }}</UiNotification>
 
-    <UiCard data-ui-kit-section="inventory">
-      <h2 class="text-lg font-semibold text-gray-900">Состав UI-kit</h2>
-      <p class="mt-1 text-sm text-gray-500">
-        22 UI primitives и 3 shared-компонента, доступных для повторного
-        использования. Layout- и feature-компоненты в этот каталог не входят.
-      </p>
-      <div class="mt-4 grid gap-4 lg:grid-cols-2">
+    <UiCard
+      data-ui-kit-section="inventory"
+      aria-labelledby="ui-kit-inventory-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-inventory-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Состав UI-kit
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            22 UI primitives и 3 shared-компонента, доступных для повторного
+            использования. Layout- и feature-компоненты в этот каталог не
+            входят.
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-4 lg:grid-cols-2">
         <div>
           <h3 class="text-sm font-semibold text-gray-700">components/ui</h3>
           <div class="mt-2 flex flex-wrap gap-2">
@@ -387,11 +404,25 @@ function submitAuthPreview(): void {
     </UiCard>
 
     <div class="grid gap-6 xl:grid-cols-2">
-      <UiCard data-ui-kit-section="buttons">
-        <h2 class="text-lg font-semibold text-gray-900">Кнопки</h2>
-        <p class="mt-1 text-sm text-gray-500"><code>ui/UiButton.vue</code></p>
+      <UiCard
+        data-ui-kit-section="buttons"
+        aria-labelledby="ui-kit-buttons-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-buttons-title"
+              class="text-lg font-semibold text-gray-900"
+            >
+              Кнопки
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiButton.vue</code>
+            </p>
+          </div>
+        </template>
 
-        <h3 class="mt-4 text-sm font-semibold text-gray-700">Варианты</h3>
+        <h3 class="text-sm font-semibold text-gray-700">Варианты</h3>
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton>Основная</UiButton>
           <UiButton variant="secondary">Вторичная</UiButton>
@@ -447,14 +478,24 @@ function submitAuthPreview(): void {
         </div>
       </UiCard>
 
-      <UiCard data-ui-kit-section="feedback">
-        <h2 class="text-lg font-semibold text-gray-900">
-          Статусы и оповещения
-        </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          <code>ui/UiAlert.vue</code>, <code>ui/UiBadge.vue</code>
-        </p>
-        <div class="mt-4 flex flex-wrap gap-2">
+      <UiCard
+        data-ui-kit-section="feedback"
+        aria-labelledby="ui-kit-feedback-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-feedback-title"
+              class="text-lg font-semibold text-gray-900"
+            >
+              Статусы и оповещения
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiAlert.vue</code>, <code>ui/UiBadge.vue</code>
+            </p>
+          </div>
+        </template>
+        <div class="flex flex-wrap gap-2">
           <UiBadge>Нейтральный</UiBadge>
           <UiBadge tone="primary">Основной</UiBadge>
           <UiBadge tone="additional">Дополнительный</UiBadge>
@@ -494,55 +535,76 @@ function submitAuthPreview(): void {
       </UiCard>
     </div>
 
-    <UiCard data-ui-kit-section="cards-and-header">
-      <h2 class="text-lg font-semibold text-gray-900">
-        Карточки и заголовок страницы
-      </h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>ui/UiCard.vue</code>, <code>shared/PageHeader.vue</code>
-      </p>
-      <p class="mt-3 text-sm text-gray-600">
+    <UiCard
+      data-ui-kit-section="cards-and-header"
+      aria-labelledby="ui-kit-cards-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-cards-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Карточки и заголовок страницы
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiCard.vue</code>, <code>shared/PageHeader.vue</code>
+          </p>
+        </div>
+      </template>
+      <p class="text-sm text-gray-600">
         Текущий заголовок UI-kit выше показывает <code>PageHeader</code> с
         eyebrow, description и actions slot.
       </p>
       <div class="mt-4 grid gap-4 md:grid-cols-2">
         <UiCard>
-          <h3 class="font-semibold text-gray-900">Card с отступами</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            <code>padded=true</code> по умолчанию.
+          <template #header>
+            <h3 class="font-semibold text-gray-900">Секционная панель</h3>
+          </template>
+          <p>
+            Заголовок находится в серой шапке, а содержимое — в отдельном белом
+            блоке со скруглёнными углами.
           </p>
         </UiCard>
-        <UiCard :padded="false" class="overflow-hidden">
-          <div
-            class="border-b border-gray-200 px-5 py-3 font-semibold text-gray-900"
-          >
-            Card без отступов
-          </div>
-          <p class="px-5 py-4 text-sm text-gray-500">
-            <code>padded=false</code> для таблиц и кастомных секций.
-          </p>
+        <UiCard surface="white">
+          <template #header>
+            <h3 class="font-semibold text-gray-900">Белая поверхность</h3>
+          </template>
+          <p>Внешний фон, шапка и белое тело используют общие card tokens.</p>
         </UiCard>
-        <UiCard surface="muted" class="md:col-span-2">
-          <h3 class="font-semibold text-gray-900">Светлая поверхность</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            <code>surface=muted</code> для показателей и вспомогательных блоков.
-            Карточка без тени; основной текст сохраняет читаемый контраст.
+        <UiCard class="md:col-span-2">
+          <template #header>
+            <h3 class="font-semibold text-gray-900">Общий паттерн</h3>
+          </template>
+          <p>
+            <code>UiCard</code> с именованным слотом <code>#header</code>
+            автоматически разделяет заголовок и основное содержимое.
           </p>
         </UiCard>
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="form-controls">
-      <h2 class="text-lg font-semibold text-gray-900">Поля формы</h2>
-      <p
-        class="mt-1 break-words text-sm text-gray-500 [overflow-wrap:anywhere]"
-      >
-        <code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>,
-        <code>ui/UiSelect.vue</code>, <code>ui/UiDatePicker.vue</code>,
-        <code>ui/UiTextarea.vue</code>
-      </p>
+    <UiCard
+      data-ui-kit-section="form-controls"
+      aria-labelledby="ui-kit-fields-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-fields-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Поля формы
+          </h2>
+          <p class="break-words text-sm text-gray-500 [overflow-wrap:anywhere]">
+            <code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>,
+            <code>ui/UiSelect.vue</code>, <code>ui/UiDatePicker.vue</code>,
+            <code>ui/UiTextarea.vue</code>
+          </p>
+        </div>
+      </template>
 
-      <div class="mt-5 grid min-w-0 gap-6 xl:grid-cols-2">
+      <div class="grid min-w-0 gap-6 xl:grid-cols-2">
         <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
           <h3 class="text-sm font-semibold text-gray-700">Input и Textarea</h3>
           <UiField
@@ -718,14 +780,24 @@ function submitAuthPreview(): void {
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="selection">
-      <h2 class="text-lg font-semibold text-gray-900">
-        Флажки и переключатели
-      </h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code>
-      </p>
-      <div class="mt-4 grid gap-6 lg:grid-cols-2">
+    <UiCard
+      data-ui-kit-section="selection"
+      aria-labelledby="ui-kit-selection-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-selection-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Флажки и переключатели
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code>
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-6 lg:grid-cols-2">
         <div class="grid content-start gap-3">
           <h3 class="text-sm font-semibold text-gray-700">Checkbox</h3>
           <UiCheckbox
@@ -789,14 +861,24 @@ function submitAuthPreview(): void {
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="segmented">
-      <h2 class="text-lg font-semibold text-gray-900">
-        Сегментированные переключатели
-      </h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>ui/UiSegmentedControl.vue</code>
-      </p>
-      <div class="mt-4 grid gap-6 lg:grid-cols-2">
+    <UiCard
+      data-ui-kit-section="segmented"
+      aria-labelledby="ui-kit-segmented-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-segmented-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Сегментированные переключатели
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiSegmentedControl.vue</code>
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-6 lg:grid-cols-2">
         <UiSegmentedControl
           v-model="segmented"
           name="ui-kit-segmented"
@@ -813,12 +895,24 @@ function submitAuthPreview(): void {
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="table-and-pagination">
-      <h2 class="text-lg font-semibold text-gray-900">Таблица и пагинация</h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>ui/UiTable.vue</code>, <code>ui/UiPagination.vue</code>
-      </p>
-      <div class="mt-4">
+    <UiCard
+      data-ui-kit-section="table-and-pagination"
+      aria-labelledby="ui-kit-table-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-table-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Таблица и пагинация
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiTable.vue</code>, <code>ui/UiPagination.vue</code>
+          </p>
+        </div>
+      </template>
+      <div>
         <UiTable min-width="min-w-[680px]" label="Пример компонентов UI-kit">
           <thead class="bg-gray-25 text-xs font-medium text-gray-500">
             <tr>
@@ -890,11 +984,24 @@ function submitAuthPreview(): void {
     </UiCard>
 
     <div class="grid gap-6 xl:grid-cols-2">
-      <UiCard data-ui-kit-section="collection-states">
-        <h2 class="text-lg font-semibold text-gray-900">Состояния коллекций</h2>
-        <p class="mt-1 text-sm text-gray-500">
-          <code>ui/UiLoadingState.vue</code>, <code>ui/UiEmptyState.vue</code>
-        </p>
+      <UiCard
+        data-ui-kit-section="collection-states"
+        aria-labelledby="ui-kit-collections-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-collections-title"
+              class="text-lg font-semibold text-gray-900"
+            >
+              Состояния коллекций
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiLoadingState.vue</code>,
+              <code>ui/UiEmptyState.vue</code>
+            </p>
+          </div>
+        </template>
         <UiLoadingState label="Загрузка данных для примера…" />
         <UiEmptyState label="В этой коллекции пока нет данных.">
           <UiButton size="sm" variant="soft-blue" type="button"
@@ -909,12 +1016,25 @@ function submitAuthPreview(): void {
         </div>
       </UiCard>
 
-      <UiCard data-ui-kit-section="dialogs">
-        <h2 class="text-lg font-semibold text-gray-900">Диалоги</h2>
-        <p class="mt-1 text-sm text-gray-500">
-          <code>ui/UiDialog.vue</code>, <code>shared/ConfirmDialog.vue</code>
-        </p>
-        <div class="mt-4 flex flex-wrap gap-3">
+      <UiCard
+        data-ui-kit-section="dialogs"
+        aria-labelledby="ui-kit-dialogs-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-dialogs-title"
+              class="text-lg font-semibold text-gray-900"
+            >
+              Диалоги
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiDialog.vue</code>,
+              <code>shared/ConfirmDialog.vue</code>
+            </p>
+          </div>
+        </template>
+        <div class="flex flex-wrap gap-3">
           <UiButton variant="secondary" @click="isDialogOpen = true">
             Открыть диалог
           </UiButton>
@@ -950,10 +1070,21 @@ function submitAuthPreview(): void {
       </UiCard>
     </div>
 
-    <UiCard data-ui-kit-section="auth-card">
-      <h2 class="text-lg font-semibold text-gray-900">Auth shell</h2>
-      <p class="mt-1 text-sm text-gray-500"><code>shared/AuthCard.vue</code></p>
-      <div class="mt-4 rounded-xl bg-gray-50 p-4 sm:p-6">
+    <UiCard data-ui-kit-section="auth-card" aria-labelledby="ui-kit-auth-title">
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-auth-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Auth shell
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>shared/AuthCard.vue</code>
+          </p>
+        </div>
+      </template>
+      <div class="rounded-xl bg-gray-50 p-4 sm:p-6">
         <AuthCard
           class="mx-auto"
           heading-tag="h2"
@@ -974,14 +1105,26 @@ function submitAuthPreview(): void {
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="design-tokens">
-      <h2 class="text-lg font-semibold text-gray-900">Design tokens</h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>styles/tokens.css</code> — единственный source of truth для
-        визуальных констант Admin.
-      </p>
+    <UiCard
+      data-ui-kit-section="design-tokens"
+      aria-labelledby="ui-kit-tokens-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-tokens-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Design tokens
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>styles/tokens.css</code> — единственный source of truth для
+            визуальных констант Admin.
+          </p>
+        </div>
+      </template>
 
-      <section class="mt-6" data-ui-kit-tokens="colors">
+      <section data-ui-kit-tokens="colors">
         <h3 class="text-base font-semibold text-gray-800">Цвета</h3>
         <div class="mt-4 space-y-5">
           <div v-for="group in colorGroups" :key="group.label">

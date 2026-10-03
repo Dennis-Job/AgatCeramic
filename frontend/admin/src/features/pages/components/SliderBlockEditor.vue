@@ -122,7 +122,7 @@ onMounted(() => state.load())
         <li
           v-for="(banner, index) in state.selected.value.banners"
           :key="banner.id"
-          class="min-w-0 space-y-2 rounded-lg border border-gray-200 p-3"
+          class="admin-panel--inset min-w-0 space-y-2 p-3"
         >
           <UiImagePreview
             :url="banner.image_url"

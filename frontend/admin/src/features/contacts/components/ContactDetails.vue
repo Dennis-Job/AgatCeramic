@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
@@ -38,7 +39,24 @@ defineEmits<{
 </script>
 
 <template>
-  <aside class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-card">
+  <UiCard
+    class="min-w-0"
+    role="complementary"
+    aria-labelledby="contact-details-title"
+  >
+    <template #header>
+      <div>
+        <p class="text-xs text-gray-500">
+          {{ selected ? typeName(selected.type) : 'Обращение' }}
+        </p>
+        <h2
+          id="contact-details-title"
+          class="mt-1 break-words font-bold text-gray-900"
+        >
+          {{ selected ? `Обращение #${selected.id}` : 'Детали обращения' }}
+        </h2>
+      </div>
+    </template>
     <UiNotification v-if="actionError && !selected">{{
       actionError
     }}</UiNotification>
@@ -46,13 +64,7 @@ defineEmits<{
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
       Выберите обращение в списке.
     </div>
-    <div v-else class="space-y-6 p-5">
-      <div>
-        <p class="text-xs text-gray-500">{{ typeName(selected.type) }}</p>
-        <h2 class="mt-1 text-xl font-bold text-gray-900">
-          Обращение #{{ selected.id }}
-        </h2>
-      </div>
+    <div v-else class="space-y-6">
       <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
       <section>
         <h3 class="text-sm font-semibold text-gray-900">Контакт</h3>
@@ -73,14 +85,14 @@ defineEmits<{
         </p>
         <p
           v-if="selected.message"
-          class="mt-3 whitespace-pre-line break-words rounded-lg bg-gray-25 p-3 text-sm text-gray-700"
+          class="admin-panel--inset mt-3 whitespace-pre-line break-words p-3 text-sm text-gray-700"
         >
           {{ selected.message }}
         </p>
       </section>
       <section
         v-if="canManageStatus || canAssign"
-        class="grid gap-3 rounded-lg border border-gray-200 p-4"
+        class="admin-panel--inset grid gap-3 p-4"
       >
         <h3 class="text-sm font-semibold text-gray-900">Обработка</h3>
         <template v-if="canManageStatus"
@@ -132,7 +144,7 @@ defineEmits<{
           <article
             v-for="comment in comments"
             :key="comment.id"
-            class="rounded-lg bg-gray-25 p-3 text-sm"
+            class="admin-panel--inset p-3 text-sm"
           >
             <p class="whitespace-pre-line break-words">{{ comment.body }}</p>
             <p class="mt-2 text-xs text-gray-500">
@@ -167,5 +179,5 @@ defineEmits<{
         </form>
       </section>
     </div>
-  </aside>
+  </UiCard>
 </template>

@@ -45,14 +45,22 @@ const {
     </template>
 
     <UiNotification v-if="success" tone="success">{{ success }}</UiNotification>
-    <UiCard class="admin-container mb-6">
-      <form
-        class="grid gap-4 p-5 sm:grid-cols-2"
-        @submit.prevent="editing ? saveEdit() : upload()"
-      >
-        <h2 class="text-base font-semibold sm:col-span-2">
+    <UiCard
+      class="admin-container mb-6"
+      :aria-labelledby="editing ? 'media-edit-title' : 'media-upload-title'"
+    >
+      <template #header>
+        <h2
+          :id="editing ? 'media-edit-title' : 'media-upload-title'"
+          class="font-semibold text-gray-900"
+        >
           {{ editing ? 'Редактировать файл' : 'Загрузить файл' }}
         </h2>
+      </template>
+      <form
+        class="grid gap-4 sm:grid-cols-2"
+        @submit.prevent="editing ? saveEdit() : upload()"
+      >
         <UiField label="Название" required
           ><UiInput v-model="title" required maxlength="255" :disabled="busy"
         /></UiField>

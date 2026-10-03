@@ -744,3 +744,16 @@ API behaviour без migration plan и синхронного обновлени
   source format, 73 unit passed; полный macOS E2E 268/273 с пятью прежними
   product baseline mismatch. UI Design Guard accepted, live и production
   проверены. [Результат и проверки](../docs/ADMIN_SCROLL_HEADER_REPORT.md).
+
+- [x] TASK-A063 Единый Seller-стиль обособленных панелей Admin, 2026-10-03:
+    общие tokens и классы карточек применены к самостоятельным панелям, сводкам,
+    редакторам и dashboard. Lint/build/scoped format и ручной просмотр прошли;
+    UI Design Guard accepted. Unit/E2E и отдельная проверка контрольных ширин не
+    запускались. [Отчёт](../docs/TASK_A063_REPORT.md).
+
+- [x] TASK-A064 Секционные карточки Admin по референсу Seller, 2026-10-03:
+    серые шапки и белые округлённые тела добавлены в основные самостоятельные
+    панели UI-kit и рабочих экранов Admin; тело растягивается на высоту строки.
+    Lint/build/scoped format и diff check прошли; UI Design Guard accepted по
+    статическому аудиту. Unit/E2E и мобильные viewport проверки не запускались.
+    [Отчёт](../docs/TASK_A064_REPORT.md).

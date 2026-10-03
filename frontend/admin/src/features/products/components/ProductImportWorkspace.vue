@@ -10,6 +10,7 @@ import {
 import { CheckCircle2, Download, ImagePlus, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { RouterLink } from 'vue-router'
@@ -134,38 +135,38 @@ function changeTab(event: KeyboardEvent) {
         >
       </template>
     </PageHeader>
-    <div
-      class="min-w-0 rounded-xl border border-gray-200 bg-white px-4 sm:px-6"
-    >
-      <div
-        class="grid grid-cols-2 gap-2 border-b border-gray-200"
-        role="tablist"
-        aria-label="Тип загрузки"
-        @keydown="changeTab"
-      >
-        <UiButton
-          v-for="item in [
-            { id: 'products', label: 'Загрузка товаров' },
-            { id: 'images', label: 'Загрузка изображений' },
-          ]"
-          :id="`import-tab-${item.id}`"
-          :key="item.id"
-          type="button"
-          variant="ghost"
-          role="tab"
-          :aria-selected="tab === item.id"
-          :aria-controls="`import-panel-${item.id}`"
-          :tabindex="tab === item.id ? 0 : -1"
-          class="rounded-none border-b-2 py-4"
-          :class="
-            tab === item.id
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          "
-          @click="tab = item.id as typeof tab"
-          >{{ item.label }}</UiButton
+    <UiCard class="min-w-0" :padded="false">
+      <template #header>
+        <div
+          class="grid grid-cols-2 gap-2"
+          role="tablist"
+          aria-label="Тип загрузки"
+          @keydown="changeTab"
         >
-      </div>
+          <UiButton
+            v-for="item in [
+              { id: 'products', label: 'Загрузка товаров' },
+              { id: 'images', label: 'Загрузка изображений' },
+            ]"
+            :id="`import-tab-${item.id}`"
+            :key="item.id"
+            type="button"
+            variant="ghost"
+            role="tab"
+            :aria-selected="tab === item.id"
+            :aria-controls="`import-panel-${item.id}`"
+            :tabindex="tab === item.id ? 0 : -1"
+            class="rounded-none border-b-2 py-4"
+            :class="
+              tab === item.id
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            "
+            @click="tab = item.id as typeof tab"
+            >{{ item.label }}</UiButton
+          >
+        </div>
+      </template>
       <div
         v-show="tab === 'products'"
         id="import-panel-products"
@@ -175,7 +176,7 @@ function changeTab(event: KeyboardEvent) {
       >
         <fieldset
           :disabled="busy || downloading"
-          class="grid gap-3 rounded-xl border border-gray-200 p-4 sm:grid-cols-2 sm:p-5"
+          class="admin-panel--inset grid gap-3 p-4 sm:grid-cols-2 sm:p-5"
         >
           <legend class="px-1 text-base font-semibold text-gray-900">
             1. Выберите сценарий
@@ -269,10 +270,7 @@ function changeTab(event: KeyboardEvent) {
             добавляются на сайте с соответствующими правами.
           </p>
         </div>
-        <form
-          class="rounded-xl border border-gray-200 p-4 sm:p-5"
-          @submit.prevent="upload"
-        >
+        <form class="admin-panel--inset p-4 sm:p-5" @submit.prevent="upload">
           <h2 class="text-base font-semibold text-gray-900">
             3. Загрузите заполненный файл
           </h2>
@@ -328,7 +326,7 @@ function changeTab(event: KeyboardEvent) {
           notice
         }}</UiNotification>
         <div
-          class="min-h-32 rounded-xl border p-4 sm:p-5"
+          class="admin-panel--state min-h-32 p-4 sm:p-5"
           :class="
             finished
               ? result?.failed_rows || result?.status === 'failed'
@@ -447,7 +445,7 @@ function changeTab(event: KeyboardEvent) {
         class="space-y-5 py-5 sm:py-6"
       >
         <section
-          class="rounded-xl border border-gray-200 p-4 sm:p-5"
+          class="admin-panel--inset p-4 sm:p-5"
           aria-labelledby="image-import-preparation-title"
         >
           <div class="flex items-start gap-3">
@@ -502,7 +500,7 @@ images.zip
         </section>
 
         <form
-          class="rounded-xl border border-gray-200 p-4 sm:p-5"
+          class="admin-panel--inset p-4 sm:p-5"
           @submit.prevent="uploadImageImport"
         >
           <h2 class="text-base font-semibold text-gray-900">Загрузите архив</h2>
@@ -562,7 +560,7 @@ images.zip
         }}</UiNotification>
 
         <section
-          class="min-h-32 rounded-xl border p-4 sm:p-5"
+          class="admin-panel--state min-h-32 p-4 sm:p-5"
           :class="
             imageFinished
               ? imageResult?.failed_folders || imageResult?.status === 'failed'
@@ -721,6 +719,6 @@ images.zip
           </template>
         </section>
       </div>
-    </div>
+    </UiCard>
   </AdminWorkspace>
 </template>

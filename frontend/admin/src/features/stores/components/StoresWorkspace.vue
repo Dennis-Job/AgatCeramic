@@ -68,7 +68,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
     <UiCard
       v-if="!stores.error.value || stores.loading.value"
       class="overflow-hidden"
+      aria-labelledby="stores-list-title"
     >
+      <template #header>
+        <h2 id="stores-list-title" class="font-semibold text-gray-900">
+          Список магазинов
+        </h2>
+      </template>
       <UiLoadingState v-if="stores.loading.value" label="Загрузка магазинов…" />
       <div v-else-if="stores.items.value.length" class="divide-y">
         <article

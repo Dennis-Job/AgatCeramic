@@ -52,7 +52,7 @@ const filterAttributes = () =>
       </p>
       <template v-else
         ><dl
-          class="mt-6 grid gap-4 rounded-xl border border-gray-200 p-4 text-sm sm:grid-cols-2"
+          class="admin-panel--inset mt-6 grid gap-4 p-4 text-sm sm:grid-cols-2"
         >
           <div>
             <dt class="text-gray-500">Slug</dt>

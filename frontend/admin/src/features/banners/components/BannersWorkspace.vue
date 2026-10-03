@@ -56,7 +56,13 @@ onMounted(() => banners.load())
     <UiCard
       v-if="!banners.error.value || banners.loading.value"
       class="overflow-hidden"
+      aria-labelledby="banners-list-title"
     >
+      <template #header>
+        <h2 id="banners-list-title" class="font-semibold text-gray-900">
+          Список баннеров
+        </h2>
+      </template>
       <UiLoadingState v-if="banners.loading.value" label="Загрузка баннеров…" />
       <div v-else-if="banners.items.value.length" class="divide-y">
         <article

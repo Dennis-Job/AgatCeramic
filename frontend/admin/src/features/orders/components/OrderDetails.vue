@@ -2,6 +2,7 @@
 import { MessageSquare } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -36,7 +37,27 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
 </script>
 
 <template>
-  <aside class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-card">
+  <UiCard
+    class="min-w-0"
+    role="complementary"
+    aria-labelledby="order-details-title"
+  >
+    <template #header>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-medium text-gray-500">Заказ</p>
+          <h2
+            id="order-details-title"
+            class="mt-1 break-all font-bold text-gray-900"
+          >
+            {{ selected?.order_number ?? 'Детали заказа' }}
+          </h2>
+        </div>
+        <strong v-if="selected" class="text-lg text-gray-800">
+          {{ amount(selected.total_amount) }}
+        </strong>
+      </div>
+    </template>
     <UiNotification v-if="actionError && !selected">{{
       actionError
     }}</UiNotification>
@@ -44,18 +65,7 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
       Выберите заказ в списке, чтобы открыть рабочее место менеджера.
     </div>
-    <div v-else class="space-y-6 p-5">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p class="text-xs font-medium text-gray-500">Заказ</p>
-          <h2 class="mt-1 break-all text-xl font-bold text-gray-900">
-            {{ selected.order_number }}
-          </h2>
-        </div>
-        <strong class="text-lg text-gray-800">{{
-          amount(selected.total_amount)
-        }}</strong>
-      </div>
+    <div v-else class="space-y-6">
       <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
       <section>
         <h3 class="text-sm font-semibold text-gray-900">Клиент и доставка</h3>
@@ -85,9 +95,7 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
       </section>
       <section>
         <h3 class="text-sm font-semibold text-gray-900">Состав заказа</h3>
-        <ul
-          class="mt-3 divide-y divide-gray-100 rounded-lg border border-gray-200"
-        >
+        <ul class="admin-panel--inset mt-3 divide-y divide-gray-100">
           <li
             v-for="item in selected.items"
             :key="`${item.product_id}-${item.product_name}`"
@@ -105,10 +113,7 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
           </li>
         </ul>
       </section>
-      <section
-        v-if="canManageStatus"
-        class="rounded-lg border border-gray-200 p-4"
-      >
+      <section v-if="canManageStatus" class="admin-panel--inset p-4">
         <h3 class="text-sm font-semibold text-gray-900">Статус заказа</h3>
         <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <UiSelect
@@ -126,10 +131,7 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
           >
         </div>
       </section>
-      <section
-        v-if="canManagePayment"
-        class="rounded-lg border border-gray-200 p-4"
-      >
+      <section v-if="canManagePayment" class="admin-panel--inset p-4">
         <h3 class="text-sm font-semibold text-gray-900">Оплата</h3>
         <div class="mt-3 grid gap-3">
           <UiSelect
@@ -189,7 +191,7 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
           <article
             v-for="comment in comments"
             :key="comment.id"
-            class="rounded-lg bg-gray-25 p-3 text-sm"
+            class="admin-panel--inset p-3 text-sm"
           >
             <p class="whitespace-pre-line break-words text-gray-700">
               {{ comment.body }}
@@ -226,5 +228,5 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
         </form>
       </section>
     </div>
-  </aside>
+  </UiCard>
 </template>

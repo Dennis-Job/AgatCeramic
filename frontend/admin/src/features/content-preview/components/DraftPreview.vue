@@ -25,10 +25,14 @@ const links = computed(() => {
 
 <template>
   <UiCard
-    class="content-preview-panel min-w-0 self-start p-4 sm:p-6"
-    aria-label="Предпросмотр страницы"
+    class="content-preview-panel min-w-0 self-start"
+    aria-labelledby="draft-preview-title"
   >
-    <h2 class="text-lg font-semibold">Предпросмотр</h2>
+    <template #header>
+      <h2 id="draft-preview-title" class="text-lg font-semibold text-gray-900">
+        Предпросмотр
+      </h2>
+    </template>
     <p class="mt-2 text-sm text-gray-600" role="status">
       Сохранённый черновик страницы и общего оформления. Сайт обновляется после
       отдельной публикации.

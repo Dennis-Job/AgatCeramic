@@ -58,7 +58,7 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
     <div
       v-for="(link, index) in content.header.navigation"
       :key="index"
-      class="rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset p-4"
     >
       <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
         <span class="text-sm font-medium text-gray-700"
@@ -117,7 +117,7 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
     <div
       v-for="(link, index) in content.footer.explore_links"
       :key="index"
-      class="rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset p-4"
     >
       <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
         <span class="text-sm font-medium text-gray-700"

@@ -136,20 +136,22 @@ onMounted(() => pages.load())
     }}</UiNotification>
     <AdminEditorLayout>
       <template #navigation>
-        <UiCard class="min-w-0 self-start p-3" aria-label="Страницы сайта">
-          <div
-            class="mb-3 flex flex-wrap items-center justify-between gap-2 px-2"
-          >
-            <h2 class="font-semibold">Страницы сайта</h2>
-            <UiButton
-              size="sm"
-              variant="secondary"
-              aria-label="Добавить страницу"
-              :disabled="pages.busy.value || blocksPending"
-              @click="pages.openEditor()"
-              ><Plus :size="17" aria-hidden="true"
-            /></UiButton>
-          </div>
+        <UiCard class="min-w-0 self-start" aria-labelledby="site-pages-title">
+          <template #header>
+            <div class="flex items-center justify-between gap-2">
+              <h2 id="site-pages-title" class="font-semibold text-gray-900">
+                Страницы сайта
+              </h2>
+              <UiButton
+                size="sm"
+                variant="secondary"
+                aria-label="Добавить страницу"
+                :disabled="pages.busy.value || blocksPending"
+                @click="pages.openEditor()"
+                ><Plus :size="17" aria-hidden="true"
+              /></UiButton>
+            </div>
+          </template>
           <nav class="space-y-1" aria-label="Выбор страницы сайта">
             <RouterLink
               :to="{
@@ -258,81 +260,88 @@ onMounted(() => pages.load())
             v-else-if="pages.loading.value || selectedLoading"
             label="Загрузка страницы…"
           />
-          <UiCard v-else-if="selectedPage" class="min-w-0 p-4 sm:p-6">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p class="break-all text-xs font-medium text-gray-500">
-                  /{{ selectedPage.slug }}
-                </p>
-                <h2 class="break-words text-xl font-semibold">
+          <UiCard
+            v-else-if="selectedPage"
+            class="min-w-0"
+            aria-labelledby="selected-page-title"
+          >
+            <template #header>
+              <div
+                class="flex min-w-0 flex-wrap items-center justify-between gap-3"
+              >
+                <h2
+                  id="selected-page-title"
+                  class="min-w-0 break-words text-lg font-semibold text-gray-900"
+                >
                   {{ selectedPage.title }}
                 </h2>
-                <UiBadge
-                  class="mt-2"
-                  :tone="selectedPage.is_published ? 'success' : 'neutral'"
-                  >{{
-                    selectedPage.is_published ? 'Опубликована' : 'Черновик'
-                  }}</UiBadge
-                >
-                <p
-                  v-if="selectedPage.has_unpublished_changes"
-                  class="mt-2 text-sm text-gray-600"
-                  role="status"
-                >
-                  В черновике есть неопубликованные изменения.
-                </p>
-                <p
-                  v-if="selectedPage.published_at"
-                  class="mt-2 text-xs text-gray-500"
-                >
-                  Последняя публикация:
-                  {{
-                    new Date(selectedPage.published_at).toLocaleString('ru-RU')
-                  }}
-                </p>
+                <div class="flex flex-wrap gap-1">
+                  <UiButton
+                    size="sm"
+                    :loading="pages.busy.value"
+                    :disabled="
+                      blocksPending ||
+                      (selectedPage.is_published &&
+                        !selectedPage.has_unpublished_changes)
+                    "
+                    @click="publishSelected()"
+                    >Опубликовать черновик</UiButton
+                  >
+                  <UiButton
+                    v-if="selectedPage.is_published"
+                    variant="secondary"
+                    size="sm"
+                    :disabled="pages.busy.value || blocksPending"
+                    @click="publishSelected(true)"
+                    >Снять с публикации</UiButton
+                  >
+                  <UiButton
+                    variant="primary-ghost"
+                    size="sm"
+                    :aria-label="`Редактировать страницу ${selectedPage.title}`"
+                    :disabled="pages.busy.value || blocksPending"
+                    @click="pages.openEditor(selectedPage)"
+                    ><Pencil
+                      :size="17"
+                      aria-hidden="true"
+                    />Редактировать</UiButton
+                  >
+                  <UiButton
+                    v-if="!systemPageSlugs.includes(selectedPage.slug)"
+                    variant="danger-ghost"
+                    size="sm"
+                    :aria-label="`Удалить страницу ${selectedPage.title}`"
+                    :disabled="pages.busy.value || blocksPending"
+                    @click="confirmDelete(selectedPage)"
+                    ><Trash2 :size="17" aria-hidden="true"
+                  /></UiButton>
+                </div>
               </div>
-              <div class="flex flex-wrap gap-1">
-                <UiButton
-                  size="sm"
-                  :loading="pages.busy.value"
-                  :disabled="
-                    blocksPending ||
-                    (selectedPage.is_published &&
-                      !selectedPage.has_unpublished_changes)
-                  "
-                  @click="publishSelected()"
-                  >Опубликовать черновик</UiButton
-                >
-                <UiButton
-                  v-if="selectedPage.is_published"
-                  variant="secondary"
-                  size="sm"
-                  :disabled="pages.busy.value || blocksPending"
-                  @click="publishSelected(true)"
-                  >Снять с публикации</UiButton
-                >
-                <UiButton
-                  variant="primary-ghost"
-                  size="sm"
-                  :aria-label="`Редактировать страницу ${selectedPage.title}`"
-                  :disabled="pages.busy.value || blocksPending"
-                  @click="pages.openEditor(selectedPage)"
-                  ><Pencil
-                    :size="17"
-                    aria-hidden="true"
-                  />Редактировать</UiButton
-                >
-                <UiButton
-                  v-if="!systemPageSlugs.includes(selectedPage.slug)"
-                  variant="danger-ghost"
-                  size="sm"
-                  :aria-label="`Удалить страницу ${selectedPage.title}`"
-                  :disabled="pages.busy.value || blocksPending"
-                  @click="confirmDelete(selectedPage)"
-                  ><Trash2 :size="17" aria-hidden="true"
-                /></UiButton>
-              </div>
-            </div>
+            </template>
+            <p class="break-all text-xs font-medium text-gray-500">
+              /{{ selectedPage.slug }}
+            </p>
+            <UiBadge
+              class="mt-2"
+              :tone="selectedPage.is_published ? 'success' : 'neutral'"
+              >{{
+                selectedPage.is_published ? 'Опубликована' : 'Черновик'
+              }}</UiBadge
+            >
+            <p
+              v-if="selectedPage.has_unpublished_changes"
+              class="mt-2 text-sm text-gray-600"
+              role="status"
+            >
+              В черновике есть неопубликованные изменения.
+            </p>
+            <p
+              v-if="selectedPage.published_at"
+              class="mt-2 text-xs text-gray-500"
+            >
+              Последняя публикация:
+              {{ new Date(selectedPage.published_at).toLocaleString('ru-RU') }}
+            </p>
             <UiNotification v-if="pages.publishError.value">{{
               pages.publishError.value
             }}</UiNotification>

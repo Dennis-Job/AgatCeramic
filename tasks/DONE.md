@@ -175,6 +175,7 @@
       product baseline mismatch. UI Design Guard accepted, live и production
       проверены. [Результат и проверки](../docs/ADMIN_SCROLL_HEADER_REPORT.md).
 
+
 - [x] Единый формат цен, 2026-10-03: все существующие суммы и денежные поля Admin/Client показывают разделители тысяч. Цена, старая цена и сумма оплаты группируются во время ввода; API сохраняет точную decimal string без пробелов. Проверено в запускаемой Docker копии и localhost:5173; 85 unit и функциональные E2E passed, независимый UI Design Guard принял правку. Ограничения полного baseline — [Файлы и проверки](../docs/PRICE_FORMAT_REPORT.md).
 
 - [x] Кнопки управления, 2026-10-03: единый заметный hover и доступные подсказки
@@ -195,3 +196,16 @@
       проверка `/products` прошли; UI Design Guard accepted. Общий format check
       ограничен существующими предупреждениями в `.tmp`; изменённые файлы прошли
       scoped format check.
+
+- [x] TASK-A063 Единый Seller-стиль обособленных панелей Admin (2026-10-03).
+    Общие tokens и panel-классы применены к самостоятельным карточкам Admin и их
+    вложенным поверхностям. UI Design Guard accepted; lint, build, scoped
+    formatting и git diff --check прошли. Unit/E2E не запускались.
+    [Отчёт и файлы](../docs/TASK_A063_REPORT.md).
+
+- [x] TASK-A064 Секционные карточки Admin по референсу Seller (2026-10-03).
+    Общий `UiCard #header` применён к UI-kit, дашборду, товарам и основным
+    секциям настроек/контента; белое тело растягивается на высоту строки. UI
+    Design Guard accepted по статическому аудиту; lint, build, scoped format и
+    diff check прошли. Unit/E2E и отдельные мобильные viewport проверки не
+    запускались. [Отчёт](../docs/TASK_A064_REPORT.md).

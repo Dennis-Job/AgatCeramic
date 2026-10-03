@@ -55,7 +55,13 @@ onMounted(() => sliders.load())
     <UiCard
       v-if="!sliders.error.value || sliders.loading.value"
       class="overflow-hidden"
+      aria-labelledby="sliders-list-title"
     >
+      <template #header>
+        <h2 id="sliders-list-title" class="font-semibold text-gray-900">
+          Список слайдеров
+        </h2>
+      </template>
       <UiLoadingState
         v-if="sliders.loading.value"
         label="Загрузка слайдеров…"

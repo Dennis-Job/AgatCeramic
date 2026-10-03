@@ -63,7 +63,7 @@ const emit = defineEmits<{
       </div>
       <UiNotification v-if="error">{{ error }}</UiNotification>
       <div class="mt-6 max-h-80 space-y-4 overflow-y-auto">
-        <section class="rounded-xl border border-gray-200 p-3">
+        <section class="admin-panel--inset p-3">
           <h3 class="mb-2 text-sm font-semibold text-gray-800">
             Группы характеристик
           </h3>
@@ -82,7 +82,7 @@ const emit = defineEmits<{
         <section
           v-for="group in groupedAttributes"
           :key="group.id"
-          class="overflow-hidden rounded-xl border border-gray-200"
+          class="admin-panel--inset overflow-hidden"
         >
           <div class="bg-gray-50 px-4 py-3">
             <h3 class="font-semibold text-gray-800">{{ group.name }}</h3>
@@ -123,7 +123,7 @@ const emit = defineEmits<{
         </section>
         <section
           v-if="ungroupedAttributes.length"
-          class="overflow-hidden rounded-xl border border-gray-200"
+          class="admin-panel--inset overflow-hidden"
         >
           <div class="bg-gray-50 px-4 py-3">
             <h3 class="font-semibold text-gray-800">Без группы</h3>

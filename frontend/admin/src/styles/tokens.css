@@ -121,6 +121,13 @@
   --admin-radius-lg: 0.5rem;
   --admin-radius-xl: 1rem;
   --admin-radius-2xl: 1.25rem;
+  --admin-radius-card: 1.5rem;
+  --admin-radius-card-inset: 1.25rem;
+
+  --admin-color-card-surface: var(--admin-color-gray-50);
+  --admin-color-card-border: var(--admin-color-gray-100);
+  --admin-color-card-inset-surface: var(--admin-color-white);
+  --admin-color-card-inset-border: var(--admin-color-gray-100);
 
   --admin-control-height-sm: 2rem;
   --admin-control-height-md: 2.25rem;

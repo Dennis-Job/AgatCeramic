@@ -3,6 +3,7 @@ import { nextTick, onActivated, onDeactivated, ref, watch } from 'vue'
 import { CheckCircle2, CircleAlert, Download, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { RouterLink } from 'vue-router'
@@ -66,16 +67,12 @@ watch([busy, downloading], async () => {
       </template>
     </PageHeader>
     <div class="min-w-0 space-y-5">
-      <section
-        class="rounded-xl border border-gray-200 p-4 sm:p-5"
-        aria-labelledby="group-import-preparation"
-      >
-        <h2
-          id="group-import-preparation"
-          class="text-base font-semibold text-gray-900"
-        >
-          1. Скачайте актуальную выгрузку
-        </h2>
+      <UiCard aria-labelledby="group-import-preparation">
+        <template #header>
+          <h2 id="group-import-preparation" class="font-semibold text-gray-900">
+            1. Скачайте актуальную выгрузку
+          </h2>
+        </template>
         <p class="mt-1 text-sm leading-6 text-gray-500">
           На листе «Группы» выберите действие: создать, изменить или
           расформировать. На листе «Состав» укажите полный итоговый список SKU
@@ -94,72 +91,78 @@ watch([busy, downloading], async () => {
             downloading ? 'Скачиваем…' : 'Скачать Excel с группами'
           }}</UiButton
         >
-      </section>
-      <form
-        class="rounded-xl border border-gray-200 p-4 sm:p-5"
-        @submit.prevent="upload"
-      >
-        <h2 class="text-base font-semibold text-gray-900">
-          2. Загрузите отредактированный файл
-        </h2>
-        <p id="group-import-file-help" class="mt-1 text-sm text-gray-500">
-          XLSX до 10 МБ. Если в файле есть ошибка, изменения из него не
-          применяются.
-        </p>
-        <input
-          ref="input"
-          class="hidden"
-          type="file"
-          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          aria-label="Файл Excel для импорта групп вариантов"
-          @change="selectFile"
-        />
-        <p
-          id="group-import-file-selection"
-          class="sr-only"
-          role="status"
-          aria-live="polite"
-        >
-          {{ file ? `Выбран файл: ${file.name}` : 'Файл не выбран' }}
-        </p>
-        <UiButton
-          type="button"
-          variant="secondary"
-          class="mt-4 flex w-full justify-start text-left"
-          :disabled="busy"
-          aria-describedby="group-import-file-help group-import-file-selection"
-          @click="input?.click()"
-          ><Upload :size="18" class="shrink-0" aria-hidden="true" /><span
-            class="break-all"
-            >{{ file?.name ?? 'Выбрать файл XLSX' }}</span
-          ></UiButton
-        ><UiButton
-          type="submit"
-          class="mt-4"
-          :loading="uploading"
-          :disabled="!file || busy"
-          ><Upload :size="18" aria-hidden="true" />{{
-            uploading
-              ? 'Загружаем…'
-              : busy
-                ? 'Обработка…'
-                : 'Запустить обработку'
-          }}</UiButton
-        ><UiNotification
-          v-if="active && busy && !uploading"
-          tone="info"
-          live="polite"
-          >Файл обрабатывается в фоне. Можно перейти на другую страницу и
-          вернуться в «Объединить товары» за результатом.</UiNotification
-        >
-      </form>
+      </UiCard>
+      <UiCard aria-labelledby="group-import-upload-title">
+        <template #header>
+          <div>
+            <h2
+              id="group-import-upload-title"
+              class="font-semibold text-gray-900"
+            >
+              2. Загрузите отредактированный файл
+            </h2>
+            <p id="group-import-file-help" class="mt-1 text-sm text-gray-500">
+              XLSX до 10 МБ. Если в файле есть ошибка, изменения из него не
+              применяются.
+            </p>
+          </div>
+        </template>
+        <form @submit.prevent="upload">
+          <input
+            ref="input"
+            class="hidden"
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            aria-label="Файл Excel для импорта групп вариантов"
+            @change="selectFile"
+          />
+          <p
+            id="group-import-file-selection"
+            class="sr-only"
+            role="status"
+            aria-live="polite"
+          >
+            {{ file ? `Выбран файл: ${file.name}` : 'Файл не выбран' }}
+          </p>
+          <UiButton
+            type="button"
+            variant="secondary"
+            class="mt-4 flex w-full justify-start text-left"
+            :disabled="busy"
+            aria-describedby="group-import-file-help group-import-file-selection"
+            @click="input?.click()"
+            ><Upload :size="18" class="shrink-0" aria-hidden="true" /><span
+              class="break-all"
+              >{{ file?.name ?? 'Выбрать файл XLSX' }}</span
+            ></UiButton
+          ><UiButton
+            type="submit"
+            class="mt-4"
+            :loading="uploading"
+            :disabled="!file || busy"
+            ><Upload :size="18" aria-hidden="true" />{{
+              uploading
+                ? 'Загружаем…'
+                : busy
+                  ? 'Обработка…'
+                  : 'Запустить обработку'
+            }}</UiButton
+          ><UiNotification
+            v-if="active && busy && !uploading"
+            tone="info"
+            live="polite"
+            >Файл обрабатывается в фоне. Можно перейти на другую страницу и
+            вернуться в «Объединить товары» за результатом.</UiNotification
+          >
+        </form>
+      </UiCard>
       <UiNotification v-if="active && error">{{ error }}</UiNotification
       ><UiNotification v-if="active && notice" tone="success" live="polite">{{
         notice
       }}</UiNotification>
       <section
         v-if="result"
-        class="rounded-xl border p-4 sm:p-5"
+        class="admin-panel--state p-4 sm:p-5"
         :class="resultClass"
         aria-live="polite"
       >

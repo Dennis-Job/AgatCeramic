@@ -29,7 +29,17 @@ const {
       description="Изменяйте только свои имя, email и пароль."
     />
     <form @submit.prevent="submit">
-      <UiCard class="p-5 sm:p-6">
+      <UiCard aria-labelledby="profile-form-title">
+        <template #header>
+          <div>
+            <h2 id="profile-form-title" class="font-semibold text-gray-900">
+              Данные профиля
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Имя, email и пароль для входа в админ-панель.
+            </p>
+          </div>
+        </template>
         <UiNotification v-if="error">{{ error }}</UiNotification>
         <UiNotification v-if="success" tone="success" live="polite">{{
           success

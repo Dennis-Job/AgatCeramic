@@ -117,17 +117,26 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <UiCard class="mt-4 min-w-0 p-4 sm:p-6" aria-label="Блоки страницы">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="text-lg font-semibold">Блоки страницы</h2>
-      <UiBadge :tone="editor.dirty.value ? 'warning' : 'neutral'">{{
-        editor.dirty.value ? 'Не сохранено' : 'Сохранённый черновик'
-      }}</UiBadge>
-    </div>
-    <p class="mt-2 text-sm text-gray-500">
-      Порядок в списке соответствует порядку на сайте. Выключенный блок
-      сохранится в черновике.
-    </p>
+  <UiCard class="mt-4 min-w-0" aria-labelledby="page-blocks-title">
+    <template #header>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2
+            id="page-blocks-title"
+            class="text-lg font-semibold text-gray-900"
+          >
+            Блоки страницы
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            Порядок в списке соответствует порядку на сайте. Выключенный блок
+            сохранится в черновике.
+          </p>
+        </div>
+        <UiBadge :tone="editor.dirty.value ? 'warning' : 'neutral'">{{
+          editor.dirty.value ? 'Не сохранено' : 'Сохранённый черновик'
+        }}</UiBadge>
+      </div>
+    </template>
     <UiNotification v-if="editor.error.value">{{
       editor.error.value
     }}</UiNotification>

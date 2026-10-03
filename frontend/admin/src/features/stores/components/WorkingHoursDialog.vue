@@ -67,7 +67,7 @@ function setClosed(day: WorkingHour, closed: boolean): void {
         <div
           v-for="day in hours"
           :key="day.weekday"
-          class="grid gap-3 rounded-lg border border-gray-100 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+          class="admin-panel--inset grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
         >
           <div class="min-w-0">
             <p class="font-medium">{{ dayNames[day.weekday - 1] }}</p>

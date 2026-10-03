@@ -98,9 +98,18 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
     <AdminEditorLayout v-else-if="workspace.content.value">
       <template #editor>
         <div class="min-w-0">
-          <UiCard class="mb-5 min-w-0 p-4 sm:p-6">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="min-w-0">
+          <UiCard
+            class="mb-5 min-w-0"
+            aria-labelledby="appearance-status-title"
+          >
+            <template #header>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2
+                  id="appearance-status-title"
+                  class="font-semibold text-gray-900"
+                >
+                  Публикация оформления
+                </h2>
                 <UiBadge
                   :tone="
                     workspace.content.value.has_unpublished_changes
@@ -113,6 +122,10 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
                       : 'Оформление опубликовано'
                   }}</UiBadge
                 >
+              </div>
+            </template>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="min-w-0">
                 <p class="mt-2 text-sm text-gray-600" role="status">
                   {{
                     pending
@@ -156,11 +169,18 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
           </nav>
           <UiCard
             v-if="panel === 'filters'"
-            class="min-w-0 p-4 sm:p-6"
+            class="min-w-0"
             role="region"
-            aria-label="Вид фильтров"
+            aria-labelledby="appearance-filters-title"
           >
-            <h2 class="text-lg font-semibold">Представление фильтров</h2>
+            <template #header>
+              <h2
+                id="appearance-filters-title"
+                class="font-semibold text-gray-900"
+              >
+                Представление фильтров
+              </h2>
+            </template>
             <p class="mt-3 text-sm text-gray-600" role="status">
               Фильтры клиентского каталога пока не реализованы. Настройки их
               внешнего вида появятся вместе с фильтрами каталога.
@@ -172,10 +192,18 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
           </UiCard>
           <UiCard
             v-else
-            class="min-w-0 p-4 sm:p-6"
+            class="min-w-0"
             role="region"
-            :aria-label="panel === 'header' ? 'Шапка и навигация' : 'Подвал'"
+            aria-labelledby="appearance-editor-title"
           >
+            <template #header>
+              <h2
+                id="appearance-editor-title"
+                class="font-semibold text-gray-900"
+              >
+                {{ panel === 'header' ? 'Шапка и навигация' : 'Подвал' }}
+              </h2>
+            </template>
             <fieldset class="min-w-0" :disabled="busy">
               <legend class="sr-only">
                 {{ panel === 'header' ? 'Шапка и навигация' : 'Подвал' }}

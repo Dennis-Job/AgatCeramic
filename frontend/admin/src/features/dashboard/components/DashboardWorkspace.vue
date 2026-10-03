@@ -83,36 +83,44 @@ const orders = [
     </div>
 
     <div class="mt-6 grid gap-6 dashboard-sales-grid">
-      <UiCard class="sm:p-6">
-        <div class="flex items-start justify-between">
-          <div>
-            <h2 class="text-base font-semibold text-gray-700">
-              Динамика продаж
-            </h2>
-            <p class="mt-1 text-sm text-gray-400">За последние 30 дней</p>
+      <UiCard>
+        <template #header>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-base font-semibold text-gray-700">
+                Динамика продаж
+              </h2>
+              <p class="mt-1 text-sm text-gray-400">За последние 30 дней</p>
+            </div>
+            <UiButton variant="secondary" size="sm"
+              >30 дней <ChevronDown :size="16"
+            /></UiButton>
           </div>
-          <UiButton variant="secondary" size="sm"
-            >30 дней <ChevronDown :size="16"
-          /></UiButton>
-        </div>
-        <div
-          class="mt-8 flex h-56 items-end gap-2 border-b border-gray-100 px-2 pb-1"
-        >
-          <span
-            v-for="height in [22, 38, 29, 47, 36, 58, 45, 72, 60, 82, 68, 92]"
-            :key="height"
-            class="flex-1 rounded-t-md bg-primary-100"
-            :style="{ height: `${height}%` }"
-          />
-        </div>
-        <div class="mt-3 flex justify-between text-xs text-gray-400">
-          <span>01 авг.</span><span>15 авг.</span><span>Сегодня</span>
+        </template>
+        <div class="rounded-xl bg-gray-25 p-4 sm:p-5">
+          <div
+            class="flex h-56 items-end gap-2 border-b border-gray-100 px-2 pb-1"
+          >
+            <span
+              v-for="height in [22, 38, 29, 47, 36, 58, 45, 72, 60, 82, 68, 92]"
+              :key="height"
+              class="flex-1 rounded-t-md bg-primary-100"
+              :style="{ height: `${height}%` }"
+            />
+          </div>
+          <div class="mt-3 flex justify-between text-xs text-gray-400">
+            <span>01 авг.</span><span>15 авг.</span><span>Сегодня</span>
+          </div>
         </div>
       </UiCard>
 
-      <UiCard class="sm:p-6">
-        <h2 class="text-base font-semibold text-gray-700">Быстрые действия</h2>
-        <div class="mt-5 space-y-3">
+      <UiCard>
+        <template #header>
+          <h2 class="text-base font-semibold text-gray-700">
+            Быстрые действия
+          </h2>
+        </template>
+        <div class="space-y-3">
           <UiButton class="w-full justify-start text-left" variant="secondary"
             ><Upload :size="18" class="text-primary-500" /><span
               >Импортировать товары</span
@@ -132,20 +140,20 @@ const orders = [
       </UiCard>
     </div>
 
-    <UiCard class="mt-6 overflow-hidden" :padded="false">
-      <div
-        class="flex items-center justify-between border-b border-gray-100 px-5 py-5 sm:px-6"
-      >
-        <div>
-          <h2 class="text-base font-semibold text-gray-700">
-            Последние заказы
-          </h2>
-          <p class="mt-1 text-sm text-gray-400">
-            Новые заказы из интернет-магазина
-          </p>
+    <UiCard class="mt-6" :padded="false">
+      <template #header>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-semibold text-gray-700">
+              Последние заказы
+            </h2>
+            <p class="mt-1 text-sm text-gray-400">
+              Новые заказы из интернет-магазина
+            </p>
+          </div>
+          <UiButton variant="ghost" size="sm">Все заказы</UiButton>
         </div>
-        <UiButton variant="ghost" size="sm">Все заказы</UiButton>
-      </div>
+      </template>
       <UiTable table-class="admin-table-orders" label="Последние заказы"
         ><thead class="bg-gray-25 text-xs font-medium text-gray-500">
           <tr>
