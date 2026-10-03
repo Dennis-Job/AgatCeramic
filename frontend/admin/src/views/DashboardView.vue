@@ -15,6 +15,7 @@ import UiBadge from '../components/ui/UiBadge.vue'
 import UiButton from '../components/ui/UiButton.vue'
 import UiCard from '../components/ui/UiCard.vue'
 import UiTable from '../components/ui/UiTable.vue'
+import { formatMoney } from '../utils/formatMoney'
 
 const metrics = [
   {
@@ -26,7 +27,7 @@ const metrics = [
   },
   {
     label: 'Выручка',
-    value: '0 ₽',
+    value: formatMoney(0),
     change: 'Оплаченные заказы за период',
     icon: RussianRuble,
     color: 'bg-success-75 text-success-500',

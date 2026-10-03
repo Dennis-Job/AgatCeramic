@@ -81,6 +81,8 @@ async function mockOrdersApi(
         },
       })
     if (path === '/admin/orders') return route.fulfill({ json: responsePage })
+    if (path === '/admin/orders/1/payment')
+      return route.fulfill({ json: { data: order } })
     if (path === '/admin/orders/1')
       return route.fulfill({ json: { data: order } })
     if (path === '/admin/orders/1/status-history')
@@ -124,6 +126,9 @@ test('orders workspace exposes protected snapshot, keyboard selection, and manag
     page.getByRole('heading', { level: 3, name: 'Клиент и доставка' }),
   ).toBeVisible()
   await expect(page.getByText(order.delivery_address)).toBeVisible()
+  await expect(
+    page.getByText('2 500,00 ₽', { exact: true }).first(),
+  ).toBeVisible()
   await expect(opener).toHaveAttribute('aria-current', 'true')
   await expect(
     page.getByRole('heading', { name: 'Статус заказа' }),
@@ -171,3 +176,34 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     ).toBeVisible()
   })
 }
+
+test('payment input groups thousands and sends an unformatted decimal amount', async ({
+  page,
+}) => {
+  await mockOrdersApi(page)
+  await page.goto('/orders')
+  await page
+    .getByRole('button', { name: `Открыть заказ ${order.order_number}` })
+    .click()
+  const payment = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Оплата', exact: true }) })
+    .last()
+  await payment.getByRole('button', { name: 'Статус оплаты' }).click()
+  await page
+    .getByRole('button', { name: 'Частично оплачено', exact: true })
+    .click()
+  const amount = page.getByRole('textbox', { name: 'Сумма оплаты' })
+  await amount.fill('12 345,67')
+  await expect(amount).toHaveValue('12\u00a0345,67')
+  await page.getByRole('textbox', { name: 'Способ оплаты' }).fill('Наличные')
+  const request = page.waitForRequest(
+    (req) =>
+      req.method() === 'PATCH' && req.url().endsWith('/admin/orders/1/payment'),
+  )
+  await page.getByRole('button', { name: 'Сохранить оплату' }).click()
+  expect((await request).postDataJSON()).toMatchObject({
+    payment_amount: '12345.67',
+    payment_method: 'Наличные',
+  })
+})

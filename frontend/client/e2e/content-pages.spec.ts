@@ -21,6 +21,9 @@ test('published content and SEO are in SSR HTML; blocks preserve order and escap
   expect(await (await request.get('/catalog')).text()).toContain(
     'Керамогранит с длинным русским названием 1',
   )
+  expect(await (await request.get('/catalog')).text()).toContain(
+    '1\u00a0234,50\u00a0₽',
+  )
   const issues: string[] = []
   page.on('console', (message) => {
     if (/hydration/i.test(message.text())) issues.push(message.text())
@@ -44,6 +47,11 @@ test('responsive routes, accessible states and navigation', async ({
 }, testInfo) => {
   for (const route of ['/', '/contacts', '/about', '/catalog']) {
     await page.goto(route)
+    if (route === '/catalog') {
+      await expect(page.locator('.product__price').first()).toHaveText(
+        '1 234,50 ₽ / м²',
+      )
+    }
     for (const width of [320, 640, 768, 1024, 1280]) {
       await page.setViewportSize({ width, height: 900 })
       expect(

@@ -3,6 +3,7 @@ import { Package } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import { useProductEditorContext } from '../composables/useProductEditorContext'
+import { formatMoney } from '../../../utils/formatMoney'
 const {
   form,
   editing,
@@ -57,7 +58,7 @@ const {
       <div class="rounded-lg bg-gray-25 px-4 py-3">
         <dt class="text-xs font-medium text-gray-500">Цена и остаток</dt>
         <dd class="mt-1 text-sm font-semibold text-gray-800">
-          {{ form.price }} ₽ · {{ form.stock_quantity }} шт.
+          {{ formatMoney(form.price) }} · {{ form.stock_quantity }} шт.
         </dd>
       </div>
       <div class="rounded-lg bg-gray-25 px-4 py-3">

@@ -41,6 +41,7 @@ import ProductRelationsSection from './ProductRelationsSection.vue'
 import ProductReviewSection from './ProductReviewSection.vue'
 import { provideProductEditorContext } from '../composables/useProductEditorContext'
 import { useProductEditor } from '../composables/useProductEditor'
+import { formatMoney } from '../../../utils/formatMoney'
 
 const editor = useProductEditor()
 provideProductEditorContext(editor)
@@ -440,7 +441,7 @@ function closeGroupDeletion(): void {
             <td
               class="whitespace-nowrap px-4 py-3 text-right font-medium text-gray-800"
             >
-              {{ product.price }} ₽
+              {{ formatMoney(product.price) }}
             </td>
             <td class="whitespace-nowrap px-4 py-3 text-right text-gray-700">
               {{ product.stock_quantity }}

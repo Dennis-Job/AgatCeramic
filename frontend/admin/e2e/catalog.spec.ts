@@ -59,6 +59,9 @@ for (const route of catalogRoutes) {
     await expect(
       page.getByText(route.item, { exact: false }).first(),
     ).toBeVisible()
+    if (route.path === '/products') {
+      await expect(page.getByRole('cell', { name: '1 990,00 ₽' })).toBeVisible()
+    }
 
     const results = await new AxeBuilder({ page }).analyze()
     expect(
@@ -72,7 +75,7 @@ for (const route of catalogRoutes) {
 for (const route of catalogRoutes) {
   test(`${route.path} shows a full visible loading state without responsive overflow`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     const deferredRequests = createDeferredApiRequests()
     await mockCatalogApi(page, { deferredRequests })
 
@@ -97,6 +100,15 @@ for (const route of catalogRoutes) {
       await expect(
         page.getByText(route.item, { exact: false }).first(),
       ).toBeVisible()
+      if (route.path === '/products') {
+        await page
+          .getByRole('cell', { name: '1 990,00 ₽' })
+          .scrollIntoViewIfNeeded()
+        await page.screenshot({
+          path: testInfo.outputPath(`products-prices-${width}.png`),
+          fullPage: true,
+        })
+      }
     }
   })
 }
@@ -642,6 +654,9 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
 
   const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
   await expect(dialog).toBeVisible()
+  await expect(
+    dialog.getByRole('textbox', { name: /^Цена(?: |$)/ }),
+  ).toHaveValue('1\u00a0990,00')
   await expect(dialog.getByLabel('Категория')).toContainText('Керамогранит')
   await expect(dialog.getByLabel('Бренд')).toContainText('Kerama Marazzi')
   await dialog.getByRole('button', { name: 'Бренд', exact: true }).click()
@@ -667,6 +682,7 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
     .getByRole('button', { name: 'Единица продажи', exact: true })
     .click()
   await dialog.getByRole('button', { name: 'Проверка', exact: false }).click()
+  await expect(dialog.getByText('1 990,00 ₽ ·')).toBeVisible()
   await expect(
     dialog.getByText('Не на распродаже', { exact: true }),
   ).toBeVisible()
