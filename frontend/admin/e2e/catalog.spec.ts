@@ -199,6 +199,10 @@ test('compact navigation leaves the keyboard flow while closed and restores focu
     await page.keyboard.press('Tab')
     await expect(focusable.first()).toBeFocused()
 
+    await expect(page.getByRole('tooltip')).toHaveText('Закрыть меню')
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(panel).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(panel).toBeHidden()
     await expect(openButton).toHaveAttribute('aria-expanded', 'false')

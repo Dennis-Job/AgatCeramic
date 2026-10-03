@@ -86,7 +86,7 @@ onMounted(workspace.load)
           <td v-if="workspace.canManage.value">
             <div class="flex justify-end gap-1">
               <UiButton
-                variant="ghost"
+                variant="primary-ghost"
                 size="sm"
                 :disabled="!workspace.canEdit.value"
                 :aria-label="`Редактировать роль ${role.name}`"

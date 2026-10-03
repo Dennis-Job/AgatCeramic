@@ -37,6 +37,13 @@ describe('notification lifetime', () => {
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
     )
     await nextTick()
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    expect(card().style.display).not.toBe('none')
+    expect(document.activeElement).toBe(close)
+    close.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    )
+    await nextTick()
     expect(document.activeElement?.id).toBe('trigger')
   })
   test('announces success politely and dismisses once after its duration', async () => {
@@ -73,11 +80,32 @@ describe('notification lifetime', () => {
     await vi.advanceTimersByTimeAsync(1)
     expect(card().style.display).toBe('none')
   })
+  test('auto-dismiss removes a hovered tooltip from a hidden notification', async () => {
+    await notify()
+    const close = card().querySelector('button')!
+    card().dispatchEvent(new MouseEvent('mouseenter'))
+    close.dispatchEvent(new MouseEvent('pointerenter'))
+    await vi.advanceTimersByTimeAsync(300)
+    const tooltip = document.querySelector('[role="tooltip"]')!
+    expect(tooltip.textContent).toBe('Закрыть уведомление')
+    tooltip.dispatchEvent(new MouseEvent('pointerenter'))
+    card().dispatchEvent(new MouseEvent('mouseleave'))
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(card().style.display).toBe('none')
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    expect(close.hasAttribute('aria-describedby')).toBe(false)
+  })
   test('focused content survives auto-dismiss and Escape restores its opener', async () => {
     await notify()
     const close = card().querySelector('button')!
     close.focus()
     await vi.advanceTimersByTimeAsync(10000)
+    expect(card().style.display).not.toBe('none')
+    close.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    )
+    await nextTick()
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
     expect(card().style.display).not.toBe('none')
     close.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),

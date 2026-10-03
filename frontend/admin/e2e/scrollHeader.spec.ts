@@ -106,6 +106,10 @@ test('scrolling moves navigation into the brand row without moving document cont
       await expect(
         dialog.getByRole('link', { name: 'Список товаров' }),
       ).toBeVisible()
+      await expect(page.getByRole('tooltip')).toHaveText('Закрыть меню')
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('tooltip')).toHaveCount(0)
+      await expect(dialog).toBeVisible()
       await page.keyboard.press('Escape')
       await expect(dialog).toHaveCount(0)
       await expect(menu).toBeFocused()
@@ -182,6 +186,12 @@ test('open navigation keeps focus and follows the header when crossing the scrol
     ),
   ).toBe(true)
   await header.getByRole('button', { name: 'Открыть меню' }).click()
+  await expect(
+    page.getByRole('dialog', { name: 'Разделы панели' }),
+  ).toBeVisible()
+  await expect(page.getByRole('tooltip')).toHaveText('Закрыть меню')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(
     page.getByRole('dialog', { name: 'Разделы панели' }),
   ).toBeVisible()

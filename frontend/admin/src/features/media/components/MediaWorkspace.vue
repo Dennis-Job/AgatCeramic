@@ -178,7 +178,7 @@ const {
             <td>
               <div class="flex justify-end gap-1">
                 <UiButton
-                  variant="ghost"
+                  variant="primary-ghost"
                   size="sm"
                   :aria-label="`Изменить файл ${item.title}`"
                   @click="startEdit(item)"

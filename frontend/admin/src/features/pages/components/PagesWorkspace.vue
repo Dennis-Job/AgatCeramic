@@ -312,7 +312,7 @@ onMounted(() => pages.load())
                   >Снять с публикации</UiButton
                 >
                 <UiButton
-                  variant="ghost"
+                  variant="primary-ghost"
                   size="sm"
                   :aria-label="`Редактировать страницу ${selectedPage.title}`"
                   :disabled="pages.busy.value || blocksPending"

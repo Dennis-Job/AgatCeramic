@@ -27,7 +27,7 @@
 }
 .admin-header-icon:hover,
 .admin-header-icon[aria-expanded='true'] {
-  background: var(--admin-color-gray-50);
+  background: var(--admin-color-primary-100);
   color: var(--admin-color-gray-600);
 }
 .admin-user-symbol {
@@ -57,7 +57,7 @@
   color: var(--admin-color-gray-400);
 }
 .admin-account-action:hover {
-  background: var(--admin-color-gray-50);
+  background: var(--admin-color-primary-100);
 }
 .admin-brand,
 .admin-header-actions {

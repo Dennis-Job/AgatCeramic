@@ -47,3 +47,20 @@
     grid-template-columns: minmax(0, 1fr) 220px 170px 170px auto auto;
   }
 }
+
+/* Portalled tooltips remain visible outside scroll regions and dialogs. */
+.admin-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: min(20rem, calc(100vw - 1rem));
+  padding: var(--admin-spacing-2) var(--admin-spacing-3);
+  border-radius: var(--admin-radius-lg);
+  border: var(--admin-border-width) solid var(--admin-color-gray-200);
+  background: var(--admin-color-white);
+  color: var(--admin-color-gray-900);
+  box-shadow: var(--admin-shadow-dropdown);
+  font-family: var(--admin-font-sans);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

@@ -99,7 +99,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
               ></UiButton
             >
             <UiButton
-              variant="ghost"
+              variant="primary-ghost"
               size="sm"
               :aria-label="`Редактировать магазин ${store.name}`"
               @click="stores.openEditor(store)"

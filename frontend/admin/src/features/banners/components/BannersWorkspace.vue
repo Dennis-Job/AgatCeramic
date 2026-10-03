@@ -85,7 +85,7 @@ onMounted(() => banners.load())
           </div>
           <div class="ml-auto flex sm:ml-0">
             <UiButton
-              variant="ghost"
+              variant="primary-ghost"
               size="sm"
               :aria-label="`Редактировать баннер ${banner.title}`"
               @click="banners.openEditor(banner)"

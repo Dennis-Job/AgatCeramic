@@ -61,7 +61,7 @@ const lastLogin = (value: string | null): string =>
         </p>
         <div v-if="canManage" class="mt-3 flex justify-end gap-1">
           <UiButton
-            variant="ghost"
+            variant="primary-ghost"
             size="sm"
             :disabled="!canEdit"
             :aria-label="`Редактировать сотрудника ${employee.name}`"
@@ -139,7 +139,7 @@ const lastLogin = (value: string | null): string =>
           <td v-if="canManage" class="px-6 py-4">
             <div class="flex justify-end gap-1">
               <UiButton
-                variant="ghost"
+                variant="primary-ghost"
                 size="sm"
                 :disabled="!canEdit"
                 :aria-label="`Редактировать сотрудника ${employee.name}`"

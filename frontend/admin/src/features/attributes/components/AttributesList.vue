@@ -73,13 +73,13 @@ function groupName(
         <td v-if="canManage">
           <div class="flex justify-end gap-1">
             <UiButton
-              variant="ghost"
+              variant="primary-ghost"
               size="sm"
               :aria-label="`Редактировать характеристику ${attribute.name}`"
               @click="emit('edit', attribute)"
               ><Pencil :size="17" /></UiButton
             ><UiButton
-              variant="ghost"
+              variant="danger-ghost"
               size="sm"
               :aria-label="`Удалить характеристику ${attribute.name}`"
               @click="emit('remove', attribute)"

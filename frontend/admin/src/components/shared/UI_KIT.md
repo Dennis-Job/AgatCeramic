@@ -154,7 +154,7 @@ screen-reader и focus trap, после закрытия возвращаетс�
 
 | Компонент                                        | Варианты / состояния                                                                                                               |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `UiButton`                                       | `primary`, `secondary`, `danger`, `ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                                           |
+| `UiButton`                                       | `primary`, `secondary`, `danger`, `ghost`, `primary-ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                          |
 | `UiInput`                                        | default, populated/clear, search, password, focus, error через `UiField`, native disabled; disabled блокирует input и clear-action |
 | `UiSelect`                                       | placeholder, search/no-results, clear, keyboard, teleport menu; disabled блокирует trigger/clear и закрывает открытое menu         |
 | `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                             |
@@ -203,7 +203,7 @@ teleport menu, confirm busy/error, disabled-контракт, keyboard/focus, ax
 категорию и бренд; activity/sale не ограничивают цифры соседних вариантов.
 
 `UiButton variant="surface"` — белая поверхность без border,
-hover primary50/primary600, обычный общий keyboard focus. Disabled состояние
+hover primary100/primary600, обычный общий keyboard focus. Disabled состояние
 прозрачное и не принимает hover-оформление. Применяется к сбросу фильтров.
 
 Уточнение компактной шапки от 2026-10-02: рядом с «Меню» нет дублирующей
@@ -237,3 +237,21 @@ CSS entry, чтобы Vite dev/HMR обновлял компоновку нез�
 и становится `0,50`. `v-model` хранит decimal string без группировки и с точкой;
 API получает исходный числовой формат. `required`, `min`, `max`, disabled и
 readonly сохраняются; обычные количественные поля остаются `type="number"`.
+
+Кнопки управления используют заметный фон `primary-100` при hover/focus-visible;
+опасные действия — `error-100`. Внутренние icon controls полей, календаря и shell
+используют общую директиву `components/ui/tooltip.ts`. Tooltip показывается через
+300 мс наведения или при клавиатурном фокусе, поддерживает наведение на саму
+подсказку, убирается по Escape/активации/blur, подавляется для disabled/loading.
+Первый Escape скрывает активную подсказку, следующий обрабатывается родительским
+окном. Tooltip размещается в ближайшем dialog/landmark вне scroll-wrapper,
+учитывает viewport/scroll и сохраняет прочие `aria-describedby`. Обязательное доступное имя остаётся на самой кнопке; для
+краткой подписи при длинном имени сущности задавать `tooltip` явно. Не заменять
+доступные имена tooltip и не добавлять параллельный native `title`.
+
+Уточнение 2026-10-03: `UiButton variant="primary-ghost"` — единый синий
+вариант действий редактирования во всех разделах; цвет primary-600, фон
+hover/focus-visible primary-100, disabled остаётся серым. Tooltip использует
+белую поверхность, текст gray-900, границу gray-200 и общую dropdown-тень.
+Столбец действий товаров 176 px вмещает три кнопки и внутренние отступы,
+включая hover-фон и keyboard focus.

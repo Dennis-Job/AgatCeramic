@@ -78,13 +78,13 @@ const emit = defineEmits<{
               @click="emit('configure', category)"
               ><ListFilter :size="17" /></UiButton
             ><UiButton
-              variant="ghost"
+              variant="primary-ghost"
               size="sm"
               :aria-label="`Редактировать категорию ${category.name}`"
               @click="emit('edit', category)"
               ><Pencil :size="17" /></UiButton
             ><UiButton
-              variant="ghost"
+              variant="danger-ghost"
               size="sm"
               :aria-label="`Удалить категорию ${category.name}`"
               @click="emit('remove', category)"

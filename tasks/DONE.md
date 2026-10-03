@@ -107,3 +107,16 @@
   проверены. [Результат и проверки](../docs/ADMIN_SCROLL_HEADER_REPORT.md).
 
 - [x] Единый формат цен, 2026-10-03: все существующие суммы и денежные поля Admin/Client показывают разделители тысяч. Цена, старая цена и сумма оплаты группируются во время ввода; API сохраняет точную decimal string без пробелов. Проверено в запускаемой Docker копии и localhost:5173; 85 unit и функциональные E2E passed, независимый UI Design Guard принял правку. Ограничения полного baseline — [Файлы и проверки](../docs/PRICE_FORMAT_REPORT.md).
+
+- [x] Кнопки управления, 2026-10-03: единый заметный hover и доступные подсказки
+  во всей Admin-панели. Исправление адаптировано в запускаемую Seller-копию;
+  localhost:5173 проверен, независимый UI Design Guard принял результат.
+  Lint/source format/build, 89 unit, 281/286 полный macOS E2E (только пять
+  прежних products baseline), 11 Linux action/baseline проверок.
+  [Файлы и результаты](../docs/ADMIN_ACTION_FEEDBACK_REPORT.md).
+
+- [x] Уточнение кнопок управления, 2026-10-03: copy остаётся внутри столбца,
+  tooltip белые, все Pencil действия редактирования используют общий синий стиль.
+  89 unit, 8 профильных E2E, 282/287 полный macOS (те же пять products baseline),
+  15 Linux action/baseline; 7 эталонов на каждой платформе приняты независимым
+  UI Design Guard. [Отчёт и файлы](../docs/ADMIN_ACTION_FEEDBACK_REPORT.md).

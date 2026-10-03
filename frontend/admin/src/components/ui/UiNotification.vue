@@ -170,6 +170,7 @@ onBeforeUnmount(() => {
         variant="ghost"
         size="sm"
         class="admin-notification-close"
+        :tooltip="visible ? undefined : false"
         aria-label="Закрыть уведомление"
         @click="dismiss"
         ><X :size="16" aria-hidden="true"

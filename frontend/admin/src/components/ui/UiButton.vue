@@ -1,15 +1,29 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue'
+import { vTooltip } from './tooltip'
 defineOptions({ inheritAttrs: false })
 const props = withDefaults(
   defineProps<{
     variant?:
-      'primary' | 'secondary' | 'surface' | 'danger' | 'ghost' | 'danger-ghost'
+      | 'primary'
+      | 'secondary'
+      | 'surface'
+      | 'danger'
+      | 'ghost'
+      | 'primary-ghost'
+      | 'danger-ghost'
     size?: 'sm' | 'md' | 'lg'
     loading?: boolean
     disabled?: boolean
+    tooltip?: string | false
   }>(),
-  { variant: 'primary', size: 'md', loading: false, disabled: false },
+  {
+    variant: 'primary',
+    size: 'md',
+    loading: false,
+    disabled: false,
+    tooltip: undefined,
+  },
 )
 const attrs = useAttrs()
 const classes = computed(() => [
@@ -24,12 +38,14 @@ const classes = computed(() => [
     : props.variant === 'danger'
       ? 'bg-error-500 text-white hover:bg-error-700 disabled:bg-gray-500 disabled:hover:bg-gray-500'
       : props.variant === 'danger-ghost'
-        ? 'text-error-500 hover:bg-error-50 hover:text-error-700 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
-        : props.variant === 'surface'
-          ? 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
-          : props.variant === 'secondary'
-            ? 'border border-transparent bg-gray-50 text-gray-900 hover:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100 disabled:hover:text-gray-500'
-            : 'text-gray-600 hover:bg-gray-50 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500',
+        ? 'text-error-500 hover:bg-error-100 focus-visible:bg-error-100 hover:text-error-700 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
+        : props.variant === 'primary-ghost'
+          ? 'text-primary-600 hover:bg-primary-100 focus-visible:bg-primary-100 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
+          : props.variant === 'surface'
+            ? 'bg-white text-gray-600 hover:bg-primary-100 hover:text-primary-600 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
+            : props.variant === 'secondary'
+              ? 'border border-transparent bg-gray-50 text-gray-900 hover:bg-gray-100 disabled:bg-gray-100 disabled:text-gray-500 disabled:hover:bg-gray-100 disabled:hover:text-gray-500'
+              : 'text-gray-600 hover:bg-primary-100 focus-visible:bg-primary-100 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500',
   attrs.class,
 ])
 const forwarded = computed(() => {
@@ -39,7 +55,12 @@ const forwarded = computed(() => {
 })
 </script>
 <template>
-  <button v-bind="forwarded" :class="classes" :disabled="disabled || loading">
+  <button
+    v-tooltip="tooltip"
+    v-bind="forwarded"
+    :class="classes"
+    :disabled="disabled || loading"
+  >
     <span
       v-if="loading"
       class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent"

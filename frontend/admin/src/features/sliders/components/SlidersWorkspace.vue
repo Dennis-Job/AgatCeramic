@@ -79,7 +79,7 @@ onMounted(() => sliders.load())
           </div>
           <div class="ml-auto flex">
             <UiButton
-              variant="ghost"
+              variant="primary-ghost"
               size="sm"
               :aria-label="`Редактировать слайдер ${slider.name}`"
               @click="sliders.openEditor(slider)"

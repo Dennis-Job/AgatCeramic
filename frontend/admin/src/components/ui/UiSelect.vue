@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { vTooltip } from './tooltip'
 // Source-of-truth select primitive.
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { Check, ChevronDown, X } from '@lucide/vue'
@@ -203,8 +204,9 @@ onBeforeUnmount(() => {
     >
     <button
       ref="triggerButton"
+      v-tooltip
       type="button"
-      class="flex min-h-[var(--admin-control-height-md)] w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 admin-control-focus disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
+      class="flex min-h-[var(--admin-control-height-md)] w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:bg-primary-50 disabled:hover:bg-gray-50 hover:border-primary-200 admin-control-focus disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
       :aria-expanded="isOpen"
       :aria-controls="isOpen ? menuId : undefined"
       :aria-label="accessibleName"
@@ -228,8 +230,9 @@ onBeforeUnmount(() => {
     </button>
     <button
       v-if="clearable && modelValue"
+      v-tooltip
       type="button"
-      class="absolute right-9 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+      class="absolute right-9 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-gray-400 transition hover:bg-primary-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
       :aria-label="`Очистить выбор: ${accessibleName}`"
       :disabled="disabled"
       @click="clear"

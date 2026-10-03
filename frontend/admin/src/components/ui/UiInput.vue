@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { vTooltip } from './tooltip'
 import { Search, X } from '@lucide/vue'
 import { computed, onMounted, ref, useAttrs, watch } from 'vue'
 import {
@@ -155,8 +156,9 @@ function clear(): void {
     />
     <button
       v-if="hasValue"
+      v-tooltip
       type="button"
-      class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-400 transition hover:bg-gray-50 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+      class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-400 transition hover:bg-primary-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
       aria-label="Очистить поле"
       :disabled="isDisabled || (money && isReadonly)"
       @click="clear"

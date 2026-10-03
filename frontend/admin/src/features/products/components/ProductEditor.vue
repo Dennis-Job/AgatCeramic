@@ -215,6 +215,7 @@ function closeGroupDeletion(): void {
           type="button"
           variant="surface"
           :disabled="!hasActiveFilters"
+          tooltip="Сбросить фильтры"
           @click="resetFilters"
           >Сбросить</UiButton
         >
@@ -261,7 +262,7 @@ function closeGroupDeletion(): void {
           <col style="width: 130px" />
           <col style="width: 130px" />
           <col style="width: 130px" />
-          <col style="width: 140px" />
+          <col style="width: 160px" />
         </colgroup>
         <thead
           class="border-b border-gray-200 bg-gray-50 text-xs font-semibold tracking-wide text-gray-500"
@@ -274,6 +275,7 @@ function closeGroupDeletion(): void {
                 size="sm"
                 class="text-left"
                 :disabled="loading"
+                tooltip="Сортировать по наименованию"
                 @click="changeSort('name')"
                 >Наименование<ArrowUp
                   v-if="sort === 'name' && direction === 'asc'"
@@ -291,6 +293,7 @@ function closeGroupDeletion(): void {
                 variant="ghost"
                 size="sm"
                 :disabled="loading"
+                tooltip="Сортировать по SKU"
                 @click="changeSort('sku')"
                 >SKU<ArrowUp
                   v-if="sort === 'sku' && direction === 'asc'"
@@ -317,6 +320,7 @@ function closeGroupDeletion(): void {
                 variant="ghost"
                 size="sm"
                 :disabled="loading"
+                tooltip="Сортировать по дате создания"
                 @click="changeSort('created_at')"
                 >Создан<ArrowUp
                   v-if="sort === 'created_at' && direction === 'asc'"
@@ -338,6 +342,7 @@ function closeGroupDeletion(): void {
                 variant="ghost"
                 size="sm"
                 :disabled="loading"
+                tooltip="Сортировать по дате изменения"
                 @click="changeSort('updated_at')"
                 >Изменён<ArrowUp
                   v-if="sort === 'updated_at' && direction === 'asc'"
@@ -422,19 +427,20 @@ function closeGroupDeletion(): void {
               }}</time>
             </td>
             <td class="px-4 py-3">
-              <div class="flex justify-end gap-1">
+              <div class="flex">
                 <UiButton
                   type="button"
                   variant="ghost"
                   size="sm"
+                  tooltip="Копировать товар — создать похожий"
                   :aria-label="`Создать похожий товар ${product.name}`"
                   @click="cloneProduct(product)"
                   ><Copy :size="17" /></UiButton
                 ><UiButton
                   type="button"
-                  variant="ghost"
+                  variant="primary-ghost"
                   size="sm"
-                  class="text-primary-600"
+                  tooltip="Редактировать товар"
                   :aria-label="`Редактировать товар ${product.name}`"
                   @click="open(product)"
                   ><Pencil :size="17" /></UiButton
@@ -442,6 +448,7 @@ function closeGroupDeletion(): void {
                   type="button"
                   variant="danger-ghost"
                   size="sm"
+                  tooltip="Удалить товар"
                   :aria-label="`Удалить товар ${product.name}`"
                   @click="requestProductDeletion(product)"
                   ><Trash2 :size="17"

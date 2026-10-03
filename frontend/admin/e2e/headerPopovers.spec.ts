@@ -303,6 +303,12 @@ test('account links navigate and logout reports errors, prevents duplicate reque
     .locator('#admin-notifications')
     .getByRole('button', { name: 'Закрыть уведомление' })
     .focus()
+  await expect(page.getByRole('tooltip')).toHaveText('Закрыть уведомление')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(
+    page.locator('#admin-notifications').getByRole('alert'),
+  ).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(user).toBeFocused()
   await user.hover()

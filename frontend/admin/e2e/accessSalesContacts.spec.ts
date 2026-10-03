@@ -241,6 +241,10 @@ test('employee editor keeps keyboard close and opener focus', async ({
   await expect(
     page.getByText('Руководитель доступа', { exact: true }).last(),
   ).toBeVisible()
+  await expect(page.getByRole('tooltip')).toHaveText('Закрыть окно сотрудника')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByRole('dialog')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(opener).toBeFocused()

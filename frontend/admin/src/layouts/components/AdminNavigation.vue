@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { vTooltip } from '../../components/ui/tooltip'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Menu } from '@lucide/vue'
@@ -137,6 +138,7 @@ onBeforeUnmount(() => {
       :inert="openId === 'compact'"
     >
       <button
+        v-tooltip="openId ? false : undefined"
         type="button"
         class="admin-header-icon"
         aria-label="Открыть меню"

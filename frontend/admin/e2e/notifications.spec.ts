@@ -40,6 +40,11 @@ test('Excel feedback floats at the top right without moving filters, supports re
   }
   const close = toast.getByRole('button', { name: 'Закрыть уведомление' })
   await close.focus()
+  await expect(page.getByRole('tooltip')).toHaveText('Закрыть уведомление')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(toast).toBeVisible()
+  await expect(close).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(toast).toBeHidden()
   await expect(download).toBeFocused()
@@ -106,6 +111,11 @@ test('notification Escape and Tab work inside a dialog without closing it', asyn
     await dialog.evaluate((el) => el.contains(document.activeElement)),
   ).toBe(true)
   await close.focus()
+  await expect(page.getByRole('tooltip')).toHaveText('Закрыть уведомление')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(toast).toBeVisible()
+  await expect(close).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(toast).toBeHidden()
   await expect(dialog).toBeVisible()

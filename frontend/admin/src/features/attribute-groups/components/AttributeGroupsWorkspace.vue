@@ -95,13 +95,13 @@ onMounted(load)
           <td v-if="canManage">
             <div class="flex justify-end gap-1">
               <UiButton
-                variant="ghost"
+                variant="primary-ghost"
                 size="sm"
                 :aria-label="`Редактировать группу ${group.name}`"
                 @click="show(group)"
                 ><Pencil :size="17" /></UiButton
               ><UiButton
-                variant="ghost"
+                variant="danger-ghost"
                 size="sm"
                 :aria-label="`Удалить группу ${group.name}`"
                 @click="deleting = group"

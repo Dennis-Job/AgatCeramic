@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Copy, Pencil, Trash2 } from '@lucide/vue'
 import AdminWorkspace from './AdminWorkspace.vue'
 import AuthCard from './AuthCard.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -396,6 +397,7 @@ function submitAuthPreview(): void {
           <UiButton variant="surface" disabled>Поверхность недоступна</UiButton>
           <UiButton variant="danger">Опасное действие</UiButton>
           <UiButton variant="ghost">Прозрачная</UiButton>
+          <UiButton variant="primary-ghost">Синяя прозрачная</UiButton>
           <UiButton variant="danger-ghost">Удалить</UiButton>
         </div>
 
@@ -407,6 +409,24 @@ function submitAuthPreview(): void {
         </div>
 
         <h3 class="mt-5 text-sm font-semibold text-gray-700">Состояния</h3>
+        <div
+          class="mt-2 flex flex-wrap gap-2"
+          aria-label="Кнопки управления с подсказками"
+        >
+          <UiButton
+            variant="ghost"
+            size="sm"
+            aria-label="Копировать"
+            tooltip="Копировать товар — создать похожий"
+            ><Copy :size="17" aria-hidden="true"
+          /></UiButton>
+          <UiButton variant="primary-ghost" size="sm" aria-label="Редактировать"
+            ><Pencil :size="17" aria-hidden="true"
+          /></UiButton>
+          <UiButton variant="danger-ghost" size="sm" aria-label="Удалить"
+            ><Trash2 :size="17" aria-hidden="true"
+          /></UiButton>
+        </div>
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton :loading="isButtonLoading" @click="showLoadingState">
             Загрузка
@@ -416,6 +436,9 @@ function submitAuthPreview(): void {
           <UiButton variant="secondary" disabled>Вторичная недоступна</UiButton>
           <UiButton variant="danger" disabled>Опасная недоступна</UiButton>
           <UiButton variant="ghost" disabled>Прозрачная недоступна</UiButton>
+          <UiButton variant="primary-ghost" disabled
+            >Редактирование недоступно</UiButton
+          >
           <UiButton variant="danger-ghost" disabled
             >Удаление недоступно</UiButton
           >
