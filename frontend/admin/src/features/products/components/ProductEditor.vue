@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatMoney } from '../../../utils/formatMoney'
 import {
   ArrowDown,
   ArrowUp,
@@ -389,7 +390,7 @@ function closeGroupDeletion(): void {
               <UiBadge tone="primary">{{ product.category.name }}</UiBadge>
             </td>
             <td class="px-4 py-3 text-right font-medium text-gray-800">
-              {{ product.price }} ₽
+              {{ formatMoney(product.price) }}
               <p class="mt-0.5 text-xs font-normal text-gray-500">
                 за {{ productUnitLabel(product.unit) }}
               </p>

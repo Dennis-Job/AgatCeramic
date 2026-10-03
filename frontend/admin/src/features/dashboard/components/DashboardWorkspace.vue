@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatMoney } from '../../../utils/formatMoney'
 import {
   ArrowRight,
   ChevronDown,
@@ -27,7 +28,7 @@ const metrics = [
   },
   {
     label: 'Выручка',
-    value: '0 ₽',
+    value: formatMoney(0),
     change: 'Оплаченные заказы за период',
     icon: RussianRuble,
     color: 'bg-success-75 text-success-500',

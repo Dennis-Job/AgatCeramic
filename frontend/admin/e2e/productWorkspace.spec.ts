@@ -246,6 +246,8 @@ test('product image failure displays a compact fallback and unit labels use real
       .filter({ hasText: 'Не удалось загрузить изображение' }),
   ).toBeVisible()
   const row = page.locator('tbody tr').first()
-  await expect(row.getByRole('cell', { name: '1990.00 ₽ за м²' })).toBeVisible()
+  await expect(
+    row.getByRole('cell', { name: '1 990,00 ₽ за м²' }),
+  ).toBeVisible()
   await expect(row.getByRole('cell', { name: '12 м²' })).toBeVisible()
 })

@@ -111,7 +111,7 @@ const {
       ><UiInput
         v-model="form.price"
         class="mt-1.5"
-        type="number"
+        money
         min="0"
         step="0.01"
         required
@@ -120,7 +120,7 @@ const {
       ><UiInput
         :model-value="form.old_price ?? ''"
         class="mt-1.5"
-        type="number"
+        money
         min="0"
         step="0.01"
         @update:model-value="(v) => (form.old_price = v || null)"

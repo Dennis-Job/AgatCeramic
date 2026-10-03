@@ -141,7 +141,7 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
             v-if="!['not_paid', 'pending'].includes(paymentForm.payment_status)"
             ><UiInput
               v-model="paymentForm.payment_amount"
-              type="number"
+              money
               min="0.01"
               step="0.01"
               placeholder="Сумма"

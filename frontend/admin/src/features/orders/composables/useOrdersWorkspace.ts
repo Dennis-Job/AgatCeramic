@@ -1,4 +1,5 @@
 import { computed, ref, watch } from 'vue'
+import { formatMoney } from '../../../utils/formatMoney'
 import { useAuthStore } from '../../../stores/auth'
 import {
   addOrderComment,
@@ -71,13 +72,7 @@ export function useOrdersWorkspace() {
 
   const date = (value: string | null): string =>
     value ? new Date(value).toLocaleString('ru-RU') : '—'
-  const amount = (value: string | null): string =>
-    value === null
-      ? '—'
-      : new Intl.NumberFormat('ru-RU', {
-          style: 'currency',
-          currency: 'RUB',
-        }).format(Number(value))
+  const amount = formatMoney
   const statusName = (code: string): string =>
     statuses.value.find((item) => item.code === code)?.name ?? code
   const paymentName = (code: string): string =>
