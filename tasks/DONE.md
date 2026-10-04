@@ -239,3 +239,12 @@
     Полный E2E: 253 сценария прошли; оставшиеся падения относятся к baseline и
     другим сценариям. Unit suite: 89 passed, 2 ранее существовавших failures в
     `authCard.test.ts` и `uiKitShowcase.test.ts`.
+
+- [x] TASK-A089 Обычный вид диалогов подтверждения (2026-10-04): пояснение в
+    общем `ConfirmDialog` отображается простым текстом в теле окна, destructive
+    кнопка остаётся красной, «Отмена» и подтверждение располагаются рядом.
+    Ошибки по-прежнему выводятся уведомлением с alert-семантикой. UI Design Guard
+    принял изменение. Lint, build, целевой unit test и целевые E2E на ширинах
+    320/640/768/1024/1280 px прошли; полный E2E — 260 passed, 43 прежних
+    failures на baseline и независимых сценариях. Unit suite: 89 passed,
+    2 прежних failure в `authCard.test.ts` и `uiKitShowcase.test.ts`.

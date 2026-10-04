@@ -231,6 +231,10 @@ describe('shared feedback and destructive confirmation', () => {
       },
     })
 
+    const description = wrapper.get('#confirm-dialog-description')
+    expect(description.element.tagName).toBe('P')
+    expect(description.classes()).toContain('text-gray-500')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
     await wrapper.get('button.bg-error-500').trigger('click')
     expect(wrapper.emitted('confirm')).toEqual([[]])
     await wrapper.get('button.text-gray-600').trigger('click')

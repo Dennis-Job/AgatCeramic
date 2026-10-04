@@ -289,43 +289,60 @@ test('desktop grouped navigation supports keyboard selection, active links, and 
   ).toBeVisible()
 })
 
-test('product destructive action uses the shared accessible confirmation flow', async ({
-  page,
-}) => {
-  await mockCatalogApi(page)
-  await page.goto('/products')
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`product destructive action uses the shared accessible confirmation flow at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockCatalogApi(page)
+    await page.goto('/products')
 
-  const deleteButton = page.getByRole('button', {
-    name: 'Удалить товар Монте Тиберио',
+    const deleteButton = page.getByRole('button', {
+      name: 'Удалить товар Монте Тиберио',
+    })
+    await expect(deleteButton).toBeVisible()
+    await expect(deleteButton.locator('svg')).toBeVisible()
+
+    await deleteButton.click()
+    let dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
+    await expect(dialog).toContainText(
+      'Будет удалена только эта продаваемая позиция.',
+    )
+    const description = dialog.locator('#confirm-dialog-description')
+    await expect(description).toHaveClass(/text-sm leading-6 text-gray-500/)
+    await expect(dialog.getByRole('status')).toHaveCount(0)
+    const cancelButton = dialog.getByRole('button', { name: 'Отмена' })
+    const confirmButton = dialog.getByRole('button', {
+      name: 'Удалить',
+      exact: true,
+    })
+    await expect(cancelButton).toBeVisible()
+    await expect(confirmButton).toBeVisible()
+    const buttonRows = await Promise.all(
+      [cancelButton, confirmButton].map((button) =>
+        button.evaluate((element) =>
+          Math.round(element.getBoundingClientRect().y),
+        ),
+      ),
+    )
+    expect(buttonRows[0]).toBe(buttonRows[1])
+
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(deleteButton).toBeFocused()
+
+    await deleteButton.click()
+    dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
+    const deleteRequest = page.waitForRequest(
+      (request) =>
+        request.method() === 'DELETE' &&
+        new URL(request.url()).pathname.endsWith('/admin/products/1'),
+    )
+    await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
+    await deleteRequest
+    await expect(dialog).toBeHidden()
   })
-  await expect(deleteButton).toBeVisible()
-  await expect(deleteButton.locator('svg')).toBeVisible()
-
-  await deleteButton.click()
-  let dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
-  await expect(dialog).toContainText(
-    'Будет удалена только эта продаваемая позиция.',
-  )
-  await expect(dialog.getByRole('button', { name: 'Отмена' })).toBeVisible()
-  await expect(
-    dialog.getByRole('button', { name: 'Удалить', exact: true }),
-  ).toBeVisible()
-
-  await page.keyboard.press('Escape')
-  await expect(dialog).toBeHidden()
-  await expect(deleteButton).toBeFocused()
-
-  await deleteButton.click()
-  dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
-  const deleteRequest = page.waitForRequest(
-    (request) =>
-      request.method() === 'DELETE' &&
-      new URL(request.url()).pathname.endsWith('/admin/products/1'),
-  )
-  await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
-  await deleteRequest
-  await expect(dialog).toBeHidden()
-})
+}
 
 test('product filters apply dynamically and reset to the first page', async ({
   page,

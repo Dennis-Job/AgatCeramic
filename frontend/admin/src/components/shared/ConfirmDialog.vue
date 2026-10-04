@@ -1,10 +1,8 @@
 <script setup lang="ts">
 // Shared destructive action flow.
-import { X } from '@lucide/vue'
 import UiDialog from '../ui/UiDialog.vue'
 import UiNotification from '../ui/UiNotification.vue'
 import UiButton from '../ui/UiButton.vue'
-import UiDialogFooter from '../ui/UiDialogFooter.vue'
 
 withDefaults(
   defineProps<{
@@ -34,27 +32,17 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
     panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
     @close="emit('close')"
   >
-    <div class="flex items-start justify-between gap-4">
-      <h2 id="confirm-dialog-title" class="text-lg font-bold text-gray-900">
-        {{ title }}
-      </h2>
-      <UiButton
-        type="button"
-        variant="ghost"
-        aria-label="Закрыть подтверждение"
-        :disabled="busy"
-        @click="emit('close')"
-      >
-        <X :size="20" />
-      </UiButton>
-    </div>
+    <h2 id="confirm-dialog-title" class="text-lg font-bold text-gray-900">
+      {{ title }}
+    </h2>
+    <p
+      id="confirm-dialog-description"
+      class="mt-3 text-sm leading-6 text-gray-500"
+    >
+      {{ description }}
+    </p>
     <UiNotification v-if="error">{{ error }}</UiNotification>
-    <UiDialogFooter>
-      <template #note
-        ><span id="confirm-dialog-description">{{
-          description
-        }}</span></template
-      >
+    <div class="mt-6 flex flex-wrap justify-end gap-3">
       <UiButton
         type="button"
         variant="ghost"
@@ -70,6 +58,6 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
         @click="emit('confirm')"
         >{{ busy ? 'Удаление…' : confirmLabel }}</UiButton
       >
-    </UiDialogFooter>
+    </div>
   </UiDialog>
 </template>
