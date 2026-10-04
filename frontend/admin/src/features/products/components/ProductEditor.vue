@@ -622,14 +622,14 @@ function closeGroupDeletion(): void {
           ><UiButton
             v-if="selectedGroupId"
             type="button"
-            variant="secondary"
-            class="text-error-500 hover:!bg-error-50 disabled:!text-gray-500 disabled:hover:!bg-gray-100 sm:mr-auto"
+            variant="danger-ghost"
+            class="sm:mr-auto"
             :disabled="saving"
             @click="requestGroupDeletion"
             >Удалить группу</UiButton
           ><UiButton
             type="button"
-            variant="secondary"
+            variant="surface"
             :disabled="saving"
             @click="activeStep = 'review'"
             >Не объединять</UiButton
