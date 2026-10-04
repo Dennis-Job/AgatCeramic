@@ -52,7 +52,7 @@ const lastLogin = (value: string | null): string =>
             :key="role.id"
             tone="primary"
             >{{ role.name }}</UiBadge
-          ><span v-if="!employee.roles.length" class="text-sm text-gray-400"
+          ><span v-if="!employee.roles.length" class="text-sm text-gray-500"
             >Роли не назначены</span
           >
         </div>

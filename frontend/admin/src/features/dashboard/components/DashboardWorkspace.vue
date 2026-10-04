@@ -31,21 +31,21 @@ const metrics = [
     value: formatMoney(0),
     change: 'Оплаченные заказы за период',
     icon: RussianRuble,
-    color: 'bg-success-75 text-success-500',
+    color: 'bg-success-75 text-success-700',
   },
   {
     label: 'Товары',
     value: '0',
     change: 'Активные позиции каталога',
     icon: Package,
-    color: 'bg-blue-light-50 text-blue-light-500',
+    color: 'bg-blue-light-50 text-blue-light-700',
   },
   {
     label: 'Обращения',
     value: '0',
     change: 'Новые заявки клиентов',
     icon: MessageSquare,
-    color: 'bg-warning-50 text-warning-500',
+    color: 'bg-warning-50 text-warning-700',
   },
 ]
 
@@ -78,7 +78,7 @@ const orders = [
         <p class="mt-5 text-3xl font-bold tracking-tight text-gray-900">
           {{ metric.value }}
         </p>
-        <p class="mt-2 text-xs text-gray-400">{{ metric.change }}</p>
+        <p class="mt-2 text-xs text-gray-500">{{ metric.change }}</p>
       </UiCard>
     </div>
 
@@ -90,7 +90,7 @@ const orders = [
               <h2 class="text-base font-semibold text-gray-700">
                 Динамика продаж
               </h2>
-              <p class="mt-1 text-sm text-gray-400">За последние 30 дней</p>
+              <p class="mt-1 text-sm text-gray-500">За последние 30 дней</p>
             </div>
             <UiButton variant="secondary" size="sm"
               >30 дней <ChevronDown :size="16"
@@ -108,7 +108,7 @@ const orders = [
               :style="{ height: `${height}%` }"
             />
           </div>
-          <div class="mt-3 flex justify-between text-xs text-gray-400">
+          <div class="mt-3 flex justify-between text-xs text-gray-500">
             <span>01 авг.</span><span>15 авг.</span><span>Сегодня</span>
           </div>
         </div>
@@ -147,7 +147,7 @@ const orders = [
             <h2 class="text-base font-semibold text-gray-700">
               Последние заказы
             </h2>
-            <p class="mt-1 text-sm text-gray-400">
+            <p class="mt-1 text-sm text-gray-500">
               Новые заказы из интернет-магазина
             </p>
           </div>

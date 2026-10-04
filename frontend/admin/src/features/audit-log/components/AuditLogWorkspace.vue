@@ -97,7 +97,7 @@ onMounted(audit.load)
                     auditActionName(log.action)
                   }}</span></UiBadge
                 >
-                <p class="mt-1 break-all text-xs text-gray-400">
+                <p class="mt-1 break-all text-xs text-gray-500">
                   {{ log.action }}
                 </p>
               </div>
@@ -170,7 +170,7 @@ onMounted(audit.load)
                       auditActionName(log.action)
                     }}</span></UiBadge
                   >
-                  <p class="mt-1 text-xs text-gray-400">{{ log.action }}</p>
+                  <p class="mt-1 text-xs text-gray-500">{{ log.action }}</p>
                 </td>
                 <td class="px-6 py-4 font-medium text-gray-700">
                   {{ log.actor?.name ?? 'Система' }}
@@ -195,7 +195,7 @@ onMounted(audit.load)
                       }}</span>
                     </p>
                   </div>
-                  <span v-else class="text-gray-400">—</span>
+                  <span v-else class="text-gray-500">—</span>
                 </td>
               </tr>
             </tbody></UiTable

@@ -90,7 +90,7 @@ const {
       <p
         v-if="relationErrors[index]"
         role="alert"
-        class="mt-2 text-xs text-error-500"
+        class="mt-2 text-xs text-error-700"
       >
         {{ relationErrors[index] }}
       </p>

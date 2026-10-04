@@ -116,6 +116,21 @@ const uiComponents = [
 
 const sharedComponents = ['AuthCard', 'ConfirmDialog', 'PageHeader']
 
+const semanticColorLevels = [
+  '25',
+  '50',
+  '100',
+  '200',
+  '300',
+  '400',
+  '500',
+  '600',
+  '700',
+  '800',
+  '900',
+  '950',
+]
+
 const colorGroups = [
   {
     label: 'Primary',
@@ -155,17 +170,17 @@ const colorGroups = [
   },
   {
     label: 'Success',
-    tokens: ['25', '50', '100', '200', '500', '600', '700'],
+    tokens: semanticColorLevels,
     prefix: '--admin-color-success-',
   },
   {
     label: 'Warning',
-    tokens: ['25', '50', '100', '200', '500', '600', '700'],
+    tokens: semanticColorLevels,
     prefix: '--admin-color-warning-',
   },
   {
     label: 'Error',
-    tokens: ['25', '50', '100', '200', '500', '600', '700'],
+    tokens: semanticColorLevels,
     prefix: '--admin-color-error-',
   },
   {

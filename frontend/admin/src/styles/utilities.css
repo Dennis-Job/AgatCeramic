@@ -63,7 +63,7 @@
   border: 0;
   border-radius: 50%;
   background: var(--admin-color-gray-50);
-  color: var(--admin-color-gray-400);
+  color: var(--admin-color-gray-500);
 }
 .admin-dialog-content:not(.admin-navigation-dialog-panel)
   button[aria-label^='Закрыть']:hover:not(:disabled) {

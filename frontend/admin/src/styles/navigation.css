@@ -22,7 +22,7 @@
   height: var(--admin-control-height-lg);
   place-items: center;
   border-radius: var(--admin-radius-lg);
-  color: var(--admin-color-gray-400);
+  color: var(--admin-color-gray-500);
   cursor: pointer;
 }
 .admin-header-icon:hover,
@@ -54,7 +54,7 @@
 }
 .admin-account-action svg {
   flex-shrink: 0;
-  color: var(--admin-color-gray-400);
+  color: var(--admin-color-gray-500);
 }
 .admin-account-action:hover {
   background: var(--admin-color-primary-100);

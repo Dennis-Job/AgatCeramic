@@ -9,7 +9,7 @@ defineProps<{ label: string }>()
     role="status"
     aria-live="polite"
   >
-    <Inbox :size="28" class="text-blue-light-500" aria-hidden="true" />
+    <Inbox :size="28" class="text-blue-light-700" aria-hidden="true" />
     <p class="font-semibold">{{ label }}</p>
     <slot />
   </div>

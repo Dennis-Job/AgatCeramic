@@ -80,7 +80,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
               v-model="form.permission_ids"
               :value="permission.id"
               >{{ permission.name }}
-              <span class="text-xs text-gray-400"
+              <span class="text-xs text-gray-500"
                 >({{ permission.code }})</span
               ></UiCheckbox
             >

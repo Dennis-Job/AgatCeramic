@@ -22,6 +22,6 @@ select:disabled {
 button.bg-primary-500:not(:disabled):hover {
   background-color: var(--admin-color-primary-600);
 }
-button.bg-error-500:not(:disabled):hover {
+button.bg-error-600:not(:disabled):hover {
   background-color: var(--admin-color-error-700);
 }

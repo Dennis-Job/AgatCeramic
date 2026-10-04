@@ -136,7 +136,7 @@ function dropFile(event: DragEvent) {
   flex-shrink: 0;
   width: calc(var(--admin-spacing-4) * 3);
   height: calc(var(--admin-spacing-4) * 3);
-  color: var(--color-gray-400);
+  color: var(--color-gray-500);
 }
 .product-photo-file-icon svg {
   fill: var(--color-gray-100);

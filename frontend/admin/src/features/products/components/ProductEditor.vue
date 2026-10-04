@@ -318,7 +318,7 @@ function closeGroupDeletion(): void {
                   :size="15" /><ArrowUpDown
                   v-else
                   :size="15"
-                  class="text-gray-400"
+                  class="text-gray-500"
               /></UiButton>
             </th>
             <th scope="col" :aria-sort="ariaSort('sku')" class="px-4 py-3">
@@ -335,7 +335,7 @@ function closeGroupDeletion(): void {
                   :size="15" /><ArrowUpDown
                   v-else
                   :size="15"
-                  class="text-gray-400"
+                  class="text-gray-500"
               /></UiButton>
             </th>
             <th scope="col" class="px-4 py-3">Артикул</th>
@@ -361,7 +361,7 @@ function closeGroupDeletion(): void {
                   :size="15" /><ArrowUpDown
                   v-else
                   :size="15"
-                  class="text-gray-400"
+                  class="text-gray-500"
               /></UiButton>
             </th>
             <th
@@ -382,7 +382,7 @@ function closeGroupDeletion(): void {
                   :size="15" /><ArrowUpDown
                   v-else
                   :size="15"
-                  class="text-gray-400"
+                  class="text-gray-500"
               /></UiButton>
             </th>
             <th scope="col" class="px-4 py-3 text-right">
@@ -623,7 +623,7 @@ function closeGroupDeletion(): void {
             v-if="selectedGroupId"
             type="button"
             variant="secondary"
-            class="!text-error-600 hover:!bg-error-50 disabled:!text-gray-500 disabled:hover:!bg-gray-100 sm:mr-auto"
+            class="!text-error-700 hover:!bg-error-50 disabled:!text-gray-500 disabled:hover:!bg-gray-100 sm:mr-auto"
             :disabled="saving"
             @click="requestGroupDeletion"
             >Удалить группу</UiButton

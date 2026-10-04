@@ -12,7 +12,7 @@ withDefaults(
     class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
     :class="
       tone === 'primary'
-        ? 'bg-primary-50 text-primary-700'
+        ? 'bg-primary-50 text-primary-500'
         : tone === 'additional'
           ? 'bg-blue-light-50 text-blue-light-700'
           : tone === 'success'

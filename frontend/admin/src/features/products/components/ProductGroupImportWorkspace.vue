@@ -170,7 +170,7 @@ watch([busy, downloading], async () => {
           <CircleAlert
             v-if="result.status === 'failed'"
             :size="20"
-            class="text-error-500"
+            class="text-error-700"
             aria-hidden="true"
           /><CheckCircle2
             v-else-if="finished"

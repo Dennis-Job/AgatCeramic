@@ -235,7 +235,7 @@ describe('shared feedback and destructive confirmation', () => {
     expect(description.element.tagName).toBe('P')
     expect(description.classes()).toContain('text-gray-500')
     expect(wrapper.find('[role="status"]').exists()).toBe(false)
-    await wrapper.get('button.bg-error-500').trigger('click')
+    await wrapper.get('button.bg-error-600').trigger('click')
     expect(wrapper.emitted('confirm')).toEqual([[]])
     await wrapper.get('button.text-gray-600').trigger('click')
     expect(wrapper.emitted('close')).toEqual([[]])

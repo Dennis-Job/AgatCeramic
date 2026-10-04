@@ -20,11 +20,11 @@ const labelClasses = computed(() =>
 const indicatorClasses = computed(() =>
   props.disabled
     ? selected.value
-      ? 'border-gray-400 bg-gray-100 text-gray-600'
+      ? 'border-gray-500 bg-gray-100 text-gray-600'
       : 'border-gray-300 bg-gray-100 text-transparent'
     : selected.value
       ? 'border-primary-500 bg-white text-primary-500'
-      : 'border-gray-400 bg-white text-transparent',
+      : 'border-gray-500 bg-white text-transparent',
 )
 </script>
 

@@ -357,7 +357,7 @@ function changeTab(event: KeyboardEvent) {
               </p>
               <p
                 v-if="result.error_message"
-                class="mt-2 break-words text-sm text-error-500"
+                class="mt-2 break-words text-sm text-error-700"
               >
                 {{ result.error_message }}
               </p>
@@ -621,7 +621,7 @@ images.zip
               </dl>
               <p
                 v-if="imageResult.error_message"
-                class="mt-3 break-words text-sm text-error-500"
+                class="mt-3 break-words text-sm text-error-700"
               >
                 {{ imageResult.error_message }}
               </p>

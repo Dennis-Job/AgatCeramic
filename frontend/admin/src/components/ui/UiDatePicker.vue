@@ -221,8 +221,7 @@ onBeforeUnmount(() => {
     >
       <CalendarDays
         :size="18"
-        class="shrink-0"
-        :class="disabled ? 'text-gray-500' : 'text-gray-400'"
+        class="shrink-0 text-gray-500"
         aria-hidden="true"
       />
       <input
@@ -232,7 +231,7 @@ onBeforeUnmount(() => {
         type="text"
         inputmode="numeric"
         maxlength="10"
-        class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:text-gray-500"
+        class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
         :placeholder="placeholder"
         :aria-label="accessibleName"
         :disabled="disabled"
@@ -244,7 +243,7 @@ onBeforeUnmount(() => {
       <button
         v-if="modelValue"
         type="button"
-        class="rounded p-1 text-gray-400 transition hover:bg-primary-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+        class="rounded p-1 text-gray-500 transition hover:bg-primary-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
         aria-label="Очистить дату"
         :disabled="disabled"
         @click="clear"
@@ -286,7 +285,7 @@ onBeforeUnmount(() => {
         <span
           v-for="weekday in weekdays"
           :key="weekday"
-          class="py-1 text-xs font-medium text-gray-400"
+          class="py-1 text-xs font-medium text-gray-500"
           >{{ weekday }}</span
         >
         <span

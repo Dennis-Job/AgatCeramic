@@ -12,7 +12,7 @@ withDefaults(
     class="rounded-lg border px-4 py-3 text-sm"
     :class="
       tone === 'error'
-        ? 'border-error-200 bg-error-50 text-error-500'
+        ? 'border-error-200 bg-error-50 text-error-700'
         : tone === 'success'
           ? 'border-success-200 bg-success-50 text-success-700'
           : tone === 'warning'

@@ -44,25 +44,40 @@
   --color-success-50: var(--admin-color-success-50);
   --color-success-100: var(--admin-color-success-100);
   --color-success-200: var(--admin-color-success-200);
+  --color-success-300: var(--admin-color-success-300);
+  --color-success-400: var(--admin-color-success-400);
   --color-success-500: var(--admin-color-success-500);
   --color-success-600: var(--admin-color-success-600);
   --color-success-700: var(--admin-color-success-700);
+  --color-success-800: var(--admin-color-success-800);
+  --color-success-900: var(--admin-color-success-900);
+  --color-success-950: var(--admin-color-success-950);
 
   --color-warning-25: var(--admin-color-warning-25);
   --color-warning-50: var(--admin-color-warning-50);
   --color-warning-100: var(--admin-color-warning-100);
   --color-warning-200: var(--admin-color-warning-200);
+  --color-warning-300: var(--admin-color-warning-300);
+  --color-warning-400: var(--admin-color-warning-400);
   --color-warning-500: var(--admin-color-warning-500);
   --color-warning-600: var(--admin-color-warning-600);
   --color-warning-700: var(--admin-color-warning-700);
+  --color-warning-800: var(--admin-color-warning-800);
+  --color-warning-900: var(--admin-color-warning-900);
+  --color-warning-950: var(--admin-color-warning-950);
 
   --color-error-25: var(--admin-color-error-25);
   --color-error-50: var(--admin-color-error-50);
   --color-error-100: var(--admin-color-error-100);
   --color-error-200: var(--admin-color-error-200);
+  --color-error-300: var(--admin-color-error-300);
+  --color-error-400: var(--admin-color-error-400);
   --color-error-500: var(--admin-color-error-500);
   --color-error-600: var(--admin-color-error-600);
   --color-error-700: var(--admin-color-error-700);
+  --color-error-800: var(--admin-color-error-800);
+  --color-error-900: var(--admin-color-error-900);
+  --color-error-950: var(--admin-color-error-950);
 
   --color-blue-50: var(--admin-color-blue-50);
   --color-blue-500: var(--admin-color-blue-500);

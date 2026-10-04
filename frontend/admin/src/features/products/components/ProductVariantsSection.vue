@@ -105,7 +105,7 @@ const {
         <p
           v-if="groupErrors.axis_attribute_ids"
           role="alert"
-          class="mt-2 text-sm text-error-500"
+          class="mt-2 text-sm text-error-700"
         >
           {{ groupErrors.axis_attribute_ids[0] }}
         </p>
@@ -170,7 +170,7 @@ const {
         <p
           v-if="groupErrors.product_ids"
           role="alert"
-          class="mt-2 text-sm text-error-500"
+          class="mt-2 text-sm text-error-700"
         >
           {{ groupErrors.product_ids[0] }}
         </p>
