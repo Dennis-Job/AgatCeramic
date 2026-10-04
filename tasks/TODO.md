@@ -6,10 +6,12 @@ canonical documentation и audit reports.
 
 ## Исправления и рефакторинг по аудиту проекта — 2026-10-03
 
-Задачи внесены 2026-10-04 по проверке версии `39d5cb2`. При составлении списка на
+TASK-A066–TASK-A081 внесены 2026-10-04 по проверке версии `39d5cb2`. При составлении списка на
 `7b0a020` повторно сверены места двух дефектов P1; они остаются открытыми. Результаты
 аудита описывают проверенную версию, а время запросов, нагрузка и реальные конкурентные
 PostgreSQL-сценарии требуют отдельного измерения. Все задачи ниже ожидают реализации.
+TASK-A082–TASK-A086 добавлены 2026-10-04 после дополнительного просмотра кода на `9140b92`;
+для TASK-A086 воспроизведено чередование ответов на действующем composable с mock API.
 
 Приоритеты: **P1** — корректность данных и рабочих сценариев, исправить в первую очередь;
 **P2** — сопровождаемость, производительность и автоматические проверки;
@@ -165,6 +167,67 @@ DB-зависимые изменения проверяются на изоли�
     Выполнять после выделения state boundaries в TASK-A069; API change обновляет OpenAPI.
   - Готовность: поведенческие/E2E tests открытия, смены шагов, повторного входа и load failure;
     права и выбор группы сохраняются, объём данных не растёт со всем каталогом при открытии товара.
+
+- [ ] TASK-A082 **P2** Разделить панели и результаты массового импорта товаров
+  - Цель: [ProductImportWorkspace.vue](../frontend/admin/src/features/products/components/ProductImportWorkspace.vue)
+    композирует самостоятельные XLSX- и ZIP-сценарии вместо объединения подготовки файла,
+    загрузки, прогресса и подробных результатов обоих сценариев в одном template.
+  - План: выделить панели импорта товаров и изображений с узкими props/events; разделить
+    подготовку, загрузку и результаты там, где есть самостоятельный контракт. Сохранить
+    существующие useProductImport/useFileImport; владелец polling и state остаётся в workspace,
+    чтобы переключение вкладки не сбрасывало job. Не дублировать транспорт или validation.
+  - Готовность: unit/import E2E покрывают XLSX create/edit, ZIP, частичный успех, ошибки,
+    скачивание отчётов и retry polling; состояние сохраняется при смене вкладок и SPA-маршрутов.
+    Проверены keyboard tabs, возврат фокуса, live announcements и responsive; UI Design Guard accepted.
+
+- [ ] TASK-A083 **P2** Разделить формы реквизитов, документов и согласований в настройках
+  - Цель: [SettingsWorkspace.vue](../frontend/admin/src/features/settings/components/SettingsWorkspace.vue)
+    и [useSettingsWorkspace](../frontend/admin/src/features/settings/composables/useSettingsWorkspace.ts)
+    имеют явные границы трёх сценариев: реквизиты продавца, версии документов и внутренние согласования.
+  - План: выделить соответствующие form/section components и локальное состояние каждого сценария;
+    workspace координирует загрузку, общую блокировку действий и связь согласования с опубликованной
+    политикой. Передавать узкие контракты; labels/options и подготовку payload хранить вне разметки.
+    Сохранить текущую последовательность операций и API без добавления новых функций.
+  - Готовность: поведенческие unit/E2E проверяют save, создание черновика, preview/publish,
+    согласование выбранной версии, validation и ошибки; settings.approve, публичность банковских
+    реквизитов и сброс только отправленной формы сохраняются; UI Design Guard accepted.
+
+- [ ] TASK-A084 **P2** Убрать дублирование обхода дерева категорий в Admin
+  - Цель: рекурсивный обход не повторяется в [useCategoriesWorkspace](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts),
+    [useProductEditor](../frontend/admin/src/features/products/composables/useProductEditor.ts) и
+    [useProductImport](../frontend/admin/src/features/products/composables/useProductImport.ts).
+  - План: выделить чистые типизированные операции обхода и получения потомков в categories feature;
+    правила сортировки, доступности и подписи options оставить явными у потребителей. Editor
+    по-прежнему скрывает неактивные категории, import показывает их с отметкой, parent selector
+    исключает саму категорию и её потомков. Не вводить универсальный tree framework.
+  - Готовность: unit tests проверяют пустое/вложенное дерево, отсутствие мутаций, порядок siblings,
+    разные правила hidden categories и исключение потомков; catalog/import E2E сохраняют выбор.
+    Согласовать изменение общего участка useProductEditor с TASK-A069.
+
+- [ ] TASK-A085 **P2** Отделить retention-выборки и унифицировать проверку legal hold
+  - Цель: [OrderRetentionService](../backend/app/Services/Retention/OrderRetentionService.php)
+    отделяет eligibility queries от batch orchestration; одинаковый predicate active legal hold
+    не дублируется в нём, ContactRequestRetentionService и TombstoneReplayService.
+  - План: перенести сложные eligibility queries в типизированные Query-компоненты; выделить
+    общую проверку hold для orders/contacts. Сохранить специализированные destruction services
+    и транзакцию у use case; не создавать универсальный retention engine или новые правила сроков.
+    Устранить дублирование unheld/heldCount/hasActiveHold без изменения смысла batch counters.
+  - Готовность: PostgreSQL retention/replay tests проверяют cutoff и terminal anchors, holds,
+    bounded batches/SKIP LOCKED, повторную проверку внутри транзакции, rollback и идемпотентность.
+    Dry-run counts, tombstones, evidence и запрет apply без утверждённой policy сохраняются;
+    действующая [retention matrix](../docs/PERSONAL_DATA_LIFECYCLE.md) не меняется.
+
+- [ ] TASK-A086 **P1** Защитить детали категории от запоздавших ответов
+  - Цель: [showDetails в useCategoriesWorkspace](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts)
+    не подставляет attributes/groups категории A после выбора B. На `9140b92` с управляемыми
+    mock-ответами воспроизведены details.id = 2 и attributes/groups.category_id = 1.
+  - План: привязать загрузку и применение результата к актуальному selection/request ID;
+    применять attributes/groups атомарно, игнорировать устаревшие success/error/finally.
+    Закрытие диалога инвалидирует запрос; отказ старого запроса не закрывает актуальные детали.
+    Переиспользовать подход TASK-A067, сохранив локальные доменные контракты и API.
+  - Готовность: поведенческие regression tests проверяют обратный порядок ответов, ошибку A
+    после успеха B, закрытие/повторное открытие и актуальный loading state; category details E2E
+    подтверждает соответствие выбранной категории её характеристикам и группам.
 
 ## Interim Audit Phases 0–6
 
