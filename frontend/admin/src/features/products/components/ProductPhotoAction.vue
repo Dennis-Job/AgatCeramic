@@ -50,7 +50,7 @@ defineEmits<{ edit: [] }>()
   height: var(--admin-spacing-6);
   border-radius: var(--admin-radius-2xl);
   color: var(--color-white);
-  background: var(--color-gray-500);
+  background: var(--color-gray-400);
 }
 .product-photo-edit {
   position: absolute;

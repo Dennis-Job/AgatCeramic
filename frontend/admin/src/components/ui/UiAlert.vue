@@ -9,15 +9,15 @@ withDefaults(
 </script>
 <template>
   <p
-    class="rounded-lg border px-4 py-3 text-sm"
+    class="rounded-lg px-4 py-3 text-sm"
     :class="
       tone === 'error'
-        ? 'border-error-200 bg-error-50 text-error-500'
+        ? 'bg-error-50 text-error-500'
         : tone === 'success'
-          ? 'border-success-200 bg-success-50 text-success-500'
+          ? 'bg-success-50 text-success-500'
           : tone === 'warning'
-            ? 'border-warning-200 bg-warning-50 text-warning-500'
-            : 'border-primary-200 bg-primary-50 text-primary-500'
+            ? 'bg-warning-50 text-warning-500'
+            : 'bg-primary-50 text-primary-500'
     "
     :role="tone === 'error' ? 'alert' : 'status'"
     :aria-live="live"

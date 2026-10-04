@@ -35,9 +35,9 @@ const classes = computed(() => [
       ? 'min-h-[var(--admin-control-height-lg)] px-5 py-2 text-base'
       : 'min-h-[var(--admin-control-height-md)] px-4 py-1.5 text-sm',
   props.variant === 'primary'
-    ? 'bg-primary-500 text-white hover:bg-primary-600 disabled:bg-gray-500 disabled:hover:bg-gray-500'
+    ? 'bg-primary-500 text-white hover:bg-primary-600 disabled:bg-gray-400 disabled:hover:bg-gray-400'
     : props.variant === 'danger'
-      ? 'bg-error-600 text-white hover:bg-error-700 disabled:bg-gray-500 disabled:hover:bg-gray-500'
+      ? 'bg-error-500 text-white hover:bg-error-600 disabled:bg-gray-400 disabled:hover:bg-gray-400'
       : props.variant === 'danger-ghost'
         ? 'text-error-500 hover:bg-error-100 focus-visible:bg-error-100 hover:text-error-500 disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500'
         : props.variant === 'primary-ghost'

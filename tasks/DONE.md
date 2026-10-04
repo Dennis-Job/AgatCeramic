@@ -270,3 +270,14 @@
     переопределений цветов. Исправлено по явному указанию пользователя.
     Lint, build, scoped Prettier и `git diff --check` прошли.
     [Отчёт](../docs/TASK_A091_REPORT.md).
+
+- [x] TASK-A092 Цвета кнопок и поверхности Admin без рамок (2026-10-04):
+    danger использует `error-500`, сплошные disabled/loading кнопки — `gray-400`.
+    UiAlert/UiNotification, внешние и внутренние панели без border.
+    Lint, build, scoped Prettier и `git diff --check` прошли; 6 тестов уведомлений
+    passed. UI Design Guard accepted. [Отчёт](../docs/TASK_A092_REPORT.md).
+
+- [x] TASK-A093 Иконки шапки и добавления фото на `gray-400` (2026-10-04).
+    Использованы существующие цвета; lint, build, scoped Prettier и
+    `git diff --check` прошли. Цвета проверены в `/products`.
+    UI Design Guard accepted. [Отчёт](../docs/TASK_A093_REPORT.md).

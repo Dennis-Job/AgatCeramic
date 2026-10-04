@@ -22,13 +22,13 @@
   height: var(--admin-control-height-lg);
   place-items: center;
   border-radius: var(--admin-radius-lg);
-  color: var(--admin-color-gray-500);
+  color: var(--admin-color-gray-400);
   cursor: pointer;
 }
 .admin-header-icon:hover,
 .admin-header-icon[aria-expanded='true'] {
   background: var(--admin-color-primary-100);
-  color: var(--admin-color-gray-600);
+  color: var(--admin-color-gray-400);
 }
 .admin-user-symbol {
   display: grid;

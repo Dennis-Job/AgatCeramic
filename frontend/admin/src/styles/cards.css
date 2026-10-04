@@ -1,12 +1,11 @@
 .admin-panel {
-  border: var(--admin-border-width) solid var(--admin-color-card-border);
+  border: 0;
   border-radius: var(--admin-radius-card);
   background: var(--admin-color-card-surface);
   box-shadow: var(--admin-shadow-card);
 }
 
 .admin-panel--white {
-  border-color: var(--admin-color-gray-200);
   background: var(--admin-color-white);
 }
 
@@ -15,15 +14,14 @@
 }
 
 .admin-panel--inset {
-  border: var(--admin-border-width) solid var(--admin-color-card-inset-border);
+  border: 0;
   border-radius: var(--admin-radius-card-inset);
   background: var(--admin-color-card-inset-surface);
   box-shadow: none;
 }
 
 .admin-panel--state {
-  border-width: var(--admin-border-width);
-  border-style: solid;
+  border: 0;
   border-radius: var(--admin-radius-card);
   box-shadow: none;
 }
