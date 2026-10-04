@@ -108,7 +108,7 @@ async function confirmPublish(): Promise<void> {
     />
     <UiNotification v-if="error"
       >{{ error }}
-      <UiButton v-if="!loaded" variant="ghost" size="sm" @click="load"
+      <UiButton v-if="!loaded" variant="surface" size="sm" @click="load"
         >Повторить загрузку</UiButton
       ></UiNotification
     >
@@ -343,7 +343,7 @@ async function confirmPublish(): Promise<void> {
             {{ preview?.version }}
           </h2>
           <UiButton
-            variant="ghost"
+            variant="surface"
             aria-label="Закрыть предпросмотр документа"
             :disabled="Boolean(busyAction)"
             @click="preview = null"
@@ -462,7 +462,7 @@ async function confirmPublish(): Promise<void> {
                 {{ approval.decided_on }} · запись #{{ approval.id }}
               </p>
               <UiButton
-                variant="ghost"
+                variant="surface"
                 size="sm"
                 :aria-label="`Просмотреть политику ПДн, документ ${approval.document_version_id}`"
                 @click="openApprovedDocument(approval.document_version_id)"

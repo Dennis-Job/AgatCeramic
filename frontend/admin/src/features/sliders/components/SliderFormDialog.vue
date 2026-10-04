@@ -60,7 +60,7 @@ watch(
         </h2>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно слайдера"
           :disabled="busy"
@@ -118,7 +118,7 @@ watch(
           </span>
           <UiButton
             type="button"
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="busy || index === 0"
             :aria-label="`Поднять баннер ${banner.title}`"
@@ -127,7 +127,7 @@ watch(
           /></UiButton>
           <UiButton
             type="button"
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="busy || index === selectedBanners.length - 1"
             :aria-label="`Опустить баннер ${banner.title}`"

@@ -151,7 +151,7 @@ function changeTab(event: KeyboardEvent) {
             :id="`import-tab-${item.id}`"
             :key="item.id"
             type="button"
-            variant="ghost"
+            variant="surface"
             role="tab"
             :aria-selected="tab === item.id"
             :aria-controls="`import-panel-${item.id}`"
@@ -160,7 +160,7 @@ function changeTab(event: KeyboardEvent) {
             :class="
               tab === item.id
                 ? 'border-primary-500 text-primary-500'
-                : 'border-transparent text-gray-500 hover:text-gray-500'
+                : 'border-transparent text-gray-500 hover:text-gray-500!'
             "
             @click="tab = item.id as typeof tab"
             >{{ item.label }}</UiButton

@@ -293,3 +293,16 @@
     уведомления используют `blue-light-50/500`. Lint, build, scoped Prettier,
     diff check и 6 тестов уведомлений прошли. UI Design Guard accepted.
     [Отчёт](../docs/TASK_A095_REPORT.md).
+
+- [x] TASK-A096 Основной стиль информационного примера UI-kit (2026-10-04):
+    явный `UiAlert tone="primary"` с `primary-50/500` применён только к примеру
+    «Информационное сообщение.». Lint, build, scoped Prettier и diff check прошли.
+    Цвета проверены в браузере; UI Design Guard accepted.
+    [Отчёт](../docs/TASK_A096_REPORT.md).
+
+- [x] TASK-A097 Hover кнопок и замена нейтрального ghost на surface (2026-10-04):
+    surface/primary-ghost используют `primary-50`, danger-ghost — `error-50`,
+    copy — `gray-100`. Все нейтральные ghost заменены на surface; лишние примеры
+    удалены из UI-kit. Lint, build, scoped Prettier и diff check прошли.
+    Hover-цвета подтверждены в браузере; UI Design Guard accepted.
+    [Отчёт](../docs/TASK_A097_REPORT.md).

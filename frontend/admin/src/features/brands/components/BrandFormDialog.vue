@@ -40,7 +40,7 @@ const emit = defineEmits<{
         <h2 id="brand-dialog-title" class="text-lg font-bold">{{ title }}</h2>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно бренда"
           :disabled="busy"

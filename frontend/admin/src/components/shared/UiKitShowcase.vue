@@ -444,7 +444,6 @@ function submitAuthPreview(): void {
           <UiButton variant="surface">На белой поверхности</UiButton>
           <UiButton variant="surface" disabled>Поверхность недоступна</UiButton>
           <UiButton variant="danger">Опасное действие</UiButton>
-          <UiButton variant="ghost">Прозрачная</UiButton>
           <UiButton variant="primary-ghost">Синяя прозрачная</UiButton>
           <UiButton variant="danger-ghost">Удалить</UiButton>
         </div>
@@ -462,8 +461,9 @@ function submitAuthPreview(): void {
           aria-label="Кнопки управления с подсказками"
         >
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
+            class="hover:bg-gray-100! hover:text-gray-500! focus-visible:bg-gray-100!"
             aria-label="Копировать"
             tooltip="Копировать товар — создать похожий"
             ><Copy :size="17" aria-hidden="true"
@@ -483,7 +483,6 @@ function submitAuthPreview(): void {
           <UiButton disabled>Недоступна</UiButton>
           <UiButton variant="secondary" disabled>Вторичная недоступна</UiButton>
           <UiButton variant="danger" disabled>Опасная недоступна</UiButton>
-          <UiButton variant="ghost" disabled>Прозрачная недоступна</UiButton>
           <UiButton variant="primary-ghost" disabled
             >Редактирование недоступно</UiButton
           >
@@ -538,7 +537,9 @@ function submitAuthPreview(): void {
               >Информационное уведомление</UiButton
             >
           </div>
-          <UiAlert tone="info" live="polite">Информационное сообщение.</UiAlert>
+          <UiAlert tone="primary" live="polite"
+            >Информационное сообщение.</UiAlert
+          >
           <UiAlert tone="additional" live="polite"
             >Дополнительное информационное сообщение.</UiAlert
           >
@@ -1352,7 +1353,7 @@ function submitAuthPreview(): void {
         </h2>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           aria-label="Закрыть обычный диалог"
           @click="isDialogOpen = false"
         >

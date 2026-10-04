@@ -70,7 +70,7 @@ async function signOut(): Promise<void> {
         >
         <UiButton
           class="admin-account-action"
-          variant="ghost"
+          variant="surface"
           :loading="signingOut"
           :disabled="signingOut"
           @click="signOut"

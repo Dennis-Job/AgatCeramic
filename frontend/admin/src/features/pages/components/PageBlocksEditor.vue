@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
         class="flex min-w-0 flex-wrap items-center gap-1 rounded-lg border border-gray-200 p-2"
       >
         <UiButton
-          variant="ghost"
+          variant="surface"
           size="sm"
           class="min-w-0 flex-1 break-words"
           :aria-pressed="selected?.id === block.id"
@@ -160,7 +160,7 @@ onBeforeUnmount(() => {
           }}{{ block.enabled ? '' : ' · Выключен' }}</UiButton
         >
         <UiButton
-          variant="ghost"
+          variant="surface"
           size="sm"
           :aria-label="`Поднять блок ${index + 1}`"
           :disabled="
@@ -170,7 +170,7 @@ onBeforeUnmount(() => {
           >↑</UiButton
         >
         <UiButton
-          variant="ghost"
+          variant="surface"
           size="sm"
           :aria-label="`Опустить блок ${index + 1}`"
           :disabled="

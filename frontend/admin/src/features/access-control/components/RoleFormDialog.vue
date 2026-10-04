@@ -40,7 +40,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно роли"
           :disabled="busy"
@@ -95,7 +95,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         >
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           :disabled="busy"
           @click="emit('close')"
           >Отмена</UiButton

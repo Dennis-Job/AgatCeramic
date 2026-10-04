@@ -151,7 +151,7 @@ const orders = [
               Новые заказы из интернет-магазина
             </p>
           </div>
-          <UiButton variant="ghost" size="sm">Все заказы</UiButton>
+          <UiButton variant="surface" size="sm">Все заказы</UiButton>
         </div>
       </template>
       <UiTable table-class="admin-table-orders" label="Последние заказы"

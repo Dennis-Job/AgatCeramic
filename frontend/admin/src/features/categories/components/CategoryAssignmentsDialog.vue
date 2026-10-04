@@ -53,7 +53,7 @@ const emit = defineEmits<{
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно характеристик категории"
           :disabled="busy"
@@ -159,7 +159,7 @@ const emit = defineEmits<{
         >
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           :disabled="busy"
           @click="emit('close')"
           >Отмена</UiButton

@@ -238,7 +238,7 @@ function toggle(id: number, checked: boolean) {
         >
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           :disabled="upload.uploading.value"
           @click="upload.cancel"

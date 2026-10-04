@@ -69,7 +69,7 @@ onMounted(audit.load)
           accessible-name="Дата по"
         />
         <UiButton type="submit" variant="secondary">Найти</UiButton>
-        <UiButton type="button" variant="ghost" @click="audit.reset"
+        <UiButton type="button" variant="surface" @click="audit.reset"
           >Сбросить</UiButton
         >
       </form>

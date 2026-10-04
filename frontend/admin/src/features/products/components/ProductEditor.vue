@@ -306,7 +306,7 @@ function closeGroupDeletion(): void {
             <th scope="col" :aria-sort="ariaSort('name')" class="px-4 py-3">
               <UiButton
                 type="button"
-                variant="ghost"
+                variant="surface"
                 size="sm"
                 class="text-left"
                 :disabled="loading"
@@ -324,7 +324,7 @@ function closeGroupDeletion(): void {
             <th scope="col" :aria-sort="ariaSort('sku')" class="px-4 py-3">
               <UiButton
                 type="button"
-                variant="ghost"
+                variant="surface"
                 size="sm"
                 :disabled="loading"
                 @click="changeSort('sku')"
@@ -350,7 +350,7 @@ function closeGroupDeletion(): void {
             >
               <UiButton
                 type="button"
-                variant="ghost"
+                variant="surface"
                 size="sm"
                 :disabled="loading"
                 @click="changeSort('created_at')"
@@ -371,7 +371,7 @@ function closeGroupDeletion(): void {
             >
               <UiButton
                 type="button"
-                variant="ghost"
+                variant="surface"
                 size="sm"
                 :disabled="loading"
                 @click="changeSort('updated_at')"
@@ -463,8 +463,9 @@ function closeGroupDeletion(): void {
               <div class="flex">
                 <UiButton
                   type="button"
-                  variant="ghost"
+                  variant="surface"
                   size="sm"
+                  class="hover:bg-gray-100! hover:text-gray-500! focus-visible:bg-gray-100!"
                   tooltip="Копировать товар — создать похожий"
                   :aria-label="`Создать похожий товар ${product.name}`"
                   @click="cloneProduct(product)"
@@ -536,7 +537,7 @@ function closeGroupDeletion(): void {
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           class="shrink-0"
           :disabled="saving"
@@ -644,7 +645,7 @@ function closeGroupDeletion(): void {
         <template v-else
           ><UiButton
             type="button"
-            variant="ghost"
+            variant="surface"
             :disabled="saving"
             @click="close"
             >Закрыть</UiButton

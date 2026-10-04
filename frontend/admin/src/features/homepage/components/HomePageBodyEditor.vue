@@ -62,7 +62,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         class="min-w-44 flex-1"
       />
       <UiButton
-        variant="ghost"
+        variant="surface"
         size="sm"
         :disabled="index === 0"
         :aria-label="`Поднять тему ${index + 1}`"
@@ -70,7 +70,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         >↑</UiButton
       >
       <UiButton
-        variant="ghost"
+        variant="surface"
         size="sm"
         :disabled="index === content.marquee.topics.length - 1"
         :aria-label="`Опустить тему ${index + 1}`"
@@ -121,14 +121,14 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         <h3 class="font-medium text-gray-500">Материал {{ index + 1 }}</h3>
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять материал ${index + 1}`"
             @click="move(content.categories.items, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.categories.items.length - 1"
             :aria-label="`Опустить материал ${index + 1}`"
@@ -312,14 +312,14 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         <h3 class="font-medium text-gray-500">Совет {{ index + 1 }}</h3>
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять совет ${index + 1}`"
             @click="move(content.guide.items, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.guide.items.length - 1"
             :aria-label="`Опустить совет ${index + 1}`"

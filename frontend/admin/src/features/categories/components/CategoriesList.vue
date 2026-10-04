@@ -49,7 +49,7 @@ const emit = defineEmits<{
       <tr v-for="category in categories" :key="category.id">
         <td>
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             class="text-left"
             @click="emit('details', category)"
@@ -72,7 +72,7 @@ const emit = defineEmits<{
         <td v-if="canManage">
           <div class="flex justify-end gap-1">
             <UiButton
-              variant="ghost"
+              variant="surface"
               size="sm"
               tooltip="Настроить характеристики"
               :aria-label="`Настроить характеристики категории ${category.name}`"

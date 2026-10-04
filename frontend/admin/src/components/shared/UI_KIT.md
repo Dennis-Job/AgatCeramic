@@ -198,6 +198,8 @@ screen-reader и focus trap, после закрытия возвращаетс�
 `blue-light-50` и текстом `blue-light-500`, как у `UiBadge tone="additional"`.
 Это оформление применяется ко всем информационным сообщениям, заметкам в
 `UiDialogFooter` и информационным `UiNotification`.
+`UiAlert tone="primary"` использует `primary-50/500`: этот вариант показан в
+UI-kit в примере «Информационное сообщение.» рядом с дополнительным примером.
 Для информационных примеров используйте `live="polite"`; роль — `status`.
 `UiAlert` используется для объяснения контекста и ограничений рядом с
 данными, а `UiField` — для ошибок конкретного поля. Loading/empty states и
@@ -206,7 +208,7 @@ screen-reader и focus trap, после закрытия возвращаетс�
 
 | Компонент                                        | Варианты / состояния                                                                                                                    |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `UiButton`                                       | `primary`, `secondary`, `soft-blue`, `danger`, `ghost`, `primary-ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                  |
+| `UiButton`                                       | `primary`, `secondary`, `soft-blue`, `surface`, `danger`, `primary-ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                |
 | `UiInput`                                        | default, populated/clear, search, password, focus, error через `UiField`, native disabled; disabled блокирует input и clear-action      |
 | `UiSelect`                                       | placeholder, search/no-results, clear, keyboard, teleport menu; disabled блокирует trigger/clear и закрывает открытое menu              |
 | `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                                  |
@@ -307,8 +309,15 @@ readonly сохраняются; обычные количественные п�
 имена tooltip и не добавлять параллельный native `title`.
 
 Уточнение 2026-10-03: `UiButton variant="primary-ghost"` — единый синий
-вариант действий редактирования во всех разделах; цвет primary-600, фон
-hover/focus-visible primary-100, disabled остаётся серым. Tooltip использует
+вариант действий редактирования во всех разделах; цвет primary-500, фон
+hover/focus-visible primary-50, disabled остаётся серым. Tooltip использует
 белую поверхность, текст gray-900, границу gray-200 и общую dropdown-тень.
 Столбец действий товаров 176 px вмещает три кнопки и внутренние отступы,
 включая hover-фон и keyboard focus.
+
+Уточнение 2026-10-04 (TASK-A097): нейтральный вариант `ghost` удалён;
+его использования переведены на `surface` («На белой поверхности»).
+Для `surface` и `primary-ghost` фон при наведении — `primary-50`,
+для `danger-ghost` — `error-50`. Кнопки копирования используют `surface`
+с фоном hover/focus-visible `gray-100` и серым текстом. Удалены отдельные
+примеры нейтральной прозрачной кнопки в UI-kit.

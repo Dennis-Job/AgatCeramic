@@ -167,7 +167,7 @@ onBeforeUnmount(() => {
     >
       <span ref="content" class="admin-notification-content"><slot /></span>
       <UiButton
-        variant="ghost"
+        variant="surface"
         size="sm"
         class="admin-notification-close"
         aria-label="Закрыть уведомление"

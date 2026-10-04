@@ -45,7 +45,7 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
     <div class="mt-6 flex flex-wrap justify-end gap-3">
       <UiButton
         type="button"
-        variant="ghost"
+        variant="surface"
         :disabled="busy"
         @click="emit('close')"
         >Отмена</UiButton

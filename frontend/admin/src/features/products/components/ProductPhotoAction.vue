@@ -16,7 +16,7 @@ defineEmits<{ edit: [] }>()
   <UiButton
     v-if="editable"
     type="button"
-    variant="ghost"
+    variant="surface"
     class="product-photo-action"
     :class="{ 'product-photo-action-filled': url }"
     :aria-label="`${url ? 'Редактировать' : 'Добавить'} фото товара ${name}`"

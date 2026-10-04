@@ -20,13 +20,13 @@ const emit = defineEmits<{ select: [id: string] }>()
       <li v-for="(step, index) in steps" :key="step.id">
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           class="w-full justify-start text-left sm:w-auto"
           :class="
             active === step.id
-              ? 'bg-primary-50 text-primary-500'
-              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-500'
+              ? 'bg-primary-50! text-primary-500!'
+              : 'text-gray-500 hover:bg-gray-50! hover:text-gray-500!'
           "
           :disabled="!enabled(step.id)"
           :aria-current="active === step.id ? 'step' : undefined"

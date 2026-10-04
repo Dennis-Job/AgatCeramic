@@ -74,7 +74,7 @@ function removeOption(index: number): void {
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно характеристики"
           :disabled="busy"
@@ -149,7 +149,11 @@ function removeOption(index: number): void {
             <div>
               <h3 class="font-semibold text-gray-500">Варианты</h3>
             </div>
-            <UiButton type="button" variant="ghost" size="sm" @click="addOption"
+            <UiButton
+              type="button"
+              variant="surface"
+              size="sm"
+              @click="addOption"
               >Добавить</UiButton
             >
           </div>

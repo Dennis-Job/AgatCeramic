@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
           </h2>
           <UiButton
             type="button"
-            variant="ghost"
+            variant="surface"
             size="sm"
             aria-label="Закрыть меню"
             @click="updatePopup('compact', false)"

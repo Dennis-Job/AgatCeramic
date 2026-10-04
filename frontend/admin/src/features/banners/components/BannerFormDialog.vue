@@ -47,7 +47,7 @@ const emit = defineEmits<{
         </h2>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно баннера"
           :disabled="busy"

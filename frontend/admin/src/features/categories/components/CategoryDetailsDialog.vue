@@ -36,7 +36,7 @@ const filterAttributes = () =>
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть"
           @click="emit('close')"

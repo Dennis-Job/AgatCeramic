@@ -52,7 +52,7 @@ function setClosed(day: WorkingHour, closed: boolean): void {
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть часы работы"
           :disabled="busy"

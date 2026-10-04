@@ -66,14 +66,14 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
         >
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять пункт меню ${index + 1}`"
             @click="move(content.header.navigation, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.header.navigation.length - 1"
             :aria-label="`Опустить пункт меню ${index + 1}`"
@@ -125,14 +125,14 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
         >
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять ссылку ${index + 1}`"
             @click="move(content.footer.explore_links, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.footer.explore_links.length - 1"
             :aria-label="`Опустить ссылку ${index + 1}`"

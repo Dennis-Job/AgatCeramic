@@ -39,7 +39,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         </h2>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно страницы"
           :disabled="busy"
