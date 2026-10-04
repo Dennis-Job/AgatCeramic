@@ -463,9 +463,8 @@ function closeGroupDeletion(): void {
               <div class="flex">
                 <UiButton
                   type="button"
-                  variant="surface"
+                  variant="neutral-ghost"
                   size="sm"
-                  class="hover:bg-gray-100! hover:text-gray-500! focus-visible:bg-gray-100!"
                   tooltip="Копировать товар — создать похожий"
                   :aria-label="`Создать похожий товар ${product.name}`"
                   @click="cloneProduct(product)"

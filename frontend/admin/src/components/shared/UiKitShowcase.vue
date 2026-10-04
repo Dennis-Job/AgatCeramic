@@ -443,6 +443,10 @@ function submitAuthPreview(): void {
           <UiButton variant="secondary">Вторичная</UiButton>
           <UiButton variant="surface">На белой поверхности</UiButton>
           <UiButton variant="surface" disabled>Поверхность недоступна</UiButton>
+          <UiButton variant="neutral-ghost">Нейтральная прозрачная</UiButton>
+          <UiButton variant="neutral-ghost" disabled
+            >Нейтральная недоступна</UiButton
+          >
           <UiButton variant="danger">Опасное действие</UiButton>
           <UiButton variant="primary-ghost">Синяя прозрачная</UiButton>
           <UiButton variant="danger-ghost">Удалить</UiButton>
@@ -461,9 +465,8 @@ function submitAuthPreview(): void {
           aria-label="Кнопки управления с подсказками"
         >
           <UiButton
-            variant="surface"
+            variant="neutral-ghost"
             size="sm"
-            class="hover:bg-gray-100! hover:text-gray-500! focus-visible:bg-gray-100!"
             aria-label="Копировать"
             tooltip="Копировать товар — создать похожий"
             ><Copy :size="17" aria-hidden="true"

@@ -307,3 +307,11 @@
     удалены из UI-kit. Lint, build, scoped Prettier и diff check прошли.
     Hover-цвета подтверждены в браузере; UI Design Guard accepted.
     [Отчёт](../docs/TASK_A097_REPORT.md).
+
+- [x] TASK-A098 Прозрачный фон нейтральных icon-кнопок (2026-10-04):
+    `neutral-ghost` возвращает прозрачное default-состояние кнопкам закрытия
+    уведомления и копирования товара; hover/focus-visible — gray-100, disabled —
+    прозрачный с приглушённым текстом. Lint/build, scoped Prettier для UI-кода
+    и UI-kit пройдены; UI Design Guard замечаний не нашёл. Отдельный
+    headless-сеанс перенаправился на login, поэтому визуальная проверка в нём
+    недоступна. [Отчёт](../docs/TASK_A098_REPORT.md).
