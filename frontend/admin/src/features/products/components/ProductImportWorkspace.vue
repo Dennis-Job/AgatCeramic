@@ -130,7 +130,7 @@ function changeTab(event: KeyboardEvent) {
       <template #actions>
         <RouterLink
           to="/products"
-          class="text-sm font-medium text-primary-700 underline admin-focus"
+          class="text-sm font-medium text-primary-500 underline admin-focus"
           >К списку товаров</RouterLink
         >
       </template>
@@ -159,8 +159,8 @@ function changeTab(event: KeyboardEvent) {
             class="rounded-none border-b-2 py-4"
             :class="
               tab === item.id
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary-500 text-primary-500'
+                : 'border-transparent text-gray-500 hover:text-gray-500'
             "
             @click="tab = item.id as typeof tab"
             >{{ item.label }}</UiButton
@@ -178,7 +178,7 @@ function changeTab(event: KeyboardEvent) {
           :disabled="busy || downloading"
           class="admin-panel--inset grid gap-3 p-4 sm:grid-cols-2 sm:p-5"
         >
-          <legend class="px-1 text-base font-semibold text-gray-900">
+          <legend class="px-1 text-base font-semibold text-gray-500">
             1. Выберите сценарий
           </legend>
           <UiRadio
@@ -186,25 +186,25 @@ function changeTab(event: KeyboardEvent) {
             name="product-import-mode"
             value="template"
             ><span
-              ><span class="block font-semibold text-gray-900"
+              ><span class="block font-semibold text-gray-500"
                 >Добавить товары</span
-              ><span class="mt-1 block text-gray-600"
+              ><span class="mt-1 block text-gray-500"
                 >Создайте товары по шаблону выбранной категории.</span
               ></span
             ></UiRadio
           >
           <UiRadio v-model="importMode" name="product-import-mode" value="edit"
             ><span
-              ><span class="block font-semibold text-gray-900"
+              ><span class="block font-semibold text-gray-500"
                 >Редактировать товары</span
-              ><span class="mt-1 block text-gray-600"
+              ><span class="mt-1 block text-gray-500"
                 >Скачайте товары категории с SKU и списками характеристик.</span
               ></span
             ></UiRadio
           >
         </fieldset>
         <div>
-          <h2 class="text-base font-semibold text-gray-900">
+          <h2 class="text-base font-semibold text-gray-500">
             2. Подготовьте шаблон
           </h2>
           <p class="mt-1 text-sm text-gray-500">
@@ -271,7 +271,7 @@ function changeTab(event: KeyboardEvent) {
           </p>
         </div>
         <form class="admin-panel--inset p-4 sm:p-5" @submit.prevent="upload">
-          <h2 class="text-base font-semibold text-gray-900">
+          <h2 class="text-base font-semibold text-gray-500">
             3. Загрузите заполненный файл
           </h2>
           <p id="product-import-file-help" class="mt-1 text-sm text-gray-500">
@@ -282,7 +282,7 @@ function changeTab(event: KeyboardEvent) {
             <div class="min-w-0">
               <p
                 id="product-import-file-label"
-                class="mb-1.5 text-sm font-medium text-gray-700"
+                class="mb-1.5 text-sm font-medium text-gray-500"
               >
                 Заполненный шаблон
               </p>
@@ -337,11 +337,11 @@ function changeTab(event: KeyboardEvent) {
         >
           <template v-if="finished && result">
             <div role="status" aria-live="polite">
-              <h2 class="flex items-center gap-2 font-semibold text-gray-900">
+              <h2 class="flex items-center gap-2 font-semibold text-gray-500">
                 <CheckCircle2
                   v-if="!result.failed_rows && result.status === 'completed'"
                   :size="20"
-                  class="shrink-0 text-success-700"
+                  class="shrink-0 text-success-500"
                   aria-hidden="true"
                 />{{
                   result.status === 'failed'
@@ -351,13 +351,13 @@ function changeTab(event: KeyboardEvent) {
                       : 'Загрузка завершена'
                 }}
               </h2>
-              <p class="mt-2 text-sm text-gray-700">
+              <p class="mt-2 text-sm text-gray-500">
                 Успешно: {{ successful }}. С ошибками:
                 {{ result.failed_rows ?? 0 }}.
               </p>
               <p
                 v-if="result.error_message"
-                class="mt-2 break-words text-sm text-error-700"
+                class="mt-2 break-words text-sm text-error-500"
               >
                 {{ result.error_message }}
               </p>
@@ -373,7 +373,7 @@ function changeTab(event: KeyboardEvent) {
                 :key="entry.row"
                 class="break-words rounded-lg border border-warning-200 bg-white p-3 text-sm"
               >
-                <p class="font-semibold text-gray-900">
+                <p class="font-semibold text-gray-500">
                   {{ entry.name || 'Без наименования' }}
                   <span class="font-normal text-gray-500"
                     >· строка {{ entry.row }}</span
@@ -382,7 +382,7 @@ function changeTab(event: KeyboardEvent) {
                 <p
                   v-for="message in entry.messages"
                   :key="message"
-                  class="mt-1 text-gray-700"
+                  class="mt-1 text-gray-500"
                 >
                   {{ message }}
                 </p>
@@ -404,7 +404,7 @@ function changeTab(event: KeyboardEvent) {
             >
           </template>
           <template v-else>
-            <p role="status" aria-live="polite" class="text-sm text-gray-700">
+            <p role="status" aria-live="polite" class="text-sm text-gray-500">
               {{ statusText }}
             </p>
             <progress
@@ -457,21 +457,21 @@ function changeTab(event: KeyboardEvent) {
             <div class="min-w-0">
               <h2
                 id="image-import-preparation-title"
-                class="text-base font-semibold text-gray-900"
+                class="text-base font-semibold text-gray-500"
               >
                 Подготовьте ZIP-архив
               </h2>
-              <p class="mt-1 text-sm leading-6 text-gray-600">
+              <p class="mt-1 text-sm leading-6 text-gray-500">
                 Для каждого уже созданного товара создайте папку с его SKU.
                 Внутри назовите файлы по схеме
-                <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-700"
+                <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-500"
                   >SKU_номер.расширение</code
                 >.
               </p>
             </div>
           </div>
           <div
-            class="mt-4 overflow-x-auto rounded-lg border border-gray-200 bg-gray-25 p-3 text-sm text-gray-700"
+            class="mt-4 overflow-x-auto rounded-lg border border-gray-200 bg-gray-25 p-3 text-sm text-gray-500"
             tabindex="0"
             aria-label="Пример структуры ZIP-архива"
           >
@@ -482,7 +482,7 @@ images.zip
     ├── 6000011_2.webp
     └── 6000011_3.png</pre>
           </div>
-          <ul class="mt-4 space-y-2 text-sm leading-6 text-gray-600">
+          <ul class="mt-4 space-y-2 text-sm leading-6 text-gray-500">
             <li>Поддерживаются JPG, PNG и WebP; ZIP — до 500 МБ.</li>
             <li>
               Имя папки и начало имени каждого файла должны совпадать со SKU
@@ -490,7 +490,7 @@ images.zip
             </li>
             <li>
               Фото с номером
-              <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-700"
+              <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-500"
                 >_1</code
               >
               станет обложкой. При том же номере новое фото заменит старое, а
@@ -503,7 +503,7 @@ images.zip
           class="admin-panel--inset p-4 sm:p-5"
           @submit.prevent="uploadImageImport"
         >
-          <h2 class="text-base font-semibold text-gray-900">Загрузите архив</h2>
+          <h2 class="text-base font-semibold text-gray-500">Загрузите архив</h2>
           <p id="image-import-file-help" class="mt-1 text-sm text-gray-500">
             Обработка выполняется в фоне. Ошибка одной папки не помешает
             импортировать остальные товары.
@@ -514,7 +514,7 @@ images.zip
             <div class="min-w-0">
               <p
                 id="image-import-file-label"
-                class="mb-1.5 text-sm font-medium text-gray-700"
+                class="mb-1.5 text-sm font-medium text-gray-500"
               >
                 ZIP-архив с изображениями
               </p>
@@ -574,7 +574,7 @@ images.zip
             <div role="status" aria-live="polite">
               <h2
                 id="image-import-result-title"
-                class="flex items-center gap-2 font-semibold text-gray-900"
+                class="flex items-center gap-2 font-semibold text-gray-500"
               >
                 <CheckCircle2
                   v-if="
@@ -582,7 +582,7 @@ images.zip
                     imageResult.status === 'completed'
                   "
                   :size="20"
-                  class="shrink-0 text-success-700"
+                  class="shrink-0 text-success-500"
                   aria-hidden="true"
                 />{{
                   imageResult.status === 'failed'
@@ -595,33 +595,33 @@ images.zip
               <dl class="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div>
                   <dt class="text-gray-500">Папок обработано</dt>
-                  <dd class="mt-1 font-semibold text-gray-900">
+                  <dd class="mt-1 font-semibold text-gray-500">
                     {{ imageResult.processed_folders }} из
                     {{ imageResult.total_folders }}
                   </dd>
                 </div>
                 <div>
                   <dt class="text-gray-500">Добавлено фото</dt>
-                  <dd class="mt-1 font-semibold text-gray-900">
+                  <dd class="mt-1 font-semibold text-gray-500">
                     {{ imageResult.created_images }}
                   </dd>
                 </div>
                 <div>
                   <dt class="text-gray-500">Заменено фото</dt>
-                  <dd class="mt-1 font-semibold text-gray-900">
+                  <dd class="mt-1 font-semibold text-gray-500">
                     {{ imageResult.replaced_images }}
                   </dd>
                 </div>
                 <div>
                   <dt class="text-gray-500">Папок с ошибками</dt>
-                  <dd class="mt-1 font-semibold text-gray-900">
+                  <dd class="mt-1 font-semibold text-gray-500">
                     {{ imageResult.failed_folders }}
                   </dd>
                 </div>
               </dl>
               <p
                 v-if="imageResult.error_message"
-                class="mt-3 break-words text-sm text-error-700"
+                class="mt-3 break-words text-sm text-error-500"
               >
                 {{ imageResult.error_message }}
               </p>
@@ -637,7 +637,7 @@ images.zip
                 :key="`${entry.sku}-${entry.entry}`"
                 class="break-words rounded-lg border border-warning-200 bg-white p-3 text-sm"
               >
-                <p class="font-semibold text-gray-900">
+                <p class="font-semibold text-gray-500">
                   {{ entry.sku || 'Без названия папки'
                   }}<span v-if="entry.entry" class="font-normal text-gray-500">
                     · {{ entry.entry }}</span
@@ -646,7 +646,7 @@ images.zip
                 <p
                   v-for="message in entry.messages"
                   :key="message"
-                  class="mt-1 text-gray-700"
+                  class="mt-1 text-gray-500"
                 >
                   {{ message }}
                 </p>
@@ -668,14 +668,14 @@ images.zip
           <template v-else>
             <h2
               id="image-import-result-title"
-              class="text-base font-semibold text-gray-900"
+              class="text-base font-semibold text-gray-500"
             >
               Статус импорта
             </h2>
             <p
               role="status"
               aria-live="polite"
-              class="mt-2 text-sm text-gray-700"
+              class="mt-2 text-sm text-gray-500"
             >
               {{
                 imageUploading

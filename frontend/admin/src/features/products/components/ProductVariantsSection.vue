@@ -50,7 +50,7 @@ const {
     >
     <UiCard>
       <template #header>
-        <h3 class="font-semibold text-gray-900">Группа вариантов</h3>
+        <h3 class="font-semibold text-gray-500">Группа вариантов</h3>
       </template>
       <div class="space-y-4">
         <div>
@@ -85,7 +85,7 @@ const {
     </UiCard>
     <UiCard>
       <template #header>
-        <h3 class="font-semibold text-gray-900">
+        <h3 class="font-semibold text-gray-500">
           Различающиеся характеристики
         </h3>
       </template>
@@ -105,7 +105,7 @@ const {
         <p
           v-if="groupErrors.axis_attribute_ids"
           role="alert"
-          class="mt-2 text-sm text-error-700"
+          class="mt-2 text-sm text-error-500"
         >
           {{ groupErrors.axis_attribute_ids[0] }}
         </p>
@@ -113,7 +113,7 @@ const {
     </UiCard>
     <UiCard>
       <template #header>
-        <h3 class="font-semibold text-gray-900">Товары группы</h3>
+        <h3 class="font-semibold text-gray-500">Товары группы</h3>
       </template>
       <fieldset>
         <legend class="sr-only">Товары группы</legend>
@@ -170,7 +170,7 @@ const {
         <p
           v-if="groupErrors.product_ids"
           role="alert"
-          class="mt-2 text-sm text-error-700"
+          class="mt-2 text-sm text-error-500"
         >
           {{ groupErrors.product_ids[0] }}
         </p>

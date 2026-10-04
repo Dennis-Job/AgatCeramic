@@ -119,7 +119,7 @@ onBeforeUnmount(() => stopPageHeader?.())
 }
 .seller-table :deep(td) {
   border-bottom: 1px solid var(--admin-color-gray-100);
-  color: var(--admin-color-gray-700);
+  color: var(--admin-color-gray-500);
 }
 .seller-table :deep(tbody tr:hover) {
   background: var(--admin-color-gray-50);

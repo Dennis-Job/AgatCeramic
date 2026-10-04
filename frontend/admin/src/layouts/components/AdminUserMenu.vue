@@ -50,7 +50,7 @@ async function signOut(): Promise<void> {
     </template>
     <template #default="{ close }">
       <div class="border-b border-gray-200 pb-4">
-        <p class="break-words text-base font-bold text-gray-900">
+        <p class="break-words text-base font-bold text-gray-500">
           {{ auth.user?.name }}
         </p>
         <p class="mt-1 break-all text-sm text-gray-500">

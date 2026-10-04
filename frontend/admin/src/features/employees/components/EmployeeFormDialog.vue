@@ -44,7 +44,7 @@ const statusOptions = [
         <div>
           <h2
             id="employee-dialog-title"
-            class="text-lg font-bold text-gray-900"
+            class="text-lg font-bold text-gray-500"
           >
             {{ title }}
           </h2>
@@ -111,7 +111,7 @@ const statusOptions = [
             :disabled="busy"
         /></UiField>
         <fieldset :disabled="busy">
-          <legend class="text-sm font-medium text-gray-700">Роли</legend>
+          <legend class="text-sm font-medium text-gray-500">Роли</legend>
           <div class="mt-2 grid gap-2 sm:grid-cols-2">
             <UiCheckbox
               v-for="role in roles"

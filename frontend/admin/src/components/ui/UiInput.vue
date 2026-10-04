@@ -146,7 +146,7 @@ function clear(): void {
       v-bind="inputAttrs"
       :value="displayValue"
       :type="money ? 'text' : type"
-      class="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-gray-700 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
+      class="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-gray-500 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
       @beforeinput="handleBeforeInput"
       @input="handleInput"
       @blur="commitMoney"
@@ -155,7 +155,7 @@ function clear(): void {
     <button
       v-if="hasValue"
       type="button"
-      class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-500 transition hover:bg-primary-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+      class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
       aria-label="Очистить поле"
       :disabled="isDisabled || (money && isReadonly)"
       @click="clear"

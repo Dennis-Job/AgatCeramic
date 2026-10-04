@@ -27,7 +27,7 @@ const open = defineModel<boolean>('open', { default: false })
         />
       </button>
     </template>
-    <h2 class="text-base font-bold text-gray-900">Уведомления</h2>
+    <h2 class="text-base font-bold text-gray-500">Уведомления</h2>
     <UiEmptyState label="Новых уведомлений нет" />
   </UiPopover>
 </template>

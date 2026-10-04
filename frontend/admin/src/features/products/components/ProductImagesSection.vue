@@ -127,7 +127,7 @@ onBeforeUnmount(clearTouchDrag)
 
 <template>
   <div>
-    <h3 class="font-bold text-gray-900">Фото этой позиции</h3>
+    <h3 class="font-bold text-gray-500">Фото этой позиции</h3>
     <ProductPhotoUpload />
     <p class="sr-only" role="status" aria-live="polite">{{ imageStatus }}</p>
     <UiEmptyState

@@ -17,14 +17,14 @@ defineProps<{
 <template>
   <div class="mt-6 grid gap-4">
     <div class="grid gap-4 sm:grid-cols-2">
-      <label class="text-sm font-medium text-gray-700"
+      <label class="text-sm font-medium text-gray-500"
         >Название<UiInput
           :model-value="form.name"
           class="mt-1.5"
           data-autofocus
           required
           @update:model-value="updateName" /></label
-      ><label class="text-sm font-medium text-gray-700"
+      ><label class="text-sm font-medium text-gray-500"
         >Технический код (slug)<UiInput
           :model-value="form.slug"
           class="mt-1.5"
@@ -33,7 +33,7 @@ defineProps<{
           @update:model-value="updateSlug"
       /></label>
     </div>
-    <label class="text-sm font-medium text-gray-700"
+    <label class="text-sm font-medium text-gray-500"
       >Описание<UiTextarea
         v-model="form.description"
         class="mt-1.5 min-h-24 font-normal"
@@ -54,7 +54,7 @@ defineProps<{
         form.document_ids = Array.isArray($event) ? $event : []
       "
     />
-    <label class="text-sm font-medium text-gray-700"
+    <label class="text-sm font-medium text-gray-500"
       >Родительская категория<UiSelect
         :model-value="form.parent_id === null ? '' : String(form.parent_id)"
         class="mt-1.5 w-full font-normal"
@@ -79,7 +79,7 @@ defineProps<{
         >Категория активна</UiCheckbox
       >
     </div>
-    <label class="text-sm font-medium text-gray-700"
+    <label class="text-sm font-medium text-gray-500"
       >Порядок сортировки<UiInput
         :model-value="String(form.sort_order)"
         class="mt-1.5"

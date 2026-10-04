@@ -19,7 +19,7 @@ const {
 
 <template>
   <form id="product-attributes-form" @submit.prevent="saveAttributes">
-    <h3 class="font-bold text-gray-900">Характеристики этой позиции</h3>
+    <h3 class="font-bold text-gray-500">Характеристики этой позиции</h3>
     <div class="mt-5 space-y-4">
       <UiCard
         v-for="section in attributeSections"
@@ -29,7 +29,7 @@ const {
         <template #header>
           <h4
             :id="`product-attribute-section-${section.id}`"
-            class="font-semibold text-gray-800"
+            class="font-semibold text-gray-500"
           >
             {{ section.name }}
           </h4>

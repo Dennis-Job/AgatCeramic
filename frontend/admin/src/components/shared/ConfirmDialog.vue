@@ -32,7 +32,7 @@ const emit = defineEmits<{ close: []; confirm: [] }>()
     panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
     @close="emit('close')"
   >
-    <h2 id="confirm-dialog-title" class="text-lg font-bold text-gray-900">
+    <h2 id="confirm-dialog-title" class="text-lg font-bold text-gray-500">
       {{ title }}
     </h2>
     <p

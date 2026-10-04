@@ -34,7 +34,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
     <form @submit.prevent="emit('submit')">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <h2 id="role-dialog-title" class="text-lg font-bold text-gray-900">
+          <h2 id="role-dialog-title" class="text-lg font-bold text-gray-500">
             {{ title }}
           </h2>
         </div>
@@ -72,7 +72,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
             :disabled="busy"
         /></UiField>
         <fieldset :disabled="busy">
-          <legend class="text-sm font-medium text-gray-700">Права</legend>
+          <legend class="text-sm font-medium text-gray-500">Права</legend>
           <div class="mt-2 grid gap-2 sm:grid-cols-2">
             <UiCheckbox
               v-for="permission in permissions"

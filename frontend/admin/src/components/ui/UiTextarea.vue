@@ -9,7 +9,7 @@ const attrs = useAttrs()
   <textarea
     v-bind="attrs"
     :value="modelValue"
-    class="min-h-28 w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-input outline-none transition placeholder:text-gray-500 admin-control-focus"
+    class="min-h-28 w-full resize-y rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-500 shadow-input outline-none transition placeholder:text-gray-500 admin-control-focus"
     @input="
       $emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)
     "

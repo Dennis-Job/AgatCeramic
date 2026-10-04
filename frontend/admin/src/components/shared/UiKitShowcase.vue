@@ -383,7 +383,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-inventory-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Состав UI-kit
           </h2>
@@ -396,7 +396,7 @@ function submitAuthPreview(): void {
       </template>
       <div class="grid gap-4 lg:grid-cols-2">
         <div>
-          <h3 class="text-sm font-semibold text-gray-700">components/ui</h3>
+          <h3 class="text-sm font-semibold text-gray-500">components/ui</h3>
           <div class="mt-2 flex flex-wrap gap-2">
             <UiBadge v-for="component in uiComponents" :key="component">
               {{ component }}
@@ -404,7 +404,7 @@ function submitAuthPreview(): void {
           </div>
         </div>
         <div>
-          <h3 class="text-sm font-semibold text-gray-700">components/shared</h3>
+          <h3 class="text-sm font-semibold text-gray-500">components/shared</h3>
           <div class="mt-2 flex flex-wrap gap-2">
             <UiBadge
               v-for="component in sharedComponents"
@@ -427,7 +427,7 @@ function submitAuthPreview(): void {
           <div>
             <h2
               id="ui-kit-buttons-title"
-              class="text-lg font-semibold text-gray-900"
+              class="text-lg font-semibold text-gray-500"
             >
               Кнопки
             </h2>
@@ -437,7 +437,7 @@ function submitAuthPreview(): void {
           </div>
         </template>
 
-        <h3 class="text-sm font-semibold text-gray-700">Варианты</h3>
+        <h3 class="text-sm font-semibold text-gray-500">Варианты</h3>
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton>Основная</UiButton>
           <UiButton variant="secondary">Вторичная</UiButton>
@@ -449,14 +449,14 @@ function submitAuthPreview(): void {
           <UiButton variant="danger-ghost">Удалить</UiButton>
         </div>
 
-        <h3 class="mt-5 text-sm font-semibold text-gray-700">Размеры</h3>
+        <h3 class="mt-5 text-sm font-semibold text-gray-500">Размеры</h3>
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton size="sm">Small</UiButton>
           <UiButton size="md">Medium</UiButton>
           <UiButton size="lg">Large</UiButton>
         </div>
 
-        <h3 class="mt-5 text-sm font-semibold text-gray-700">Состояния</h3>
+        <h3 class="mt-5 text-sm font-semibold text-gray-500">Состояния</h3>
         <div
           class="mt-2 flex flex-wrap gap-2"
           aria-label="Кнопки управления с подсказками"
@@ -501,7 +501,7 @@ function submitAuthPreview(): void {
           <div>
             <h2
               id="ui-kit-feedback-title"
-              class="text-lg font-semibold text-gray-900"
+              class="text-lg font-semibold text-gray-500"
             >
               Статусы и оповещения
             </h2>
@@ -558,7 +558,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-cards-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Карточки и заголовок страницы
           </h2>
@@ -567,14 +567,14 @@ function submitAuthPreview(): void {
           </p>
         </div>
       </template>
-      <p class="text-sm text-gray-600">
+      <p class="text-sm text-gray-500">
         Текущий заголовок UI-kit выше показывает <code>PageHeader</code> с
         eyebrow, description и actions slot.
       </p>
       <div class="mt-4 grid gap-4 md:grid-cols-2">
         <UiCard>
           <template #header>
-            <h3 class="font-semibold text-gray-900">Секционная панель</h3>
+            <h3 class="font-semibold text-gray-500">Секционная панель</h3>
           </template>
           <p>
             Заголовок находится в серой шапке, а содержимое — в отдельном белом
@@ -583,13 +583,13 @@ function submitAuthPreview(): void {
         </UiCard>
         <UiCard surface="white">
           <template #header>
-            <h3 class="font-semibold text-gray-900">Белая поверхность</h3>
+            <h3 class="font-semibold text-gray-500">Белая поверхность</h3>
           </template>
           <p>Внешний фон, шапка и белое тело используют общие card tokens.</p>
         </UiCard>
         <UiCard class="md:col-span-2">
           <template #header>
-            <h3 class="font-semibold text-gray-900">Общий паттерн</h3>
+            <h3 class="font-semibold text-gray-500">Общий паттерн</h3>
           </template>
           <p>
             <code>UiCard</code> с именованным слотом <code>#header</code>
@@ -607,7 +607,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-fields-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Поля формы
           </h2>
@@ -621,7 +621,7 @@ function submitAuthPreview(): void {
 
       <div class="grid min-w-0 gap-6 xl:grid-cols-2">
         <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
-          <h3 class="text-sm font-semibold text-gray-700">Input и Textarea</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Input и Textarea</h3>
           <UiField
             label="Название"
             help="Подсказка отображается под полем."
@@ -685,7 +685,7 @@ function submitAuthPreview(): void {
         </div>
 
         <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
-          <h3 class="text-sm font-semibold text-gray-700">
+          <h3 class="text-sm font-semibold text-gray-500">
             Select и DatePicker
           </h3>
           <UiField label="Категория" error="Выберите один вариант.">
@@ -752,7 +752,7 @@ function submitAuthPreview(): void {
         class="mt-6 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 rounded-lg border border-gray-200 bg-gray-25 p-4 md:grid-cols-2 xl:grid-cols-4"
       >
         <div class="md:col-span-2 xl:col-span-4">
-          <h3 class="text-sm font-semibold text-gray-800">Недоступные поля</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Недоступные поля</h3>
           <p class="mt-1 text-xs text-gray-500">
             Значения видимы, но ввод и вспомогательные действия заблокированы.
           </p>
@@ -803,7 +803,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-selection-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Флажки и переключатели
           </h2>
@@ -814,7 +814,7 @@ function submitAuthPreview(): void {
       </template>
       <div class="grid gap-6 lg:grid-cols-2">
         <div class="grid content-start gap-3">
-          <h3 class="text-sm font-semibold text-gray-700">Checkbox</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Checkbox</h3>
           <UiCheckbox
             v-model:checked="checked"
             mode="boolean"
@@ -849,7 +849,7 @@ function submitAuthPreview(): void {
           >
         </div>
         <div class="grid content-start gap-3">
-          <h3 class="text-sm font-semibold text-gray-700">Radio</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Radio</h3>
           <UiRadio v-model="radio" name="ui-kit-radio" value="standard">
             Выбранный
           </UiRadio>
@@ -884,7 +884,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-segmented-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Сегментированные переключатели
           </h2>
@@ -918,7 +918,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-table-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Таблица и пагинация
           </h2>
@@ -937,12 +937,12 @@ function submitAuthPreview(): void {
             </tr>
           </thead>
           <tbody>
-            <tr class="border-t border-gray-100 text-gray-700">
+            <tr class="border-t border-gray-100 text-gray-500">
               <td class="px-5 py-4 font-medium">UiButton</td>
               <td class="px-5 py-4"><code>components/ui</code></td>
               <td class="px-5 py-4">Действия и отправка форм</td>
             </tr>
-            <tr class="border-t border-gray-100 text-gray-700">
+            <tr class="border-t border-gray-100 text-gray-500">
               <td class="px-5 py-4 font-medium">PageHeader</td>
               <td class="px-5 py-4"><code>components/shared</code></td>
               <td class="px-5 py-4">Заголовок route-level страницы</td>
@@ -958,7 +958,7 @@ function submitAuthPreview(): void {
 
       <div class="mt-6 grid gap-4 xl:grid-cols-2">
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">Первая страница</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Первая страница</h3>
           <UiPagination
             :meta="firstPage"
             aria-label="Пагинация: первая страница"
@@ -966,7 +966,7 @@ function submitAuthPreview(): void {
           />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">
+          <h3 class="text-sm font-semibold text-gray-500">
             Последняя страница
           </h3>
           <UiPagination
@@ -976,7 +976,7 @@ function submitAuthPreview(): void {
           />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">Загрузка</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Загрузка</h3>
           <UiPagination
             :meta="pagination"
             aria-label="Пагинация: загрузка"
@@ -985,7 +985,7 @@ function submitAuthPreview(): void {
           />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">Нулевой total</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Нулевой total</h3>
           <p class="mt-2 text-sm text-gray-500">
             При <code>total=0</code> компонент не рендерит navigation.
           </p>
@@ -1007,7 +1007,7 @@ function submitAuthPreview(): void {
           <div>
             <h2
               id="ui-kit-collections-title"
-              class="text-lg font-semibold text-gray-900"
+              class="text-lg font-semibold text-gray-500"
             >
               Состояния коллекций
             </h2>
@@ -1039,7 +1039,7 @@ function submitAuthPreview(): void {
           <div>
             <h2
               id="ui-kit-dialogs-title"
-              class="text-lg font-semibold text-gray-900"
+              class="text-lg font-semibold text-gray-500"
             >
               Диалоги
             </h2>
@@ -1073,7 +1073,7 @@ function submitAuthPreview(): void {
               >Всплывающее окно</UiButton
             ></template
           >
-          <p class="text-sm text-gray-700">
+          <p class="text-sm text-gray-500">
             Наведите курсор или откройте окно с клавиатуры. Escape закроет его и
             вернёт фокус.
           </p>
@@ -1090,7 +1090,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-auth-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Auth shell
           </h2>
@@ -1128,7 +1128,7 @@ function submitAuthPreview(): void {
         <div>
           <h2
             id="ui-kit-tokens-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Design tokens
           </h2>
@@ -1140,10 +1140,10 @@ function submitAuthPreview(): void {
       </template>
 
       <section data-ui-kit-tokens="colors">
-        <h3 class="text-base font-semibold text-gray-800">Цвета</h3>
+        <h3 class="text-base font-semibold text-gray-500">Цвета</h3>
         <div class="mt-4 space-y-5">
           <div v-for="group in colorGroups" :key="group.label">
-            <h4 class="text-sm font-semibold text-gray-700">
+            <h4 class="text-sm font-semibold text-gray-500">
               {{ group.label }}
             </h4>
             <div
@@ -1155,7 +1155,7 @@ function submitAuthPreview(): void {
                   :style="{ backgroundColor: `var(${group.prefix}${token})` }"
                   aria-hidden="true"
                 />
-                <p class="mt-1 text-xs font-semibold text-gray-700">
+                <p class="mt-1 text-xs font-semibold text-gray-500">
                   {{ token }}
                 </p>
                 <code class="block break-all text-xs leading-4 text-gray-500">
@@ -1165,7 +1165,7 @@ function submitAuthPreview(): void {
             </div>
           </div>
           <div>
-            <h4 class="text-sm font-semibold text-gray-700">Отдельные цвета</h4>
+            <h4 class="text-sm font-semibold text-gray-500">Отдельные цвета</h4>
             <div
               class="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8"
             >
@@ -1179,7 +1179,7 @@ function submitAuthPreview(): void {
                   :style="{ backgroundColor: `var(${color.token})` }"
                   aria-hidden="true"
                 />
-                <p class="mt-1 text-xs font-semibold text-gray-700">
+                <p class="mt-1 text-xs font-semibold text-gray-500">
                   {{ color.label }}
                 </p>
                 <code class="block break-all text-xs leading-4 text-gray-500">
@@ -1196,33 +1196,33 @@ function submitAuthPreview(): void {
         data-ui-kit-tokens="foundations"
       >
         <section>
-          <h3 class="text-base font-semibold text-gray-800">Типографика</h3>
+          <h3 class="text-base font-semibold text-gray-500">Типографика</h3>
           <div class="mt-3 space-y-4 rounded-lg border border-gray-200 p-4">
             <div>
-              <p class="font-sans text-lg font-normal text-gray-900">
+              <p class="font-sans text-lg font-normal text-gray-500">
                 Nunito 400 — основной текст
               </p>
-              <p class="font-sans text-lg font-medium text-gray-900">
+              <p class="font-sans text-lg font-medium text-gray-500">
                 Nunito 500 — medium
               </p>
-              <p class="font-sans text-lg font-semibold text-gray-900">
+              <p class="font-sans text-lg font-semibold text-gray-500">
                 Nunito 600 — semibold
               </p>
-              <p class="font-sans text-lg font-bold text-gray-900">
+              <p class="font-sans text-lg font-bold text-gray-500">
                 Nunito 700 — bold
               </p>
             </div>
             <div class="border-t border-gray-200 pt-4 font-poppins">
-              <p class="text-lg font-normal text-gray-900">
+              <p class="text-lg font-normal text-gray-500">
                 Poppins 400 — display
               </p>
-              <p class="text-lg font-medium text-gray-900">
+              <p class="text-lg font-medium text-gray-500">
                 Poppins 500 — medium
               </p>
-              <p class="text-lg font-semibold text-gray-900">
+              <p class="text-lg font-semibold text-gray-500">
                 Poppins 600 — semibold
               </p>
-              <p class="text-lg font-bold text-gray-900">Poppins 700 — bold</p>
+              <p class="text-lg font-bold text-gray-500">Poppins 700 — bold</p>
             </div>
             <code class="text-xs text-gray-500"
               >--admin-font-sans / --admin-font-display</code
@@ -1231,7 +1231,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section>
-          <h3 class="text-base font-semibold text-gray-800">Spacing</h3>
+          <h3 class="text-base font-semibold text-gray-500">Spacing</h3>
           <div class="mt-3 space-y-3 rounded-lg border border-gray-200 p-4">
             <div
               v-for="token in spacingTokens"
@@ -1251,7 +1251,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section>
-          <h3 class="text-base font-semibold text-gray-800">
+          <h3 class="text-base font-semibold text-gray-500">
             Радиусы и border
           </h3>
           <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -1267,7 +1267,7 @@ function submitAuthPreview(): void {
             </div>
           </div>
           <div
-            class="mt-3 rounded-lg p-3 text-sm text-gray-600"
+            class="mt-3 rounded-lg p-3 text-sm text-gray-500"
             style="border: var(--admin-border-default)"
           >
             <code>--admin-border-default</code>
@@ -1275,7 +1275,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section>
-          <h3 class="text-base font-semibold text-gray-800">Высота controls</h3>
+          <h3 class="text-base font-semibold text-gray-500">Высота controls</h3>
           <div
             class="mt-3 flex flex-wrap items-end gap-4 rounded-lg border border-gray-200 p-4"
           >
@@ -1285,7 +1285,7 @@ function submitAuthPreview(): void {
               class="text-center"
             >
               <div
-                class="grid w-24 place-items-center rounded-lg border border-gray-300 bg-white text-xs text-gray-600"
+                class="grid w-24 place-items-center rounded-lg border border-gray-300 bg-white text-xs text-gray-500"
                 :style="{ height: `var(--admin-control-height-${token})` }"
               >
                 {{ token }}
@@ -1298,7 +1298,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section class="xl:col-span-2">
-          <h3 class="text-base font-semibold text-gray-800">Тени</h3>
+          <h3 class="text-base font-semibold text-gray-500">Тени</h3>
           <div
             class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
           >
@@ -1316,7 +1316,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section class="xl:col-span-2">
-          <h3 class="text-base font-semibold text-gray-800">
+          <h3 class="text-base font-semibold text-gray-500">
             Focus и transition
           </h3>
           <div
@@ -1344,7 +1344,7 @@ function submitAuthPreview(): void {
       @close="isDialogOpen = false"
     >
       <div class="flex items-start justify-between gap-4">
-        <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-900">
+        <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-500">
           Обычный диалог
         </h2>
         <UiButton

@@ -108,13 +108,13 @@ onMounted(audit.load)
             <dl class="mt-3 grid gap-2 text-sm">
               <div>
                 <dt class="text-xs text-gray-500">Сотрудник</dt>
-                <dd class="break-words font-medium text-gray-700">
+                <dd class="break-words font-medium text-gray-500">
                   {{ log.actor?.name ?? 'Система' }}
                 </dd>
               </div>
               <div>
                 <dt class="text-xs text-gray-500">Объект</dt>
-                <dd class="break-words text-gray-700">{{ entityName(log) }}</dd>
+                <dd class="break-words text-gray-500">{{ entityName(log) }}</dd>
                 <dd
                   v-if="log.entity?.email"
                   class="break-all text-xs text-gray-500"
@@ -130,7 +130,7 @@ onMounted(audit.load)
                 class="[overflow-wrap:anywhere]"
               >
                 <span class="text-gray-500">{{ detail.label }}:</span>
-                <span class="font-medium text-gray-700">{{
+                <span class="font-medium text-gray-500">{{
                   detail.value
                 }}</span>
               </p>
@@ -158,7 +158,7 @@ onMounted(audit.load)
               <tr
                 v-for="log in audit.logs.value"
                 :key="log.id"
-                class="border-t border-gray-100 text-gray-600"
+                class="border-t border-gray-100 text-gray-500"
               >
                 <td class="px-6 py-4">
                   <UiBadge tone="primary" class="max-w-full"
@@ -172,11 +172,11 @@ onMounted(audit.load)
                   >
                   <p class="mt-1 text-xs text-gray-500">{{ log.action }}</p>
                 </td>
-                <td class="px-6 py-4 font-medium text-gray-700">
+                <td class="px-6 py-4 font-medium text-gray-500">
                   {{ log.actor?.name ?? 'Система' }}
                 </td>
                 <td class="px-6 py-4 text-gray-500">
-                  <p class="font-medium text-gray-700">{{ entityName(log) }}</p>
+                  <p class="font-medium text-gray-500">{{ entityName(log) }}</p>
                   <p v-if="log.entity?.email" class="mt-0.5 text-xs">
                     {{ log.entity.email }}
                   </p>
@@ -190,7 +190,7 @@ onMounted(audit.load)
                   <div v-if="log.details.length" class="space-y-1.5 text-sm">
                     <p v-for="detail in log.details" :key="detail.label">
                       <span class="text-gray-500">{{ detail.label }}:</span>
-                      <span class="font-medium text-gray-700">{{
+                      <span class="font-medium text-gray-500">{{
                         detail.value
                       }}</span>
                     </p>

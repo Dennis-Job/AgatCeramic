@@ -56,7 +56,7 @@ watch(
         aria-label="AgatCeramic — главная"
         :inert="compactOpen"
       >
-        <span class="font-bold text-gray-800"
+        <span class="font-bold text-gray-500"
           >Agat<span class="text-primary-500">Ceramic</span></span
         >
         <span class="block text-xs text-gray-500">Админ-панель</span>

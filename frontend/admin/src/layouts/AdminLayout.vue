@@ -7,7 +7,7 @@ const condensed = ref(false)
 
 <template>
   <div
-    class="min-h-screen bg-page text-gray-800 admin-layout"
+    class="min-h-screen bg-page text-gray-500 admin-layout"
     :style="{
       '--admin-shell-height': condensed
         ? 'calc(var(--admin-shell-top-height) + var(--admin-border-width))'

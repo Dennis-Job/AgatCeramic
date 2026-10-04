@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
         type="text"
         inputmode="numeric"
         maxlength="10"
-        class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
+        class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-500 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
         :placeholder="placeholder"
         :aria-label="accessibleName"
         :disabled="disabled"
@@ -243,7 +243,7 @@ onBeforeUnmount(() => {
       <button
         v-if="modelValue"
         type="button"
-        class="rounded p-1 text-gray-500 transition hover:bg-primary-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+        class="rounded p-1 text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
         aria-label="Очистить дату"
         :disabled="disabled"
         @click="clear"
@@ -262,18 +262,18 @@ onBeforeUnmount(() => {
       <div class="mb-3 flex items-center justify-between px-1">
         <button
           type="button"
-          class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-700 admin-focus"
+          class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus"
           aria-label="Предыдущий месяц"
           @click="changeMonth(-1)"
         >
           <ChevronLeft :size="18" aria-hidden="true" />
         </button>
-        <p class="capitalize text-sm font-semibold text-gray-800">
+        <p class="capitalize text-sm font-semibold text-gray-500">
           {{ monthLabel }}
         </p>
         <button
           type="button"
-          class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-700 admin-focus"
+          class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus"
           aria-label="Следующий месяц"
           @click="changeMonth(1)"
         >
@@ -296,11 +296,11 @@ onBeforeUnmount(() => {
           <button
             v-if="date"
             type="button"
-            class="grid h-8 w-full max-w-8 place-items-center rounded-lg text-sm font-medium transition hover:bg-primary-50 hover:text-primary-700 admin-focus"
+            class="grid h-8 w-full max-w-8 place-items-center rounded-lg text-sm font-medium transition hover:bg-primary-50 hover:text-primary-500 admin-focus"
             :class="[
               isSameDate(dateFromIso(modelValue), date)
                 ? 'bg-primary-600 text-white hover:bg-primary-700 hover:text-white'
-                : 'text-gray-700',
+                : 'text-gray-500',
               isSameDate(new Date(), date) &&
               !isSameDate(dateFromIso(modelValue), date)
                 ? 'ring-1 ring-primary-300'
@@ -323,14 +323,14 @@ onBeforeUnmount(() => {
       >
         <button
           type="button"
-          class="rounded text-sm font-medium text-primary-600 transition hover:bg-primary-100 hover:text-primary-700 admin-focus"
+          class="rounded text-sm font-medium text-primary-500 transition hover:bg-primary-100 hover:text-primary-500 admin-focus"
           @click="select(new Date())"
         >
           Сегодня
         </button>
         <button
           type="button"
-          class="rounded text-sm font-medium text-gray-500 transition hover:bg-primary-100 hover:text-gray-700 admin-focus"
+          class="rounded text-sm font-medium text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus"
           @click="clear"
         >
           Очистить

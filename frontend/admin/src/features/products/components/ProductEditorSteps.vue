@@ -25,8 +25,8 @@ const emit = defineEmits<{ select: [id: string] }>()
           class="w-full justify-start text-left sm:w-auto"
           :class="
             active === step.id
-              ? 'bg-primary-50 text-primary-600'
-              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
+              ? 'bg-primary-50 text-primary-500'
+              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-500'
           "
           :disabled="!enabled(step.id)"
           :aria-current="active === step.id ? 'step' : undefined"
@@ -37,7 +37,7 @@ const emit = defineEmits<{ select: [id: string] }>()
             :class="
               active === step.id
                 ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 text-gray-600'
+                : 'bg-gray-100 text-gray-500'
             "
             >{{ index + 1 }}</span
           >

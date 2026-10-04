@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
         <div>
           <h2
             id="page-blocks-title"
-            class="text-lg font-semibold text-gray-900"
+            class="text-lg font-semibold text-gray-500"
           >
             Блоки страницы
           </h2>
@@ -249,7 +249,7 @@ onBeforeUnmount(() => {
     </div>
     <p
       v-if="editor.dirty.value"
-      class="mt-5 text-sm text-gray-600"
+      class="mt-5 text-sm text-gray-500"
       role="status"
     >
       Есть несохранённые изменения блоков. Сохраните черновик перед публикацией.

@@ -34,7 +34,7 @@ const lastLogin = (value: string | null): string =>
       <article v-for="employee in employees" :key="employee.id" class="p-4">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <h2 class="break-words font-semibold text-gray-700">
+            <h2 class="break-words font-semibold text-gray-500">
               {{ employee.name }}
             </h2>
             <p class="break-all text-xs text-gray-500">{{ employee.email }}</p>
@@ -101,10 +101,10 @@ const lastLogin = (value: string | null): string =>
         <tr
           v-for="employee in employees"
           :key="employee.id"
-          class="border-t border-gray-100 text-gray-600"
+          class="border-t border-gray-100 text-gray-500"
         >
           <td class="px-6 py-4">
-            <p class="font-semibold text-gray-700">{{ employee.name }}</p>
+            <p class="font-semibold text-gray-500">{{ employee.name }}</p>
             <p class="mt-0.5 text-xs text-gray-500">{{ employee.email }}</p>
           </td>
           <td class="px-6 py-4">

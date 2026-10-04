@@ -14,7 +14,7 @@ const route = useRoute()
       :key="`${group.label}-${index}`"
       class="min-w-0"
     >
-      <h3 v-if="group.label" class="mb-3 px-3 text-sm font-bold text-gray-900">
+      <h3 v-if="group.label" class="mb-3 px-3 text-sm font-bold text-gray-500">
         {{ group.label }}
       </h3>
       <RouterLink

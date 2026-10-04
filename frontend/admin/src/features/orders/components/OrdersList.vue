@@ -45,7 +45,7 @@ defineEmits<{ select: [order: Order] }>()
         >
           <div class="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <span class="block break-all font-semibold text-gray-800">{{
+              <span class="block break-all font-semibold text-gray-500">{{
                 order.order_number
               }}</span
               ><time
@@ -54,7 +54,7 @@ defineEmits<{ select: [order: Order] }>()
                 >{{ date(order.created_at) }}</time
               >
             </div>
-            <strong class="text-gray-700">{{
+            <strong class="text-gray-500">{{
               amount(order.total_amount)
             }}</strong>
           </div>
@@ -64,7 +64,7 @@ defineEmits<{ select: [order: Order] }>()
               paymentName(order.payment_status)
             }}</UiBadge>
           </div>
-          <p class="mt-3 break-words text-sm font-medium text-gray-700">
+          <p class="mt-3 break-words text-sm font-medium text-gray-500">
             {{ order.customer.name }}
           </p>
           <p class="break-all text-xs text-gray-500">
@@ -93,7 +93,7 @@ defineEmits<{ select: [order: Order] }>()
           <tr
             v-for="order in orders"
             :key="order.id"
-            class="border-t border-gray-100 text-gray-600"
+            class="border-t border-gray-100 text-gray-500"
             :class="selectedId === order.id ? 'bg-primary-50' : ''"
           >
             <td class="px-5 py-4">
@@ -104,7 +104,7 @@ defineEmits<{ select: [order: Order] }>()
                 :aria-current="selectedId === order.id ? 'true' : undefined"
                 @click="$emit('select', order)"
               >
-                <span class="block font-semibold text-gray-800">{{
+                <span class="block font-semibold text-gray-500">{{
                   order.order_number
                 }}</span
                 ><time
@@ -115,7 +115,7 @@ defineEmits<{ select: [order: Order] }>()
               </button>
             </td>
             <td class="px-5 py-4">
-              <p class="font-medium text-gray-700">{{ order.customer.name }}</p>
+              <p class="font-medium text-gray-500">{{ order.customer.name }}</p>
               <p class="mt-1 text-xs text-gray-500">
                 {{ order.customer.phone }}
               </p>
@@ -126,7 +126,7 @@ defineEmits<{ select: [order: Order] }>()
                 {{ paymentName(order.payment_status) }}
               </p>
             </td>
-            <td class="px-5 py-4 text-right font-semibold text-gray-700">
+            <td class="px-5 py-4 text-right font-semibold text-gray-500">
               {{ amount(order.total_amount) }}
             </td>
           </tr>

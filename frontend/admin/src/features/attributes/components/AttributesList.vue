@@ -50,7 +50,7 @@ function groupName(
     <tbody>
       <tr v-for="attribute in attributes" :key="attribute.id">
         <td>
-          <h2 class="font-semibold text-gray-800">
+          <h2 class="font-semibold text-gray-500">
             {{ attribute.name
             }}<span v-if="attribute.unit" class="font-medium text-gray-500">
               ({{ attribute.unit }})</span

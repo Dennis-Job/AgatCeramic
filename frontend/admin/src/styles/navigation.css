@@ -49,7 +49,7 @@
   gap: var(--admin-spacing-3);
   padding: var(--admin-spacing-2) var(--admin-spacing-3);
   border-radius: var(--admin-radius-lg);
-  color: var(--admin-color-gray-900);
+  color: var(--admin-color-gray-500);
   font-size: 0.875rem;
 }
 .admin-account-action svg {
@@ -118,7 +118,7 @@
 }
 .admin-nav-trigger:hover,
 .admin-nav-trigger.is-open {
-  color: var(--admin-color-primary-600);
+  color: var(--admin-color-primary-500);
 }
 .admin-nav-trigger.is-active {
   color: var(--admin-color-primary-500);
@@ -157,15 +157,15 @@
   padding: var(--admin-spacing-3);
   border-radius: var(--admin-radius-md);
   font-size: 0.875rem;
-  color: var(--admin-color-gray-900);
+  color: var(--admin-color-gray-500);
   overflow-wrap: anywhere;
 }
 .admin-nav-link:hover {
   background: var(--admin-color-gray-25);
-  color: var(--admin-color-primary-600);
+  color: var(--admin-color-primary-500);
 }
 .admin-nav-link.is-active {
-  color: var(--admin-color-primary-600);
+  color: var(--admin-color-primary-500);
 }
 .admin-nav-link.is-active::before {
   content: '';

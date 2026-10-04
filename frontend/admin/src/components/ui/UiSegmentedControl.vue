@@ -25,7 +25,7 @@ defineEmits<{ 'update:modelValue': [value: number | string] }>()
   <fieldset class="min-w-0" :disabled="disabled">
     <legend
       :class="
-        hideLabel ? 'sr-only' : 'mb-2 text-sm font-semibold text-gray-700'
+        hideLabel ? 'sr-only' : 'mb-2 text-sm font-semibold text-gray-500'
       "
     >
       {{ label }}
@@ -38,11 +38,11 @@ defineEmits<{ 'update:modelValue': [value: number | string] }>()
         :class="[
           disabled || option.disabled
             ? 'cursor-not-allowed text-gray-500'
-            : 'cursor-pointer hover:text-primary-600',
+            : 'cursor-pointer hover:text-primary-500',
           modelValue === option.value
             ? disabled || option.disabled
               ? 'border-gray-300 bg-gray-50'
-              : 'border-gray-200 bg-white text-primary-600'
+              : 'border-gray-200 bg-white text-primary-500'
             : 'border-transparent text-gray-500',
         ]"
       >

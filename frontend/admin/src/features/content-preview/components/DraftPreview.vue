@@ -29,11 +29,11 @@ const links = computed(() => {
     aria-labelledby="draft-preview-title"
   >
     <template #header>
-      <h2 id="draft-preview-title" class="text-lg font-semibold text-gray-900">
+      <h2 id="draft-preview-title" class="text-lg font-semibold text-gray-500">
         Предпросмотр
       </h2>
     </template>
-    <p class="mt-2 text-sm text-gray-600" role="status">
+    <p class="mt-2 text-sm text-gray-500" role="status">
       Сохранённый черновик страницы и общего оформления. Сайт обновляется после
       отдельной публикации.
     </p>
@@ -70,7 +70,7 @@ const links = computed(() => {
           target="_blank"
           rel="noopener noreferrer"
           referrerpolicy="no-referrer"
-          class="text-primary-700 underline admin-focus"
+          class="text-primary-500 underline admin-focus"
           >Открыть полноразмерный просмотр</a
         >
         <a
@@ -78,7 +78,7 @@ const links = computed(() => {
           target="_blank"
           rel="noopener noreferrer"
           referrerpolicy="no-referrer"
-          class="text-primary-700 underline admin-focus"
+          class="text-primary-500 underline admin-focus"
           >Открыть опубликованную страницу</a
         >
       </div>

@@ -39,7 +39,7 @@ const range = computed(
         @click="emit('change', meta.current_page - 1)"
         ><ChevronLeft :size="17" /></UiButton
       ><span
-        class="text-sm font-medium text-gray-600"
+        class="text-sm font-medium text-gray-500"
         :aria-label="`Текущая страница ${meta.current_page} из ${meta.last_page}`"
         >{{ meta.current_page }} / {{ meta.last_page }}</span
       ><UiButton

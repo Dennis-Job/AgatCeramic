@@ -44,7 +44,7 @@ defineEmits<{ select: [contact: Contact] }>()
         >
           <div class="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <span class="block font-semibold text-gray-800">{{
+              <span class="block font-semibold text-gray-500">{{
                 typeName(contact.type)
               }}</span
               ><time
@@ -55,7 +55,7 @@ defineEmits<{ select: [contact: Contact] }>()
             </div>
             <UiBadge tone="primary">{{ statusName(contact.status) }}</UiBadge>
           </div>
-          <p class="mt-3 break-words text-sm font-medium text-gray-700">
+          <p class="mt-3 break-words text-sm font-medium text-gray-500">
             {{ contact.contact.name ?? 'Без имени' }}
           </p>
           <p class="break-all text-xs text-gray-500">
@@ -99,7 +99,7 @@ defineEmits<{ select: [contact: Contact] }>()
                 :aria-current="selectedId === contact.id ? 'true' : undefined"
                 @click="$emit('select', contact)"
               >
-                <span class="block font-semibold text-gray-800">{{
+                <span class="block font-semibold text-gray-500">{{
                   typeName(contact.type)
                 }}</span
                 ><time
@@ -110,7 +110,7 @@ defineEmits<{ select: [contact: Contact] }>()
               </button>
             </td>
             <td class="px-5 py-4">
-              <p class="font-medium text-gray-700">
+              <p class="font-medium text-gray-500">
                 {{ contact.contact.name ?? 'Без имени' }}
               </p>
               <p class="mt-1 text-xs text-gray-500">
@@ -120,7 +120,7 @@ defineEmits<{ select: [contact: Contact] }>()
             <td class="px-5 py-4">
               <UiBadge tone="primary">{{ statusName(contact.status) }}</UiBadge>
             </td>
-            <td class="px-5 py-4 text-gray-600">
+            <td class="px-5 py-4 text-gray-500">
               {{ contact.assignee?.name ?? 'Не назначен' }}
             </td>
           </tr>

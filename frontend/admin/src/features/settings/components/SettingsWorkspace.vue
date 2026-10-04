@@ -120,7 +120,7 @@ async function confirmPublish(): Promise<void> {
           <div>
             <h2
               id="seller-details-title"
-              class="text-lg font-semibold text-gray-800"
+              class="text-lg font-semibold text-gray-500"
             >
               Реквизиты продавца
             </h2>
@@ -189,7 +189,7 @@ async function confirmPublish(): Promise<void> {
             /></UiField>
           </div>
           <div class="border-t border-gray-100 pt-5">
-            <h3 class="mb-4 font-semibold text-gray-800">
+            <h3 class="mb-4 font-semibold text-gray-500">
               Банковские реквизиты
             </h3>
             <div
@@ -246,7 +246,7 @@ async function confirmPublish(): Promise<void> {
           <div>
             <h2
               id="legal-documents-title"
-              class="text-lg font-semibold text-gray-800"
+              class="text-lg font-semibold text-gray-500"
             >
               Юридические документы
             </h2>
@@ -299,7 +299,7 @@ async function confirmPublish(): Promise<void> {
             class="flex flex-wrap items-center justify-between gap-3 py-4"
           >
             <div class="min-w-0">
-              <p class="break-words font-medium text-gray-800">
+              <p class="break-words font-medium text-gray-500">
                 {{ label(documentOptions, document.type) }} ·
                 {{ document.version }}
               </p>
@@ -337,7 +337,7 @@ async function confirmPublish(): Promise<void> {
         <div class="flex items-start justify-between gap-4">
           <h2
             id="legal-preview-title"
-            class="text-lg font-semibold text-gray-800"
+            class="text-lg font-semibold text-gray-500"
           >
             {{ preview ? label(documentOptions, preview.type) : '' }} ·
             {{ preview?.version }}
@@ -355,7 +355,7 @@ async function confirmPublish(): Promise<void> {
           class="mt-4 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-gray-25 p-4"
         >
           <pre
-            class="whitespace-pre-wrap break-words font-sans text-sm text-gray-700"
+            class="whitespace-pre-wrap break-words font-sans text-sm text-gray-500"
             >{{ preview?.body }}</pre>
         </div>
         <UiDialogFooter>
@@ -385,7 +385,7 @@ async function confirmPublish(): Promise<void> {
           <div>
             <h2
               id="approvals-title"
-              class="text-lg font-semibold text-gray-800"
+              class="text-lg font-semibold text-gray-500"
             >
               Согласования ADR-014
             </h2>
@@ -454,7 +454,7 @@ async function confirmPublish(): Promise<void> {
             class="flex flex-wrap items-center justify-between gap-2 py-4 text-sm"
           >
             <div class="min-w-0 break-words">
-              <p class="font-medium text-gray-800">
+              <p class="font-medium text-gray-500">
                 {{ label(roleOptions, approval.role) }} ·
                 {{ approval.reviewer_name }}
               </p>

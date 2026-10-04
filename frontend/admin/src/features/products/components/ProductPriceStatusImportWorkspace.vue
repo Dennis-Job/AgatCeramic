@@ -60,7 +60,7 @@ watch([busy, downloading], async () => {
       <template #actions>
         <RouterLink
           to="/products"
-          class="text-sm font-medium text-primary-700 underline admin-focus"
+          class="text-sm font-medium text-primary-500 underline admin-focus"
           >К списку товаров</RouterLink
         >
       </template>
@@ -68,7 +68,7 @@ watch([busy, downloading], async () => {
     <div class="min-w-0 space-y-5">
       <UiCard aria-labelledby="price-status-preparation">
         <template #header>
-          <h2 id="price-status-preparation" class="font-semibold text-gray-900">
+          <h2 id="price-status-preparation" class="font-semibold text-gray-500">
             1. Скачайте и заполните шаблон
           </h2>
         </template>
@@ -96,7 +96,7 @@ watch([busy, downloading], async () => {
           <div>
             <h2
               id="price-status-upload-title"
-              class="font-semibold text-gray-900"
+              class="font-semibold text-gray-500"
             >
               2. Загрузите заполненный файл
             </h2>
@@ -172,7 +172,7 @@ watch([busy, downloading], async () => {
         "
         aria-live="polite"
       >
-        <h2 class="flex items-center gap-2 font-semibold text-gray-900">
+        <h2 class="flex items-center gap-2 font-semibold text-gray-500">
           <CheckCircle2 v-if="finished" :size="20" aria-hidden="true" />{{
             result.status === 'failed'
               ? 'Обработка не завершена'
@@ -183,7 +183,7 @@ watch([busy, downloading], async () => {
                 : 'Обработка выполняется'
           }}
         </h2>
-        <p class="mt-2 text-sm text-gray-700">
+        <p class="mt-2 text-sm text-gray-500">
           Обработано: {{ result.processed_rows }} из {{ result.total_rows }}.
           Изменено: {{ result.updated_rows }}. Ошибок: {{ result.failed_rows }}.
         </p>

@@ -26,7 +26,7 @@ const {
     aria-labelledby="product-relations-title"
   >
     <template #header>
-      <h3 id="product-relations-title" class="font-bold text-gray-900">
+      <h3 id="product-relations-title" class="font-bold text-gray-500">
         Сопутствующие товары
       </h3>
     </template>
@@ -90,7 +90,7 @@ const {
       <p
         v-if="relationErrors[index]"
         role="alert"
-        class="mt-2 text-xs text-error-700"
+        class="mt-2 text-xs text-error-500"
       >
         {{ relationErrors[index] }}
       </p>

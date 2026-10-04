@@ -29,7 +29,7 @@ const filterAttributes = () =>
           <p class="text-sm font-medium text-gray-500">Категория</p>
           <h2
             id="category-details-title"
-            class="mt-1 text-xl font-bold text-gray-900"
+            class="mt-1 text-xl font-bold text-gray-500"
           >
             {{ category.name }}
           </h2>
@@ -56,7 +56,7 @@ const filterAttributes = () =>
         >
           <div>
             <dt class="text-gray-500">Slug</dt>
-            <dd class="mt-1 break-words font-medium text-gray-800">
+            <dd class="mt-1 break-words font-medium text-gray-500">
               /{{ category.slug }}
             </dd>
           </div>
@@ -70,25 +70,25 @@ const filterAttributes = () =>
           </div>
           <div>
             <dt class="text-gray-500">Родительская категория</dt>
-            <dd class="mt-1 font-medium text-gray-800">
+            <dd class="mt-1 font-medium text-gray-500">
               {{ categoryName(category.parent_id) ?? 'Нет' }}
             </dd>
           </div>
           <div>
             <dt class="text-gray-500">Порядок сортировки</dt>
-            <dd class="mt-1 font-medium text-gray-800">
+            <dd class="mt-1 font-medium text-gray-500">
               {{ category.sort_order }}
             </dd>
           </div>
           <div class="sm:col-span-2">
             <dt class="text-gray-500">Описание</dt>
-            <dd class="mt-1 whitespace-pre-wrap text-gray-800">
+            <dd class="mt-1 whitespace-pre-wrap text-gray-500">
               {{ category.description || 'Не указано' }}
             </dd>
           </div>
         </dl>
         <section class="mt-5">
-          <h3 class="font-semibold text-gray-900">Применённые группы</h3>
+          <h3 class="font-semibold text-gray-500">Применённые группы</h3>
           <div v-if="groups.length" class="mt-2 flex flex-wrap gap-2">
             <UiBadge v-for="group in groups" :key="group.id" tone="primary">{{
               group.name
@@ -97,7 +97,7 @@ const filterAttributes = () =>
           <p v-else class="mt-2 text-sm text-gray-500">Группы не назначены.</p>
         </section>
         <section class="mt-5">
-          <h3 class="font-semibold text-gray-900">Фильтры категории</h3>
+          <h3 class="font-semibold text-gray-500">Фильтры категории</h3>
           <div
             v-if="filterAttributes().length"
             class="mt-2 flex flex-wrap gap-2"
@@ -117,7 +117,7 @@ const filterAttributes = () =>
           </p>
         </section>
         <section class="mt-5">
-          <h3 class="font-semibold text-gray-900">
+          <h3 class="font-semibold text-gray-500">
             Все назначенные характеристики
           </h3>
           <div v-if="attributes.length" class="mt-2 flex flex-wrap gap-2">

@@ -59,7 +59,7 @@ const emit = defineEmits<{
         </td>
         <td>
           <p>{{ categoryName(category.parent_id) ?? '—' }}</p>
-          <p v-if="category.is_parent" class="mt-1 text-xs text-primary-600">
+          <p v-if="category.is_parent" class="mt-1 text-xs text-primary-500">
             Родительская · Подкатегорий: {{ category.children?.length ?? 0 }}
           </p>
         </td>

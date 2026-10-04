@@ -14,14 +14,14 @@ withDefaults(
       tone === 'primary'
         ? 'bg-primary-50 text-primary-500'
         : tone === 'additional'
-          ? 'bg-blue-light-50 text-blue-light-700'
+          ? 'bg-blue-light-50 text-blue-light-500'
           : tone === 'success'
-            ? 'bg-success-50 text-success-700'
+            ? 'bg-success-50 text-success-500'
             : tone === 'warning'
-              ? 'bg-warning-50 text-warning-700'
+              ? 'bg-warning-50 text-warning-500'
               : tone === 'danger'
-                ? 'bg-error-50 text-error-700'
-                : 'bg-gray-100 text-gray-600'
+                ? 'bg-error-50 text-error-500'
+                : 'bg-gray-100 text-gray-500'
     "
     ><slot
   /></span>

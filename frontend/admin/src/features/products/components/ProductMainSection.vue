@@ -80,7 +80,7 @@ const {
       <span id="product-sku-label">SKU</span>
       <p
         aria-labelledby="product-sku-label"
-        class="mt-1.5 flex min-h-[var(--admin-control-height-md)] w-full min-w-0 items-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-sm leading-5 text-gray-700"
+        class="mt-1.5 flex min-h-[var(--admin-control-height-md)] w-full min-w-0 items-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-sm leading-5 text-gray-500"
         :title="editing?.sku ?? 'Будет назначен автоматически после сохранения'"
       >
         <span class="truncate">{{

@@ -87,7 +87,7 @@ onMounted(load)
       <tbody>
         <tr v-for="group in groups" :key="group.id">
           <td>
-            <h2 class="font-semibold text-gray-800">{{ group.name }}</h2>
+            <h2 class="font-semibold text-gray-500">{{ group.name }}</h2>
             <p class="mt-1 text-xs text-gray-500">/{{ group.slug }}</p>
           </td>
           <td>{{ group.description || 'Без описания' }}</td>

@@ -32,7 +32,7 @@
   --admin-color-gray-900: #101828;
   --admin-color-gray-950: #0c111d;
   --admin-color-gray-dark: #1a2231;
-  --admin-color-text: var(--admin-color-gray-900);
+  --admin-color-text: var(--admin-color-gray-500);
 
   --admin-color-success-25: #f6fef9;
   --admin-color-success-50: #ecfdf3;

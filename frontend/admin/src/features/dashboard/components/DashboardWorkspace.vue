@@ -31,21 +31,21 @@ const metrics = [
     value: formatMoney(0),
     change: 'Оплаченные заказы за период',
     icon: RussianRuble,
-    color: 'bg-success-75 text-success-700',
+    color: 'bg-success-75 text-success-500',
   },
   {
     label: 'Товары',
     value: '0',
     change: 'Активные позиции каталога',
     icon: Package,
-    color: 'bg-blue-light-50 text-blue-light-700',
+    color: 'bg-blue-light-50 text-blue-light-500',
   },
   {
     label: 'Обращения',
     value: '0',
     change: 'Новые заявки клиентов',
     icon: MessageSquare,
-    color: 'bg-warning-50 text-warning-700',
+    color: 'bg-warning-50 text-warning-500',
   },
 ]
 
@@ -75,7 +75,7 @@ const orders = [
             ><component :is="metric.icon" :size="20" :stroke-width="2"
           /></span>
         </div>
-        <p class="mt-5 text-3xl font-bold tracking-tight text-gray-900">
+        <p class="mt-5 text-3xl font-bold tracking-tight text-gray-500">
           {{ metric.value }}
         </p>
         <p class="mt-2 text-xs text-gray-500">{{ metric.change }}</p>
@@ -87,7 +87,7 @@ const orders = [
         <template #header>
           <div class="flex items-start justify-between gap-3">
             <div>
-              <h2 class="text-base font-semibold text-gray-700">
+              <h2 class="text-base font-semibold text-gray-500">
                 Динамика продаж
               </h2>
               <p class="mt-1 text-sm text-gray-500">За последние 30 дней</p>
@@ -116,7 +116,7 @@ const orders = [
 
       <UiCard>
         <template #header>
-          <h2 class="text-base font-semibold text-gray-700">
+          <h2 class="text-base font-semibold text-gray-500">
             Быстрые действия
           </h2>
         </template>
@@ -144,7 +144,7 @@ const orders = [
       <template #header>
         <div class="flex items-center justify-between gap-3">
           <div>
-            <h2 class="text-base font-semibold text-gray-700">
+            <h2 class="text-base font-semibold text-gray-500">
               Последние заказы
             </h2>
             <p class="mt-1 text-sm text-gray-500">
@@ -167,7 +167,7 @@ const orders = [
           <tr
             v-for="order in orders"
             :key="order.number"
-            class="border-t border-gray-100 text-gray-600"
+            class="border-t border-gray-100 text-gray-500"
           >
             <td class="px-6 py-4 font-medium">{{ order.number }}</td>
             <td class="px-6 py-4">{{ order.customer }}</td>

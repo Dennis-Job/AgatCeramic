@@ -99,13 +99,13 @@ onMounted(() => state.load())
         !state.selected.value
       "
       role="alert"
-      class="text-sm text-error-600"
+      class="text-sm text-error-500"
     >
       Выбранный слайдер недоступен. Выберите другой ресурс.
     </p>
     <template v-if="state.selected.value">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h4 class="min-w-0 break-words font-semibold text-gray-900">
+        <h4 class="min-w-0 break-words font-semibold text-gray-500">
           {{ state.selected.value.name }}
         </h4>
         <UiBadge

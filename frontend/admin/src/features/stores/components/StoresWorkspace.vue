@@ -71,7 +71,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
       aria-labelledby="stores-list-title"
     >
       <template #header>
-        <h2 id="stores-list-title" class="font-semibold text-gray-900">
+        <h2 id="stores-list-title" class="font-semibold text-gray-500">
           Список магазинов
         </h2>
       </template>

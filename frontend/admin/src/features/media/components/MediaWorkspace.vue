@@ -52,7 +52,7 @@ const {
       <template #header>
         <h2
           :id="editing ? 'media-edit-title' : 'media-upload-title'"
-          class="font-semibold text-gray-900"
+          class="font-semibold text-gray-500"
         >
           {{ editing ? 'Редактировать файл' : 'Загрузить файл' }}
         </h2>
@@ -90,7 +90,7 @@ const {
             "
             required
             :disabled="busy"
-            class="mt-1.5 block w-full min-w-0 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary-700 admin-focus"
+            class="mt-1.5 block w-full min-w-0 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary-500 admin-focus"
             @change="chooseFile"
           />
         </UiField>
@@ -161,7 +161,7 @@ const {
                 /><FileText
                   v-else
                   :size="32"
-                  class="shrink-0 text-primary-600"
+                  class="shrink-0 text-primary-500"
                   aria-hidden="true"
                 />
                 <div class="min-w-0">
@@ -169,7 +169,7 @@ const {
                     :href="item.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="font-medium text-primary-700 underline admin-focus"
+                    class="font-medium text-primary-500 underline admin-focus"
                     >{{ item.title }}</a
                   >
                   <p class="mt-1 text-xs text-gray-500">#{{ item.id }}</p>

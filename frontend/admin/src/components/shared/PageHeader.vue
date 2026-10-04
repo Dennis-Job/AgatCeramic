@@ -8,7 +8,7 @@ defineProps<{ title: string; description?: string; eyebrow?: string }>()
       <p v-if="eyebrow" class="text-sm font-medium text-gray-500">
         {{ eyebrow }}
       </p>
-      <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">{{ title }}</h1>
+      <h1 class="text-2xl font-bold text-gray-500 sm:text-3xl">{{ title }}</h1>
       <p v-if="description" class="mt-1 max-w-3xl text-sm text-gray-500">
         {{ description }}
       </p>

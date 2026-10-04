@@ -83,7 +83,7 @@ onMounted(catalogue.load)
             :key="permission.id"
           >
             <td>
-              <h2 class="font-semibold text-gray-700">{{ permission.name }}</h2>
+              <h2 class="font-semibold text-gray-500">{{ permission.name }}</h2>
               <code class="mt-1 block text-xs text-gray-500">{{
                 permission.code
               }}</code>

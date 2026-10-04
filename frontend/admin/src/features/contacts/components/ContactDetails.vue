@@ -51,7 +51,7 @@ defineEmits<{
         </p>
         <h2
           id="contact-details-title"
-          class="mt-1 break-words font-bold text-gray-900"
+          class="mt-1 break-words font-bold text-gray-500"
         >
           {{ selected ? `Обращение #${selected.id}` : 'Детали обращения' }}
         </h2>
@@ -67,25 +67,25 @@ defineEmits<{
     <div v-else class="space-y-6">
       <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
       <section>
-        <h3 class="text-sm font-semibold text-gray-900">Контакт</h3>
-        <p class="mt-2 break-words text-sm text-gray-700">
+        <h3 class="text-sm font-semibold text-gray-500">Контакт</h3>
+        <p class="mt-2 break-words text-sm text-gray-500">
           {{ selected.contact.name ?? 'Без имени' }}
         </p>
         <p
           v-if="selected.contact.phone"
-          class="break-all text-sm text-gray-600"
+          class="break-all text-sm text-gray-500"
         >
           {{ selected.contact.phone }}
         </p>
         <p
           v-if="selected.contact.email"
-          class="break-all text-sm text-gray-600"
+          class="break-all text-sm text-gray-500"
         >
           {{ selected.contact.email }}
         </p>
         <p
           v-if="selected.message"
-          class="admin-panel--inset mt-3 whitespace-pre-line break-words p-3 text-sm text-gray-700"
+          class="admin-panel--inset mt-3 whitespace-pre-line break-words p-3 text-sm text-gray-500"
         >
           {{ selected.message }}
         </p>
@@ -94,7 +94,7 @@ defineEmits<{
         v-if="canManageStatus || canAssign"
         class="admin-panel--inset grid gap-3 p-4"
       >
-        <h3 class="text-sm font-semibold text-gray-900">Обработка</h3>
+        <h3 class="text-sm font-semibold text-gray-500">Обработка</h3>
         <template v-if="canManageStatus"
           ><UiSelect
             v-model="selected.status"
@@ -119,7 +119,7 @@ defineEmits<{
         />
       </section>
       <section>
-        <h3 class="text-sm font-semibold text-gray-900">История статусов</h3>
+        <h3 class="text-sm font-semibold text-gray-500">История статусов</h3>
         <ol class="mt-3 space-y-2 border-l border-gray-200 pl-4 text-sm">
           <li v-for="entry in history" :key="entry.id">
             <p class="break-words">
@@ -137,7 +137,7 @@ defineEmits<{
         </ol>
       </section>
       <section>
-        <h3 class="text-sm font-semibold text-gray-900">
+        <h3 class="text-sm font-semibold text-gray-500">
           Внутренние комментарии
         </h3>
         <div class="mt-3 space-y-3">

@@ -46,7 +46,7 @@ const emit = defineEmits<{
         <div>
           <h2
             id="category-attributes-title"
-            class="text-lg font-bold text-gray-900"
+            class="text-lg font-bold text-gray-500"
           >
             Характеристики: {{ category.name }}
           </h2>
@@ -64,7 +64,7 @@ const emit = defineEmits<{
       <UiNotification v-if="error">{{ error }}</UiNotification>
       <div class="mt-6 max-h-80 space-y-4 overflow-y-auto">
         <section class="admin-panel--inset p-3">
-          <h3 class="mb-2 text-sm font-semibold text-gray-800">
+          <h3 class="mb-2 text-sm font-semibold text-gray-500">
             Группы характеристик
           </h3>
           <div class="grid gap-2 sm:grid-cols-2">
@@ -85,7 +85,7 @@ const emit = defineEmits<{
           class="admin-panel--inset overflow-hidden"
         >
           <div class="bg-gray-50 px-4 py-3">
-            <h3 class="font-semibold text-gray-800">{{ group.name }}</h3>
+            <h3 class="font-semibold text-gray-500">{{ group.name }}</h3>
           </div>
           <div
             v-for="attribute in group.attributes"
@@ -97,7 +97,7 @@ const emit = defineEmits<{
               :value="attribute.id"
               class="h-auto min-h-[42px] flex-1 border-0"
               @update:model-value="emit('attributesChange', $event)"
-              ><span class="font-medium text-gray-800"
+              ><span class="font-medium text-gray-500"
                 >{{ attribute.name }}
                 <span class="text-xs text-gray-500"
                   >/{{ attribute.slug }} ·
@@ -126,7 +126,7 @@ const emit = defineEmits<{
           class="admin-panel--inset overflow-hidden"
         >
           <div class="bg-gray-50 px-4 py-3">
-            <h3 class="font-semibold text-gray-800">Без группы</h3>
+            <h3 class="font-semibold text-gray-500">Без группы</h3>
           </div>
           <div
             v-for="attribute in ungroupedAttributes"

@@ -63,7 +63,7 @@ onMounted(load)
       }}</UiBadge>
       <p
         v-if="page.has_unpublished_changes"
-        class="mt-2 text-sm text-gray-600"
+        class="mt-2 text-sm text-gray-500"
         role="status"
       >
         В черновике есть неопубликованные изменения.

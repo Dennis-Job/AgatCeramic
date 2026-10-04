@@ -61,7 +61,7 @@ watch([busy, downloading], async () => {
       <template #actions>
         <RouterLink
           to="/products"
-          class="text-sm font-medium text-primary-700 underline admin-focus"
+          class="text-sm font-medium text-primary-500 underline admin-focus"
           >К списку товаров</RouterLink
         >
       </template>
@@ -69,7 +69,7 @@ watch([busy, downloading], async () => {
     <div class="min-w-0 space-y-5">
       <UiCard aria-labelledby="group-import-preparation">
         <template #header>
-          <h2 id="group-import-preparation" class="font-semibold text-gray-900">
+          <h2 id="group-import-preparation" class="font-semibold text-gray-500">
             1. Скачайте актуальную выгрузку
           </h2>
         </template>
@@ -97,7 +97,7 @@ watch([busy, downloading], async () => {
           <div>
             <h2
               id="group-import-upload-title"
-              class="font-semibold text-gray-900"
+              class="font-semibold text-gray-500"
             >
               2. Загрузите отредактированный файл
             </h2>
@@ -166,11 +166,11 @@ watch([busy, downloading], async () => {
         :class="resultClass"
         aria-live="polite"
       >
-        <h2 class="flex items-center gap-2 font-semibold text-gray-900">
+        <h2 class="flex items-center gap-2 font-semibold text-gray-500">
           <CircleAlert
             v-if="result.status === 'failed'"
             :size="20"
-            class="text-error-700"
+            class="text-error-500"
             aria-hidden="true"
           /><CheckCircle2
             v-else-if="finished"
@@ -186,7 +186,7 @@ watch([busy, downloading], async () => {
                 : 'Обработка выполняется'
           }}
         </h2>
-        <p class="mt-2 text-sm text-gray-700">
+        <p class="mt-2 text-sm text-gray-500">
           Обработано групп: {{ result.processed_rows }} из
           {{ result.total_rows }}. Изменено: {{ result.updated_rows }}. Ошибок:
           {{ result.failed_rows }}.

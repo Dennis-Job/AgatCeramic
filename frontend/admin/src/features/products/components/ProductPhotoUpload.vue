@@ -68,7 +68,7 @@ function dropFile(event: DragEvent) {
       <span class="min-w-0 flex-1 text-left font-normal">
         <span
           id="product-image-upload-label"
-          class="block text-sm font-semibold text-gray-900 sm:text-base"
+          class="block text-sm font-semibold text-gray-500 sm:text-base"
         >
           {{
             dragDepth > 0 && !saving
@@ -89,7 +89,7 @@ function dropFile(event: DragEvent) {
       class="mt-3 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center"
     >
       <output
-        class="min-w-0 flex-1 text-sm text-gray-700 [overflow-wrap:anywhere]"
+        class="min-w-0 flex-1 text-sm text-gray-500 [overflow-wrap:anywhere]"
         aria-live="polite"
       >
         {{ selectedFile.name }}

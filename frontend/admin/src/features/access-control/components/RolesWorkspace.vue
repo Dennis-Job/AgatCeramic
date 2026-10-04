@@ -73,7 +73,7 @@ onMounted(workspace.load)
       <tbody>
         <tr v-for="role in workspace.roles.value" :key="role.id">
           <td>
-            <h2 class="font-semibold text-gray-700">{{ role.name }}</h2>
+            <h2 class="font-semibold text-gray-500">{{ role.name }}</h2>
             <p class="mt-1 text-xs text-gray-500">{{ role.slug }}</p>
           </td>
           <td>{{ role.description || 'Без описания' }}</td>

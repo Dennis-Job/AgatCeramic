@@ -78,7 +78,7 @@ function toggle(id: number, checked: boolean) {
 
 <template>
   <div class="min-w-0">
-    <p class="text-sm font-medium text-gray-700">{{ label }}</p>
+    <p class="text-sm font-medium text-gray-500">{{ label }}</p>
     <template v-if="!canSelect">
       <p class="mt-1 text-sm text-gray-500" role="status">
         {{ modelValue ? `Выбран файл #${modelValue}.` : 'Файл не выбран.' }}
@@ -187,7 +187,7 @@ function toggle(id: number, checked: boolean) {
           target="_blank"
           rel="noopener noreferrer"
           :aria-label="`Открыть документ ${item.title}, файл ${item.id}`"
-          class="text-sm text-primary-700 underline admin-focus"
+          class="text-sm text-primary-500 underline admin-focus"
           >Открыть</a
         >
       </div>
@@ -196,7 +196,7 @@ function toggle(id: number, checked: boolean) {
       v-if="canManage && inlineUpload"
       class="mt-4 space-y-3 rounded-lg border border-gray-200 p-3"
     >
-      <label class="block text-sm font-medium text-gray-700"
+      <label class="block text-sm font-medium text-gray-500"
         >Загрузить файл — {{ label }}
         <input
           :key="upload.inputKey.value"

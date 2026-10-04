@@ -38,7 +38,7 @@ const emit = defineEmits<{
         <div>
           <h2
             id="attribute-group-dialog-title"
-            class="text-lg font-bold text-gray-900"
+            class="text-lg font-bold text-gray-500"
           >
             {{ title }}
           </h2>
@@ -55,25 +55,25 @@ const emit = defineEmits<{
       </div>
       <UiNotification v-if="error">{{ error }}</UiNotification>
       <div class="mt-6 grid gap-4">
-        <label class="text-sm font-medium text-gray-700"
+        <label class="text-sm font-medium text-gray-500"
           >Название<UiInput
             :model-value="form.name"
             class="mt-1.5"
             data-autofocus
             required
             @update:model-value="emit('updateName', $event)" /></label
-        ><label class="text-sm font-medium text-gray-700"
+        ><label class="text-sm font-medium text-gray-500"
           >Технический код (slug)<UiInput
             :model-value="form.slug"
             class="mt-1.5"
             required
             :pattern="slugPattern"
             @update:model-value="emit('updateSlug', $event)" /></label
-        ><label class="text-sm font-medium text-gray-700"
+        ><label class="text-sm font-medium text-gray-500"
           >Описание<UiTextarea
             v-model="form.description"
             class="mt-1.5 min-h-24 font-normal" /></label
-        ><label class="text-sm font-medium text-gray-700"
+        ><label class="text-sm font-medium text-gray-500"
           >Порядок сортировки<UiInput
             :model-value="String(form.sort_order)"
             class="mt-1.5"

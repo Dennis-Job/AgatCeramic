@@ -407,7 +407,7 @@ function closeGroupDeletion(): void {
                 />
                 <div class="min-w-0">
                   <p
-                    class="font-semibold text-gray-800"
+                    class="font-semibold text-gray-500"
                     data-testid="product-name-preview"
                   >
                     {{ product.name }}
@@ -418,22 +418,22 @@ function closeGroupDeletion(): void {
                 </div>
               </div>
             </td>
-            <td class="px-4 py-3 font-mono text-gray-700">
+            <td class="px-4 py-3 font-mono text-gray-500">
               {{ product.sku }}
             </td>
-            <td class="px-4 py-3 text-gray-600">
+            <td class="px-4 py-3 text-gray-500">
               {{ product.article_number || '—' }}
             </td>
             <td class="max-w-48 px-4 py-3">
               <UiBadge tone="additional">{{ product.category.name }}</UiBadge>
             </td>
-            <td class="px-4 py-3 text-right font-medium text-gray-800">
+            <td class="px-4 py-3 text-right font-medium text-gray-500">
               {{ formatMoney(product.price) }}
               <p class="mt-0.5 text-xs font-normal text-gray-500">
                 за {{ productUnitLabel(product.unit) }}
               </p>
             </td>
-            <td class="px-4 py-3 text-right text-gray-700">
+            <td class="px-4 py-3 text-right text-gray-500">
               {{ product.stock_quantity }}
               <p class="mt-0.5 text-xs text-gray-500">
                 {{ productUnitLabel(product.unit) }}
@@ -449,12 +449,12 @@ function closeGroupDeletion(): void {
                 >
               </div>
             </td>
-            <td class="px-4 py-3 text-gray-600">
+            <td class="px-4 py-3 text-gray-500">
               <time :datetime="product.created_at">{{
                 formatDate(product.created_at)
               }}</time>
             </td>
-            <td class="px-4 py-3 text-gray-600">
+            <td class="px-4 py-3 text-gray-500">
               <time :datetime="product.updated_at">{{
                 formatDate(product.updated_at)
               }}</time>
@@ -516,7 +516,7 @@ function closeGroupDeletion(): void {
         <div class="min-w-0 [overflow-wrap:anywhere]">
           <h2
             id="product-editor-title"
-            class="admin-focus text-lg font-bold text-gray-900 focus:outline-none"
+            class="admin-focus text-lg font-bold text-gray-500 focus:outline-none"
             :data-autofocus="photosOnly ? '' : undefined"
             :tabindex="photosOnly ? -1 : undefined"
           >
@@ -565,7 +565,7 @@ function closeGroupDeletion(): void {
         <template v-if="photosOnly">
           <UiLoadingState v-if="photosLoading" label="Загрузка фотографий…" />
           <div v-else-if="photosLoadFailed" class="space-y-4">
-            <p class="text-sm text-gray-700" role="status">
+            <p class="text-sm text-gray-500" role="status">
               Не удалось загрузить фотографии товара.
             </p>
             <UiButton type="button" variant="secondary" @click="loadPhotos"
@@ -623,7 +623,7 @@ function closeGroupDeletion(): void {
             v-if="selectedGroupId"
             type="button"
             variant="secondary"
-            class="!text-error-700 hover:!bg-error-50 disabled:!text-gray-500 disabled:hover:!bg-gray-100 sm:mr-auto"
+            class="text-error-500 hover:!bg-error-50 disabled:!text-gray-500 disabled:hover:!bg-gray-100 sm:mr-auto"
             :disabled="saving"
             @click="requestGroupDeletion"
             >Удалить группу</UiButton

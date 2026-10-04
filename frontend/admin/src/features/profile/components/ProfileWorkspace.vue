@@ -32,7 +32,7 @@ const {
       <UiCard aria-labelledby="profile-form-title">
         <template #header>
           <div>
-            <h2 id="profile-form-title" class="font-semibold text-gray-900">
+            <h2 id="profile-form-title" class="font-semibold text-gray-500">
               Данные профиля
             </h2>
             <p class="mt-1 text-sm text-gray-500">
@@ -66,7 +66,7 @@ const {
           >
             <h2
               id="profile-password-title"
-              class="text-base font-semibold text-gray-700"
+              class="text-base font-semibold text-gray-500"
             >
               Смена пароля
             </h2>

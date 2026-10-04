@@ -67,7 +67,7 @@ function removeOption(index: number): void {
         <div>
           <h2
             id="attribute-dialog-title"
-            class="text-lg font-bold text-gray-900"
+            class="text-lg font-bold text-gray-500"
           >
             {{ title }}
           </h2>
@@ -86,14 +86,14 @@ function removeOption(index: number): void {
         {{ error }}
       </UiNotification>
       <div class="mt-6 grid gap-4">
-        <label class="text-sm font-medium text-gray-700"
+        <label class="text-sm font-medium text-gray-500"
           >Название<UiInput
             :model-value="form.name"
             class="mt-1.5 w-full font-normal"
             data-autofocus
             required
             @update:model-value="emit('updateName', $event)" /></label
-        ><label class="text-sm font-medium text-gray-700"
+        ><label class="text-sm font-medium text-gray-500"
           >Технический код (slug)<UiInput
             :model-value="form.slug"
             class="mt-1.5 w-full font-normal"
@@ -102,7 +102,7 @@ function removeOption(index: number): void {
             @update:model-value="emit('updateSlug', $event)"
         /></label>
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="text-sm font-medium text-gray-700"
+          <label class="text-sm font-medium text-gray-500"
             >Группа<UiSelect
               :model-value="
                 form.attribute_group_id === null
@@ -115,7 +115,7 @@ function removeOption(index: number): void {
               @update:model-value="
                 form.attribute_group_id = $event === '' ? null : Number($event)
               " /></label
-          ><label class="text-sm font-medium text-gray-700"
+          ><label class="text-sm font-medium text-gray-500"
             >Тип<UiSelect
               :model-value="form.type"
               class="mt-1.5 w-full font-normal"
@@ -124,7 +124,7 @@ function removeOption(index: number): void {
               @update:model-value="emit('updateType', $event as AttributeType)"
           /></label>
         </div>
-        <label class="text-sm font-medium text-gray-700"
+        <label class="text-sm font-medium text-gray-500"
           >Единица измерения<UiInput
             :model-value="form.unit ?? ''"
             class="mt-1.5 w-full font-normal"
@@ -147,7 +147,7 @@ function removeOption(index: number): void {
         <section v-if="hasOptions" class="admin-panel--inset p-4">
           <div class="flex items-center justify-between">
             <div>
-              <h3 class="font-semibold text-gray-800">Варианты</h3>
+              <h3 class="font-semibold text-gray-500">Варианты</h3>
             </div>
             <UiButton type="button" variant="ghost" size="sm" @click="addOption"
               >Добавить</UiButton
@@ -179,7 +179,7 @@ function removeOption(index: number): void {
             /></UiButton>
           </div>
         </section>
-        <label class="text-sm font-medium text-gray-700"
+        <label class="text-sm font-medium text-gray-500"
           >Порядок сортировки<UiInput
             :model-value="String(form.sort_order)"
             class="mt-1.5"

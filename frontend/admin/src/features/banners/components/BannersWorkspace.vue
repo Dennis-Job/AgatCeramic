@@ -59,7 +59,7 @@ onMounted(() => banners.load())
       aria-labelledby="banners-list-title"
     >
       <template #header>
-        <h2 id="banners-list-title" class="font-semibold text-gray-900">
+        <h2 id="banners-list-title" class="font-semibold text-gray-500">
           Список баннеров
         </h2>
       </template>

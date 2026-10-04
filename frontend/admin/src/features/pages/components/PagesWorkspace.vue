@@ -139,7 +139,7 @@ onMounted(() => pages.load())
         <UiCard class="min-w-0 self-start" aria-labelledby="site-pages-title">
           <template #header>
             <div class="flex items-center justify-between gap-2">
-              <h2 id="site-pages-title" class="font-semibold text-gray-900">
+              <h2 id="site-pages-title" class="font-semibold text-gray-500">
                 Страницы сайта
               </h2>
               <UiButton
@@ -161,8 +161,8 @@ onMounted(() => pages.load())
               class="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-50 admin-focus"
               :class="
                 isHomeSelected
-                  ? 'bg-primary-50 text-primary-700'
-                  : 'text-gray-700'
+                  ? 'bg-primary-50 text-primary-500'
+                  : 'text-gray-500'
               "
               :aria-current="isHomeSelected ? 'page' : undefined"
               >Главная
@@ -184,7 +184,7 @@ onMounted(() => pages.load())
                   path: '/content',
                   query: { ...route.query, page: String(fetchedPage.id) },
                 }"
-                class="block min-w-0 break-words rounded-lg bg-primary-50 px-3 py-2 text-sm text-primary-700 admin-focus"
+                class="block min-w-0 break-words rounded-lg bg-primary-50 px-3 py-2 text-sm text-primary-500 admin-focus"
                 aria-current="page"
                 >{{ fetchedPage.title
                 }}<span class="block break-all text-xs text-gray-500"
@@ -201,8 +201,8 @@ onMounted(() => pages.load())
                 class="block min-w-0 rounded-lg px-3 py-2 text-sm hover:bg-gray-50 admin-focus"
                 :class="
                   selectedId === page.id
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-700'
+                    ? 'bg-primary-50 text-primary-500'
+                    : 'text-gray-500'
                 "
                 :aria-current="selectedId === page.id ? 'page' : undefined"
                 ><span class="block break-words font-medium">{{
@@ -271,7 +271,7 @@ onMounted(() => pages.load())
               >
                 <h2
                   id="selected-page-title"
-                  class="min-w-0 break-words text-lg font-semibold text-gray-900"
+                  class="min-w-0 break-words text-lg font-semibold text-gray-500"
                 >
                   {{ selectedPage.title }}
                 </h2>
@@ -330,7 +330,7 @@ onMounted(() => pages.load())
             >
             <p
               v-if="selectedPage.has_unpublished_changes"
-              class="mt-2 text-sm text-gray-600"
+              class="mt-2 text-sm text-gray-500"
               role="status"
             >
               В черновике есть неопубликованные изменения.
@@ -347,7 +347,7 @@ onMounted(() => pages.load())
             }}</UiNotification>
             <p
               v-if="!selectedPage.blocks?.length"
-              class="mt-5 whitespace-pre-wrap break-words text-sm text-gray-700"
+              class="mt-5 whitespace-pre-wrap break-words text-sm text-gray-500"
             >
               {{ selectedPage.body }}
             </p>

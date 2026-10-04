@@ -106,7 +106,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2
                   id="appearance-status-title"
-                  class="font-semibold text-gray-900"
+                  class="font-semibold text-gray-500"
                 >
                   Публикация оформления
                 </h2>
@@ -126,7 +126,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
             </template>
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="min-w-0">
-                <p class="mt-2 text-sm text-gray-600" role="status">
+                <p class="mt-2 text-sm text-gray-500" role="status">
                   {{
                     pending
                       ? 'Есть несохранённые изменения. Перед публикацией сохраните каждый изменённый раздел.'
@@ -176,16 +176,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
             <template #header>
               <h2
                 id="appearance-filters-title"
-                class="font-semibold text-gray-900"
+                class="font-semibold text-gray-500"
               >
                 Представление фильтров
               </h2>
             </template>
-            <p class="mt-3 text-sm text-gray-600" role="status">
+            <p class="mt-3 text-sm text-gray-500" role="status">
               Фильтры клиентского каталога пока не реализованы. Настройки их
               внешнего вида появятся вместе с фильтрами каталога.
             </p>
-            <p class="mt-3 text-sm text-gray-600">
+            <p class="mt-3 text-sm text-gray-500">
               Здесь будут параметры представления. Состав фильтров,
               характеристики и значения товаров управляются в каталоге.
             </p>
@@ -199,7 +199,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
             <template #header>
               <h2
                 id="appearance-editor-title"
-                class="font-semibold text-gray-900"
+                class="font-semibold text-gray-500"
               >
                 {{ panel === 'header' ? 'Шапка и навигация' : 'Подвал' }}
               </h2>

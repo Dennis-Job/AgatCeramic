@@ -34,7 +34,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
         <div>
           <h2
             id="category-dialog-title"
-            class="text-lg font-bold text-gray-900"
+            class="text-lg font-bold text-gray-500"
           >
             {{ title }}
           </h2>
