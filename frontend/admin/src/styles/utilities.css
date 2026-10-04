@@ -8,6 +8,26 @@
   max-height: 90vh;
   max-height: 90dvh;
 }
+/* Dialog sections stay visually connected without changing their spacing. */
+.admin-dialog-content [class~='border-t'],
+.admin-dialog-content [class*='border-t-'],
+.admin-dialog-content [class~='border-b'],
+.admin-dialog-content [class*='border-b-'],
+.admin-dialog-content [class~='border-y'],
+.admin-dialog-content [class*='border-y-'],
+[data-modal-floating-select-menu] [class~='border-t'],
+[data-modal-floating-select-menu] [class*='border-t-'],
+[data-modal-floating-select-menu] [class~='border-b'],
+[data-modal-floating-select-menu] [class*='border-b-'],
+[data-modal-floating-select-menu] [class~='border-y'],
+[data-modal-floating-select-menu] [class*='border-y-'] {
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+}
+.admin-dialog-content [class*='divide-y'] > *,
+[data-modal-floating-select-menu] [class*='divide-y'] > * {
+  border-block-color: transparent !important;
+}
 .admin-dialog-overlay {
   background: var(--admin-dialog-backdrop-color);
   -webkit-backdrop-filter: var(--admin-dialog-backdrop-filter);

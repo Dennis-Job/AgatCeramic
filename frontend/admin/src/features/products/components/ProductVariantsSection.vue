@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useId } from 'vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
@@ -7,6 +8,9 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useProductEditorContext } from '../composables/useProductEditorContext'
+const groupHelpId = useId()
+const groupHelp =
+  'Если группа для товара уже создана, выберите её. Чтобы создать новую, выберите в списке «Новая группа» и заполните название и уникальный код.'
 const {
   saveGroup,
   copiedFromProduct,
@@ -49,14 +53,26 @@ const {
         <h3 class="font-semibold text-gray-900">Группа вариантов</h3>
       </template>
       <div class="space-y-4">
-        <UiSelect
-          :model-value="selectedGroupId"
-          class="max-w-xl"
-          :options="groupOptions"
-          accessible-name="Группа вариантов"
-          searchable
-          @update:model-value="selectGroup"
-        />
+        <div>
+          <UiField label="Группа товаров">
+            <UiSelect
+              :model-value="selectedGroupId"
+              class="mt-1.5"
+              :options="groupOptions"
+              accessible-name="Группа товаров"
+              :description-id="groupHelpId"
+              searchable
+              teleport-menu
+              @update:model-value="selectGroup"
+            />
+          </UiField>
+          <p
+            :id="groupHelpId"
+            class="mt-1 block text-xs font-normal text-gray-500"
+          >
+            {{ groupHelp }}
+          </p>
+        </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <UiField label="Название группы" required
             ><UiInput v-model="groupForm.name" class="mt-1.5" required

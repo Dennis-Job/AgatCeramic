@@ -770,6 +770,99 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
 })
 
 for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`group selector menu stays visible and handles Escape at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockCatalogApi(page, { sourceProductInGroup: true })
+    await page.goto('/products')
+    await page
+      .getByRole('button', { name: 'Редактировать товар Монте Тиберио' })
+      .click()
+
+    const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+    await dialog
+      .getByRole('button', { name: 'Варианты модели', exact: false })
+      .click()
+    expect(
+      await dialog
+        .locator('header')
+        .first()
+        .evaluate((element) => getComputedStyle(element).borderBottomColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    expect(
+      await dialog
+        .locator('nav[aria-label="Этапы карточки товара"]')
+        .evaluate((element) => getComputedStyle(element).borderBottomColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    expect(
+      await dialog
+        .getByTestId('product-editor-footer')
+        .evaluate((element) => getComputedStyle(element).borderTopColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    const selector = dialog.getByRole('button', {
+      name: 'Группа товаров',
+      exact: true,
+    })
+    const describesHint = await selector.evaluate((element) => {
+      const descriptions = (
+        element.getAttribute('aria-describedby') ?? ''
+      ).split(/\s+/)
+      return descriptions
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ')
+    })
+    expect(describesHint).toContain('выберите в списке «Новая группа»')
+
+    await selector.click()
+    const menu = page.getByRole('group', {
+      name: 'Группа товаров: варианты',
+    })
+    const newGroupOption = menu.getByRole('button', {
+      name: 'Новая группа',
+      exact: true,
+    })
+    await expect(menu).toBeVisible()
+    await expect(newGroupOption).toBeVisible()
+    expect(
+      await menu.getAttribute('data-modal-floating-select-menu'),
+    ).not.toBeNull()
+    expect(
+      await menu
+        .locator('.border-b')
+        .evaluate((element) => getComputedStyle(element).borderBottomColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    const menuIsFloated = await menu.evaluate(
+      (element) =>
+        element.parentElement === document.body &&
+        getComputedStyle(element).position === 'fixed',
+    )
+    expect(menuIsFloated).toBe(true)
+    const optionInViewport = await newGroupOption.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      return rect.top >= 0 && rect.bottom <= window.innerHeight
+    })
+    expect(optionInViewport).toBe(true)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+    await expect(dialog).toBeVisible()
+    await expect(selector).toBeFocused()
+    await expect(page.getByRole('tooltip')).toHaveText('Группа товаров')
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+  })
+}
+
+for (const width of [320, 640, 768, 1024, 1280]) {
   test(`grouped product identifies product-specific and shared characteristics at ${width}px`, async ({
     page,
   }) => {
@@ -1167,7 +1260,7 @@ test('creating a similar product requires a different name and generates a clean
     .getByRole('status')
     .filter({ hasText: 'Исходный товар' })
   await expect(copyStatus).toContainText(longSourceSku)
-  await expect(savedDialog.getByLabel('Группа вариантов')).toContainText(
+  await expect(savedDialog.getByLabel('Группа товаров')).toContainText(
     'Новая группа',
   )
   expect(
@@ -1201,7 +1294,7 @@ test('a similar product is prepared for the source product existing group', asyn
     .getByRole('button', { name: 'Варианты модели', exact: false })
     .click()
 
-  await expect(savedDialog.getByLabel('Группа вариантов')).toContainText(
+  await expect(savedDialog.getByLabel('Группа товаров')).toContainText(
     'Монте Тиберио · MONTE-TIBERIO-GROUP',
   )
   await expect(

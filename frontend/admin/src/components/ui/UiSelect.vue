@@ -12,6 +12,7 @@ const props = withDefaults(
     options: SelectOption[]
     placeholder?: string
     accessibleName: string
+    descriptionId?: string
     searchable?: boolean
     searchPlaceholder?: string
     clearable?: boolean
@@ -20,6 +21,7 @@ const props = withDefaults(
   }>(),
   {
     placeholder: 'Выберите значение',
+    descriptionId: '',
     searchable: false,
     searchPlaceholder: 'Начните вводить для поиска',
     clearable: false,
@@ -40,6 +42,12 @@ const search = ref('')
 const searchInput = ref<HTMLInputElement | null>(null)
 const menuId = useId()
 const selectedDescriptionId = useId()
+const describedBy = computed(() =>
+  [selectedDescriptionId, props.descriptionId].filter(Boolean).join(' '),
+)
+const isWithinDialog = computed(() =>
+  Boolean(root.value?.closest('.admin-dialog-content')),
+)
 const selectedLabel = computed(
   () =>
     props.options.find((option) => option.value === props.modelValue)?.label ??
@@ -127,7 +135,7 @@ function updateMenuPosition(): void {
     availableBelow < Math.min(preferredHeight, 160) &&
     availableAbove > availableBelow
   const availableHeight = Math.max(
-    96,
+    1,
     Math.min(264, placeAbove ? availableAbove : availableBelow),
   )
 
@@ -210,7 +218,7 @@ onBeforeUnmount(() => {
       :aria-expanded="isOpen"
       :aria-controls="isOpen ? menuId : undefined"
       :aria-label="accessibleName"
-      :aria-describedby="selectedDescriptionId"
+      :aria-describedby="describedBy"
       :disabled="disabled"
       @click="toggle"
     >
@@ -245,6 +253,9 @@ onBeforeUnmount(() => {
         :id="menuId"
         ref="menu"
         :data-floating-select-menu="teleportMenu ? '' : undefined"
+        :data-modal-floating-select-menu="
+          teleportMenu && isWithinDialog ? '' : undefined
+        "
         class="rounded-xl border border-gray-200 bg-white py-1 shadow-dropdown"
         :class="
           teleportMenu

@@ -102,7 +102,7 @@ function handleKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape') {
     if (
       event.target instanceof Element &&
-      event.target.closest('[data-notification]')
+      event.target.closest('[data-notification], [data-floating-select-menu]')
     )
       return
     event.preventDefault()
