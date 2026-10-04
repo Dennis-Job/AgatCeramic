@@ -58,7 +58,10 @@ success/warning/error цвета. Радиусы, поверхности и гр
 и выход; данные/сценарии референса не копируются.
 
 `UiPopover` — немодальное controlled окно (`v-model:open`, `label`, optional `id`,
-`align`, `panelClass`, `closeDelay`). Slot `trigger` получает обязательные bindings
+`align`, `boundarySelector`, `panelClass`, `closeDelay`). `boundarySelector` ограничивает
+горизонтальное позиционирование ближайшим matching ancestor и используется desktop-навигацией
+для соблюдения общего контейнера шапки.
+Slot `trigger` получает обязательные bindings
 `trigger` (`aria-expanded`, `aria-controls`, click/keydown), default slot — `close`.
 Hover не переводит фокус; задержка закрытия 180 ms позволяет перейти через зазор.
 Клавиатура: Enter/Space, ArrowDown/Up, Home/End, Tab наружу и Escape с возвратом

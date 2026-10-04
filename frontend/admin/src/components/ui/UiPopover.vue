@@ -15,10 +15,17 @@ const props = withDefaults(
     label: string
     id?: string
     align?: 'start' | 'end'
+    boundarySelector?: string
     panelClass?: string
     closeDelay?: number
   }>(),
-  { id: undefined, align: 'start', panelClass: '', closeDelay: 180 },
+  {
+    id: undefined,
+    align: 'start',
+    boundarySelector: undefined,
+    panelClass: '',
+    closeDelay: 180,
+  },
 )
 const emit = defineEmits<{ 'update:open': [open: boolean] }>()
 const generatedId = useId()
@@ -33,6 +40,11 @@ let resizeObserver: ResizeObserver | undefined
 
 function triggerElement(): HTMLElement | null {
   return root.value?.querySelector<HTMLElement>('[aria-controls]') ?? null
+}
+function boundaryElement(): HTMLElement | null {
+  return props.boundarySelector
+    ? (root.value?.closest<HTMLElement>(props.boundarySelector) ?? null)
+    : null
 }
 function hoverAvailable(): boolean {
   return (
@@ -148,15 +160,20 @@ function outsideKeydown(event: KeyboardEvent): void {
 function position(): void {
   if (!props.open || !root.value || !panel.value) return
   const anchor = root.value.getBoundingClientRect()
-  const rect = panel.value.getBoundingClientRect()
   // Read resolved lengths: the spacing tokens themselves contain calc/rem.
   const style = getComputedStyle(panel.value)
-  const gutter = parseFloat(style.scrollPaddingTop)
+  const gutter = parseFloat(style.scrollPaddingTop) || 0
+  const boundary = boundaryElement()?.getBoundingClientRect()
+  const minLeft = Math.max(gutter, boundary?.left ?? 0)
+  const maxRight = Math.min(innerWidth - gutter, boundary?.right ?? innerWidth)
+  if (boundary)
+    panel.value.style.maxWidth = `${Math.max(0, maxRight - minLeft)}px`
+  else panel.value.style.removeProperty('max-width')
+  const rect = panel.value.getBoundingClientRect()
   const desired =
     props.align === 'end' ? anchor.right - rect.width : anchor.left
   offset.value =
-    Math.max(gutter, Math.min(desired, innerWidth - gutter - rect.width)) -
-    anchor.left
+    Math.max(minLeft, Math.min(desired, maxRight - rect.width)) - anchor.left
   const gap = parseFloat(style.scrollMarginLeft)
   const naturalHeight =
     panel.value.scrollHeight +
@@ -195,6 +212,8 @@ onMounted(() => {
   if (typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(position)
     if (root.value) resizeObserver.observe(root.value)
+    const boundary = boundaryElement()
+    if (boundary && boundary !== root.value) resizeObserver.observe(boundary)
   }
   position()
 })

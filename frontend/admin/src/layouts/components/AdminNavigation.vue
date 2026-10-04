@@ -104,6 +104,7 @@ onBeforeUnmount(() => {
           :id="`admin-navigation-${section.id}-panel`"
           :open="openId === section.id"
           :label="`${section.label} — подразделы`"
+          boundary-selector=".admin-header-inner"
           panel-class="admin-navigation-panel"
           :style="columns(section.groups?.length ?? 1)"
           @update:open="updatePopup(section.id, $event)"
