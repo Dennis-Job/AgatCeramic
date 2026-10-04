@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { vTooltip } from './tooltip'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { CalendarDays, ChevronLeft, ChevronRight, X } from '@lucide/vue'
 
@@ -244,7 +243,6 @@ onBeforeUnmount(() => {
       />
       <button
         v-if="modelValue"
-        v-tooltip
         type="button"
         class="rounded p-1 text-gray-400 transition hover:bg-primary-100 hover:text-gray-600 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
         aria-label="Очистить дату"
@@ -264,7 +262,6 @@ onBeforeUnmount(() => {
     >
       <div class="mb-3 flex items-center justify-between px-1">
         <button
-          v-tooltip
           type="button"
           class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-700 admin-focus"
           aria-label="Предыдущий месяц"
@@ -276,7 +273,6 @@ onBeforeUnmount(() => {
           {{ monthLabel }}
         </p>
         <button
-          v-tooltip
           type="button"
           class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-700 admin-focus"
           aria-label="Следующий месяц"
@@ -327,7 +323,6 @@ onBeforeUnmount(() => {
         class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3"
       >
         <button
-          v-tooltip="'Выбрать сегодняшнюю дату'"
           type="button"
           class="rounded text-sm font-medium text-primary-600 transition hover:bg-primary-100 hover:text-primary-700 admin-focus"
           @click="select(new Date())"
@@ -335,7 +330,6 @@ onBeforeUnmount(() => {
           Сегодня
         </button>
         <button
-          v-tooltip="'Очистить дату'"
           type="button"
           class="rounded text-sm font-medium text-gray-500 transition hover:bg-primary-100 hover:text-gray-700 admin-focus"
           @click="clear"

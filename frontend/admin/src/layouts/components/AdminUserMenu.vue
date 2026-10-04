@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { vTooltip } from '../../components/ui/tooltip'
 import { ref } from 'vue'
 import { LogOut, Settings, UserRound } from '@lucide/vue'
 import { useRouter } from 'vue-router'
@@ -39,7 +38,6 @@ async function signOut(): Promise<void> {
   >
     <template #trigger="{ trigger }">
       <button
-        v-tooltip="open ? false : undefined"
         v-bind="trigger"
         type="button"
         class="admin-header-icon"

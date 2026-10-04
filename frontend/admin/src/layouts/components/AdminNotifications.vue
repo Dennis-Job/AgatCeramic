@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { vTooltip } from '../../components/ui/tooltip'
 import { Bell } from '@lucide/vue'
 import UiPopover from '../../components/ui/UiPopover.vue'
 import UiEmptyState from '../../components/ui/UiEmptyState.vue'
@@ -15,7 +14,6 @@ const open = defineModel<boolean>('open', { default: false })
   >
     <template #trigger="{ trigger }">
       <button
-        v-tooltip="open ? false : undefined"
         v-bind="trigger"
         type="button"
         class="admin-header-icon"

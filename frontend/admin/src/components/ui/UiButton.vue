@@ -23,7 +23,7 @@ const props = withDefaults(
     size: 'md',
     loading: false,
     disabled: false,
-    tooltip: undefined,
+    tooltip: false,
   },
 )
 const attrs = useAttrs()

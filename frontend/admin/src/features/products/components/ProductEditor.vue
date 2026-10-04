@@ -251,7 +251,6 @@ function closeGroupDeletion(): void {
           type="button"
           variant="surface"
           :disabled="!hasActiveFilters"
-          tooltip="Сбросить фильтры"
           @click="resetFilters"
           >Сбросить</UiButton
         >
@@ -311,7 +310,6 @@ function closeGroupDeletion(): void {
                 size="sm"
                 class="text-left"
                 :disabled="loading"
-                tooltip="Сортировать по наименованию"
                 @click="changeSort('name')"
                 >Наименование<ArrowUp
                   v-if="sort === 'name' && direction === 'asc'"
@@ -329,7 +327,6 @@ function closeGroupDeletion(): void {
                 variant="ghost"
                 size="sm"
                 :disabled="loading"
-                tooltip="Сортировать по SKU"
                 @click="changeSort('sku')"
                 >SKU<ArrowUp
                   v-if="sort === 'sku' && direction === 'asc'"
@@ -356,7 +353,6 @@ function closeGroupDeletion(): void {
                 variant="ghost"
                 size="sm"
                 :disabled="loading"
-                tooltip="Сортировать по дате создания"
                 @click="changeSort('created_at')"
                 >Создан<ArrowUp
                   v-if="sort === 'created_at' && direction === 'asc'"
@@ -378,7 +374,6 @@ function closeGroupDeletion(): void {
                 variant="ghost"
                 size="sm"
                 :disabled="loading"
-                tooltip="Сортировать по дате изменения"
                 @click="changeSort('updated_at')"
                 >Изменён<ArrowUp
                   v-if="sort === 'updated_at' && direction === 'asc'"

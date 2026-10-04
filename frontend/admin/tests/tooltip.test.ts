@@ -5,16 +5,36 @@ import UiButton from '../src/components/ui/UiButton.vue'
 afterEach(() => vi.useRealTimers())
 
 describe('Action tooltips', () => {
-  test('keyboard focus shows the action and Escape dismisses it without changing focus or existing help', async () => {
+  test('accessible names do not create tooltips on focus or hover by default', async () => {
+    vi.useFakeTimers()
     const wrapper = mount(UiButton, {
       attachTo: document.body,
-      attrs: {
-        'aria-label': 'Копировать товар',
-        'aria-describedby': 'existing-help',
-      },
+      attrs: { 'aria-label': 'Закрыть окно' },
     })
     const button = wrapper.get('button')
     ;(button.element as HTMLButtonElement).focus()
+    await wrapper.trigger('pointerenter')
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(500)
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('only pointer hover shows the action and Escape preserves existing help', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(UiButton, {
+      attachTo: document.body,
+      props: { tooltip: 'Копировать товар' },
+      attrs: { 'aria-describedby': 'existing-help' },
+    })
+    const button = wrapper.get('button')
+    ;(button.element as HTMLButtonElement).focus()
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    await wrapper.trigger('pointerenter')
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(299)
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    vi.advanceTimersByTime(1)
     const tooltip = document.querySelector('[role="tooltip"]')!
     expect(tooltip.textContent).toBe('Копировать товар')
     expect(button.attributes('aria-describedby')).toBe(
@@ -27,47 +47,67 @@ describe('Action tooltips', () => {
     wrapper.unmount()
   })
 
-  test('hover is delayed, hoverable, and cleaned up on unmount', async () => {
+  test('tooltip can be hovered, then hides outside both targets and activation leaves no stale tooltip', async () => {
     vi.useFakeTimers()
     const wrapper = mount(UiButton, {
       attachTo: document.body,
       props: { tooltip: 'Редактировать' },
     })
     await wrapper.trigger('pointerenter')
-    vi.advanceTimersByTime(299)
-    expect(document.querySelector('[role="tooltip"]')).toBeNull()
-    vi.advanceTimersByTime(1)
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(300)
     const tooltip = document.querySelector('[role="tooltip"]')!
     await wrapper.trigger('pointerleave')
+    vi.advanceTimersByTime(149)
+    expect(tooltip.isConnected).toBe(true)
     tooltip.dispatchEvent(new Event('pointerenter'))
-    vi.advanceTimersByTime(200)
+    vi.advanceTimersByTime(300)
     expect(tooltip.isConnected).toBe(true)
     tooltip.dispatchEvent(new Event('pointerleave'))
     vi.advanceTimersByTime(150)
-    expect(tooltip.isConnected).toBe(false)
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+
     await wrapper.trigger('pointerenter')
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(300)
+    await wrapper.trigger('click')
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    await wrapper.trigger('pointerenter')
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(300)
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
+
+    await wrapper.trigger('pointerleave')
+    vi.advanceTimersByTime(150)
+    await wrapper.trigger('pointerenter')
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(300)
+    expect(document.querySelector('[role="tooltip"]')).not.toBeNull()
     wrapper.unmount()
     vi.runAllTimers()
     expect(document.querySelector('[role="tooltip"]')).toBeNull()
   })
 
   test('reactive labels update, disabled/loading states hide it and opt-out suppresses it', async () => {
+    vi.useFakeTimers()
     const wrapper = mount(UiButton, {
       attachTo: document.body,
       props: { tooltip: 'Удалить' },
       attrs: { 'aria-label': 'Удалить товар' },
     })
-    await wrapper.trigger('focus')
+    await wrapper.trigger('pointerenter')
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(300)
     await wrapper.setProps({ tooltip: 'Удалить изображение' })
     expect(document.querySelector('[role="tooltip"]')?.textContent).toBe(
       'Удалить изображение',
     )
     await wrapper.setProps({ loading: true })
     expect(document.querySelector('[role="tooltip"]')).toBeNull()
-    await wrapper.trigger('focus')
-    expect(document.querySelector('[role="tooltip"]')).toBeNull()
     await wrapper.setProps({ loading: false, tooltip: false })
-    await wrapper.trigger('focus')
+    await wrapper.trigger('pointerenter')
+    await wrapper.trigger('pointermove', { pointerType: 'mouse' })
+    vi.advanceTimersByTime(300)
     expect(document.querySelector('[role="tooltip"]')).toBeNull()
     wrapper.unmount()
   })

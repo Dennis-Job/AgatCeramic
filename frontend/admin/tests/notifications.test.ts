@@ -38,12 +38,7 @@ describe('notification lifetime', () => {
     )
     await nextTick()
     expect(document.querySelector('[role="tooltip"]')).toBeNull()
-    expect(card().style.display).not.toBe('none')
-    expect(document.activeElement).toBe(close)
-    close.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    )
-    await nextTick()
+    expect(card().style.display).toBe('none')
     expect(document.activeElement?.id).toBe('trigger')
   })
   test('announces success politely and dismisses once after its duration', async () => {
@@ -80,15 +75,13 @@ describe('notification lifetime', () => {
     await vi.advanceTimersByTimeAsync(1)
     expect(card().style.display).toBe('none')
   })
-  test('auto-dismiss removes a hovered tooltip from a hidden notification', async () => {
+  test('auto-dismiss hides a notification without adding a tooltip to its close control', async () => {
     await notify()
     const close = card().querySelector('button')!
     card().dispatchEvent(new MouseEvent('mouseenter'))
     close.dispatchEvent(new MouseEvent('pointerenter'))
     await vi.advanceTimersByTimeAsync(300)
-    const tooltip = document.querySelector('[role="tooltip"]')!
-    expect(tooltip.textContent).toBe('Закрыть уведомление')
-    tooltip.dispatchEvent(new MouseEvent('pointerenter'))
+    expect(document.querySelector('[role="tooltip"]')).toBeNull()
     card().dispatchEvent(new MouseEvent('mouseleave'))
     await vi.advanceTimersByTimeAsync(1000)
     expect(card().style.display).toBe('none')
@@ -106,11 +99,6 @@ describe('notification lifetime', () => {
     )
     await nextTick()
     expect(document.querySelector('[role="tooltip"]')).toBeNull()
-    expect(card().style.display).not.toBe('none')
-    close.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    )
-    await nextTick()
     expect(card().style.display).toBe('none')
     expect(document.activeElement?.id).toBe('opener')
   })

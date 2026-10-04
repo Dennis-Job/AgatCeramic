@@ -55,7 +55,6 @@ function dropFile(event: DragEvent) {
       :disabled="saving"
       aria-labelledby="product-image-upload-label"
       aria-describedby="product-image-file-help"
-      :tooltip="false"
       @click="chooseFile"
       @dragenter="dragEnter"
       @dragover="dragOver"

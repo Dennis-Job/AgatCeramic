@@ -8,7 +8,7 @@ type TooltipState = {
 const states = new WeakMap<HTMLElement, TooltipState>()
 let sequence = 0
 
-// Shared by UiButton and the native controls inside UI primitives and the shell.
+// Tooltips are opt-in: accessible names alone must not create visual overlays.
 export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
   mounted(el, binding) {
     const doc = el.ownerDocument
@@ -17,11 +17,10 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
     let value = binding.value
     let tooltip: HTMLDivElement | undefined
     let timer: ReturnType<typeof setTimeout> | undefined
-    let hovered = false
-    let focused = false
+    let pointerOver = false
+    let tooltipHovered = false
     let dismissed = false
-    const label = () =>
-      value === false ? '' : value || el.getAttribute('aria-label') || ''
+    const label = () => (value === false ? '' : value || '')
     const enabled = () =>
       !el.matches(':disabled, [aria-disabled="true"]') && !!label()
 
@@ -51,6 +50,7 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
 
     function hide() {
       clearTimeout(timer)
+      tooltipHovered = false
       tooltip?.remove()
       tooltip = undefined
       const descriptions = (el.getAttribute('aria-describedby') || '')
@@ -61,8 +61,7 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
       else el.removeAttribute('aria-describedby')
       win.removeEventListener('keydown', onKeydown, true)
       win.removeEventListener('resize', hide)
-      doc.removeEventListener('scroll', position, true)
-      doc.removeEventListener('transitionend', position, true)
+      doc.removeEventListener('scroll', hide, true)
     }
 
     function show() {
@@ -73,8 +72,8 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
       tooltip.className = 'admin-tooltip'
       tooltip.role = 'tooltip'
       tooltip.textContent = label()
-      tooltip.addEventListener('pointerenter', () => clearTimeout(timer))
-      tooltip.addEventListener('pointerleave', scheduleHide)
+      tooltip.addEventListener('pointerenter', onTooltipEnter)
+      tooltip.addEventListener('pointerleave', onTooltipLeave)
       // Keep the description in its semantic context; fixed positioning escapes
       // table/input scroll wrappers without placing dialog text outside the modal.
       const container =
@@ -90,51 +89,60 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
       position()
       win.addEventListener('keydown', onKeydown, true)
       win.addEventListener('resize', hide)
-      doc.addEventListener('scroll', position, true)
-      doc.addEventListener('transitionend', position, true)
-    }
-
-    function scheduleHide() {
-      clearTimeout(timer)
-      if (!focused) timer = setTimeout(hide, 150)
+      doc.addEventListener('scroll', hide, true)
     }
     function onKeydown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault()
         event.stopPropagation()
-        dismissed = true
+        dismissed = pointerOver
         hide()
       }
     }
     function onEnter(event: PointerEvent) {
       if (event.pointerType === 'touch') return
-      hovered = true
-      dismissed = false
+      pointerOver = true
       clearTimeout(timer)
+    }
+    function onMove(event: PointerEvent) {
+      if (event.pointerType === 'touch') return
+      pointerOver = true
+      if (dismissed) return
+      clearTimeout(timer)
+      doc.addEventListener('scroll', hide, true)
       timer = setTimeout(show, 300)
     }
     function onLeave() {
-      hovered = false
+      pointerOver = false
+      dismissed = false
       scheduleHide()
     }
-    function onFocus() {
-      focused = true
-      dismissed = false
-      show()
+    function onTooltipEnter() {
+      tooltipHovered = true
+      clearTimeout(timer)
     }
-    function onBlur() {
-      focused = false
-      if (!hovered) hide()
+    function onTooltipLeave() {
+      tooltipHovered = false
+      scheduleHide()
+    }
+    function scheduleHide() {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        if (!pointerOver && !tooltipHovered) {
+          dismissed = false
+          hide()
+        }
+      }, 150)
     }
     function onClick() {
-      dismissed = true
+      dismissed = pointerOver
+      tooltipHovered = false
       hide()
     }
 
     el.addEventListener('pointerenter', onEnter)
+    el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerleave', onLeave)
-    el.addEventListener('focus', onFocus)
-    el.addEventListener('blur', onBlur)
     el.addEventListener('click', onClick)
     states.set(el, {
       update(next) {
@@ -153,9 +161,8 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
       dispose() {
         hide()
         el.removeEventListener('pointerenter', onEnter)
+        el.removeEventListener('pointermove', onMove)
         el.removeEventListener('pointerleave', onLeave)
-        el.removeEventListener('focus', onFocus)
-        el.removeEventListener('blur', onBlur)
         el.removeEventListener('click', onClick)
       },
     })

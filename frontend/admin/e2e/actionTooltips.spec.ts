@@ -46,7 +46,7 @@ test('product actions show distinct hover backgrounds and descriptive tooltips',
   const clear = page.getByRole('button', { name: 'Очистить поле' })
   await page.getByRole('textbox', { name: 'Поиск' }).fill('Монте')
   await clear.hover()
-  await expect(page.getByRole('tooltip')).toHaveText('Очистить поле')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
 
 test('tooltips remain within the viewport and outside table clipping at all supported widths', async ({
@@ -60,7 +60,9 @@ test('tooltips remain within the viewport and outside table clipping at all supp
       name: 'Редактировать товар Монте Тиберио',
       exact: true,
     })
-    await edit.focus()
+    await edit.scrollIntoViewIfNeeded()
+    await page.mouse.move(2, 2)
+    await edit.hover()
     const cell = edit.locator('..').locator('..')
     const cellBox = (await cell.boundingBox())!
     for (const action of await cell.getByRole('button').all()) {
@@ -86,11 +88,12 @@ test('tooltips remain within the viewport and outside table clipping at all supp
     ).toBe(true)
     await page.keyboard.press('Escape')
     await expect(page.getByRole('tooltip')).toHaveCount(0)
-    await expect(edit).toBeFocused()
+    await edit.focus()
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
   }
 })
 
-test('Escape dismisses a focused tooltip before closing its dialog', async ({
+test('modal close controls have no tooltip and Escape closes the dialog immediately', async ({
   page,
 }) => {
   await mockCatalogApi(page)
@@ -103,13 +106,10 @@ test('Escape dismisses a focused tooltip before closing its dialog', async ({
     .click()
   const close = page.getByRole('button', { name: 'Закрыть карточку товара' })
   await close.focus()
-  await expect(page.getByRole('tooltip')).toHaveText('Закрыть карточку товара')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   await page.keyboard.press('Escape')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
-  await expect(page.getByRole('dialog')).toBeVisible()
-  await expect(close).toBeFocused()
-  await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
@@ -118,7 +118,7 @@ test('UI-kit demonstrates the reusable action tooltip', async ({ page }) => {
   await page.goto('/ui-kit')
   const copy = page.getByRole('button', { name: 'Копировать', exact: true })
   await copy.scrollIntoViewIfNeeded()
-  await copy.focus()
+  await copy.hover()
   await expect(page.getByRole('tooltip')).toHaveText(
     'Копировать товар — создать похожий',
   )
@@ -127,28 +127,30 @@ test('UI-kit demonstrates the reusable action tooltip', async ({ page }) => {
   })
 })
 
-test('catalog delete actions consistently use danger feedback and tooltips', async ({
+test('category action icons have focused tooltips only while hovered', async ({
   page,
 }) => {
   await mockCatalogApi(page)
-  for (const [route, name] of [
-    ['/categories', 'Удалить категорию Керамогранит'],
-    ['/brands', 'Удалить бренд Kerama Marazzi'],
-    ['/attribute-groups', 'Удалить группу Размеры'],
-    ['/attributes', 'Удалить характеристику Ширина'],
+  await page.goto('/categories')
+  for (const [name, tooltip] of [
+    [
+      'Настроить характеристики категории Керамогранит',
+      'Настроить характеристики',
+    ],
+    ['Редактировать категорию Керамогранит', 'Редактировать категорию'],
+    ['Удалить категорию Керамогранит', 'Удалить категорию'],
   ]) {
-    await page.goto(route!)
-    const remove = page.getByRole('button', { name, exact: true })
-    await remove.hover()
-    await expect(remove).toHaveCSS('background-color', 'rgb(254, 228, 226)')
-    await expect(page.getByRole('tooltip')).toHaveText(name!)
-    await page.screenshot({
-      path: test.info().outputPath(`delete-${route!.slice(1)}.png`),
-    })
+    const action = page.getByRole('button', { name, exact: true })
+    await action.hover()
+    if (name.startsWith('Удалить'))
+      await expect(action).toHaveCSS('background-color', 'rgb(254, 228, 226)')
+    await expect(page.getByRole('tooltip')).toHaveText(tooltip!)
+    await page.getByRole('heading', { name: 'Категории', exact: true }).hover()
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
   }
 })
 
-test('mobile navigation tooltip keeps the menu context and stays within the viewport', async ({
+test('mobile navigation close control does not show a tooltip', async ({
   page,
 }) => {
   await mockCatalogApi(page)
@@ -158,22 +160,11 @@ test('mobile navigation tooltip keeps the menu context and stays within the view
     await page.getByRole('button', { name: 'Открыть меню' }).click()
     const close = page.getByRole('button', { name: 'Закрыть меню' })
     await close.focus()
-    await expect(page.getByRole('tooltip')).toHaveText('Закрыть меню')
-    const box = await page.getByRole('tooltip').boundingBox()
-    expect(box!.x).toBeGreaterThanOrEqual(0)
-    expect(box!.x + box!.width).toBeLessThanOrEqual(width)
-    await page.screenshot({
-      path: test.info().outputPath(`menu-tooltip-${width}.png`),
-    })
-    await page.keyboard.press('Escape')
     await expect(page.getByRole('tooltip')).toHaveCount(0)
-    await expect(
-      page.getByRole('dialog', { name: 'Разделы панели' }),
-    ).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(
       page.getByRole('dialog', { name: 'Разделы панели' }),
-    ).toHaveCount(0)
+    ).toBeHidden()
   }
 })
 

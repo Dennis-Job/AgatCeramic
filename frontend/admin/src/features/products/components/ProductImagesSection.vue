@@ -182,7 +182,6 @@ onBeforeUnmount(clearTouchDrag)
             class="absolute right-2 top-2 z-20 h-9 w-9 min-h-9 !p-0 rounded-full bg-white/95 shadow-sm"
             :disabled="saving"
             :aria-label="`Удалить изображение ${index + 1}`"
-            tooltip="Удалить фото"
             @click.stop="requestImageDeletion(image)"
             ><Trash2 :size="17" aria-hidden="true"
           /></UiButton>

@@ -74,18 +74,21 @@ const emit = defineEmits<{
             <UiButton
               variant="ghost"
               size="sm"
+              tooltip="Настроить характеристики"
               :aria-label="`Настроить характеристики категории ${category.name}`"
               @click="emit('configure', category)"
               ><ListFilter :size="17" /></UiButton
             ><UiButton
               variant="primary-ghost"
               size="sm"
+              tooltip="Редактировать категорию"
               :aria-label="`Редактировать категорию ${category.name}`"
               @click="emit('edit', category)"
               ><Pencil :size="17" /></UiButton
             ><UiButton
               variant="danger-ghost"
               size="sm"
+              tooltip="Удалить категорию"
               :aria-label="`Удалить категорию ${category.name}`"
               @click="emit('remove', category)"
               ><Trash2 :size="17"
