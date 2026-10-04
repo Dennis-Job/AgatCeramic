@@ -539,6 +539,9 @@ function submitAuthPreview(): void {
             >
           </div>
           <UiAlert tone="info" live="polite">Информационное сообщение.</UiAlert>
+          <UiAlert tone="additional" live="polite"
+            >Дополнительное информационное сообщение.</UiAlert
+          >
           <UiAlert tone="success" live="polite"
             >Операция выполнена успешно.</UiAlert
           >

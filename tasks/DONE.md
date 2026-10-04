@@ -281,3 +281,15 @@
     Использованы существующие цвета; lint, build, scoped Prettier и
     `git diff --check` прошли. Цвета проверены в `/products`.
     UI Design Guard accepted. [Отчёт](../docs/TASK_A093_REPORT.md).
+
+- [x] TASK-A094 Дополнительное информационное сообщение (2026-10-04):
+    `UiAlert tone="additional"` использует `blue-light-50/500`, как дополнительный
+    badge. Добавлен пример в UI-kit. Lint, build, scoped Prettier и diff check
+    прошли; цвета и status/polite проверены в браузере. UI Design Guard accepted.
+    [Отчёт](../docs/TASK_A094_REPORT.md).
+
+- [x] TASK-A095 Все информационные блоки Admin в дополнительном стиле
+    (2026-10-04): `UiAlert info/additional`, заметки диалогов и информационные
+    уведомления используют `blue-light-50/500`. Lint, build, scoped Prettier,
+    diff check и 6 тестов уведомлений прошли. UI Design Guard accepted.
+    [Отчёт](../docs/TASK_A095_REPORT.md).
