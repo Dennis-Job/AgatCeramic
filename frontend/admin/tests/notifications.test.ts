@@ -17,9 +17,11 @@ afterEach(() => {
   vi.useRealTimers()
   document.body.innerHTML = ''
 })
-async function notify(tone: 'success' | 'error' = 'success') {
+async function notify(
+  tone: 'success' | 'error' | 'warning' | 'info' = 'success',
+) {
   wrapper = mount(UiNotification, {
-    props: { tone, duration: 1000 },
+    props: { tone },
     slots: { default: 'Файл готов.' },
   })
   await flushPromises()
@@ -41,23 +43,34 @@ describe('notification lifetime', () => {
     expect(card().style.display).toBe('none')
     expect(document.activeElement?.id).toBe('trigger')
   })
-  test('announces success politely and dismisses once after its duration', async () => {
-    await notify()
-    expect(card().getAttribute('role')).toBe('status')
-    expect(card().getAttribute('aria-live')).toBe('polite')
-    await vi.advanceTimersByTimeAsync(1000)
+  test.each([
+    ['success', 'status', 'polite'],
+    ['info', 'status', 'polite'],
+    ['warning', 'status', 'polite'],
+    ['error', 'alert', 'assertive'],
+  ] as const)(
+    '%s notification keeps its live semantics and dismisses after five seconds',
+    async (tone, role, live) => {
+      await notify(tone)
+      expect(card().getAttribute('role')).toBe(role)
+      expect(card().getAttribute('aria-live')).toBe(live)
+      await vi.advanceTimersByTimeAsync(4999)
+      expect(card().style.display).not.toBe('none')
+      await vi.advanceTimersByTimeAsync(1)
+      expect(card().style.display).toBe('none')
+      expect(wrapper?.emitted('dismiss')).toHaveLength(1)
+    },
+  )
+  test('still supports manual close before the timer expires', async () => {
+    await notify('warning')
+    card().querySelector('button')?.click()
+    await nextTick()
     expect(card().style.display).toBe('none')
     expect(wrapper?.emitted('dismiss')).toHaveLength(1)
   })
-  test('retains an error until manual dismissal and cleans its timer on unmount', async () => {
+  test('cleans its timer on unmount', async () => {
     await notify('error')
-    expect(card().getAttribute('role')).toBe('alert')
-    expect(card().getAttribute('aria-live')).toBe('assertive')
-    await vi.advanceTimersByTimeAsync(10000)
-    expect(card().style.display).not.toBe('none')
-    card().querySelector('button')?.click()
-    await nextTick()
-    expect(wrapper?.emitted('dismiss')).toHaveLength(1)
+    await vi.advanceTimersByTimeAsync(0)
     wrapper?.unmount()
     wrapper = undefined
     expect(document.querySelector('[data-notification]')).toBeNull()
@@ -65,7 +78,7 @@ describe('notification lifetime', () => {
   })
   test('hover pauses and resumes the remaining time', async () => {
     await notify()
-    await vi.advanceTimersByTimeAsync(600)
+    await vi.advanceTimersByTimeAsync(4600)
     card().dispatchEvent(new MouseEvent('mouseenter'))
     await vi.advanceTimersByTimeAsync(5000)
     expect(card().style.display).not.toBe('none')
@@ -80,10 +93,10 @@ describe('notification lifetime', () => {
     const close = card().querySelector('button')!
     card().dispatchEvent(new MouseEvent('mouseenter'))
     close.dispatchEvent(new MouseEvent('pointerenter'))
-    await vi.advanceTimersByTimeAsync(300)
+    await vi.advanceTimersByTimeAsync(5000)
     expect(document.querySelector('[role="tooltip"]')).toBeNull()
     card().dispatchEvent(new MouseEvent('mouseleave'))
-    await vi.advanceTimersByTimeAsync(1000)
+    await vi.advanceTimersByTimeAsync(5000)
     expect(card().style.display).toBe('none')
     expect(document.querySelector('[role="tooltip"]')).toBeNull()
     expect(close.hasAttribute('aria-describedby')).toBe(false)

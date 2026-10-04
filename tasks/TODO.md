@@ -903,6 +903,10 @@ API behaviour без migration plan и синхронного обновлени
   258 строгих E2E каждой macOS/Linux, real Nuxt3.
   [Отчёт](../docs/ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
 
+- [x] Доработка уведомлений от 2026-10-04: все tones автоматически скрываются
+      через 5 секунд; hover, focus и скрытая вкладка приостанавливают оставшееся время.
+      Проверки и UI Design Guard — в [отчёте](../docs/ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
+
 - [x] Доработка товаров от 2026-10-02: «Добавить массово товары», «Цены и статусы»
   и «Объединить товары» перенесены в меню «Товары» и отдельные страницы вместо
   модальных окон. Сохранены import contracts, permissions и состояние при

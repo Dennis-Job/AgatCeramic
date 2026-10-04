@@ -87,13 +87,15 @@ unselected glyph скрыт независимо от system colors. UI Design G
 255 строгих E2E каждой macOS/Linux и 3 real Nuxt пройдены.
 [Результат, файлы и ограничения](ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).
 
-Доработка уведомлений от 2026-10-02 завершена: операционные сообщения страниц
-и диалогов отображаются в общем стеке справа сверху, без сдвига рабочего layout.
-UiNotification/Host поддерживают close, paused auto-dismiss и modal ownership;
-ошибки остаются до закрытия, focus возвращается к живому control/trigger.
-UI Design Guard принят, 28 platform baseline согласованы до замены;
-lint/format/build, 69 unit, 258 строгих E2E каждой macOS/Linux и real Nuxt3
-пройдены. [Изменения, evidence и ограничения](ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
+Доработка уведомлений от 2026-10-02 вывела операционные сообщения страниц и диалогов
+в общий стек справа сверху, без сдвига рабочего layout. Первоначальная реализация
+прошла UI Design Guard, 28 platform baseline, lint/format/build, 69 unit, 258
+строгих E2E каждой macOS/Linux и real Nuxt3.
+Изменение от 2026-10-04 задаёт всем tones авто-закрытие через 5 секунд; hover,
+focus и скрытая вкладка приостанавливают таймер. UI Design Guard принял code
+review; targeted notifications 10/10, lint/build/scoped format прошли. Более
+широкие текущие unit/E2E прогоны имеют несвязанные ошибки; детали и evidence —
+в [отчёте](ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
 
 Доработка ширины таблиц от 2026-10-02 завершена: 12 рабочих таблиц списков заполняют
 экран без боковых отступов; меню, кнопки, фильтры, пагинация и детали остаются

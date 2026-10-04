@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onUpdated,
+  ref,
+} from 'vue'
 import { X } from '@lucide/vue'
 import UiAlert from './UiAlert.vue'
 import UiButton from './UiButton.vue'
@@ -7,13 +14,16 @@ import { notificationOpener } from '../../composables/useNotificationContext'
 
 defineOptions({ inheritAttrs: false })
 const emit = defineEmits<{ dismiss: [] }>()
+const NOTIFICATION_DURATION = 5000
 const props = withDefaults(
   defineProps<{
     tone?: 'error' | 'success' | 'warning' | 'info'
     live?: 'assertive' | 'polite'
-    duration?: number
   }>(),
-  { tone: 'error', live: undefined, duration: 8000 },
+  { tone: 'error', live: undefined },
+)
+const notificationLive = computed(
+  () => props.live ?? (props.tone === 'error' ? 'assertive' : 'polite'),
 )
 const visible = ref(true)
 const ready = ref(false)
@@ -46,8 +56,7 @@ function startTimer(): void {
 }
 function resetTimer(): void {
   stopTimer()
-  remaining =
-    props.tone === 'success' || props.tone === 'info' ? props.duration : 0
+  remaining = NOTIFICATION_DURATION
   startTimer()
 }
 function pauseHover(): void {
@@ -156,8 +165,8 @@ onBeforeUnmount(() => {
     <UiAlert
       v-show="visible"
       class="admin-notification"
-      :tone="tone"
-      :live="live ?? (tone === 'error' ? 'assertive' : 'polite')"
+      :tone="props.tone"
+      :live="notificationLive"
       data-notification
       @mouseenter="pauseHover"
       @mouseleave="resumeHover"

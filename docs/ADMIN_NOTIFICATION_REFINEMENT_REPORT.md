@@ -99,6 +99,31 @@ Windows не проверен; имеющееся предупреждение V
 `frontend/admin/.tmp/notifications/`.
 Коммит и отправка этой доработки не выполнялись.
 
+## Дополнение 2026-10-04 — единый таймер
+
+Все уведомления (`success`, `info`, `warning`, `error`) теперь закрываются
+через 5 секунд. Наведение, клавиатурный фокус и скрытая вкладка приостанавливают
+таймер; после выхода курсора/фокуса или возврата к вкладке отсчёт продолжается
+с оставшимся временем. Ручное закрытие и Escape сохранены. `UiNotification`
+больше не принимает переопределяемую длительность, чтобы время было одинаковым
+для всех сообщений. ARIA roles/live не изменены.
+
+UI Design Guard независимо принял код, блокирующих замечаний нет. Неблокирующее
+замечание: отдельный тест на возобновление после выхода из фокуса/скрытой вкладки
+не добавлен. Автор визуально проверил `/ui-kit` в открытом браузере: внешний вид
+ошибки и её автоматическое исчезновение отображались ожидаемо.
+
+| Проверка | Результат |
+| --- | --- |
+| `tests/notifications.test.ts` | 10/10 PASS: каждый tone исчезает на 5-й секунде; hover сохраняет остаток, manual close работает |
+| `npm run lint` | PASS |
+| `npm run build` | PASS; осталось существующее предупреждение Vite о чанке >500 kB |
+| Scoped Prettier для изменённых Vue/test/UI-kit файлов | PASS |
+| `npm run test:unit` | 91 PASS, 4 FAIL в unrelated `authCard`, `catalogComponents`, `uiBadge`, `uiKitShowcase` assertions |
+| `npm run test:e2e -- --workers=2` | 177/303 PASS; все три notification-сценария заканчиваются на axe-проверке цветового контраста (до этой проверки в двух сценариях проходят assertions на закрытие/focus). Полный прогон также выявил строгие baseline/accessibility failures на других маршрутах. |
+| `npm run check` | Останавливается на full `format:check`: Prettier сообщает 65 сгенерированных файлов в `frontend/admin/.tmp`; scoped UI files проходят. |
+| `git diff --check` | PASS |
+
 ## Мигрированные feature/view файлы
 
 - `frontend/admin/src/features/access-control/components/PermissionsWorkspace.vue`
