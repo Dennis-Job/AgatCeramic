@@ -992,3 +992,12 @@ API behaviour без migration plan и синхронного обновлени
     полупрозрачный overlay, мягкая белая карточка и круглая кнопка закрытия.
     UI Design Guard accepted; вручную просмотрены ширины 320–1280 px. Lint,
     format и build прошли; unit/E2E не запускались. [Результаты](../docs/TASK_A065_REPORT.md).
+
+- [x] Белая рабочая область и вкладки массового импорта, 2026-10-05: внешняя
+  `UiCard` удалена; новый общий `UiSegmentedTabs` выделен в компонент и
+  представлен в UI-kit с четырьмя вкладками и панелями, синей обводкой 1 px
+  поверх общего контура. UI Design
+  Guard accepted; lint/build/format и responsive E2E на 320–1280 px passed.
+  Unit 94/98 с 4 несвязанными прежними ошибками; UI-kit E2E встретил старое
+  ожидание отсутствующей кнопки, полный `productImport.spec.ts` 16/17 с
+  несвязанным contrast-сбоем. [Отчёт](../docs/ADMIN_PRODUCT_IMPORT_SURFACE_REPORT.md).

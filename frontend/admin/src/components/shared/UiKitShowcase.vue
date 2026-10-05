@@ -23,6 +23,7 @@ import UiPagination from '../ui/UiPagination.vue'
 import UiPopover from '../ui/UiPopover.vue'
 import UiRadio from '../ui/UiRadio.vue'
 import UiSegmentedControl from '../ui/UiSegmentedControl.vue'
+import UiSegmentedTabs from '../ui/UiSegmentedTabs.vue'
 import UiSelect from '../ui/UiSelect.vue'
 import UiTable from '../ui/UiTable.vue'
 import UiTextarea from '../ui/UiTextarea.vue'
@@ -44,6 +45,29 @@ const checked = ref(false)
 const checkedByDefault = ref(true)
 const checkboxValues = ref<Array<number | string>>(['porcelain'])
 const segmented = ref('')
+const importTabDemo = ref('tab-1')
+const importTabDemoOptions = [
+  {
+    id: 'tab-1',
+    label: 'Вкладка 1',
+    panelId: 'ui-kit-tab-panel-1',
+  },
+  {
+    id: 'tab-2',
+    label: 'Вкладка 2',
+    panelId: 'ui-kit-tab-panel-2',
+  },
+  {
+    id: 'tab-3',
+    label: 'Вкладка 3',
+    panelId: 'ui-kit-tab-panel-3',
+  },
+  {
+    id: 'tab-4',
+    label: 'Вкладка 4',
+    panelId: 'ui-kit-tab-panel-4',
+  },
+]
 const segmentOptions = [
   { value: '', label: 'Все' },
   { value: '1', label: 'Активные', count: 124 },
@@ -109,6 +133,7 @@ const uiComponents = [
   'UiPopover',
   'UiRadio',
   'UiSegmentedControl',
+  'UiSegmentedTabs',
   'UiSelect',
   'UiTable',
   'UiTextarea',
@@ -388,7 +413,7 @@ function submitAuthPreview(): void {
             Состав UI-kit
           </h2>
           <p class="mt-1 text-sm text-gray-500">
-            22 UI primitives и 3 shared-компонента, доступных для повторного
+            23 UI primitives и 3 shared-компонента, доступных для повторного
             использования. Layout- и feature-компоненты в этот каталог не
             входят.
           </p>
@@ -879,6 +904,42 @@ function submitAuthPreview(): void {
           >
             Недоступный
           </UiRadio>
+        </div>
+      </div>
+    </UiCard>
+
+    <UiCard data-ui-kit-section="tabs" aria-labelledby="ui-kit-tabs-title">
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-tabs-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Вкладки
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiSegmentedTabs.vue</code>
+          </p>
+        </div>
+      </template>
+      <div class="space-y-4">
+        <UiSegmentedTabs
+          v-model="importTabDemo"
+          id-prefix="ui-kit-import-tab"
+          label="Тип загрузки"
+          :options="importTabDemoOptions"
+        />
+        <div
+          v-for="option in importTabDemoOptions"
+          v-show="importTabDemo === option.id"
+          :id="option.panelId"
+          :key="option.id"
+          role="tabpanel"
+          tabindex="0"
+          :aria-labelledby="`ui-kit-import-tab-${option.id}`"
+          class="rounded-xl bg-gray-25 p-4 text-sm text-gray-500"
+        >
+          {{ `Пример содержимого для вкладки ${option.id.slice(-1)}.` }}
         </div>
       </div>
     </UiCard>

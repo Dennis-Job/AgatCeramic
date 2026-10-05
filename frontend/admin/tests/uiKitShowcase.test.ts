@@ -18,8 +18,24 @@ describe('UiKitShowcase', () => {
     for (const component of [...uiComponents, ...sharedComponents]) {
       expect(inventory, component).toContain(component)
     }
-    expect(uiComponents).toHaveLength(22)
-    expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(12)
+    expect(uiComponents).toHaveLength(23)
+    expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(13)
+    expect(
+      wrapper.get('[data-ui-kit-section="tabs"] [role="tablist"]').exists(),
+    ).toBe(true)
+    const demoTabs = wrapper.findAll(
+      '[data-ui-kit-section="tabs"] [role="tab"]',
+    )
+    expect(demoTabs.map((tab) => tab.text())).toEqual([
+      'Вкладка 1',
+      'Вкладка 2',
+      'Вкладка 3',
+      'Вкладка 4',
+    ])
+    expect(
+      wrapper.findAll('[data-ui-kit-section="tabs"] [role="tabpanel"]'),
+    ).toHaveLength(4)
+    expect(demoTabs[0].attributes('aria-selected')).toBe('true')
     expect(wrapper.findAll('input[required]')).toHaveLength(2)
     expect(
       wrapper.get('[data-ui-kit-section="collection-states"] button').classes(),

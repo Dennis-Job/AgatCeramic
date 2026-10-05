@@ -10,7 +10,6 @@ import {
 import { CheckCircle2, Download, ImagePlus, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { RouterLink } from 'vue-router'
@@ -19,6 +18,7 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiRadio from '../../../components/ui/UiRadio.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiSegmentedTabs from '../../../components/ui/UiSegmentedTabs.vue'
 import { useProductImport } from '../composables/useProductImport'
 
 const active = ref(true)
@@ -48,6 +48,18 @@ const {
   uploadProducts,
   downloadImageErrors,
 } = useProductImport(() => {})
+const importTabs = [
+  {
+    id: 'products',
+    label: 'Загрузка товаров',
+    panelId: 'import-panel-products',
+  },
+  {
+    id: 'images',
+    label: 'Загрузка изображений',
+    panelId: 'import-panel-images',
+  },
+] as const
 const {
   file,
   result,
@@ -102,21 +114,6 @@ function selectImageFile(event: Event) {
   selectProductImageFile(target.files?.[0] ?? null)
   target.value = ''
 }
-function changeTab(event: KeyboardEvent) {
-  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-  event.preventDefault()
-  tab.value =
-    event.key === 'Home'
-      ? 'products'
-      : event.key === 'End'
-        ? 'images'
-        : tab.value === 'products'
-          ? 'images'
-          : 'products'
-  void nextTick(() =>
-    document.getElementById(`import-tab-${tab.value}`)?.focus(),
-  )
-}
 </script>
 
 <template>
@@ -135,38 +132,13 @@ function changeTab(event: KeyboardEvent) {
         >
       </template>
     </PageHeader>
-    <UiCard class="min-w-0" :padded="false">
-      <template #header>
-        <div
-          class="grid grid-cols-2 gap-2"
-          role="tablist"
-          aria-label="Тип загрузки"
-          @keydown="changeTab"
-        >
-          <UiButton
-            v-for="item in [
-              { id: 'products', label: 'Загрузка товаров' },
-              { id: 'images', label: 'Загрузка изображений' },
-            ]"
-            :id="`import-tab-${item.id}`"
-            :key="item.id"
-            type="button"
-            variant="surface"
-            role="tab"
-            :aria-selected="tab === item.id"
-            :aria-controls="`import-panel-${item.id}`"
-            :tabindex="tab === item.id ? 0 : -1"
-            class="rounded-none border-b-2 py-4"
-            :class="
-              tab === item.id
-                ? 'border-primary-500 text-primary-500'
-                : 'border-transparent text-gray-500 hover:text-gray-500!'
-            "
-            @click="tab = item.id as typeof tab"
-            >{{ item.label }}</UiButton
-          >
-        </div>
-      </template>
+    <div class="min-w-0">
+      <UiSegmentedTabs
+        v-model="tab"
+        id-prefix="import-tab"
+        label="Тип загрузки"
+        :options="importTabs"
+      />
       <div
         v-show="tab === 'products'"
         id="import-panel-products"
@@ -719,6 +691,6 @@ images.zip
           </template>
         </section>
       </div>
-    </UiCard>
+    </div>
   </AdminWorkspace>
 </template>

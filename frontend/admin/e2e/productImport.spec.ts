@@ -448,6 +448,29 @@ for (const { path, title } of importPages) {
       page.getByRole('heading', { level: 1, name: title }),
     ).toBeVisible()
     await expect(page.getByRole('dialog')).toHaveCount(0)
+    if (path === '/products/import') {
+      await expect(page.locator('.admin-workspace > .admin-panel')).toHaveCount(
+        0,
+      )
+      const tabList = page.getByRole('tablist', { name: 'Тип загрузки' })
+      await expect(tabList).toHaveClass(/rounded-xl/)
+      await expect(tabList).toHaveClass(/border-gray-200/)
+      await expect(
+        page.getByRole('tab', { name: 'Загрузка товаров' }),
+      ).toHaveClass(/outline-primary-500/)
+      await expect(
+        page.getByRole('tab', { name: 'Загрузка товаров' }),
+      ).toHaveClass(/outline-1/)
+      const imageTab = page.getByRole('tab', {
+        name: 'Загрузка изображений',
+      })
+      const colorBeforeHover = await imageTab.evaluate(
+        (element) => getComputedStyle(element).color,
+      )
+      await imageTab.hover()
+      await expect(imageTab).toHaveCSS('color', colorBeforeHover)
+      await expect(imageTab).toHaveCSS('background-color', 'rgb(242, 244, 247)')
+    }
     for (const width of [320, 640, 768, 1024, 1280]) {
       await page.setViewportSize({ width, height: 900 })
       expect(

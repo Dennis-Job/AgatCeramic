@@ -214,6 +214,7 @@ UI-kit в примере «Информационное сообщение.» р
 | `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                                    |
 | `UiDatePicker`                                   | input/calendar, Escape/focus return, responsive popup; disabled блокирует input/clear и закрывает открытый calendar                       |
 | `UiCheckbox`, `UiRadio`                          | boolean/array mode, selected/unselected, keyboard focus, disabled через native control                                                    |
+| `UiSegmentedTabs`                                | controlled tablist, связанный tabpanel, синяя обводка 1 px, нейтральный hover, стрелки/Home/End                                           |
 | `UiPopover`                                      | hover/tap, open/close, keyboard, Escape/focus return, outside close, viewport clamp/flip/scroll                                           |
 | `UiDialog`, `ConfirmDialog`                      | open/close, Escape, backdrop, focus trap/return, busy, error                                                                              |
 | `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                           |
@@ -233,7 +234,7 @@ Disabled-состояния используют существующие ток
 
 Живая витрина доступна авторизованному пользователю по `/ui-kit` и через верхнее меню →
 «Управление» → «Служебное» → «UI-kit». Она собрана в `components/shared/UiKitShowcase.vue` и показывает все
-22 `Ui*` primitives, `AuthCard`, `ConfirmDialog`, `PageHeader`, их значимые варианты и состояния,
+23 `Ui*` primitives, `AuthCard`, `ConfirmDialog`, `PageHeader`, их значимые варианты и состояния,
 а также все CSS custom properties из `styles/tokens.css`. Layout- и feature-компоненты не являются
 частью UI-kit и на витрину не выносятся.
 
@@ -256,6 +257,17 @@ teleport menu, confirm busy/error, disabled-контракт, keyboard/focus, ax
 варианта, число связано через `aria-describedby`. На узком экране бейдж может
 перенестись целиком под подпись. В `/products` счётчики учитывают поиск,
 категорию и бренд; activity/sale не ограничивают цифры соседних вариантов.
+
+`UiSegmentedTabs` — controlled tabs primitive с `modelValue`, `idPrefix`,
+доступной подписью `label` и массивом `options` (`id`, `label`, `panelId`).
+Компонент связывает `tablist` и `tab` через `aria-selected`, `aria-controls` и
+roving tabindex; содержимое `tabpanel` остаётся ответственностью вызывающей
+страницы. Стрелки влево/вправо циклически меняют выбранную вкладку, Home/End
+переводят выбор в начало/конец и фокусируют соответствующую кнопку. Синяя
+обводка выбранной вкладки толщиной 1 px накладывается на общий серый контур;
+нейтральный hover серый и не меняет цвет текста. Длинные подписи переносятся.
+Компонент и интерактивный пример с четырьмя вкладками показаны в UI-kit;
+radio-группы остаются задачей `UiSegmentedControl`.
 
 `UiButton variant="surface"` — белая поверхность без border,
 hover primary100/primary600, обычный общий keyboard focus. Disabled состояние
