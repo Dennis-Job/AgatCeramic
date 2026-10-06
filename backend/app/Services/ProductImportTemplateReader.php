@@ -12,11 +12,15 @@ use Throwable;
 
 final class ProductImportTemplateReader
 {
-    public function __construct(private readonly ProductImportTemplateSchema $schema) {}
+    public function __construct(
+        private readonly ProductImportTemplateSchema $schema,
+        private readonly ProductImportTemplateCategoryValidator $categoryValidator,
+    ) {}
 
     /** @return list<array{row: int, editing: bool, values: array<string, mixed>}> */
     public function read(Category $category, string $path): array
     {
+        $this->categoryValidator->validate($category, $path);
         $headers = $this->schema->headers($category);
         $editingHeaders = $this->schema->headers($category, true);
         $editing = false;
@@ -24,20 +28,10 @@ final class ProductImportTemplateReader
         $readerOptions->SHOULD_PRESERVE_EMPTY_ROWS = true;
         $reader = new Reader($readerOptions);
         $entries = [];
-        $matchesCategory = false;
         $hasProducts = false;
         try {
             $reader->open($path);
             foreach ($reader->getSheetIterator() as $sheet) {
-                if ($sheet->getName() === 'Справочники') {
-                    foreach ($sheet->getRowIterator() as $index => $row) {
-                        if ($index !== 1) {
-                            continue;
-                        }
-                        $values = $row->toArray();
-                        $matchesCategory = ($values[0] ?? null) === 'AGAT_CATEGORY_TEMPLATE_V1' && $this->integerValue($values[1] ?? 0) === $category->id;
-                    }
-                }
                 if ($sheet->getName() !== 'Товары') {
                     continue;
                 }
@@ -66,7 +60,7 @@ final class ProductImportTemplateReader
                     $entries[] = ['row' => $index, 'editing' => $editing, 'values' => array_combine(array_keys($headers), array_pad($values, count($headers), null))];
                 }
             }
-            if (! $matchesCategory || ! $hasProducts) {
+            if (! $hasProducts) {
                 throw ValidationException::withMessages(['file' => ['Файл не является шаблоном выбранной категории. Скачайте шаблон ещё раз.']]);
             }
             if ($entries === []) {
@@ -86,10 +80,5 @@ final class ProductImportTemplateReader
         }
 
         return $entries;
-    }
-
-    private function integerValue(mixed $value): int
-    {
-        return is_int($value) ? $value : (is_numeric($value) ? (int) $value : 0);
     }
 }

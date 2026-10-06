@@ -2,18 +2,23 @@
 
 namespace App\Services;
 
+use App\Models\Category;
 use App\Models\ProductImageImport;
 use App\Models\ProductImport;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
 
 class ImportSubmissionService
 {
-    public function __construct(private readonly ImportDispatchService $dispatchService) {}
+    public function __construct(
+        private readonly ImportDispatchService $dispatchService,
+        private readonly ProductImportTemplateCategoryValidator $templateCategoryValidator,
+    ) {}
 
     public function submitProductWorkbook(
         User $user,
@@ -22,6 +27,7 @@ class ImportSubmissionService
         ?int $categoryId = null,
         ?string $operation = null,
     ): ProductImport {
+        $this->validateTemplateCategory($file, $categoryId);
         $path = $this->storeSource($file, $directory, 'XLSX-файл');
 
         try {
@@ -84,6 +90,18 @@ class ImportSubmissionService
         }
 
         return $import;
+    }
+
+    private function validateTemplateCategory(UploadedFile $file, ?int $categoryId): void
+    {
+        if ($categoryId === null) {
+            return;
+        }
+        $category = Category::query()->find($categoryId);
+        if ($category === null) {
+            throw ValidationException::withMessages(['category_id' => ['Выбранная категория больше не существует.']]);
+        }
+        $this->templateCategoryValidator->validate($category, $file->getPathname());
     }
 
     private function storeSource(UploadedFile $file, string $directory, string $sourceType): string

@@ -4380,7 +4380,7 @@
             "post": {
                 "operationId": "importProducts",
                 "summary": "Upload a product Excel import",
-                "description": "Requires imports.manage. With category_id, creation templates create products with server-generated SKU, while SKU-based edit templates update only matching products in the selected category; both use independent row transactions and durable progress/errors. Duplicate names/slugs, invalid SKU and values absent from current option lists fail only that row. Every category attribute marked required must be supplied even when the product row is inactive. Without category_id, validates all rows before catalogue writes, including ordered unique-value and group constraints. Any validation errors are retained as named row errors and no catalogue rows are changed. Otherwise the server persists a normalized write plan and processes up to 100 rows or 35 seconds per Redis job; each row and checkpoint commit together, so retries skip completed rows. Write-time concurrency guards remain authoritative and conflicts become row errors. Limit: 5000 products, 10 MiB.",
+                "description": "Requires imports.manage. With category_id, the server checks the category ID in the first row of the hidden Справочники sheet before storing the file or creating an import/queue record. A mismatch returns 422 validation_failed with error.details.file naming the template and selected categories and their IDs; missing/invalid metadata also returns 422. Names and filenames do not determine equality. Existing AGAT_CATEGORY_TEMPLATE_V1 templates remain compatible; the worker repeats the check before reading product rows. With category_id, creation templates create products with server-generated SKU, while SKU-based edit templates update only matching products in the selected category; both use independent row transactions and durable progress/errors. Duplicate names/slugs, invalid SKU and values absent from current option lists fail only that row. Every category attribute marked required must be supplied even when the product row is inactive. Without category_id, validates all rows before catalogue writes, including ordered unique-value and group constraints. Any validation errors are retained as named row errors and no catalogue rows are changed. Otherwise the server persists a normalized write plan and processes up to 100 rows or 35 seconds per Redis job; each row and checkpoint commit together, so retries skip completed rows. Write-time concurrency guards remain authoritative and conflicts become row errors. Limit: 5000 products, 10 MiB.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {
                     "required": true,
@@ -4391,7 +4391,7 @@
                                 "required": ["file"],
                                 "properties": {
                                     "file": {"type": "string", "format": "binary", "description": "XLSX workbook, up to 10 MiB."},
-                                    "category_id": {"type": ["integer", "null"], "description": "Selected category for create-only template mode. Omit for legacy/export round-trip import."}
+                                    "category_id": {"type": ["integer", "null"], "description": "Selected category for creation or SKU-based edit templates; must match the hidden template category ID. Omit for legacy/export round-trip import."}
                                 }
                             }
                         }

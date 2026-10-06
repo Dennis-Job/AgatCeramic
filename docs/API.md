@@ -463,8 +463,17 @@ The `Инструкция` sheet explains the limit and filling rules. Current d
 validated again on import; editing/pasting into Excel cannot create new catalogue options.
 
 To import this template, submit the selected `category_id` alongside multipart `file`. The file's
-category marker and current category headers must match. At most 5000 rows (2–5001) and 10 MiB are
-accepted. Each valid row commits independently; invalid rows retain their original values and
+category marker and current category headers must match. Before storing the workbook or creating
+an import/queue record, the endpoint reads only the first row of the hidden `Справочники` sheet:
+`AGAT_CATEGORY_TEMPLATE_V1`, category ID, and category name. A different category ID returns `422`
+(`error.code=validation_failed`, `error.details.file`) naming both the template and selected
+categories with their IDs. The current catalogue name is used when available; the saved template
+name is the fallback for a deleted category. Missing or invalid metadata also returns `422`.
+Filenames and category names are never used to determine equality; renamed files and categories
+remain supported. Existing V1 templates need no regeneration. The worker repeats the category
+check before validating headers/reading product rows. The source file still has to reach the
+server; the early check avoids waiting for queue processing. At most 5000 rows (2–5001) and 10 MiB
+are accepted. Each valid row commits independently; invalid rows retain their original values and
 named messages. The status resource adds `category_id`, `total_rows`, `failed_rows`, `row_errors`
 (`row`, `name`, `messages`), and `has_error_file`. `processed_rows` includes successful and failed
 rows; `created_rows` counts successes. `completed` means all rows were checked, including partial
