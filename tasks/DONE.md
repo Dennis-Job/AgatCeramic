@@ -409,3 +409,9 @@
   утверждённого `UiAlert` (2.58:1), палитра оставлена без изменений. Lint,
   scoped Prettier и build прошли; браузерная страница визуально проверена.
   Тесты в этой итерации не запускались.
+
+- [x] Служебные файлы macOS в ZIP-импорте, 2026-10-06: `__MACOSX/`,
+  `.DS_Store` и `._*` пропускаются после проверок безопасности и лимитов.
+  Исходный архив пользователя принят инспектором; image import/API tests 14/14,
+  Pint, PHPStan, Composer validate/audit и architecture guard прошли.
+  [Отчёт](../docs/PRODUCT_IMAGE_IMPORT_MACOS_REPORT.md).

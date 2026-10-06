@@ -81,6 +81,10 @@ class ProductImageImportService
                 && (($attributes >> 16) & 0170000) === 0120000) {
                 throw new RuntimeException('Архив не может содержать символические ссылки.');
             }
+            // Finder metadata is not gallery content, but must pass the safety checks above.
+            if ($this->isMacMetadata($name)) {
+                continue;
+            }
             if (str_ends_with($name, '/')) {
                 if (substr_count(rtrim($name, '/'), '/') !== 0) {
                     throw new RuntimeException('Вложенные каталоги не поддерживаются.');
@@ -108,6 +112,19 @@ class ProductImageImportService
         }
 
         return $groups;
+    }
+
+    private function isMacMetadata(string $name): bool
+    {
+        if (str_starts_with($name, '__MACOSX/')) {
+            return true;
+        }
+        if (str_ends_with($name, '/')) {
+            return false;
+        }
+        $filename = basename($name);
+
+        return $filename === '.DS_Store' || str_starts_with($filename, '._');
     }
 
     /** @param list<array{name:string,index:int,extension:string,size:int}> $entries */

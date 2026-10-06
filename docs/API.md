@@ -521,6 +521,10 @@ unsafe paths and unsupported files are rejected. The worker validates the real M
 archive entries and uncompressed size, and records a folder-level error for an unknown SKU or an
 invalid gallery without blocking other valid folders.
 
+Finder metadata under `__MACOSX/` and files named `.DS_Store` or starting with `._`
+are ignored; they do not count as SKU folders, images or folder errors. Archive entry/size
+limits, unsafe-path and symbolic-link checks still apply before metadata is skipped.
+
 The initiating manager polls `GET /admin/product-image-imports/{productImageImport}`. The status
 includes folder progress, created/replaced image counts, folder errors and a terminal error-report
 flag. `GET /admin/product-image-imports/{productImageImport}/errors` downloads the owner-only CSV

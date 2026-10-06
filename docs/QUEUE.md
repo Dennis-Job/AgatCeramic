@@ -105,6 +105,10 @@ records commit per gallery; replaced public files and completed/failed source ZI
 through the existing durable cleanup outbox. The status record and owner-only CSV error report remain
 available after the source ZIP is removed.
 
+ZIP inspection skips Finder metadata (`__MACOSX/`, `.DS_Store`, `._*`) after checking
+entry sizes, total limits, paths and symbolic links. Metadata does not create SKU groups
+or affect gallery counters; an archive with only metadata is rejected as empty.
+
 ## Локальный запуск
 
 Запустите окружение:

@@ -4487,7 +4487,7 @@
             "post": {
                 "operationId": "importProductImages",
                 "summary": "Upload a ZIP archive of product images",
-                "description": "Requires imports.manage. Accepts one ZIP archive up to 500 MiB. Each image is JPG, PNG or WebP up to 10 MiB in SKU/SKU_ordinal.extension. Processing is queued; invalid SKU folders are reported without blocking valid folders.",
+                "description": "Requires imports.manage. Accepts one ZIP archive up to 500 MiB. Each image is JPG, PNG or WebP up to 10 MiB in SKU/SKU_ordinal.extension. Finder metadata under __MACOSX/ and files named .DS_Store or starting with ._ are ignored after archive safety and size checks. Processing is queued; invalid SKU folders are reported without blocking valid folders.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string", "format": "binary", "description": "ZIP archive, up to 500 MiB."}}}}}},
                 "responses": {"202": {"description": "Image import accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImageImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}
