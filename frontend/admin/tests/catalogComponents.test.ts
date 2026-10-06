@@ -20,6 +20,18 @@ const readSource = (relativePath: string) =>
   readFileSync(new URL(relativePath, import.meta.url), 'utf8')
 
 describe('products feature boundaries', () => {
+  test('uses the approved information alert and Excel dropzone on price status import', () => {
+    const source = readSource(
+      '../src/features/products/components/ProductPriceStatusImportWorkspace.vue',
+    )
+
+    expect(source).toMatch(/<UiAlert\s+tone="info"/)
+    expect(source).toMatch(/<UiFileDropzone[\s\S]*?format-label="XLSX"/)
+    expect(source).toMatch(
+      /description="XLSX до 10 МБ\. Строки с ошибками не помешают обработать остальные\."/,
+    )
+  })
+
   test('keeps product domain types in the feature types module', () => {
     const editorComposable = readSource(
       '../src/features/products/composables/useProductEditor.ts',

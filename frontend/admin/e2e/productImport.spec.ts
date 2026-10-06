@@ -575,8 +575,32 @@ test('variation-group Excel import downloads, uploads and reports its accessible
   await expect(
     page.getByRole('heading', { name: 'Объединить товары', level: 1 }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('status').filter({
+      hasText: 'На листе «Группы» выберите действие',
+    }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'К списку товаров' }),
+  ).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   const workspace = page.locator('body')
+  const uploadCard = workspace.locator('section.admin-panel').filter({
+    has: page.getByRole('heading', {
+      name: '2. Загрузите отредактированный файл',
+    }),
+  })
+  const fileHelp =
+    'XLSX до 10 МБ. Если в файле есть ошибка, изменения из него не применяются.'
+  await expect(uploadCard.locator('header').getByText(fileHelp)).toHaveCount(0)
+  await expect(
+    uploadCard.locator('.admin-panel--inset').getByText(fileHelp),
+  ).toBeVisible()
+  const fileDropzone = workspace.locator('[data-group-import-excel-dropzone]')
+  await expect(fileDropzone).toBeVisible()
+  await expect(fileDropzone).toContainText(
+    'Выберите или перетащите Excel в эту область',
+  )
   const templateRequest = page.waitForRequest((request) =>
     new URL(request.url()).pathname.endsWith(
       '/admin/products/group-import-template',
@@ -596,6 +620,9 @@ test('variation-group Excel import downloads, uploads and reports its accessible
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     buffer: Buffer.from('mock xlsx'),
   })
+  await expect(workspace.locator('#group-import-file-selection')).toContainText(
+    'groups.xlsx',
+  )
   const uploadRequest = page.waitForRequest((request) =>
     new URL(request.url()).pathname.endsWith('/admin/products/group-import'),
   )
@@ -632,8 +659,33 @@ test('price and status Excel import preserves its contract and responsive access
   await expect(
     page.getByRole('heading', { name: 'Цены и статусы', level: 1 }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'К списку товаров' }),
+  ).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   const workspace = page.locator('body')
+
+  await expect(
+    workspace.getByRole('status').filter({
+      hasText: '«Цены»: SKU, новая и необязательная старая цена.',
+    }),
+  ).toBeVisible()
+  const uploadCard = workspace.locator('section.admin-panel').filter({
+    has: page.getByRole('heading', {
+      name: '2. Загрузите заполненный файл',
+    }),
+  })
+  const fileHelp =
+    'XLSX до 10 МБ. Строки с ошибками не помешают обработать остальные.'
+  await expect(uploadCard.locator('header').getByText(fileHelp)).toHaveCount(0)
+  await expect(
+    uploadCard.locator('.admin-panel--inset').getByText(fileHelp),
+  ).toBeVisible()
+  const fileDropzone = workspace.locator('[data-price-status-excel-dropzone]')
+  await expect(fileDropzone).toBeVisible()
+  await expect(fileDropzone).toContainText(
+    'Выберите или перетащите Excel в эту область',
+  )
 
   const templateRequest = page.waitForRequest((request) =>
     new URL(request.url()).pathname.endsWith(
@@ -891,7 +943,10 @@ for (const { path, title, endpoint } of [
     })
     await page.getByRole('button', { name: 'Запустить обработку' }).click()
     await status.requested
-    await page.getByRole('link', { name: 'К списку товаров' }).click()
+    await openProductMenu(page)
+    await page
+      .getByRole('link', { name: 'Список товаров', exact: true })
+      .click()
     await expect(
       page.getByText('Файл обрабатывается в фоне.', { exact: false }),
     ).toHaveCount(0)
@@ -901,9 +956,7 @@ for (const { path, title, endpoint } of [
     await expect(
       page.getByRole('heading', { name: 'Обработка завершена', exact: true }),
     ).toBeVisible()
-    await expect(
-      page.getByRole('button', { name: 'import.xlsx' }),
-    ).toBeVisible()
+    await expect(page.getByText('import.xlsx', { exact: true })).toBeVisible()
   })
 }
 
@@ -938,7 +991,9 @@ test('import page cache is cleared after logout and a new login', async ({
   await openProductMenu(page)
   await page.getByRole('link', { name: 'Цены и статусы', exact: true }).click()
   await expect(
-    page.getByRole('button', { name: 'Выбрать файл XLSX' }),
+    page.getByRole('button', {
+      name: 'Выберите или перетащите Excel в эту область',
+    }),
   ).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'previous-session.xlsx' }),

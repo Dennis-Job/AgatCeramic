@@ -383,3 +383,29 @@
   Lint/build/format passed, новые lifecycle E2E 2/2 и scoped axe passed,
   UI Design Guard accepted. Прежние ошибки общего прогона описаны в
   [отчёте](../docs/ADMIN_PRODUCT_IMPORT_SURFACE_REPORT.md).
+
+- [x] Доработка «Цены и статусы», 2026-10-06: описание шаблона оформлено
+  информационным `UiAlert`, подсказка XLSX перенесена в тело шага, выбор файла
+  использует общий `UiFileDropzone` с отображением имени/размера и drag/drop.
+  UI Design Guard accepted; lint/build, scoped Prettier и targeted unit passed.
+  Responsive и upload assertions прошли; Axe выявил утверждённые цвета
+  `blue-light-500/50` (2.58:1) и `success-500/50` (2.48:1), оставлены без
+  изменения по правилу владельца. Полный unit: 100 passed, 4 существующих
+  failures в AuthCard, UiBadge, UI-kit tokens и ConfirmDialog.
+  Повторная проверка открытой dev-вкладки: после сбоя Vite HMR новые
+  компоненты оставались undefined. Полная перезагрузка восстановила
+  информационный текст и XLSX-dropzone; новых Vue/Vite ошибок нет.
+
+- [x] Ссылки возврата на страницах импорта, 2026-10-06: ссылка «К списку
+  товаров» удалена со страниц «Цены и статусы» и «Объединить товары».
+  Lint/build/scoped Prettier прошли; E2E проверил обе страницы и сохранение
+  импорта при навигации. UI Design Guard accepted; Axe для страницы цен
+  сохраняет ранее зафиксированные palette contrast findings.
+
+- [x] Доработка «Объединить товары», 2026-10-06: описание шаблона выделено
+  голубым `UiAlert`; ограничение XLSX перенесено в тело шага, а кнопка выбора
+  заменена общим `UiFileDropzone` с XLSX-иконкой, перетаскиванием и именем/
+  размером выбранного файла. UI Design Guard принял компоновку; отметил контраст
+  утверждённого `UiAlert` (2.58:1), палитра оставлена без изменений. Lint,
+  scoped Prettier и build прошли; браузерная страница визуально проверена.
+  Тесты в этой итерации не запускались.

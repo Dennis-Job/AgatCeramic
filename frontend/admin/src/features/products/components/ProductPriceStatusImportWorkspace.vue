@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { nextTick, onActivated, onDeactivated, ref, watch } from 'vue'
-import { CheckCircle2, Download, Upload } from '@lucide/vue'
+import { CheckCircle2, Download, FileSpreadsheet, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import { RouterLink } from 'vue-router'
 import { useProductPriceStatusImport } from '../composables/useProductPriceStatusImport'
 
 const active = ref(true)
@@ -38,6 +39,11 @@ function selectFile(event: Event) {
   workflow.selectFile(target.files?.[0] ?? null)
   target.value = ''
 }
+function selectDroppedFile(files: FileList) {
+  if (busy.value) return
+  workflow.selectFile(files[0] ?? null)
+  if (input.value) input.value.value = ''
+}
 watch([busy, downloading], async () => {
   await nextTick()
   if (
@@ -56,15 +62,7 @@ watch([busy, downloading], async () => {
       eyebrow="Товары"
       title="Цены и статусы"
       description="Массовое изменение цены, активности и распродажи из Excel."
-    >
-      <template #actions>
-        <RouterLink
-          to="/products"
-          class="text-sm font-medium text-primary-500 underline admin-focus"
-          >К списку товаров</RouterLink
-        >
-      </template>
-    </PageHeader>
+    />
     <div class="min-w-0 space-y-5">
       <UiCard aria-labelledby="price-status-preparation">
         <template #header>
@@ -72,12 +70,12 @@ watch([busy, downloading], async () => {
             1. Скачайте и заполните шаблон
           </h2>
         </template>
-        <p class="mt-1 text-sm leading-6 text-gray-500">
+        <UiAlert tone="info" live="polite" class="mt-3">
           «Цены»: SKU, новая и необязательная старая цена. «Активность» и
           «Распродажа»: SKU и выбор «Да» или «Нет». Листы можно оставлять
           пустыми; характеристики, названия, остатки и категории этот файл не
           меняет.
-        </p>
+        </UiAlert>
         <UiButton
           id="price-status-template"
           type="button"
@@ -100,9 +98,6 @@ watch([busy, downloading], async () => {
             >
               2. Загрузите заполненный файл
             </h2>
-            <p id="price-status-file-help" class="mt-1 text-sm text-gray-500">
-              XLSX до 10 МБ. Строки с ошибками не помешают обработать остальные.
-            </p>
           </div>
         </template>
         <form @submit.prevent="upload">
@@ -114,26 +109,46 @@ watch([busy, downloading], async () => {
             aria-label="Заполненный файл цен и статусов"
             @change="selectFile"
           />
-          <p
+          <UiFileDropzone
+            data-price-status-excel-dropzone
+            label="Выберите или перетащите Excel в эту область"
+            drop-label="Отпустите файл Excel для добавления"
+            description="XLSX до 10 МБ. Строки с ошибками не помешают обработать остальные."
+            format-label="XLSX"
+            icon-tone="green"
+            description-id="price-status-file-selection"
+            :disabled="busy"
+            @choose="input?.click()"
+            @files="selectDroppedFile"
+          >
+            <template #icon>
+              <FileSpreadsheet :size="44" :stroke-width="1.4" />
+            </template>
+          </UiFileDropzone>
+          <output
+            v-if="file"
             id="price-status-file-selection"
-            class="sr-only"
-            role="status"
+            class="mt-3 block min-w-0 text-sm text-gray-500 [overflow-wrap:anywhere]"
             aria-live="polite"
           >
-            {{ file ? `Выбран файл: ${file.name}` : 'Файл не выбран' }}
-          </p>
+            <span class="block font-semibold">{{ file.name }}</span>
+            <span class="mt-1 block text-xs">
+              {{
+                (file.size / 1024).toLocaleString('ru', {
+                  maximumFractionDigits: 1,
+                })
+              }}
+              КБ · Нажмите на область, чтобы заменить файл.
+            </span>
+          </output>
+          <output
+            v-else
+            id="price-status-file-selection"
+            class="sr-only"
+            aria-live="polite"
+            >Файл не выбран</output
+          >
           <UiButton
-            type="button"
-            variant="secondary"
-            class="mt-4 flex w-full justify-start text-left"
-            :disabled="busy"
-            aria-describedby="price-status-file-help price-status-file-selection"
-            @click="input?.click()"
-            ><Upload :size="18" class="shrink-0" aria-hidden="true" /><span
-              class="break-all"
-              >{{ file?.name ?? 'Выбрать файл XLSX' }}</span
-            ></UiButton
-          ><UiButton
             type="submit"
             class="mt-4"
             :loading="uploading"
