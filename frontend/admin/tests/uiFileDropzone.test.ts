@@ -64,4 +64,17 @@ describe('UiFileDropzone', () => {
     expect(wrapper.emitted('files')).toBeUndefined()
     wrapper.unmount()
   })
+
+  test('styles a ZIP archive icon in the familiar yellow tone', () => {
+    const wrapper = mount(UiFileDropzone, {
+      props: { ...props, iconTone: 'yellow' },
+    })
+    expect(wrapper.get('.ui-file-dropzone-icon').classes()).toContain(
+      'ui-file-dropzone-icon-yellow',
+    )
+    expect(wrapper.get('.ui-file-dropzone-badge').classes()).toContain(
+      'ui-file-dropzone-badge-yellow',
+    )
+    wrapper.unmount()
+  })
 })

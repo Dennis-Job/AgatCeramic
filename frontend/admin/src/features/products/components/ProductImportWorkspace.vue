@@ -10,8 +10,8 @@ import {
 import {
   CheckCircle2,
   Download,
+  FileArchive,
   FileSpreadsheet,
-  ImagePlus,
   Upload,
 } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
@@ -126,6 +126,11 @@ function selectImageFile(event: Event) {
   const target = event.target as HTMLInputElement
   selectProductImageFile(target.files?.[0] ?? null)
   target.value = ''
+}
+function selectDroppedImageFile(files: FileList) {
+  if (imageBusy.value) return
+  selectProductImageFile(files[0] ?? null)
+  if (imageInput.value) imageInput.value.value = ''
 }
 </script>
 
@@ -488,31 +493,26 @@ function selectImageFile(event: Event) {
         aria-labelledby="import-tab-images"
         class="space-y-5 py-5 sm:py-6"
       >
-        <section
-          class="admin-panel--inset p-4 sm:p-5"
-          aria-labelledby="image-import-preparation-title"
-        >
-          <div class="flex items-start gap-3">
-            <ImagePlus
-              :size="24"
-              class="mt-0.5 shrink-0 text-primary-500"
-              aria-hidden="true"
-            />
-            <div class="min-w-0">
-              <h2
-                id="image-import-preparation-title"
-                class="text-base font-semibold text-gray-500"
-              >
-                Подготовьте ZIP-архив
-              </h2>
-              <p class="mt-1 text-sm leading-6 text-gray-500">
-                Для каждого уже созданного товара создайте папку с его SKU.
-                Внутри назовите файлы по схеме
-                <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-500"
-                  >SKU_номер.расширение</code
-                >.
-              </p>
-            </div>
+        <UiCard data-product-image-import-step="1">
+          <template #header>
+            <h2
+              id="image-import-preparation-title"
+              class="text-base font-semibold text-gray-500"
+            >
+              1. Подготовьте архив
+            </h2>
+          </template>
+          <div class="min-w-0">
+            <h3 class="text-sm font-semibold text-gray-500">
+              Структура ZIP-архива
+            </h3>
+            <p class="mt-1 text-sm leading-6 text-gray-500">
+              Для каждого уже созданного товара создайте папку с его SKU. Внутри
+              назовите файлы по схеме
+              <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-500"
+                >SKU_номер.расширение</code
+              >.
+            </p>
           </div>
           <div
             class="mt-4 overflow-x-auto rounded-lg border border-gray-200 bg-gray-25 p-3 text-sm text-gray-500"
@@ -526,77 +526,103 @@ images.zip
     ├── 6000011_2.webp
     └── 6000011_3.png</pre>
           </div>
-          <ul class="mt-4 space-y-2 text-sm leading-6 text-gray-500">
-            <li>Поддерживаются JPG, PNG и WebP; ZIP — до 500 МБ.</li>
-            <li>
-              Имя папки и начало имени каждого файла должны совпадать со SKU
-              товара.
-            </li>
-            <li>
-              Фото с номером
-              <code class="rounded bg-gray-100 px-1 py-0.5 text-gray-500"
-                >_1</code
-              >
-              станет обложкой. При том же номере новое фото заменит старое, а
-              отсутствующие в архиве фото сохранятся.
-            </li>
-          </ul>
-        </section>
-
-        <form
-          class="admin-panel--inset p-4 sm:p-5"
-          @submit.prevent="uploadImageImport"
-        >
-          <h2 class="text-base font-semibold text-gray-500">Загрузите архив</h2>
-          <p id="image-import-file-help" class="mt-1 text-sm text-gray-500">
-            Обработка выполняется в фоне. Ошибка одной папки не помешает
-            импортировать остальные товары.
-          </p>
-          <div
-            class="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+          <UiAlert
+            data-product-image-import-info
+            tone="additional"
+            live="polite"
+            class="mt-4 leading-6"
           >
-            <div class="min-w-0">
-              <p
-                id="image-import-file-label"
-                class="mb-1.5 text-sm font-medium text-gray-500"
-              >
-                ZIP-архив с изображениями
-              </p>
-              <input
-                id="image-import-file"
-                ref="imageInput"
-                type="file"
-                accept=".zip,application/zip"
-                class="hidden"
-                :disabled="imageBusy"
-                @change="selectImageFile"
-              />
-              <UiButton
-                type="button"
-                variant="secondary"
-                class="w-full min-w-0 justify-start text-left"
-                :disabled="imageBusy"
-                aria-labelledby="image-import-file-label image-import-file-selection"
-                aria-describedby="image-import-file-help"
-                @click="imageInput?.click()"
-              >
-                <Upload :size="18" class="shrink-0" aria-hidden="true" />
-                <span
-                  id="image-import-file-selection"
-                  class="min-w-0 break-all"
-                  >{{ imageFile?.name ?? 'Выбрать ZIP-архив' }}</span
-                >
-              </UiButton>
-            </div>
-            <UiButton
-              type="submit"
-              :loading="imageBusy"
-              :disabled="imageBusy || !imageFile"
-              ><Upload :size="18" aria-hidden="true" />{{
-                imageBusy ? 'Загрузка…' : 'Загрузить архив'
-              }}</UiButton
+            <span class="block"
+              >Поддерживаются JPG, PNG и WebP; ZIP — до 500 МБ.</span
             >
-          </div>
+            <span class="mt-1 block"
+              >Имя папки и начало имени каждого файла должны совпадать со SKU
+              товара.</span
+            >
+            <span class="mt-1 block"
+              >Фото с номером
+              <code class="rounded bg-gray-100 px-1 py-0.5">_1</code>
+              станет обложкой. При том же номере новое фото заменит старое, а
+              отсутствующие в архиве фото сохранятся.</span
+            >
+            <span class="mt-1 block"
+              >Обработка выполняется в фоне. Ошибка одной папки не помешает
+              импортировать остальные товары.</span
+            >
+          </UiAlert>
+        </UiCard>
+
+        <form @submit.prevent="uploadImageImport">
+          <UiCard data-product-image-import-step="2" class="h-full">
+            <template #header>
+              <h2 class="text-base font-semibold text-gray-500">
+                2. Загрузите архив
+              </h2>
+            </template>
+            <input
+              id="image-import-file"
+              ref="imageInput"
+              type="file"
+              accept=".zip,application/zip"
+              aria-label="ZIP-архив с изображениями"
+              tabindex="-1"
+              :disabled="imageBusy"
+              class="hidden"
+              @change="selectImageFile"
+            />
+            <UiFileDropzone
+              data-product-zip-dropzone
+              label="Выберите или перетащите ZIP-архив в эту область"
+              drop-label="Отпустите ZIP-архив для добавления"
+              description="Формат — ZIP. Размер — не больше 500 МБ."
+              format-label="ZIP"
+              icon-tone="yellow"
+              description-id="image-import-file-help"
+              :disabled="imageBusy"
+              @choose="imageInput?.click()"
+              @files="selectDroppedImageFile"
+            >
+              <template #icon>
+                <FileArchive :size="44" :stroke-width="1.4" />
+              </template>
+            </UiFileDropzone>
+            <output
+              v-if="imageFile"
+              id="image-import-file-selection"
+              class="mt-3 block min-w-0 text-sm text-gray-500 [overflow-wrap:anywhere]"
+              aria-live="polite"
+            >
+              <span class="block font-semibold">{{ imageFile.name }}</span>
+              <span class="mt-1 block text-xs">
+                {{
+                  (imageFile.size / 1024).toLocaleString('ru', {
+                    maximumFractionDigits: 1,
+                  })
+                }}
+                КБ · Нажмите на область, чтобы заменить файл.
+              </span>
+            </output>
+            <output v-else class="sr-only" aria-live="polite"
+              >Файл не выбран</output
+            >
+            <p
+              id="image-import-file-help"
+              class="mt-4 text-sm leading-6 text-gray-500"
+            >
+              Нажмите «Загрузить архив», чтобы начать импорт подготовленных
+              изображений.
+            </p>
+            <div class="mt-4 flex justify-end">
+              <UiButton
+                type="submit"
+                :loading="imageBusy"
+                :disabled="imageBusy || !imageFile"
+                ><Upload :size="18" aria-hidden="true" />{{
+                  imageBusy ? 'Загрузка…' : 'Загрузить архив'
+                }}</UiButton
+              >
+            </div>
+          </UiCard>
         </form>
 
         <UiNotification v-if="active && imageError">{{

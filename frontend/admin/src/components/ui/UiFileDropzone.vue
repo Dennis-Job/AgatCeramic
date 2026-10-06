@@ -9,7 +9,7 @@ const props = withDefaults(
     description: string
     formatLabel: string
     dropLabel?: string
-    iconTone?: 'blue' | 'green'
+    iconTone?: 'blue' | 'green' | 'yellow'
     descriptionId?: string
     disabled?: boolean
   }>(),
@@ -70,11 +70,18 @@ watch(
   >
     <span
       class="ui-file-dropzone-icon"
-      :class="{ 'ui-file-dropzone-icon-green': iconTone === 'green' }"
+      :class="{
+        'ui-file-dropzone-icon-green': iconTone === 'green',
+        'ui-file-dropzone-icon-yellow': iconTone === 'yellow',
+      }"
       aria-hidden="true"
     >
       <slot name="icon"><File :size="44" :stroke-width="1.4" /></slot>
-      <span class="ui-file-dropzone-badge">{{ formatLabel }}</span>
+      <span
+        class="ui-file-dropzone-badge"
+        :class="{ 'ui-file-dropzone-badge-yellow': iconTone === 'yellow' }"
+        >{{ formatLabel }}</span
+      >
     </span>
     <span class="min-w-0 flex-1 text-left font-normal">
       <span
@@ -143,6 +150,16 @@ watch(
 .ui-file-dropzone-icon-green .ui-file-dropzone-badge {
   background: var(--color-green-500);
   color: var(--color-white);
+}
+.ui-file-dropzone-icon-yellow {
+  color: var(--color-warning-500);
+}
+.ui-file-dropzone-icon-yellow :deep(svg) {
+  fill: var(--color-warning-100);
+}
+.ui-file-dropzone-badge-yellow {
+  background: var(--color-warning-300);
+  color: var(--color-warning-900);
 }
 @media (max-width: 639px) {
   .ui-file-dropzone {

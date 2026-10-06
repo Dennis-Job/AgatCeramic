@@ -160,3 +160,26 @@ responsive E2E также проверяет 320/640/768/1024/1280 px. UI Design
 
 Изменены `ProductImportWorkspace.vue`, `useProductImport.ts`,
 `e2e/productImport.spec.ts`, этот отчёт и списки задач.
+
+## Шаги загрузки изображений — 2026-10-06
+
+По запросу владельца вкладка изображений разделена на два `UiCard` в стиле
+вкладки товаров: инструкции по структуре архива и отдельная форма загрузки.
+Загрузка переиспользует `UiFileDropzone`, включая выбор и перетаскивание,
+отображение имени/размера ZIP и жёлтую архивную иконку с существующими
+warning tokens. Список форматов, правил имён и главного фото перенесён в
+голубой `UiAlert tone="additional"` вместе с пояснением о фоновой обработке.
+Импортный API и обработка результата не менялись.
+
+Проверки: unit `uiFileDropzone` — 4/4; production build, lint, scoped
+Prettier и `git diff --check` прошли. Два целевых E2E прошли: импорт изображений
+с отчётом и responsive-проверка на 320/640/768/1024/1280 px; E2E также проверяет
+2 шага, содержимое голубого сообщения и состояние выбранного ZIP. Axe сообщает
+контраст `blue-light-500` на `blue-light-50` — 2.58:1; голубая палитра сохранена
+по прямому указанию владельца. Изменение контрастности текста требует
+отдельного указания.
+
+Изменены `frontend/admin/src/features/products/components/ProductImportWorkspace.vue`,
+`frontend/admin/src/components/ui/UiFileDropzone.vue`,
+`frontend/admin/tests/uiFileDropzone.test.ts`,
+`frontend/admin/e2e/productImport.spec.ts`, этот отчёт и списки задач.
