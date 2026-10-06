@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Copy, Pencil, Trash2, X } from '@lucide/vue'
+import { Copy, FileSpreadsheet, Pencil, Trash2, X } from '@lucide/vue'
 import AdminWorkspace from './AdminWorkspace.vue'
 import AuthCard from './AuthCard.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -16,6 +16,7 @@ import UiDialog from '../ui/UiDialog.vue'
 import UiDatePicker from '../ui/UiDatePicker.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
 import UiField from '../ui/UiField.vue'
+import UiFileDropzone from '../ui/UiFileDropzone.vue'
 import UiImagePreview from '../ui/UiImagePreview.vue'
 import UiInput from '../ui/UiInput.vue'
 import UiLoadingState from '../ui/UiLoadingState.vue'
@@ -31,6 +32,11 @@ import UiTextarea from '../ui/UiTextarea.vue'
 type ConfirmMode = 'default' | 'busy' | 'error'
 
 const input = ref('')
+const demoFileInput = ref<HTMLInputElement | null>(null)
+const demoFile = ref<File | null>(null)
+function selectDemoFile(files: FileList | null) {
+  demoFile.value = files?.[0] ?? null
+}
 const populatedInput = ref('Керамогранит')
 const searchInput = ref('')
 const passwordInput = ref('надёжный-пароль')
@@ -124,6 +130,7 @@ const uiComponents = [
   'UiDialogFooter',
   'UiEmptyState',
   'UiField',
+  'UiFileDropzone',
   'UiImagePreview',
   'UiInput',
   'UiLoadingState',
@@ -1097,6 +1104,51 @@ function submitAuthPreview(): void {
           </p>
           <UiImagePreview :url="null" alt="Пример изображения" />
         </div>
+      </UiCard>
+
+      <UiCard data-ui-kit-section="file-upload">
+        <template #header>
+          <h2 class="text-lg font-semibold text-gray-500">
+            Выбор и перетаскивание файла
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiFileDropzone.vue</code>
+          </p>
+        </template>
+        <input
+          ref="demoFileInput"
+          type="file"
+          accept=".xlsx"
+          aria-label="Файл Excel для примера"
+          tabindex="-1"
+          class="hidden"
+          @change="selectDemoFile(($event.target as HTMLInputElement).files)"
+        />
+        <UiFileDropzone
+          label="Выберите или перетащите Excel в эту область"
+          description="Формат — XLSX. Размер — не больше 10 МБ."
+          format-label="XLSX"
+          icon-tone="green"
+          @choose="demoFileInput?.click()"
+          @files="selectDemoFile"
+        >
+          <template #icon
+            ><FileSpreadsheet :size="44" :stroke-width="1.4"
+          /></template>
+        </UiFileDropzone>
+        <output
+          v-if="demoFile"
+          class="mt-3 block text-sm text-gray-500 [overflow-wrap:anywhere]"
+          aria-live="polite"
+          >{{ demoFile.name }}</output
+        >
+        <UiFileDropzone
+          class="mt-4"
+          label="Выбор файла недоступен"
+          description="Действие заблокировано на время загрузки."
+          format-label="IMG"
+          disabled
+        />
       </UiCard>
 
       <UiCard

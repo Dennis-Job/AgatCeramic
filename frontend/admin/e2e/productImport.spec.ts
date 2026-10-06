@@ -43,6 +43,58 @@ async function attach(page: Page) {
     })
 }
 
+test('Excel dropzone selects and replaces a spreadsheet while preserving upload permissions', async ({
+  page,
+}) => {
+  await mockCatalogApi(page)
+  await page.goto('/products/import')
+  const dropzone = page.locator('[data-product-excel-dropzone]')
+  await expect(dropzone).toBeDisabled()
+  await expect(dropzone).toContainText('Выберите или перетащите Excel')
+  await expect(dropzone.locator('.ui-file-dropzone-icon')).toHaveCSS(
+    'color',
+    'rgb(4, 120, 87)',
+  )
+  await page
+    .getByRole('button', { name: 'Категория товаров для загрузки' })
+    .click()
+  await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
+  const dataTransfer = await page.evaluateHandle(() => {
+    const transfer = new DataTransfer()
+    transfer.items.add(
+      new File(['workbook'], 'dropped.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+    )
+    return transfer
+  })
+  await dropzone.dispatchEvent('dragenter', { dataTransfer })
+  await expect(dropzone).toContainText('Отпустите файл Excel')
+  await dropzone.dispatchEvent('drop', { dataTransfer })
+  await expect(page.locator('#product-import-file-selection')).toContainText(
+    'dropped.xlsx',
+  )
+  await expect(
+    page.getByRole('button', { name: 'Загрузить', exact: true }),
+  ).toBeEnabled()
+  const picker = page.waitForEvent('filechooser')
+  await dropzone.click()
+  await (
+    await picker
+  ).setFiles({
+    name: 'replacement.xlsx',
+    mimeType:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: Buffer.from('replacement'),
+  })
+  await expect(page.locator('#product-import-file-selection')).toContainText(
+    'replacement.xlsx',
+  )
+  await page.getByRole('button', { name: 'Загрузить', exact: true }).click()
+  await expect(page.getByText('Успешно: 5. С ошибками: 0.')).toBeVisible()
+  await dataTransfer.dispose()
+})
+
 test('product Excel import downloads category template and preserves processing across page navigation', async ({
   page,
 }) => {

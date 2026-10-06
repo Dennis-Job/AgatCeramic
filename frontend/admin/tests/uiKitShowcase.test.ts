@@ -18,8 +18,8 @@ describe('UiKitShowcase', () => {
     for (const component of [...uiComponents, ...sharedComponents]) {
       expect(inventory, component).toContain(component)
     }
-    expect(uiComponents).toHaveLength(23)
-    expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(13)
+    expect(uiComponents).toHaveLength(24)
+    expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(14)
     expect(
       wrapper.get('[data-ui-kit-section="tabs"] [role="tablist"]').exists(),
     ).toBe(true)

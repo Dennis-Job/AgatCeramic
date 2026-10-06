@@ -7,7 +7,13 @@ import {
   ref,
   watch,
 } from 'vue'
-import { CheckCircle2, Download, ImagePlus, Upload } from '@lucide/vue'
+import {
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  ImagePlus,
+  Upload,
+} from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -17,6 +23,7 @@ import PageHeader from '../../../components/shared/PageHeader.vue'
 import { RouterLink } from 'vue-router'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiField from '../../../components/ui/UiField.vue'
+import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiRadio from '../../../components/ui/UiRadio.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -107,6 +114,11 @@ watch([categoryId, importMode], () => {
 })
 function selectFile(event: Event) {
   selectProductFile((event.target as HTMLInputElement).files?.[0] ?? null)
+}
+function selectDroppedFile(files: FileList) {
+  if (busy.value || !categoryId.value) return
+  selectProductFile(files[0] ?? null)
+  if (input.value) input.value.value = ''
 }
 async function upload() {
   await uploadProducts()
@@ -272,50 +284,60 @@ function selectImageFile(event: Event) {
                   3. Загрузите заполненный файл
                 </h2>
               </template>
+              <input
+                id="product-import-file"
+                ref="input"
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                aria-label="Заполненный шаблон"
+                tabindex="-1"
+                :disabled="busy || !categoryId"
+                class="hidden"
+                @change="selectFile"
+              />
+              <UiFileDropzone
+                data-product-excel-dropzone
+                label="Выберите или перетащите Excel в эту область"
+                drop-label="Отпустите файл Excel для добавления"
+                description="Формат — XLSX. Размер — не больше 10 МБ."
+                format-label="XLSX"
+                icon-tone="green"
+                description-id="product-import-file-help"
+                :disabled="busy || !categoryId"
+                @choose="input?.click()"
+                @files="selectDroppedFile"
+              >
+                <template #icon>
+                  <FileSpreadsheet :size="44" :stroke-width="1.4" />
+                </template>
+              </UiFileDropzone>
+              <output
+                v-if="file"
+                id="product-import-file-selection"
+                class="mt-3 block min-w-0 text-sm text-gray-500 [overflow-wrap:anywhere]"
+                aria-live="polite"
+              >
+                <span class="block font-semibold">{{ file.name }}</span>
+                <span class="mt-1 block text-xs">
+                  {{
+                    (file.size / 1024).toLocaleString('ru', {
+                      maximumFractionDigits: 1,
+                    })
+                  }}
+                  КБ · Нажмите на область, чтобы заменить файл.
+                </span>
+              </output>
+              <output v-else class="sr-only" aria-live="polite"
+                >Файл не выбран</output
+              >
               <p
                 id="product-import-file-help"
-                class="mt-1 text-sm text-gray-500"
+                class="mt-4 text-sm leading-6 text-gray-500"
               >
-                XLSX, до 10 МБ. Корректные товары сохранятся, строки с ошибками
-                можно будет исправить и загрузить повторно.
+                Корректные товары сохранятся, строки с ошибками можно будет
+                исправить и загрузить повторно.
               </p>
-              <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <div class="min-w-0">
-                  <p
-                    id="product-import-file-label"
-                    class="mb-1.5 text-sm font-medium text-gray-500"
-                  >
-                    Заполненный шаблон
-                  </p>
-                  <input
-                    id="product-import-file"
-                    ref="input"
-                    type="file"
-                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    aria-label="Заполненный шаблон"
-                    tabindex="-1"
-                    :disabled="busy || !categoryId"
-                    class="hidden"
-                    @change="selectFile"
-                  /><UiButton
-                    type="button"
-                    variant="secondary"
-                    class="w-full min-w-0 justify-start text-left"
-                    :disabled="busy || !categoryId"
-                    aria-labelledby="product-import-file-label product-import-file-selection"
-                    aria-describedby="product-import-file-help"
-                    @click="input?.click()"
-                    ><Upload
-                      :size="18"
-                      class="shrink-0"
-                      aria-hidden="true"
-                    /><span
-                      id="product-import-file-selection"
-                      class="min-w-0 break-all"
-                      >{{ file?.name ?? 'Выбрать файл XLSX' }}</span
-                    ></UiButton
-                  >
-                </div>
+              <div class="mt-4 flex justify-end">
                 <UiButton
                   type="submit"
                   :loading="busy"
