@@ -195,7 +195,8 @@ screen-reader и focus trap, после закрытия возвращаетс�
 
 `UiAlert` и построенные на нём `UiNotification` отображаются без рамок.
 `UiAlert tone="info"` и `UiAlert tone="additional"` используют дополнительный стиль с фоном
-`blue-light-50` и текстом `blue-light-500`, как у `UiBadge tone="additional"`.
+`blue-light-50` и текстом `blue-light-500`, как у
+`UiBadge tone="additional"`.
 Это оформление применяется ко всем информационным сообщениям, заметкам в
 `UiDialogFooter` и информационным `UiNotification`.
 `UiAlert tone="primary"` использует `primary-50/500`: этот вариант показан в

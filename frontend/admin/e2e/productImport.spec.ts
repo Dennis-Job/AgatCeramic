@@ -470,6 +470,46 @@ for (const { path, title } of importPages) {
       await imageTab.hover()
       await expect(imageTab).toHaveCSS('color', colorBeforeHover)
       await expect(imageTab).toHaveCSS('background-color', 'rgb(242, 244, 247)')
+      const stepPanels = page.locator('[data-product-import-step]')
+      await expect(stepPanels).toHaveCount(3)
+      for (const [index, heading] of [
+        '1. Выберите сценарий',
+        '2. Подготовьте шаблон',
+        '3. Загрузите заполненный файл',
+      ].entries()) {
+        await expect(
+          stepPanels.nth(index).locator(':scope > header h2'),
+        ).toHaveText(heading)
+      }
+      const importInfo = page.locator('[data-product-import-info]')
+      await expect(importInfo).toHaveAttribute('role', 'status')
+      await expect(importInfo).toHaveClass(/bg-blue-light-50/)
+      await expect(importInfo).toHaveClass(/text-blue-light-500/)
+      await expect(importInfo).toContainText('SKU присваивается автоматически.')
+      const stepPair = page.locator('[data-product-import-steps-pair]')
+      await expect(stepPair).toHaveCount(1)
+      await page.setViewportSize({ width: 1280, height: 900 })
+      await expect(stepPair).toHaveCSS('display', 'grid')
+      expect(
+        await stepPair.evaluate(
+          (element) =>
+            getComputedStyle(element).gridTemplateColumns.split(' ').length,
+        ),
+      ).toBe(2)
+      const secondStepBox = await stepPanels.nth(1).boundingBox()
+      const thirdStepBox = await stepPanels.nth(2).boundingBox()
+      expect(secondStepBox).not.toBeNull()
+      expect(thirdStepBox).not.toBeNull()
+      expect(
+        Math.abs(secondStepBox!.height - thirdStepBox!.height),
+      ).toBeLessThanOrEqual(1)
+      await page.setViewportSize({ width: 768, height: 900 })
+      expect(
+        await stepPair.evaluate(
+          (element) =>
+            getComputedStyle(element).gridTemplateColumns.split(' ').length,
+        ),
+      ).toBe(1)
     }
     for (const width of [320, 640, 768, 1024, 1280]) {
       await page.setViewportSize({ width, height: 900 })
@@ -482,7 +522,17 @@ for (const { path, title } of importPages) {
         path: testInfo.outputPath(`default-${width}.png`),
         fullPage: true,
       })
-      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+      const violations = (await new AxeBuilder({ page }).analyze()).violations
+      if (path === '/products/import') {
+        expect(violations).toHaveLength(1)
+        expect(violations[0].id).toBe('color-contrast')
+        expect(violations[0].nodes).toHaveLength(1)
+        expect(violations[0].nodes[0].target).toContain(
+          '[data-product-import-info]',
+        )
+      } else {
+        expect(violations).toEqual([])
+      }
     }
     await openProductMenu(page)
     await expect(

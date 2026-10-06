@@ -222,6 +222,18 @@ describe('shared feedback and destructive confirmation', () => {
     )
   })
 
+  test('keeps the approved palette for additional informational alerts', () => {
+    const wrapper = mount(UiAlert, {
+      props: { tone: 'additional', live: 'polite' },
+      slots: { default: 'Дополнительное информационное сообщение.' },
+    })
+    const alert = wrapper.get('[role="status"]')
+
+    expect(alert.classes()).toContain('bg-blue-light-50')
+    expect(alert.classes()).toContain('text-blue-light-500')
+    expect(alert.attributes('aria-live')).toBe('polite')
+  })
+
   test('uses the shared dialog controls for destructive confirmation', async () => {
     const wrapper = mount(ConfirmDialog, {
       props: {

@@ -10,6 +10,8 @@ import {
 import { CheckCircle2, Download, ImagePlus, Upload } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { RouterLink } from 'vue-router'
@@ -146,153 +148,185 @@ function selectImageFile(event: Event) {
         aria-labelledby="import-tab-products"
         class="space-y-5 py-5 sm:py-6"
       >
-        <fieldset
-          :disabled="busy || downloading"
-          class="admin-panel--inset grid gap-3 p-4 sm:grid-cols-2 sm:p-5"
-        >
-          <legend class="px-1 text-base font-semibold text-gray-500">
-            1. Выберите сценарий
-          </legend>
-          <UiRadio
-            v-model="importMode"
-            name="product-import-mode"
-            value="template"
-            ><span
-              ><span class="block font-semibold text-gray-500"
-                >Добавить товары</span
-              ><span class="mt-1 block text-gray-500"
-                >Создайте товары по шаблону выбранной категории.</span
-              ></span
-            ></UiRadio
-          >
-          <UiRadio v-model="importMode" name="product-import-mode" value="edit"
-            ><span
-              ><span class="block font-semibold text-gray-500"
-                >Редактировать товары</span
-              ><span class="mt-1 block text-gray-500"
-                >Скачайте товары категории с SKU и списками характеристик.</span
-              ></span
-            ></UiRadio
-          >
-        </fieldset>
-        <div>
-          <h2 class="text-base font-semibold text-gray-500">
-            2. Подготовьте шаблон
-          </h2>
-          <p class="mt-1 text-sm text-gray-500">
-            {{
-              importMode === 'template'
-                ? 'До 5 000 товаров в одном файле. Шаблон содержит характеристики выбранной категории.'
-                : 'Файл содержит все товары выбранной категории, их SKU и характеристики. SKU определяет редактируемый товар.'
-            }}
-          </p>
-          <UiLoadingState
-            v-if="categoriesLoading"
-            class="mt-3"
-            label="Загружаем категории…"
-          />
-          <UiNotification v-else-if="active && categoryError"
-            >{{ categoryError }}
-            <UiButton
-              type="button"
-              variant="danger-ghost"
-              size="sm"
-              @click="loadCategories"
-              >Повторить</UiButton
-            ></UiNotification
-          >
-          <UiEmptyState
-            v-else-if="!categoryOptions.length"
-            class="mt-3"
-            label="Категорий пока нет. Сначала создайте категорию в каталоге."
-          />
+        <UiCard data-product-import-step="1">
+          <template #header>
+            <h2
+              id="product-import-step-1-title"
+              class="text-base font-semibold text-gray-500"
+            >
+              1. Выберите сценарий
+            </h2>
+          </template>
           <fieldset
-            v-else
             :disabled="busy || downloading"
-            class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2"
+            aria-labelledby="product-import-step-1-title"
+            class="grid gap-3 sm:grid-cols-2"
           >
-            <UiField class="min-w-0" label="Категория товаров"
-              ><UiSelect
-                v-model="categoryId"
-                class="mt-1.5"
-                :options="categoryOptions"
-                accessible-name="Категория товаров для загрузки"
-                placeholder="Выберите категорию"
-                searchable
-            /></UiField>
-            <UiButton
-              type="button"
-              variant="secondary"
-              class="self-end"
-              :loading="downloading"
-              :disabled="!categoryId || downloading"
-              @click="downloadTemplate()"
-              ><Download :size="18" class="shrink-0" aria-hidden="true" />{{
-                downloading ? 'Скачиваем…' : 'Скачать шаблон Excel'
-              }}</UiButton
+            <UiRadio
+              v-model="importMode"
+              name="product-import-mode"
+              value="template"
+              ><span
+                ><span class="block font-semibold text-gray-500"
+                  >Добавить товары</span
+                ><span class="mt-1 block text-gray-500"
+                  >Создайте товары по шаблону выбранной категории.</span
+                ></span
+              ></UiRadio
+            >
+            <UiRadio
+              v-model="importMode"
+              name="product-import-mode"
+              value="edit"
+              ><span
+                ><span class="block font-semibold text-gray-500"
+                  >Редактировать товары</span
+                ><span class="mt-1 block text-gray-500"
+                  >Скачайте товары категории с SKU и списками
+                  характеристик.</span
+                ></span
+              ></UiRadio
             >
           </fieldset>
-          <p class="mt-3 text-sm leading-6 text-gray-500">
-            {{
-              importMode === 'template'
-                ? 'SKU присваивается автоматически. Slug можно оставить пустым — он создастся из наименования.'
-                : 'Не изменяйте SKU и не добавляйте строки: редактируются только товары выбранной категории.'
-            }}
-            Значения списков выбирайте в ячейках Excel; новые значения
-            добавляются на сайте с соответствующими правами.
-          </p>
-        </div>
-        <form class="admin-panel--inset p-4 sm:p-5" @submit.prevent="upload">
-          <h2 class="text-base font-semibold text-gray-500">
-            3. Загрузите заполненный файл
-          </h2>
-          <p id="product-import-file-help" class="mt-1 text-sm text-gray-500">
-            XLSX, до 10 МБ. Корректные товары сохранятся, строки с ошибками
-            можно будет исправить и загрузить повторно.
-          </p>
-          <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div class="min-w-0">
-              <p
-                id="product-import-file-label"
-                class="mb-1.5 text-sm font-medium text-gray-500"
-              >
-                Заполненный шаблон
-              </p>
-              <input
-                id="product-import-file"
-                ref="input"
-                type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                aria-label="Заполненный шаблон"
-                tabindex="-1"
-                :disabled="busy || !categoryId"
-                class="hidden"
-                @change="selectFile"
-              /><UiButton
+        </UiCard>
+        <div data-product-import-steps-pair class="grid gap-5 lg:grid-cols-2">
+          <UiCard data-product-import-step="2">
+            <template #header>
+              <h2 class="text-base font-semibold text-gray-500">
+                2. Подготовьте шаблон
+              </h2>
+            </template>
+            <p class="mt-1 text-sm text-gray-500">
+              {{
+                importMode === 'template'
+                  ? 'До 5 000 товаров в одном файле. Шаблон содержит характеристики выбранной категории.'
+                  : 'Файл содержит все товары выбранной категории, их SKU и характеристики. SKU определяет редактируемый товар.'
+              }}
+            </p>
+            <UiLoadingState
+              v-if="categoriesLoading"
+              class="mt-3"
+              label="Загружаем категории…"
+            />
+            <UiNotification v-else-if="active && categoryError"
+              >{{ categoryError }}
+              <UiButton
+                type="button"
+                variant="danger-ghost"
+                size="sm"
+                @click="loadCategories"
+                >Повторить</UiButton
+              ></UiNotification
+            >
+            <UiEmptyState
+              v-else-if="!categoryOptions.length"
+              class="mt-3"
+              label="Категорий пока нет. Сначала создайте категорию в каталоге."
+            />
+            <fieldset
+              v-else
+              :disabled="busy || downloading"
+              class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2"
+            >
+              <UiField class="min-w-0" label="Категория товаров"
+                ><UiSelect
+                  v-model="categoryId"
+                  class="mt-1.5"
+                  :options="categoryOptions"
+                  accessible-name="Категория товаров для загрузки"
+                  placeholder="Выберите категорию"
+                  searchable
+              /></UiField>
+              <UiButton
                 type="button"
                 variant="secondary"
-                class="w-full min-w-0 justify-start text-left"
-                :disabled="busy || !categoryId"
-                aria-labelledby="product-import-file-label product-import-file-selection"
-                aria-describedby="product-import-file-help"
-                @click="input?.click()"
-                ><Upload :size="18" class="shrink-0" aria-hidden="true" /><span
-                  id="product-import-file-selection"
-                  class="min-w-0 break-all"
-                  >{{ file?.name ?? 'Выбрать файл XLSX' }}</span
-                ></UiButton
+                class="self-end"
+                :loading="downloading"
+                :disabled="!categoryId || downloading"
+                @click="downloadTemplate()"
+                ><Download :size="18" class="shrink-0" aria-hidden="true" />{{
+                  downloading ? 'Скачиваем…' : 'Скачать шаблон Excel'
+                }}</UiButton
               >
-            </div>
-            <UiButton
-              type="submit"
-              :loading="busy"
-              :disabled="busy || !file || !categoryId"
-              ><Upload :size="18" aria-hidden="true" />{{
-                busy ? 'Загрузка…' : 'Загрузить'
-              }}</UiButton
+            </fieldset>
+            <UiAlert
+              data-product-import-info
+              tone="additional"
+              live="polite"
+              class="mt-3 leading-6"
             >
-          </div>
-        </form>
+              {{
+                importMode === 'template'
+                  ? 'SKU присваивается автоматически. Slug можно оставить пустым — он создастся из наименования.'
+                  : 'Не изменяйте SKU и не добавляйте строки: редактируются только товары выбранной категории.'
+              }}
+              Значения списков выбирайте в ячейках Excel; новые значения
+              добавляются на сайте с соответствующими правами.
+            </UiAlert>
+          </UiCard>
+          <form @submit.prevent="upload">
+            <UiCard data-product-import-step="3" class="h-full">
+              <template #header>
+                <h2 class="text-base font-semibold text-gray-500">
+                  3. Загрузите заполненный файл
+                </h2>
+              </template>
+              <p
+                id="product-import-file-help"
+                class="mt-1 text-sm text-gray-500"
+              >
+                XLSX, до 10 МБ. Корректные товары сохранятся, строки с ошибками
+                можно будет исправить и загрузить повторно.
+              </p>
+              <div class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div class="min-w-0">
+                  <p
+                    id="product-import-file-label"
+                    class="mb-1.5 text-sm font-medium text-gray-500"
+                  >
+                    Заполненный шаблон
+                  </p>
+                  <input
+                    id="product-import-file"
+                    ref="input"
+                    type="file"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    aria-label="Заполненный шаблон"
+                    tabindex="-1"
+                    :disabled="busy || !categoryId"
+                    class="hidden"
+                    @change="selectFile"
+                  /><UiButton
+                    type="button"
+                    variant="secondary"
+                    class="w-full min-w-0 justify-start text-left"
+                    :disabled="busy || !categoryId"
+                    aria-labelledby="product-import-file-label product-import-file-selection"
+                    aria-describedby="product-import-file-help"
+                    @click="input?.click()"
+                    ><Upload
+                      :size="18"
+                      class="shrink-0"
+                      aria-hidden="true"
+                    /><span
+                      id="product-import-file-selection"
+                      class="min-w-0 break-all"
+                      >{{ file?.name ?? 'Выбрать файл XLSX' }}</span
+                    ></UiButton
+                  >
+                </div>
+                <UiButton
+                  type="submit"
+                  :loading="busy"
+                  :disabled="busy || !file || !categoryId"
+                  ><Upload :size="18" aria-hidden="true" />{{
+                    busy ? 'Загрузка…' : 'Загрузить'
+                  }}</UiButton
+                >
+              </div>
+            </UiCard>
+          </form>
+        </div>
         <UiNotification v-if="active && error">{{ error }}</UiNotification>
         <UiNotification v-if="active && notice" tone="success" live="polite">{{
           notice
