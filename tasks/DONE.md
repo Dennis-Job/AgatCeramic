@@ -353,3 +353,16 @@
   показан в UI-kit. UI Design Guard accepted; lint/build/format прошли,
   новые unit 3/3 и Excel E2E прошли. Профильный E2E 21/25, полный 176/304;
   ограничения проверок описаны в [отчёте](../docs/ADMIN_EXCEL_UPLOAD_SURFACE_REPORT.md).
+
+- [x] Ссылка в заголовке импорта, 2026-10-06: по указанию владельца удалена
+  «К списку товаров» с `/products/import`. Переход через меню сохраняет
+  фоновую обработку. Lint/format/build и два профильных E2E passed;
+  unit 98/102 с четырьмя прежними failure.
+  [Отчёт](../docs/ADMIN_PRODUCT_IMPORT_SURFACE_REPORT.md).
+
+- [x] Статус и шкала импорта XLSX/ZIP, 2026-10-06: постоянный заголовок,
+  шкала 0–100%, процент по серверным счётчикам, activity при неизвестном
+  объёме и reduced-motion. Сохранены ошибки и результаты; API не менялся.
+  Lint/build/format passed, новые lifecycle E2E 2/2 и scoped axe passed,
+  UI Design Guard accepted. Прежние ошибки общего прогона описаны в
+  [отчёте](../docs/ADMIN_PRODUCT_IMPORT_SURFACE_REPORT.md).

@@ -95,6 +95,170 @@ test('Excel dropzone selects and replaces a spreadsheet while preserving upload 
   await dataTransfer.dispose()
 })
 
+for (const kind of ['products', 'images'] as const) {
+  test(`${kind}: import progress shows idle, transfer, server counts, failure and completion`, async ({
+    page,
+  }, testInfo) => {
+    const deferredRequests = createDeferredApiRequests()
+    await mockCatalogApi(page, { deferredRequests })
+    const uploadPath =
+      kind === 'products'
+        ? '/admin/products/import'
+        : '/admin/product-image-imports'
+    const statusPath =
+      kind === 'products'
+        ? '/admin/product-imports/1'
+        : '/admin/product-image-imports/1'
+    let phase: 'pending' | 'processing' | 'failed' | 'completed' = 'pending'
+    await page.route(`**${statusPath}`, async (route) => {
+      const completed = phase === 'completed'
+      const total = phase === 'pending' ? 0 : 5
+      const processed = completed ? 5 : phase === 'pending' ? 0 : 2
+      await route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            filename: kind === 'products' ? 'products.xlsx' : 'images.zip',
+            status: phase,
+            created_at: '2026-10-06T12:00:00Z',
+            started_at: null,
+            completed_at: null,
+            error_message: phase === 'failed' ? 'Обработка остановлена.' : null,
+            has_error_file: false,
+            ...(kind === 'products'
+              ? {
+                  category_id: 1,
+                  total_rows: total,
+                  processed_rows: processed,
+                  created_rows: processed,
+                  updated_rows: 0,
+                  failed_rows: 0,
+                  row_errors: [],
+                }
+              : {
+                  total_folders: total,
+                  processed_folders: processed,
+                  created_images: processed,
+                  replaced_images: 0,
+                  failed_folders: 0,
+                  errors: [],
+                }),
+          },
+        },
+      })
+    })
+    await page.goto('/products/import')
+    if (kind === 'images') {
+      await page.getByRole('tab', { name: 'Загрузка изображений' }).click()
+    } else {
+      await page
+        .getByRole('button', { name: 'Категория товаров для загрузки' })
+        .click()
+      await page
+        .getByRole('button', { name: 'Керамогранит', exact: true })
+        .click()
+    }
+    const panel = page.locator(`#import-panel-${kind}`)
+    const status = panel.getByRole('region', {
+      name: 'Статус импорта',
+      exact: true,
+    })
+    const progress = status.getByRole('progressbar')
+    await expect(progress).toHaveAttribute('value', '0')
+    await expect(status.locator('[data-import-progress-label]')).toHaveText(
+      '0%',
+    )
+    const input = panel.locator(
+      kind === 'products' ? '#product-import-file' : '#image-import-file',
+    )
+    const file = {
+      name: kind === 'products' ? 'products.xlsx' : 'images.zip',
+      mimeType:
+        kind === 'products'
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : 'application/zip',
+      buffer: Buffer.from('mock import'),
+    }
+    await input.setInputFiles(file)
+    const transfer = deferredRequests.defer(uploadPath)
+    await panel
+      .getByRole('button', {
+        name: kind === 'products' ? 'Загрузить' : 'Загрузить архив',
+        exact: true,
+      })
+      .click()
+    await transfer.requested
+    await expect(progress).not.toHaveAttribute('value')
+    await expect(status).toContainText(
+      kind === 'products' ? 'Загружаем XLSX-файл' : 'Загружаем ZIP-архив',
+    )
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await expect(progress).toHaveCSS(
+      'animation-name',
+      /^import-progress-active/,
+    )
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await expect(progress).toHaveCSS('animation-name', 'none')
+    await status.screenshot({
+      path: testInfo.outputPath('progress-unknown.png'),
+    })
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    transfer.release()
+    await expect(status).toContainText(
+      kind === 'products'
+        ? 'Файл ожидает обработки'
+        : 'Архив ожидает обработки',
+    )
+    await expect(progress).not.toHaveAttribute('value')
+    phase = 'processing'
+    await expect(progress).toHaveAttribute('value', '40')
+    await expect(status.locator('[data-import-progress-label]')).toHaveText(
+      '40%',
+    )
+    const accessibility = await new AxeBuilder({ page })
+      .include(
+        `#import-panel-${kind} [aria-labelledby="${kind === 'products' ? 'product' : 'image'}-import-result-title"]`,
+      )
+      .analyze()
+    expect(
+      accessibility.violations.filter((item) =>
+        ['serious', 'critical'].includes(item.impact ?? ''),
+      ),
+    ).toEqual([])
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 })
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true)
+      await status.screenshot({
+        path: testInfo.outputPath(`progress-${width}.png`),
+      })
+    }
+    phase = 'failed'
+    await expect(status).toContainText('Загрузка не завершена')
+    await expect(progress).toHaveAttribute('value', '40')
+    await expect(status.locator('[data-import-progress-label]')).toHaveText(
+      '40%',
+    )
+    phase = 'completed'
+    await input.setInputFiles(file)
+    await expect(progress).toHaveAttribute('value', '0')
+    await panel
+      .getByRole('button', {
+        name: kind === 'products' ? 'Загрузить' : 'Загрузить архив',
+        exact: true,
+      })
+      .click()
+    await expect(progress).toHaveAttribute('value', '100')
+    await expect(status.locator('[data-import-progress-label]')).toHaveText(
+      '100%',
+    )
+    await expect(status).toContainText('Загрузка завершена')
+  })
+}
+
 test('product Excel import downloads category template and preserves processing across page navigation', async ({
   page,
 }) => {
@@ -126,7 +290,8 @@ test('product Excel import downloads category template and preserves processing 
   await expect(
     workspace.getByRole('button', { name: 'Загрузка…' }),
   ).toBeDisabled()
-  await page.getByRole('link', { name: 'К списку товаров' }).click()
+  await openProductMenu(page)
+  await page.getByRole('link', { name: 'Список товаров', exact: true }).click()
   await expect(page).toHaveURL('/products')
   const search = page.getByRole('textbox', { name: 'Поиск', exact: true })
   await search.focus()
@@ -144,7 +309,10 @@ test('product Excel import downloads category template and preserves processing 
       .getByRole('status')
       .filter({ hasText: 'Успешно: 5. С ошибками: 0.' }),
   ).toBeVisible()
-  await expect(workspace.getByRole('progressbar')).toHaveCount(0)
+  await expect(workspace.getByRole('progressbar')).toHaveAttribute(
+    'value',
+    '100',
+  )
 })
 
 test('product Excel import errors are downloadable and page is accessible at supported widths', async ({
@@ -269,7 +437,7 @@ test('product Excel import shows upload failure and allows retry', async ({
   await expect(
     workspace.getByRole('button', { name: 'Загрузить', exact: true }),
   ).toBeEnabled()
-  await expect(workspace.getByRole('progressbar')).toHaveCount(0)
+  await expect(workspace.getByRole('progressbar')).toHaveAttribute('value', '0')
 })
 
 test('product Excel import retains job on polling failure and refreshes status', async ({

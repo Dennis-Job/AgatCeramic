@@ -20,7 +20,6 @@ import UiCard from '../../../components/ui/UiCard.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import { RouterLink } from 'vue-router'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
@@ -137,15 +136,7 @@ function selectImageFile(event: Event) {
       eyebrow="Товары"
       title="Добавить массово товары"
       description="Добавление и массовое редактирование товаров из Excel, загрузка изображений из ZIP."
-    >
-      <template #actions>
-        <RouterLink
-          to="/products"
-          class="text-sm font-medium text-primary-500 underline admin-focus"
-          >К списку товаров</RouterLink
-        >
-      </template>
-    </PageHeader>
+    />
     <div class="min-w-0">
       <UiSegmentedTabs
         v-model="tab"
@@ -354,8 +345,9 @@ function selectImageFile(event: Event) {
         <UiNotification v-if="active && notice" tone="success" live="polite">{{
           notice
         }}</UiNotification>
-        <div
+        <section
           class="admin-panel--state min-h-32 p-4 sm:p-5"
+          aria-labelledby="product-import-result-title"
           :class="
             finished
               ? result?.failed_rows || result?.status === 'failed'
@@ -364,9 +356,26 @@ function selectImageFile(event: Event) {
               : 'border-gray-200 bg-gray-25'
           "
         >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2
+              id="product-import-result-title"
+              class="text-base font-semibold text-gray-500"
+            >
+              Статус импорта
+            </h2>
+            <span
+              data-import-progress-label
+              class="text-sm font-semibold tabular-nums text-gray-500"
+              aria-hidden="true"
+            >
+              {{ progress === undefined ? 'Выполняется…' : `${progress}%` }}
+            </span>
+          </div>
           <template v-if="finished && result">
             <div role="status" aria-live="polite">
-              <h2 class="flex items-center gap-2 font-semibold text-gray-500">
+              <h3
+                class="mt-2 flex items-center gap-2 font-semibold text-gray-500"
+              >
                 <CheckCircle2
                   v-if="!result.failed_rows && result.status === 'completed'"
                   :size="20"
@@ -379,7 +388,7 @@ function selectImageFile(event: Event) {
                       ? 'Загрузка завершена с ошибками'
                       : 'Загрузка завершена'
                 }}
-              </h2>
+              </h3>
               <p class="mt-2 text-sm text-gray-500">
                 Успешно: {{ successful }}. С ошибками:
                 {{ result.failed_rows ?? 0 }}.
@@ -433,21 +442,13 @@ function selectImageFile(event: Event) {
             >
           </template>
           <template v-else>
-            <p role="status" aria-live="polite" class="text-sm text-gray-500">
+            <p
+              role="status"
+              aria-live="polite"
+              class="mt-2 text-sm text-gray-500"
+            >
               {{ statusText }}
             </p>
-            <progress
-              v-if="busy"
-              class="mt-4 h-2 w-full accent-primary-500"
-              aria-label="Обработка товаров"
-              :value="progress"
-              max="100"
-            />
-            <div
-              v-else
-              class="mt-4 h-2 rounded-full bg-gray-200"
-              aria-hidden="true"
-            />
             <p v-if="busy" class="mt-3 text-xs text-gray-500">
               Можно перейти на другую страницу — обработка продолжится.
               Вернитесь в «Товары» → «Добавить массово товары», чтобы посмотреть
@@ -464,7 +465,21 @@ function selectImageFile(event: Event) {
               ></UiNotification
             >
           </template>
-        </div>
+          <div class="mt-4">
+            <progress
+              class="import-progress"
+              aria-label="Обработка товаров"
+              :value="progress"
+              max="100"
+            />
+            <div
+              class="mt-2 flex justify-between text-xs tabular-nums text-gray-500"
+              aria-hidden="true"
+            >
+              <span>0%</span><span>100%</span>
+            </div>
+          </div>
+        </section>
       </div>
       <div
         v-show="tab === 'images'"
@@ -599,11 +614,29 @@ images.zip
           "
           aria-labelledby="image-import-result-title"
         >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2
+              id="image-import-result-title"
+              class="text-base font-semibold text-gray-500"
+            >
+              Статус импорта
+            </h2>
+            <span
+              data-import-progress-label
+              class="text-sm font-semibold tabular-nums text-gray-500"
+              aria-hidden="true"
+            >
+              {{
+                imageProgress === undefined
+                  ? 'Выполняется…'
+                  : `${imageProgress}%`
+              }}
+            </span>
+          </div>
           <template v-if="imageFinished && imageResult">
             <div role="status" aria-live="polite">
-              <h2
-                id="image-import-result-title"
-                class="flex items-center gap-2 font-semibold text-gray-500"
+              <h3
+                class="mt-2 flex items-center gap-2 font-semibold text-gray-500"
               >
                 <CheckCircle2
                   v-if="
@@ -620,7 +653,7 @@ images.zip
                       ? 'Загрузка завершена с ошибками'
                       : 'Загрузка завершена'
                 }}
-              </h2>
+              </h3>
               <dl class="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div>
                   <dt class="text-gray-500">Папок обработано</dt>
@@ -695,12 +728,6 @@ images.zip
             >
           </template>
           <template v-else>
-            <h2
-              id="image-import-result-title"
-              class="text-base font-semibold text-gray-500"
-            >
-              Статус импорта
-            </h2>
             <p
               role="status"
               aria-live="polite"
@@ -718,18 +745,6 @@ images.zip
                       : 'Выберите подготовленный ZIP-архив, чтобы начать импорт.'
               }}
             </p>
-            <progress
-              v-if="imageBusy"
-              class="mt-4 h-2 w-full accent-primary-500"
-              aria-label="Обработка изображений"
-              :value="imageProgress"
-              max="100"
-            />
-            <div
-              v-else
-              class="mt-4 h-2 rounded-full bg-gray-200"
-              aria-hidden="true"
-            />
             <p v-if="imageBusy" class="mt-3 text-xs text-gray-500">
               Можно перейти на другую страницу — обработка продолжится.
               Вернитесь в «Товары» → «Добавить массово товары», чтобы посмотреть
@@ -746,8 +761,74 @@ images.zip
               ></UiNotification
             >
           </template>
+          <div class="mt-4">
+            <progress
+              class="import-progress"
+              aria-label="Обработка изображений"
+              :value="imageProgress"
+              max="100"
+            />
+            <div
+              class="mt-2 flex justify-between text-xs tabular-nums text-gray-500"
+              aria-hidden="true"
+            >
+              <span>0%</span><span>100%</span>
+            </div>
+          </div>
         </section>
       </div>
     </div>
   </AdminWorkspace>
 </template>
+
+<style scoped>
+.import-progress {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: var(--admin-spacing-2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--admin-radius-lg);
+  background: var(--color-gray-200);
+}
+.import-progress::-webkit-progress-bar {
+  border-radius: inherit;
+  background: transparent;
+}
+.import-progress::-webkit-progress-value {
+  border-radius: inherit;
+  background: var(--color-primary-500);
+}
+.import-progress::-moz-progress-bar {
+  border-radius: inherit;
+  background: var(--color-primary-500);
+}
+.import-progress:indeterminate {
+  background-image: linear-gradient(
+    var(--color-primary-500),
+    var(--color-primary-500)
+  );
+  background-repeat: no-repeat;
+  background-size: calc(100% / 3) 100%;
+  animation: import-progress-active calc(var(--admin-transition-duration) * 8)
+    linear infinite;
+}
+.import-progress:indeterminate::-moz-progress-bar {
+  background: transparent;
+}
+@keyframes import-progress-active {
+  from {
+    background-position: -50% 0;
+  }
+  to {
+    background-position: 150% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .import-progress:indeterminate {
+    animation: none;
+    background-position: 50% 0;
+  }
+}
+</style>

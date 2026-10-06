@@ -50,28 +50,20 @@ export function useProductImport(onCompleted: () => void) {
       (productImport.result.value?.updated_rows ?? 0),
   )
   const progress = computed(() =>
-    productImport.result.value?.total_rows
-      ? Math.min(
-          100,
-          Math.round(
-            (productImport.result.value.processed_rows /
-              productImport.result.value.total_rows) *
-              100,
-          ),
-        )
-      : undefined,
+    calculateProgress(
+      productImport.result.value?.status,
+      productImport.result.value?.processed_rows ?? 0,
+      productImport.result.value?.total_rows ?? 0,
+      productImport.uploading.value,
+    ),
   )
   const imageProgress = computed(() =>
-    imageImport.result.value?.total_folders
-      ? Math.min(
-          100,
-          Math.round(
-            (imageImport.result.value.processed_folders /
-              imageImport.result.value.total_folders) *
-              100,
-          ),
-        )
-      : undefined,
+    calculateProgress(
+      imageImport.result.value?.status,
+      imageImport.result.value?.processed_folders ?? 0,
+      imageImport.result.value?.total_folders ?? 0,
+      imageImport.uploading.value,
+    ),
   )
   const statusText = computed(() => {
     if (productImport.uploading.value) return 'Загружаем XLSX-файл…'
@@ -158,6 +150,20 @@ export function useProductImport(onCompleted: () => void) {
     uploadProducts,
     downloadImageErrors,
   }
+}
+
+function calculateProgress(
+  status: 'pending' | 'processing' | 'completed' | 'failed' | undefined,
+  processed: number,
+  total: number,
+  uploading: boolean,
+) {
+  if (uploading) return undefined
+  if (status === 'completed') return 100
+  if (total > 0)
+    return Math.max(0, Math.min(100, Math.round((processed / total) * 100)))
+  if (status === 'pending' || status === 'processing') return undefined
+  return 0
 }
 
 function flattenCategories(
