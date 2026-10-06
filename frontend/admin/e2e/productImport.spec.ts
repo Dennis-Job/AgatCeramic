@@ -486,6 +486,24 @@ for (const { path, title } of importPages) {
       await expect(importInfo).toHaveClass(/bg-blue-light-50/)
       await expect(importInfo).toHaveClass(/text-blue-light-500/)
       await expect(importInfo).toContainText('SKU присваивается автоматически.')
+      const categoryTrigger = page.getByRole('button', {
+        name: 'Категория товаров для загрузки',
+      })
+      await categoryTrigger.click()
+      const categoryMenu = page.getByRole('group', {
+        name: 'Категория товаров для загрузки: варианты',
+      })
+      await expect(categoryMenu).toBeVisible()
+      expect(
+        await categoryMenu.evaluate(
+          (element) =>
+            element.parentElement === document.body &&
+            getComputedStyle(element).position === 'fixed',
+        ),
+      ).toBe(true)
+      await page.keyboard.press('Escape')
+      await expect(categoryMenu).toHaveCount(0)
+      await page.mouse.move(0, 0)
       const stepPair = page.locator('[data-product-import-steps-pair]')
       await expect(stepPair).toHaveCount(1)
       await page.setViewportSize({ width: 1280, height: 900 })
@@ -527,8 +545,8 @@ for (const { path, title } of importPages) {
         expect(violations).toHaveLength(1)
         expect(violations[0].id).toBe('color-contrast')
         expect(violations[0].nodes).toHaveLength(1)
-        expect(violations[0].nodes[0].target).toContain(
-          '[data-product-import-info]',
+        expect(violations[0].nodes[0].html).toContain(
+          'data-product-import-info',
         )
       } else {
         expect(violations).toEqual([])

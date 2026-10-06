@@ -236,6 +236,7 @@ function selectImageFile(event: Event) {
                   accessible-name="Категория товаров для загрузки"
                   placeholder="Выберите категорию"
                   searchable
+                  teleport-menu
               /></UiField>
               <UiButton
                 type="button"
