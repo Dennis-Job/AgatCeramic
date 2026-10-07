@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Plus } from '@lucide/vue'
-import UiNotification from '../../../components/ui/UiNotification.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiSelect from '../../../components/ui/UiSelect.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
@@ -19,11 +20,16 @@ const auth = useAuthStore()
 const workspace = useCategoriesWorkspace()
 const {
   catalog,
+  overview,
+  refreshOverview,
   categories,
   error,
   loading,
   deleting,
   deletingBusy,
+  deletionError,
+  showDelete,
+  closeDelete,
   details,
   detailsLoading,
   detailsAttributes,
@@ -67,6 +73,31 @@ const {
   submit: submitAssignments,
 } = assignments
 const canManage = computed(() => auth.hasPermission('catalog.manage'))
+const selectedCategoryId = ref('')
+const categoryOptions = computed(() => [
+  { label: 'Все категории', value: '' },
+  ...categories.value.map((category) => ({
+    label:
+      category.parent_id === null
+        ? category.name
+        : `${categoryName(category.parent_id) ?? 'Без родителя'} / ${category.name}`,
+    value: String(category.id),
+  })),
+])
+watch(categories, (items) => {
+  if (
+    selectedCategoryId.value &&
+    !items.some((category) => String(category.id) === selectedCategoryId.value)
+  ) {
+    selectedCategoryId.value = ''
+  }
+})
+async function saveAssignments(): Promise<void> {
+  const id = assignmentCategory.value?.id
+  await submitAssignments()
+  // Group replacement can succeed even when attribute replacement fails.
+  if (id !== undefined) await refreshOverview(id)
+}
 onMounted(load)
 </script>
 <template>
@@ -74,22 +105,37 @@ onMounted(load)
     <template #intro>
       <PageHeader class="mb-7" eyebrow="Каталог" title="Категории"
         ><template #actions
-          ><UiButton v-if="canManage" @click="showEditor()"
+          ><UiSelect
+            v-model="selectedCategoryId"
+            :options="categoryOptions"
+            accessible-name="Категория"
+            searchable
+            teleport-menu
+            class="w-full sm:w-72"
+            :disabled="loading || !categories.length"
+          /><UiButton v-if="canManage" @click="showEditor()"
             ><Plus :size="18" />Добавить категорию</UiButton
           ></template
         ></PageHeader
       >
     </template>
-    <UiNotification v-if="error">{{ error }}</UiNotification
-    ><CategoriesList
+    <div v-if="error" class="admin-container space-y-3">
+      <UiAlert>{{ error }}</UiAlert>
+      <UiButton variant="secondary" @click="load">Повторить загрузку</UiButton>
+    </div>
+    <CategoriesList
+      v-else
+      v-model:selected-category-id="selectedCategoryId"
       :categories="categories"
+      :overview="overview"
       :loading="loading"
       :can-manage="canManage"
       :category-name="categoryName"
       @details="showDetails"
       @edit="showEditor"
       @configure="showAssignments"
-      @remove="deleting = $event"
+      @remove="showDelete"
+      @retry="refreshOverview"
     /><CategoryDetailsDialog
       :category="details"
       :loading="detailsLoading"
@@ -109,7 +155,7 @@ onMounted(load)
       :selected-attribute-ids="selectedAttributeIds"
       :required-attribute-ids="requiredAttributeIds"
       @close="closeAssignments"
-      @submit="submitAssignments"
+      @submit="saveAssignments"
       @groups-change="setGroupIds"
       @attributes-change="setAttributeIds"
       @required-change="requiredAttributeIds = $event.map(Number)"
@@ -129,7 +175,8 @@ onMounted(load)
       title="Удалить категорию?"
       :description="`Категория «${deleting?.name ?? ''}» будет удалена. Это действие нельзя отменить.`"
       :busy="deletingBusy"
-      @close="deleting = null"
+      :error="deletionError"
+      @close="closeDelete"
       @confirm="confirmDelete"
     />
   </AdminWorkspace>

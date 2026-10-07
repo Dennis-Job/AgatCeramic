@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
-import { attribute, attributeGroup, brand, category } from './catalogApi'
+import { attribute, attributeGroup, brand } from './catalogApi'
 
 const widths = [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]
 const longName =
@@ -57,9 +57,6 @@ const contact = {
   created_at: timestamp,
 }
 const fixtures = {
-  '/admin/categories/tree': {
-    data: repeated({ ...category, name: longName, slug: longCode }),
-  },
   '/admin/brands': collection(
     repeated({ ...brand, name: longName, slug: longCode }),
   ),
@@ -132,8 +129,8 @@ const fixtures = {
   ),
 }
 
+// The expanded category overview has its own responsive coverage in categoryOverview.spec.ts.
 for (const [path, label, cardsBelow] of [
-  ['/categories', 'Список категорий', 0],
   ['/brands', 'Список брендов', 0],
   ['/attribute-groups', 'Список групп характеристик', 0],
   ['/attributes', 'Список характеристик', 0],

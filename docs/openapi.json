@@ -2438,6 +2438,35 @@
                 }
             }
         },
+        "/admin/categories/overview": {
+            "get": {
+                "operationId": "getCategoryOverview",
+                "summary": "Get the nested category overview with assigned attributes and groups",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Complete category overview; empty assignment arrays mean no assignments",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CategoryOverviewResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                }
+            }
+        },
         "/admin/categories/tree": {
             "get": {
                 "operationId": "getCategoryTree",
@@ -10695,6 +10724,140 @@
                                 }
                             },
                             "additionalProperties": false
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CategoryOverview": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "parent_id",
+                    "name",
+                    "slug",
+                    "description",
+                    "sku_prefix",
+                    "is_parent",
+                    "is_active",
+                    "sort_order",
+                    "children",
+                    "created_at",
+                    "updated_at",
+                    "image_id",
+                    "image",
+                    "documents",
+                    "attributes",
+                    "attribute_groups"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "parent_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "sku_prefix": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^(?:[1-9]|[1-9][1-9])$",
+                        "description": "Server-owned one- or two-digit root product-type prefix inherited by descendants. Multiples of ten are not allocated. Null is possible only for a legacy or directly inserted category until first use."
+                    },
+                    "is_parent": {
+                        "type": "boolean"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "sort_order": {
+                        "type": "integer"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryOverview"
+                        }
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "image": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Media"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "documents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Media"
+                        }
+                    },
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Attribute"
+                        }
+                    },
+                    "attribute_groups": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AttributeGroup"
+                        }
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Category overview including all assigned groups and attributes. Required flags are specific to the category; filter flags come from the attribute definition."
+            },
+            "CategoryOverviewResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryOverview"
                         }
                     }
                 },

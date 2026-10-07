@@ -96,6 +96,7 @@ Route::get('orders/{order}/status-history', [OrderController::class, 'statusHist
 Route::get('orders/{order}/comments', [OrderController::class, 'comments'])->name('orders.comments.index');
 Route::post('orders/{order}/comments', [OrderController::class, 'storeComment'])->name('orders.comments.store');
 Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment.update');
+Route::get('categories/overview', [CategoryController::class, 'overview'])->name('categories.overview');
 Route::get('categories/tree', [CategoryController::class, 'tree'])->name('categories.tree');
 Route::get('categories/{category}/attributes', [CategoryAttributeController::class, 'index'])->name('categories.attributes.index');
 Route::put('categories/{category}/attributes', [CategoryAttributeController::class, 'replace'])->name('categories.attributes.replace');

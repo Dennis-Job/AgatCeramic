@@ -205,6 +205,16 @@ export async function mockAdminBaseline(
     if (fixtures[path]) return route.fulfill({ json: fixtures[path] })
     const collection = <T>(items: T[]) => page(state === 'empty' ? [] : items)
     const data = <T>(items: T[]) => ({ data: state === 'empty' ? [] : items })
+    if (path === '/admin/categories/overview')
+      return route.fulfill({
+        json: data([
+          {
+            ...category,
+            attributes: [attribute],
+            attribute_groups: [attributeGroup],
+          },
+        ]),
+      })
     if (path === '/admin/categories/tree')
       return route.fulfill({ json: data([category]) })
     if (path === '/admin/brands')

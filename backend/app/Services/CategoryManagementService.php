@@ -82,7 +82,23 @@ class CategoryManagementService
     /** @return Collection<int, Category> */
     public function tree(): Collection
     {
-        $categories = Category::query()->with(['image', 'documents'])->orderBy('sort_order')->orderBy('name')->get();
+        return $this->buildTree(false);
+    }
+
+    /** @return Collection<int, Category> */
+    public function overview(): Collection
+    {
+        return $this->buildTree(true);
+    }
+
+    /** @return Collection<int, Category> */
+    private function buildTree(bool $includeAssignments): Collection
+    {
+        $relations = ['image', 'documents'];
+        if ($includeAssignments) {
+            $relations = [...$relations, 'attributes.options', 'attributeGroups'];
+        }
+        $categories = Category::query()->with($relations)->orderBy('sort_order')->orderBy('name')->get();
         $byParent = $categories->groupBy('parent_id');
         $attach = function (mixed $category) use (&$attach, $byParent): Category {
             if (! $category instanceof Category) {

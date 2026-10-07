@@ -286,6 +286,31 @@ export async function mockCatalogApi(
       return
     }
 
+    if (path === '/admin/categories/overview') {
+      const assignedAttributes = [
+        attribute,
+        ...(options.includeSharedAttribute ? [sharedAttribute] : []),
+        ...(options.includeOptionalSelectAttribute
+          ? [optionalSelectAttribute]
+          : []),
+      ]
+      await route.fulfill({
+        json: {
+          data:
+            options.emptyPath === path
+              ? []
+              : [
+                  {
+                    ...category,
+                    attributes: assignedAttributes,
+                    attribute_groups: [attributeGroup],
+                  },
+                ],
+        },
+      })
+      return
+    }
+
     if (path === '/admin/categories/tree') {
       await route.fulfill({
         json: { data: options.emptyPath === path ? [] : [category] },
