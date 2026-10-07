@@ -46,6 +46,8 @@ const {
   open: editorOpen,
   editing,
   busy: editorBusy,
+  mediaPending,
+  mediaUploading,
   error: editorError,
   form: editorForm,
   title: editorTitle,
@@ -163,6 +165,8 @@ onMounted(load)
       :open="editorOpen"
       :title="editorTitle"
       :busy="editorBusy"
+      :media-pending="mediaPending"
+      :media-uploading="mediaUploading"
       :error="editorError"
       :form="editorForm"
       :parent-options="parentOptionsFor(editing)"
@@ -170,6 +174,8 @@ onMounted(load)
       :update-slug="updateSlug"
       @close="closeEditor"
       @submit="submitEditor"
+      @media-pending="mediaPending = $event"
+      @media-uploading="mediaUploading = $event"
     /><ConfirmDialog
       :open="Boolean(deleting)"
       title="Удалить категорию?"

@@ -1,5 +1,56 @@
 # DONE
 
+- [x] Центрирование пустого фото категории, 2026-10-07: icon/text
+      выровнены по вертикали через сохранение flex layout общего preview.
+      Build/lint/scoped format, 6 E2E passed; UI Design Guard accepted.
+      [Отчёт и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
+- [x] Локальная ошибка 500 при очистке фото категории, 2026-10-07:
+      причина — неприменённые миграции контента (`home_pages` отсутствовала).
+      После резервной копии применены две существующие миграции;
+      проблемный PATCH возвращает HTTP 200, проверен с rollback без удаления
+      рабочего фото. [Диагностика и проверка](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
+- [x] Очистка файлов фото категории, 2026-10-07: после Save/замены/удаления
+      категории неиспользуемое фото и миниатюра очищаются из storage через
+      durable очередь; shared ID/URL references, права и rollback защищены.
+      Backend 399, PostgreSQL feature 64 + concurrency 5, реальный Redis worker
+      1/84; static checks/API checks passed. Независимое backend review accepted.
+      [Отчёт и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
+- [x] Корзина на фото категории, 2026-10-07: подпись убрана, отдельная иконка
+      доступна на hover/focus и touch; снимает связь после Save, сам файл
+      сохраняется. 36 E2E + 1 touch, lint/build/scoped format passed;
+      UI Design Guard accepted. [Отчёт и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
+- [x] Компактное изображение категории, 2026-10-07: постоянный select заменён
+      checkbox с очисткой и восстановлением, preview 128 px и общий dropzone
+      в ряд; фото открывается на весь viewport. Сохранены выбор загруженных
+      файлов, права и guards; focus и доступность close проверены. 35 E2E,
+      lint/build/scoped Prettier passed; unit 103/108 с 5 прежними failures.
+      UI Design Guard accepted. [Отчёт и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
+- [x] Изображение категории из модального окна, 2026-10-07: существующий
+      inline uploader подключён к созданию и редактированию. Автовыбор и
+      preview, pending/in-flight guards, ошибки/retry и media.manage сохранены;
+      устранена гонка первоначального списка с upload. 33 E2E категорий и
+      1 appearance regression, lint/build/scoped Prettier passed.
+      UI Design Guard accepted. [Отчёт и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
+- [x] Единый стиль формы категорий, 2026-10-07: удалён UI документов, окно
+      расширено до 768 px, выровнены поля и отступы, действия в одном ряду.
+      Короткий заголовок редактирования сохраняет область полей при имени
+      255 символов, меню родителей не обрезается. 23 E2E, lint/build и
+      scoped Prettier passed; unit 103/108 с 5 прежними failures.
+      UI Design Guard accepted. [Отчёт и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
+- [x] Прокрутка создания и редактирования категорий, 2026-10-07: поля
+      прокручиваются в отдельной области, заголовок и кнопки остаются доступны;
+      последнее поле больше не перекрывается footer. 23 E2E, включая 10
+      регрессионных сценариев на 320–1280 × 600 px, 4 unit, lint/build и
+      форматирование прошли. UI Design Guard accepted.
+      [Отчёт и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
 - [x] Выбор категории, 2026-10-07: верхний поиск заменён существующим UiSelect
       со всеми созданными категориями и пунктом «Все категории». Выбор по ID
       сохраняет контекст дерева, удаление сбрасывает фильтр. Открытое меню

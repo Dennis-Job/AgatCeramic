@@ -18,6 +18,8 @@ class PageManagementService
     public function create(User $actor, array $attributes): Page
     {
         return DB::transaction(function () use ($actor, $attributes): Page {
+            // Serialize URL-only references with media cleanup, before page/media locks.
+            HomePage::query()->lockForUpdate()->findOrFail(1);
             if (! is_string($attributes['title'] ?? null)) {
                 throw new \LogicException('Validated page title must be a string.');
             }
@@ -37,7 +39,7 @@ class PageManagementService
     {
         return DB::transaction(function () use ($actor, $page, $attributes): Page {
             // Same lock order as the legacy home editor and media removal.
-            $home = $page->slug === 'home' ? HomePage::query()->lockForUpdate()->find(1) : null;
+            $home = HomePage::query()->lockForUpdate()->findOrFail(1);
             $page = Page::query()->whereKey($page->id)->lockForUpdate()->firstOrFail();
             if (isset($attributes['slug']) && $attributes['slug'] !== $page->slug && in_array($page->slug, PageBlocks::RESERVED_SLUGS, true)) {
                 throw ValidationException::withMessages(['slug' => 'Адрес системной страницы нельзя изменить.']);
@@ -58,7 +60,7 @@ class PageManagementService
             }
             $page->fill($attributes)->save();
             $this->syncMedia($page);
-            if ($home !== null) {
+            if ($page->slug === 'home') {
                 $this->syncHomeDraft($page, $home);
             }
             $this->auditLogService->record($actor, 'page.updated', $page);
@@ -81,9 +83,7 @@ class PageManagementService
     public function publish(User $actor, Page $page): Page
     {
         return DB::transaction(function () use ($actor, $page): Page {
-            if ($page->slug === 'home') {
-                HomePage::query()->lockForUpdate()->findOrFail(1);
-            }
+            HomePage::query()->lockForUpdate()->findOrFail(1);
             $page = Page::query()->whereKey($page->id)->lockForUpdate()->firstOrFail();
             $snapshot = $this->snapshot($page);
             // Publishing page content never publishes a global appearance draft.

@@ -5,6 +5,7 @@ import type { Media } from '../types/media.types'
 export function useInlineMediaUpload(
   kind: Media['kind'],
   onUploaded: (media: Media) => void,
+  successMessage = 'Файл загружен и выбран. Сохраните черновик, чтобы закрепить выбор.',
 ) {
   const file = ref<File | null>(null)
   const title = ref('')
@@ -13,11 +14,14 @@ export function useInlineMediaUpload(
   const error = ref('')
   const success = ref('')
   const inputKey = ref(0)
-  function choose(event: Event): void {
-    file.value = (event.target as HTMLInputElement).files?.[0] ?? null
+  function chooseFile(selectedFile: File | null): void {
+    file.value = selectedFile
     title.value = file.value?.name.replace(/\.[^.]+$/, '') ?? ''
     error.value = ''
     success.value = ''
+  }
+  function choose(event: Event): void {
+    chooseFile((event.target as HTMLInputElement).files?.[0] ?? null)
   }
   async function upload(): Promise<void> {
     if (!file.value || uploading.value) return
@@ -40,8 +44,7 @@ export function useInlineMediaUpload(
       title.value = ''
       alt.value = ''
       inputKey.value++
-      success.value =
-        'Файл загружен и выбран. Сохраните черновик, чтобы закрепить выбор.'
+      success.value = successMessage
     } catch (reason) {
       error.value =
         reason instanceof Error ? reason.message : 'Не удалось загрузить файл.'
@@ -65,6 +68,7 @@ export function useInlineMediaUpload(
     success,
     inputKey,
     choose,
+    chooseFile,
     upload,
   }
 }

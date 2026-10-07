@@ -13,14 +13,18 @@ export function useCategoryForm(
   const open = ref(false)
   const editing = ref<Category | null>(null)
   const busy = ref(false)
+  const mediaPending = ref(false)
+  const mediaUploading = ref(false)
   const error = ref('')
   const form = ref<CategoryPayload>(emptyCategory())
   const manuallyEditedSlug = ref(false)
   const title = computed(() =>
-    editing.value ? `Категория: ${editing.value.name}` : 'Новая категория',
+    editing.value ? 'Редактирование категории' : 'Новая категория',
   )
 
   function show(category: Category | null = null): void {
+    mediaPending.value = false
+    mediaUploading.value = false
     editing.value = category
     manuallyEditedSlug.value = category !== null
     error.value = ''
@@ -48,6 +52,7 @@ export function useCategoryForm(
     manuallyEditedSlug.value = true
   }
   async function submit(): Promise<void> {
+    if (busy.value || mediaPending.value || mediaUploading.value) return
     error.value = validateCategory(form.value)
     if (error.value) return
     busy.value = true
@@ -68,11 +73,14 @@ export function useCategoryForm(
     open,
     editing,
     busy,
+    mediaPending,
+    mediaUploading,
     error,
     form,
     title,
     show,
     close: () => {
+      if (busy.value || mediaUploading.value) return
       open.value = false
     },
     updateName,

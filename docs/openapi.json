@@ -2612,7 +2612,7 @@
             "patch": {
                 "operationId": "updateCategory",
                 "summary": "Update a category",
-                "description": "Serialises category-tree mutations and rejects a concurrent change that would make the selected parent ineligible or introduce a cycle.",
+                "description": "Serialises category-tree mutations and rejects a concurrent change that would make the selected parent ineligible or introduce a cycle. Requires catalog.manage. When image_id changes, the previous image is removed from the media library only if it has no remaining references and the actor has media.manage. Original and thumbnail file cleanup is durably queued after commit; shared files are preserved.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -2648,6 +2648,7 @@
             },
             "delete": {
                 "operationId": "deleteCategory",
+                "description": "Requires catalog.manage. After category deletion, its image is removed from the media library only if it has no remaining references and the actor has media.manage. Original and thumbnail file cleanup is durably queued after commit; shared files are preserved.",
                 "summary": "Delete a category",
                 "security": [
                     {

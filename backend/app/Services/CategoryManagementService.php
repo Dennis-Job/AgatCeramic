@@ -13,6 +13,7 @@ class CategoryManagementService
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly CatalogSkuService $skuService,
+        private readonly MediaManagementService $mediaService,
     ) {}
 
     /** @param array<string, mixed> $attributes */
@@ -46,6 +47,7 @@ class CategoryManagementService
             $category = $categories?->firstWhere('id', $category->id)
                 ?? Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
             $originalParentId = $category->parent_id;
+            $originalImageId = $category->image_id;
             $parent = null;
 
             if (array_key_exists('parent_id', $attributes)) {
@@ -66,17 +68,25 @@ class CategoryManagementService
                 $this->skuService->reassignSubtree($category, $parent);
             }
             $this->auditLogService->record($actor, 'category.updated', $category);
+            if ($originalImageId !== null && $category->image_id !== $originalImageId) {
+                $this->mediaService->deleteIfUnused($actor, $originalImageId);
+            }
 
             return $category->load(['image', 'documents']);
-        });
+        }, 3);
     }
 
     public function delete(User $actor, Category $category): void
     {
         DB::transaction(function () use ($actor, $category): void {
+            $category = Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+            $imageId = $category->image_id;
             $this->auditLogService->record($actor, 'category.deleted', $category);
             $category->delete();
-        });
+            if ($imageId !== null) {
+                $this->mediaService->deleteIfUnused($actor, $imageId);
+            }
+        }, 3);
     }
 
     /** @return Collection<int, Category> */

@@ -2,6 +2,148 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from './fixtures'
 import { mockCategoryOverview, overviewCategories } from './categoryOverviewApi'
 
+for (const width of [320, 640, 768, 1024, 1280]) {
+  for (const mode of ['create', 'edit'] as const) {
+    test(`category ${mode} form scrolls every field above its actions at ${width}px`, async ({
+      page,
+    }) => {
+      await mockCategoryOverview(page, mode === 'edit')
+      await page.setViewportSize({ width, height: 600 })
+      await page.goto('/categories')
+      const opener =
+        mode === 'create'
+          ? page.getByRole('button', {
+              name: 'Добавить категорию',
+              exact: true,
+            })
+          : page
+              .locator('#category-1')
+              .getByRole('button', { name: /^Редактировать категорию/ })
+      await opener.click()
+      const dialog = page.getByRole('dialog')
+      await expect(
+        dialog.getByText('Документы категории', { exact: true }),
+      ).toHaveCount(0)
+      const cancelBounds = (await dialog
+        .getByRole('button', { name: 'Отмена', exact: true })
+        .boundingBox())!
+      const saveBounds = (await dialog
+        .getByRole('button', { name: 'Сохранить', exact: true })
+        .boundingBox())!
+      expect(Math.abs(cancelBounds.y - saveBounds.y)).toBeLessThanOrEqual(1)
+      if (width >= 640) {
+        const nameControl = await dialog
+          .getByRole('textbox', { name: /^Название(?:\s|$)/ })
+          .evaluate((el) => {
+            const rect = el.parentElement!.getBoundingClientRect()
+            return { width: rect.width, height: rect.height }
+          })
+        const sortControl = await dialog
+          .getByRole('spinbutton', { name: /^Порядок сортировки(?:\s|$)/ })
+          .evaluate((el) => {
+            const rect = el.parentElement!.getBoundingClientRect()
+            return { width: rect.width, height: rect.height }
+          })
+        const parentBounds = (await dialog
+          .getByRole('button', { name: 'Родительская категория', exact: true })
+          .boundingBox())!
+        expect(
+          Math.abs(sortControl.width - nameControl.width),
+        ).toBeLessThanOrEqual(1)
+        expect(
+          Math.abs(parentBounds.width - nameControl.width),
+        ).toBeLessThanOrEqual(1)
+        expect(
+          Math.abs(parentBounds.height - nameControl.height),
+        ).toBeLessThanOrEqual(1)
+      }
+      const scroller = dialog.locator('.overflow-y-auto').first()
+      expect(
+        await scroller.evaluate((el) => el.clientHeight),
+      ).toBeGreaterThanOrEqual(36)
+      await scroller.hover()
+      await page.mouse.wheel(0, 2000)
+      await expect
+        .poll(() => scroller.evaluate((el) => el.scrollTop))
+        .toBeGreaterThan(0)
+      await expect
+        .poll(async () => {
+          const field = (await dialog
+            .getByRole('spinbutton', {
+              name: /^Порядок сортировки(?:\s|$)/,
+            })
+            .boundingBox())!
+          const footer = (await dialog.locator('footer').boundingBox())!
+          const lastControlBottom = await dialog
+            .getByRole('checkbox', { name: 'Категория активна', exact: true })
+            .evaluate(
+              (el) => el.closest('label')!.getBoundingClientRect().bottom,
+            )
+          return Math.max(field.y + field.height, lastControlBottom) - footer.y
+        })
+        .toBeLessThanOrEqual(0)
+      const bounds = (await dialog.boundingBox())!
+      expect(bounds.x).toBeGreaterThanOrEqual(0)
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
+      expect(bounds.y + bounds.height).toBeLessThanOrEqual(600)
+      await expect(
+        dialog.getByRole('button', { name: 'Сохранить', exact: true }),
+      ).toBeInViewport()
+      const accessibility = await new AxeBuilder({ page })
+        .include('[role="dialog"]')
+        .disableRules(['color-contrast'])
+        .analyze()
+      expect(
+        accessibility.violations.filter((item) =>
+          ['serious', 'critical'].includes(item.impact ?? ''),
+        ),
+      ).toEqual([])
+      await page.screenshot({
+        path: `.tmp/category-${mode}-scroll-${width}.png`,
+      })
+      const sort = dialog.getByRole('spinbutton', {
+        name: /^Порядок сортировки(?:\s|$)/,
+      })
+      await sort.scrollIntoViewIfNeeded()
+      await expect(sort).toBeInViewport({ ratio: 1 })
+      const parent = dialog.getByRole('button', {
+        name: 'Родительская категория',
+        exact: true,
+      })
+      await parent.click()
+      const parentMenu = page.getByRole('group', {
+        name: 'Родительская категория: варианты',
+        exact: true,
+      })
+      await expect
+        .poll(() =>
+          parentMenu
+            .getByRole('button')
+            .last()
+            .evaluate((el) => {
+              const rect = el.getBoundingClientRect()
+              return el.contains(
+                document.elementFromPoint(
+                  rect.x + rect.width / 2,
+                  rect.y + rect.height / 2,
+                ),
+              )
+            }),
+        )
+        .toBe(true)
+      await page.screenshot({
+        path: `.tmp/category-${mode}-parent-menu-${width}.png`,
+      })
+      await page.keyboard.press('Escape')
+      await expect(parentMenu).toHaveCount(0)
+      await expect(parent).toBeFocused()
+      await page.keyboard.press('Escape')
+      await expect(dialog).toHaveCount(0)
+      await expect(opener).toBeFocused()
+    })
+  }
+}
+
 test('categories show the complete hierarchy, groups and per-attribute flags on arrival', async ({
   page,
 }) => {

@@ -68,7 +68,9 @@ export const overviewCategories = [
 
 export async function mockCategoryOverview(page: Page, longText = false) {
   const categoryName = longText
-    ? 'Керамогранит для общественных помещений с повышенной проходимостью и декоративными вставками'
+    ? 'Керамогранит для общественных помещений с повышенной проходимостью и декоративными вставками '
+        .repeat(3)
+        .slice(0, 255)
     : 'Керамогранит'
   const mainGroup = longText
     ? {

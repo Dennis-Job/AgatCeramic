@@ -42,8 +42,8 @@ class MediaLibraryTest extends TestCase
         ])->assertCreated()->assertJsonPath('data.image.id', $image)->json('data.id');
 
         $this->actingAs($actor)->deleteJson("/api/v1/admin/media/{$image}")->assertUnprocessable();
-        $this->actingAs($actor)->patchJson("/api/v1/admin/brands/{$brand}", ['logo_id' => null, 'document_ids' => []])->assertOk();
         $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$category}", ['image_id' => null, 'document_ids' => []])->assertOk();
+        $this->actingAs($actor)->patchJson("/api/v1/admin/brands/{$brand}", ['logo_id' => null, 'document_ids' => []])->assertOk();
         $path = Media::query()->findOrFail($image)->path;
         $thumbnailPath = Media::query()->findOrFail($image)->thumbnail_path;
         Storage::disk('public')->assertExists($thumbnailPath);

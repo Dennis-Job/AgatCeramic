@@ -19,6 +19,7 @@ const props = defineProps<{
   modelValue: number | null | number[]
   disabled?: boolean
   inlineUpload?: boolean
+  uploadSuccessMessage?: string
   requireManagePermission?: boolean
 }>()
 const emit = defineEmits<{
@@ -40,16 +41,20 @@ const { options, loading, error, load } = useMediaOptions(
   props.kind,
   () => canSelect.value || (canPreview.value && Boolean(props.modelValue)),
 )
-const upload = useInlineMediaUpload(props.kind, (media) => {
-  options.value = [
-    media,
-    ...options.value.filter((item) => item.id !== media.id),
-  ]
-  emit(
-    'update:modelValue',
-    props.kind === 'document' ? [...selected.value, media.id] : media.id,
-  )
-})
+const upload = useInlineMediaUpload(
+  props.kind,
+  (media) => {
+    options.value = [
+      media,
+      ...options.value.filter((item) => item.id !== media.id),
+    ]
+    emit(
+      'update:modelValue',
+      props.kind === 'document' ? [...selected.value, media.id] : media.id,
+    )
+  },
+  props.uploadSuccessMessage,
+)
 watch(
   () => upload.uploading.value || Boolean(upload.file.value),
   (value) => emit('pending', value),
@@ -111,6 +116,7 @@ function toggle(id: number, checked: boolean) {
         variant="secondary"
         size="sm"
         class="mt-2"
+        :disabled="disabled || upload.uploading.value"
         @click="load"
         >Повторить загрузку</UiButton
       >
@@ -232,7 +238,7 @@ function toggle(id: number, checked: boolean) {
           variant="secondary"
           size="sm"
           :loading="upload.uploading.value"
-          :disabled="disabled"
+          :disabled="disabled || loading"
           @click="upload.upload"
           >Загрузить и выбрать</UiButton
         >
