@@ -15,6 +15,7 @@ import {
   Upload,
 } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
+import UiProgressBar from '../../../components/ui/UiProgressBar.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
@@ -71,6 +72,7 @@ const importTabs = [
 const {
   file,
   result,
+  uploading,
   downloading,
   error,
   notice,
@@ -470,20 +472,12 @@ function selectDroppedImageFile(files: FileList) {
               ></UiNotification
             >
           </template>
-          <div class="mt-4">
-            <progress
-              class="import-progress"
-              aria-label="Обработка товаров"
-              :value="progress"
-              max="100"
-            />
-            <div
-              class="mt-2 flex justify-between text-xs tabular-nums text-gray-500"
-              aria-hidden="true"
-            >
-              <span>0%</span><span>100%</span>
-            </div>
-          </div>
+          <UiProgressBar
+            class="mt-4"
+            :label="uploading ? 'Загрузка XLSX-файла' : 'Обработка товаров'"
+            :value="progress"
+            show-scale
+          />
         </section>
       </div>
       <div
@@ -787,74 +781,16 @@ images.zip
               ></UiNotification
             >
           </template>
-          <div class="mt-4">
-            <progress
-              class="import-progress"
-              aria-label="Обработка изображений"
-              :value="imageProgress"
-              max="100"
-            />
-            <div
-              class="mt-2 flex justify-between text-xs tabular-nums text-gray-500"
-              aria-hidden="true"
-            >
-              <span>0%</span><span>100%</span>
-            </div>
-          </div>
+          <UiProgressBar
+            class="mt-4"
+            :label="
+              imageUploading ? 'Загрузка ZIP-архива' : 'Обработка изображений'
+            "
+            :value="imageProgress"
+            show-scale
+          />
         </section>
       </div>
     </div>
   </AdminWorkspace>
 </template>
-
-<style scoped>
-.import-progress {
-  appearance: none;
-  display: block;
-  width: 100%;
-  height: var(--admin-spacing-2);
-  overflow: hidden;
-  border: 0;
-  border-radius: var(--admin-radius-lg);
-  background: var(--color-gray-200);
-}
-.import-progress::-webkit-progress-bar {
-  border-radius: inherit;
-  background: transparent;
-}
-.import-progress::-webkit-progress-value {
-  border-radius: inherit;
-  background: var(--color-primary-500);
-}
-.import-progress::-moz-progress-bar {
-  border-radius: inherit;
-  background: var(--color-primary-500);
-}
-.import-progress:indeterminate {
-  background-image: linear-gradient(
-    var(--color-primary-500),
-    var(--color-primary-500)
-  );
-  background-repeat: no-repeat;
-  background-size: calc(100% / 3) 100%;
-  animation: import-progress-active calc(var(--admin-transition-duration) * 8)
-    linear infinite;
-}
-.import-progress:indeterminate::-moz-progress-bar {
-  background: transparent;
-}
-@keyframes import-progress-active {
-  from {
-    background-position: -50% 0;
-  }
-  to {
-    background-position: 150% 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .import-progress:indeterminate {
-    animation: none;
-    background-position: 50% 0;
-  }
-}
-</style>

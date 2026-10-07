@@ -23,7 +23,10 @@ test('Excel feedback floats at the top right without moving filters, supports re
   const toast = page.locator(host).getByRole('status')
   await expect(toast).toContainText('Все товары экспортированы в Excel.')
   await expect(toast).toHaveAttribute('aria-live', 'polite')
+  await expect(toast).toHaveCSS('box-shadow', 'none')
+  await expect(toast).toHaveCSS('border-radius', '16px')
   expect((await search.boundingBox())?.y).toBe(before?.y)
+  const close = toast.getByRole('button', { name: 'Закрыть уведомление' })
   await toast.hover()
   for (const width of [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
     await page.setViewportSize({ width, height: 910 })
@@ -38,7 +41,6 @@ test('Excel feedback floats at the top right without moving filters, supports re
     await page.screenshot({ path: `.tmp/notifications/export-${width}.png` })
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   }
-  const close = toast.getByRole('button', { name: 'Закрыть уведомление' })
   await close.focus()
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await page.keyboard.press('Escape')
@@ -64,6 +66,25 @@ test('long errors and multiple notifications fit a scrollable stack at 320px', a
   expect(
     await page
       .locator(host)
+      .getByRole('alert')
+      .evaluateAll((notifications) =>
+        notifications.map((notification) => {
+          const style = getComputedStyle(notification)
+          return {
+            boxShadow: style.boxShadow,
+            borderRadius: style.borderRadius,
+          }
+        }),
+      ),
+  ).toEqual(
+    Array.from({ length: 6 }, () => ({
+      boxShadow: 'none',
+      borderRadius: '16px',
+    })),
+  )
+  expect(
+    await page
+      .locator(host)
       .evaluate((el) => el.scrollHeight > el.clientHeight),
   ).toBe(true)
   expect(
@@ -79,6 +100,26 @@ test('long errors and multiple notifications fit a scrollable stack at 320px', a
     .first()
     .click()
   await expect(page.locator(host).getByRole('alert')).toHaveCount(5)
+})
+
+test('notification close button stays transparent inside an open dialog', async ({
+  page,
+}) => {
+  await mockAdminBaseline(page)
+  await page.goto('/ui-kit')
+  await page
+    .getByRole('button', { name: 'Confirm: error', exact: true })
+    .click()
+  const dialog = page.getByRole('dialog', {
+    name: 'Удалить демонстрационный элемент?',
+    exact: true,
+  })
+  await expect(dialog).toBeVisible()
+  const close = dialog
+    .locator(host)
+    .getByRole('alert')
+    .getByRole('button', { name: 'Закрыть уведомление' })
+  await expect(close).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
 })
 
 test('notification Escape and Tab work inside a dialog without closing it', async ({

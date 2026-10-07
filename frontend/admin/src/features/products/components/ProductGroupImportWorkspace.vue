@@ -12,6 +12,7 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
+import UiProgressBar from '../../../components/ui/UiProgressBar.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { useProductGroupImport } from '../composables/useProductGroupImport'
@@ -167,7 +168,14 @@ watch([busy, downloading], async () => {
                   ? 'Обработка…'
                   : 'Запустить обработку'
             }}</UiButton
-          ><UiNotification
+          >
+          <div v-if="active && uploading" class="mt-4">
+            <p role="status" aria-live="polite" class="text-sm text-gray-500">
+              Загружаем XLSX-файл…
+            </p>
+            <UiProgressBar class="mt-3" label="Загрузка XLSX-файла" />
+          </div>
+          <UiNotification
             v-if="active && busy && !uploading"
             tone="info"
             live="polite"
@@ -214,15 +222,18 @@ watch([busy, downloading], async () => {
         <UiNotification
           v-if="active && result.status === 'failed' && result.error_message"
           >{{ result.error_message }}</UiNotification
-        ><progress
-          v-if="progress !== null"
-          class="mt-3 h-2 w-full overflow-hidden rounded-full"
-          :value="Math.min(progress, 100)"
-          max="100"
-          aria-label="Ход обработки групп"
-        >
-          {{ progress }}%</progress
-        ><UiNotification v-if="active && pollingError"
+        ><UiProgressBar
+          v-if="
+            progress !== null ||
+            result.status === 'pending' ||
+            result.status === 'processing'
+          "
+          class="mt-3"
+          label="Ход обработки групп"
+          :value="progress === null ? undefined : Math.min(progress, 100)"
+          :show-scale="progress !== null"
+        />
+        <UiNotification v-if="active && pollingError"
           >Не удалось обновить статус.
           <UiButton
             type="button"

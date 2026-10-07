@@ -10169,7 +10169,7 @@
                     "row_errors": {"type": "array", "items": {"type": "object", "required": ["row", "name", "messages"], "properties": {"row": {"type": "integer", "minimum": 2}, "name": {"type": ["string", "null"]}, "messages": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false}},
                     "created_rows": {"type": "integer", "minimum": 0},
                     "updated_rows": {"type": "integer", "minimum": 0},
-                    "processed_rows": {"type": "integer", "minimum": 0},
+                    "processed_rows": {"type": "integer", "minimum": 0, "description": "For group imports, counts handled group rows including unchanged rows, not atomic workbook jobs. Equals total_rows when status is completed, including workbook validation errors."},
                     "error_message": {"type": ["string", "null"]},
                     "created_at": {"type": ["string", "null"], "format": "date-time"},
                     "started_at": {"type": ["string", "null"], "format": "date-time"},

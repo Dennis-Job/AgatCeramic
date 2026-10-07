@@ -23,7 +23,8 @@
   gap: var(--admin-spacing-3);
   margin: 0;
   pointer-events: auto;
-  box-shadow: var(--admin-shadow-dropdown);
+  border-radius: var(--admin-radius-xl);
+  box-shadow: none;
 }
 .admin-notification-content {
   flex: 1;

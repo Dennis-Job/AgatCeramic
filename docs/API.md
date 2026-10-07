@@ -504,6 +504,8 @@ attribute axes represented as human-readable names. Its `Состав` sheet map
 the `Инструкция` sheet explains the supported actions and every required field for managers. The
 The axis columns expose names through an Excel dropdown backed by a hidden technical column, while
 the importer resolves each selected name to its current attribute ID.
+Empty cells appended to the end of a header row by Excel are ignored, including the blank
+header above the hidden axis helper column. Required header names and their order remain strict.
 `POST /admin/products/group-import` accepts the edited workbook as multipart `file` (up to 10 MiB),
 requires both `imports.manage` and `catalog.manage`, and runs in the queue. `Изменить` replaces the
 complete membership and axes; a product can move between groups in one workbook. Groups are never
@@ -511,6 +513,9 @@ removed by omission: `Расформировать` is required. The entire work
 atomically, so a conflict leaves no partial group changes. The initiating user polls
 `GET /admin/product-group-imports/{productImport}` and may download terminal row errors from
 `GET /admin/product-group-imports/{productImport}/errors`.
+For group imports, `total_rows` counts all non-empty group rows, including `Не изменять`.
+`processed_rows` counts handled group rows rather than the single atomic workbook job;
+when the workbook completes it equals `total_rows`, including files rejected with row errors.
 
 `POST /admin/product-image-imports` accepts a ZIP archive in multipart field `file` and requires
 `imports.manage`. The archive may be up to 500 MiB and is retained only on the private disk while

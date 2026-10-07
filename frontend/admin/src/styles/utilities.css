@@ -56,7 +56,7 @@
   border-end-end-radius: var(--admin-dialog-radius);
 }
 .admin-dialog-content:not(.admin-navigation-dialog-panel)
-  button[aria-label^='Закрыть'] {
+  button[aria-label^='Закрыть']:not(.admin-notification-close) {
   width: var(--admin-dialog-close-size);
   height: var(--admin-dialog-close-size);
   padding: 0;
@@ -66,12 +66,14 @@
   color: var(--admin-color-gray-500);
 }
 .admin-dialog-content:not(.admin-navigation-dialog-panel)
-  button[aria-label^='Закрыть']:hover:not(:disabled) {
+  button[aria-label^='Закрыть']:not(.admin-notification-close):hover:not(
+    :disabled
+  ) {
   background: var(--admin-color-gray-100);
   color: var(--admin-color-gray-500);
 }
 .admin-dialog-content:not(.admin-navigation-dialog-panel)
-  button[aria-label^='Закрыть']:disabled {
+  button[aria-label^='Закрыть']:not(.admin-notification-close):disabled {
   cursor: not-allowed;
   background: var(--admin-color-gray-100);
   color: var(--admin-color-gray-500);
