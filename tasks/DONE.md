@@ -501,3 +501,14 @@
   доступное имя меняется между загрузкой и обработкой. UI Design Guard принят;
   lint, build, scoped format и ручной просмотр трёх маршрутов прошли.
   Автоматические тесты не запускались.
+
+- [x] TASK-A086 — Защита деталей категории от запоздавших ответов, 2026-10-11:
+  отдельная версия запроса защищает success/error/finally; closeDetails и
+  размонтирование инвалидируют старые ответы, включая повторное открытие той же
+  категории. Лишние Map/watch незавершённого варианта удалены.
+  Добавлены 11 unit-сценариев и 7 E2E; 15 адресных unit и 23 существующих
+  category E2E passed. Build/TypeScript, ESLint, scoped Prettier и diff check passed.
+  Полный unit: 114 passed, те же 5 failures воспроизведены на HEAD; полный
+  format:check сохраняет несвязанные несоответствия, включая `.tmp`.
+  Независимый UI Design Guard accepted; API, миграции и палитра сохранены.
+  [Отчёт](../docs/ADMIN_CATEGORIES_OVERVIEW.md).

@@ -217,7 +217,7 @@ DB-зависимые изменения проверяются на изоли�
     Dry-run counts, tombstones, evidence и запрет apply без утверждённой policy сохраняются;
     действующая [retention matrix](../docs/PERSONAL_DATA_LIFECYCLE.md) не меняется.
 
-- [ ] TASK-A086 **P1** Защитить детали категории от запоздавших ответов
+- [x] TASK-A086 **P1** Защитить детали категории от запоздавших ответов
   - Цель: [showDetails в useCategoriesWorkspace](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts)
     не подставляет attributes/groups категории A после выбора B. На `9140b92` с управляемыми
     mock-ответами воспроизведены details.id = 2 и attributes/groups.category_id = 1.
@@ -228,6 +228,8 @@ DB-зависимые изменения проверяются на изоли�
   - Готовность: поведенческие regression tests проверяют обратный порядок ответов, ошибку A
     после успеха B, закрытие/повторное открытие и актуальный loading state; category details E2E
     подтверждает соответствие выбранной категории её характеристикам и группам.
+  - Выполнено 2026-10-11: 15 адресных unit, 7 новых и 23 существующих category E2E passed;
+    независимый UI Design Guard accepted. [Отчёт](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
 
 ## Interim Audit Phases 0–6
 

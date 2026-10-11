@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { ref } from 'vue'
+import { effectScope, ref } from 'vue'
 import CategoriesList from '../src/features/categories/components/CategoriesList.vue'
 import { useCategoriesWorkspace } from '../src/features/categories/composables/useCategoriesWorkspace'
 import type { Category } from '../src/features/categories/types/category.types'
@@ -62,6 +62,151 @@ const groups = [
     updated_at: timestamp,
   },
 ]
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: Error) => void
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}
+
+describe('category details request lifecycle', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    api.getCategoryAttributeGroups.mockResolvedValue(groups)
+  })
+
+  test('keeps current loading when an earlier category finishes first', async () => {
+    const old = deferred<Attribute[]>()
+    const current = deferred<Attribute[]>()
+    api.getCategoryAttributes
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(current.promise)
+    const workspace = useCategoriesWorkspace()
+    const first = workspace.showDetails(category(1, 'Плитка'))
+    const second = workspace.showDetails(category(2, 'Для пола'))
+    old.resolve([attribute])
+    await first
+    expect(workspace.detailsLoading.value).toBe(true)
+    expect(workspace.detailsAttributes.value).toEqual([])
+    expect(workspace.detailsGroups.value).toEqual([])
+    current.resolve([{ ...attribute, name: 'Цвет' }])
+    await second
+    expect(workspace.detailsLoading.value).toBe(false)
+    expect(workspace.detailsAttributes.value[0]?.name).toBe('Цвет')
+    expect(workspace.detailsGroups.value).toEqual(groups)
+  })
+
+  test.each(['success', 'error'] as const)(
+    'ignores late %s from another category after the current response',
+    async (outcome) => {
+      const old = deferred<Attribute[]>()
+      api.getCategoryAttributes
+        .mockReturnValueOnce(old.promise)
+        .mockResolvedValueOnce([{ ...attribute, name: 'Цвет' }])
+      const workspace = useCategoriesWorkspace()
+      const first = workspace.showDetails(category(1, 'Плитка'))
+      await workspace.showDetails(category(2, 'Для пола'))
+      if (outcome === 'success') old.resolve([attribute])
+      else old.reject(new Error('Устаревшая ошибка'))
+      await first
+      expect(workspace.details.value?.id).toBe(2)
+      expect(workspace.detailsAttributes.value[0]?.name).toBe('Цвет')
+      expect(workspace.detailsGroups.value).toEqual(groups)
+      expect(workspace.error.value).toBe('')
+      expect(workspace.detailsLoading.value).toBe(false)
+    },
+  )
+
+  test.each(['success', 'error'] as const)(
+    'ignores late %s after closing and reopening the same category',
+    async (outcome) => {
+      const old = deferred<Attribute[]>()
+      api.getCategoryAttributes
+        .mockReturnValueOnce(old.promise)
+        .mockResolvedValueOnce([{ ...attribute, name: 'Цвет' }])
+      const workspace = useCategoriesWorkspace()
+      const selected = category(1, 'Плитка')
+      const first = workspace.showDetails(selected)
+      workspace.closeDetails()
+      await workspace.showDetails(selected)
+      if (outcome === 'success') old.resolve([attribute])
+      else old.reject(new Error('Устаревшая ошибка'))
+      await first
+      expect(workspace.details.value?.id).toBe(1)
+      expect(workspace.detailsAttributes.value[0]?.name).toBe('Цвет')
+      expect(workspace.detailsGroups.value).toEqual(groups)
+      expect(workspace.error.value).toBe('')
+      expect(workspace.detailsLoading.value).toBe(false)
+    },
+  )
+
+  test.each(['success', 'error'] as const)(
+    'closing invalidates a pending %s and clears detail state',
+    async (outcome) => {
+      const pending = deferred<Attribute[]>()
+      api.getCategoryAttributes.mockReturnValueOnce(pending.promise)
+      const workspace = useCategoriesWorkspace()
+      const request = workspace.showDetails(category(1, 'Плитка'))
+      workspace.closeDetails()
+      expect(workspace.details.value).toBeNull()
+      expect(workspace.detailsLoading.value).toBe(false)
+      if (outcome === 'success') pending.resolve([attribute])
+      else pending.reject(new Error('Ошибка закрытого диалога'))
+      await request
+      expect(workspace.detailsAttributes.value).toEqual([])
+      expect(workspace.detailsGroups.value).toEqual([])
+      expect(workspace.error.value).toBe('')
+    },
+  )
+
+  test('applies attributes and groups together only after both responses', async () => {
+    const pendingGroups = deferred<typeof groups>()
+    api.getCategoryAttributes.mockResolvedValue([attribute])
+    api.getCategoryAttributeGroups.mockReturnValueOnce(pendingGroups.promise)
+    const workspace = useCategoriesWorkspace()
+    const request = workspace.showDetails(category(1, 'Плитка'))
+    await flushPromises()
+    expect(workspace.detailsLoading.value).toBe(true)
+    expect(workspace.detailsAttributes.value).toEqual([])
+    expect(workspace.detailsGroups.value).toEqual([])
+    pendingGroups.resolve(groups)
+    await request
+    expect(workspace.detailsAttributes.value).toEqual([attribute])
+    expect(workspace.detailsGroups.value).toEqual(groups)
+    expect(workspace.detailsLoading.value).toBe(false)
+  })
+
+  test('reports a current request failure and stops loading', async () => {
+    api.getCategoryAttributes.mockRejectedValue(new Error('Нет доступа'))
+    const workspace = useCategoriesWorkspace()
+    await workspace.showDetails(category(1, 'Плитка'))
+    expect(workspace.details.value).toBeNull()
+    expect(workspace.error.value).toBe('Нет доступа')
+    expect(workspace.detailsLoading.value).toBe(false)
+  })
+
+  test.each(['success', 'error'] as const)(
+    'scope disposal ignores a pending %s',
+    async (outcome) => {
+      const pending = deferred<Attribute[]>()
+      api.getCategoryAttributes.mockReturnValueOnce(pending.promise)
+      const scope = effectScope()
+      const workspace = scope.run(() => useCategoriesWorkspace())!
+      const request = workspace.showDetails(category(1, 'Плитка'))
+      scope.stop()
+      if (outcome === 'success') pending.resolve([attribute])
+      else pending.reject(new Error('Ошибка после размонтирования'))
+      await request
+      expect(workspace.detailsAttributes.value).toEqual([])
+      expect(workspace.detailsGroups.value).toEqual([])
+      expect(workspace.error.value).toBe('')
+    },
+  )
+})
 
 describe('category overview', () => {
   beforeEach(() => vi.resetAllMocks())

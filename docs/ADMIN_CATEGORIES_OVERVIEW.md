@@ -324,3 +324,45 @@ Build/TypeScript, ESLint, scoped Prettier и `git diff --check` passed.
 все пять empty PNG просмотрены, замечаний нет. Новые тесты не добавлялись
 для точечной CSS-правки. Изменены `MediaImageEditor.vue`, этот отчёт
 и `tasks/DONE.md`.
+
+## Защита деталей категории от запоздавших ответов, TASK-A086, 2026-10-11
+
+`useCategoriesWorkspace` использует отдельную версию запроса деталей. Новый
+`showDetails`, закрытие через `closeDetails` и размонтирование инвалидируют
+предыдущую загрузку. Только актуальный запрос обновляет характеристики,
+группы, ошибку и loading. Характеристики и группы применяются вместе после
+`Promise.all`; отмена HTTP-запросов не заявляется и для этого исправления
+не требуется. `CategoriesWorkspace` передаёт все события закрытия существующего
+диалога в `closeDetails`. Map с Promise, глубокий watch и неиспользуемый
+`cleanupPendingRequests` из незавершённого варианта удалены.
+
+Добавлены 11 unit-сценариев: очередность ответов разных категорий, поздний
+success/error, закрытие и повторное открытие той же категории, сброс состояния,
+атомарность данных, актуальная ошибка и размонтирование. До исправления
+7 сценариев падали, после исправления все 15 тестов файла проходят.
+
+Добавлены 7 production E2E: загрузка и выбранные данные на ширинах
+320/640/768/1024/1280, поздний success/error после повторного открытия,
+Escape, кнопка закрытия и возврат фокуса. Новые E2E: 7 passed;
+существующий `categoryOverview.spec.ts`: 23 passed. Просмотрены loading/success
+PNG; axe диалога не обнаружил serious/critical нарушений при прежнем исключении
+`color-contrast`. Утверждённая палитра и разметка диалога сохранены.
+
+Build/TypeScript и полный ESLint passed. Полный unit-набор: 114 passed,
+5 failed. На чистом HEAD в отдельной временной копии воспроизведены те же
+5 failures (103 passed): `authCard`, `catalogComponents`, `uiBadge` и два
+`uiKitShowcase`. Они не связаны с деталями категорий. Полный `format:check`
+не проходит из-за многочисленных существующих несоответствий, в том числе
+артефактов `.tmp`; scoped Prettier четырёх изменённых frontend-файлов passed. Сохраняется прежнее
+предупреждение Vite о размере bundle. Полный E2E всех разделов не запускался.
+
+Независимый UI Design Guard `/root/ui_design_guard`: **accepted**, blocking
+findings отсутствуют; просмотрены все 10 loading/success PNG.
+Backend, миграции и OpenAPI не изменены. Рабочие данные не менялись:
+браузерные проверки используют контролируемые API fixtures.
+
+Изменённые файлы: `composables/useCategoriesWorkspace.ts`,
+`components/CategoriesWorkspace.vue`, `tests/categoryOverview.test.ts`,
+новый `e2e/categoryDetails.spec.ts` (пути внутри `frontend/admin`), этот отчёт,
+`tasks/TODO.md` и `tasks/DONE.md`. Ошибочная запись незавершённого варианта
+в `tasks/IN_PROGRESS.md` удалена; активных задач нет.

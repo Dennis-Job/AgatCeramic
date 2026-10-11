@@ -14,9 +14,11 @@ export function useCategoriesWorkspace() {
   const { overview, hydrateOverview, refreshOverview, resetOverview } =
     useCategoryOverview(catalog)
   let loadVersion = 0
+  let detailsVersion = 0
   if (getCurrentScope())
     onScopeDispose(() => {
       loadVersion += 1
+      detailsVersion += 1
     })
   const categories = ref<Category[]>([])
   const error = ref('')
@@ -77,7 +79,15 @@ export function useCategoriesWorkspace() {
       if (current === loadVersion) loading.value = false
     }
   }
+  function closeDetails(): void {
+    detailsVersion += 1
+    details.value = null
+    detailsLoading.value = false
+    detailsAttributes.value = []
+    detailsGroups.value = []
+  }
   async function showDetails(category: Category): Promise<void> {
+    const current = ++detailsVersion
     details.value = category
     detailsLoading.value = true
     detailsAttributes.value = []
@@ -87,16 +97,18 @@ export function useCategoriesWorkspace() {
         catalog.getCategoryAttributes(category.id),
         catalog.getCategoryAttributeGroups(category.id),
       ])
+      if (current !== detailsVersion) return
       detailsAttributes.value = attributes
       detailsGroups.value = groups
     } catch (reason) {
+      if (current !== detailsVersion) return
       details.value = null
       error.value =
         reason instanceof Error
           ? reason.message
           : 'Не удалось загрузить информацию о категории.'
     } finally {
-      detailsLoading.value = false
+      if (current === detailsVersion) detailsLoading.value = false
     }
   }
   function showDelete(category: Category): void {
@@ -137,6 +149,7 @@ export function useCategoriesWorkspace() {
     deletionError,
     showDelete,
     closeDelete,
+    closeDetails,
     details,
     detailsLoading,
     detailsAttributes,

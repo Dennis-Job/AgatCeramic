@@ -38,6 +38,7 @@ const {
   categoryName,
   load,
   showDetails,
+  closeDetails,
   confirmDelete,
 } = workspace
 const editor = useCategoryForm(catalog.saveCategory, load)
@@ -144,7 +145,7 @@ onMounted(load)
       :attributes="detailsAttributes"
       :groups="detailsGroups"
       :category-name="categoryName"
-      @close="details = null"
+      @close="closeDetails"
     /><CategoryAssignmentsDialog
       :open="assignmentsOpen"
       :busy="assignmentsBusy"
