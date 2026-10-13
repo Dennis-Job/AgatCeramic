@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
 
@@ -15,7 +15,12 @@ test('table photo action uploads, deletes and updates the thumbnail without open
   page,
 }) => {
   await mockCatalogApi(page)
+  // Observe only requests caused by opening the photo editor, after initial counts load.
+  const initialCounts = page.waitForResponse(
+    '**/api/v1/admin/products/filter-counts**',
+  )
   await page.goto('/products')
+  await initialCounts
   const add = page.getByRole('button', { name: addName, exact: true })
   await expect(add).toBeVisible()
   await page.screenshot({ path: '.tmp/product-photo-review/table-empty.png' })

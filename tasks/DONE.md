@@ -1,5 +1,22 @@
 # DONE
 
+- [x] Утверждённые macOS-цвета на Windows, 2026-10-13: production palette/CSS
+      сохранены; 99 цветов закреплены независимым контрактом, новые цветовые
+      отклонения блокируют тесты. Windows unit 125/125, palette/baseline 230/230;
+      полный E2E 521/523, последние два test timing failures закрыты повтором
+      10/10 (513 остальных PASS в полном прогоне). Linux полный 514/516,
+      исправленные группы 59/59; lint/build/typecheck/scoped format PASS.
+      UI Design Guard принял 70 Windows и 66 Linux PNG, Darwin PNG не менялись.
+      Добавлен Windows CI gate. [Отчёт и ограничения](../docs/ADMIN_WINDOWS_PALETTE_REPORT.md).
+
+- [x] Проверка ранее непройденных Windows-тестов, 2026-10-13: Admin unit
+      114 PASS / 5 FAIL, E2E 224 PASS / 126 FAIL; Client E2E 15/15 и dev 2/2,
+      повтор real Nuxt preview 3/3 PASS. Native backend: 393 PASS / 6 XLSX errors
+      в каждом из двух прогонов. Docker PostgreSQL integration 22/22, feature
+      318/318, Redis 1/1, full-stack 1/1 и dependency bootstrap PASS.
+      Проверка завершена; исправления и обновление baseline не выполнялись.
+      [Полный отчёт и ограничения](../docs/WINDOWS_VERIFICATION_2026-10-13.md).
+
 - [x] Центрирование пустого фото категории, 2026-10-07: icon/text
       выровнены по вертикали через сохранение flex layout общего preview.
       Build/lint/scoped format, 6 E2E passed; UI Design Guard accepted.

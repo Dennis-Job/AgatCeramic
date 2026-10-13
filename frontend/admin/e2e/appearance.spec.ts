@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { createDeferredApiRequests } from './deferredApi'
 import type { SiteAppearance } from '../src/features/appearance/types/appearance.types'
@@ -315,7 +315,7 @@ test('appearance media controls require media.manage and filters stay informatio
   ).toHaveCount(0)
   await page.getByRole('button', { name: 'Вид фильтров' }).click()
   const filters = page.getByRole('region', {
-    name: 'Вид фильтров',
+    name: 'Представление фильтров',
     exact: true,
   })
   await expect(filters.getByRole('status')).toContainText('пока не реализованы')
@@ -341,34 +341,35 @@ test('appearance exposes media selection and upload for a media manager', async 
   await expect(page.getByText('Изображений пока нет.')).toBeVisible()
 })
 
-test('appearance panels support keyboard, accessibility and all required widths', async ({
-  page,
-}) => {
-  await mockWorkspace(page)
-  await page.goto('/content?section=appearance&panel=header')
-  const contentNavigation = page.getByRole('navigation', {
-    name: 'Разделы контента',
-  })
-  await expect(contentNavigation.getByRole('button')).toHaveText([
-    'Страницы',
-    'Общее оформление',
-    'Магазины',
-  ])
-  await expect(
-    contentNavigation.getByRole('button', { name: /Баннеры|Слайдеры/ }),
-  ).toHaveCount(0)
-  const footer = page.getByRole('button', { name: 'Подвал', exact: true })
-  await footer.focus()
-  await page.keyboard.press('Enter')
-  await expect(page.getByLabel('Слоган под логотипом')).toBeVisible()
-  await expect(footer).toBeFocused()
-  expect(
-    await footer.evaluate((element) => {
-      const style = getComputedStyle(element)
-      return style.outlineStyle !== 'none' || style.boxShadow !== 'none'
-    }),
-  ).toBe(true)
-  for (const width of [320, 640, 768, 1024, 1280]) {
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`appearance panels support keyboard, accessibility and all required widths at ${width}px`, async ({
+    page,
+  }) => {
+    await mockWorkspace(page)
+    await page.goto('/content?section=appearance&panel=header')
+    const contentNavigation = page.getByRole('navigation', {
+      name: 'Разделы контента',
+    })
+    await expect(contentNavigation.getByRole('button')).toHaveText([
+      'Страницы',
+      'Общее оформление',
+      'Магазины',
+    ])
+    await expect(
+      contentNavigation.getByRole('button', { name: /Баннеры|Слайдеры/ }),
+    ).toHaveCount(0)
+    const footer = page.getByRole('button', { name: 'Подвал', exact: true })
+    await footer.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByLabel('Слоган под логотипом')).toBeVisible()
+    await expect(footer).toBeFocused()
+    expect(
+      await footer.evaluate((element) => {
+        const style = getComputedStyle(element)
+        return style.outlineStyle !== 'none' || style.boxShadow !== 'none'
+      }),
+    ).toBe(true)
+
     await page.setViewportSize({ width, height: 800 })
     for (const panel of [
       { name: 'Шапка и навигация', key: 'header' },
@@ -377,7 +378,10 @@ test('appearance panels support keyboard, accessibility and all required widths'
     ]) {
       await page.getByRole('button', { name: panel.name, exact: true }).click()
       await expect(
-        page.getByRole('region', { name: panel.name, exact: true }),
+        page.getByRole('region', {
+          name: panel.key === 'filters' ? 'Представление фильтров' : panel.name,
+          exact: true,
+        }),
       ).toBeVisible()
       await page
         .getByRole('navigation', { name: 'Разделы общего оформления' })
@@ -406,8 +410,8 @@ test('appearance panels support keyboard, accessibility and all required widths'
         animations: 'disabled',
       })
     }
-  }
-})
+  })
+}
 
 test('pending and in-flight logo uploads survive browser history panel changes', async ({
   page,

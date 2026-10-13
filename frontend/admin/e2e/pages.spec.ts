@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures'
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import type { ContentPage } from '../src/features/pages/types/page.types'
 
 const timestamp = '2026-09-25T10:00:00Z'
@@ -162,7 +162,9 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   const navigation = await page
     .getByRole('navigation', { name: 'Выбор страницы сайта' })
     .boundingBox()
-  const preview = await page.getByLabel('Предпросмотр страницы').boundingBox()
+  const preview = await page
+    .getByRole('region', { name: 'Предпросмотр', exact: true })
+    .boundingBox()
   expect(navigation).not.toBeNull()
   expect(preview).not.toBeNull()
   expect(preview!.x).toBeGreaterThan(navigation!.x + navigation!.width)

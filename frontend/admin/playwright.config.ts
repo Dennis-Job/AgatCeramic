@@ -15,6 +15,8 @@ export default defineConfig({
   },
   use: {
     baseURL: 'http://127.0.0.1:4173',
+    // Fixture timestamps must not depend on the host OS or CI runner timezone.
+    timezoneId: 'Europe/Moscow',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },

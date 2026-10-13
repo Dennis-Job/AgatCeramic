@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
 import type { SiteAppearance } from '../src/features/appearance/types/appearance.types'

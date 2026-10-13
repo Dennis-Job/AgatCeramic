@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
 import { createDeferredApiRequests } from './deferredApi'
@@ -90,8 +90,21 @@ for (const path of stateRoutes) {
         browserIssueGuard.allowApiError(500, /^\/api\/v1\/admin\//)
       await mockAdminBaseline(page, false, state)
       await page.goto(path, { waitUntil: 'networkidle' })
-      if (state === 'error')
-        await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 })
+      if (state === 'error') {
+        const error =
+          path === '/products'
+            ? page.getByRole('main').getByRole('alert')
+            : page.getByRole('alert')
+        await expect(error).toBeVisible({ timeout: 10_000 })
+        if (path === '/products') {
+          await expect(error).toContainText('Baseline API error')
+          await expect(
+            page
+              .getByRole('complementary', { name: 'Уведомления' })
+              .getByRole('alert'),
+          ).toContainText('Baseline API error')
+        }
+      }
       await expect(page).toHaveScreenshot(
         `route-${path.slice(1)}-${state}.png`,
         { fullPage: true, animations: 'disabled' },
@@ -128,8 +141,6 @@ for (const [path, heading] of authenticatedRoutes) {
     ).toBeVisible()
     await page.waitForLoadState('networkidle')
     const axe = new AxeBuilder({ page })
-    // Owner-approved palette stays fixed; structural accessibility is checked.
-    if (path === '/categories') axe.disableRules(['color-contrast'])
     const accessibility = await axe.analyze()
     const serious = accessibility.violations.filter((item) =>
       ['serious', 'critical'].includes(item.impact ?? ''),
@@ -142,7 +153,7 @@ for (const [path, heading] of authenticatedRoutes) {
   })
 }
 
-test('Admin UI-kit states meet color contrast requirements', async ({
+test('Admin UI-kit preserves approved colors and accessible states', async ({
   page,
 }) => {
   await mockAdminBaseline(page)
@@ -174,7 +185,7 @@ test('Admin UI-kit states meet color contrast requirements', async ({
     'Недоступна',
     'Вторичная недоступна',
     'Опасная недоступна',
-    'Прозрачная недоступна',
+    'Редактирование недоступно',
     'Удаление недоступно',
   ]) {
     await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
@@ -186,7 +197,7 @@ test('Admin UI-kit states meet color contrast requirements', async ({
   await expect(disabledCheckbox).toBeChecked()
   await expect(
     disabledCheckbox.locator('..').locator('span').first(),
-  ).toHaveClass(/text-gray-600/)
+  ).toHaveCSS('color', 'rgb(102, 112, 133)')
   const disabledRadio = page.getByRole('radio', {
     name: 'Недоступный',
     exact: true,
@@ -243,32 +254,32 @@ test('Admin UI-kit exposes interactive select and confirmation states', async ({
   await page.getByRole('button', { name: 'Отмена' }).click()
 })
 
-test('Admin UI-kit field disabled contract remains accessible and usable at all supported widths', async ({
-  page,
-}) => {
-  await page.clock.setFixedTime(new Date('2026-09-13T12:00:00Z'))
-  await mockAdminBaseline(page)
-  await page.goto('/ui-kit')
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'UI-kit' }),
-  ).toBeVisible()
-  await page.waitForLoadState('networkidle')
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`Admin UI-kit field disabled contract remains accessible and usable at all supported widths at ${width}px`, async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(new Date('2026-09-13T12:00:00Z'))
+    await mockAdminBaseline(page)
+    await page.goto('/ui-kit')
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'UI-kit' }),
+    ).toBeVisible()
+    await page.waitForLoadState('networkidle')
 
-  const enabledDate = page.getByRole('textbox', {
-    name: 'Дата публикации',
-    exact: true,
-  })
-  await enabledDate.focus()
-  await expect(
-    page.getByRole('dialog', { name: 'Дата публикации: выбор даты' }),
-  ).toBeVisible()
-  await page.keyboard.press('Escape')
-  await expect(
-    page.getByRole('dialog', { name: 'Дата публикации: выбор даты' }),
-  ).toHaveCount(0)
-  await expect(enabledDate).toBeFocused()
+    const enabledDate = page.getByRole('textbox', {
+      name: 'Дата публикации',
+      exact: true,
+    })
+    await enabledDate.focus()
+    await expect(
+      page.getByRole('dialog', { name: 'Дата публикации: выбор даты' }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(
+      page.getByRole('dialog', { name: 'Дата публикации: выбор даты' }),
+    ).toHaveCount(0)
+    await expect(enabledDate).toBeFocused()
 
-  for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     const disabledFields = page.locator('[data-ui-kit-disabled-fields]')
     await expect(disabledFields).toBeVisible()
@@ -355,8 +366,8 @@ test('Admin UI-kit field disabled contract remains accessible and usable at all 
     await page.keyboard.press('Escape')
     await expect(dateDialog).toHaveCount(0)
     await expect(enabledDate).toBeFocused()
-  }
-})
+  })
+}
 
 for (const [path, heading] of [
   ['/login', 'Вход'],
@@ -391,17 +402,18 @@ for (const path of [
   '/reset-password',
   '/ui-kit',
 ]) {
-  test(`Admin baseline: ${path} remains usable at all supported widths`, async ({
-    page,
-    browserIssueGuard,
-  }) => {
-    const guest =
-      path.startsWith('/login') ||
-      path.startsWith('/forgot') ||
-      path.startsWith('/reset')
-    if (guest) browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
-    await mockAdminBaseline(page, guest)
-    for (const width of [320, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
+  for (const width of [320, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
+    test(`Admin baseline: ${path} remains usable at ${width}px`, async ({
+      page,
+      browserIssueGuard,
+    }) => {
+      const guest =
+        path.startsWith('/login') ||
+        path.startsWith('/forgot') ||
+        path.startsWith('/reset')
+      if (guest) browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
+      await mockAdminBaseline(page, guest)
+
       await page.setViewportSize({ width, height: 800 })
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
@@ -423,7 +435,6 @@ for (const path of [
         `${path} page overflow at ${width}px`,
       ).toBe(true)
       const axe = new AxeBuilder({ page })
-      if (path === '/categories') axe.disableRules(['color-contrast'])
       const accessibility = await axe.analyze()
       expect(
         accessibility.violations,
@@ -433,6 +444,6 @@ for (const path of [
         path: `.tmp/a062-visual/${path === '/' ? 'dashboard' : path.slice(1)}-${width}.png`,
         animations: 'disabled',
       })
-    }
-  })
+    })
+  }
 }

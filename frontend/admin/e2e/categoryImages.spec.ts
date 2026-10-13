@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { mockCategoryOverview, overviewCategories } from './categoryOverviewApi'
 import { createDeferredApiRequests } from './deferredApi'
@@ -345,7 +345,6 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     expect(Math.abs(save.y - cancel.y)).toBeLessThanOrEqual(1)
     const accessibility = await new AxeBuilder({ page })
       .include('[role="dialog"]')
-      .disableRules(['color-contrast'])
       .analyze()
     expect(
       accessibility.violations.filter((item) =>
@@ -398,7 +397,6 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     })
     const viewerAxe = await new AxeBuilder({ page })
       .include('[role="dialog"]')
-      .disableRules(['color-contrast'])
       .analyze()
     expect(
       viewerAxe.violations.filter((item) =>

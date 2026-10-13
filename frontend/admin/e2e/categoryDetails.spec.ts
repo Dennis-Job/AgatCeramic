@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import type { Page, Route } from '@playwright/test'
 import { expect, test } from './fixtures'
 import { mockCategoryOverview } from './categoryOverviewApi'
@@ -100,7 +100,6 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     ).toBe(true)
     const accessibility = await new AxeBuilder({ page })
       .include('[role="dialog"]')
-      .disableRules(['color-contrast'])
       .analyze()
     expect(
       accessibility.violations.filter((item) =>

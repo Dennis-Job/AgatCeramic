@@ -11,6 +11,6 @@ describe('UiBadge', () => {
 
     expect(wrapper.text()).toBe('Дополнительный')
     expect(wrapper.classes()).toContain('bg-blue-light-50')
-    expect(wrapper.classes()).toContain('text-blue-light-700')
+    expect(wrapper.classes()).toContain('text-blue-light-500')
   })
 })

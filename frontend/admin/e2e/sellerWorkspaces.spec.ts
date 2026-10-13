@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
 import { attribute, attributeGroup, brand } from './catalogApi'
@@ -262,9 +262,7 @@ for (const [path, label, cardsBelow] of [
         name: 'Детали выбранной записи',
       })
       await expect(detailPanel).toBeFocused()
-      await expect(
-        detailPanel.locator('aside').getByRole('heading').first(),
-      ).toBeInViewport()
+      await expect(detailPanel.getByRole('heading').first()).toBeInViewport()
       await detailPanel
         .getByRole('button', { name: 'Вернуться к списку' })
         .click()
@@ -324,7 +322,6 @@ for (const [path, label, cardsBelow] of [
         expect(zones.detail.left).toBe((width - zones.detail.width) / 2)
         await page
           .getByRole('region', { name: 'Детали выбранной записи', exact: true })
-          .locator('aside')
           .screenshot({
             path: `.tmp/a060-visual/${path.slice(1)}-selected-${width}.png`,
             // Exclude the global sticky shell from a tall detail-only crop.

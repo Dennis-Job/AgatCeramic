@@ -1,0 +1,42 @@
+name: Admin Windows approved UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - frontend/admin/**
+      - .github/workflows/admin-windows-ui.yml
+  pull_request:
+    paths:
+      - frontend/admin/**
+      - .github/workflows/admin-windows-ui.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-windows-ui-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  approved-ui:
+    name: Approved palette and Windows baselines
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: frontend/admin
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24.19.0"
+          cache: npm
+          cache-dependency-path: frontend/admin/package-lock.json
+      - run: npm ci
+      - run: npm run test:unit -- --maxWorkers=2
+      - run: npm run build
+      - run: npm exec playwright install chromium
+      - name: Check approved colors, accessible states and platform snapshots
+        run: npm exec playwright test -- approvedPalette.spec.ts adminBaseline.spec.ts --workers=2

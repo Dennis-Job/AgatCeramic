@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures'
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { blankBlockData } from '../src/features/pages/validation/blocks'
 
 test('home route uses typed blocks with saved preview, pending notice and separate publication', async ({

@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
 
@@ -18,7 +18,7 @@ test('product segment selection stays subtle with a pointer and has one soft key
     await label.click()
     await expect(radio).toBeChecked()
     await expect(label).toHaveCSS('border-width', '1px')
-    await expect(label).toHaveCSS('border-color', 'rgb(227, 233, 241)')
+    await expect(label).toHaveCSS('border-color', 'rgb(228, 231, 236)')
     await expect(label).toHaveCSS('box-shadow', 'none')
     await page.screenshot({
       path: `.tmp/soft-focus/products-pointer-${width}.png`,
@@ -74,7 +74,7 @@ test('fields use one thin focus edge, composite inputs have no duplicate outline
   await expect(error).toHaveAttribute('aria-invalid', 'true')
   await expect(error.locator('..')).toHaveCSS(
     'border-color',
-    'rgb(180, 35, 24)',
+    'rgb(240, 68, 56)',
   )
   await expect(form.getByRole('alert').first()).toBeVisible()
   await page.screenshot({ path: '.tmp/soft-focus/error-focus.png' })
@@ -116,7 +116,7 @@ test('filled and secondary buttons and selected checkbox keep a thin visible key
     'Основная',
     'Вторичная',
     'Опасное действие',
-    'Прозрачная',
+    'Синяя прозрачная',
   ]) {
     const button = buttons.getByRole('button', { name, exact: true })
     await button.focus()

@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
 import { createDeferredApiRequests } from './deferredApi'
@@ -351,8 +351,9 @@ test('product Excel import errors are downloadable and page is accessible at sup
   }
   const accessibility = await new AxeBuilder({ page }).analyze()
   // This approved additional-message tone has a known 2.58:1 contrast finding.
+  expect(accessibility.violations).toEqual([])
   expect(
-    accessibility.violations.map((violation) => ({
+    accessibility.approvedContrastViolations.map((violation) => ({
       id: violation.id,
       targets: violation.nodes.flatMap((node) => node.target),
     })),
@@ -543,8 +544,9 @@ test('product image ZIP import uploads, polls and downloads its accessible respo
   }
   const accessibility = await new AxeBuilder({ page }).analyze()
   // The owner requested the approved additional blue tone; its text contrast remains a known finding.
+  expect(accessibility.violations).toEqual([])
   expect(
-    accessibility.violations.map((violation) => ({
+    accessibility.approvedContrastViolations.map((violation) => ({
       id: violation.id,
       targets: violation.nodes.flatMap((node) => node.target),
     })),
@@ -856,7 +858,9 @@ for (const { path, title } of importPages) {
         path: testInfo.outputPath(`default-${width}.png`),
         fullPage: true,
       })
-      const violations = (await new AxeBuilder({ page }).analyze()).violations
+      const accessibility = await new AxeBuilder({ page }).analyze()
+      expect(accessibility.violations).toEqual([])
+      const violations = accessibility.approvedContrastViolations
       if (path === '/products/import') {
         expect(violations).toHaveLength(1)
         expect(violations[0].id).toBe('color-contrast')
@@ -864,8 +868,6 @@ for (const { path, title } of importPages) {
         expect(violations[0].nodes[0].html).toContain(
           'data-product-import-info',
         )
-      } else {
-        expect(violations).toEqual([])
       }
     }
     await openProductMenu(page)

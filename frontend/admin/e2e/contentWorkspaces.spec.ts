@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockContentWorkspace } from './contentWorkspaceApi'
 

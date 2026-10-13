@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import type { ContentPage } from '../src/features/pages/types/page.types'
 import { blankBlockData } from '../src/features/pages/validation/blocks'

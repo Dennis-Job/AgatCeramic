@@ -22,6 +22,7 @@ import UiInput from '../ui/UiInput.vue'
 import UiLoadingState from '../ui/UiLoadingState.vue'
 import UiPagination from '../ui/UiPagination.vue'
 import UiPopover from '../ui/UiPopover.vue'
+import UiProgressBar from '../ui/UiProgressBar.vue'
 import UiRadio from '../ui/UiRadio.vue'
 import UiSegmentedControl from '../ui/UiSegmentedControl.vue'
 import UiSegmentedTabs from '../ui/UiSegmentedTabs.vue'
@@ -138,6 +139,7 @@ const uiComponents = [
   'UiNotificationHost',
   'UiPagination',
   'UiPopover',
+  'UiProgressBar',
   'UiRadio',
   'UiSegmentedControl',
   'UiSegmentedTabs',
@@ -279,6 +281,11 @@ const foundationMetaTokens = [
   '--admin-workspace-form-max-width',
   '--admin-editor-navigation-width',
   '--admin-editor-preview-min-width',
+  '--admin-dialog-backdrop-color',
+  '--admin-dialog-backdrop-filter',
+  '--admin-dialog-close-size',
+  '--admin-dialog-content-padding',
+  '--admin-dialog-radius',
   '--admin-workspace-gutter',
   '--admin-workspace-gutter-compact',
   '--admin-workspace-inline-gutter',
@@ -420,9 +427,10 @@ function submitAuthPreview(): void {
             Состав UI-kit
           </h2>
           <p class="mt-1 text-sm text-gray-500">
-            23 UI primitives и 3 shared-компонента, доступных для повторного
-            использования. Layout- и feature-компоненты в этот каталог не
-            входят.
+            {{ uiComponents.length }} UI primitives и
+            {{ sharedComponents.length }} shared-компонента, доступных для
+            повторного использования. Layout- и feature-компоненты в этот
+            каталог не входят.
           </p>
         </div>
       </template>
@@ -1088,11 +1096,26 @@ function submitAuthPreview(): void {
             </h2>
             <p class="mt-1 text-sm text-gray-500">
               <code>ui/UiLoadingState.vue</code>,
-              <code>ui/UiEmptyState.vue</code>
+              <code>ui/UiEmptyState.vue</code>,
+              <code>ui/UiProgressBar.vue</code>
             </p>
           </div>
         </template>
         <UiLoadingState label="Загрузка данных для примера…" />
+        <div class="mb-4 space-y-4">
+          <div>
+            <p class="mb-2 text-sm text-gray-500">Обработка файла: 65%</p>
+            <UiProgressBar
+              label="Обработка файла: 65%"
+              :value="65"
+              show-scale
+            />
+          </div>
+          <div>
+            <p class="mb-2 text-sm text-gray-500">Ожидание обработки файла</p>
+            <UiProgressBar label="Ожидание обработки файла" />
+          </div>
+        </div>
         <UiEmptyState label="В этой коллекции пока нет данных.">
           <UiButton size="sm" variant="soft-blue" type="button"
             >Добавить элемент</UiButton

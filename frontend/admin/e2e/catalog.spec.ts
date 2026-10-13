@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import {
   attribute,
@@ -62,7 +62,6 @@ for (const route of catalogRoutes) {
 
     const axe = new AxeBuilder({ page })
     // Keep the owner-approved palette; color contrast is documented separately.
-    if (route.path === '/categories') axe.disableRules(['color-contrast'])
     const results = await axe.analyze()
     expect(
       results.violations.filter((violation) =>

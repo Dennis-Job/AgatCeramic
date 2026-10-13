@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockCategoryOverview, overviewCategories } from './categoryOverviewApi'
 
@@ -91,7 +91,6 @@ for (const width of [320, 640, 768, 1024, 1280]) {
       ).toBeInViewport()
       const accessibility = await new AxeBuilder({ page })
         .include('[role="dialog"]')
-        .disableRules(['color-contrast'])
         .analyze()
       expect(
         accessibility.violations.filter((item) =>
@@ -252,9 +251,7 @@ for (const width of [320, 640, 768, 1024, 1280]) {
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true)
-    const accessibility = await new AxeBuilder({ page })
-      .disableRules(['color-contrast'])
-      .analyze()
+    const accessibility = await new AxeBuilder({ page }).analyze()
     expect(
       accessibility.violations.filter((item) =>
         ['serious', 'critical'].includes(item.impact ?? ''),
@@ -271,9 +268,9 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     const bounds = (await menu.boundingBox())!
     expect(bounds.x).toBeGreaterThanOrEqual(0)
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
-    const menuAccessibility = await new AxeBuilder({ page })
-      .disableRules(['color-contrast'])
-      .analyze()
+    // Scan the approved hover endpoint, not an interpolated transition frame.
+    await expect(select).toHaveCSS('background-color', 'rgb(235, 244, 255)')
+    const menuAccessibility = await new AxeBuilder({ page }).analyze()
     expect(
       menuAccessibility.violations.filter((item) =>
         ['serious', 'critical'].includes(item.impact ?? ''),

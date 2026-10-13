@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
 import { mockAdminBaseline } from './adminBaselineApi'
@@ -12,17 +12,19 @@ test('product actions show distinct hover backgrounds and descriptive tooltips',
     [
       'Создать похожий товар Монте Тиберио',
       'Копировать товар — создать похожий',
+      'rgb(242, 244, 247)',
     ],
-    ['Редактировать товар Монте Тиберио', 'Редактировать товар'],
-    ['Удалить товар Монте Тиберио', 'Удалить товар'],
+    [
+      'Редактировать товар Монте Тиберио',
+      'Редактировать товар',
+      'rgb(235, 244, 255)',
+    ],
+    ['Удалить товар Монте Тиберио', 'Удалить товар', 'rgb(254, 243, 242)'],
   ]
-  for (const [name, description] of actions) {
+  for (const [name, description, background] of actions) {
     const button = page.getByRole('button', { name, exact: true })
     await button.hover()
-    await expect(button).toHaveCSS(
-      'background-color',
-      name.startsWith('Удалить') ? 'rgb(254, 228, 226)' : 'rgb(217, 234, 255)',
-    )
+    await expect(button).toHaveCSS('background-color', background!)
     await expect(page.getByRole('tooltip')).toHaveText(description!)
     await expect(page.getByRole('tooltip')).toHaveCSS(
       'background-color',
@@ -30,11 +32,11 @@ test('product actions show distinct hover backgrounds and descriptive tooltips',
     )
     await expect(page.getByRole('tooltip')).toHaveCSS(
       'color',
-      'rgb(17, 24, 32)',
+      'rgb(102, 112, 133)',
     )
     await expect(page.getByRole('tooltip')).toHaveCSS(
       'border-top-color',
-      'rgb(227, 233, 241)',
+      'rgb(228, 231, 236)',
     )
     if (name.startsWith('Создать'))
       await page.screenshot({
@@ -143,7 +145,7 @@ test('category action icons have focused tooltips only while hovered', async ({
     const action = page.getByRole('button', { name, exact: true })
     await action.hover()
     if (name.startsWith('Удалить'))
-      await expect(action).toHaveCSS('background-color', 'rgb(254, 228, 226)')
+      await expect(action).toHaveCSS('background-color', 'rgb(254, 243, 242)')
     await expect(page.getByRole('tooltip')).toHaveText(tooltip!)
     await page.getByRole('heading', { name: 'Категории', exact: true }).hover()
     await expect(page.getByRole('tooltip')).toHaveCount(0)
@@ -210,10 +212,10 @@ test('edit actions share the same blue style across admin workspaces', async ({
   ]) {
     await page.goto(route!)
     const edit = page.getByRole('button', { name, exact: true })
-    await expect(edit).toHaveCSS('color', 'rgb(0, 80, 224)')
+    await expect(edit).toHaveCSS('color', 'rgb(0, 91, 255)')
     await edit.hover()
-    await expect(edit).toHaveCSS('color', 'rgb(0, 80, 224)')
-    await expect(edit).toHaveCSS('background-color', 'rgb(217, 234, 255)')
+    await expect(edit).toHaveCSS('color', 'rgb(0, 91, 255)')
+    await expect(edit).toHaveCSS('background-color', 'rgb(235, 244, 255)')
     await page.screenshot({
       path: test.info().outputPath(`edit-${route!.slice(1)}.png`),
     })

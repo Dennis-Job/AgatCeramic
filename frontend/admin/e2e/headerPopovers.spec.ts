@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
 
@@ -88,12 +88,13 @@ test('desktop submenus open on hover, stay hoverable, use group-sized columns an
   }
 })
 
-test('account and notifications open on hover at every width, stay within the viewport and expose existing actions', async ({
-  page,
-}) => {
-  await mockAdminBaseline(page)
-  await page.goto('/products')
-  for (const width of widths) {
+for (const width of widths) {
+  test(`account and notifications open on hover at every width, stay within the viewport and expose existing actions at ${width}px`, async ({
+    page,
+  }) => {
+    await mockAdminBaseline(page)
+    await page.goto('/products')
+
     await page.setViewportSize({ width, height: 900 })
     await page.mouse.move(0, 800)
     for (const [label, id] of [
@@ -136,8 +137,8 @@ test('account and notifications open on hover at every width, stay within the vi
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true)
-  }
-})
+  })
+}
 
 test('keyboard disclosures support arrows, Escape, focus return and Tab dismissal; only one header popup is open', async ({
   page,

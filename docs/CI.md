@@ -13,10 +13,19 @@ Workflow получает только право `contents: read` и не ис�
 | Redis queue delivery | Реальные import, storage cleanup и order confirmation jobs через отдельный Redis worker и PostgreSQL 17 |
 | Admin full-stack smoke | Production build Admin, реальный Sanctum session/CSRF flow, Laravel, PostgreSQL 17 и Redis 7.4 без browser API mocks |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
+| Admin Windows approved UI | Отдельный native Windows workflow: unit/build, 99 утверждённых цветовых tokens, computed CSS состояний компонентов и строгие Windows visual baselines |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+С 2026-10-13 текущая macOS-палитра утверждена владельцем также для Windows.
+Все Admin axe scans сначала сверяют замороженный цветовой контракт, затем
+проверяют доступность с точными документированными owner-approved contrast
+exceptions и сохранением raw findings. Новые пары цветов и остальные нарушения
+остаются blocking; blanket `disableRules(['color-contrast'])` удалены.
+Это не заявление полного WCAG AA compliance. Контракт, ограничения и порядок
+приёмки снимков описаны в [ADMIN_APPROVED_PALETTE_TESTS.md](ADMIN_APPROVED_PALETTE_TESTS.md).
 
 Client audit использует актуальную базу advisories, поэтому может перестать проходить даже без
 изменения зависимостей в последнем коммите. Исправление выполняется совместимым обновлением

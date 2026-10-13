@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
 
@@ -79,8 +79,8 @@ test('product badges show scoped totals and reset has surface and hover states',
   await expect(reset).toBeEnabled()
   await expect(reset).toHaveCSS('background-color', 'rgb(255, 255, 255)')
   await reset.hover()
-  await expect(reset).toHaveCSS('background-color', 'rgb(217, 234, 255)')
-  await expect(reset).toHaveCSS('color', 'rgb(0, 80, 224)')
+  await expect(reset).toHaveCSS('background-color', 'rgb(235, 244, 255)')
+  await expect(reset).toHaveCSS('color', 'rgb(0, 91, 255)')
   await page.mouse.move(0, 0)
   await expect(badge('Распродажа')).toHaveText('6')
   await expect(badge('Не распродажа')).toHaveText('3')

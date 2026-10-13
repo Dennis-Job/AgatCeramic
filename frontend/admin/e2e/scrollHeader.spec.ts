@@ -1,33 +1,40 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
 import { product } from './catalogApi'
 
 const widths = [320, 640, 768, 1024, 1280, 1440, 1920, 2560]
 
-test('scrolling moves navigation into the brand row without moving document content', async ({
-  page,
-}) => {
-  await mockAdminBaseline(page, false, 'default', undefined, {
-    '/admin/products': {
-      data: Array.from({ length: 25 }, (_, index) => ({
-        ...product,
-        id: index + 1,
-        name: `${product.name} ${index + 1}`,
-      })),
-      meta: { current_page: 1, last_page: 1, per_page: 25, total: 25 },
-    },
-  })
-  await page.goto('/products')
-  const header = page.getByRole('banner')
-  const table = page.getByRole('region', { name: 'Таблица товаров' })
-  const brand = header.getByRole('link', { name: 'AgatCeramic — главная' })
-  const nav = header.locator('.admin-navigation')
-  const actions = header.locator('.admin-header-actions')
-  await expect(table).toBeVisible()
-  await page.evaluate(() => document.fonts.ready)
+for (const width of widths) {
+  test(`scrolling moves navigation into the brand row without moving document content at ${width}px`, async ({
+    page,
+  }) => {
+    await mockAdminBaseline(page, false, 'default', undefined, {
+      '/admin/products': {
+        data: Array.from({ length: 25 }, (_, index) => ({
+          ...product,
+          id: index + 1,
+          name: `${product.name} ${index + 1}`,
+        })),
+        meta: { current_page: 1, last_page: 1, per_page: 25, total: 25 },
+      },
+      '/admin/products/filter-counts': {
+        data: { active: 25, hidden: 0, sale: 0, regular: 25 },
+      },
+    })
+    await page.goto('/products')
+    const header = page.getByRole('banner')
+    const table = page.getByRole('region', { name: 'Таблица товаров' })
+    const brand = header.getByRole('link', { name: 'AgatCeramic — главная' })
+    const nav = header.locator('.admin-navigation')
+    const actions = header.locator('.admin-header-actions')
+    await expect(table).toBeVisible()
+    // Loading badges can wrap at 320px; measure the fully loaded filter layout.
+    await expect(
+      page.getByRole('radio', { name: 'Активные', exact: true }),
+    ).toHaveAccessibleDescription('Количество товаров: 25')
+    await page.evaluate(() => document.fonts.ready)
 
-  for (const width of widths) {
     await page.setViewportSize({ width, height: 900 })
     await page.evaluate(() => window.scrollTo(0, 0))
     await expect(header).not.toHaveClass(/is-condensed/)
@@ -144,8 +151,8 @@ test('scrolling moves navigation into the brand row without moving document cont
     await expect(header).not.toHaveClass(/is-condensed/)
     await expect(header).toHaveCSS('height', width < 1024 ? '65px' : '109px')
     await expect.poll(() => page.evaluate(() => scrollY)).toBe(44)
-  }
-})
+  })
+}
 
 test('open navigation keeps focus and follows the header when crossing the scroll threshold', async ({
   page,

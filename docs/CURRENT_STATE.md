@@ -1,5 +1,21 @@
 # Текущее состояние проекта
 
+Утверждённая macOS-палитра закреплена для Windows 2026-10-13: 99 фиксированных
+цветов, computed CSS, точные contrast exceptions и native Windows CI.
+Windows unit 125/125; palette/baseline subset 230/230. Полный E2E дал 521/523,
+последние два сбоя синхронизации тестов закрыты повтором 10/10; остальные
+513 scenarios прошли в полном прогоне. UI Design Guard принял 70 Windows и
+66 Linux PNG; production palette/CSS и Darwin snapshots сохранены.
+[Отчёт, изменённые файлы и ограничения](ADMIN_WINDOWS_PALETTE_REPORT.md).
+
+Проверка Windows от 2026-10-13 выполнена на `5d7b58b`: Admin unit 114 PASS / 5 FAIL,
+полный E2E 224 PASS / 126 FAIL; Client production 15/15, dev 2/2 и повтор
+real Nuxt preview 3/3 PASS. Native backend имеет 6 Windows XLSX errors;
+Docker PostgreSQL/Redis/full-stack проверки прошли. Подробности и ограничения —
+в [отчёте Windows](WINDOWS_VERIFICATION_2026-10-13.md). Упоминания непроверенного
+Windows ниже относятся к историческим приёмкам; в первичной проверке эталоны
+не обновлялись, последующая приёмка описана выше.
+
 На 2026-10-02 Nuxt Client (`TASK-119`, `TASK-C002`–`TASK-C005`) подключён к управляемому
 контенту Phase 7: типизированным упорядоченным блокам страниц, опубликованному слайдеру,
 общим шапке/подвалу и SEO. Черновики отделены от опубликованных snapshots;
