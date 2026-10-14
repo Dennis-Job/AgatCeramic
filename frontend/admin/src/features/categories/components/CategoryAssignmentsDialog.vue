@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
@@ -65,11 +66,19 @@ const emit = defineEmits<{
       <div
         class="mt-6 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain"
       >
-        <section class="admin-panel--inset p-3">
-          <h3 class="mb-2 text-sm font-semibold text-gray-500">
-            Группы характеристик
-          </h3>
-          <div class="grid gap-2 sm:grid-cols-2">
+        <UiCard
+          :padded="false"
+          aria-labelledby="category-assignment-groups-title"
+        >
+          <template #header>
+            <h3
+              id="category-assignment-groups-title"
+              class="text-sm font-semibold text-gray-500"
+            >
+              Группы характеристик
+            </h3>
+          </template>
+          <div class="grid gap-2 p-3 sm:grid-cols-2 sm:p-4">
             <UiCheckbox
               v-for="group in groups"
               :key="group.id"
@@ -80,37 +89,43 @@ const emit = defineEmits<{
               >{{ group.name }}</UiCheckbox
             >
           </div>
-        </section>
-        <section
+        </UiCard>
+        <UiCard
           v-for="group in groupedAttributes"
           :key="group.id"
-          class="admin-panel--inset overflow-hidden"
+          :padded="false"
+          :aria-labelledby="`category-assignment-group-${group.id}`"
         >
-          <div class="bg-gray-50 px-4 py-3">
-            <h3 class="font-semibold text-gray-500">{{ group.name }}</h3>
-          </div>
+          <template #header>
+            <h3
+              :id="`category-assignment-group-${group.id}`"
+              class="break-words text-sm font-semibold text-gray-500 [overflow-wrap:anywhere]"
+            >
+              {{ group.name }}
+            </h3>
+          </template>
           <div
             v-for="attribute in group.attributes"
             :key="attribute.id"
-            class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-3"
+            class="flex min-w-0 flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center"
           >
             <UiCheckbox
               :model-value="selectedAttributeIds"
               :value="attribute.id"
-              class="h-auto min-h-[42px] flex-1 border-0"
+              class="h-auto min-h-[42px] min-w-0 flex-1 border-0"
               @update:model-value="emit('attributesChange', $event)"
-              ><span class="font-medium text-gray-500"
-                >{{ attribute.name }}
-                <span class="text-xs text-gray-500"
-                  >/{{ attribute.slug }} ·
-                  {{ attributeTypeLabel(attribute.type) }}</span
-                ></span
+              ><span class="block font-medium text-gray-500">{{
+                attribute.name
+              }}</span>
+              <span class="mt-1 block text-xs text-gray-500"
+                >/{{ attribute.slug }} ·
+                {{ attributeTypeLabel(attribute.type) }}</span
               ></UiCheckbox
             ><UiCheckbox
               v-if="selectedAttributeIds.includes(attribute.id)"
               :model-value="requiredAttributeIds"
               :value="attribute.id"
-              class="h-auto min-h-[42px]"
+              class="h-auto min-h-[42px] shrink-0 self-start sm:self-center"
               :accessible-name="`Обязательная характеристика: ${attribute.name}`"
               @update:model-value="emit('requiredChange', $event)"
               >Обязательная</UiCheckbox
@@ -122,35 +137,42 @@ const emit = defineEmits<{
           >
             В группе пока нет характеристик.
           </p>
-        </section>
-        <section
+        </UiCard>
+        <UiCard
           v-if="ungroupedAttributes.length"
-          class="admin-panel--inset overflow-hidden"
+          :padded="false"
+          aria-labelledby="category-assignment-ungrouped-title"
         >
-          <div class="bg-gray-50 px-4 py-3">
-            <h3 class="font-semibold text-gray-500">Без группы</h3>
-          </div>
+          <template #header>
+            <h3
+              id="category-assignment-ungrouped-title"
+              class="text-sm font-semibold text-gray-500"
+            >
+              Без группы
+            </h3>
+          </template>
           <div
             v-for="attribute in ungroupedAttributes"
             :key="attribute.id"
-            class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-3"
+            class="flex min-w-0 flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center"
           >
             <UiCheckbox
               :model-value="selectedAttributeIds"
               :value="attribute.id"
-              class="h-auto min-h-[42px] flex-1 border-0"
+              class="h-auto min-h-[42px] min-w-0 flex-1 border-0"
               @update:model-value="emit('attributesChange', $event)"
               >{{ attribute.name }}</UiCheckbox
             ><UiCheckbox
               v-if="selectedAttributeIds.includes(attribute.id)"
               :model-value="requiredAttributeIds"
               :value="attribute.id"
-              class="h-auto min-h-[42px]"
+              class="h-auto min-h-[42px] shrink-0 self-start sm:self-center"
+              :accessible-name="`Обязательная характеристика: ${attribute.name}`"
               @update:model-value="emit('requiredChange', $event)"
               >Обязательная</UiCheckbox
             >
           </div>
-        </section>
+        </UiCard>
       </div>
       <UiDialogFooter>
         <template #note
