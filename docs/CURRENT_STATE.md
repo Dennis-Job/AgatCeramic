@@ -1,5 +1,13 @@
 # Текущее состояние проекта
 
+Windows follow-up от 2026-10-14 закрывает XLSX file locks, preview matrix и
+test/infra nondeterminism: backend 403/403 дважды, Admin 523/523 E2E,
+real preview 24/24, Client production/dev 15/15 + 2/2. Cold full-stack readiness
+102.9s и browser smoke 1/1 прошли с изолированным dist; LF/format/hygiene PASS.
+Admin npm audit чистый; Client сохраняет 11 high unpatched findings,
+Composer audit недоступен из-за Packagist timeout. Общий security gate не зелёный.
+[Файлы, проверки и оставшийся пункт 5](WINDOWS_FIXES_2026-10-14.md).
+
 Утверждённая macOS-палитра закреплена для Windows 2026-10-13: 99 фиксированных
 цветов, computed CSS, точные contrast exceptions и native Windows CI.
 Windows unit 125/125; palette/baseline subset 230/230. Полный E2E дал 521/523,

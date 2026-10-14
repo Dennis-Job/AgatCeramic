@@ -1,5 +1,21 @@
 # DONE
 
+- [x] Windows follow-up, пункты 1/3/6, 2026-10-14: XLSX ресурсы закрываются
+      без forced GC, GuestCart time фиксирован; backend 403/403 дважды.
+      Preview matrix 24/24, Admin полный E2E 523/523 и native regression 17/17,
+      Client 15/15 + 2/2; UI Design Guard и backend review approved.
+      Cold bootstrap отделён от HTTP health, dist изолирован; readiness102.9s,
+      real browser smoke1/1, clean/stale dependency harness PASS, owned resources0.
+      LF/format/repository hygiene PASS. Совместимые npm обновления применены:
+      Admin audit0, Client11high unpatched — оставшаяся часть пункта5 открыта.
+      [Отчёт, файлы и ограничения](../docs/WINDOWS_FIXES_2026-10-14.md).
+
+- [x] Бэкап тестовых баз перед очисткой Docker, 2026-10-13: пять PostgreSQL
+      custom-format дампов сохранены вне репозитория вместе с инструкцией
+      и скриптом восстановления. Все пять баз восстановлены в изолированном
+      PostgreSQL, сверены 470 таблиц и SHA-256 архивов; рабочие данные не менялись.
+      [Результат проверки](../docs/DATABASE_BACKUP_2026-10-13.md).
+
 - [x] Утверждённые macOS-цвета на Windows, 2026-10-13: production palette/CSS
       сохранены; 99 цветов закреплены независимым контрактом, новые цветовые
       отклонения блокируют тесты. Windows unit 125/125, palette/baseline 230/230;

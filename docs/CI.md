@@ -19,6 +19,15 @@ Workflow получает только право `contents: read` и не ис�
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
 
+Frontend text checkout использует LF через `.gitattributes`; default Prettier
+проверяется без EOL override. Admin `.prettierignore` исключает локальные `.tmp`
+browser artifacts, чтобы обычный `format:check` оставался воспроизводимым.
+
+На 2026-10-14 совместимые npm lock updates очистили Admin audit. Client audit
+остаётся blocking: 11 high findings из unpatched braces/node-forge, без
+critical/moderate. Порог и классификация dependencies не менялись.
+[Исправления, reachability assessment и ограничения](WINDOWS_FIXES_2026-10-14.md).
+
 С 2026-10-13 текущая macOS-палитра утверждена владельцем также для Windows.
 Все Admin axe scans сначала сверяют замороженный цветовой контракт, затем
 проверяют доступность с точными документированными owner-approved contrast
@@ -266,6 +275,27 @@ docker compose -p agatceramic-admin-smoke-test --env-file .env.example \
 ```
 
 Отдельный project name обязателен, чтобы cleanup не затронул development Compose.
+
+Cold preparation вынесена в one-shot `admin-smoke-backend-bootstrap`
+(Composer + safety guard + migrations + fixtures, bounded 300s) и
+`admin-smoke-bootstrap` (npm + build, bounded 360s). Runtime ждёт
+`service_completed_successfully`; прежний HTTP health budget начинается после
+подготовки. Build artifacts изолированы в `admin_smoke_dist`, shared только
+между двумя Admin test services. TERM kill grace — 10 секунд.
+
+Compose job проверяет конфигурационный regression gate. Полная локальная
+проверка independent bootstrap failures, clean volumes, readiness и настоящего
+browser smoke доступна отдельно:
+
+```sh
+node scripts/test-admin-smoke-bootstrap.mjs --config-only
+node scripts/test-admin-smoke-bootstrap.mjs --browser-smoke
+```
+
+Harness отказывается переиспользовать уже существующие project resources и
+в `finally` удаляет только свой отдельный project. Optional `--composer-audit`
+выполняет отдельный audit и передаёт nonzero exit; network failure не считается
+успешной security-проверкой.
 
 Полный локальный Admin workflow после `npm ci` запускается командой `npm run test:ci`: ESLint,
 Prettier check, unit-тесты, production build и Playwright выполняются последовательно с единым

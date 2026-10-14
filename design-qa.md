@@ -2,14 +2,22 @@
 
 Дата: 2026-10-07. Route: `http://localhost:5173/categories`. Final result: **passed**.
 
+Это историческая приёмка от 7 октября. Локальные файлы исходного ревью не
+входили в Git; их пути ниже сохранены как идентификаторы, а не переносимые
+ссылки. На Windows отсутствуют исходный macOS ImageGen PNG и два real-data
+JPEG, поэтому повторно проверить именно эти исторические изображения здесь
+нельзя. Актуальные переносимые эталоны — [Windows](frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-categories-chromium-win32.png)
+и [Linux](frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-categories-chromium-linux.png);
+их отдельная приёмка описана в [Windows palette report](docs/ADMIN_WINDOWS_PALETTE_REPORT.md).
+
 ## Источник и проверяемый результат
 
 Владелец выбрал вариант 3 из трёх ImageGen-концептов: раскрытая иерархия, отношения и группы характеристик сразу под каждой категорией.
 
-- Точный источник: [вариант 3](/Users/dennis.a.k/.codex/generated_images/01a1161c-cea9-7640-b7ee-d3db770b1ce0/exec-e0998579-7139-48fd-8560-3dcdd2ed2f90.png), PNG 1487×1058.
-- Реализация с сопоставимым содержимым: [desktop](frontend/admin/.tmp/category-overview-desktop.png), viewport 1440×1024, full-page PNG 1440×1045.
-- Реальные данные: [Сантехника и дети](frontend/admin/.tmp/category-overview-real.jpg), нативный screenshot JPEG 1243×1139.
-- Длинные русские строки и непрерывные слова: [320](frontend/admin/.tmp/category-overview-320.png), [640](frontend/admin/.tmp/category-overview-640.png), [768](frontend/admin/.tmp/category-overview-768.png), [1024](frontend/admin/.tmp/category-overview-1024.png), [1280](frontend/admin/.tmp/category-overview-1280.png).
+- Точный источник: вариант 3, `/Users/dennis.a.k/.codex/generated_images/01a1161c-cea9-7640-b7ee-d3db770b1ce0/exec-e0998579-7139-48fd-8560-3dcdd2ed2f90.png`, PNG 1487×1058.
+- Реализация с сопоставимым содержимым: `frontend/admin/.tmp/category-overview-desktop.png`, viewport 1440×1024, full-page PNG 1440×1045.
+- Реальные данные: «Сантехника и дети», `frontend/admin/.tmp/category-overview-real.jpg`, нативный screenshot JPEG 1243×1139.
+- Длинные русские строки и непрерывные слова: `frontend/admin/.tmp/category-overview-{320,640,768,1024,1280}.png`.
 
 Источник и реализация представлены вместе в одном сравнительном input; композиция сопоставлена по ширине (1487 и 1440 px) с сохранением пропорций. Данные fixture отражают ту же структуру: корень, две дочерние категории и две группы. Основные области отдельно проверены в исходном масштабе: названия групп, строки характеристик, отметки обязательности/фильтра, parent/child links и действия.
 
@@ -54,4 +62,4 @@
 
 После приёмки варианта 3 владелец попросил заменить верхний поиск выпадающим списком созданных категорий. `UiSelect` показывает «Все категории» и каждый существующий ID, включая скрытые; названия детей дополнены родителем. Выбор сохраняет предков и потомков, переход к связанным категориям и удаление сбрасывают выбор. Это явное уточнение исходного концепта, без изменения утверждённой палитры.
 
-Открытое меню: `frontend/admin/.tmp/category-select-menu-{320,640,768,1024,1280}.png`; реальный каталог: [dropdown](frontend/admin/.tmp/category-select-real.jpg). Все восемь state-эталонов просмотрены независимым UI Design Guard перед adoption. Проверены длинные строки, границы viewport, возврат фокуса и Escape, disabled loading/empty/error. 13 сценариев обзора и 5 baseline прошли на обеих платформах. Итог независимого ревью: accepted, blocking findings отсутствуют.
+Открытое меню: `frontend/admin/.tmp/category-select-menu-{320,640,768,1024,1280}.png`; реальный каталог: `frontend/admin/.tmp/category-select-real.jpg` (исторический dropdown JPEG). Все восемь state-эталонов просмотрены независимым UI Design Guard перед adoption. Проверены длинные строки, границы viewport, возврат фокуса и Escape, disabled loading/empty/error. 13 сценариев обзора и 5 baseline прошли на обеих платформах. Итог независимого ревью: accepted, blocking findings отсутствуют.
