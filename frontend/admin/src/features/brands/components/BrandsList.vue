@@ -8,7 +8,12 @@ import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import { countryName } from '../../../constants/countries'
 import type { Brand } from '../types/brand.types'
 
-defineProps<{ brands: Brand[]; loading: boolean; canManage: boolean }>()
+defineProps<{
+  brands: Brand[]
+  loading: boolean
+  canManage: boolean
+  search?: string
+}>()
 const emit = defineEmits<{ edit: [brand: Brand]; remove: [brand: Brand] }>()
 </script>
 
@@ -107,7 +112,15 @@ const emit = defineEmits<{ edit: [brand: Brand]; remove: [brand: Brand] }>()
       </li>
     </ul>
   </div>
-  <UiEmptyState v-else class="admin-container" label="Брендов пока нет." />
+  <UiEmptyState
+    v-else
+    class="admin-container"
+    :label="
+      search?.trim()
+        ? 'Бренды не найдены. Попробуйте другой запрос.'
+        : 'Брендов пока нет.'
+    "
+  />
 </template>
 
 <style scoped>

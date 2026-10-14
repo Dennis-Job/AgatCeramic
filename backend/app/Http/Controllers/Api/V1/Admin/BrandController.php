@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\ListBrandsRequest;
 use App\Http\Requests\Api\V1\Admin\StoreBrandRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateBrandRequest;
 use App\Http\Resources\Catalog\BrandResource;
 use App\Models\Brand;
+use App\Queries\BrandQuery;
 use App\Services\BrandManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,11 +20,9 @@ class BrandController extends Controller
 {
     public function __construct(private readonly BrandManagementService $managementService) {}
 
-    public function index(): AnonymousResourceCollection
+    public function index(ListBrandsRequest $request, BrandQuery $query): AnonymousResourceCollection
     {
-        Gate::authorize('viewAny', Brand::class);
-
-        return BrandResource::collection(Brand::query()->with(['logo', 'documents'])->orderBy('name')->paginate(25));
+        return BrandResource::collection($query->paginate($request->string('search')->toString(), $request->integer('page', 1)));
     }
 
     public function store(StoreBrandRequest $request): JsonResponse

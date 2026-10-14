@@ -1,5 +1,20 @@
 # DONE
 
+- [x] Поиск рядом с «Добавить бренд», 2026-10-14: перенесён в PageHeader actions,
+      слева от кнопки, с переносом controls на узком экране. Build/lint/format
+      PASS, unit 129/129, Windows E2E 21/21, Linux visual 4/4;
+      независимый UI Design Guard accepted.
+      [Результат и файлы](../docs/ADMIN_BRANDS_REDESIGN.md#поиск-рядом-с-добавлением-бренда-2026-10-14).
+
+- [x] Поиск брендов, 2026-10-14: по названию/slug во всём справочнике,
+      без учёта регистра, с debounce, очисткой и сохранением фильтра при
+      пагинации; empty/error/retry и поздние ответы обработаны. API/OpenAPI
+      обновлены, миграции не нужны. Frontend unit 129/129, E2E 30/30,
+      Linux visual 4/4; backend SQLite 410 (1 pg-only skip), PostgreSQL
+      feature 329/329. Lint/format/build, backend static/API checks PASS;
+      независимый UI Design Guard accepted.
+      [Результат, файлы и проверки](../docs/ADMIN_BRANDS_REDESIGN.md#поиск-брендов-2026-10-14).
+
 - [x] Подсветка фокуса в формах категорий и брендов, 2026-10-14:
       scroll-body оставляет место для полного halo без изменения положения
       полей и утверждённой палитры. Создание/редактирование проверены на

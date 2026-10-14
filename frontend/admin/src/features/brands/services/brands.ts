@@ -18,10 +18,11 @@ async function fail(response: Response): Promise<never> {
   )
 }
 export async function getBrands(
-  request: PageRequest = {},
+  request: PageRequest & { search?: string } = {},
 ): Promise<PaginatedResponse<Brand>> {
   const query = new URLSearchParams()
   withPage(query, request)
+  if (request.search?.trim()) query.set('search', request.search.trim())
   const response = await apiFetch(
     `/admin/brands${query.size ? `?${query}` : ''}`,
   )
