@@ -35,18 +35,18 @@ const emit = defineEmits<{
     labelledby="category-attributes-title"
     describedby="category-attributes-description"
     :close-disabled="busy"
-    panel-class="w-full max-w-xl"
+    panel-class="category-assignments-dialog w-full max-w-4xl"
     @close="emit('close')"
     ><form
       v-if="category"
-      class="max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+      class="flex h-[calc(100dvh-2rem)] w-full flex-col rounded-xl bg-white p-6 shadow-xl"
       @submit.prevent="emit('submit')"
     >
-      <div class="flex items-start justify-between gap-4">
-        <div>
+      <div class="flex shrink-0 items-start justify-between gap-4">
+        <div class="min-w-0 flex-1">
           <h2
             id="category-attributes-title"
-            class="text-lg font-bold text-gray-500"
+            class="break-words text-lg font-bold text-gray-500 [overflow-wrap:anywhere]"
           >
             Характеристики: {{ category.name }}
           </h2>
@@ -62,7 +62,9 @@ const emit = defineEmits<{
         /></UiButton>
       </div>
       <UiNotification v-if="error">{{ error }}</UiNotification>
-      <div class="mt-6 max-h-80 space-y-4 overflow-y-auto">
+      <div
+        class="mt-6 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain"
+      >
         <section class="admin-panel--inset p-3">
           <h3 class="mb-2 text-sm font-semibold text-gray-500">
             Группы характеристик
@@ -157,14 +159,22 @@ const emit = defineEmits<{
             категории.</span
           ></template
         >
-        <UiButton
-          type="button"
-          variant="surface"
-          :disabled="busy"
-          @click="emit('close')"
-          >Отмена</UiButton
-        ><UiButton :loading="busy">Сохранить</UiButton>
+        <div class="flex shrink-0 items-center gap-3">
+          <UiButton
+            type="button"
+            variant="surface"
+            :disabled="busy"
+            @click="emit('close')"
+            >Отмена</UiButton
+          ><UiButton :loading="busy">Сохранить</UiButton>
+        </div>
       </UiDialogFooter>
     </form></UiDialog
   >
 </template>
+
+<style scoped>
+:deep(.category-assignments-dialog) {
+  max-height: calc(100dvh - 2rem);
+}
+</style>

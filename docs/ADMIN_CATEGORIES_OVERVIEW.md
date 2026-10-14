@@ -366,3 +366,30 @@ Backend, миграции и OpenAPI не изменены. Рабочие да�
 новый `e2e/categoryDetails.spec.ts` (пути внутри `frontend/admin`), этот отчёт,
 `tasks/TODO.md` и `tasks/DONE.md`. Ошибочная запись незавершённого варианта
 в `tasks/IN_PROGRESS.md` удалена; активных задач нет.
+
+## Окно настройки характеристик, 2026-10-14
+
+`CategoryAssignmentsDialog` расширен с 576 до 896 px и занимает доступную
+высоту viewport с отступами по 16 px. Вместо ограничения списка в 320 px
+используется оставшаяся высота flex-формы; прокручивается только список,
+шапка и footer сохраняют положение. Кнопки «Отмена» и «Сохранить» объединены
+в один непереносимый ряд, как в существующей форме категории. Длинный заголовок
+переносится внутри своей области. Утверждённые стили и общий UI-kit сохранены.
+
+Добавлены 6 production E2E для 320/640/768/1024/1280 × 900 px и 1280 × 600 px:
+длинный список, высота/ширина, отсутствие overflow, неподвижные действия,
+Escape, возврат фокуса и axe с действующим контрактом утверждённых цветов.
+До исправления проверка 1280 × 900 воспроизвела высоту окна 561 px;
+после исправления все 6 проходят. Вместе с `categoryDetails.spec.ts`,
+`categoryOverview.spec.ts` и существующим catalog dialog flow — **37 E2E PASS**.
+`npm run check`: lint, полный format check, **125 unit PASS**, TypeScript/build PASS.
+Сохраняется предупреждение Vite о размере bundle. Первоначальные запуски
+в Windows sandbox блокировались расположением Chromium и временными rename;
+итоговые проверки успешно выполнены в обычном Windows-профиле.
+
+Независимый UI Design Guard: **PASS**, blocking findings отсутствуют;
+визуально просмотрены PNG 320 × 900, 768 × 900, 1280 × 900 и 1280 × 600.
+Backend, миграции и API-контракт не изменены. Проверки используют API fixtures.
+
+Изменённые файлы: `frontend/admin/src/features/categories/components/CategoryAssignmentsDialog.vue`,
+`frontend/admin/e2e/categoryAssignments.spec.ts`, этот отчёт и `tasks/DONE.md`.

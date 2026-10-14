@@ -1,5 +1,12 @@
 # DONE
 
+- [x] Окно настройки характеристик категории, 2026-10-14: ширина 896 px,
+      высота viewport с отступами 16 px, список использует доступную высоту;
+      шапка и footer закреплены, отмена/сохранение в один ряд.
+      Lint/format/build PASS, unit 125/125, production E2E 37/37;
+      независимый UI Design Guard PASS.
+      [Результат и файлы](../docs/ADMIN_CATEGORIES_OVERVIEW.md).
+
 - [x] Windows follow-up, пункты 1/3/6, 2026-10-14: XLSX ресурсы закрываются
       без forced GC, GuestCart time фиксирован; backend 403/403 дважды.
       Preview matrix 24/24, Admin полный E2E 523/523 и native regression 17/17,
