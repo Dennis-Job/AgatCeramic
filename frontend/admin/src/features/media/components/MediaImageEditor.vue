@@ -20,6 +20,8 @@ const props = defineProps<{
   modelValue: number | null
   disabled?: boolean
   uploadSuccessMessage?: string
+  previewLabel?: string
+  removeLabel?: string
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: number | null]
@@ -153,7 +155,7 @@ function cancelFile() {
             type="button"
             variant="surface"
             class="image-editor-preview"
-            aria-label="Увеличить изображение категории"
+            :aria-label="previewLabel || 'Увеличить изображение категории'"
             @click="viewerOpen = true"
           >
             <UiImagePreview
@@ -167,7 +169,7 @@ function cancelFile() {
             variant="danger-ghost"
             size="sm"
             class="image-editor-remove"
-            aria-label="Убрать изображение категории"
+            :aria-label="removeLabel || 'Убрать изображение категории'"
             tooltip="Убрать изображение"
             :disabled="controlsDisabled"
             @click.stop="removeImage"

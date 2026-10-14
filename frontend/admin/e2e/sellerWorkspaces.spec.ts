@@ -129,9 +129,57 @@ const fixtures = {
   ),
 }
 
-// The expanded category overview has its own responsive coverage in categoryOverview.spec.ts.
+test('Seller workspace /brands keeps long data, scroll and actions usable', async ({
+  page,
+}) => {
+  await mockAdminBaseline(page, false, 'default', undefined, fixtures)
+  await page.goto('/brands')
+  const list = page.getByRole('list', {
+    name: 'Бренды и подробная информация',
+    exact: true,
+  })
+  await expect(list.getByRole('article')).toHaveCount(25)
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect(
+      list.getByRole('heading', { name: longName, exact: true }).first(),
+    ).toBeVisible()
+    expect(
+      await list.evaluate((element) =>
+        Array.from(element.querySelectorAll('article')).every(
+          (row) => row.scrollWidth <= row.clientWidth,
+        ),
+      ),
+    ).toBe(true)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    const edit = list
+      .getByRole('button', {
+        name: `Редактировать бренд ${longName}`,
+        exact: true,
+      })
+      .last()
+    await edit.focus()
+    await expect(edit).toBeInViewport()
+    await page.keyboard.press('Enter')
+    const dialog = page.getByRole('dialog', {
+      name: 'Редактирование бренда',
+      exact: true,
+    })
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(edit).toBeFocused()
+  }
+  const results = await new AxeBuilder({ page }).analyze()
+  expect(results.violations).toEqual([])
+})
+
+// The expanded category and brand lists have their own responsive coverage.
 for (const [path, label, cardsBelow] of [
-  ['/brands', 'Список брендов', 0],
   ['/attribute-groups', 'Список групп характеристик', 0],
   ['/attributes', 'Список характеристик', 0],
   ['/employees', 'Список сотрудников', 1280],

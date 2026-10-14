@@ -59,7 +59,9 @@ const emit = defineEmits<{
           ><X :size="20"
         /></UiButton>
       </div>
-      <div class="min-h-0 overflow-y-auto overscroll-contain">
+      <div
+        class="-m-[var(--admin-focus-halo-width)] min-h-0 overflow-y-auto overscroll-contain p-[var(--admin-focus-halo-width)]"
+      >
         <UiNotification v-if="error">{{ error }}</UiNotification>
         <CategoryMainSection
           :form="form"

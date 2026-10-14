@@ -1507,9 +1507,9 @@ test('categories, brands, groups, and attributes expose their dialog and selecto
   await page.getByRole('button', { name: 'Добавить бренд' }).click()
   dialog = page.getByRole('dialog', { name: 'Новый бренд' })
   await dialog.getByLabel('Страна происхождения').click()
-  await expect(dialog.getByLabel('Поиск: Страна происхождения')).toBeFocused()
-  await dialog.getByLabel('Поиск: Страна происхождения').fill('Россия')
-  await dialog.getByRole('button', { name: 'Россия', exact: true }).click()
+  await expect(page.getByLabel('Поиск: Страна происхождения')).toBeFocused()
+  await page.getByLabel('Поиск: Страна происхождения').fill('Россия')
+  await page.getByRole('button', { name: 'Россия', exact: true }).click()
   await expect(dialog.getByLabel('Страна происхождения')).toContainText(
     'Россия',
   )
