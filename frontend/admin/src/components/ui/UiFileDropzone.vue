@@ -9,7 +9,7 @@ const props = withDefaults(
     description: string
     formatLabel: string
     dropLabel?: string
-    iconTone?: 'blue' | 'green' | 'yellow'
+    iconTone?: 'blue' | 'green' | 'yellow' | 'red'
     descriptionId?: string
     disabled?: boolean
   }>(),
@@ -73,6 +73,7 @@ watch(
       :class="{
         'ui-file-dropzone-icon-green': iconTone === 'green',
         'ui-file-dropzone-icon-yellow': iconTone === 'yellow',
+        'ui-file-dropzone-icon-red': iconTone === 'red',
       }"
       aria-hidden="true"
     >
@@ -160,6 +161,16 @@ watch(
 .ui-file-dropzone-badge-yellow {
   background: var(--color-warning-300);
   color: var(--color-warning-900);
+}
+.ui-file-dropzone-icon-red {
+  color: var(--color-error-500);
+}
+.ui-file-dropzone-icon-red :deep(svg) {
+  fill: var(--color-error-50);
+}
+.ui-file-dropzone-icon-red .ui-file-dropzone-badge {
+  background: var(--color-error-100);
+  color: var(--color-error-700);
 }
 @media (max-width: 639px) {
   .ui-file-dropzone {

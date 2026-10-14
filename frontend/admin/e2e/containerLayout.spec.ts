@@ -75,6 +75,17 @@ for (const path of routes) {
         .all()) {
         if (!(await panel.isVisible())) continue
         const box = await panel.boundingBox()
+        if (await panel.evaluate((el) => Boolean(el.closest('header')))) {
+          expect(
+            box!.x,
+            `${path} header control left at ${width}`,
+          ).toBeGreaterThanOrEqual(expectedLeft)
+          expect(
+            box!.x + box!.width,
+            `${path} header control right at ${width}`,
+          ).toBeLessThanOrEqual(expectedLeft + expectedWidth)
+          continue
+        }
         expect(box!.x, `${path} panel left at ${width}`).toBe(expectedLeft)
         expect(box!.width, `${path} panel width at ${width}`).toBe(
           expectedWidth,

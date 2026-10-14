@@ -3740,6 +3740,7 @@
             "patch": {
                 "operationId": "updateBrand",
                 "summary": "Update a brand",
+                "description": "Clearing or replacing logo_id removes the previous media if unused and the actor may delete media. Original and thumbnail files are cleaned through durable jobs after commit; shared references are preserved.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -3783,6 +3784,7 @@
             "delete": {
                 "operationId": "deleteBrand",
                 "summary": "Delete a brand",
+                "description": "Deletes the brand and removes its previous logo media if unused and the actor may delete media. Original and thumbnail files are cleaned through durable jobs after commit; shared references are preserved.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -3806,6 +3808,7 @@
             "put": {
                 "operationId": "putUpdateBrand",
                 "summary": "Replace: Update a brand",
+                "description": "Clearing or replacing logo_id removes the previous media if unused and the actor may delete media. Original and thumbnail files are cleaned through durable jobs after commit; shared references are preserved.",
                 "security": [
                     {
                         "sanctumSession": []

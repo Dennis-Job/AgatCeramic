@@ -34,11 +34,15 @@ Nunito для основного текста, Poppins для display, суще�
 
 `UiFileDropzone` — общая область выбора и перетаскивания файлов по референсу
 загрузки фото. Props: `label`, `dropLabel`, `description`, `formatLabel`,
-`iconTone=blue|green`, `disabled`, optional `descriptionId` для внешней подсказки.
+`iconTone=blue|green|yellow|red`, `disabled`, optional `descriptionId` для внешней подсказки.
 Slot `icon` задаёт тип файла; зелёный вариант использует существующий
 `green-500` для иконки и метки XLSX. Событие `choose` открывает файловый input
 родителя, `files` передаёт dropped FileList. Проверка формата/размера и загрузка
 остаются у feature. Disabled запрещает выбор и drop, очищает drag-состояние.
+Для PDF используется `FileText` в слоте `icon` и `iconTone="red"`: контур
+`error-500`, заливка `error-50`, плашка PDF `error-100`/`error-700`.
+Кнопка выбора, hover и focus сохраняют общие стили; красный обозначает формат файла.
+PDF-поле бренда поддерживает выбор с клавиатуры, drop и возврат фокуса после отмены.
 Компонент используется для фото товара и заполненного шаблона Excel;
 витрина показывает активную область XLSX, выбранный файл и disabled-вариант.
 

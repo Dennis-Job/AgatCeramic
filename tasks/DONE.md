@@ -1,5 +1,28 @@
 # DONE
 
+- [x] Оформление загрузки PDF у бренда, 2026-10-14: общий UiFileDropzone как у фото,
+      красная FileText/PDF-иконка на существующих tokens, выбор/drag-and-drop,
+      возврат фокуса при отмене и сохранённые guards. Build/lint/format,
+      unit 133/133, полный Windows E2E 549/549 PASS; UI Design Guard accepted.
+      [Результат и файлы](../docs/ADMIN_BRANDS_REDESIGN.md#оформление-загрузки-pdf-2026-10-14).
+
+- [x] Загрузка PDF у бренда, 2026-10-14: inline upload в создании/редактировании,
+      до 20 МБ, автоматический выбор документа и привязка при сохранении бренда.
+      Permissions, validation, retry/cancel и независимые logo/PDF guards сохранены.
+      Build/lint/format, unit 133/133, backend media 3/37 PASS; полный Windows E2E
+      547 PASS + устаревшее ожидание ширины поиска, исправлено и повторено: 25/25 PASS.
+      Адаптивность 320–1280 px, axe и независимый UI Design Guard accepted.
+      [Результат и файлы](../docs/ADMIN_BRANDS_REDESIGN.md#загрузка-pdf-в-форме-бренда-2026-10-14).
+
+- [x] Очистка логотипов брендов, 2026-10-14: подключён существующий deleteIfUnused
+      после снятия/замены логотипа и удаления бренда. Shared ID/URL, права,
+      rollback и stale model защищены; оригинал/thumbnail удаляются durable queue.
+      Native backend 431 PASS + 1 pg-only skip, PostgreSQL feature 351/351,
+      Redis integration 1/84 и brand worker smoke 3 сценария/12 deliveries PASS.
+      Pint/PHPStan/architecture/Composer validate/OpenAPI PASS; независимое review
+      accepted. Composer audit недоступен из-за Packagist timeout (curl 28).
+      [Результат, файлы и ограничения](../docs/ADMIN_BRANDS_REDESIGN.md#автоматическая-очистка-логотипа-2026-10-14).
+
 - [x] Поиск рядом с «Добавить бренд», 2026-10-14: перенесён в PageHeader actions,
       слева от кнопки, с переносом controls на узком экране. Build/lint/format
       PASS, unit 129/129, Windows E2E 21/21, Linux visual 4/4;

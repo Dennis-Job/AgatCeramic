@@ -146,11 +146,13 @@ for (const mode of ['create', 'edit'] as const) {
     await dialog
       .getByRole('textbox', { name: /^Название/ })
       .fill('Новый бренд плитки')
-    await dialog.locator('input[type=file]').setInputFiles({
-      name: 'logo.png',
-      mimeType: 'image/png',
-      buffer: Buffer.from(pixel.split(',')[1]!, 'base64'),
-    })
+    await dialog
+      .getByLabel('Загрузить файл — Логотип бренда', { exact: true })
+      .setInputFiles({
+        name: 'logo.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from(pixel.split(',')[1]!, 'base64'),
+      })
     await expect(
       dialog.getByRole('button', { name: 'Сохранить', exact: true }),
     ).toBeDisabled()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { X } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
@@ -33,6 +33,22 @@ const emit = defineEmits<{
   mediaPending: [boolean]
   mediaUploading: [boolean]
 }>()
+const uploads = reactive({
+  logoPending: false,
+  documentPending: false,
+  logoUploading: false,
+  documentUploading: false,
+})
+watch(
+  () => uploads.logoPending || uploads.documentPending,
+  (value) => emit('mediaPending', value),
+  { flush: 'sync' },
+)
+watch(
+  () => uploads.logoUploading || uploads.documentUploading,
+  (value) => emit('mediaUploading', value),
+  { flush: 'sync' },
+)
 </script>
 
 <template>
@@ -105,10 +121,10 @@ const emit = defineEmits<{
             preview-label="Увеличить логотип бренда"
             remove-label="Убрать логотип бренда"
             upload-success-message="Логотип загружен и выбран. Сохраните бренд, чтобы применить его."
-            :disabled="busy"
+            :disabled="busy || uploads.documentUploading"
             :model-value="form.logo_id"
-            @pending="emit('mediaPending', $event)"
-            @uploading="emit('mediaUploading', $event)"
+            @pending="uploads.logoPending = $event"
+            @uploading="uploads.logoUploading = $event"
             @preview-open="imagePreviewOpen = $event"
             @update:model-value="form.logo_id = $event"
           />
@@ -129,8 +145,12 @@ const emit = defineEmits<{
           <MediaReferenceField
             kind="document"
             label="Документы бренда"
+            inline-upload
+            upload-success-message="Документ загружен и выбран. Сохраните бренд, чтобы прикрепить его."
             :model-value="form.document_ids"
             :disabled="busy || mediaUploading"
+            @pending="uploads.documentPending = $event"
+            @uploading="uploads.documentUploading = $event"
             @update:model-value="
               form.document_ids = Array.isArray($event) ? $event : []
             "
@@ -148,9 +168,9 @@ const emit = defineEmits<{
         <template #note
           ><span id="brand-dialog-description">{{
             mediaUploading
-              ? 'Логотип загружается…'
+              ? 'Файлы загружаются…'
               : mediaPending
-                ? 'Загрузите выбранный логотип или отмените выбор файла перед сохранением.'
+                ? 'Загрузите выбранные файлы или отмените их выбор перед сохранением.'
                 : 'Настройте название, логотип и информацию о бренде.'
           }}</span></template
         >

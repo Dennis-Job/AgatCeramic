@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import UiNotification from '../../../components/ui/UiNotification.vue'
-import { computed, onBeforeUnmount, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { FileText } from '@lucide/vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
+import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useInlineMediaUpload } from '../composables/useInlineMediaUpload'
 import { useMediaOptions } from '../composables/useMediaOptions'
@@ -28,6 +30,8 @@ const emit = defineEmits<{
   uploading: [value: boolean]
 }>()
 const auth = useAuthStore()
+const documentInput = ref<HTMLInputElement | null>(null)
+const documentDropzone = ref<InstanceType<typeof UiFileDropzone> | null>(null)
 const canManage = computed(() => auth.hasPermission('media.manage'))
 const canPreview = computed(
   () =>
@@ -78,6 +82,24 @@ function toggle(id: number, checked: boolean) {
       ? [...selected.value, id]
       : selected.value.filter((value) => value !== id),
   )
+}
+function chooseDocumentFiles(files: FileList | null) {
+  if (
+    props.disabled ||
+    loading.value ||
+    upload.uploading.value ||
+    !canManage.value ||
+    !files?.length
+  )
+    return
+  upload.chooseFile(files[0]!)
+}
+async function cancelFile() {
+  upload.cancel()
+  if (props.kind === 'document') {
+    await nextTick()
+    documentDropzone.value?.$el.focus()
+  }
 }
 </script>
 
@@ -200,9 +222,44 @@ function toggle(id: number, checked: boolean) {
     </div>
     <div
       v-if="canManage && inlineUpload"
-      class="mt-4 space-y-3 rounded-lg border border-gray-200 p-3"
+      class="mt-4 space-y-3"
+      :class="{ 'rounded-lg border border-gray-200 p-3': kind === 'image' }"
     >
-      <label class="block text-sm font-medium text-gray-500"
+      <template v-if="kind === 'document'">
+        <input
+          ref="documentInput"
+          :key="upload.inputKey.value"
+          type="file"
+          accept="application/pdf"
+          :aria-label="`Загрузить файл — ${label}`"
+          :disabled="disabled || loading || upload.uploading.value"
+          class="hidden"
+          tabindex="-1"
+          @change="
+            chooseDocumentFiles(($event.target as HTMLInputElement).files)
+          "
+        />
+        <UiFileDropzone
+          ref="documentDropzone"
+          label="Перетащите PDF или нажмите для добавления"
+          drop-label="Отпустите PDF для добавления"
+          description="Формат — PDF. Размер — не больше 20 МБ."
+          format-label="PDF"
+          icon-tone="red"
+          :disabled="disabled || loading || upload.uploading.value"
+          @choose="documentInput?.click()"
+          @files="chooseDocumentFiles"
+        >
+          <template #icon><FileText :size="44" :stroke-width="1.4" /></template>
+        </UiFileDropzone>
+        <output
+          v-if="upload.file.value"
+          class="block break-words text-xs text-gray-500 [overflow-wrap:anywhere]"
+          aria-live="polite"
+          >{{ upload.file.value.name }}</output
+        >
+      </template>
+      <label v-else class="block text-sm font-medium text-gray-500"
         >Загрузить файл — {{ label }}
         <input
           :key="upload.inputKey.value"
@@ -233,23 +290,25 @@ function toggle(id: number, checked: boolean) {
             maxlength="255"
             :disabled="disabled || upload.uploading.value"
         /></UiField>
-        <UiButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          :loading="upload.uploading.value"
-          :disabled="disabled || loading"
-          @click="upload.upload"
-          >Загрузить и выбрать</UiButton
-        >
-        <UiButton
-          type="button"
-          variant="surface"
-          size="sm"
-          :disabled="upload.uploading.value"
-          @click="upload.cancel"
-          >Отменить выбор файла</UiButton
-        >
+        <div class="flex flex-wrap gap-2">
+          <UiButton
+            type="button"
+            :variant="kind === 'document' ? 'primary' : 'secondary'"
+            size="sm"
+            :loading="upload.uploading.value"
+            :disabled="disabled || loading"
+            @click="upload.upload"
+            >Загрузить и выбрать</UiButton
+          >
+          <UiButton
+            type="button"
+            variant="surface"
+            size="sm"
+            :disabled="disabled || upload.uploading.value"
+            @click="cancelFile"
+            >Отменить выбор файла</UiButton
+          >
+        </div>
       </template>
       <UiNotification v-if="upload.error.value">
         {{ upload.error.value }}
