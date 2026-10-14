@@ -142,18 +142,18 @@ services:
       retries: 20
       start_period: 2s
 
-  admin-smoke-backend:
+  admin-smoke-backend-bootstrap: &admin-smoke-backend
     build:
       context: .
       dockerfile: infrastructure/docker/backend/Dockerfile
     profiles: ["admin-smoke"]
     working_dir: /var/www/backend
     command: >-
-      sh -c "install-locked-dependencies composer /var/www/backend
+      timeout --signal=TERM --kill-after=10s 300s sh -ec
+      "install-locked-dependencies composer /var/www/backend
       && php scripts/assert-safe-postgres-test-environment.php agatceramic_admin_smoke_test
       && php artisan migrate:fresh --seed --force
-      && php scripts/setup-admin-full-stack-smoke.php
-      && exec php artisan serve --host=0.0.0.0 --port=8000 --no-reload"
+      && php scripts/setup-admin-full-stack-smoke.php"
     environment:
       APP_ENV: testing
       APP_DEBUG: "false"
@@ -194,6 +194,13 @@ services:
         condition: service_healthy
       admin-smoke-redis:
         condition: service_healthy
+
+  admin-smoke-backend:
+    <<: *admin-smoke-backend
+    command: php artisan serve --host=0.0.0.0 --port=8000 --no-reload
+    depends_on:
+      admin-smoke-backend-bootstrap:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -205,25 +212,31 @@ services:
       retries: 30
       start_period: 5s
 
-  admin-smoke:
+  admin-smoke-bootstrap: &admin-smoke
     build:
       context: .
       dockerfile: infrastructure/docker/node/Dockerfile
     profiles: ["admin-smoke"]
     working_dir: /app
     command: >-
-      sh -c "install-locked-dependencies npm /app
-      && npm run build
-      && exec npm run preview -- --host 0.0.0.0 --port=4173"
+      timeout --signal=TERM --kill-after=10s 360s sh -ec
+      "install-locked-dependencies npm /app && npm run build"
     environment:
       ADMIN_PREVIEW_BACKEND_URL: http://admin-smoke-backend:8000
       VITE_API_BASE_URL: /api/v1
     volumes:
       - ./frontend/admin:/app
       - admin_smoke_node_modules:/app/node_modules
+      - admin_smoke_dist:/app/dist
+
+  admin-smoke:
+    <<: *admin-smoke
+    command: npm run preview -- --host 0.0.0.0 --port=4173
     depends_on:
       admin-smoke-backend:
         condition: service_healthy
+      admin-smoke-bootstrap:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -410,6 +423,7 @@ volumes:
   backend_vendor:
   admin_smoke_backend_vendor:
   admin_smoke_node_modules:
+  admin_smoke_dist:
   admin_smoke_playwright_browsers:
   admin_smoke_state:
   admin_node_modules:

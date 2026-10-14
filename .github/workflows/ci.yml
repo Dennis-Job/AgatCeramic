@@ -402,5 +402,8 @@ jobs:
       - name: Validate Docker Compose configuration
         run: docker compose --env-file .env.example config --quiet
 
+      - name: Check Admin bootstrap readiness gates
+        run: node scripts/test-admin-smoke-bootstrap.mjs --config-only
+
       - name: Test clean and stale dependency volumes
         run: bash scripts/test-compose-dependency-bootstrap.sh
