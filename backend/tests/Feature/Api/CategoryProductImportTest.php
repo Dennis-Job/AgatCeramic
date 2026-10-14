@@ -12,6 +12,7 @@ use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CategoryProductImportService;
+use App\Services\ProductImportTemplateCategoryValidator;
 use App\Services\ProductImportTemplateService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -22,12 +23,65 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 use ZipArchive;
 
 class CategoryProductImportTest extends TestCase
 {
     use RefreshDatabase;
+
+    #[DataProvider('workbookCleanupCases')]
+    public function test_readers_release_workbook_immediately_without_garbage_collection(string $reader, bool $invalid): void
+    {
+        [$category] = $this->catalog();
+        $template = app(ProductImportTemplateService::class);
+        $file = $template->create($category, [$this->values('Товар')]);
+        if ($invalid) {
+            $zip = new ZipArchive;
+            $zip->open($file['path']);
+            $sheet = $reader === 'metadata' ? 'xl/worksheets/sheet2.xml' : 'xl/worksheets/sheet1.xml';
+            $xml = $zip->getFromName($sheet);
+            $zip->addFromString($sheet, $reader === 'metadata'
+                ? str_replace('AGAT_CATEGORY_TEMPLATE_V1', 'INVALID_MARKER', $xml)
+                : str_replace('Название', 'Invalid header', $xml));
+            $zip->close();
+        }
+
+        $garbageCollectionEnabled = gc_enabled();
+        gc_disable();
+        try {
+            try {
+                if ($reader === 'metadata') {
+                    app(ProductImportTemplateCategoryValidator::class)->validate($category, $file['path']);
+                } else {
+                    $entries = $template->read($category, $file['path']);
+                    $this->assertCount(1, $entries);
+                    $this->assertSame('Товар', $entries[0]['values']['name']);
+                }
+                $this->assertFalse($invalid, 'Invalid workbooks must be rejected.');
+            } catch (ValidationException $exception) {
+                $this->assertTrue($invalid);
+                $this->assertArrayHasKey('file', $exception->errors());
+            }
+
+            $this->assertTrue(unlink($file['path']), 'The reader must release its source workbook before returning or throwing.');
+            $this->assertFileDoesNotExist($file['path']);
+        } finally {
+            if ($garbageCollectionEnabled) {
+                gc_enable();
+            }
+        }
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function workbookCleanupCases(): iterable
+    {
+        yield 'preflight early return' => ['metadata', false];
+        yield 'preflight validation error' => ['metadata', true];
+        yield 'template success' => ['template', false];
+        yield 'template header error' => ['template', true];
+    }
 
     public function test_upload_rejects_wrong_category_before_queueing_and_names_both_categories(): void
     {

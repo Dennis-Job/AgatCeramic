@@ -66,6 +66,7 @@ class GuestCartTest extends TestCase
 
     public function test_guest_can_add_update_and_remove_cart_items_with_ttl_transitions(): void
     {
+        $this->freezeTime();
         config(['cart.empty_ttl_hours' => 2, 'cart.abandoned_ttl_days' => 3]);
         $resolved = $this->createGuestCart();
         $cart = $resolved->cart;

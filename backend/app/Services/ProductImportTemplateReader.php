@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Support\ProductWorkbookSchema;
+use App\Support\XlsxReaderCleanup;
 use DateTimeInterface;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Reader\XLSX\Options as ReaderOptions;
@@ -15,6 +16,7 @@ final class ProductImportTemplateReader
     public function __construct(
         private readonly ProductImportTemplateSchema $schema,
         private readonly ProductImportTemplateCategoryValidator $categoryValidator,
+        private readonly XlsxReaderCleanup $cleanup,
     ) {}
 
     /** @return list<array{row: int, editing: bool, values: array<string, mixed>}> */
@@ -27,6 +29,7 @@ final class ProductImportTemplateReader
         $readerOptions = new ReaderOptions;
         $readerOptions->SHOULD_PRESERVE_EMPTY_ROWS = true;
         $reader = new Reader($readerOptions);
+        $rows = null;
         $entries = [];
         $hasProducts = false;
         try {
@@ -36,7 +39,8 @@ final class ProductImportTemplateReader
                     continue;
                 }
                 $hasProducts = true;
-                foreach ($sheet->getRowIterator() as $index => $row) {
+                $rows = $sheet->getRowIterator();
+                foreach ($rows as $index => $row) {
                     $values = array_map(fn ($value) => $value instanceof DateTimeInterface ? $value->format('Y-m-d') : $value, $row->toArray());
                     if ($index === 1) {
                         if ($values === array_values($editingHeaders)) {
@@ -71,12 +75,7 @@ final class ProductImportTemplateReader
         } catch (Throwable) {
             throw ValidationException::withMessages(['file' => ['Не удалось прочитать XLSX-файл. Проверьте, что файл не повреждён.']]);
         } finally {
-            try {
-                $reader->close();
-            } catch (Throwable) {
-            }
-            unset($sheet, $reader);
-            gc_collect_cycles();
+            $this->cleanup->close($reader, $rows);
         }
 
         return $entries;

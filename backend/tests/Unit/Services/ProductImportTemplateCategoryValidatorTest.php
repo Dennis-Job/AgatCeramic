@@ -36,6 +36,9 @@ try {
 } catch (Illuminate\Validation\ValidationException) {
     echo 'rejected';
 }
+if (!unlink($argv[2])) {
+    exit(2);
+}
 PHP;
         try {
             $process = new Process([PHP_BINARY, '-d', 'memory_limit=128M', '-d', 'sys_temp_dir='.$directory.'/cache', '-r', $script, dirname(__DIR__, 3), $path]);

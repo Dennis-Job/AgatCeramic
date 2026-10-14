@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Support\XlsxReaderCleanup;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Validation\ValidationException;
 use OpenSpout\Reader\XLSX\Options;
@@ -12,7 +13,10 @@ use Throwable;
 
 final class ProductImportTemplateCategoryValidator
 {
-    public function __construct(private readonly Filesystem $files) {}
+    public function __construct(
+        private readonly Filesystem $files,
+        private readonly XlsxReaderCleanup $cleanup,
+    ) {}
 
     public function validate(Category $selected, string $path): void
     {
@@ -33,6 +37,7 @@ final class ProductImportTemplateCategoryValidator
     {
         $temporaryDirectory = sys_get_temp_dir().'/agat-category-'.bin2hex(random_bytes(16));
         $reader = null;
+        $rows = null;
         try {
             if (! $this->files->makeDirectory($temporaryDirectory, 0700)) {
                 throw new RuntimeException('Не удалось создать временный каталог проверки шаблона.');
@@ -47,7 +52,8 @@ final class ProductImportTemplateCategoryValidator
                     continue;
                 }
                 // Do not iterate product rows or the remaining lookup rows during submission.
-                foreach ($sheet->getRowIterator() as $row) {
+                $rows = $sheet->getRowIterator();
+                foreach ($rows as $row) {
                     return $this->parseMetadata($row->toArray());
                 }
                 break;
@@ -59,12 +65,12 @@ final class ProductImportTemplateCategoryValidator
             throw ValidationException::withMessages(['file' => ['Не удалось прочитать XLSX-файл. Проверьте, что файл не повреждён.']]);
         } finally {
             try {
-                $reader?->close();
-            } catch (Throwable) {
+                $this->cleanup->close($reader, $rows);
+            } finally {
+                // OpenSpout skips cache cleanup when open() fails partway through initialization.
+                unset($sheet, $rows, $reader);
+                $this->files->deleteDirectory($temporaryDirectory);
             }
-            // OpenSpout skips cache cleanup when open() fails partway through initialization.
-            unset($sheet, $reader);
-            $this->files->deleteDirectory($temporaryDirectory);
         }
     }
 
