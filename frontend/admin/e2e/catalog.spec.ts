@@ -98,7 +98,10 @@ for (const route of catalogRoutes) {
       ).toBe(true)
       request.release()
       await expect(
-        page.getByText(route.item, { exact: false }).first(),
+        page
+          .getByText(route.item, { exact: false })
+          .filter({ visible: true })
+          .first(),
       ).toBeVisible()
     }
   })

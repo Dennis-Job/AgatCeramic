@@ -277,7 +277,7 @@ describe('category overview', () => {
     expect(workspace.overview.value[1]?.attributes[0]?.name).toBe('Цвет')
   })
 
-  test('shows assigned attributes with their own flags and retains parent context for a selected category', async () => {
+  test('shows assigned flags and only the chosen category in the detail pane', async () => {
     const root = category(1, 'Плитка')
     root.children = [category(2, 'Для пола', 1), category(3, 'Для пола', 1)]
     const all = [root, ...root.children]
@@ -321,7 +321,7 @@ describe('category overview', () => {
       'Нет назначенных характеристик',
     )
     await wrapper.setProps({ selectedCategoryId: '2' })
-    expect(wrapper.find('#category-1').exists()).toBe(true)
+    expect(wrapper.find('#category-1').exists()).toBe(false)
     expect(wrapper.find('#category-2').exists()).toBe(true)
     expect(wrapper.find('#category-3').exists()).toBe(false)
     expect(
@@ -330,7 +330,7 @@ describe('category overview', () => {
         .exists(),
     ).toBe(false)
     await wrapper.setProps({ selectedCategoryId: '1' })
-    expect(wrapper.findAll('article')).toHaveLength(3)
+    expect(wrapper.findAll('article')).toHaveLength(1)
     await wrapper.setProps({ selectedCategoryId: '' })
     expect(wrapper.findAll('article')).toHaveLength(3)
     wrapper.unmount()

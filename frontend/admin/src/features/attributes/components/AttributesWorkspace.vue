@@ -11,6 +11,7 @@ import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
+import CatalogReferenceLayout from '../../../components/shared/CatalogReferenceLayout.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { attributeTypeOptions } from '../../../utils/attributeTypes'
@@ -136,8 +137,8 @@ function closeDelete(): void {
       <UiEmptyState label="Не удалось загрузить характеристики и группы." />
       <UiButton variant="surface" @click="load">Повторить загрузку</UiButton>
     </div>
-    <div v-else class="attributes-workspace admin-container">
-      <aside class="attribute-groups min-w-0">
+    <CatalogReferenceLayout v-else>
+      <template #sidebar>
         <div class="mb-4 flex items-center justify-between gap-2">
           <h2 class="text-xl font-bold text-gray-500">Группы</h2>
           <UiButton
@@ -185,8 +186,8 @@ function closeDelete(): void {
         >
           Группы не найдены.
         </p>
-      </aside>
-      <div class="attribute-mobile-group">
+      </template>
+      <template #mobile>
         <label class="block text-sm font-medium text-gray-500"
           >Группа<UiSelect
             v-model="selectedGroup"
@@ -205,7 +206,7 @@ function closeDelete(): void {
           @click="showGroup()"
           ><Plus :size="17" />Создать группу</UiButton
         >
-      </div>
+      </template>
       <section
         class="attribute-content min-w-0"
         aria-labelledby="attribute-content-title"
@@ -312,7 +313,7 @@ function closeDelete(): void {
           >
         </p>
       </section>
-    </div>
+    </CatalogReferenceLayout>
     <AttributeFormDialog
       :open="attributeOpen"
       :title="attributeTitle"
@@ -357,20 +358,6 @@ function closeDelete(): void {
   </AdminWorkspace>
 </template>
 <style scoped>
-.attributes-workspace {
-  display: grid;
-  min-width: 0;
-  border-top: var(--admin-border-width) solid var(--admin-color-gray-200);
-}
-.attribute-groups {
-  display: none;
-}
-.attribute-mobile-group {
-  padding-block: var(--admin-spacing-5);
-}
-.attribute-content {
-  padding-block: var(--admin-spacing-5);
-}
 .attribute-context {
   border-radius: var(--admin-radius-lg);
   background: var(--admin-color-primary-25);
@@ -400,22 +387,5 @@ function closeDelete(): void {
   text-align: center;
   border-radius: 999px;
   background: var(--admin-color-primary-25);
-}
-@media (min-width: 1024px) {
-  .attributes-workspace {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
-  .attribute-groups {
-    display: block;
-    padding-block: var(--admin-spacing-5);
-    padding-right: var(--admin-spacing-5);
-    border-right: var(--admin-border-width) solid var(--admin-color-gray-200);
-  }
-  .attribute-mobile-group {
-    display: none;
-  }
-  .attribute-content {
-    padding-left: var(--admin-spacing-6);
-  }
 }
 </style>

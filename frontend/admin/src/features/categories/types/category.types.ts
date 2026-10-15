@@ -40,6 +40,13 @@ export type CategoryPayload = Omit<
   | 'image'
   | 'documents'
 > & { document_ids: number[] }
+export type CategoryNavigationItem = {
+  category: Category
+  depth: number
+  path: string
+  ancestorIds: number[]
+  count: number | null
+}
 export type CategoryAttributeAssignment = {
   id: number
   sort_order: number

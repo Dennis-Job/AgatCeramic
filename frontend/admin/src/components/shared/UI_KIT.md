@@ -1,5 +1,12 @@
 # UI-kit Admin
 
+`CatalogReferenceLayout` — общая компоновка справочников категорий и характеристик.
+Слоты `sidebar`, `mobile` и default разделяют навигацию и подробное содержимое.
+От 1024 px слева колонка 240 px, справа — сжимаемая область; на узких экранах
+выбор выводится над содержимым. Состояние выбора и доменные действия принадлежат
+feature. Общие границы и отступы используют Seller tokens; длинные значения
+не расширяют сетку за пределы страницы.
+
 `UiSwitch` — быстрый boolean control с `role="switch"`: props `checked`,
 `accessibleName`, `disabled`, `busy`; событие `update:checked`. Сохраняет native
 Space/Enter и общий `admin-focus`; busy блокирует повторное изменение. Primary

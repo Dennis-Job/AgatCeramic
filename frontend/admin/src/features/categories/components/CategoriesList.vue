@@ -24,39 +24,16 @@ const emit = defineEmits<{
   retry: [id: number]
   'update:selectedCategoryId': [value: string]
 }>()
-const rows = computed(() => {
-  const byId = new Map(
-    props.categories.map((category) => [category.id, category]),
-  )
-  const selectedId = props.selectedCategoryId
-  const matched = new Set(selectedId ? [Number(selectedId)] : [])
-  const allRows = props.categories.map((category) => {
-    const ancestors: number[] = []
-    let parent = category.parent_id
-    const seen = new Set([category.id])
-    while (parent != null && byId.has(parent) && !seen.has(parent)) {
-      seen.add(parent)
-      ancestors.unshift(parent)
-      parent = byId.get(parent)?.parent_id
-    }
-    return { category, ancestors }
-  })
-  const context = new Set(
-    allRows
-      .filter((row) => matched.has(row.category.id))
-      .flatMap((row) => row.ancestors),
-  )
-  return allRows.filter(
-    (row) =>
-      !selectedId ||
-      matched.has(row.category.id) ||
-      context.has(row.category.id) ||
-      row.ancestors.some((id) => matched.has(id)),
-  )
-})
+const rows = computed(() =>
+  props.categories.filter(
+    (category) =>
+      !props.selectedCategoryId ||
+      String(category.id) === props.selectedCategoryId,
+  ),
+)
 
 async function navigateTo(id: number): Promise<void> {
-  emit('update:selectedCategoryId', '')
+  emit('update:selectedCategoryId', String(id))
   await nextTick()
   const category = document.getElementById(`category-${id}`)
   category?.focus({ preventScroll: true })
@@ -64,23 +41,17 @@ async function navigateTo(id: number): Promise<void> {
 }
 </script>
 <template>
-  <UiLoadingState
-    v-if="loading"
-    class="admin-container"
-    label="Загрузка категорий…"
-  />
-  <div v-else-if="categories.length" class="admin-container">
+  <UiLoadingState v-if="loading" label="Загрузка категорий…" />
+  <div v-else-if="categories.length">
     <ol
       v-if="rows.length"
       aria-label="Категории и их характеристики"
       class="category-tree"
     >
       <li
-        v-for="{ category, ancestors } in rows"
+        v-for="category in rows"
         :key="category.id"
         class="category-tree-item"
-        :class="{ 'category-tree-item--child': ancestors.length }"
-        :style="{ '--category-depth': Math.min(ancestors.length, 3) }"
       >
         <article
           :id="`category-${category.id}`"
@@ -204,7 +175,7 @@ async function navigateTo(id: number): Promise<void> {
       label="Категории не найдены. Попробуйте другой запрос."
     />
   </div>
-  <UiEmptyState v-else class="admin-container" label="Категорий пока нет." />
+  <UiEmptyState v-else label="Категорий пока нет." />
 </template>
 <style scoped>
 .category-tree {
@@ -213,6 +184,10 @@ async function navigateTo(id: number): Promise<void> {
 .category-tree-item {
   padding-block: var(--admin-spacing-6);
   border-top: var(--admin-border-width) solid var(--admin-color-gray-100);
+}
+.category-tree-item:first-child {
+  padding-top: 0;
+  border-top: 0;
 }
 .category-overview {
   min-width: 0;
@@ -254,10 +229,6 @@ async function navigateTo(id: number): Promise<void> {
   margin-top: var(--admin-spacing-1);
 }
 @media (min-width: 640px) {
-  .category-tree-item--child {
-    padding-left: calc(var(--category-depth) * 36px);
-    border-left: var(--admin-border-width) solid var(--admin-color-gray-200);
-  }
   .category-overview-header {
     grid-template-columns: 26px minmax(0, 1fr) auto;
   }
@@ -270,7 +241,7 @@ async function navigateTo(id: number): Promise<void> {
     margin-left: 42px;
   }
 }
-@media (min-width: 1024px) {
+@media (min-width: 1440px) {
   .category-overview-header {
     grid-template-columns: 26px minmax(180px, 0.65fr) minmax(0, 1fr) auto;
   }

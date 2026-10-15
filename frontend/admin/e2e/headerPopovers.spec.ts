@@ -51,7 +51,7 @@ test('desktop submenus open on hover, stay hoverable, use group-sized columns an
     name: 'Основная навигация',
   })
   for (const [name, count] of [
-    ['Товары', 3],
+    ['Товары', 2],
     ['Контент', 2],
     ['Управление', 3],
   ] as const) {

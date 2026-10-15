@@ -1,6 +1,13 @@
 import AxeBuilder from './approvedAccessibility'
-import { expect, test } from './fixtures'
+import { expect, test, type Page } from './fixtures'
 import { mockCategoryOverview, overviewCategories } from './categoryOverviewApi'
+
+async function selectFloorCategory(page: Page): Promise<void> {
+  await page
+    .getByRole('navigation', { name: 'Выбор категории', exact: true })
+    .getByRole('button', { name: /^Для пола/ })
+    .click()
+}
 
 for (const width of [320, 640, 768, 1024, 1280]) {
   for (const mode of ['create', 'edit'] as const) {
@@ -158,35 +165,25 @@ test('categories show the complete hierarchy, groups and per-attribute flags on 
   ).toBeVisible()
   const wall = page.locator('#category-3')
   await expect(wall.getByText('Скрыта', { exact: true })).toBeVisible()
-  await expect(wall.getByText('Нет назначенных характеристик.')).toBeVisible()
+  await expect(wall.getByText('Цвет', { exact: true })).toBeVisible()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.screenshot({
     path: '.tmp/category-overview-desktop.png',
     fullPage: true,
   })
-  const select = page.getByRole('button', { name: 'Категория', exact: true })
-  await select.click()
-  await page
-    .getByRole('group', { name: 'Категория: варианты' })
-    .getByRole('button', { name: 'Керамогранит / Для пола', exact: true })
-    .click()
-  await expect(page.locator('article')).toHaveCount(2)
-  await expect(root).toBeVisible()
+  await selectFloorCategory(page)
+  await expect(page.locator('article')).toHaveCount(1)
+  await expect(root).toHaveCount(0)
   await page
     .locator('#category-2')
     .getByRole('button', { name: 'Керамогранит', exact: true })
     .click()
-  await expect(select).toContainText('Все категории')
+  await expect(page).toHaveURL(/category=1/)
+  await expect(page.locator('article')).toHaveCount(1)
   await expect(root).toBeFocused()
-  await select.click()
-  await page
-    .getByRole('searchbox', { name: 'Поиск: Категория', exact: true })
-    .fill('Не существует')
-  await expect(
-    page.getByRole('group', { name: 'Категория: варианты' }),
-  ).toContainText('Ничего не найдено')
-  await page.keyboard.press('Escape')
-  await expect(select).toBeFocused()
+  await root.getByRole('button', { name: 'Для пола', exact: true }).click()
+  await expect(page).toHaveURL(/category=2/)
+  await expect(page.locator('#category-2')).toBeFocused()
 })
 
 test('category creation still opens the existing form and returns focus on Escape', async ({
@@ -261,6 +258,15 @@ for (const width of [320, 640, 768, 1024, 1280]) {
       path: `.tmp/category-overview-${width}.png`,
       fullPage: true,
     })
+    if (width >= 1024) {
+      await expect(
+        page.getByRole('navigation', { name: 'Выбор категории', exact: true }),
+      ).toBeVisible()
+      await expect(
+        page.getByRole('button', { name: 'Категория', exact: true }),
+      ).toBeHidden()
+      return
+    }
     const select = page.getByRole('button', { name: 'Категория', exact: true })
     await select.click()
     const menu = page.getByRole('group', { name: 'Категория: варианты' })
@@ -394,7 +400,7 @@ for (const status of [422, 500]) {
   })
 }
 
-test('deleting the selected category resets the dropdown to all remaining categories', async ({
+test('deleting the selected category resets the workspace to all remaining categories', async ({
   page,
 }) => {
   await mockCategoryOverview(page)
@@ -423,12 +429,7 @@ test('deleting the selected category resets the dropdown to all remaining catego
     return route.fulfill({ status: 204 })
   })
   await page.goto('/categories')
-  const select = page.getByRole('button', { name: 'Категория', exact: true })
-  await select.click()
-  await page
-    .getByRole('group', { name: 'Категория: варианты' })
-    .getByRole('button', { name: 'Керамогранит / Для пола', exact: true })
-    .click()
+  await selectFloorCategory(page)
   await page
     .getByRole('button', { name: 'Удалить категорию Для пола', exact: true })
     .click()
@@ -436,7 +437,12 @@ test('deleting the selected category resets the dropdown to all remaining catego
     .getByRole('dialog', { name: 'Удалить категорию?' })
     .getByRole('button', { name: 'Удалить', exact: true })
     .click()
-  await expect(select).toContainText('Все категории')
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Выбор категории', exact: true })
+      .getByRole('button', { name: /^Все категории/ }),
+  ).toHaveAttribute('aria-current', 'true')
+  await expect(page).toHaveURL('/categories')
   await expect(page.locator('#category-2')).toHaveCount(0)
   await expect(page.locator('#category-3')).toBeVisible()
   await expect(page.locator('article')).toHaveCount(2)

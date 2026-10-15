@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Plus } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
+import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
+import CatalogReferenceLayout from '../../../components/shared/CatalogReferenceLayout.vue'
+import CategoriesNavigation from './CategoriesNavigation.vue'
+import { useCategoryNavigation } from '../composables/useCategoryNavigation'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
@@ -76,24 +81,33 @@ const {
   submit: submitAssignments,
 } = assignments
 const canManage = computed(() => auth.hasPermission('catalog.manage'))
-const selectedCategoryId = ref('')
-const categoryOptions = computed(() => [
-  { label: 'Все категории', value: '' },
-  ...categories.value.map((category) => ({
-    label:
-      category.parent_id === null
-        ? category.name
-        : `${categoryName(category.parent_id) ?? 'Без родителя'} / ${category.name}`,
-    value: String(category.id),
-  })),
-])
-watch(categories, (items) => {
+const {
+  selectedCategoryId,
+  search: categorySearch,
+  visibleItems,
+  categoryOptions,
+} = useCategoryNavigation(categories, overview, { loading, error })
+const route = useRoute()
+const router = useRouter()
+watch(
+  () => [route.query.category, route.query.search],
+  ([category, search]) => {
+    selectedCategoryId.value = typeof category === 'string' ? category : ''
+    categorySearch.value = typeof search === 'string' ? search : ''
+  },
+  { immediate: true },
+)
+watch([selectedCategoryId, categorySearch], ([category, search]) => {
+  const query = { ...route.query }
+  if (category) query.category = category
+  else delete query.category
+  if (search) query.search = search
+  else delete query.search
   if (
-    selectedCategoryId.value &&
-    !items.some((category) => String(category.id) === selectedCategoryId.value)
-  ) {
-    selectedCategoryId.value = ''
-  }
+    route.query.category !== query.category ||
+    route.query.search !== query.search
+  )
+    void router.replace({ query })
 })
 async function saveAssignments(): Promise<void> {
   const id = assignmentCategory.value?.id
@@ -106,40 +120,74 @@ onMounted(load)
 <template>
   <AdminWorkspace mode="list" :aria-busy="loading">
     <template #intro>
-      <PageHeader class="mb-7" eyebrow="Каталог" title="Категории"
-        ><template #actions
-          ><UiSelect
-            v-model="selectedCategoryId"
-            :options="categoryOptions"
-            accessible-name="Категория"
-            searchable
-            teleport-menu
-            class="w-full sm:w-72"
-            :disabled="loading || !categories.length"
-          /><UiButton v-if="canManage" @click="showEditor()"
+      <PageHeader
+        class="mb-7"
+        eyebrow="Каталог"
+        title="Категории"
+        description="Выберите категорию, чтобы посмотреть сведения и назначенные характеристики."
+      >
+        <template #actions
+          ><UiButton
+            v-if="canManage"
+            :disabled="loading || Boolean(error)"
+            @click="showEditor()"
             ><Plus :size="18" />Добавить категорию</UiButton
           ></template
-        ></PageHeader
-      >
+        >
+      </PageHeader>
     </template>
     <div v-if="error" class="admin-container space-y-3">
       <UiAlert>{{ error }}</UiAlert>
       <UiButton variant="secondary" @click="load">Повторить загрузку</UiButton>
     </div>
-    <CategoriesList
-      v-else
-      v-model:selected-category-id="selectedCategoryId"
-      :categories="categories"
-      :overview="overview"
-      :loading="loading"
-      :can-manage="canManage"
-      :category-name="categoryName"
-      @details="showDetails"
-      @edit="showEditor"
-      @configure="showAssignments"
-      @remove="showDelete"
-      @retry="refreshOverview"
-    /><CategoryDetailsDialog
+    <UiLoadingState
+      v-else-if="loading"
+      class="admin-container"
+      label="Загрузка категорий…"
+    />
+    <CatalogReferenceLayout v-else>
+      <template #sidebar
+        ><CategoriesNavigation
+          v-model:selected-category-id="selectedCategoryId"
+          v-model:search="categorySearch"
+          :items="visibleItems"
+          :total="categories.length"
+      /></template>
+      <template #mobile
+        ><label class="block text-sm font-medium text-gray-500"
+          >Категория<UiSelect
+            v-model="selectedCategoryId"
+            :options="categoryOptions"
+            accessible-name="Категория"
+            searchable
+            teleport-menu
+            class="mt-1.5 w-full"
+            :disabled="!categories.length" /></label
+      ></template>
+      <section aria-label="Подробная информация о категориях">
+        <p class="sr-only" role="status">
+          {{
+            selectedCategoryId
+              ? `Выбрана категория: ${categoryName(Number(selectedCategoryId)) ?? ''}`
+              : `Показаны все категории: ${categories.length}`
+          }}
+        </p>
+        <CategoriesList
+          v-model:selected-category-id="selectedCategoryId"
+          :categories="categories"
+          :overview="overview"
+          :loading="false"
+          :can-manage="canManage"
+          :category-name="categoryName"
+          @details="showDetails"
+          @edit="showEditor"
+          @configure="showAssignments"
+          @remove="showDelete"
+          @retry="refreshOverview"
+        />
+      </section>
+    </CatalogReferenceLayout>
+    <CategoryDetailsDialog
       :category="details"
       :loading="detailsLoading"
       :attributes="detailsAttributes"

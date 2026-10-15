@@ -147,7 +147,9 @@ test('category action icons have focused tooltips only while hovered', async ({
     if (name.startsWith('Удалить'))
       await expect(action).toHaveCSS('background-color', 'rgb(254, 243, 242)')
     await expect(page.getByRole('tooltip')).toHaveText(tooltip!)
-    await page.getByRole('heading', { name: 'Категории', exact: true }).hover()
+    await page
+      .getByRole('heading', { level: 1, name: 'Категории', exact: true })
+      .hover()
     await expect(page.getByRole('tooltip')).toHaveCount(0)
   }
 })
