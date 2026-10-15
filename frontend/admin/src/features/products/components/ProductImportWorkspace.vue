@@ -27,7 +27,7 @@ import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiRadio from '../../../components/ui/UiRadio.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import UiSegmentedTabs from '../../../components/ui/UiSegmentedTabs.vue'
+import UiSegmentedControl from '../../../components/ui/UiSegmentedControl.vue'
 import { useProductImport } from '../composables/useProductImport'
 
 const active = ref(true)
@@ -59,12 +59,12 @@ const {
 } = useProductImport(() => {})
 const importTabs = [
   {
-    id: 'products',
+    value: 'products',
     label: 'Загрузка товаров',
     panelId: 'import-panel-products',
   },
   {
-    id: 'images',
+    value: 'images',
     label: 'Загрузка изображений',
     panelId: 'import-panel-images',
   },
@@ -107,7 +107,7 @@ watch([busy, downloading], async () => {
     (document.activeElement === document.body ||
       document.activeElement?.matches(':disabled'))
   ) {
-    document.getElementById('import-tab-products')?.focus()
+    document.getElementById('import-type-products')?.focus()
   }
 })
 watch([categoryId, importMode], () => {
@@ -145,18 +145,20 @@ function selectDroppedImageFile(files: FileList) {
       description="Добавление и массовое редактирование товаров из Excel, загрузка изображений из ZIP."
     />
     <div class="min-w-0">
-      <UiSegmentedTabs
+      <UiSegmentedControl
         v-model="tab"
-        id-prefix="import-tab"
+        id-prefix="import-type"
+        name="import-type"
         label="Тип загрузки"
         :options="importTabs"
         fit-content
+        hide-label
       />
       <div
         v-show="tab === 'products'"
         id="import-panel-products"
-        role="tabpanel"
-        aria-labelledby="import-tab-products"
+        role="region"
+        aria-labelledby="import-type-products"
         class="space-y-5 py-5 sm:py-6"
       >
         <UiCard data-product-import-step="1">
@@ -484,8 +486,8 @@ function selectDroppedImageFile(files: FileList) {
       <div
         v-show="tab === 'images'"
         id="import-panel-images"
-        role="tabpanel"
-        aria-labelledby="import-tab-images"
+        role="region"
+        aria-labelledby="import-type-images"
         class="space-y-5 py-5 sm:py-6"
       >
         <UiCard data-product-image-import-step="1">

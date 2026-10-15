@@ -19,25 +19,13 @@ describe('UiKitShowcase', () => {
     expect(
       inventory.findAllComponents(UiBadge).map((badge) => badge.text()),
     ).toEqual([...uiComponents, ...sharedComponents])
-    expect(uiComponents).toHaveLength(26)
-    expect(inventory.text()).toContain('26 UI primitives и 3 shared-компонента')
-    expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(14)
-    expect(
-      wrapper.get('[data-ui-kit-section="tabs"] [role="tablist"]').exists(),
-    ).toBe(true)
-    const demoTabs = wrapper.findAll(
-      '[data-ui-kit-section="tabs"] [role="tab"]',
+    expect(uiComponents).toHaveLength(25)
+    expect(inventory.text()).toContain('25 UI primitives и 3 shared-компонента')
+    expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(13)
+    expect(wrapper.find('[data-ui-kit-section="tabs"]').exists()).toBe(false)
+    expect(wrapper.find('input[aria-label="Загрузка товаров"]').exists()).toBe(
+      true,
     )
-    expect(demoTabs.map((tab) => tab.text())).toEqual([
-      'Вкладка 1',
-      'Вкладка 2',
-      'Вкладка 3',
-      'Вкладка 4',
-    ])
-    expect(
-      wrapper.findAll('[data-ui-kit-section="tabs"] [role="tabpanel"]'),
-    ).toHaveLength(4)
-    expect(demoTabs[0].attributes('aria-selected')).toBe('true')
     expect(wrapper.findAll('input[required]')).toHaveLength(2)
     expect(
       wrapper.get('[data-ui-kit-section="collection-states"] button').classes(),

@@ -251,7 +251,7 @@ UI-kit в примере «Информационное сообщение.» р
 | `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                                    |
 | `UiDatePicker`                                   | input/calendar, Escape/focus return, responsive popup; disabled блокирует input/clear и закрывает открытый calendar                       |
 | `UiCheckbox`, `UiRadio`                          | boolean/array mode, selected/unselected, keyboard focus, disabled через native control                                                    |
-| `UiSegmentedTabs`                                | controlled tablist, связанный tabpanel, синяя обводка 1 px, нейтральный hover, стрелки/Home/End                                           |
+| `UiSegmentedControl`                             | выбор одного значения, обычная/компактная ширина, счётчики текстом, синяя нижняя линия, native radio, Home/End, disabled                  |
 | `UiPopover`                                      | hover/tap, open/close, keyboard, Escape/focus return, outside close, viewport clamp/flip/scroll                                           |
 | `UiDialog`, `ConfirmDialog`                      | open/close, Escape, backdrop, focus trap/return, busy, error                                                                              |
 | `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                           |
@@ -281,33 +281,29 @@ teleport menu, confirm busy/error, disabled-контракт, keyboard/focus, ax
 
 `UiSegmentedControl` — общий выбор одного значения из нескольких: `modelValue`,
 `options` (`value`, `label`, опциональный `disabled`), `name`, `label` и `disabled`.
-Общая серо-голубая подложка, белый выбранный сегмент с синим текстом; размеры,
+Общая серо-голубая подложка, белый выбранный сегмент с синим текстом и нижней
+синей линией 2 px по референсу владельца от 2026-10-15; размеры,
 радиусы и focus используют существующие tokens. Native radio сохраняют Tab,
-стрелки, Space и объявление выбранного значения; fieldset/legend именуют группу.
+стрелки, Space и объявление выбранного значения; Home/End выбирают первый/последний
+доступный вариант. Fieldset/legend именуют группу.
 Длинные подписи переносятся, все сегменты получают одинаковую высоту.
 В фильтрах товаров поиск/категория/бренд используют доступные названия без
 видимых лейблов; activity/sale сохраняют три состояния и существующий API.
 
 У `UiSegmentedControl` `hideLabel` скрывает legend визуально, сохраняя название
-группы. Опция `count` добавляет `UiBadge`, а `countsLoading` показывает «…»;
+группы. Опция `count` добавляет число обычным текстом рядом с подписью,
+а `countsLoading` показывает «…»;
 `null` отображается как «—», ноль — как 0. Доступное имя radio остаётся подписью
-варианта, число связано через `aria-describedby`. На узком экране бейдж может
+варианта, число связано через `aria-describedby`. На узком экране число может
 перенестись целиком под подпись. В `/products` счётчики учитывают поиск,
 категорию и бренд; activity/sale не ограничивают цифры соседних вариантов.
 
-`UiSegmentedTabs` — controlled tabs primitive с `modelValue`, `idPrefix`,
-доступной подписью `label` и массивом `options` (`id`, `label`, `panelId`).
-Компонент связывает `tablist` и `tab` через `aria-selected`, `aria-controls` и
-roving tabindex; содержимое `tabpanel` остаётся ответственностью вызывающей
-страницы. Стрелки влево/вправо циклически меняют выбранную вкладку, Home/End
-переводят выбор в начало/конец и фокусируют соответствующую кнопку. Синяя
-обводка выбранной вкладки толщиной 1 px накладывается на общий серый контур;
-нейтральный hover серый и не меняет цвет текста. Длинные подписи переносятся.
-Опциональный `fitContent` ограничивает общую ширину содержимым и шириной
-контейнера; вкладки занимают ширину своих подписей и сжимаются с переносом
-на узком экране. Режим применяется к выбору типа загрузки в `/products/import`.
-Компонент и интерактивный пример с четырьмя вкладками показаны в UI-kit;
-radio-группы остаются задачей `UiSegmentedControl`.
+Опциональный `fitContent` ограничивает ширину `UiSegmentedControl` содержимым
+и шириной контейнера. Он применяется к выбору типа загрузки в `/products/import`;
+фильтры товаров занимают доступную ширину. `idPrefix` задаёт стабильные id radio,
+а `options[].panelId` связывает выбор с именованным region через `aria-controls`.
+Старый компонент вкладок с контурной обводкой удалён; на витрине показан один
+переключатель в обычном, компактном и disabled-вариантах.
 
 `UiButton variant="surface"` — белая поверхность без border,
 hover primary100/primary600, обычный общий keyboard focus. Disabled состояние

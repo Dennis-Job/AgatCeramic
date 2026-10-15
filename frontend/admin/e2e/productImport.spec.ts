@@ -149,7 +149,10 @@ for (const kind of ['products', 'images'] as const) {
     })
     await page.goto('/products/import')
     if (kind === 'images') {
-      await page.getByRole('tab', { name: 'Загрузка изображений' }).click()
+      await page
+        .getByRole('radio', { name: 'Загрузка изображений' })
+        .locator('..')
+        .click()
     } else {
       await page
         .getByRole('button', { name: 'Категория товаров для загрузки' })
@@ -363,10 +366,10 @@ test('product Excel import errors are downloadable and page is accessible at sup
       targets: ['p[data-product-import-info=""]'],
     },
   ])
-  await workspace.getByRole('tab', { name: 'Загрузка товаров' }).focus()
+  await workspace.getByRole('radio', { name: 'Загрузка товаров' }).focus()
   await page.keyboard.press('ArrowRight')
   await expect(
-    workspace.getByRole('tab', { name: 'Загрузка изображений' }),
+    workspace.getByRole('radio', { name: 'Загрузка изображений' }),
   ).toBeFocused()
   await expect(
     workspace.getByRole('heading', { name: '1. Подготовьте архив' }),
@@ -399,7 +402,7 @@ test('product Excel import errors are downloadable and page is accessible at sup
   ).toBeVisible()
   await page.keyboard.press('Home')
   await expect(
-    workspace.getByRole('tab', { name: 'Загрузка товаров' }),
+    workspace.getByRole('radio', { name: 'Загрузка товаров' }),
   ).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(page).toHaveURL('/products/import')
@@ -501,7 +504,10 @@ test('product image ZIP import uploads, polls and downloads its accessible respo
 }, testInfo) => {
   await mockCatalogApi(page, { importErrors: true })
   const workspace = await openImport(page)
-  await workspace.getByRole('tab', { name: 'Загрузка изображений' }).click()
+  await workspace
+    .getByRole('radio', { name: 'Загрузка изображений' })
+    .locator('..')
+    .click()
   await workspace.locator('#image-import-file').setInputFiles({
     name: 'images.zip',
     mimeType: 'application/zip',
@@ -770,24 +776,23 @@ for (const { path, title } of importPages) {
       await expect(page.locator('.admin-workspace > .admin-panel')).toHaveCount(
         0,
       )
-      const tabList = page.getByRole('tablist', { name: 'Тип загрузки' })
-      await expect(tabList).toHaveClass(/rounded-xl/)
-      await expect(tabList).toHaveClass(/border-gray-200/)
+      const typeGroup = page.getByRole('group', { name: 'Тип загрузки' })
+      await expect(typeGroup).toHaveClass(/w-fit/)
       await expect(
-        page.getByRole('tab', { name: 'Загрузка товаров' }),
-      ).toHaveClass(/outline-primary-500/)
+        typeGroup.getByRole('radio', { name: 'Загрузка товаров' }),
+      ).toBeChecked()
       await expect(
-        page.getByRole('tab', { name: 'Загрузка товаров' }),
-      ).toHaveClass(/outline-1/)
-      const imageTab = page.getByRole('tab', {
-        name: 'Загрузка изображений',
-      })
-      const colorBeforeHover = await imageTab.evaluate(
-        (element) => getComputedStyle(element).color,
-      )
-      await imageTab.hover()
-      await expect(imageTab).toHaveCSS('color', colorBeforeHover)
-      await expect(imageTab).toHaveCSS('background-color', 'rgb(242, 244, 247)')
+        typeGroup
+          .getByRole('radio', { name: 'Загрузка товаров' })
+          .locator('..'),
+      ).toHaveCSS('border-bottom-color', 'rgb(0, 91, 255)')
+      const imageChoice = page
+        .getByRole('radio', {
+          name: 'Загрузка изображений',
+        })
+        .locator('..')
+      await imageChoice.hover()
+      await expect(imageChoice).toHaveCSS('color', 'rgb(0, 91, 255)')
       const stepPanels = page.locator('[data-product-import-step]')
       await expect(stepPanels).toHaveCount(3)
       for (const [index, heading] of [

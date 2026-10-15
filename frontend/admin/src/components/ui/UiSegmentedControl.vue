@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import UiBadge from './UiBadge.vue'
 import { useId } from 'vue'
 
 const countId = useId()
@@ -9,20 +8,41 @@ defineProps<{
   name: string
   label: string
   hideLabel?: boolean
+  fitContent?: boolean
+  idPrefix?: string
   countsLoading?: boolean
   options: ReadonlyArray<{
     value: number | string
     label: string
     disabled?: boolean
     count?: number | null
+    panelId?: string
   }>
   disabled?: boolean
 }>()
 defineEmits<{ 'update:modelValue': [value: number | string] }>()
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Home' && event.key !== 'End') return
+  const radios = (
+    event.currentTarget as HTMLElement
+  ).querySelectorAll<HTMLInputElement>('input[type="radio"]:not(:disabled)')
+  const target =
+    event.key === 'Home' ? radios.item(0) : radios.item(radios.length - 1)
+  if (!target) return
+  event.preventDefault()
+  target.click()
+  target.focus()
+}
 </script>
 
 <template>
-  <fieldset class="min-w-0" :disabled="disabled">
+  <fieldset
+    class="min-w-0"
+    :class="{ 'w-fit max-w-full': fitContent }"
+    :disabled="disabled"
+    @keydown="handleKeydown"
+  >
     <legend
       :class="
         hideLabel ? 'sr-only' : 'mb-2 text-sm font-semibold text-gray-500'
@@ -30,28 +50,31 @@ defineEmits<{ 'update:modelValue': [value: number | string] }>()
     >
       {{ label }}
     </legend>
-    <div class="flex min-w-0 gap-1 rounded-lg bg-gray-100 p-1">
+    <div class="flex min-w-0 gap-1 rounded-xl bg-gray-100 p-1">
       <label
         v-for="(option, index) in options"
         :key="option.value"
-        class="admin-choice-focus flex min-h-[var(--admin-control-height-md)] min-w-0 flex-auto basis-[min-content] items-center justify-center rounded-md border px-1.5 py-1.5 text-center text-sm font-semibold transition"
+        class="admin-choice-focus flex min-h-[var(--admin-control-height-md)] min-w-0 items-center justify-center rounded-lg border-b-2 px-1.5 py-1.5 text-center text-sm transition sm:px-3"
         :class="[
+          fitContent ? 'flex-initial' : 'flex-auto basis-[min-content]',
           disabled || option.disabled
             ? 'cursor-not-allowed text-gray-500'
             : 'cursor-pointer hover:text-primary-500',
           modelValue === option.value
             ? disabled || option.disabled
               ? 'border-gray-300 bg-gray-50'
-              : 'border-gray-200 bg-white text-primary-500'
-            : 'border-transparent text-gray-500',
+              : 'border-primary-500 bg-white font-semibold text-primary-500'
+            : 'border-transparent font-normal text-gray-500',
         ]"
       >
         <input
+          :id="idPrefix ? `${idPrefix}-${option.value}` : undefined"
           class="sr-only"
           type="radio"
           :name="name"
           :value="option.value"
           :aria-label="option.label"
+          :aria-controls="option.panelId"
           :aria-describedby="
             option.count !== undefined ? `${countId}-${index}` : undefined
           "
@@ -59,11 +82,12 @@ defineEmits<{ 'update:modelValue': [value: number | string] }>()
           :disabled="disabled || option.disabled"
           @change="$emit('update:modelValue', option.value)"
         />
-        <span class="flex min-w-0 flex-wrap items-center justify-center gap-1">
+        <span class="flex min-w-0 flex-wrap items-center justify-center gap-2">
           <span class="min-w-0 break-words">{{ option.label }}</span>
-          <UiBadge
+          <span
             v-if="option.count !== undefined"
             :id="`${countId}-${index}`"
+            class="tabular-nums"
             :aria-label="
               countsLoading
                 ? 'Обновляем количество товаров'
@@ -77,7 +101,7 @@ defineEmits<{ 'update:modelValue': [value: number | string] }>()
                 : option.count === null
                   ? '—'
                   : option.count.toLocaleString('ru-RU')
-            }}</UiBadge
+            }}</span
           >
         </span>
       </label>

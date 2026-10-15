@@ -17,15 +17,15 @@ test('product segment selection stays subtle with a pointer and has one soft key
     await page.setViewportSize({ width, height: 910 })
     await label.click()
     await expect(radio).toBeChecked()
-    await expect(label).toHaveCSS('border-width', '1px')
-    await expect(label).toHaveCSS('border-color', 'rgb(228, 231, 236)')
+    await expect(label).toHaveCSS('border-bottom-width', '2px')
+    await expect(label).toHaveCSS('border-bottom-color', 'rgb(0, 91, 255)')
     await expect(label).toHaveCSS('box-shadow', 'none')
     await page.screenshot({
       path: `.tmp/soft-focus/products-pointer-${width}.png`,
     })
     await page.keyboard.press('Tab')
     await radio.focus()
-    await expect(label).toHaveCSS('border-color', edge)
+    await expect(label).toHaveCSS('border-bottom-color', edge)
     await expect(label).toHaveCSS('outline-style', 'none')
     await expect(label).toHaveCSS(
       'box-shadow',
