@@ -12,6 +12,7 @@ import UiButton from '../ui/UiButton.vue'
 import UiDialogFooter from '../ui/UiDialogFooter.vue'
 import UiCard from '../ui/UiCard.vue'
 import UiCheckbox from '../ui/UiCheckbox.vue'
+import UiSwitch from '../ui/UiSwitch.vue'
 import UiDialog from '../ui/UiDialog.vue'
 import UiDatePicker from '../ui/UiDatePicker.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
@@ -50,6 +51,7 @@ const emptyDate = ref('')
 const message = ref('')
 const checked = ref(false)
 const checkedByDefault = ref(true)
+const switchChecked = ref(true)
 const checkboxValues = ref<Array<number | string>>(['porcelain'])
 const segmented = ref('')
 const importTabDemo = ref('tab-1')
@@ -144,6 +146,7 @@ const uiComponents = [
   'UiSegmentedControl',
   'UiSegmentedTabs',
   'UiSelect',
+  'UiSwitch',
   'UiTable',
   'UiTextarea',
 ]
@@ -855,7 +858,8 @@ function submitAuthPreview(): void {
             Флажки и переключатели
           </h2>
           <p class="mt-1 text-sm text-gray-500">
-            <code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code>
+            <code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code>,
+            <code>ui/UiSwitch.vue</code>
           </p>
         </div>
       </template>
@@ -896,6 +900,30 @@ function submitAuthPreview(): void {
           >
         </div>
         <div class="grid content-start gap-3">
+          <h3 class="text-sm font-semibold text-gray-500">
+            Быстрые переключатели
+          </h3>
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="text-sm text-gray-500">Включён</span
+            ><UiSwitch
+              v-model:checked="switchChecked"
+              accessible-name="Демонстрационный переключатель"
+            /><span class="text-sm text-gray-500">Выключен</span
+            ><UiSwitch
+              :checked="false"
+              accessible-name="Выключенный переключатель"
+            /><span class="text-sm text-gray-500">Недоступен</span
+            ><UiSwitch
+              :checked="true"
+              disabled
+              accessible-name="Недоступный переключатель"
+            /><span class="text-sm text-gray-500">Сохранение</span
+            ><UiSwitch
+              :checked="true"
+              busy
+              accessible-name="Сохраняемый переключатель"
+            />
+          </div>
           <h3 class="text-sm font-semibold text-gray-500">Radio</h3>
           <UiRadio v-model="radio" name="ui-kit-radio" value="standard">
             Выбранный

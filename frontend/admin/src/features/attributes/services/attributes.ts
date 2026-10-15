@@ -5,7 +5,11 @@ import {
   type PageRequest,
   type PaginatedResponse,
 } from '../../../services/pagination'
-import type { Attribute, AttributePayload } from '../types/attribute.types'
+import type {
+  Attribute,
+  AttributePayload,
+  AttributeDisplayPatch,
+} from '../types/attribute.types'
 export type {
   Attribute,
   AttributeOption,
@@ -60,4 +64,17 @@ export async function deleteAttribute(id: number): Promise<void> {
     method: 'DELETE',
   })
   if (!response.ok) return fail(response)
+}
+export async function patchAttributeDisplay(
+  id: number,
+  payload: AttributeDisplayPatch,
+): Promise<Attribute> {
+  await requestCsrfCookie()
+  const response = await apiFetch(`/admin/attributes/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok) return fail(response)
+  return ((await response.json()) as { data: Attribute }).data
 }

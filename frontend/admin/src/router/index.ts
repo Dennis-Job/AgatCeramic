@@ -54,7 +54,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
-        title: 'Группы характеристик',
+        title: 'Характеристики',
       },
     },
     {

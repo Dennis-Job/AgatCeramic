@@ -119,7 +119,7 @@ const authenticatedRoutes = [
   ['/products', 'Товары'],
   ['/categories', 'Категории'],
   ['/brands', 'Бренды'],
-  ['/attribute-groups', 'Группы характеристик'],
+  ['/attribute-groups', 'Характеристики'],
   ['/attributes', 'Характеристики'],
   ['/employees', 'Сотрудники'],
   ['/roles', 'Роли'],

@@ -7,6 +7,7 @@ export type NavigationLink = {
   label: string
   to: RouteLocationRaw
   path: string
+  activePaths?: string[]
   section?: 'pages' | 'appearance' | 'stores'
   requiredPermission?: string
   additionalPermission?: string
@@ -84,15 +85,10 @@ export const adminNavigation: NavigationSection[] = [
         label: 'Характеристики товаров',
         links: [
           {
-            label: 'Группы характеристик',
-            to: '/attribute-groups',
-            path: '/attribute-groups',
-            requiredPermission: 'catalog.manage',
-          },
-          {
             label: 'Характеристики',
             to: '/attributes',
             path: '/attributes',
+            activePaths: ['/attribute-groups'],
             requiredPermission: 'catalog.manage',
           },
         ],
@@ -237,9 +233,11 @@ export function isNavigationLinkActive(
   link: NavigationLink,
   route: Pick<RouteLocationNormalizedLoaded, 'path' | 'query'>,
 ): boolean {
-  const pathMatches =
-    route.path === link.path ||
-    (!link.exact && link.path !== '/' && route.path.startsWith(`${link.path}/`))
+  const pathMatches = [link.path, ...(link.activePaths ?? [])].some(
+    (path) =>
+      route.path === path ||
+      (!link.exact && path !== '/' && route.path.startsWith(`${path}/`)),
+  )
   if (!pathMatches || !link.section) return pathMatches
   const section =
     route.query.section === 'appearance' || route.query.section === 'stores'

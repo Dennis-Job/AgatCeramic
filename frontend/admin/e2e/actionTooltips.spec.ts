@@ -211,6 +211,11 @@ test('edit actions share the same blue style across admin workspaces', async ({
     ['/media', 'Изменить файл Каталог коллекций'],
   ]) {
     await page.goto(route!)
+    if (route === '/attribute-groups')
+      await page
+        .getByRole('navigation', { name: 'Группы характеристик' })
+        .getByRole('button', { name: /^Размеры/ })
+        .click()
     const edit = page.getByRole('button', { name, exact: true })
     await expect(edit).toHaveCSS('color', 'rgb(0, 91, 255)')
     await edit.hover()

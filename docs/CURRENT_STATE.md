@@ -1,5 +1,13 @@
 # Текущее состояние проекта
 
+Admin: характеристики и группы объединены в одну рабочую область с локальной
+навигацией по группам, подробными строками и быстрыми переключателями фильтров/
+карточки товара. Старый `/attribute-groups` сохранён; формы унифицированы с
+категориями. Unit 147/147, целевые E2E 99/99, baseline/responsive 24/24;
+независимое UI Design Guard-ревью принято. Полный прогон сохраняет пять
+устаревших snapshots кнопки скачивания товаров, не относящихся к этой задаче.
+[Отчёт от 2026-10-15](ADMIN_ATTRIBUTES_WORKSPACE_REPORT.md).
+
 Windows follow-up от 2026-10-14 закрывает XLSX file locks, preview matrix и
 test/infra nondeterminism: backend 403/403 дважды, Admin 523/523 E2E,
 real preview 24/24, Client production/dev 15/15 + 2/2. Cold full-stack readiness

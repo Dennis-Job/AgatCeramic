@@ -28,17 +28,17 @@ const emit = defineEmits<{
     labelledby="attribute-group-dialog-title"
     describedby="attribute-group-dialog-description"
     :close-disabled="busy"
-    panel-class="w-full max-w-xl"
+    panel-class="w-full max-w-3xl"
     @close="emit('close')"
     ><form
-      class="max-h-[90vh] w-full overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+      class="flex max-h-[90dvh] w-full flex-col rounded-xl bg-white p-6 shadow-xl"
       @submit.prevent="emit('submit')"
     >
-      <div class="flex items-start justify-between gap-4">
-        <div>
+      <div class="flex shrink-0 items-start justify-between gap-4">
+        <div class="min-w-0 flex-1">
           <h2
             id="attribute-group-dialog-title"
-            class="text-lg font-bold text-gray-500"
+            class="break-words text-lg font-bold text-gray-500 [overflow-wrap:anywhere]"
           >
             {{ title }}
           </h2>
@@ -53,35 +53,42 @@ const emit = defineEmits<{
           ><X :size="20"
         /></UiButton>
       </div>
-      <UiNotification v-if="error">{{ error }}</UiNotification>
-      <div class="mt-6 grid gap-4">
-        <label class="text-sm font-medium text-gray-500"
-          >Название<UiInput
-            :model-value="form.name"
-            class="mt-1.5"
-            data-autofocus
-            required
-            @update:model-value="emit('updateName', $event)" /></label
-        ><label class="text-sm font-medium text-gray-500"
-          >Технический код (slug)<UiInput
-            :model-value="form.slug"
-            class="mt-1.5"
-            required
-            :pattern="slugPattern"
-            @update:model-value="emit('updateSlug', $event)" /></label
-        ><label class="text-sm font-medium text-gray-500"
-          >Описание<UiTextarea
-            v-model="form.description"
-            class="mt-1.5 min-h-24 font-normal" /></label
-        ><label class="text-sm font-medium text-gray-500"
-          >Порядок сортировки<UiInput
-            :model-value="String(form.sort_order)"
-            class="mt-1.5"
-            type="number"
-            min="0"
-            required
-            @update:model-value="form.sort_order = Number($event)"
-        /></label>
+      <div
+        class="-m-[var(--admin-focus-halo-width)] min-h-0 overflow-y-auto overscroll-contain p-[var(--admin-focus-halo-width)]"
+      >
+        <UiNotification v-if="error">{{ error }}</UiNotification>
+        <div class="mt-6 grid gap-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="text-sm font-medium text-gray-500"
+              >Название<UiInput
+                :model-value="form.name"
+                class="mt-1.5"
+                data-autofocus
+                required
+                @update:model-value="emit('updateName', $event)" /></label
+            ><label class="text-sm font-medium text-gray-500"
+              >Технический код (slug)<UiInput
+                :model-value="form.slug"
+                class="mt-1.5"
+                required
+                :pattern="slugPattern"
+                @update:model-value="emit('updateSlug', $event)"
+            /></label>
+          </div>
+          <label class="text-sm font-medium text-gray-500"
+            >Описание<UiTextarea
+              v-model="form.description"
+              class="mt-1.5 min-h-24 font-normal" /></label
+          ><label class="text-sm font-medium text-gray-500"
+            >Порядок сортировки<UiInput
+              :model-value="String(form.sort_order)"
+              class="mt-1.5"
+              type="number"
+              min="0"
+              required
+              @update:model-value="form.sort_order = Number($event)"
+          /></label>
+        </div>
       </div>
       <UiDialogFooter>
         <template #note

@@ -63,3 +63,38 @@ JPEG, поэтому повторно проверить именно эти и�
 После приёмки варианта 3 владелец попросил заменить верхний поиск выпадающим списком созданных категорий. `UiSelect` показывает «Все категории» и каждый существующий ID, включая скрытые; названия детей дополнены родителем. Выбор сохраняет предков и потомков, переход к связанным категориям и удаление сбрасывают выбор. Это явное уточнение исходного концепта, без изменения утверждённой палитры.
 
 Открытое меню: `frontend/admin/.tmp/category-select-menu-{320,640,768,1024,1280}.png`; реальный каталог: `frontend/admin/.tmp/category-select-real.jpg` (исторический dropdown JPEG). Все восемь state-эталонов просмотрены независимым UI Design Guard перед adoption. Проверены длинные строки, границы viewport, возврат фокуса и Escape, disabled loading/empty/error. 13 сценариев обзора и 5 baseline прошли на обеих платформах. Итог независимого ревью: accepted, blocking findings отсутствуют.
+
+---
+
+# Design QA — единая рабочая область характеристик
+
+final result: passed
+
+## Evidence
+
+- Approved source: exec-cda9ed3c-0654-45bd-864b-bc7a8b7c5453.png.
+- Rendered production build: `.tmp/attributes-workspace-selected-group-1440.png`.
+- Combined comparison: `.tmp/attributes-design-comparison.png` (source left,
+  implementation right; source is a generated concept, production retains
+  established UI-kit typography/dimensions and actual API/fixture records).
+- Widths: 320, 640, 768, 1024, 1280, 1440. Both dialogs captured at320/1440.
+- Independent UI Design Guard reviewed all11 page/form captures and code.
+
+## Findings and resolutions
+
+- [P2] Async display rollback/refresh ordering: fixed by field-only ID and
+  revision reconciliation; regressions cover both GET/PATCH completion orders
+  and group removal while PATCH is pending.
+- Apparent old selected-group highlight in initial screenshot was captured
+  during CSS transition. Stable DOM/aria/current/background assertions and
+  animations-disabled recapture confirm correct active group.
+- No outstanding P0/P1/P2 findings. Palette remains owner-approved; known
+  contrast exceptions are unchanged and documented by existing axe wrapper.
+
+## Verification
+
+Production E2E workspace/catalog/navigation/actions: 99/99; unit147/147;
+build/lint/format PASS. Load failure/retry and legacy active navigation were
+reviewed separately, including the final five updated baseline captures.
+Full app regression recorded separately in
+`docs/ADMIN_ATTRIBUTES_WORKSPACE_REPORT.md`.

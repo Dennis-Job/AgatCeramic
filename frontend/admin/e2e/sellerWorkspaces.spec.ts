@@ -178,10 +178,9 @@ test('Seller workspace /brands keeps long data, scroll and actions usable', asyn
   expect(results.violations).toEqual([])
 })
 
-// The expanded category and brand lists have their own responsive coverage.
+// Categories, brands and the unified attributes workspace have dedicated
+// responsive tests; these routes retain the full-width table contract.
 for (const [path, label, cardsBelow] of [
-  ['/attribute-groups', 'Список групп характеристик', 0],
-  ['/attributes', 'Список характеристик', 0],
   ['/employees', 'Список сотрудников', 1280],
   ['/roles', 'Список ролей', 0],
   ['/permissions', 'Каталог прав', 0],

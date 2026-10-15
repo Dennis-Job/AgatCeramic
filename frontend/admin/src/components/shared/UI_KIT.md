@@ -1,5 +1,12 @@
 # UI-kit Admin
 
+`UiSwitch` — быстрый boolean control с `role="switch"`: props `checked`,
+`accessibleName`, `disabled`, `busy`; событие `update:checked`. Сохраняет native
+Space/Enter и общий `admin-focus`; busy блокирует повторное изменение. Primary
+500 означает включённое состояние, gray 400 — выключенное; положение индикатора
+и `aria-checked` дублируют цвет. Поддерживает reduced motion и forced colors.
+Сетевые запросы, optimistic update и rollback принадлежат feature, а не primitive.
+
 `components/ui` содержит примитивы без знания доменов. `components/shared` —
 повторно используемые композиции, не привязанные к feature. После финальной
 приёмки TASK-A030 все переходные `Base*` и shared-state adapters удалены:

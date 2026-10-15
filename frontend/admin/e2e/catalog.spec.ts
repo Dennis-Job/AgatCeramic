@@ -6,6 +6,7 @@ import {
   optionalSelectAttribute,
 } from './catalogApi'
 import { createDeferredApiRequests } from './deferredApi'
+import { mockAttributesWorkspace } from './attributesWorkspaceApi'
 
 const catalogRoutes = [
   {
@@ -32,9 +33,9 @@ const catalogRoutes = [
   {
     path: '/attribute-groups',
     apiPath: '/admin/attribute-groups',
-    heading: 'Группы характеристик',
-    item: 'Размеры',
-    loadingLabel: 'Загрузка групп характеристик…',
+    heading: 'Характеристики',
+    item: 'Ширина',
+    loadingLabel: 'Загрузка характеристик…',
   },
   {
     path: '/attributes',
@@ -106,8 +107,6 @@ for (const route of catalogRoutes) {
 for (const route of [
   { path: '/products', nextItem: 'Про Стоун' },
   { path: '/brands', nextItem: 'Italon' },
-  { path: '/attribute-groups', nextItem: 'Поверхность' },
-  { path: '/attributes', nextItem: 'Длина' },
 ] as const) {
   test(`${route.path} pagination requests and renders page two`, async ({
     page,
@@ -117,11 +116,8 @@ for (const route of [
     const requestPromise = page.waitForRequest((request) => {
       const url = new URL(request.url())
       return (
-        url.pathname.endsWith(
-          route.path === '/attribute-groups'
-            ? '/admin/attribute-groups'
-            : `/admin${route.path}`,
-        ) && url.searchParams.get('page') === '2'
+        url.pathname.endsWith(`/admin${route.path}`) &&
+        url.searchParams.get('page') === '2'
       )
     })
     await page.getByRole('button', { name: 'Следующая страница' }).click()
@@ -130,6 +126,39 @@ for (const route of [
       page.getByText(route.nextItem, { exact: false }).first(),
     ).toBeVisible()
     await expect(page.getByLabel('Текущая страница 2 из 2')).toBeVisible()
+  })
+}
+
+for (const path of ['/attributes', '/attribute-groups'] as const) {
+  test(`${path} loads all API pages for both characteristics and groups`, async ({
+    page,
+  }) => {
+    await mockAttributesWorkspace(page)
+    const requested: string[] = []
+    page.on('request', (request) => requested.push(request.url()))
+    await page.goto(path)
+    await expect(
+      page.getByRole('article', {
+        name: 'Характеристика Примечание',
+        exact: true,
+      }),
+    ).toBeVisible()
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Группы характеристик' })
+        .getByRole('button', { name: /^Пустая группа/ }),
+    ).toBeVisible()
+    for (const endpoint of ['/admin/attributes', '/admin/attribute-groups']) {
+      expect(
+        requested.some((value) => {
+          const url = new URL(value)
+          return (
+            url.pathname.endsWith(endpoint) &&
+            url.searchParams.get('page') === '2'
+          )
+        }),
+      ).toBe(true)
+    }
   })
 }
 
@@ -1514,18 +1543,26 @@ test('categories, brands, groups, and attributes expose their dialog and selecto
   )
 
   await page.goto('/attribute-groups')
-  await page.getByRole('button', { name: 'Добавить группу' }).click()
+  await page.getByRole('button', { name: 'Создать', exact: true }).click()
   await expect(
     page.getByRole('dialog', { name: 'Новая группа характеристик' }),
   ).toBeVisible()
 
   await page.goto('/attributes')
-  await page.getByRole('button', { name: 'Добавить', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Добавить характеристику', exact: true })
+    .click()
   dialog = page.getByRole('dialog', { name: 'Новая характеристика' })
   await dialog.getByLabel('Группа характеристики').click()
-  await dialog.getByRole('button', { name: 'Размеры', exact: true }).click()
+  await page
+    .getByRole('group', { name: 'Группа характеристики: варианты' })
+    .getByRole('button', { name: 'Размеры', exact: true })
+    .click()
   await dialog.getByLabel('Тип характеристики').click()
-  await dialog.getByRole('button', { name: 'Список', exact: true }).click()
+  await page
+    .getByRole('group', { name: 'Тип характеристики: варианты' })
+    .getByRole('button', { name: 'Список', exact: true })
+    .click()
   await expect(dialog.getByRole('heading', { name: 'Варианты' })).toBeVisible()
   const dialogA11y = await new AxeBuilder({ page })
     .include('[role="dialog"]')
