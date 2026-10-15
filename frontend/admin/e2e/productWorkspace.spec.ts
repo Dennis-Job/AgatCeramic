@@ -101,6 +101,7 @@ test('wide product workspace keeps details, page sticky headers and horizontal a
   const region = page.getByRole('region', { name: 'Таблица товаров' })
   await expect(region).toBeVisible()
   await page.evaluate(() => document.fonts.ready)
+  let desktopColumnWidths: number[] | undefined
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 })
     await page.evaluate(() => window.scrollTo(0, 0))
@@ -116,6 +117,10 @@ test('wide product workspace keeps details, page sticky headers and horizontal a
       viewportWidth: document.documentElement.clientWidth,
       pageOverflow: document.documentElement.scrollWidth > innerWidth,
       nameWidth: element.querySelector('td')!.getBoundingClientRect().width,
+      columnWidths: Array.from(
+        element.querySelectorAll('tbody tr:first-child td'),
+        (cell) => cell.getBoundingClientRect().width,
+      ),
       headerTop:
         element.querySelector('th')!.getBoundingClientRect().top -
         element.getBoundingClientRect().top,
@@ -126,7 +131,20 @@ test('wide product workspace keeps details, page sticky headers and horizontal a
     expect(dimensions.pageOverflow, `page overflow at ${width}`).toBe(false)
     expect(dimensions.overflowingCells, `cell overflow at ${width}`).toBe(0)
     expect(dimensions.regionWidth).toBe(dimensions.viewportWidth)
-    if (width >= 1920) expect(dimensions.nameWidth).toBeGreaterThan(650)
+    if (width >= 1920) {
+      const nameShare = dimensions.nameWidth / dimensions.regionWidth
+      expect(nameShare).toBeGreaterThan(0.2)
+      expect(nameShare).toBeLessThan(0.3)
+      if (desktopColumnWidths) {
+        dimensions.columnWidths.forEach((columnWidth, index) => {
+          expect(
+            columnWidth,
+            `column ${index} grows at ${width}`,
+          ).toBeGreaterThan(desktopColumnWidths![index]!)
+        })
+      }
+      desktopColumnWidths = dimensions.columnWidths
+    }
     await region.evaluate((element) => {
       element.scrollTop = 500
       element.scrollLeft = 500

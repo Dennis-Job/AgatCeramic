@@ -271,16 +271,17 @@ function closeGroupDeletion(): void {
           управляют сортировкой.
         </caption>
         <colgroup>
-          <col class="product-table-name-column" />
-          <col style="width: 130px" />
-          <col style="width: 130px" />
-          <col style="width: 160px" />
-          <col style="width: 130px" />
-          <col style="width: 100px" />
-          <col style="width: 130px" />
-          <col style="width: 130px" />
-          <col style="width: 130px" />
-          <col style="width: 160px" />
+          <!-- Share extra space across all columns on wide screens. -->
+          <col style="width: 23%" />
+          <col style="width: 8.5%" />
+          <col style="width: 8%" />
+          <col style="width: 10%" />
+          <col style="width: 8.5%" />
+          <col style="width: 6.5%" />
+          <col style="width: 8.5%" />
+          <col style="width: 8.5%" />
+          <col style="width: 8.5%" />
+          <col style="width: 10%" />
         </colgroup>
         <thead
           class="border-b border-gray-200 bg-gray-50 text-xs font-semibold tracking-wide text-gray-500"
@@ -690,9 +691,5 @@ function closeGroupDeletion(): void {
 }
 :deep(.product-table td) {
   overflow-wrap: anywhere;
-}
-.product-table-name-column {
-  /* The name receives all remaining width beyond the fixed detail columns. */
-  width: auto;
 }
 </style>
