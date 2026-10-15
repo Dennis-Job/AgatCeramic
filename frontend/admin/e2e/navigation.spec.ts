@@ -156,6 +156,32 @@ for (const width of [320, 640, 768, 1023, 1024, 1280, 1440, 1920, 2560]) {
           panel.getByRole('link', { name: label, exact: true }),
         ).toHaveAttribute('href', destinations[label])
       }
+      if (group.label === 'Товары') {
+        const catalogGroup = panel
+          .locator('.admin-navigation-groups > div')
+          .filter({
+            has: page.getByRole('heading', {
+              name: 'Справочники каталога',
+              exact: true,
+            }),
+          })
+        await expect(catalogGroup.getByRole('link')).toHaveText([
+          'Категории',
+          'Бренды',
+          'Характеристики',
+        ])
+        await expect(
+          panel.getByRole('heading', {
+            name: 'Характеристики товаров',
+            exact: true,
+          }),
+        ).toHaveCount(0)
+        if (width === 1280)
+          await page.screenshot({
+            path: '../../.tmp/attributes-navigation-catalog-1280.png',
+            animations: 'disabled',
+          })
+      }
       await expect(panel.locator('a svg')).toHaveCount(0)
       const panelBox = await panel.boundingBox()
       expect(panelBox).not.toBeNull()

@@ -79,11 +79,6 @@ export const adminNavigation: NavigationSection[] = [
             path: '/brands',
             requiredPermission: 'catalog.manage',
           },
-        ],
-      },
-      {
-        label: 'Характеристики товаров',
-        links: [
           {
             label: 'Характеристики',
             to: '/attributes',
