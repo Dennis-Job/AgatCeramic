@@ -500,7 +500,7 @@ test('product filters apply dynamically and reset to the first page', async ({
   )
 })
 
-test('product Excel export downloads the current filtered and sorted selection', async ({
+test('all-products Excel export ignores the current page filters', async ({
   page,
 }) => {
   const deferredRequests = createDeferredApiRequests()
@@ -521,7 +521,10 @@ test('product Excel export downloads the current filtered and sorted selection',
   )
   const downloadPromise = page.waitForEvent('download')
   const exportRequest = deferredRequests.defer('/admin/products/export')
-  await page.getByRole('button', { name: 'Скачать Excel', exact: true }).click()
+  await page.getByRole('button', { name: 'Скачать', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Все товары в Excel', exact: true })
+    .click()
   const request = await requestPromise
   await exportRequest.requested
   await expect(page.getByRole('button', { name: 'Экспорт…' })).toHaveAttribute(
@@ -533,17 +536,13 @@ test('product Excel export downloads the current filtered and sorted selection',
   const download = await downloadPromise
   const query = new URL(request.url()).searchParams
 
-  expect(query.get('search')).toBe('монте')
-  expect(query.get('category_id')).toBe('1')
-  expect(query.get('is_active')).toBe('1')
-  expect(query.get('sort')).toBe('created_at')
-  expect(query.get('direction')).toBe('desc')
+  expect(query.size).toBe(0)
   expect(query.has('page')).toBe(false)
   expect(download.suggestedFilename()).toBe('products-2026-09-01-120000.xlsx')
   await expect(
     page
       .getByRole('status')
-      .filter({ hasText: 'Отфильтрованные товары экспортированы в Excel.' }),
+      .filter({ hasText: 'Все товары экспортированы в Excel.' }),
   ).toBeVisible()
 })
 

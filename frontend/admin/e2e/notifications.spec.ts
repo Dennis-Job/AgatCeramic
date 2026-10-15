@@ -17,10 +17,13 @@ for (const width of [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
     const search = page.getByRole('textbox', { name: 'Поиск', exact: true })
     const before = await search.boundingBox()
     const download = page.getByRole('button', {
-      name: 'Скачать Excel',
+      name: 'Скачать',
       exact: true,
     })
     await download.click()
+    await page
+      .getByRole('button', { name: 'Все товары в Excel', exact: true })
+      .click()
     const toast = page.locator(host).getByRole('status')
     await expect(toast).toContainText('Все товары экспортированы в Excel.')
     await expect(toast).toHaveAttribute('aria-live', 'polite')
@@ -50,6 +53,9 @@ for (const width of [320, 602, 640, 768, 1024, 1280, 1440, 1920, 2560]) {
     await expect(toast).toBeHidden()
     await expect(download).toBeFocused()
     await download.click()
+    await page
+      .getByRole('button', { name: 'Все товары в Excel', exact: true })
+      .click()
     await expect(toast).toBeVisible()
     if (width < 1024)
       await page.getByRole('button', { name: 'Открыть меню' }).click()

@@ -6,7 +6,6 @@ import {
   ArrowUp,
   ArrowUpDown,
   Copy,
-  Download,
   EyeOff,
   Pencil,
   Plus,
@@ -34,6 +33,7 @@ import ProductMainSection from './ProductMainSection.vue'
 import ProductAttributesSection from './ProductAttributesSection.vue'
 import ProductImagesSection from './ProductImagesSection.vue'
 import ProductPhotoAction from './ProductPhotoAction.vue'
+import ProductDownloadMenu from './ProductDownloadMenu.vue'
 import ProductVariantsSection from './ProductVariantsSection.vue'
 import ProductRelationsSection from './ProductRelationsSection.vue'
 import ProductReviewSection from './ProductReviewSection.vue'
@@ -62,8 +62,6 @@ const {
   filterResultStatus,
   filterCountsLoading,
   filterCountsError,
-  exportStatus,
-  exporting,
   productCountUnavailable,
   filters,
   sort,
@@ -86,7 +84,6 @@ const {
   load,
   resetFilters,
   changeSort,
-  exportFilteredProducts,
   enabled,
   open,
   openPhotos,
@@ -163,18 +160,7 @@ function closeGroupDeletion(): void {
     <template #intro>
       <PageHeader class="mb-6" eyebrow="Каталог" title="Товары">
         <template #actions>
-          <UiButton
-            v-if="canManageImports"
-            type="button"
-            variant="secondary"
-            :loading="exporting"
-            :disabled="exporting"
-            :aria-busy="exporting"
-            @click="exportFilteredProducts"
-            ><Download :size="18" aria-hidden="true" />{{
-              exporting ? 'Экспорт…' : 'Скачать Excel'
-            }}</UiButton
-          >
+          <ProductDownloadMenu v-if="canManageImports" />
           <UiButton v-if="canManage" type="button" @click="open()"
             ><Plus :size="18" aria-hidden="true" />Добавить товар</UiButton
           >
@@ -183,9 +169,6 @@ function closeGroupDeletion(): void {
     </template>
 
     <UiNotification v-if="error && !opened">{{ error }}</UiNotification>
-    <UiNotification v-if="exportStatus" tone="success" live="polite">{{
-      exportStatus
-    }}</UiNotification>
 
     <form
       class="admin-container rounded-xl bg-gray-50 p-4 sm:p-5"

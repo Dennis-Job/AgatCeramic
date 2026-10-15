@@ -27,7 +27,7 @@ class OpenApiCatalogContractTest extends TestCase
             '/admin/brands/{brand}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products' => ['get', 'post'],
             '/admin/products/filter-counts' => ['get'],
-            '/admin/products/export' => ['get'],
+            '/admin/products/export' => ['get', 'post'],
             '/admin/products/import' => ['post'],
             '/admin/products/import-template' => ['get'],
             '/admin/product-imports/{productImport}' => ['get'],
@@ -82,6 +82,12 @@ class OpenApiCatalogContractTest extends TestCase
             ['search', 'category_id', 'brand_id', 'is_active', 'is_on_sale', 'has_stock', 'price_from', 'price_to', 'sort', 'direction'],
             array_column($productExport['parameters'], 'name'),
         );
+        $selectedExport = $spec['paths']['/admin/products/export']['post'];
+        $selectedSchema = $selectedExport['requestBody']['content']['application/json']['schema'];
+        self::assertSame(['skus'], $selectedSchema['required']);
+        self::assertSame(1, $selectedSchema['properties']['skus']['minItems']);
+        self::assertSame(1000, $selectedSchema['properties']['skus']['maxItems']);
+        self::assertSame('string', $selectedSchema['properties']['skus']['items']['type']);
         self::assertSame('multipart/form-data', array_key_first($spec['paths']['/admin/products/import']['post']['requestBody']['content']));
         self::assertSame(
             '#/components/schemas/ProductImportResponse',

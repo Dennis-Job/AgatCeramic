@@ -32,12 +32,7 @@ import {
   ProductRelationRequestError,
   saveProductRelations,
 } from '../services/productRelations'
-import {
-  deleteProduct,
-  getProductExport,
-  getProducts,
-  saveProduct,
-} from '../services/products'
+import { deleteProduct, getProducts, saveProduct } from '../services/products'
 import { useAuthStore } from '../../../stores/auth'
 import { compareAlphabetically, sortByLabel } from '../../../utils/alphabetical'
 import { useProductFilterCounts } from './useProductFilterCounts'
@@ -83,8 +78,6 @@ export function useProductEditor() {
   const success = ref('')
   const confirmError = ref('')
   const filterResultStatus = ref('')
-  const exportStatus = ref('')
-  const exporting = ref(false)
   const productCountUnavailable = ref(false)
   const filters = ref({
     search: '',
@@ -488,35 +481,6 @@ export function useProductEditor() {
       brand_id: '',
       is_active: '',
       is_on_sale: '',
-    }
-  }
-  async function exportFilteredProducts() {
-    if (exporting.value) return
-    const exportedFilteredSelection = hasActiveFilters.value
-    const exportedFilters = filtersPayload()
-    exporting.value = true
-    error.value = ''
-    exportStatus.value = ''
-    try {
-      const file = await getProductExport(exportedFilters)
-      const url = URL.createObjectURL(file.blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = file.filename
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(url)
-      exportStatus.value = exportedFilteredSelection
-        ? 'Отфильтрованные товары экспортированы в Excel.'
-        : 'Все товары экспортированы в Excel.'
-    } catch (reason) {
-      error.value =
-        reason instanceof Error
-          ? reason.message
-          : 'Не удалось экспортировать товары.'
-    } finally {
-      exporting.value = false
     }
   }
   function fillGroup(group: ProductGroup | null, id: number) {
@@ -1195,8 +1159,6 @@ export function useProductEditor() {
     filterResultStatus,
     filterCountsLoading,
     filterCountsError,
-    exportStatus,
-    exporting,
     productCountUnavailable,
     filters,
     sort,
@@ -1261,7 +1223,6 @@ export function useProductEditor() {
     load,
     resetFilters,
     changeSort,
-    exportFilteredProducts,
     enabled,
     fillGroup,
     prepareGroupDraft,

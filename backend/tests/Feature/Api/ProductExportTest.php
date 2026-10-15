@@ -148,6 +148,97 @@ class ProductExportTest extends TestCase
         $this->assertSame(['SKU', 'Артикул', 'Штрихкод', 'Название', 'Описание'], array_slice($rows[0], 0, 5));
     }
 
+    public function test_selected_skus_restrict_both_product_sheets_and_image_columns_with_existing_filters_and_sort(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $first = Product::factory()->create(['sku' => '0001', 'is_active' => true]);
+        Product::factory()->create(['sku' => '0002', 'is_active' => true]);
+        Product::factory()->create(['sku' => '0003', 'is_active' => false]);
+        $excluded = Product::factory()->create(['sku' => '9999', 'is_active' => true]);
+        foreach ([[$first, 1], [$excluded, 3]] as [$product, $count]) {
+            for ($index = 1; $index <= $count; $index++) {
+                $product->images()->create([
+                    'disk' => 'public', 'path' => 'products/'.$product->sku.'/'.$index.'.jpg',
+                    'mime_type' => 'image/jpeg', 'size' => 100, 'is_primary' => $index === 1, 'sort_order' => $index,
+                ]);
+            }
+        }
+
+        $response = $this->actingAs($actor)
+            ->postJson('/api/v1/admin/products/export', ['skus' => ['0002', '0001', '0003'], 'is_active' => true, 'sort' => 'sku', 'direction' => 'asc'])
+            ->assertOk();
+
+        $sheets = $this->readSheets($response->baseResponse);
+        $this->assertSame(['0001', '0002'], array_column(array_slice($sheets['Товары'], 1), 0));
+        $this->assertSame(['0001', '0002'], array_column(array_slice($sheets['SEO товаров'], 1), 0));
+        $this->assertContains('Изображение 1', $sheets['Товары'][0]);
+        $this->assertNotContains('Изображение 2', $sheets['Товары'][0]);
+    }
+
+    public function test_unknown_sku_prevents_download_even_when_other_skus_exist(): void
+    {
+        Product::factory()->create(['sku' => '0001']);
+
+        $response = $this->actingAs($this->userWithPermission('imports.manage'))
+            ->postJson('/api/v1/admin/products/export', ['skus' => ['0001', 'unknown', '0009']])
+            ->assertUnprocessable()
+            ->assertHeader('content-type', 'application/json');
+
+        $this->assertSame(['Товар с SKU unknown не найден.'], $response->json('error.details')['skus.1']);
+        $this->assertSame(['Товар с SKU 0009 не найден.'], $response->json('error.details')['skus.2']);
+    }
+
+    public function test_invalid_sku_lists_never_fall_back_to_the_full_catalog(): void
+    {
+        $this->actingAs($this->userWithPermission('imports.manage'));
+        Product::factory()->create(['sku' => '0001']);
+
+        foreach ([[], null, '', '0001', array_fill(0, 1001, '0001')] as $skus) {
+            $this->postJson('/api/v1/admin/products/export', ['skus' => $skus])
+                ->assertUnprocessable()
+                ->assertJsonStructure(['error' => ['details' => ['skus']]]);
+        }
+
+        foreach ([[''], [str_repeat('x', 256)], [['0001']], [1]] as $skus) {
+            $this->postJson('/api/v1/admin/products/export', ['skus' => $skus])
+                ->assertUnprocessable()
+                ->assertJsonStructure(['error' => ['details' => ['skus.0']]]);
+        }
+    }
+
+    public function test_selected_export_requires_skus_and_get_rejects_sku_selection(): void
+    {
+        $this->actingAs($this->userWithPermission('imports.manage'));
+
+        $this->postJson('/api/v1/admin/products/export', [])
+            ->assertUnprocessable()
+            ->assertJsonStructure(['error' => ['details' => ['skus']]]);
+        $this->getJson('/api/v1/admin/products/export?skus[]=0001')
+            ->assertUnprocessable()
+            ->assertJsonStructure(['error' => ['details' => ['skus']]]);
+    }
+
+    public function test_selected_export_accepts_the_maximum_sku_count_and_exports_each_product_once(): void
+    {
+        Product::factory()->create(['sku' => '0001']);
+        $response = $this->actingAs($this->userWithPermission('imports.manage'))
+            ->postJson('/api/v1/admin/products/export', ['skus' => array_fill(0, 1000, '0001')])
+            ->assertOk();
+
+        $this->assertSame(['0001'], array_column(array_slice($this->readSheets($response->baseResponse)['Товары'], 1), 0));
+    }
+
+    public function test_selected_export_requires_the_dedicated_import_permission(): void
+    {
+        Product::factory()->create(['sku' => '0001']);
+        $this->postJson('/api/v1/admin/products/export', ['skus' => ['0001']])->assertUnauthorized();
+        $this->actingAs($this->userWithPermission('catalog.manage'))
+            ->postJson('/api/v1/admin/products/export', ['skus' => ['0001']])->assertForbidden();
+        foreach ([['unknown'], [], '0001'] as $skus) {
+            $this->postJson('/api/v1/admin/products/export', ['skus' => $skus])->assertForbidden();
+        }
+    }
+
     public function test_export_requires_the_dedicated_import_permission(): void
     {
         $this->getJson('/api/v1/admin/products/export')->assertUnauthorized();

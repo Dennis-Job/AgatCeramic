@@ -433,6 +433,20 @@ for the public disk), so local exports point to the local server.
 `SEO товаров` links SKU to product/category/brand names and slugs; `SEO характеристик` lists
 characteristic names, units and slugs. No sheet contains database IDs.
 
+`POST /admin/products/export` downloads the same workbook for a required JSON `skus` array
+of 1–1000 existing strings, each at most 255 characters. Leading zeros are preserved.
+The endpoint requires `imports.manage` before validation and normal Sanctum SPA CSRF protection.
+Unknown SKU entries return `422` with Russian messages in `error.details.skus.N`; no partial file
+is generated. Empty, omitted or malformed selections never fall back to exporting all products.
+Optional list filters/sort may be combined with the selection. Both product sheets and the gallery
+column count respect the selection; `SEO характеристик` retains the full characteristic reference.
+SKU selection on GET is rejected: lists use POST to avoid URL and query parsing limits.
+
+The Admin `/products` button **Скачать** opens on hover, click/tap or keyboard. **Все товары в Excel**
+calls GET without page filters. **Товары по SKU** opens a dialog with comma-separated input;
+whitespace and duplicates are removed, and the normalized strings are posted as `skus`.
+The dialog preserves input after errors and prevents repeated submission while creating the file.
+
 `POST /admin/products/import` accepts that workbook as multipart field `file`, stores it on the
 private `local` disk, creates a persistent import-status record, and dispatches processing to the
 Redis queue after commit. The endpoint requires `imports.manage`, accepts only XLSX files up to

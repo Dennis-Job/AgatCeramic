@@ -51,6 +51,10 @@ class ProductQuery
     {
         $query = Product::query();
 
+        if (array_key_exists('skus', $filters)) {
+            $query->whereIn('sku', $filters['skus']);
+        }
+
         $search = $filters['search'] ?? null;
         if (is_string($search) && $search !== '') {
             $pattern = '%'.mb_strtolower($search).'%';
