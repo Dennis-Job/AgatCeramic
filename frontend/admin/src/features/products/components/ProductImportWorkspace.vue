@@ -150,6 +150,7 @@ function selectDroppedImageFile(files: FileList) {
         id-prefix="import-tab"
         label="Тип загрузки"
         :options="importTabs"
+        fit-content
       />
       <div
         v-show="tab === 'products'"

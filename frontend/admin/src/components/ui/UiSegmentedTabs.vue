@@ -13,6 +13,7 @@ const props = defineProps<{
   idPrefix: string
   label: string
   options: ReadonlyArray<UiSegmentedTabOption>
+  fitContent?: boolean
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
@@ -66,6 +67,7 @@ function handleKeydown(event: KeyboardEvent) {
   <div
     ref="tabList"
     class="flex min-w-0 rounded-xl border border-gray-200"
+    :class="{ 'w-fit max-w-full': fitContent }"
     role="tablist"
     :aria-label="label"
     @keydown="handleKeydown"
@@ -80,12 +82,13 @@ function handleKeydown(event: KeyboardEvent) {
       :aria-selected="modelValue === option.id"
       :aria-controls="option.panelId"
       :tabindex="modelValue === option.id ? 0 : -1"
-      class="relative min-w-0 flex-1 rounded-xl px-3 py-3 text-center text-sm leading-5"
-      :class="
+      class="relative min-w-0 rounded-xl px-3 py-3 text-center text-sm leading-5"
+      :class="[
+        fitContent ? 'flex-initial' : 'flex-1',
         modelValue === option.id
           ? 'z-10 text-gray-900 outline outline-1 outline-primary-500'
-          : 'text-gray-500'
-      "
+          : 'text-gray-500',
+      ]"
       @click="selectTab(option.id)"
       >{{ option.label }}</UiButton
     >

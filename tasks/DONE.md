@@ -8,6 +8,19 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-15 — переключатель типа загрузки в `/products/import` сужен по содержимому:
+341 px на viewport 1212 px, на 320 px — 288 px с переносом подписей.
+Изменены `UiSegmentedTabs.vue` (опциональный `fitContent`),
+`ProductImportWorkspace.vue`, `components/shared/UI_KIT.md` и `tasks/DONE.md`.
+Build, Admin lint/format, 148 unit-тестов и независимый UI Design Guard — PASS.
+Полный Windows E2E: 587/592 PASS; пять visual baseline failures в
+`adminBaseline.spec.ts` — `/products` default/loading/forbidden/empty/error —
+также воспроизведены с исходными HEAD-версиями обоих изменённых Vue-компонентов.
+Все пять actual PNG совпадают побайтно до/после правки; эталоны не обновлялись.
+Свежие скриншоты и размеры: `frontend/admin/.tmp/import-tabs-review/`;
+полный прогон: `frontend/admin/test-results/`, контроль HEAD:
+`frontend/admin/.tmp/head-baseline-results/`. Backend, миграции и API не менялись.
+
 2026-10-15 — столбцы товаров Admin распределены пропорционально ширине таблицы:
 «Наименование» — 23%, остальные колонки растут вместе с окном. Сохранены локальная
 прокрутка, закрепление и полный перенос названий. Обновлены `ProductEditor.vue`,
