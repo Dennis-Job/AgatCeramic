@@ -24,8 +24,9 @@ final class CategoryProductRowImporter
      * Create or update one category-template row. The caller owns its transaction and checkpoint.
      *
      * @param  array<string, mixed>  $rowValues
+     * @param  array<string, mixed>  $auditContext
      */
-    public function apply(User $actor, Category $category, array $rowValues, int $row, bool $editing = false): string
+    public function apply(User $actor, Category $category, array $rowValues, int $row, bool $editing = false, array $auditContext = []): string
     {
         $name = $this->values->requiredString($rowValues['name'] ?? null, $row, 'Название');
         $category = Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
@@ -101,7 +102,7 @@ final class CategoryProductRowImporter
                 ->map(static fn (Attribute $attribute): string => '«'.$attribute->name.'»')->implode(', ').'.');
         }
 
-        $result = $this->executor->applyWithResult($actor, $product?->id, $payload, $attributePayload);
+        $result = $this->executor->applyWithResult($actor, $product?->id, $payload, $attributePayload, $auditContext);
         if ($product === null && Product::query()->whereKeyNot($result['product']->id)->where(fn ($query) => $query->where('name', $name)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)]))->exists()) {
             $this->values->rowError($row, 'товар с таким наименованием уже существует.');
         }

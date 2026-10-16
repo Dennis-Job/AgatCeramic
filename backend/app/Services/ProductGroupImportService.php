@@ -43,7 +43,7 @@ class ProductGroupImportService
                 if ($actor === null) {
                     throw new RuntimeException('Не удалось определить автора импорта.');
                 }
-                $this->groups->applyBulk($actor, $changes);
+                $this->groups->applyBulk($actor, $changes, ['import_id' => $import->id]);
                 DB::rollBack();
             } catch (ValidationException $exception) {
                 if (DB::transactionLevel() > 0) {
@@ -106,7 +106,7 @@ class ProductGroupImportService
                 if ($actor === null) {
                     throw new RuntimeException('Не удалось определить автора импорта.');
                 }
-                $this->groups->applyBulk($actor, $changes);
+                $this->groups->applyBulk($actor, $changes, ['import_id' => $import->id]);
                 $item->forceFill(['status' => 'completed'])->save();
                 $import->increment('created_rows', collect($changes)->where('action', 'create')->count());
                 $import->increment('updated_rows', collect($changes)->whereIn('action', ['update', 'disband'])->count());

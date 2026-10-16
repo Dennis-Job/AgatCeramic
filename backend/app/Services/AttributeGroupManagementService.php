@@ -25,8 +25,10 @@ class AttributeGroupManagementService
     public function update(User $actor, AttributeGroup $group, array $attributes): AttributeGroup
     {
         return DB::transaction(function () use ($actor, $group, $attributes): AttributeGroup {
+            $group = AttributeGroup::query()->whereKey($group->id)->lockForUpdate()->firstOrFail();
+            $before = $this->auditLogService->capture($group);
             $group->fill($attributes)->save();
-            $this->auditLogService->record($actor, 'attribute-group.updated', $group);
+            $this->auditLogService->recordUpdated($actor, 'attribute-group.updated', $group, $before);
 
             return $group;
         });
@@ -35,6 +37,7 @@ class AttributeGroupManagementService
     public function delete(User $actor, AttributeGroup $group): void
     {
         DB::transaction(function () use ($actor, $group): void {
+            $group = AttributeGroup::query()->whereKey($group->id)->lockForUpdate()->firstOrFail();
             $this->auditLogService->record($actor, 'attribute-group.deleted', $group);
             $group->delete();
         });

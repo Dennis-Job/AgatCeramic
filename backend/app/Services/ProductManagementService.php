@@ -18,26 +18,34 @@ class ProductManagementService
         private readonly CatalogSkuService $skuService,
     ) {}
 
-    /** @param array<string, mixed> $attributes */
-    public function create(User $actor, array $attributes): Product
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $auditContext
+     */
+    public function create(User $actor, array $attributes, array $auditContext = [], bool $deferAudit = false): Product
     {
-        return DB::transaction(function () use ($actor, $attributes): Product {
+        return DB::transaction(function () use ($actor, $attributes, $auditContext, $deferAudit): Product {
             $category = Category::query()->whereKey($attributes['category_id'])->lockForUpdate()->firstOrFail();
             $attributes['sku'] = $this->skuService->generate($category);
             $product = Product::query()->create($attributes);
             if ($product->is_active) {
                 $this->completenessService->assertCanActivate($product->load('category'));
             }
-            $this->auditLogService->record($actor, 'product.created', $product);
+            if (! $deferAudit) {
+                $this->auditLogService->record($actor, 'product.created', $product, $auditContext);
+            }
 
             return $product;
         });
     }
 
-    /** @param array<string, mixed> $attributes */
-    public function update(User $actor, Product $product, array $attributes): Product
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $auditContext
+     */
+    public function update(User $actor, Product $product, array $attributes, array $auditContext = [], bool $deferAudit = false): Product
     {
-        return DB::transaction(function () use ($actor, $product, $attributes): Product {
+        return DB::transaction(function () use ($actor, $product, $attributes, $auditContext, $deferAudit): Product {
             $membership = $product->groupMembership()->first();
             if ($membership !== null) {
                 foreach (['category_id', 'brand_id'] as $field) {
@@ -71,11 +79,14 @@ class ProductManagementService
                 $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             }
 
+            $before = $deferAudit ? [] : $this->auditLogService->capture($product);
             $product->fill($attributes)->save();
             if (($attributes['is_active'] ?? false) === true) {
                 $this->completenessService->assertCanActivate($product->load('category'));
             }
-            $this->auditLogService->record($actor, 'product.updated', $product);
+            if (! $deferAudit) {
+                $this->auditLogService->recordUpdated($actor, 'product.updated', $product, $before, $auditContext);
+            }
 
             return $product;
         });
@@ -86,8 +97,10 @@ class ProductManagementService
         DB::transaction(function () use ($actor, $product): void {
             $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $membership = $product->groupMembership()->with('group')->first();
-            $group = $membership?->group()->first();
+            $group = $membership?->group()->lockForUpdate()->first();
+            $groupBefore = $group === null ? null : $this->auditLogService->capture($group);
             if ($group !== null && $group->products()->count() <= 2) {
+                $this->auditLogService->record($actor, 'product-group.deleted', $group, ['trigger_product_id' => $product->id]);
                 $group->delete();
             }
             $images = $product->images()->get(['disk', 'path'])->all();
@@ -96,6 +109,9 @@ class ProductManagementService
                 $this->storageCleanupService->schedule($image->disk, $image->path);
             }
             $product->delete();
+            if ($group !== null && $group->exists && $groupBefore !== null) {
+                $this->auditLogService->recordUpdated($actor, 'product-group.updated', $group, $groupBefore, ['trigger_product_id' => $product->id]);
+            }
 
         });
     }

@@ -18,6 +18,7 @@ class ImportSubmissionService
     public function __construct(
         private readonly ImportDispatchService $dispatchService,
         private readonly ProductImportTemplateCategoryValidator $templateCategoryValidator,
+        private readonly AuditLogService $audit,
     ) {}
 
     public function submitProductWorkbook(
@@ -51,6 +52,11 @@ class ImportSubmissionService
 
                 $import = ProductImport::query()->create($attributes);
 
+                $this->audit->record($user, 'import.submitted', $import, [
+                    'import_id' => $import->id,
+                    'operation' => $import->operation ?? 'product',
+                ]);
+
                 $this->dispatchService->scheduleProductImport($import);
 
                 return $import;
@@ -78,6 +84,8 @@ class ImportSubmissionService
                     'path' => $path,
                     'status' => 'pending',
                 ]);
+
+                $this->audit->record($user, 'image-import.submitted', $import, ['import_id' => $import->id, 'operation' => 'image']);
 
                 $this->dispatchService->scheduleProductImageImport($import);
 

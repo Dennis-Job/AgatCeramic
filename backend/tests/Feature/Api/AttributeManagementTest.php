@@ -219,8 +219,8 @@ class AttributeManagementTest extends TestCase
         ])->assertOk()->assertJsonPath('data.is_required', false);
 
         $this->assertDatabaseMissing('product_attribute_values', ['product_id' => $product->id, 'attribute_id' => $attribute->id]);
-        $metadata = AuditLog::query()->where('action', 'attribute.updated')->where('entity_id', $attribute->id)->sole()->metadata;
-        $this->assertArrayNotHasKey('is_required_before', $metadata);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'attribute.updated', 'entity_id' => $attribute->id]);
+        $this->assertFalse((bool) $category->attributes()->sole()->pivot->is_required);
     }
 
     public function test_product_page_visibility_is_exposed_and_audited(): void

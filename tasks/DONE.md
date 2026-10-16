@@ -8,6 +8,15 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-16 — Содержательный журнал аудита, этап 1: before/after и снимки каталога,
+фотографий, объединений, справочников, сотрудников и ролей; импорт/экспорт с исходным
+инициатором, результатами и `import_id`. API-структура сохранена, описания доступны
+через существующий `details`; редизайн не выполнялся. Windows backend: 488 тестов /
+1 PostgreSQL-only skip; PostgreSQL feature 407/407 и immutability/concurrency 14/14.
+PHPStan, Pint, architecture и OpenAPI compatibility — PASS. Composer audit сообщил
+advisory для прежней зависимости symfony/http-foundation при Packagist timeout.
+[Изменённые файлы, покрытие и ограничения](../docs/AUDIT_TRAIL_ENRICHMENT.md).
+
 2026-10-16 — «Команда и доступ», выбранное сочетание 3+2: карточки сотрудников,
 боковой выбор роли и сгруппированные права; справочник прав встроен в раздел.
 Сохранены адреса страниц и независимые permissions, исправлен запрос обновления

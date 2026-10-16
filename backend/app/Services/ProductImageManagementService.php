@@ -25,6 +25,7 @@ class ProductImageManagementService
         try {
             return DB::transaction(function () use ($actor, $product, $file, $attributes, &$path): ProductImage {
                 $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+                $imagesBefore = $this->captureImages($product);
                 $ordinal = $this->nextOrdinal($product);
                 $baseName = "{$product->sku}_{$ordinal}";
                 $directory = "product-images/{$product->id}";
@@ -49,6 +50,7 @@ class ProductImageManagementService
                     'is_primary' => $isPrimary,
                 ]);
                 $this->auditLogService->record($actor, 'product.image-uploaded', $image);
+                $this->recordAutomaticImageChanges($actor, $product, $imagesBefore, $image->id);
 
                 return $image;
             });
@@ -99,6 +101,7 @@ class ProductImageManagementService
         return DB::transaction(function () use ($actor, $product, $image, $attributes): ProductImage {
             $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $image = $product->images()->findOrFail($image->id);
+            $imagesBefore = $this->captureImages($product);
             $isPrimary = $attributes['is_primary'] ?? $image->is_primary;
             if ($isPrimary) {
                 $product->images()->whereKeyNot($image->id)->update(['is_primary' => false]);
@@ -108,13 +111,15 @@ class ProductImageManagementService
                 $replacement = $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first();
                 $image->fill([...$this->imageAttributes($attributes), 'is_primary' => false])->save();
                 $replacement?->update(['is_primary' => true]);
-                $this->auditLogService->record($actor, 'product.image-updated', $image);
+                $this->auditLogService->recordUpdated($actor, 'product.image-updated', $image, $imagesBefore[$image->id]);
+                $this->recordAutomaticImageChanges($actor, $product, $imagesBefore, $image->id);
 
                 return $image;
             }
 
             $image->fill([...$this->imageAttributes($attributes), 'is_primary' => $isPrimary])->save();
-            $this->auditLogService->record($actor, 'product.image-updated', $image);
+            $this->auditLogService->recordUpdated($actor, 'product.image-updated', $image, $imagesBefore[$image->id]);
+            $this->recordAutomaticImageChanges($actor, $product, $imagesBefore, $image->id);
 
             return $image;
         });
@@ -125,6 +130,7 @@ class ProductImageManagementService
         $image = DB::transaction(function () use ($actor, $product, $image): ProductImage {
             $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
             $image = $product->images()->findOrFail($image->id);
+            $imagesBefore = $this->captureImages($product);
             $replacement = $image->is_primary
                 ? $product->images()->whereKeyNot($image->id)->orderBy('sort_order')->orderBy('id')->first()
                 : null;
@@ -132,10 +138,32 @@ class ProductImageManagementService
             $this->storageCleanupService->schedule($image->disk, $image->path);
             $image->delete();
             $replacement?->update(['is_primary' => true]);
+            $this->recordAutomaticImageChanges($actor, $product, $imagesBefore, $image->id);
 
             return $image;
         });
 
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function captureImages(Product $product): array
+    {
+        return $product->images()->get()->mapWithKeys(
+            fn (ProductImage $image): array => [$image->id => $this->auditLogService->capture($image)],
+        )->all();
+    }
+
+    /** @param array<int, array<string, mixed>> $before */
+    private function recordAutomaticImageChanges(User $actor, Product $product, array $before, int $triggerImageId): void
+    {
+        foreach ($product->images()->whereKeyNot($triggerImageId)->get() as $image) {
+            if (isset($before[$image->id])) {
+                $this->auditLogService->recordUpdated($actor, 'product.image-updated', $image, $before[$image->id], [
+                    'automatic' => true,
+                    'trigger_image_id' => $triggerImageId,
+                ]);
+            }
+        }
     }
 
     /**

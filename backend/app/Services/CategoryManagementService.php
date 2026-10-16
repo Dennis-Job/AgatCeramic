@@ -46,6 +46,7 @@ class CategoryManagementService
                 : null;
             $category = $categories?->firstWhere('id', $category->id)
                 ?? Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+            $before = $this->auditLogService->capture($category);
             $originalParentId = $category->parent_id;
             $originalImageId = $category->image_id;
             $parent = null;
@@ -67,7 +68,7 @@ class CategoryManagementService
             if (array_key_exists('parent_id', $attributes) && $attributes['parent_id'] !== $originalParentId) {
                 $this->skuService->reassignSubtree($category, $parent);
             }
-            $this->auditLogService->record($actor, 'category.updated', $category);
+            $this->auditLogService->recordUpdated($actor, 'category.updated', $category, $before);
             if ($originalImageId !== null && $category->image_id !== $originalImageId) {
                 $this->mediaService->deleteIfUnused($actor, $originalImageId);
             }

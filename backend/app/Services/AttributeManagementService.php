@@ -38,6 +38,7 @@ class AttributeManagementService
     {
         return DB::transaction(function () use ($actor, $attribute, $attributes): Attribute {
             $attribute = $this->lockForDefinitionMutation($attribute);
+            $before = $this->auditLogService->capture($attribute);
 
             $hasOptions = array_key_exists('options', $attributes);
             $options = $this->options($attributes['options'] ?? []);
@@ -84,7 +85,7 @@ class AttributeManagementService
                 $metadata['option_values_before'] = $optionValuesBefore;
                 $metadata['option_values_after'] = $optionValuesAfter;
             }
-            $this->auditLogService->record($actor, 'attribute.updated', $attribute, $metadata);
+            $this->auditLogService->recordUpdated($actor, 'attribute.updated', $attribute, $before, $metadata);
 
             return $attribute->load('options');
         });

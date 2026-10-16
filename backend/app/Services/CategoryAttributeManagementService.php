@@ -31,8 +31,9 @@ class CategoryAttributeManagementService
 
             $this->integrityService->assertCategoryAssignmentsCanBeReplaced($category, $this->attributeIds($attributes));
 
+            $before = $this->auditLogService->capture($category);
             $category->attributes()->sync($assignments);
-            $this->auditLogService->record($actor, 'category.attributes-updated', $category, [
+            $this->auditLogService->recordUpdated($actor, 'category.attributes-updated', $category, $before, [
                 'attribute_ids' => array_keys($assignments),
             ]);
 
@@ -88,9 +89,10 @@ class CategoryAttributeManagementService
 
             $this->integrityService->assertCategoryAssignmentsCanBeReplaced($category, $remainingAttributeIds, 'attribute_groups');
 
+            $before = $this->auditLogService->capture($category);
             $category->attributeGroups()->sync($assignments);
             $category->attributes()->detach($removedAttributeIds);
-            $this->auditLogService->record($actor, 'category.attribute-groups-updated', $category, ['attribute_group_ids' => array_keys($assignments)]);
+            $this->auditLogService->recordUpdated($actor, 'category.attribute-groups-updated', $category, $before, ['attribute_group_ids' => array_keys($assignments)]);
 
             return $category->load('attributeGroups');
         });

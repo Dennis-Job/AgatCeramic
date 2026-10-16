@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Support;
+
+class AuditLabels
+{
+    public const ACTIONS = [
+        'auth.login' => 'Вход в систему', 'auth.logout' => 'Выход из системы',
+        'auth.password-reset.completed' => 'Сброшен пароль сотрудника', 'auth.profile.updated' => 'Изменён профиль',
+        'admin.bootstrap' => 'Создан супер-администратор',
+        'admin-user.created' => 'Создан сотрудник', 'admin-user.updated' => 'Изменён сотрудник', 'admin-user.deleted' => 'Удалён сотрудник',
+        'role.created' => 'Создана роль', 'role.updated' => 'Изменена роль', 'role.deleted' => 'Удалена роль',
+        'category.created' => 'Создана категория', 'category.updated' => 'Изменена категория', 'category.deleted' => 'Удалена категория',
+        'category.attributes-updated' => 'Изменены характеристики категории', 'category.attribute-groups-updated' => 'Изменены группы характеристик категории',
+        'brand.created' => 'Создан бренд', 'brand.updated' => 'Изменён бренд', 'brand.deleted' => 'Удалён бренд',
+        'attribute.created' => 'Создана характеристика', 'attribute.updated' => 'Изменена характеристика', 'attribute.deleted' => 'Удалена характеристика',
+        'attribute-group.created' => 'Создана группа характеристик', 'attribute-group.updated' => 'Изменена группа характеристик', 'attribute-group.deleted' => 'Удалена группа характеристик',
+        'product.created' => 'Создан товар', 'product.updated' => 'Изменён товар', 'product.deleted' => 'Удалён товар',
+        'product.attributes-updated' => 'Изменены характеристики товара', 'product.relations-updated' => 'Изменены связанные товары',
+        'product.image-uploaded' => 'Загружено фото товара', 'product.image-updated' => 'Изменено фото товара', 'product.image-deleted' => 'Удалено фото товара', 'product.image-imported' => 'Импортированы фото товара',
+        'product-group.created' => 'Создано объединение товаров', 'product-group.updated' => 'Изменено объединение товаров', 'product-group.deleted' => 'Расформировано объединение товаров',
+        'product.exported' => 'Подготовлен экспорт товаров',
+        'import.submitted' => 'Загружен файл импорта', 'import.completed' => 'Завершён импорт', 'import.failed' => 'Импорт завершился ошибкой',
+        'image-import.submitted' => 'Загружен архив фотографий', 'image-import.completed' => 'Завершён импорт фотографий', 'image-import.failed' => 'Импорт фотографий завершился ошибкой',
+        'order.status-changed' => 'Изменён статус заказа', 'order.comment-added' => 'Добавлен комментарий к заказу', 'order.payment-registered' => 'Зарегистрирована оплата заказа',
+        'contact.assignee-changed' => 'Изменён ответственный за обращение', 'contact.status-changed' => 'Изменён статус обращения', 'contact.comment-added' => 'Добавлен комментарий к обращению',
+        'page.created' => 'Создана страница', 'page.updated' => 'Изменена страница', 'page.deleted' => 'Удалена страница', 'page.published' => 'Опубликована страница',
+        'home-page.updated' => 'Изменена главная страница', 'home-page.published' => 'Опубликована главная страница',
+        'site-appearance.published' => 'Опубликовано оформление сайта', 'site-settings.updated' => 'Изменены настройки сайта',
+        'media.created' => 'Добавлен медиафайл', 'media.updated' => 'Изменён медиафайл', 'media.deleted' => 'Удалён медиафайл',
+        'banner.created' => 'Создан баннер', 'banner.updated' => 'Изменён баннер', 'banner.deleted' => 'Удалён баннер',
+        'slider.created' => 'Создан слайдер', 'slider.updated' => 'Изменён слайдер', 'slider.deleted' => 'Удалён слайдер',
+        'store.created' => 'Добавлен магазин', 'store.updated' => 'Изменён магазин', 'store.deleted' => 'Удалён магазин', 'store.working-hours-updated' => 'Изменены часы работы магазина',
+        'legal-document.created' => 'Создан юридический документ', 'legal-document.published' => 'Опубликован юридический документ',
+        'compliance-approval.recorded' => 'Зафиксировано согласование', 'security.admin-auth-invalidated' => 'Отозваны административные сессии',
+    ];
+
+    public const FIELDS = [
+        'title' => 'Название', 'sku' => 'SKU', 'slug' => 'Технический код', 'code' => 'Код',
+        'article_number' => 'Артикул', 'barcode' => 'Штрихкод', 'description' => 'Описание',
+        'price' => 'Цена', 'old_price' => 'Старая цена', 'stock_quantity' => 'Остаток', 'unit' => 'Единица измерения',
+        'is_active' => 'Активность', 'is_on_sale' => 'Распродажа', 'category_id' => 'Категория (ID)', 'brand_id' => 'Бренд (ID)',
+        'parent_id' => 'Родительская категория (ID)', 'is_parent' => 'Родительская категория',
+        'image_id' => 'Изображение (ID)', 'logo_id' => 'Логотип (ID)', 'country_code' => 'Страна', 'documents' => 'Документы',
+        'status' => 'Статус', 'roles' => 'Роли', 'permissions' => 'Права', 'fields' => 'Изменённые поля',
+        'path' => 'Файл изображения', 'is_primary' => 'Главное фото', 'sort_order' => 'Порядок', 'alt' => 'Описание фото',
+        'product_skus' => 'Товары в объединении (SKU)', 'axis_ids' => 'Оси объединения (ID)',
+        'attribute_values' => 'Значения характеристик', 'relations' => 'Связанные товары',
+        'attribute_group_id' => 'Группа характеристик (ID)', 'type' => 'Тип', 'options' => 'Варианты значений',
+        'attributes' => 'Характеристики категории', 'attribute_groups' => 'Группы характеристик',
+        'is_filterable' => 'Фильтр каталога', 'is_visible_on_product_page' => 'Показывать в товаре',
+        'import_id' => 'Импорт (ID)', 'operation' => 'Операция импорта', 'affected_records' => 'Затронуто записей',
+        'total' => 'Всего строк', 'processed' => 'Обработано строк', 'created' => 'Создано', 'updated' => 'Обновлено', 'replaced' => 'Заменено', 'failed' => 'Ошибок',
+        'automatic' => 'Автоматическое изменение', 'trigger_image_id' => 'Причина: фото (ID)',
+        'trigger_product_id' => 'Причина: товар (ID)', 'source_product_id' => 'Исходный товар (ID)', 'synchronized' => 'Синхронизировано из объединения',
+        'images' => 'Фотографии товара', 'file' => 'Файл', 'mime_type' => 'Формат', 'size' => 'Размер (байт)',
+        'is_required' => 'Обязательная характеристика', 'payment_amount' => 'Сумма оплаты',
+        'name' => 'Имя', 'email' => 'Email', 'password' => 'Пароль',
+    ];
+
+    public const STATUSES = ['new' => 'Новый', 'processing' => 'В обработке', 'confirmed' => 'Подтверждён', 'completed' => 'Завершён', 'cancelled' => 'Отменён', 'active' => 'Активен', 'blocked' => 'Заблокирован'];
+}

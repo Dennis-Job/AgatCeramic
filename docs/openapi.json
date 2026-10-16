@@ -8154,9 +8154,10 @@
                         },
                         "additionalProperties": false
                     },
-                    "metadata": {"type": ["object", "null"], "additionalProperties": true},
+                    "metadata": {"type": ["object", "null"], "description": "Очищенные сведения: changes содержит разрешённые изменённые поля с before/after, values — состояние созданного/удалённого объекта; import_id связывает массовую операцию с её изменениями. Персональные поля сотрудников представлены только именами полей. Старые записи могут содержать меньше сведений.", "additionalProperties": true},
                     "details": {
                         "type": "array",
+                        "description": "Человекочитаемые сведения: описание действия, SKU/номер заказа, безопасные поля и значения до/после. Структура ответа сохранена для прежних клиентов.",
                         "items": {
                             "type": "object",
                             "required": ["label", "value"],

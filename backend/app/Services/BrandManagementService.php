@@ -32,6 +32,7 @@ class BrandManagementService
     {
         return DB::transaction(function () use ($actor, $brand, $attributes): Brand {
             $brand = Brand::query()->whereKey($brand->id)->lockForUpdate()->firstOrFail();
+            $before = $this->auditLogService->capture($brand);
             $originalLogoId = $brand->logo_id;
             $documentIds = $attributes['document_ids'] ?? null;
             unset($attributes['document_ids']);
@@ -39,7 +40,7 @@ class BrandManagementService
             if ($documentIds !== null) {
                 $brand->documents()->sync($this->documentOrder($documentIds));
             }
-            $this->auditLogService->record($actor, 'brand.updated', $brand);
+            $this->auditLogService->recordUpdated($actor, 'brand.updated', $brand, $before);
             if ($originalLogoId !== null && $brand->logo_id !== $originalLogoId) {
                 $this->mediaService->deleteIfUnused($actor, $originalLogoId);
             }

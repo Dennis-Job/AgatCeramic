@@ -39,11 +39,12 @@ class ProductGroupManagementService
     {
         return DB::transaction(function () use ($actor, $group, $payload): ProductGroup {
             $group = ProductGroup::query()->whereKey($group->id)->lockForUpdate()->firstOrFail();
+            $before = $this->auditLogService->capture($group);
             $axisIds = $payload['axis_attribute_ids'] ?? $this->integerIds($group->axes()->pluck('attributes.id')->all());
             $productIds = $payload['product_ids'] ?? $this->integerIds($group->products()->pluck('products.id')->all());
             $group->fill(array_intersect_key($payload, array_flip(['name', 'code'])))->save();
             $this->replaceComposition($group, $axisIds, $productIds);
-            $this->auditLogService->record($actor, 'product-group.updated', $group);
+            $this->auditLogService->recordUpdated($actor, 'product-group.updated', $group, $before);
 
             return $this->load($group);
         });
@@ -74,15 +75,17 @@ class ProductGroupManagementService
      * two groups.
      *
      * @param  list<BulkChange>  $changes
+     * @param  array<string, mixed>  $auditContext
      */
-    public function applyBulk(User $actor, array $changes): void
+    public function applyBulk(User $actor, array $changes, array $auditContext = []): void
     {
-        DB::transaction(function () use ($actor, $changes): void {
+        DB::transaction(function () use ($actor, $changes, $auditContext): void {
             $existingIds = collect($changes)->pluck('group_id')->filter(static fn (mixed $id): bool => is_int($id))->unique()->sort()->values()->all();
             $groups = ProductGroup::query()->whereIn('id', $existingIds)->lockForUpdate()->get()->keyBy('id');
             if ($groups->count() !== count($existingIds)) {
                 throw ValidationException::withMessages(['groups' => ['Группа вариантов была удалена до обработки файла.']]);
             }
+            $beforeById = $groups->map(fn (ProductGroup $group): array => $this->auditLogService->capture($group))->all();
 
             // Detaching only the groups covered by this atomic component leaves
             // memberships of unrelated groups visible to replaceComposition.
@@ -96,7 +99,7 @@ class ProductGroupManagementService
                     if (! $group instanceof ProductGroup) {
                         throw ValidationException::withMessages(['groups' => ['Группа вариантов была удалена до обработки файла.']]);
                     }
-                    $this->auditLogService->record($actor, 'product-group.deleted', $group);
+                    $this->auditLogService->record($actor, 'product-group.deleted', $group, [...$auditContext, 'values' => $beforeById[$group->id]]);
                     $group->delete();
 
                     continue;
@@ -114,7 +117,11 @@ class ProductGroupManagementService
                     $group->fill(['name' => $change['name'], 'code' => $change['code']])->save();
                 }
                 $this->replaceComposition($group, $change['axis_attribute_ids'], $change['product_ids']);
-                $this->auditLogService->record($actor, $change['group_id'] !== null ? 'product-group.updated' : 'product-group.created', $group);
+                if ($change['group_id'] !== null) {
+                    $this->auditLogService->recordUpdated($actor, 'product-group.updated', $group, $beforeById[$group->id], $auditContext);
+                } else {
+                    $this->auditLogService->record($actor, 'product-group.created', $group, $auditContext);
+                }
             }
         });
     }

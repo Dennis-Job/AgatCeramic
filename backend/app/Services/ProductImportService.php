@@ -26,10 +26,13 @@ class ProductImportService
         private readonly CategoryProductRowImporter $categoryRows,
     ) {}
 
-    /** @param array<string, mixed> $values */
-    public function createTemplateRow(User $actor, Category $category, array $values, int $row, bool $editing = false): string
+    /**
+     * @param  array<string, mixed>  $values
+     * @param  array<string, mixed>  $auditContext
+     */
+    public function createTemplateRow(User $actor, Category $category, array $values, int $row, bool $editing = false, array $auditContext = []): string
     {
-        return $this->categoryRows->apply($actor, $category, $values, $row, $editing);
+        return $this->categoryRows->apply($actor, $category, $values, $row, $editing, $auditContext);
     }
 
     /** @return array{created: int, updated: int, processed: int} */
@@ -80,9 +83,10 @@ class ProductImportService
 
     /** @param ProductPayload $payload
      * @param  AttributePayload  $attributePayload
+     * @param  array<string, mixed>  $auditContext
      */
-    public function applyPreparedRow(User $actor, ?int $productId, array $payload, array $attributePayload): string
+    public function applyPreparedRow(User $actor, ?int $productId, array $payload, array $attributePayload, array $auditContext = []): string
     {
-        return $this->executor->apply($actor, $productId, $payload, $attributePayload);
+        return $this->executor->apply($actor, $productId, $payload, $attributePayload, $auditContext);
     }
 }

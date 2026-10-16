@@ -192,6 +192,7 @@ class ProductImageImportService
             }
             DB::transaction(function () use ($import, $product, $sku, $ordinals, $staged, &$created, &$replaced, &$written, &$backups): void {
                 $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+                $galleryBefore = $this->galleryState($product);
                 $existing = $product->images()->get()->keyBy(function (ProductImage $image) use ($sku): int {
                     return preg_match('/^'.preg_quote($sku, '/').'_(\\d+)(?:-i\\d+)?\\.[^.]+$/', basename($image->path), $m) ? (int) $m[1] : -$image->id;
                 });
@@ -242,7 +243,9 @@ class ProductImageImportService
                 if (! in_array($sku, $processed, true)) {
                     $import->forceFill(['processed_skus' => [...$processed, $sku]])->save();
                 }
-                $this->audit->record($import->user, 'product.image-imported', $product, ['import_id' => $import->id, 'created' => $created, 'replaced' => $replaced]);
+                $galleryAfter = $this->galleryState($product);
+                $changes = $galleryBefore === $galleryAfter ? [] : ['images' => ['before' => $galleryBefore, 'after' => $galleryAfter]];
+                $this->audit->record($import->user, 'product.image-imported', $product, ['import_id' => $import->id, 'created' => $created, 'replaced' => $replaced, 'changes' => $changes]);
             });
             foreach ($staged as $path) {
                 $this->cleanup->schedule($import->disk, $path);
@@ -263,6 +266,19 @@ class ProductImageImportService
             }
             $this->failSku($import, $sku, null, ['Не удалось применить изображения этой папки.']);
         }
+    }
+
+    /** @return list<array{image_id: int, file: string, mime_type: string, size: int, is_primary: bool, sort_order: int}> */
+    private function galleryState(Product $product): array
+    {
+        return array_values($product->images()->orderBy('id')->get()->map(fn (ProductImage $image): array => [
+            'image_id' => $image->id,
+            'file' => basename($image->path),
+            'mime_type' => $image->mime_type,
+            'size' => $image->size,
+            'is_primary' => $image->is_primary,
+            'sort_order' => $image->sort_order,
+        ])->all());
     }
 
     /** @param list<string> $messages */
