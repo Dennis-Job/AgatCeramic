@@ -1,9 +1,9 @@
-export type AuditActor = { id: number; name: string } | null
+export type AuditActor = { id: number | null; name: string } | null
 export type AuditEntity = {
   type: string
   id: number | null
-  name?: string
-  email?: string
+  name?: string | null
+  email?: string | null
 } | null
 export type AuditDetail = { label: string; value: string }
 export type AuditLog = {
@@ -13,7 +13,7 @@ export type AuditLog = {
   entity: AuditEntity
   metadata: Record<string, unknown> | null
   details: AuditDetail[]
-  occurred_at: string
+  occurred_at: string | null
 }
 export type AuditLogFilters = {
   search?: string
@@ -24,5 +24,10 @@ export type AuditLogFilters = {
 }
 export type AuditLogPage = {
   data: AuditLog[]
-  meta: { current_page: number; last_page: number; total: number }
+  meta: {
+    current_page: number
+    last_page: number
+    total: number
+    per_page?: number
+  }
 }

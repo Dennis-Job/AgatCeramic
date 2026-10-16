@@ -91,22 +91,6 @@ const fixtures = {
       roles: [role],
     }),
   },
-  '/admin/audit-logs': collection(
-    repeated({
-      id: 1,
-      action: longCode,
-      actor: { id: 1, name: longName },
-      entity: {
-        type: 'product',
-        id: 1,
-        name: longName,
-        email: `${longCode}@example.test`,
-      },
-      metadata: null,
-      details: [{ label: longName, value: longCode }],
-      occurred_at: timestamp,
-    }),
-  ),
   '/admin/orders': collection(repeated(order)),
   '/admin/orders/1': { data: order },
   '/admin/contact-requests': collection(repeated(contact)),
@@ -178,10 +162,9 @@ test('Seller workspace /brands keeps long data, scroll and actions usable', asyn
   expect(results.violations).toEqual([])
 })
 
-// Categories, brands, team access and the unified attributes workspace have dedicated
+// Categories, brands, team access, attributes and the audit timeline have dedicated
 // responsive tests; these routes retain the full-width table contract.
 for (const [path, label, cardsBelow] of [
-  ['/audit-log', 'Записи журнала аудита', 1280],
   ['/orders', 'Список заказов', 768],
   ['/contacts', 'Список обращений', 768],
   ['/media', 'Список файлов', 0],

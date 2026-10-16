@@ -4,26 +4,7 @@ import type { AuditLog, AuditLogFilters } from '../types/auditLog.types'
 
 type Filters = Required<Omit<AuditLogFilters, 'page'>>
 
-export const auditActionOptions = [
-  { label: 'Все действия', value: '' },
-  { label: 'Вход в систему', value: 'auth.login' },
-  { label: 'Выход из системы', value: 'auth.logout' },
-  { label: 'Создание сотрудника', value: 'admin-user.created' },
-  { label: 'Изменение сотрудника', value: 'admin-user.updated' },
-  { label: 'Удаление сотрудника', value: 'admin-user.deleted' },
-  { label: 'Создание роли', value: 'role.created' },
-  { label: 'Изменение роли', value: 'role.updated' },
-  { label: 'Удаление роли', value: 'role.deleted' },
-  { label: 'Создание супер-администратора', value: 'admin.bootstrap' },
-]
-
-const actionNames = Object.fromEntries(
-  auditActionOptions
-    .filter((option) => option.value)
-    .map((option) => [option.value, option.label]),
-)
-export const auditActionName = (action: string): string =>
-  actionNames[action] ?? action
+export { auditActionOptions, auditActionName } from '../utils/auditActions'
 
 export function useAuditLog() {
   const logs = ref<AuditLog[]>([])
@@ -36,6 +17,7 @@ export function useAuditLog() {
   const page = ref(1)
   const lastPage = ref(1)
   const total = ref(0)
+  const perPage = ref(25)
   const loading = ref(false)
   const error = ref('')
   let loadSequence = 0
@@ -51,6 +33,7 @@ export function useAuditLog() {
       page.value = response.meta.current_page
       lastPage.value = response.meta.last_page
       total.value = response.meta.total
+      perPage.value = response.meta.per_page ?? 25
     } catch (reason) {
       if (sequence === loadSequence)
         error.value =
@@ -78,5 +61,16 @@ export function useAuditLog() {
     ],
     () => void load(),
   )
-  return { logs, filters, page, lastPage, total, loading, error, load, reset }
+  return {
+    logs,
+    filters,
+    page,
+    lastPage,
+    total,
+    perPage,
+    loading,
+    error,
+    load,
+    reset,
+  }
 }

@@ -1,34 +1,30 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { ScrollText } from '@lucide/vue'
+import { computed, onMounted } from 'vue'
 import UiDatePicker from '../../../components/ui/UiDatePicker.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
-import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import UiTable from '../../../components/ui/UiTable.vue'
-import {
-  auditActionName,
-  auditActionOptions,
-  useAuditLog,
-} from '../composables/useAuditLog'
-import type { AuditLog } from '../types/auditLog.types'
+import UiPagination from '../../../components/ui/UiPagination.vue'
+import AuditTimeline from './AuditTimeline.vue'
+import { auditActionOptions, useAuditLog } from '../composables/useAuditLog'
 
 const audit = useAuditLog()
-const date = (value: string): string => new Date(value).toLocaleString('ru-RU')
-const entityName = (log: AuditLog): string =>
-  log.entity?.name ??
-  (log.entity ? `${log.entity.type} #${log.entity.id}` : '—')
+const pagination = computed(() => ({
+  current_page: audit.page.value,
+  last_page: audit.lastPage.value,
+  total: audit.total.value,
+  per_page: audit.perPage.value,
+}))
 onMounted(audit.load)
 </script>
 
 <template>
-  <AdminWorkspace mode="list">
+  <AdminWorkspace mode="overview">
     <template #intro>
       <PageHeader
         class="mb-7"
@@ -83,152 +79,16 @@ onMounted(audit.load)
         class="admin-container"
         label="Записи не найдены."
       />
-      <template v-else-if="!audit.error.value">
-        <div class="admin-container divide-y divide-gray-100 xl:hidden">
-          <article v-for="log in audit.logs.value" :key="log.id" class="p-4">
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <div class="min-w-0 max-w-full">
-                <UiBadge tone="primary" class="max-w-full"
-                  ><ScrollText
-                    :size="14"
-                    aria-hidden="true"
-                    class="mr-1 shrink-0"
-                  /><span class="min-w-0 [overflow-wrap:anywhere]">{{
-                    auditActionName(log.action)
-                  }}</span></UiBadge
-                >
-                <p class="mt-1 break-all text-xs text-gray-500">
-                  {{ log.action }}
-                </p>
-              </div>
-              <time :datetime="log.occurred_at" class="text-xs text-gray-500">{{
-                date(log.occurred_at)
-              }}</time>
-            </div>
-            <dl class="mt-3 grid gap-2 text-sm">
-              <div>
-                <dt class="text-xs text-gray-500">Сотрудник</dt>
-                <dd class="break-words font-medium text-gray-500">
-                  {{ log.actor?.name ?? 'Система' }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-xs text-gray-500">Объект</dt>
-                <dd class="break-words text-gray-500">{{ entityName(log) }}</dd>
-                <dd
-                  v-if="log.entity?.email"
-                  class="break-all text-xs text-gray-500"
-                >
-                  {{ log.entity.email }}
-                </dd>
-              </div>
-            </dl>
-            <div v-if="log.details.length" class="mt-3 space-y-1 text-sm">
-              <p
-                v-for="detail in log.details"
-                :key="detail.label"
-                class="[overflow-wrap:anywhere]"
-              >
-                <span class="text-gray-500">{{ detail.label }}:</span>
-                <span class="font-medium text-gray-500">{{
-                  detail.value
-                }}</span>
-              </p>
-            </div>
-          </article>
-        </div>
-        <div class="hidden xl:block">
-          <UiTable
-            full-bleed
-            class="hidden md:block"
-            table-class="seller-table"
-            label="Записи журнала аудита"
-            min-width="min-w-[960px]"
-            sticky-header
-            ><thead class="bg-gray-25 text-xs font-medium text-gray-500">
-              <tr>
-                <th scope="col" class="w-60 px-6 py-3">Действие</th>
-                <th scope="col" class="px-6 py-3">Сотрудник</th>
-                <th scope="col" class="px-6 py-3">Объект</th>
-                <th scope="col" class="w-44 px-6 py-3">Время</th>
-                <th scope="col" class="px-6 py-3">Детали</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="log in audit.logs.value"
-                :key="log.id"
-                class="border-t border-gray-100 text-gray-500"
-              >
-                <td class="px-6 py-4">
-                  <UiBadge tone="primary" class="max-w-full"
-                    ><ScrollText
-                      :size="14"
-                      aria-hidden="true"
-                      class="mr-1 shrink-0"
-                    /><span class="min-w-0 [overflow-wrap:anywhere]">{{
-                      auditActionName(log.action)
-                    }}</span></UiBadge
-                  >
-                  <p class="mt-1 text-xs text-gray-500">{{ log.action }}</p>
-                </td>
-                <td class="px-6 py-4 font-medium text-gray-500">
-                  {{ log.actor?.name ?? 'Система' }}
-                </td>
-                <td class="px-6 py-4 text-gray-500">
-                  <p class="font-medium text-gray-500">{{ entityName(log) }}</p>
-                  <p v-if="log.entity?.email" class="mt-0.5 text-xs">
-                    {{ log.entity.email }}
-                  </p>
-                </td>
-                <td class="px-6 py-4 text-gray-500">
-                  <time :datetime="log.occurred_at">{{
-                    date(log.occurred_at)
-                  }}</time>
-                </td>
-                <td class="px-6 py-4">
-                  <div v-if="log.details.length" class="space-y-1.5 text-sm">
-                    <p v-for="detail in log.details" :key="detail.label">
-                      <span class="text-gray-500">{{ detail.label }}:</span>
-                      <span class="font-medium text-gray-500">{{
-                        detail.value
-                      }}</span>
-                    </p>
-                  </div>
-                  <span v-else class="text-gray-500">—</span>
-                </td>
-              </tr>
-            </tbody></UiTable
-          >
-        </div>
-      </template>
+      <AuditTimeline v-else-if="!audit.error.value" :logs="audit.logs.value" />
       <div
         v-if="!audit.error.value"
-        class="admin-container flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-5 py-4 text-sm text-gray-500"
+        class="admin-container border-t border-gray-100 pb-6"
       >
-        <span>Всего: {{ audit.total.value }}</span>
-        <nav
-          class="flex items-center gap-3"
-          aria-label="Пагинация журнала аудита"
-        >
-          <UiButton
-            size="sm"
-            variant="secondary"
-            :disabled="audit.page.value === 1 || audit.loading.value"
-            @click="audit.load(audit.page.value - 1)"
-            >Назад</UiButton
-          ><span
-            >Страница {{ audit.page.value }} из {{ audit.lastPage.value }}</span
-          ><UiButton
-            size="sm"
-            variant="secondary"
-            :disabled="
-              audit.page.value === audit.lastPage.value || audit.loading.value
-            "
-            @click="audit.load(audit.page.value + 1)"
-            >Вперёд</UiButton
-          >
-        </nav>
+        <UiPagination
+          :meta="pagination"
+          :loading="audit.loading.value"
+          @change="audit.load"
+        />
       </div>
     </div>
   </AdminWorkspace>
