@@ -1,23 +1,7 @@
 import { computed, ref } from 'vue'
 import { getPermissionCatalogue } from '../services/permissions'
 import type { CataloguePermission } from '../types/access.types'
-
-const moduleNames: Record<string, string> = {
-  'admin-users': 'Сотрудники',
-  roles: 'Роли',
-  permissions: 'Права',
-  catalog: 'Каталог',
-  imports: 'Импорт и экспорт',
-  orders: 'Заказы',
-  payments: 'Оплаты',
-  contacts: 'Обращения',
-  content: 'Контент',
-  media: 'Медиа',
-  seo: 'SEO',
-  analytics: 'Аналитика',
-  settings: 'Настройки',
-  'audit-log': 'Журнал аудита',
-}
+import { groupPermissions, permissionModuleNames } from '../utils/permissions'
 
 export function usePermissionCatalogue() {
   const permissions = ref<CataloguePermission[]>([])
@@ -33,7 +17,7 @@ export function usePermissionCatalogue() {
   const moduleOptions = computed(() => [
     { label: 'Все разделы', value: '' },
     ...modules.value.map((module) => ({
-      label: moduleNames[module] ?? module,
+      label: permissionModuleNames[module] ?? module,
       value: module,
     })),
   ])
@@ -51,6 +35,10 @@ export function usePermissionCatalogue() {
       return matchesModule && matchesSearch
     })
   })
+
+  const permissionGroups = computed(() =>
+    groupPermissions(filteredPermissions.value),
+  )
 
   async function load(): Promise<void> {
     loading.value = true
@@ -75,6 +63,7 @@ export function usePermissionCatalogue() {
     loading,
     moduleOptions,
     filteredPermissions,
+    permissionGroups,
     load,
   }
 }

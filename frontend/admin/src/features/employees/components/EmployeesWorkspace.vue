@@ -24,7 +24,7 @@ onMounted(workspace.initialize)
 <template>
   <AdminWorkspace mode="list">
     <template #intro>
-      <PageHeader class="mb-7" eyebrow="Управление доступом" title="Сотрудники"
+      <PageHeader eyebrow="Управление" title="Команда и доступ"
         ><template #actions
           ><UiButton
             v-if="workspace.canManage.value"
@@ -34,6 +34,7 @@ onMounted(workspace.initialize)
           ></template
         ></PageHeader
       >
+      <slot name="navigation" />
     </template>
 
     <UiNotification v-if="workspace.error.value">{{

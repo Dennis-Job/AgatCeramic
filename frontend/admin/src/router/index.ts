@@ -144,7 +144,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'admin-users.view',
-        title: 'Сотрудники',
+        title: 'Команда и доступ — Сотрудники',
       },
     },
     {
@@ -154,7 +154,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'roles.view',
-        title: 'Роли',
+        title: 'Команда и доступ — Роли и права',
       },
     },
     {
@@ -164,7 +164,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'permissions.view',
-        title: 'Права доступа',
+        title: 'Команда и доступ — Справочник прав',
       },
     },
     {

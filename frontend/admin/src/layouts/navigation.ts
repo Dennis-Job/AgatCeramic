@@ -11,6 +11,7 @@ export type NavigationLink = {
   section?: 'pages' | 'appearance' | 'stores'
   requiredPermission?: string
   additionalPermission?: string
+  fallbacks?: ReadonlyArray<{ path: string; requiredPermission: string }>
   exact?: boolean
 }
 export type NavigationGroup = { label: string; links: NavigationLink[] }
@@ -161,22 +162,15 @@ export const adminNavigation: NavigationSection[] = [
         label: 'Сотрудники и доступ',
         links: [
           {
-            label: 'Сотрудники',
+            label: 'Команда и доступ',
             to: '/employees',
             path: '/employees',
             requiredPermission: 'admin-users.view',
-          },
-          {
-            label: 'Роли',
-            to: '/roles',
-            path: '/roles',
-            requiredPermission: 'roles.view',
-          },
-          {
-            label: 'Права',
-            to: '/permissions',
-            path: '/permissions',
-            requiredPermission: 'permissions.view',
+            activePaths: ['/roles', '/permissions'],
+            fallbacks: [
+              { path: '/roles', requiredPermission: 'roles.view' },
+              { path: '/permissions', requiredPermission: 'permissions.view' },
+            ],
           },
         ],
       },
@@ -215,10 +209,20 @@ export function visibleNavigation(
   const allowed = (link: NavigationLink) =>
     (!link.requiredPermission || hasPermission(link.requiredPermission)) &&
     (!link.additionalPermission || hasPermission(link.additionalPermission))
+  const accessibleLink = (link: NavigationLink): NavigationLink[] => {
+    if (allowed(link)) return [link]
+    const fallback = link.fallbacks?.find((item) =>
+      hasPermission(item.requiredPermission),
+    )
+    return fallback ? [{ ...link, to: fallback.path }] : []
+  }
   return adminNavigation.flatMap((section) => {
     if (section.link) return allowed(section.link) ? [section] : []
     const groups = section.groups
-      ?.map((group) => ({ ...group, links: group.links.filter(allowed) }))
+      ?.map((group) => ({
+        ...group,
+        links: group.links.flatMap(accessibleLink),
+      }))
       .filter((group) => group.links.length)
     return groups?.length ? [{ ...section, groups }] : []
   })

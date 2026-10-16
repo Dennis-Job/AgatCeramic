@@ -178,12 +178,9 @@ test('Seller workspace /brands keeps long data, scroll and actions usable', asyn
   expect(results.violations).toEqual([])
 })
 
-// Categories, brands and the unified attributes workspace have dedicated
+// Categories, brands, team access and the unified attributes workspace have dedicated
 // responsive tests; these routes retain the full-width table contract.
 for (const [path, label, cardsBelow] of [
-  ['/employees', 'Список сотрудников', 1280],
-  ['/roles', 'Список ролей', 0],
-  ['/permissions', 'Каталог прав', 0],
   ['/audit-log', 'Записи журнала аудита', 1280],
   ['/orders', 'Список заказов', 768],
   ['/contacts', 'Список обращений', 768],

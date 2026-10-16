@@ -32,9 +32,7 @@ const destinations: Record<string, string> = {
   'Общее оформление': '/content?section=appearance',
   Магазины: '/content?section=stores',
   Медиатека: '/media',
-  Сотрудники: '/employees',
-  Роли: '/roles',
-  Права: '/permissions',
+  'Команда и доступ': '/employees',
   'Журнал аудита': '/audit-log',
   'UI-kit': '/ui-kit',
 }
@@ -89,6 +87,12 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
           meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 },
         },
       })
+    if (path === '/admin/users')
+      return route.fulfill({
+        json: { data: [], meta: { current_page: 1, last_page: 1, total: 0 } },
+      })
+    if (['/admin/roles', '/admin/permissions'].includes(path))
+      return route.fulfill({ json: { data: [] } })
     return route.fallback()
   })
   return { mutations }
@@ -124,7 +128,7 @@ for (const width of [320, 640, 768, 1023, 1024, 1280, 1440, 1920, 2560]) {
       },
       {
         label: 'Управление',
-        links: ['Сотрудники', 'Роли', 'Права', 'Журнал аудита', 'UI-kit'],
+        links: ['Команда и доступ', 'Журнал аудита', 'UI-kit'],
       },
     ]
     const compact = width < 1024
@@ -265,9 +269,7 @@ for (const profile of [
         'Заказы',
         'Обращения',
         'Настройки',
-        'Сотрудники',
-        'Роли',
-        'Права',
+        'Команда и доступ',
         'Журнал аудита',
       ]) {
         await expect(
@@ -383,4 +385,67 @@ test('compact navigation passes axe and ignores a drag from its panel onto the b
   await expect(panel).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: 'Открыть меню' })).toBeFocused()
+})
+
+for (const profile of [
+  {
+    permissions: ['admin-users.view', 'roles.view', 'permissions.view'],
+    destination: '/employees',
+  },
+  { permissions: ['roles.view', 'permissions.view'], destination: '/roles' },
+  { permissions: ['permissions.view'], destination: '/permissions' },
+]) {
+  test(`team access navigation selects first permitted destination ${profile.destination}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await mockNavigation(page, profile.permissions)
+    await page.goto('/')
+    await page
+      .getByRole('navigation', { name: 'Основная навигация', exact: true })
+      .getByRole('button', { name: 'Управление', exact: true })
+      .click()
+    const panel = page.locator(
+      '.admin-navigation-panel, #admin-navigation-panel',
+    )
+    const link = panel.getByRole('link', {
+      name: 'Команда и доступ',
+      exact: true,
+    })
+    await expect(link).toHaveAttribute('href', profile.destination)
+    for (const oldLabel of ['Сотрудники', 'Роли', 'Права'])
+      await expect(
+        panel.getByRole('link', { name: oldLabel, exact: true }),
+      ).toHaveCount(0)
+    await link.click()
+    await expect(page).toHaveURL(profile.destination)
+    await expect(
+      page.getByRole('heading', {
+        level: 1,
+        name: 'Команда и доступ',
+        exact: true,
+      }),
+    ).toBeVisible()
+  })
+}
+
+test('team access navigation marks the same entry active for all preserved URLs', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await mockNavigation(page)
+  for (const path of ['/employees', '/roles', '/permissions']) {
+    await page.goto(path)
+    await page
+      .getByRole('navigation', { name: 'Основная навигация', exact: true })
+      .getByRole('button', { name: 'Управление', exact: true })
+      .click()
+    const panel = page.locator(
+      '.admin-navigation-panel, #admin-navigation-panel',
+    )
+    await expect(panel.locator('a[aria-current="page"]')).toHaveCount(1)
+    await expect(
+      panel.getByRole('link', { name: 'Команда и доступ', exact: true }),
+    ).toHaveAttribute('aria-current', 'page')
+  }
 })
