@@ -102,12 +102,12 @@ docker compose up --build --force-recreate
 
 ## Ответственность файлов
 
-| Файл | Назначение |
-| --- | --- |
-| `/.env` | Порты и локальные PostgreSQL credentials для Docker Compose |
-| `/backend/.env` | Настройки Laravel и `APP_KEY` |
-| `/frontend/admin/.env` | Публичный URL API для Admin SPA |
-| `/frontend/client/.env` | Публичный URL API для Nuxt storefront |
+| Файл                    | Назначение                                                  |
+| ----------------------- | ----------------------------------------------------------- |
+| `/.env`                 | Порты и локальные PostgreSQL credentials для Docker Compose |
+| `/backend/.env`         | Настройки Laravel и `APP_KEY`                               |
+| `/frontend/admin/.env`  | Публичный URL API для Admin SPA                             |
+| `/frontend/client/.env` | Публичный URL API для Nuxt storefront                       |
 
 Laravel использует PostgreSQL как базу данных по умолчанию. В Docker Compose параметры `DB_*` формируются из PostgreSQL credentials корневого `.env`, а `DB_HOST` равен `postgres`. При запуске Laravel вне Docker укажите доступ к PostgreSQL в `backend/.env`.
 
@@ -119,13 +119,31 @@ server process. Restart the backend service after changing its environment value
 
 `SANCTUM_STATEFUL_DOMAINS` is the explicit comma-separated allowlist of first-party SPA
 origins, including their ports. `CORS_ALLOWED_ORIGINS` is the matching comma-separated CORS
-allowlist. Both must be set to the deployed Admin SPA origin in each environment; wildcard
-origins are not compatible with credentialed cookie requests. For HTTPS deployments set
+allowlist. Both must include the deployed Admin SPA origin and the first-party Nuxt
+origin used by the protected saved-draft preview; wildcard origins are not compatible
+with credentialed cookie requests. For HTTPS deployments set
 `SESSION_SECURE_COOKIE=true`.
 
 `ADMIN_APP_URL` is the absolute Admin SPA origin used in password-reset emails. It must be the
 deployed HTTPS Admin SPA URL in non-local environments; links target `/reset-password` on that
 origin and must never point at the Laravel API host.
+
+### Local saved-draft preview: CORS / 401
+
+An existing `backend/.env` overrides the defaults in `config/cors.php` and
+`config/sanctum.php`; updating `.env.example` does not update that local file.
+With Admin on `http://localhost:5173` and Nuxt on `http://localhost:3000`,
+`CORS_ALLOWED_ORIGINS` must contain both absolute origins and
+`SANCTUM_STATEFUL_DOMAINS` both `localhost:5173` and `localhost:3000`.
+Keep other explicitly required entries. `localhost` and `127.0.0.1` are different
+cookie hosts; use the same host consistently across Admin/Nuxt/API.
+
+If Nuxt reports a CORS header for `localhost:5173` and a preview `401`, inspect
+both active allowlists. Add only the intended first-party origin, clear a cached
+Laravel configuration if present, and run `docker compose restart backend` to
+apply `.env` changes to the development server started with `--no-reload`.
+Refresh the embedded preview while signed into Admin. CORS alone does not grant
+access: anonymous requests must still receive `401`, and missing permissions `403`.
 
 ## Initial Super Admin
 
