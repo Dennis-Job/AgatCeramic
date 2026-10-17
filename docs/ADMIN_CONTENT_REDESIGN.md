@@ -81,3 +81,21 @@ Live capture: `frontend/admin/.tmp/content-redesign/toolbar-container-live.png`.
 на узкой компоновке. Live capture: `.tmp/content-redesign/toolbar-divider-live.png`.
 Проверка разделителя: build/lint/format и 20 workspace/baseline E2E — PASS;
 UI Design Guard утвердил live capture и четыре обновлённых baseline.
+
+## Окно добавления страницы
+
+По уточнению владельца `PageFormDialog.vue` расширен с 672 до 768 px. После
+повторного уточнения высота подстраивается под содержимое, ограничена 90dvh
+и не растягивается на весь экран. На viewport 1551×1139 окно имеет высоту около
+692 px; поле текста сохраняет 12 строк и возможность изменения размера.
+Содержимое формы имеет отдельную вертикальную прокрутку; заголовок и footer
+остаются доступными. «Отмена» и «Сохранить» объединены в неразрывный ряд, в том
+числе на 320 px. Сохранение по-прежнему меняет черновик; пояснение и доступное
+название кнопки сохранены. API, публикация и общие UI-примитивы не изменялись.
+
+Проверки: build/typecheck, lint/format — PASS; unit — 158/158 PASS;
+`e2e/pages.spec.ts` — 3/3 PASS, включая создание/публикацию/удаление и отдельную
+проверку доступности действий при прокрутке на высоте 400 px, ширины
+320/640/768/1024/1280 px и возврат фокуса после закрытия. UI Design Guard
+просмотрел live capture и все responsive captures: открытых P1/P2 нет.
+Live capture: `frontend/admin/.tmp/content-redesign/page-dialog-compact-live.png`.

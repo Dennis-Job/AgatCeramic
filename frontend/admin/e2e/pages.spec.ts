@@ -1,8 +1,69 @@
 import { expect, test } from './fixtures'
 import AxeBuilder from './approvedAccessibility'
+import { mockContentWorkspace } from './contentWorkspaceApi'
 import type { ContentPage } from '../src/features/pages/types/page.types'
 
 const timestamp = '2026-09-25T10:00:00Z'
+
+test('new page dialog keeps actions reachable while its fields scroll', async ({
+  page,
+}) => {
+  await mockContentWorkspace(page)
+  await page.goto('/content')
+  const opener = page.getByRole('button', { name: 'Добавить страницу' })
+  await opener.click()
+  const dialog = page.getByRole('dialog', { name: 'Новая страница' })
+  const cancel = dialog.getByRole('button', { name: 'Отмена', exact: true })
+  const save = dialog.getByRole('button', {
+    name: 'Сохранить черновик',
+    exact: true,
+  })
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 600 })
+    await expect(cancel).toBeInViewport()
+    await expect(save).toBeInViewport()
+    const cancelBox = (await cancel.boundingBox())!
+    const saveBox = (await save.boundingBox())!
+    expect(Math.abs(cancelBox.y - saveBox.y)).toBeLessThan(1)
+    expect(
+      await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true)
+    const bounds = (await dialog.boundingBox())!
+    expect(bounds.y).toBeGreaterThanOrEqual(0)
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(600)
+    await page.screenshot({
+      path: test.info().outputPath(`page-dialog-${width}.png`),
+    })
+  }
+  await page.setViewportSize({ width: 1280, height: 400 })
+  const scrollArea = dialog
+    .locator('div')
+    .filter({ has: page.getByLabel('Заголовок') })
+    .last()
+  // Scroll the form area beside the controls, leaving the action row fixed.
+  const area = (await scrollArea.boundingBox())!
+  const before = (await save.boundingBox())!
+  await page.mouse.move(area.x + 2, area.y + area.height / 2)
+  await page.mouse.wheel(0, 800)
+  await expect
+    .poll(() =>
+      dialog.evaluate((el) =>
+        Array.from(el.querySelectorAll('div')).some((n) => n.scrollTop > 0),
+      ),
+    )
+    .toBe(true)
+  await expect(save).toBeInViewport()
+  expect((await save.boundingBox())!.y).toBe(before.y)
+  await page.screenshot({
+    path: test.info().outputPath('page-dialog-short.png'),
+  })
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  await expect(opener).toBeFocused()
+  await opener.click()
+  await cancel.click()
+  await expect(opener).toBeFocused()
+})
 
 test('content editor creates a draft, publishes it, and deletes it', async ({
   page,
