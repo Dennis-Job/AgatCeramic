@@ -17,7 +17,8 @@ defineProps<{ mode: 'overview' | 'list' | 'editor' | 'form' }>()
   min-width: 0;
   margin-inline: auto;
 }
-.admin-workspace:not(.admin-workspace--list) {
+.admin-workspace--overview,
+.admin-workspace--form {
   max-width: var(--admin-container-max-width);
 }
 .admin-workspace :deep(.grid),

@@ -109,29 +109,33 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   await expect(page.getByText('Черновик', { exact: true })).toBeVisible()
   expect(publishedBody).toBeNull()
 
-  await page.getByRole('button', { name: 'Опубликовать черновик' }).click()
+  await page
+    .getByRole('button', { name: 'Опубликовать блоки страницы' })
+    .click()
   await expect(page.getByRole('alert')).toHaveText(
     'Проверьте черновик перед публикацией.',
   )
-  await page.getByRole('button', { name: 'Опубликовать черновик' }).click()
+  await page
+    .getByRole('button', { name: 'Опубликовать блоки страницы' })
+    .click()
   await expect(page.getByText('Опубликована', { exact: true })).toBeVisible()
   expect(publishedBody).toBe('История компании.')
 
-  await page
-    .getByRole('button', { name: 'Редактировать страницу О компании' })
-    .click()
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
   await page.getByLabel('Текст страницы').fill('Новая история компании.')
   await page
-    .getByRole('button', { name: 'Сохранить черновик', exact: true })
+    .getByRole('button', { name: 'Сохранить черновик блоков', exact: true })
     .click()
   await expect(
     page.getByText('В черновике есть неопубликованные изменения.'),
   ).toBeVisible()
   expect(publishedBody).toBe('История компании.')
-  await page.getByRole('button', { name: 'Опубликовать черновик' }).click()
+  await page
+    .getByRole('button', { name: 'Опубликовать блоки страницы' })
+    .click()
   await expect(page.getByText('Опубликована', { exact: true })).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Опубликовать черновик' }),
+    page.getByRole('button', { name: 'Опубликовать блоки страницы' }),
   ).toBeDisabled()
   // The published badge is already visible and busy also disables this button;
   // wait for the publication request to apply before asserting its snapshot.
@@ -173,6 +177,7 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   await expect(page.getByText('Черновик', { exact: true })).toBeVisible()
   expect(submittedPublicationStates).toEqual([undefined, undefined, false])
 
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
   await page
     .getByRole('button', { name: 'Удалить страницу О компании' })
     .click()
@@ -231,6 +236,9 @@ test('content editor opens a page outside the current list from its URL', async 
 
   await page.goto('/content?page=77')
   await expect(page.getByRole('heading', { name: 'Доставка' })).toBeVisible()
-  await expect(page.getByText('Информация о доставке.')).toBeVisible()
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
+  await expect(
+    page.getByRole('textbox', { name: /^Текст страницы/ }),
+  ).toHaveValue('Информация о доставке.')
   await expect(page.getByText('Страниц пока нет.')).toHaveCount(0)
 })

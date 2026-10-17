@@ -93,12 +93,14 @@ test('home route uses typed blocks with saved preview, pending notice and separa
   await expect(
     page.getByRole('button', { name: 'Блоки и порядок', exact: true }),
   ).toHaveCount(0)
+  await page.getByRole('tab', { name: 'SEO', exact: true }).click()
   await expect(
     page.getByRole('heading', { name: 'SEO страницы' }),
   ).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Изображение Open Graph', exact: true }),
   ).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Блоки', exact: true }).click()
   const frame = page.frameLocator('iframe[title="Сохранённый черновик: home"]')
   await expect(frame.getByRole('heading')).toHaveText('Исходное промо')
   const loads = previewLoads

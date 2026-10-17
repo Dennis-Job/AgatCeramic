@@ -45,6 +45,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
 
 <template>
   <section class="min-w-0">
+    <div v-if="$slots['toolbar-navigation']" class="mb-4">
+      <slot name="toolbar-navigation" />
+    </div>
     <PageHeader class="mb-7" eyebrow="Контент" title="Магазины">
       <template #actions>
         <UiButton @click="stores.openEditor()"

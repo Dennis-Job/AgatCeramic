@@ -28,6 +28,7 @@ import UiRadio from '../ui/UiRadio.vue'
 import UiSegmentedControl from '../ui/UiSegmentedControl.vue'
 import UiSelect from '../ui/UiSelect.vue'
 import UiTable from '../ui/UiTable.vue'
+import UiTabs from '../ui/UiTabs.vue'
 import UiTextarea from '../ui/UiTextarea.vue'
 
 type ConfirmMode = 'default' | 'busy' | 'error'
@@ -53,6 +54,12 @@ const checkedByDefault = ref(true)
 const switchChecked = ref(true)
 const checkboxValues = ref<Array<number | string>>(['porcelain'])
 const segmented = ref('')
+const editorTab = ref('blocks')
+const editorTabOptions = [
+  { value: 'blocks', label: 'Блоки' },
+  { value: 'settings', label: 'Настройки' },
+  { value: 'seo', label: 'SEO', disabled: true },
+]
 const importTypeDemo = ref('products')
 const importTypeDemoOptions = [
   { value: 'products', label: 'Загрузка товаров' },
@@ -128,6 +135,7 @@ const uiComponents = [
   'UiSelect',
   'UiSwitch',
   'UiTable',
+  'UiTabs',
   'UiTextarea',
 ]
 
@@ -969,6 +977,33 @@ function submitAuthPreview(): void {
           :options="importTypeDemoOptions"
           fit-content
         />
+      </div>
+    </UiCard>
+
+    <UiCard data-ui-kit-section="tabs" aria-labelledby="ui-kit-tabs-title">
+      <template #header
+        ><h2 id="ui-kit-tabs-title" class="text-lg font-semibold">
+          Вкладки редактора
+        </h2></template
+      >
+      <UiTabs
+        id="ui-kit-editor-tabs"
+        v-model="editorTab"
+        label="Разделы редактора"
+        :items="editorTabOptions"
+      />
+      <div
+        v-for="item in editorTabOptions"
+        v-show="editorTab === item.value"
+        :id="`ui-kit-editor-tabs-${item.value}-panel`"
+        :key="item.value"
+        role="tabpanel"
+        :aria-labelledby="`ui-kit-editor-tabs-${item.value}`"
+        tabindex="0"
+        class="py-4 admin-focus"
+      >
+        {{ item.label }}: переключение стрелками, Home и End. Неактивная вкладка
+        пропускается.
       </div>
     </UiCard>
 

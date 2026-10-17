@@ -162,8 +162,8 @@ test('Admin UI-kit preserves approved colors and accessible states', async ({
     page.getByRole('heading', { level: 1, name: 'UI-kit' }),
   ).toBeVisible()
   await page.waitForLoadState('networkidle')
-  await expect(page.locator('[data-ui-kit-section]')).toHaveCount(13)
-  await expect(page.locator('[data-ui-kit-section="tabs"]')).toHaveCount(0)
+  await expect(page.locator('[data-ui-kit-section]')).toHaveCount(14)
+  await expect(page.locator('[data-ui-kit-section="tabs"]')).toHaveCount(1)
   await expect(
     page.getByRole('group', { name: 'Тип загрузки' }).getByRole('radio'),
   ).toHaveCount(2)

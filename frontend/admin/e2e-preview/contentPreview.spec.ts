@@ -58,7 +58,7 @@ for (const [path, slug] of [
           })
         await page.screenshot({ path, animations: 'disabled' })
       }
-      await page.setViewportSize({ width, height: 900 })
+      await page.setViewportSize({ width, height: width === 1920 ? 1080 : 900 })
       // Wait for MediaQueryList/Vue to replace the desktop menu after resize.
       const compactMenu = page.getByRole('button', { name: 'Открыть меню' })
       if (width < 1024) await expect(compactMenu).toBeVisible()
@@ -107,6 +107,13 @@ for (const [path, slug] of [
       )
       await page.getByRole('button', { name: 'Компьютер', exact: true }).click()
       await expect(iframe).toHaveCSS('width', '1280px')
+      if (width === 1920) {
+        await page.evaluate(() => window.scrollTo(0, 0))
+        await page.screenshot({
+          path: `.tmp/content-redesign/${slug}-${path.includes('appearance') ? 'appearance' : 'pages'}-1920.png`,
+          animations: 'disabled',
+        })
+      }
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,

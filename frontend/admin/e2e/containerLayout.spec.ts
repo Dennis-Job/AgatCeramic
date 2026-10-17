@@ -60,16 +60,19 @@ for (const path of routes) {
         expect(menu!.width).toBe(40)
         await expect(page.getByRole('banner')).toHaveCSS('height', '65px')
       }
-      const header = await page
-        .getByRole('heading', { level: 1 })
-        .first()
-        .locator('..')
-        .locator('..')
-        .boundingBox()
-      expect(header!.x, `${path} title left at ${width}`).toBe(expectedLeft)
-      expect(header!.width, `${path} title width at ${width}`).toBe(
-        expectedWidth,
-      )
+      const header =
+        path === '/content' || path === '/content?section=appearance'
+          ? await page.locator('.admin-editor-toolbar').boundingBox()
+          : await page
+              .getByRole('heading', { level: 1 })
+              .first()
+              .locator('..')
+              .locator('..')
+              .boundingBox()
+      const titleWidth = expectedWidth
+      const titleLeft = (width - titleWidth) / 2
+      expect(header!.x, `${path} title left at ${width}`).toBe(titleLeft)
+      expect(header!.width, `${path} title width at ${width}`).toBe(titleWidth)
       for (const panel of await page
         .locator('form[role="search"], .admin-workspace > .admin-container')
         .all()) {

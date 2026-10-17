@@ -7,11 +7,9 @@ import {
   useRouter,
 } from 'vue-router'
 import AdminEditorLayout from '../../../components/shared/AdminEditorLayout.vue'
-import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import { useAppearance } from '../composables/useAppearance'
 import type { AppearancePanel } from '../types/appearance.types'
@@ -71,117 +69,101 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
 
 <template>
   <section class="min-w-0">
-    <PageHeader
-      class="mb-6"
-      eyebrow="Контент"
-      title="Общее оформление"
-      description="Шапка, навигация и подвал едины для всех страниц сайта. Публикация оформления не публикует черновики страниц."
-    />
-    <UiNotification v-if="workspace.error.value">{{
-      workspace.error.value
-    }}</UiNotification>
-    <UiNotification v-if="workspace.success.value" tone="success">{{
-      workspace.success.value
-    }}</UiNotification>
-    <UiButton
-      v-if="workspace.error.value && !workspace.content.value"
-      class="mb-4"
-      variant="secondary"
-      :disabled="busy"
-      @click="workspace.load()"
-      >Повторить загрузку</UiButton
-    >
-    <UiLoadingState
-      v-if="workspace.loading.value"
-      label="Загрузка общего оформления…"
-    />
-    <AdminEditorLayout v-else-if="workspace.content.value">
+    <AdminEditorLayout>
+      <template #toolbar-navigation
+        ><slot name="toolbar-navigation"
+      /></template>
+      <template #toolbar>
+        <div class="flex min-w-0 flex-wrap items-center gap-3">
+          <h1 class="text-xl font-semibold">Общее оформление</h1>
+          <UiBadge
+            v-if="workspace.content.value"
+            :tone="
+              workspace.content.value.has_unpublished_changes
+                ? 'neutral'
+                : 'success'
+            "
+            >{{
+              workspace.content.value.has_unpublished_changes
+                ? 'Есть неопубликованные изменения'
+                : 'Оформление опубликовано'
+            }}</UiBadge
+          >
+        </div>
+        <div v-if="workspace.content.value" class="flex flex-wrap gap-2">
+          <UiButton
+            v-if="panel !== 'filters'"
+            variant="secondary"
+            aria-label="Сохранить черновик раздела"
+            :loading="workspace.saving.value"
+            :disabled="busy || mediaPending || !workspace.isDirty(panel)"
+            @click="workspace.save(panel)"
+            >Сохранить черновик</UiButton
+          >
+          <UiButton
+            :loading="workspace.publishing.value"
+            :disabled="
+              busy ||
+              pending ||
+              !workspace.content.value.has_unpublished_changes
+            "
+            @click="workspace.publish()"
+            >Опубликовать оформление</UiButton
+          >
+        </div>
+      </template>
+      <template #navigation>
+        <nav aria-label="Разделы общего оформления" class="space-y-2">
+          <h2 class="mb-4 font-semibold">Элементы сайта</h2>
+          <UiButton
+            v-for="item in panels"
+            :key="item.key"
+            class="w-full justify-start text-left"
+            :variant="panel === item.key ? 'primary-ghost' : 'neutral-ghost'"
+            :class="panel === item.key && 'bg-primary-50'"
+            :aria-pressed="panel === item.key"
+            :disabled="busy || mediaPending"
+            @click="selectPanel(item.key)"
+            >{{ item.label
+            }}<span
+              v-if="item.key !== 'filters' && workspace.isDirty(item.key)"
+              class="ml-auto"
+              aria-label="Есть несохранённые изменения"
+              >•</span
+            ></UiButton
+          >
+        </nav>
+      </template>
       <template #editor>
-        <div class="min-w-0">
-          <UiCard
-            class="mb-5 min-w-0"
-            aria-labelledby="appearance-status-title"
-          >
-            <template #header>
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2
-                  id="appearance-status-title"
-                  class="font-semibold text-gray-500"
-                >
-                  Публикация оформления
-                </h2>
-                <UiBadge
-                  :tone="
-                    workspace.content.value.has_unpublished_changes
-                      ? 'neutral'
-                      : 'success'
-                  "
-                  >{{
-                    workspace.content.value.has_unpublished_changes
-                      ? 'Есть неопубликованные изменения'
-                      : 'Оформление опубликовано'
-                  }}</UiBadge
-                >
-              </div>
-            </template>
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="min-w-0">
-                <p class="mt-2 text-sm text-gray-500" role="status">
-                  {{
-                    pending
-                      ? 'Есть несохранённые изменения. Перед публикацией сохраните каждый изменённый раздел.'
-                      : 'Сохранение меняет только черновик. Сайт обновляется после публикации оформления.'
-                  }}
-                </p>
-              </div>
-              <UiButton
-                :loading="workspace.publishing.value"
-                :disabled="
-                  busy ||
-                  pending ||
-                  !workspace.content.value.has_unpublished_changes
-                "
-                @click="workspace.publish()"
-                >Опубликовать оформление</UiButton
-              >
-            </div>
-          </UiCard>
-          <nav
-            class="mb-5 flex flex-wrap gap-2"
-            aria-label="Разделы общего оформления"
-          >
-            <UiButton
-              v-for="item in panels"
-              :key="item.key"
-              size="sm"
-              :variant="panel === item.key ? 'primary' : 'secondary'"
-              :aria-pressed="panel === item.key"
-              :disabled="busy || mediaPending"
-              @click="selectPanel(item.key)"
-              >{{ item.label
-              }}<span
-                v-if="item.key !== 'filters' && workspace.isDirty(item.key)"
-                class="ml-1"
-                aria-label="Есть несохранённые изменения"
-                >•</span
-              ></UiButton
-            >
-          </nav>
-          <UiCard
+        <UiNotification v-if="workspace.error.value">{{
+          workspace.error.value
+        }}</UiNotification>
+        <UiNotification v-if="workspace.success.value" tone="success">{{
+          workspace.success.value
+        }}</UiNotification>
+        <UiButton
+          v-if="workspace.error.value && !workspace.content.value"
+          class="mb-4"
+          variant="secondary"
+          :disabled="busy"
+          @click="workspace.load()"
+          >Повторить загрузку</UiButton
+        >
+        <UiLoadingState
+          v-if="workspace.loading.value"
+          label="Загрузка общего оформления…"
+        />
+        <div v-if="workspace.content.value" class="min-w-0">
+          <section
             v-if="panel === 'filters'"
             class="min-w-0"
             role="region"
             aria-labelledby="appearance-filters-title"
           >
-            <template #header>
-              <h2
-                id="appearance-filters-title"
-                class="font-semibold text-gray-500"
-              >
-                Представление фильтров
-              </h2>
-            </template>
-            <p class="mt-3 text-sm text-gray-500" role="status">
+            <h2 id="appearance-filters-title" class="mb-4 font-semibold">
+              Представление фильтров
+            </h2>
+            <p class="text-sm text-gray-500" role="status">
               Фильтры клиентского каталога пока не реализованы. Настройки их
               внешнего вида появятся вместе с фильтрами каталога.
             </p>
@@ -189,21 +171,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
               Здесь будут параметры представления. Состав фильтров,
               характеристики и значения товаров управляются в каталоге.
             </p>
-          </UiCard>
-          <UiCard
+          </section>
+          <section
             v-else
             class="min-w-0"
             role="region"
             aria-labelledby="appearance-editor-title"
           >
-            <template #header>
-              <h2
-                id="appearance-editor-title"
-                class="font-semibold text-gray-500"
-              >
-                {{ panel === 'header' ? 'Шапка и навигация' : 'Подвал' }}
-              </h2>
-            </template>
+            <h2 id="appearance-editor-title" class="mb-4 font-semibold">
+              {{ panel === 'header' ? 'Шапка и навигация' : 'Подвал' }}
+            </h2>
             <fieldset class="min-w-0" :disabled="busy">
               <legend class="sr-only">
                 {{ panel === 'header' ? 'Шапка и навигация' : 'Подвал' }}
@@ -216,19 +193,22 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
                 @uploading="uploading = $event"
               />
             </fieldset>
-            <div class="mt-7 flex justify-end border-t border-gray-200 pt-5">
-              <UiButton
-                :loading="workspace.saving.value"
-                :disabled="busy || mediaPending || !workspace.isDirty(panel)"
-                @click="workspace.save(panel)"
-                >Сохранить черновик раздела</UiButton
-              >
-            </div>
-          </UiCard>
+          </section>
+          <p
+            class="mt-5 border-t border-gray-200 pt-4 text-sm text-gray-500"
+            role="status"
+          >
+            {{
+              pending
+                ? 'Есть несохранённые изменения. Перед публикацией сохраните каждый изменённый раздел.'
+                : 'Сохранение меняет только черновик. Публикация оформления обновляет общие элементы всех страниц сайта.'
+            }}
+          </p>
         </div>
       </template>
       <template #preview>
         <DraftPreview
+          v-if="workspace.content.value"
           slug="home"
           :revision="previewRevision"
           :pending="pending"

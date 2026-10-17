@@ -11,6 +11,12 @@ import { getPage } from '../../pages/services/pages'
 import type { ContentPage } from '../../pages/types/page.types'
 import { getHomePage } from '../services/homepage'
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), {
+  embedded: false,
+})
+const editor = ref<InstanceType<typeof PageBlocksEditor> | null>(null)
+defineExpose({ editor })
+
 const emit = defineEmits<{
   saved: [page: ContentPage]
   pending: [value: boolean]
@@ -44,6 +50,7 @@ onMounted(load)
 <template>
   <AdminWorkspace mode="editor">
     <PageHeader
+      v-if="!props.embedded"
       class="mb-6"
       eyebrow="Управление сайтом"
       title="Главная страница"
@@ -58,17 +65,21 @@ onMounted(load)
     </template>
     <template v-else-if="page">
       <UiNotification v-if="error">{{ error }}</UiNotification>
-      <UiBadge :tone="page.is_published ? 'success' : 'neutral'">{{
-        page.is_published ? 'Опубликована' : 'Черновик'
-      }}</UiBadge>
+      <UiBadge
+        v-if="!props.embedded"
+        :tone="page.is_published ? 'success' : 'neutral'"
+        >{{ page.is_published ? 'Опубликована' : 'Черновик' }}</UiBadge
+      >
       <p
-        v-if="page.has_unpublished_changes"
+        v-if="!props.embedded && page.has_unpublished_changes"
         class="mt-2 text-sm text-gray-500"
         role="status"
       >
         В черновике есть неопубликованные изменения.
       </p>
       <PageBlocksEditor
+        ref="editor"
+        :show-actions="!props.embedded"
         :page="page"
         @saved="saved"
         @pending="emit('pending', $event)"

@@ -10,13 +10,19 @@ for (const [path, title, mode, maxWidth, editor] of [
   ['/profile', 'Мой профиль', 'form', 1280, ''],
   ['/settings', 'Настройки сайта', 'form', 1280, ''],
   ['/content?section=stores', 'Магазины', 'overview', 1280, ''],
-  ['/content?page=home', 'Главная страница', 'editor', 1280, 'navigation'],
-  ['/content?page=2', 'Страницы', 'editor', 1280, 'navigation'],
+  ['/content?page=home', 'Главная страница', 'editor', Infinity, 'navigation'],
+  [
+    '/content?page=2',
+    'Керамическая плитка и керамогранит для уютного дома и просторных загородных помещений',
+    'editor',
+    Infinity,
+    'navigation',
+  ],
   [
     '/content?section=appearance',
     'Общее оформление',
     'editor',
-    1280,
+    Infinity,
     'appearance',
   ],
 ] as const) {
@@ -59,6 +65,29 @@ for (const [path, title, mode, maxWidth, editor] of [
         ),
         `page overflow at ${width}`,
       ).toBe(true)
+      if (editor && width >= 1440) {
+        const toolbar = (await page
+          .locator('.admin-editor-toolbar')
+          .boundingBox())!
+        const sections = (await page
+          .getByRole('navigation', { name: 'Разделы контента' })
+          .boundingBox())!
+        const save = (await page
+          .getByRole('button', {
+            name:
+              editor === 'appearance'
+                ? 'Сохранить черновик раздела'
+                : 'Сохранить черновик блоков',
+            exact: true,
+          })
+          .boundingBox())!
+        expect(toolbar.width).toBe(1280)
+        expect(toolbar.x).toBe((width - 1280) / 2)
+        expect(sections.x).toBeGreaterThanOrEqual(toolbar.x)
+        expect(
+          Math.abs(sections.y + sections.height / 2 - save.y - save.height / 2),
+        ).toBeLessThan(1)
+      }
       if (editor) {
         const zones = await page
           .locator('.admin-editor-grid > div')
@@ -76,12 +105,16 @@ for (const [path, title, mode, maxWidth, editor] of [
           } else expect(zones[1]!.y).toBeGreaterThan(zones[0]!.y)
           if (width >= 1440) {
             expect(zones[2]!.y).toBe(zones[1]!.y)
-            expect(zones[2]!.width).toBeGreaterThanOrEqual(420)
+            expect(zones[2]!.width / dimensions!.width).toBeGreaterThan(0.47)
+            expect(zones[2]!.width / dimensions!.width).toBeLessThan(0.53)
           } else expect(zones[2]!.y).toBeGreaterThan(zones[1]!.y)
         } else {
-          expect(zones).toHaveLength(2)
-          if (width >= 1280) expect(zones[1]!.y).toBe(zones[0]!.y)
-          else expect(zones[1]!.y).toBeGreaterThan(zones[0]!.y)
+          expect(zones).toHaveLength(3)
+          if (width >= 1440) {
+            expect(zones[2]!.y).toBe(zones[1]!.y)
+            expect(zones[2]!.width / dimensions!.width).toBeGreaterThan(0.47)
+            expect(zones[2]!.width / dimensions!.width).toBeLessThan(0.53)
+          } else expect(zones[2]!.y).toBeGreaterThan(zones[1]!.y)
         }
       }
       await page.evaluate(() => window.scrollTo(0, 0))
@@ -94,3 +127,23 @@ for (const [path, title, mode, maxWidth, editor] of [
     ).toEqual([])
   })
 }
+
+test('content section keyboard focus survives workspace replacement and appearance loading', async ({
+  page,
+}) => {
+  await mockContentWorkspace(page)
+  await page.goto('/content?page=home')
+  const navigation = page.getByRole('navigation', { name: 'Разделы контента' })
+  for (const name of ['Общее оформление', 'Магазины', 'Страницы']) {
+    const button = navigation.getByRole('button', { name, exact: true })
+    await button.focus()
+    await button.press('Enter')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Загрузка' }),
+    ).toHaveCount(0)
+    await expect(
+      navigation.getByRole('button', { name, exact: true }),
+    ).toBeFocused()
+  }
+})
