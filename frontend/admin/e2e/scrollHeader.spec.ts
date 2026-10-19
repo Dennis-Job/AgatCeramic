@@ -23,6 +23,7 @@ for (const width of widths) {
       },
     })
     await page.goto('/products')
+    await page.getByRole('button', { name: 'Фильтры', exact: true }).click()
     const header = page.getByRole('banner')
     const table = page.getByRole('region', { name: 'Таблица товаров' })
     const brand = header.getByRole('link', { name: 'AgatCeramic — главная' })

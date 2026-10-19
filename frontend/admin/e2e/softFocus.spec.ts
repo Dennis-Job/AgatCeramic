@@ -10,6 +10,7 @@ test('product segment selection stays subtle with a pointer and has one soft key
 }) => {
   await mockAdminBaseline(page)
   await page.goto('/products')
+  await page.getByRole('button', { name: 'Фильтры', exact: true }).click()
   const group = page.getByRole('group', { name: 'Активность', exact: true })
   const radio = group.getByRole('radio', { name: 'Все', exact: true })
   const label = radio.locator('..')
@@ -159,6 +160,7 @@ test('forced colors retain a system keyboard outline for buttons, fields and rad
   await mockAdminBaseline(page)
   await page.emulateMedia({ forcedColors: 'active' })
   await page.goto('/products')
+  await page.getByRole('button', { name: 'Фильтры', exact: true }).click()
   const radio = page
     .getByRole('group', { name: 'Активность', exact: true })
     .getByRole('radio', { name: 'Все', exact: true })

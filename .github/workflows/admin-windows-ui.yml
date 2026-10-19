@@ -40,3 +40,11 @@ jobs:
       - run: npm exec playwright install chromium
       - name: Check approved colors, accessible states and platform snapshots
         run: npm exec playwright test -- approvedPalette.spec.ts adminBaseline.spec.ts --workers=2
+      - name: Preserve failed Windows browser evidence
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: admin-windows-browser-evidence
+          path: frontend/admin/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

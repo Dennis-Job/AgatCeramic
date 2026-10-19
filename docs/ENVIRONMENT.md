@@ -128,7 +128,7 @@ with credentialed cookie requests. For HTTPS deployments set
 deployed HTTPS Admin SPA URL in non-local environments; links target `/reset-password` on that
 origin and must never point at the Laravel API host.
 
-### Local saved-draft preview: CORS / 401
+### Local saved-draft preview: CORS and 401
 
 An existing `backend/.env` overrides the defaults in `config/cors.php` and
 `config/sanctum.php`; updating `.env.example` does not update that local file.

@@ -60,7 +60,7 @@ Build/typecheck/lint/format, 158 unit и 3 целевых E2E — PASS; UI Desig
 CORS/Sanctum в `backend/.env` (добавлен только Nuxt `localhost:3000`) и перезапущен
 backend. В текущей сессии проверены главная, контакты, о нас и каталог без заглушек.
 ContentPreviewTest — 6 PASS / 154 assertions; анонимный доступ остаётся 401,
-посторонний origin не получает CORS-разрешения. [Диагностика](../docs/ENVIRONMENT.md#local-saved-draft-preview-cors--401).
+посторонний origin не получает CORS-разрешения. [Диагностика](../docs/ENVIRONMENT.md#local-saved-draft-preview-cors-and-401).
 
 2026-10-17 — TASK-C006: «Контент» и «Общее оформление» по третьему варианту
 «Инспектор»: вся доступная ширина, список слева, вкладки посередине, Nuxt-preview

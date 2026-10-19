@@ -19,6 +19,11 @@ Workflow получает только право `contents: read` и не ис�
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
 
+Исправления падений PR #5, независимая приёмка platform screenshots и оставшийся
+Client audit описаны в [отчёте 2026-10-19](CI_PR5_REPAIR_2026-10-19.md).
+Admin jobs сохраняют browser `test-results/` при failure на семь дней для
+разбора remote-only расхождений без ослабления screenshot/palette gates.
+
 Frontend text checkout использует LF через `.gitattributes`; default Prettier
 проверяется без EOL override. Admin `.prettierignore` исключает локальные `.tmp`
 browser artifacts, чтобы обычный `format:check` оставался воспроизводимым.
