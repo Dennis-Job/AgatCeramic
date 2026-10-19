@@ -54,6 +54,16 @@ fixtures не менялись между Windows host и UTC CI runner.
 с `updateSnapshots: none` и прежним пределом 30 px. Palette contract сравнивает
 точные значения независимо от screenshot tolerance.
 
+Windows PNG считаются эталонами hosted GitHub Windows runner. Desktop Windows
+может отличаться системным monospace fallback и нативным placeholder поля даты
+даже при той же locale; совпадение всех пикселей между этими средами не обещается.
+Для `/products`, `/roles`, `/permissions`, `/settings` приняты отдельно
+проверенные UI Design Guard hosted actuals из run 39253140410. Источник,
+bounding boxes и ограничение локального запуска описаны в
+[отчёте PR #5](CI_PR5_REPAIR_2026-10-19.md#hosted-windows-follow-up).
+Из-за этих четырёх различий desktop screenshot failure сам по себе не доказывает
+регрессию hosted CI; сравнивать actual/diff и проверять canonical workflow.
+
 Основной Linux CI включает новый palette spec в полный E2E. Workflow
 `.github/workflows/admin-windows-ui.yml` отдельно выполняет native Windows
 unit/build, palette spec и все `adminBaseline.spec.ts` проверки. Изменение

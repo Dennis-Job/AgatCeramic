@@ -41,7 +41,7 @@ Files: `frontend/admin/e2e/scrollHeader.spec.ts`, `frontend/admin/e2e/softFocus.
 
 Files: reviewed PNGs in `frontend/admin/e2e/adminBaseline.spec.ts-snapshots/`; test fixtures only if investigation proves stale fixture expectations.
 
-- [x] Reproduce Windows and Linux baseline mismatches and collect actual/diff evidence. Three Windows CI-only differences require a new remote run and are not considered resolved locally.
+- [x] Reproduce Windows and Linux baseline mismatches and collect actual/diff evidence. Remote run on aca2c57 collected four hosted Windows native-rendering differences; independent diagnosis and UI review accepted the actuals as canonical hosted baselines. Desktop Windows differs in these four comparisons; rerun hosted CI after adoption.
 - [x] Compare against current approved product, category, team-access and content designs.
 - [x] Obtain independent UI Design Guard review of the 42 actual images before adoption.
 - [x] Adopt only accepted same-platform actual images; rerun strict baseline/palette tests and full Admin E2E: both platforms pass all 631 tests, retries=0.

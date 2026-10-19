@@ -5,7 +5,9 @@
   Локально PASS: Windows E2E 631 / Linux E2E 631, backend 487 tests,
   Admin unit 159 tests, lint/static analysis и security checks кроме Client audit.
   Владелец явно разрешил commit/push и проверку нового CI;
-  remote CI после публикации ещё нужен, включая три CI-only Windows расхождения.
+  На aca2c57 remote Backend/PostgreSQL/Redis/security/smoke/Compose PASS.
+  Для четырёх Windows-only native rendering различий UI Design Guard принял
+  hosted screenshots; следующий remote прогон должен подтвердить Windows gate.
   [Текущий отчёт](../docs/CI_PR5_REPAIR_2026-10-19.md).
 - Client dependency audit, оставшаяся часть пункта 5 Windows follow-up:
   11 high findings из braces/node-forge без опубликованных patched releases
