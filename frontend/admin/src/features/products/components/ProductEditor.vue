@@ -5,12 +5,9 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  Copy,
   EyeOff,
-  Pencil,
   Plus,
   Save,
-  Trash2,
   X,
 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
@@ -22,11 +19,8 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
-import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
-import UiSegmentedControl from '../../../components/ui/UiSegmentedControl.vue'
-import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
 import EditorSteps from './ProductEditorSteps.vue'
 import ProductMainSection from './ProductMainSection.vue'
@@ -34,6 +28,8 @@ import ProductAttributesSection from './ProductAttributesSection.vue'
 import ProductImagesSection from './ProductImagesSection.vue'
 import ProductPhotoAction from './ProductPhotoAction.vue'
 import ProductDownloadMenu from './ProductDownloadMenu.vue'
+import ProductListControls from './ProductListControls.vue'
+import ProductRowActions from './ProductRowActions.vue'
 import ProductVariantsSection from './ProductVariantsSection.vue'
 import ProductRelationsSection from './ProductRelationsSection.vue'
 import ProductReviewSection from './ProductReviewSection.vue'
@@ -60,10 +56,6 @@ const {
   success,
   confirmError,
   filterResultStatus,
-  filterCountsLoading,
-  filterCountsError,
-  productCountUnavailable,
-  filters,
   sort,
   direction,
   form,
@@ -73,16 +65,9 @@ const {
   canManage,
   canManageImports,
   sortStatus,
-  activityOptions,
-  saleOptions,
-  filterCategoryOptions,
-  filterBrandOptions,
-  hasActiveFilters,
-  productCountLabel,
   ariaSort,
   formatDate,
   load,
-  resetFilters,
   changeSort,
   enabled,
   open,
@@ -158,7 +143,7 @@ function closeGroupDeletion(): void {
 <template>
   <AdminWorkspace mode="list" :aria-busy="loading">
     <template #intro>
-      <PageHeader class="mb-6" eyebrow="Каталог" title="Товары">
+      <PageHeader class="mb-5" title="Товары">
         <template #actions>
           <ProductDownloadMenu v-if="canManageImports" />
           <UiButton v-if="canManage" type="button" @click="open()"
@@ -170,75 +155,7 @@ function closeGroupDeletion(): void {
 
     <UiNotification v-if="error && !opened">{{ error }}</UiNotification>
 
-    <form
-      class="admin-container rounded-xl bg-gray-50 p-4 sm:p-5"
-      role="search"
-      @submit.prevent
-    >
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <UiInput
-          v-model="filters.search"
-          class="xl:col-span-2"
-          aria-label="Поиск"
-          searchable
-          placeholder="Название, SKU, артикул"
-        />
-        <UiSelect
-          v-model="filters.category_id"
-          :options="filterCategoryOptions"
-          accessible-name="Категория"
-          search-placeholder="Начните вводить название категории"
-          searchable
-        />
-        <UiSelect
-          v-model="filters.brand_id"
-          :options="filterBrandOptions"
-          accessible-name="Бренд"
-          search-placeholder="Начните вводить название бренда"
-          searchable
-        />
-      </div>
-      <div class="mt-4 grid gap-4 xl:grid-cols-2">
-        <UiSegmentedControl
-          v-model="filters.is_active"
-          label="Активность"
-          hide-label
-          :counts-loading="filterCountsLoading"
-          name="product-activity-filter"
-          :options="activityOptions"
-        />
-        <UiSegmentedControl
-          v-model="filters.is_on_sale"
-          label="Распродажа"
-          hide-label
-          :counts-loading="filterCountsLoading"
-          name="product-sale-filter"
-          :options="saleOptions"
-        />
-      </div>
-      <p
-        v-if="filterCountsError"
-        class="mt-2 text-xs text-gray-500"
-        role="alert"
-      >
-        {{ filterCountsError }}
-      </p>
-      <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <UiBadge
-          data-testid="product-count"
-          :tone="
-            productCountUnavailable ? 'danger' : loading ? 'neutral' : 'primary'
-          "
-          >{{ productCountLabel }}</UiBadge
-        ><UiButton
-          type="button"
-          variant="surface"
-          :disabled="!hasActiveFilters"
-          @click="resetFilters"
-          >Сбросить</UiButton
-        >
-      </div>
-    </form>
+    <ProductListControls />
     <p class="sr-only" role="status" aria-live="polite">
       {{ filterResultStatus }}
     </p>
@@ -258,7 +175,7 @@ function closeGroupDeletion(): void {
       <UiTable
         v-else
         full-bleed
-        min-width="min-w-[1560px]"
+        min-width="min-w-[1040px]"
         table-class="product-table"
         sticky-header="page"
         sticky-edges
@@ -267,20 +184,16 @@ function closeGroupDeletion(): void {
         tabindex="0"
       >
         <caption class="sr-only">
-          Товары каталога. Заголовки SKU, Наименование, Создан и Изменён
-          управляют сортировкой.
+          Товары каталога. Заголовки SKU и Наименование управляют сортировкой.
+          Сортировка по датам доступна в меню над таблицей.
         </caption>
         <colgroup>
-          <!-- Share extra space across all columns on wide screens. -->
-          <col style="width: 23%" />
-          <col style="width: 8.5%" />
-          <col style="width: 8%" />
-          <col style="width: 10%" />
-          <col style="width: 8.5%" />
-          <col style="width: 6.5%" />
-          <col style="width: 8.5%" />
-          <col style="width: 8.5%" />
-          <col style="width: 8.5%" />
+          <col style="width: 32%" />
+          <col style="width: 13%" />
+          <col style="width: 12%" />
+          <col style="width: 12%" />
+          <col style="width: 9%" />
+          <col style="width: 12%" />
           <col style="width: 10%" />
         </colgroup>
         <thead
@@ -312,7 +225,7 @@ function closeGroupDeletion(): void {
                 size="sm"
                 :disabled="loading"
                 @click="changeSort('sku')"
-                >SKU<ArrowUp
+                >SKU / артикул<ArrowUp
                   v-if="sort === 'sku' && direction === 'asc'"
                   :size="15" /><ArrowDown
                   v-else-if="sort === 'sku'"
@@ -322,53 +235,10 @@ function closeGroupDeletion(): void {
                   class="text-gray-500"
               /></UiButton>
             </th>
-            <th scope="col" class="px-4 py-3">Артикул</th>
             <th scope="col" class="px-4 py-3">Категория</th>
             <th scope="col" class="px-4 py-3 text-right">Цена</th>
             <th scope="col" class="px-4 py-3 text-right">Остаток</th>
             <th scope="col" class="px-4 py-3">Статус</th>
-            <th
-              scope="col"
-              :aria-sort="ariaSort('created_at')"
-              class="px-4 py-3"
-            >
-              <UiButton
-                type="button"
-                variant="surface"
-                size="sm"
-                :disabled="loading"
-                @click="changeSort('created_at')"
-                >Создан<ArrowUp
-                  v-if="sort === 'created_at' && direction === 'asc'"
-                  :size="15" /><ArrowDown
-                  v-else-if="sort === 'created_at'"
-                  :size="15" /><ArrowUpDown
-                  v-else
-                  :size="15"
-                  class="text-gray-500"
-              /></UiButton>
-            </th>
-            <th
-              scope="col"
-              :aria-sort="ariaSort('updated_at')"
-              class="px-4 py-3"
-            >
-              <UiButton
-                type="button"
-                variant="surface"
-                size="sm"
-                :disabled="loading"
-                @click="changeSort('updated_at')"
-                >Изменён<ArrowUp
-                  v-if="sort === 'updated_at' && direction === 'asc'"
-                  :size="15" /><ArrowDown
-                  v-else-if="sort === 'updated_at'"
-                  :size="15" /><ArrowUpDown
-                  v-else
-                  :size="15"
-                  class="text-gray-500"
-              /></UiButton>
-            </th>
             <th scope="col" class="px-4 py-3 text-right">
               <span class="sr-only">Действия</span>
             </th>
@@ -402,14 +272,12 @@ function closeGroupDeletion(): void {
                 </div>
               </div>
             </td>
-            <td class="px-4 py-3 font-mono text-gray-500">
-              {{ product.sku }}
-            </td>
             <td class="px-4 py-3 text-gray-500">
-              {{ product.article_number || '—' }}
+              <p class="font-mono">{{ product.sku }}</p>
+              <p class="mt-0.5 text-xs">{{ product.article_number || '—' }}</p>
             </td>
             <td class="max-w-48 px-4 py-3">
-              <UiBadge tone="additional">{{ product.category.name }}</UiBadge>
+              <span class="text-gray-500">{{ product.category.name }}</span>
             </td>
             <td class="px-4 py-3 text-right font-medium text-gray-500">
               {{ formatMoney(product.price) }}
@@ -424,7 +292,7 @@ function closeGroupDeletion(): void {
               </p>
             </td>
             <td class="px-4 py-3">
-              <div class="flex min-w-24 flex-col items-start gap-1">
+              <div class="flex min-w-0 flex-col items-start gap-1">
                 <UiBadge :tone="product.is_active ? 'success' : 'neutral'">{{
                   product.is_active ? 'Активен' : 'Скрыт'
                 }}</UiBadge
@@ -433,44 +301,13 @@ function closeGroupDeletion(): void {
                 >
               </div>
             </td>
-            <td class="px-4 py-3 text-gray-500">
-              <time :datetime="product.created_at">{{
-                formatDate(product.created_at)
-              }}</time>
-            </td>
-            <td class="px-4 py-3 text-gray-500">
-              <time :datetime="product.updated_at">{{
-                formatDate(product.updated_at)
-              }}</time>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex">
-                <UiButton
-                  type="button"
-                  variant="neutral-ghost"
-                  size="sm"
-                  tooltip="Копировать товар — создать похожий"
-                  :aria-label="`Создать похожий товар ${product.name}`"
-                  @click="cloneProduct(product)"
-                  ><Copy :size="17" /></UiButton
-                ><UiButton
-                  type="button"
-                  variant="primary-ghost"
-                  size="sm"
-                  tooltip="Редактировать товар"
-                  :aria-label="`Редактировать товар ${product.name}`"
-                  @click="open(product)"
-                  ><Pencil :size="17" /></UiButton
-                ><UiButton
-                  type="button"
-                  variant="danger-ghost"
-                  size="sm"
-                  tooltip="Удалить товар"
-                  :aria-label="`Удалить товар ${product.name}`"
-                  @click="requestProductDeletion(product)"
-                  ><Trash2 :size="17"
-                /></UiButton>
-              </div>
+            <td class="px-2 py-3">
+              <ProductRowActions
+                :name="product.name"
+                @edit="open(product)"
+                @clone="cloneProduct(product)"
+                @delete="requestProductDeletion(product)"
+              />
             </td>
           </tr>
         </tbody>
@@ -514,6 +351,16 @@ function closeGroupDeletion(): void {
                   : 'Новый товар'
             }}
           </h2>
+          <p v-if="editing && !photosOnly" class="mt-1 text-xs text-gray-500">
+            Создан
+            <time :datetime="editing.created_at">{{
+              formatDate(editing.created_at)
+            }}</time>
+            · Изменён
+            <time :datetime="editing.updated_at">{{
+              formatDate(editing.updated_at)
+            }}</time>
+          </p>
           <p v-if="photosOnly" class="mt-1 text-sm text-gray-500">
             {{ editing?.name }}
           </p>
@@ -691,5 +538,12 @@ function closeGroupDeletion(): void {
 }
 :deep(.product-table td) {
   overflow-wrap: anywhere;
+}
+:deep(.product-table th button) {
+  max-width: 100%;
+  padding-inline: 0;
+  background: transparent;
+  text-align: left;
+  white-space: normal;
 }
 </style>

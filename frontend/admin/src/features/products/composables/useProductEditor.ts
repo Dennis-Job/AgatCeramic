@@ -52,6 +52,7 @@ import type {
   ProductPayload,
   ProductRelationDraft,
   ProductSort,
+  ProductListFilters,
   ProductUnit,
   SortDirection,
 } from '../types/product.types'
@@ -79,7 +80,7 @@ export function useProductEditor() {
   const confirmError = ref('')
   const filterResultStatus = ref('')
   const productCountUnavailable = ref(false)
-  const filters = ref({
+  const filters = ref<ProductListFilters>({
     search: '',
     category_id: '',
     brand_id: '',
@@ -428,9 +429,11 @@ export function useProductEditor() {
     ])
     return { ...productPage, ...catalogOptions }
   }
+  let listLoadVersion = 0
   async function load(
     page = pagination.value?.current_page ?? 1,
   ): Promise<boolean> {
+    ++listLoadVersion
     filterResultStatus.value = ''
     productCountUnavailable.value = false
     const response = await list.load(page, fetchPage)
@@ -448,21 +451,31 @@ export function useProductEditor() {
         : `${hasActiveFilters.value ? 'Найдено товаров' : 'Всего товаров в каталоге'}: ${response.meta.total}. Показано ${from}–${to}.`
     return true
   }
-  async function changeSort(field: ProductSort) {
+  async function setSort(field: ProductSort, order: SortDirection) {
     if (loading.value) return
+    if (sort.value === field && direction.value === order) return
     const previousSort = sort.value
     const previousDirection = direction.value
-    if (sort.value === field)
-      direction.value = direction.value === 'asc' ? 'desc' : 'asc'
-    else {
-      sort.value = field
-      direction.value =
-        field === 'created_at' || field === 'updated_at' ? 'desc' : 'asc'
-    }
-    if (!(await load(1))) {
+    sort.value = field
+    direction.value = order
+    const requestVersion = listLoadVersion + 1
+    // A newer filter request already uses the selected sort; a stale response
+    // must not roll the controls back behind the displayed results.
+    if (!(await load(1)) && requestVersion === listLoadVersion) {
       sort.value = previousSort
       direction.value = previousDirection
     }
+  }
+  function changeSort(field: ProductSort) {
+    const order =
+      sort.value === field
+        ? direction.value === 'asc'
+          ? 'desc'
+          : 'asc'
+        : field === 'created_at' || field === 'updated_at'
+          ? 'desc'
+          : 'asc'
+    return setSort(field, order)
   }
   function ariaSort(field: ProductSort): 'none' | 'ascending' | 'descending' {
     return sort.value === field
@@ -1223,6 +1236,7 @@ export function useProductEditor() {
     load,
     resetFilters,
     changeSort,
+    setSort,
     enabled,
     fillGroup,
     prepareGroupDraft,

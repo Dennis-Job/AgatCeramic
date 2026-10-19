@@ -18,6 +18,7 @@ const props = withDefaults(
     boundarySelector?: string
     panelClass?: string
     closeDelay?: number
+    teleport?: boolean
   }>(),
   {
     id: undefined,
@@ -25,6 +26,7 @@ const props = withDefaults(
     boundarySelector: undefined,
     panelClass: '',
     closeDelay: 180,
+    teleport: false,
   },
 )
 const emit = defineEmits<{ 'update:open': [open: boolean] }>()
@@ -64,7 +66,10 @@ function pointerLeave(event: PointerEvent): void {
   if (event.pointerType !== 'mouse' || !props.open) return
   cancelClose()
   closeTimer = setTimeout(() => {
-    if (!root.value?.contains(document.activeElement))
+    if (
+      !root.value?.contains(document.activeElement) &&
+      !panel.value?.contains(document.activeElement)
+    )
       emit('update:open', false)
   }, props.closeDelay)
 }
@@ -122,7 +127,17 @@ function triggerKeydown(event: KeyboardEvent): void {
 }
 function keydown(event: KeyboardEvent): void {
   if (!props.open) return
-  if (event.key === 'Escape') {
+  if (props.teleport && event.key === 'Tab') {
+    const items = focusables()
+    const focused = document.activeElement
+    if (
+      (event.shiftKey && focused === items[0]) ||
+      (!event.shiftKey && focused === items.at(-1))
+    ) {
+      event.preventDefault()
+      void leavePortal(event.shiftKey)
+    }
+  } else if (event.key === 'Escape') {
     event.preventDefault()
     event.stopPropagation()
     void close(true)
@@ -144,8 +159,34 @@ function keydown(event: KeyboardEvent): void {
     focusInPanel(items[next])
   }
 }
+async function leavePortal(backwards: boolean): Promise<void> {
+  const trigger = triggerElement()
+  const items = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      'a[href], button, input, select, textarea, [tabindex]',
+    ),
+  ).filter(
+    (element) =>
+      element.tabIndex >= 0 &&
+      !element.matches(':disabled') &&
+      !element.closest('[inert]') &&
+      element.getClientRects().length > 0 &&
+      !panel.value?.contains(element),
+  )
+  const index = trigger ? items.indexOf(trigger) : -1
+  const target =
+    backwards || index < 0 ? trigger : (items[index + 1] ?? trigger)
+  await close()
+  await nextTick()
+  target?.focus()
+}
 function outside(event: Event): void {
-  if (!props.open || root.value?.contains(event.target as Node)) return
+  if (
+    !props.open ||
+    root.value?.contains(event.target as Node) ||
+    panel.value?.contains(event.target as Node)
+  )
+    return
   const focusable = (event.target as Element).closest(
     'a[href], button, input, select, textarea, [tabindex], [contenteditable="true"]',
   )
@@ -173,7 +214,8 @@ function position(): void {
   const desired =
     props.align === 'end' ? anchor.right - rect.width : anchor.left
   offset.value =
-    Math.max(minLeft, Math.min(desired, maxRight - rect.width)) - anchor.left
+    Math.max(minLeft, Math.min(desired, maxRight - rect.width)) -
+    (props.teleport ? 0 : anchor.left)
   const gap = parseFloat(style.scrollMarginLeft)
   const naturalHeight =
     panel.value.scrollHeight +
@@ -190,7 +232,7 @@ function position(): void {
   const desiredTop = flip ? anchor.top - gap - height : anchor.bottom + gap
   offsetTop.value =
     Math.max(gutter, Math.min(desiredTop, innerHeight - gutter - height)) -
-    anchor.top
+    (props.teleport ? 0 : anchor.top)
   maxHeight.value = available
 }
 watch(
@@ -243,24 +285,31 @@ const trigger = computed(() => ({
     @keydown="keydown"
   >
     <slot name="trigger" :trigger="trigger" :open="open" />
-    <section
-      v-if="open"
-      :id="panelId"
-      ref="panel"
-      data-floating-popover
-      class="ui-popover-panel admin-focus"
-      :class="panelClass"
-      :style="{
-        left: `${offset}px`,
-        top: offsetTop === undefined ? undefined : `${offsetTop}px`,
-        maxHeight: maxHeight === undefined ? undefined : `${maxHeight}px`,
-      }"
-      role="region"
-      :aria-label="label"
-      tabindex="-1"
-    >
-      <slot :close="() => close(true)" />
-    </section>
+    <Teleport to="body" :disabled="!teleport">
+      <section
+        v-if="open"
+        :id="panelId"
+        ref="panel"
+        data-floating-popover
+        class="ui-popover-panel admin-focus"
+        :class="panelClass"
+        :style="{
+          left: `${offset}px`,
+          top: offsetTop === undefined ? undefined : `${offsetTop}px`,
+          maxHeight: maxHeight === undefined ? undefined : `${maxHeight}px`,
+          position: teleport ? 'fixed' : undefined,
+          zIndex: teleport ? 70 : undefined,
+        }"
+        role="region"
+        :aria-label="label"
+        tabindex="-1"
+        @pointerenter="teleport && pointerEnter($event)"
+        @pointerleave="teleport && pointerLeave($event)"
+        @keydown="teleport && keydown($event)"
+      >
+        <slot :close="() => close(true)" />
+      </section>
+    </Teleport>
   </div>
 </template>
 

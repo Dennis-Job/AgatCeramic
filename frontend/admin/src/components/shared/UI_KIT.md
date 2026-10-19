@@ -99,7 +99,7 @@ success/warning/error цвета; все варианты панелей ото�
 и выход; данные/сценарии референса не копируются.
 
 `UiPopover` — немодальное controlled окно (`v-model:open`, `label`, optional `id`,
-`align`, `boundarySelector`, `panelClass`, `closeDelay`). `boundarySelector` ограничивает
+`align`, `boundarySelector`, `panelClass`, `closeDelay`, `teleport`). `boundarySelector` ограничивает
 горизонтальное позиционирование ближайшим matching ancestor и используется desktop-навигацией
 для соблюдения общего контейнера шапки.
 Slot `trigger` получает обязательные bindings
@@ -111,6 +111,13 @@ control сохраняет фокус этого control. Окно остаёт�
 при нехватке места снизу открывается вверх; избыток высоты прокручивается внутри.
 Shared primitive не знает о сессии, permissions и маршрутах. Header координирует
 единственное открытое окно и закрывает его при смене маршрута.
+Опциональный `teleport` выводит panel в `body` с fixed-позиционированием,
+сохраняя привязку к trigger, viewport clamp/flip, outside close и Escape.
+Он используется для действий товара внутри `UiTable` с paint containment.
+Tab с последнего пункта продолжает порядок фокуса после trigger; Shift+Tab
+с первого возвращает фокус на trigger и закрывает panel. Portal-specific
+padding/width задаются через `panelClass` utilities, а не ancestor-dependent
+scoped selectors. По умолчанию прежний режим без portal сохраняется.
 `AdminWorkspace` выбирает `mode=overview/list/editor/form`. Общий
 `--admin-container-max-width: 1280px` ограничивает обзор, редактор и простую
 форму. В режиме списка slot `intro`, фильтры, feedback, мобильные карточки,

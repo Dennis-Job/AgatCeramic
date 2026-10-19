@@ -52,105 +52,85 @@ final result: passed
 
 ---
 
-## Историческая приёмка категорий (сохранена без изменений)
+# Products Admin design QA — 2026-10-16
 
-# Design QA — категории, вариант 3
+Final verification: 2026-10-19. Scope: the products workspace and its shared
+popover extension.
 
-Дата: 2026-10-07. Route: `http://localhost:5173/categories`. Final result: **passed**.
+## Comparison target and evidence
 
-Это историческая приёмка от 7 октября. Локальные файлы исходного ревью не
-входили в Git; их пути ниже сохранены как идентификаторы, а не переносимые
-ссылки. На Windows отсутствуют исходный macOS ImageGen PNG и два real-data
-JPEG, поэтому повторно проверить именно эти исторические изображения здесь
-нельзя. Актуальные переносимые эталоны — [Windows](frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-categories-chromium-win32.png)
-и [Linux](frontend/admin/e2e/adminBaseline.spec.ts-snapshots/route-categories-chromium-linux.png);
-их отдельная приёмка описана в [Windows palette report](docs/ADMIN_WINDOWS_PALETTE_REPORT.md).
+- Source visual truth:
+  `C:/Users/dkargopolov/.codex/generated_images/01a144cf-d558-7392-8252-a2f2fbda04e5/exec-7220bbcc-fcf6-4493-aefe-0f4fe177dc15.png`.
+- Implementation: `http://localhost:5173/products`, real authenticated API;
+  production interaction checks: `http://127.0.0.1:4183/products`.
+- Screenshot:
+  `frontend/admin/.tmp/products-redesign/real-open-1440.png`.
+- CSS viewport: 1440 × 1024; source raster 1487 × 1058; browser export
+  1425 × 1013. Both aspect-preserving normalized to fit 1440 × 1024 for
+  comparison; no pixel-exact raster assertion is made across export sizes.
+- State: filters expanded, category «Керамогранит», sale=false, activity=all,
+  sort=created_at/desc, sorting menu open. Source data are illustrative;
+  implementation uses actual rows and facet totals.
+- Full-view combined evidence:
+  `frontend/admin/.tmp/products-redesign/comparison-1440.png`.
+- Focused controls/menu comparison:
+  `frontend/admin/.tmp/products-redesign/comparison-controls.png`.
+- Responsive/axe evidence: `.tmp/products-redesign/open-{320,640,768,1024,1280,1440}.png`.
 
-## Источник и проверяемый результат
+## Findings and required fidelity surfaces
 
-Владелец выбрал вариант 3 из трёх ImageGen-концептов: раскрытая иерархия, отношения и группы характеристик сразу под каждой категорией.
+- Fonts/typography: existing Nunito/Poppins, weights and text tokens preserved.
+  Generated mock's darker text was not substituted for approved tokens.
+  Full real Russian product names wrap without truncation.
+- Spacing/layout: same search → expanded inline filters → removable conditions
+  → activity/results/sort → table hierarchy. Controls retain approved sizes;
+  seven table columns, full-bleed table, centered 1280 px controls. No page
+  overflow at checked widths; table scroll stays local below its minimum.
+- Colors/tokens: white, existing blue accent, gray surfaces and semantic
+  statuses preserved. No palette or global typography change.
+- Image quality: actual API product media and the existing upload/fallback
+  component are used. Demo marble photos from the generated mock are not
+  invented as catalogue data. Missing-photo controls remain meaningful.
+- Copy/content: mock annotation is omitted from production. Real facet
+  counts replace illustrative totals. SKU/article and created/updated dates
+  remain available. Three-state sale filtering and four supported sort fields
+  retain the current server contract.
 
-- Точный источник: вариант 3, `/Users/dennis.a.k/.codex/generated_images/01a1161c-cea9-7640-b7ee-d3db770b1ce0/exec-e0998579-7139-48fd-8560-3dcdd2ed2f90.png`, PNG 1487×1058.
-- Реализация с сопоставимым содержимым: `frontend/admin/.tmp/category-overview-desktop.png`, viewport 1440×1024, full-page PNG 1440×1045.
-- Реальные данные: «Сантехника и дети», `frontend/admin/.tmp/category-overview-real.jpg`, нативный screenshot JPEG 1243×1139.
-- Длинные русские строки и непрерывные слова: `frontend/admin/.tmp/category-overview-{320,640,768,1024,1280}.png`.
+## Comparison and fix history
 
-Источник и реализация представлены вместе в одном сравнительном input; композиция сопоставлена по ширине (1487 и 1440 px) с сохранением пропорций. Данные fixture отражают ту же структуру: корень, две дочерние категории и две группы. Основные области отдельно проверены в исходном масштабе: названия групп, строки характеристик, отметки обязательности/фильтра, parent/child links и действия.
+1. Real desktop and 320–1440 px captures compared with the source. Narrow-cell
+   validation found status minimum width and actions too wide for their cells;
+   removed unnecessary status minimum and redistributed columns. Fresh wide
+   workspace regression passed at 320–2560 px.
+2. Independent UI Design Guard accepted visual hierarchy and reported P2
+   keyboard focus loss on native-disabled sorting options/trigger, reset and
+   portal Tab exit. Options now use guarded aria-disabled; trigger stays
+   focusable with aria-busy, reset focuses search, portal leaves after the
+   original trigger or returns to it. Red/green E2E reproductions and the
+   independent review of the final production build confirm each fix.
+3. Delayed sorting followed by newer search reproduced a rollback mismatch.
+   Request ownership now guards rollback; regression passed on the final build.
+4. Portal row-menu padding was corrected using portal-safe UI utilities;
+   reviewer confirmed computed padding 8 px.
 
-## Оценка соответствия
+No remaining actionable P0/P1/P2. Independent UI Design Guard: accepted.
+Expected differences are real product data/media/counts, approved token
+typography, page-size pagination and omission of the mock annotation.
 
-| Область          | Итог                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| Общая композиция | Раскрытая иерархия, непрерывный список, белая рабочая область, поиск и создание сверху сохранены |
-| Связи            | Тип категории, видимость, родитель и реальные имена детей видны; переход сохраняет фокус         |
-| Плотные данные   | Группы открыты, имена/единицы/оба флага читаемы; пустые назначения не скрываются                 |
-| Действия         | Existing forms/dialogs сохранены, доступ по прежнему permission, tooltip и focus UI-kit          |
-| Responsive       | 320/640/768/1024/1280 px без горизонтального overflow, длинные строки переносятся                |
-| Состояния        | Loading, empty, error/retry, success после сохранения, readonly и keyboard/Escape проверены      |
-| API              | Один overview-запрос с полной рекурсивной проекцией; старый tree контракт сохранён               |
+## Implementation checklist and limits
 
-## Исправленные замечания
-
-- Пустые группы и неназначенные характеристики имеют `role=status`; ошибка сведений не изображается пустым массивом.
-- Длинные имена группы, характеристики, категории и slug переносятся без утраты информации.
-- Начальная ошибка загрузки показывает in-place `UiAlert` и «Повторить загрузку», без ложного «Категорий пока нет».
-- По результатам проверки реального API обзор загружается одним запросом, без серии per-category запросов и HTTP 429.
-- Отдельная recursive overview-схема не расширяет закрытый Category DTO в товарах и других endpoints.
-
-## Обоснованные отличия от растрового концепта
-
-Сохранены зафиксированные Seller UI-kit цвета, Nunito/Poppins и существующая ширина контейнера. Поэтому текст и размеры заголовков следуют работающему приложению, а не случайным значениям генерации. Дочерние категории выделены отступом и вертикальной линией; раскрытие не требует клика. Дополнительно видны реальные порядок и SKU-префикс. Растровые assets в интерфейс не вставлялись: папка и действия используют установленный Lucide.
-
-Контраст утверждённых status-цветов — известное ограничение. Axe `color-contrast` исключён адресно для категорий; цвета не изменены без указания владельца. Остальные structural serious/critical проверки пройдены. Не заявляется полная accessibility compliance.
-
-## Доказательства и независимое ревью
-
-- Production build и TypeScript, ESLint и форматирование изменённых исходников passed.
-- Новые E2E: 13/13 на macOS и Linux; unit обзора: 4/4; существующие catalog flows: 3/3.
-- Category baseline: 5/5 на обеих платформах. Default/loading/empty/error PNG просмотрены до adoption; обновлены ровно восемь эталонов этого маршрута.
-- UI Design Guard `/root/ui_design_guard`: **accepted**, без blocking findings. Независимо проверены source, desktop, пять обязательных ширин, длинные строки, API boundaries и четыре состояния на обеих платформах.
-- Backend: 374 tests; PostgreSQL категории/назначения: 16 tests. OpenAPI schema lint и backward compatibility passed.
-- Общий unit-набор Admin имеет 5 подтверждённых прежних failures; детали и полный список изменений — [в техническом отчёте](docs/ADMIN_CATEGORIES_OVERVIEW.md).
-
-Неразрешённых блокирующих несоответствий выбранной композиции нет.
-
-## Уточнение владельца: список категорий
-
-После приёмки варианта 3 владелец попросил заменить верхний поиск выпадающим списком созданных категорий. `UiSelect` показывает «Все категории» и каждый существующий ID, включая скрытые; названия детей дополнены родителем. Выбор сохраняет предков и потомков, переход к связанным категориям и удаление сбрасывают выбор. Это явное уточнение исходного концепта, без изменения утверждённой палитры.
-
-Открытое меню: `frontend/admin/.tmp/category-select-menu-{320,640,768,1024,1280}.png`; реальный каталог: `frontend/admin/.tmp/category-select-real.jpg` (исторический dropdown JPEG). Все восемь state-эталонов просмотрены независимым UI Design Guard перед adoption. Проверены длинные строки, границы viewport, возврат фокуса и Escape, disabled loading/empty/error. 13 сценариев обзора и 5 baseline прошли на обеих платформах. Итог независимого ревью: accepted, blocking findings отсутствуют.
-
----
-
-# Design QA — единая рабочая область характеристик
+- Filters/chips/reset, both sort directions, API failure rollback, stale
+  request handling, CRUD/export/photo workflows checked by production E2E.
+- Keyboard Escape during busy sort, focus return and portal Tab/Shift+Tab
+  independently verified. Responsive checks include axe and console/runtime
+  guards. Real local filters were also exercised through the in-app browser.
+- Full Admin regression results and platform limits are recorded in
+  `docs/ADMIN_PRODUCTS_REDESIGN.md`.
+- No full manual screen-reader audit or Linux/macOS raster baseline update.
+- Final build/lint/format and 159 unit tests passed. Product baseline/actions
+  recheck: 6/6. Full Windows Admin E2E: 622/626; the four existing Content
+  snapshot mismatches were independently traced to commit `58a155c` and its
+  unchanged Windows baselines. They are outside this products design QA and
+  remain documented in `docs/ADMIN_PRODUCTS_REDESIGN.md`.
 
 final result: passed
-
-## Evidence
-
-- Approved source: exec-cda9ed3c-0654-45bd-864b-bc7a8b7c5453.png.
-- Rendered production build: `.tmp/attributes-workspace-selected-group-1440.png`.
-- Combined comparison: `.tmp/attributes-design-comparison.png` (source left,
-  implementation right; source is a generated concept, production retains
-  established UI-kit typography/dimensions and actual API/fixture records).
-- Widths: 320, 640, 768, 1024, 1280, 1440. Both dialogs captured at320/1440.
-- Independent UI Design Guard reviewed all11 page/form captures and code.
-
-## Findings and resolutions
-
-- [P2] Async display rollback/refresh ordering: fixed by field-only ID and
-  revision reconciliation; regressions cover both GET/PATCH completion orders
-  and group removal while PATCH is pending.
-- Apparent old selected-group highlight in initial screenshot was captured
-  during CSS transition. Stable DOM/aria/current/background assertions and
-  animations-disabled recapture confirm correct active group.
-- No outstanding P0/P1/P2 findings. Palette remains owner-approved; known
-  contrast exceptions are unchanged and documented by existing axe wrapper.
-
-## Verification
-
-Production E2E workspace/catalog/navigation/actions: 99/99; unit147/147;
-build/lint/format PASS. Load failure/retry and legacy active navigation were
-reviewed separately, including the final five updated baseline captures.
-Full app regression recorded separately in
-`docs/ADMIN_ATTRIBUTES_WORKSPACE_REPORT.md`.

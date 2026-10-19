@@ -12,10 +12,11 @@ test('product segmented filters support keyboard, reset and compact layouts', as
   await mockCatalogApi(page)
   await page.goto('/products')
   const filters = page.getByRole('search')
+  await filters.getByRole('button', { name: /^Фильтры/ }).click()
   const activity = filters.getByRole('group', { name: 'Активность' })
   const sale = filters.getByRole('group', { name: 'Распродажа', exact: true })
   await expect(filters.getByLabel('Поиск', { exact: true })).toBeVisible()
-  for (const label of ['Поиск', 'Категория', 'Бренд']) {
+  for (const label of ['Поиск']) {
     await expect(filters.getByText(label, { exact: true })).toHaveCount(0)
   }
   await activity.getByRole('radio', { name: 'Все', exact: true }).focus()
@@ -27,7 +28,7 @@ test('product segmented filters support keyboard, reset and compact layouts', as
   await page.keyboard.press('ArrowLeft')
   await expect(sale.getByRole('radio', { name: 'Не распродажа' })).toBeChecked()
   await expect(activity.getByRole('radio', { name: 'Скрытые' })).toBeChecked()
-  await filters.getByRole('button', { name: 'Сбросить' }).click()
+  await filters.getByRole('button', { name: 'Сбросить фильтры' }).click()
   await expect(
     activity.getByRole('radio', { name: 'Все', exact: true }),
   ).toBeChecked()
@@ -133,8 +134,8 @@ test('wide product workspace keeps details, page sticky headers and horizontal a
     expect(dimensions.regionWidth).toBe(dimensions.viewportWidth)
     if (width >= 1920) {
       const nameShare = dimensions.nameWidth / dimensions.regionWidth
-      expect(nameShare).toBeGreaterThan(0.2)
-      expect(nameShare).toBeLessThan(0.3)
+      expect(nameShare).toBeGreaterThan(0.3)
+      expect(nameShare).toBeLessThan(0.4)
       if (desktopColumnWidths) {
         dimensions.columnWidths.forEach((columnWidth, index) => {
           expect(
@@ -205,7 +206,7 @@ test('wide product workspace keeps details, page sticky headers and horizontal a
   await page.keyboard.press('ArrowRight')
   await expect
     .poll(() => region.evaluate((element) => element.scrollLeft))
-    .toBeGreaterThan(0)
+    .toBe(0)
   const result = await new AxeBuilder({ page }).analyze()
   expect(
     result.violations.filter((violation) =>

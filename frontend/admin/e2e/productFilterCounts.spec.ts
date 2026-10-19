@@ -54,6 +54,7 @@ test('product badges show scoped totals and reset has surface and hover states',
   })
   await page.goto('/products')
   const filters = page.getByRole('search')
+  await filters.getByRole('button', { name: /^Фильтры/ }).click()
   const badge = (name: string) =>
     filters
       .getByRole('radio', { name, exact: true })
@@ -62,7 +63,7 @@ test('product badges show scoped totals and reset has surface and hover states',
   const activity = filters.getByRole('group', { name: 'Активность' })
   const sale = filters.getByRole('group', { name: 'Распродажа', exact: true })
   await expect(activity.locator('legend')).toHaveClass('sr-only')
-  await expect(sale.locator('legend')).toHaveClass('sr-only')
+  await expect(sale.locator('legend')).toBeVisible()
   for (const [name, value] of [
     ['Активные', '137'],
     ['Скрытые', '21'],
@@ -73,11 +74,12 @@ test('product badges show scoped totals and reset has surface and hover states',
   expect(countQueries).toHaveLength(1)
   expect(brandRequests).toBe(1)
   expect(categoryRequests).toBe(1)
-  const reset = filters.getByRole('button', { name: 'Сбросить' })
-  await expect(reset).toBeDisabled()
+  const reset = filters.getByRole('button', { name: 'Сбросить фильтры' })
+  await expect(reset).toBeHidden()
   await activity.getByRole('radio', { name: 'Активные' }).locator('..').click()
   await expect(reset).toBeEnabled()
-  await expect(reset).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  await page.mouse.move(0, 0)
+  await expect(reset).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   await reset.hover()
   await expect(reset).toHaveCSS('background-color', 'rgb(235, 244, 255)')
   await expect(reset).toHaveCSS('color', 'rgb(0, 91, 255)')
@@ -125,7 +127,7 @@ test('product badges show scoped totals and reset has surface and hover states',
   expect(categoryRequests).toBe(1)
   await reset.click()
   await expect(badge('Активные')).toHaveText('137')
-  await expect(reset).toBeDisabled()
+  await expect(reset).toBeHidden()
   await page.emulateMedia({ forcedColors: 'active' })
   await activity.getByRole('radio', { name: 'Активные' }).focus()
   await page.keyboard.press('Space')
@@ -173,6 +175,7 @@ test('a 429 on the counter request preserves usable product results', async ({
   })
   await page.goto('/products')
   const filters = page.getByRole('search')
+  await filters.getByRole('button', { name: /^Фильтры/ }).click()
   const badge = (name: string) =>
     filters
       .getByRole('radio', { name, exact: true })

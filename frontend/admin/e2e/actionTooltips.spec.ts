@@ -8,43 +8,50 @@ test('product actions show distinct hover backgrounds and descriptive tooltips',
 }) => {
   await mockCatalogApi(page)
   await page.goto('/products')
-  const actions = [
+  const edit = page.getByRole('button', {
+    name: 'Редактировать товар Монте Тиберио',
+    exact: true,
+  })
+  await edit.hover()
+  await expect(edit).toHaveCSS('background-color', 'rgb(235, 244, 255)')
+  await expect(page.getByRole('tooltip')).toHaveText('Редактировать товар')
+  await expect(page.getByRole('tooltip')).toHaveCSS(
+    'background-color',
+    'rgb(255, 255, 255)',
+  )
+  await expect(page.getByRole('tooltip')).toHaveCSS(
+    'color',
+    'rgb(102, 112, 133)',
+  )
+  await expect(page.getByRole('tooltip')).toHaveCSS(
+    'border-top-color',
+    'rgb(228, 231, 236)',
+  )
+  await page.keyboard.press('Escape')
+  const more = page.getByRole('button', {
+    name: 'Действия товара Монте Тиберио',
+    exact: true,
+  })
+  await more.hover()
+  await expect(more).toHaveCSS('background-color', 'rgb(242, 244, 247)')
+  await expect(more).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  for (const [name, text, background] of [
     [
       'Создать похожий товар Монте Тиберио',
-      'Копировать товар — создать похожий',
-      'rgb(242, 244, 247)',
-    ],
-    [
-      'Редактировать товар Монте Тиберио',
-      'Редактировать товар',
+      'Создать похожий',
       'rgb(235, 244, 255)',
     ],
     ['Удалить товар Монте Тиберио', 'Удалить товар', 'rgb(254, 243, 242)'],
-  ]
-  for (const [name, description, background] of actions) {
-    const button = page.getByRole('button', { name, exact: true })
-    await button.hover()
-    await expect(button).toHaveCSS('background-color', background!)
-    await expect(page.getByRole('tooltip')).toHaveText(description!)
-    await expect(page.getByRole('tooltip')).toHaveCSS(
-      'background-color',
-      'rgb(255, 255, 255)',
-    )
-    await expect(page.getByRole('tooltip')).toHaveCSS(
-      'color',
-      'rgb(102, 112, 133)',
-    )
-    await expect(page.getByRole('tooltip')).toHaveCSS(
-      'border-top-color',
-      'rgb(228, 231, 236)',
-    )
-    if (name.startsWith('Создать'))
-      await page.screenshot({
-        path: test.info().outputPath('product-copy-tooltip.png'),
-      })
-    await page.keyboard.press('Escape')
+  ]) {
+    const action = page.getByRole('button', { name, exact: true })
+    await expect(action).toContainText(text!)
+    await action.hover()
+    await expect(action).toHaveCSS('background-color', background!)
     await expect(page.getByRole('tooltip')).toHaveCount(0)
   }
+  await page.keyboard.press('Escape')
+  await expect(more).toHaveAttribute('aria-expanded', 'false')
   const clear = page.getByRole('button', { name: 'Очистить поле' })
   await page.getByRole('textbox', { name: 'Поиск' }).fill('Монте')
   await clear.hover()
