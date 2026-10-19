@@ -323,7 +323,7 @@ test('four filters retain useful select widths with large counts at 1024px', asy
   })
 })
 
-for (const width of [320, 640, 768, 1024, 1280, 1349, 1440]) {
+for (const width of [320, 640, 768, 1024, 1035, 1280, 1349, 1440]) {
   test(`product filters and sorting fit and remain accessible at ${width}px`, async ({
     page,
   }) => {
@@ -385,6 +385,23 @@ for (const width of [320, 640, 768, 1024, 1280, 1349, 1440]) {
         .locator('..'),
     ).toContainText('16')
     await page.evaluate(() => document.fonts.ready)
+    for (const group of [
+      sale,
+      filters.getByRole('group', { name: 'Активность', exact: true }),
+    ]) {
+      const all = group
+        .getByRole('radio', { name: 'Все', exact: true })
+        .locator('..')
+      expect(
+        await all.evaluate((label) => {
+          const text = label.querySelector('span > span')!
+          return (
+            text.getBoundingClientRect().height <=
+            parseFloat(getComputedStyle(text).lineHeight) + 1
+          )
+        }),
+      ).toBe(true)
+    }
     await expect(sale.locator('legend')).toHaveClass('sr-only')
     await expect(
       filters.locator('p').filter({ hasText: /^(Категория|Бренд)$/ }),

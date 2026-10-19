@@ -130,7 +130,7 @@ async function clearAll() {
         />
         <UiSegmentedControl
           v-model="filters.is_on_sale"
-          class="sm:col-span-2 lg:col-span-1"
+          class="sm:col-span-2 lg:col-span-1 [&>div>label:first-child]:shrink-0 [&>div>label:first-child]:whitespace-nowrap"
           label="Распродажа"
           hide-label
           :counts-loading="filterCountsLoading"
@@ -140,7 +140,7 @@ async function clearAll() {
         />
         <UiSegmentedControl
           v-model="filters.is_active"
-          class="sm:col-span-2 lg:col-span-1"
+          class="sm:col-span-2 lg:col-span-1 [&>div>label:first-child]:shrink-0 [&>div>label:first-child]:whitespace-nowrap"
           label="Активность"
           hide-label
           :counts-loading="filterCountsLoading"

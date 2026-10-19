@@ -119,6 +119,13 @@ typography, page-size pagination and omission of the mock annotation.
 
 ## Implementation checklist and limits
 
+- Browser comment fix for the All option: both product segmented controls
+  keep the first option unshrunk and on one line. Eight viewport checks now
+  include 1035 px and measure the text height. Build/lint/format, 159 unit and
+  20 targeted production E2E pass, including gaps and large-count stress.
+  Independent UI Design Guard accepted: All text stays at one line on
+  320/1035 px and large-count 1024 px, without page or label overflow.
+
 - Browser comment spacing refinement: all adjacent filter gaps are 16 px;
   bounded content tracks for sale/activity give spare width to both selects.
   Geometry includes 1349 px, fonts/counts are awaited, and large counts at
