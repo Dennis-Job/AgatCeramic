@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatMoney } from '~/utils/formatMoney'
 import { fetchCatalog } from '~/services/contentPages'
 import PageState from '~/components/shared/PageState.vue'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
@@ -29,15 +30,10 @@ const units: Record<CatalogProduct['unit'], string> = {
   liter: 'л',
   set: 'компл.',
 }
-const rubles = new Intl.NumberFormat('ru-RU', {
-  style: 'currency',
-  currency: 'RUB',
-  maximumFractionDigits: 2,
-})
 function priceLabel(product: CatalogProduct) {
   return product.price === null
     ? 'Цена по запросу'
-    : `${rubles.format(Number(product.price))} / ${units[product.unit]}`
+    : `${formatMoney(product.price)} / ${units[product.unit]}`
 }
 function pageLink(next: number) {
   return {

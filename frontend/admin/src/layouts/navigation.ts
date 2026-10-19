@@ -1,0 +1,246 @@
+import type {
+  RouteLocationNormalizedLoaded,
+  RouteLocationRaw,
+} from 'vue-router'
+
+export type NavigationLink = {
+  label: string
+  to: RouteLocationRaw
+  path: string
+  activePaths?: string[]
+  section?: 'pages' | 'appearance' | 'stores'
+  requiredPermission?: string
+  additionalPermission?: string
+  fallbacks?: ReadonlyArray<{ path: string; requiredPermission: string }>
+  exact?: boolean
+}
+export type NavigationGroup = { label: string; links: NavigationLink[] }
+export type NavigationSection = {
+  id: string
+  label: string
+  link?: NavigationLink
+  groups?: NavigationGroup[]
+}
+
+export const adminNavigation: NavigationSection[] = [
+  {
+    id: 'home',
+    label: 'Главная',
+    link: { label: 'Главная', to: '/', path: '/' },
+  },
+  {
+    id: 'products',
+    label: 'Товары',
+    groups: [
+      {
+        label: 'Работа с товарами',
+        links: [
+          {
+            label: 'Список товаров',
+            to: '/products',
+            path: '/products',
+            exact: true,
+            requiredPermission: 'catalog.manage',
+          },
+          {
+            label: 'Добавить массово товары',
+            to: '/products/import',
+            path: '/products/import',
+            requiredPermission: 'imports.manage',
+            additionalPermission: 'catalog.manage',
+          },
+          {
+            label: 'Цены и статусы',
+            to: '/products/price-status',
+            path: '/products/price-status',
+            requiredPermission: 'imports.manage',
+            additionalPermission: 'catalog.manage',
+          },
+          {
+            label: 'Объединить товары',
+            to: '/products/combine',
+            path: '/products/combine',
+            requiredPermission: 'imports.manage',
+            additionalPermission: 'catalog.manage',
+          },
+        ],
+      },
+      {
+        label: 'Справочники каталога',
+        links: [
+          {
+            label: 'Категории',
+            to: '/categories',
+            path: '/categories',
+            requiredPermission: 'catalog.manage',
+          },
+          {
+            label: 'Бренды',
+            to: '/brands',
+            path: '/brands',
+            requiredPermission: 'catalog.manage',
+          },
+          {
+            label: 'Характеристики',
+            to: '/attributes',
+            path: '/attributes',
+            activePaths: ['/attribute-groups'],
+            requiredPermission: 'catalog.manage',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'orders',
+    label: 'Заказы',
+    link: {
+      label: 'Заказы',
+      to: '/orders',
+      path: '/orders',
+      requiredPermission: 'orders.view',
+    },
+  },
+  {
+    id: 'contacts',
+    label: 'Обращения',
+    link: {
+      label: 'Обращения',
+      to: '/contacts',
+      path: '/contacts',
+      requiredPermission: 'contacts.view',
+    },
+  },
+  {
+    id: 'content',
+    label: 'Контент',
+    groups: [
+      {
+        label: 'Сайт и страницы',
+        links: [
+          {
+            label: 'Страницы',
+            to: '/content',
+            path: '/content',
+            section: 'pages',
+            requiredPermission: 'content.manage',
+          },
+          {
+            label: 'Общее оформление',
+            to: { path: '/content', query: { section: 'appearance' } },
+            path: '/content',
+            section: 'appearance',
+            requiredPermission: 'content.manage',
+          },
+          {
+            label: 'Магазины',
+            to: { path: '/content', query: { section: 'stores' } },
+            path: '/content',
+            section: 'stores',
+            requiredPermission: 'content.manage',
+          },
+        ],
+      },
+      {
+        label: 'Файлы и изображения',
+        links: [
+          {
+            label: 'Медиатека',
+            to: '/media',
+            path: '/media',
+            requiredPermission: 'media.manage',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'management',
+    label: 'Управление',
+    groups: [
+      {
+        label: 'Сотрудники и доступ',
+        links: [
+          {
+            label: 'Команда и доступ',
+            to: '/employees',
+            path: '/employees',
+            requiredPermission: 'admin-users.view',
+            activePaths: ['/roles', '/permissions'],
+            fallbacks: [
+              { path: '/roles', requiredPermission: 'roles.view' },
+              { path: '/permissions', requiredPermission: 'permissions.view' },
+            ],
+          },
+        ],
+      },
+      {
+        label: 'Контроль действий',
+        links: [
+          {
+            label: 'Журнал аудита',
+            to: '/audit-log',
+            path: '/audit-log',
+            requiredPermission: 'audit-log.view',
+          },
+        ],
+      },
+      {
+        label: 'Служебное',
+        links: [{ label: 'UI-kit', to: '/ui-kit', path: '/ui-kit' }],
+      },
+    ],
+  },
+  {
+    id: 'settings',
+    label: 'Настройки',
+    link: {
+      label: 'Настройки',
+      to: '/settings',
+      path: '/settings',
+      requiredPermission: 'settings.manage',
+    },
+  },
+]
+
+export function visibleNavigation(
+  hasPermission: (permission: string) => boolean,
+): NavigationSection[] {
+  const allowed = (link: NavigationLink) =>
+    (!link.requiredPermission || hasPermission(link.requiredPermission)) &&
+    (!link.additionalPermission || hasPermission(link.additionalPermission))
+  const accessibleLink = (link: NavigationLink): NavigationLink[] => {
+    if (allowed(link)) return [link]
+    const fallback = link.fallbacks?.find((item) =>
+      hasPermission(item.requiredPermission),
+    )
+    return fallback ? [{ ...link, to: fallback.path }] : []
+  }
+  return adminNavigation.flatMap((section) => {
+    if (section.link) return allowed(section.link) ? [section] : []
+    const groups = section.groups
+      ?.map((group) => ({
+        ...group,
+        links: group.links.flatMap(accessibleLink),
+      }))
+      .filter((group) => group.links.length)
+    return groups?.length ? [{ ...section, groups }] : []
+  })
+}
+
+export function isNavigationLinkActive(
+  link: NavigationLink,
+  route: Pick<RouteLocationNormalizedLoaded, 'path' | 'query'>,
+): boolean {
+  const pathMatches = [link.path, ...(link.activePaths ?? [])].some(
+    (path) =>
+      route.path === path ||
+      (!link.exact && path !== '/' && route.path.startsWith(`${path}/`)),
+  )
+  if (!pathMatches || !link.section) return pathMatches
+  const section =
+    route.query.section === 'appearance' || route.query.section === 'stores'
+      ? route.query.section
+      : 'pages'
+  return section === link.section
+}

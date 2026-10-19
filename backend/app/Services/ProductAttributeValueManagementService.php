@@ -19,16 +19,20 @@ class ProductAttributeValueManagementService
         private readonly ProductGroupManagementService $productGroupService,
     ) {}
 
-    /** @param array<int, array{attribute_id: int, value: mixed}> $attributes */
-    public function replace(User $actor, Product $product, array $attributes): Product
+    /**
+     * @param  array<int, array{attribute_id: int, value: mixed}>  $attributes
+     * @param  array<string, mixed>  $auditContext
+     */
+    public function replace(User $actor, Product $product, array $attributes, array $auditContext = [], bool $deferProductAudit = false): Product
     {
-        return DB::transaction(function () use ($actor, $product, $attributes): Product {
+        return DB::transaction(function () use ($actor, $product, $attributes, $auditContext, $deferProductAudit): Product {
             $category = Category::query()->whereKey($product->category_id)->lockForUpdate()->firstOrFail();
             [$product, $group, $groupProducts] = $this->lockProductContext($product);
             if ($product->category_id !== $category->id) {
                 throw ValidationException::withMessages(['attributes' => ['Категория товара была изменена параллельно. Повторите запрос.']]);
             }
             $product->setRelation('category', $category);
+            $beforeById = $groupProducts->mapWithKeys(fn (Product $member): array => [$member->id => $this->auditLogService->capture($member)])->all();
 
             $attributeIds = collect(array_column($attributes, 'attribute_id'));
             $this->integrityService->assertValuesMatchCategory($product, $attributes, 'attributes', $product->is_active);
@@ -72,12 +76,18 @@ class ProductAttributeValueManagementService
                 $this->productGroupService->revalidate($group);
             }
 
-            $this->auditLogService->record($actor, 'product.attributes-updated', $product, [
-                'attribute_ids' => $attributeIds->all(),
-                'synchronized_product_ids' => $group === null
-                    ? []
-                    : $groupProducts->where('id', '!=', $product->id)->pluck('id')->values()->all(),
-            ]);
+            foreach ($groupProducts as $member) {
+                if ($deferProductAudit && $member->id === $product->id) {
+                    continue;
+                }
+                $this->auditLogService->recordUpdated($actor, 'product.attributes-updated', $member, $beforeById[$member->id], [
+                    ...$auditContext,
+                    'attribute_ids' => $attributeIds->all(),
+                    'synchronized_product_ids' => $groupProducts->where('id', '!=', $product->id)->pluck('id')->values()->all(),
+                    'source_product_id' => $product->id,
+                    'synchronized' => $member->id !== $product->id,
+                ]);
+            }
 
             return $product->load(['attributeValues.attribute.options']);
         });

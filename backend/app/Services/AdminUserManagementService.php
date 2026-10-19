@@ -21,7 +21,7 @@ class AdminUserManagementService
             $user = User::query()->create($attributes);
             $user->roles()->sync($roleIds);
             $this->auditLogService->record($actor, 'admin-user.created', $user, [
-                'status' => $user->status,
+                'status' => $user->getRawOriginal('status'),
                 'role_ids' => $roleIds,
             ]);
 
@@ -32,14 +32,17 @@ class AdminUserManagementService
     /** @param array<string, mixed> $attributes */
     public function update(User $actor, User $user, array $attributes): User
     {
-        $this->ensureNotBlockingSelf($actor, $user, $attributes);
-        $this->ensureActiveSuperAdminRemains($user, $attributes);
-
         return DB::transaction(function () use ($actor, $user, $attributes): User {
+            $user = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $this->ensureNotBlockingSelf($actor, $user, $attributes);
+            $this->ensureActiveSuperAdminRemains($user, $attributes);
+            $before = $this->auditLogService->capture($user);
             $passwordChanged = array_key_exists('password', $attributes);
             $roleIds = array_key_exists('role_ids', $attributes) ? $this->roleIds($attributes['role_ids']) : null;
             unset($attributes['role_ids']);
-            $user->fill($attributes)->save();
+            $user->fill($attributes);
+            $fields = array_values(array_intersect(['name', 'email', 'password'], array_keys($user->getDirty())));
+            $user->save();
 
             if ($passwordChanged) {
                 DB::table('sessions')->where('user_id', $user->getKey())->delete();
@@ -49,9 +52,10 @@ class AdminUserManagementService
                 $user->roles()->sync($roleIds);
             }
 
-            $this->auditLogService->record($actor, 'admin-user.updated', $user, [
-                'status' => $user->status,
+            $this->auditLogService->recordUpdated($actor, 'admin-user.updated', $user, $before, [
+                'status' => $user->getRawOriginal('status'),
                 'role_ids' => $user->roles()->pluck('roles.id')->all(),
+                'fields' => $fields,
             ]);
 
             return $user->load('roles');
@@ -64,11 +68,11 @@ class AdminUserManagementService
             throw ValidationException::withMessages(['user' => ['Нельзя удалить собственную учётную запись.']]);
         }
 
-        $this->ensureActiveSuperAdminRemains($user, ['status' => AdminUserStatus::Blocked->value, 'role_ids' => []]);
-
         DB::transaction(function () use ($actor, $user): void {
+            $user = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $this->ensureActiveSuperAdminRemains($user, ['status' => AdminUserStatus::Blocked->value, 'role_ids' => []]);
             $this->auditLogService->record($actor, 'admin-user.deleted', $user, [
-                'status' => $user->status,
+                'status' => $user->getRawOriginal('status'),
                 'role_ids' => $user->roles()->pluck('roles.id')->all(),
             ]);
             $user->delete();

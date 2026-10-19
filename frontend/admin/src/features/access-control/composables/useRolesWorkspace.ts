@@ -8,6 +8,7 @@ import {
 } from '../services/roles'
 import type { AccessRole, Permission, RolePayload } from '../types/access.types'
 import { roleNameToSlug } from '../validation/role.schema'
+import { groupPermissions } from '../utils/permissions'
 
 const emptyForm = (): RolePayload => ({
   name: '',
@@ -19,6 +20,25 @@ const emptyForm = (): RolePayload => ({
 export function useRolesWorkspace() {
   const auth = useAuthStore()
   const roles = ref<AccessRole[]>([])
+  const search = ref('')
+  const selectedRoleId = ref<number | null>(null)
+  const filteredRoles = computed(() => {
+    const needle = search.value.trim().toLocaleLowerCase('ru-RU')
+    return roles.value.filter((role) =>
+      [role.name, role.slug, role.description ?? ''].some((value) =>
+        value.toLocaleLowerCase('ru-RU').includes(needle),
+      ),
+    )
+  })
+  const selectedRole = computed(
+    () =>
+      filteredRoles.value.find((role) => role.id === selectedRoleId.value) ??
+      filteredRoles.value[0] ??
+      null,
+  )
+  const permissionGroups = computed(() =>
+    groupPermissions(selectedRole.value?.permissions ?? []),
+  )
   const permissions = ref<Permission[]>([])
   const error = ref('')
   const permissionsError = ref('')
@@ -117,7 +137,14 @@ export function useRolesWorkspace() {
     saving.value = true
     formError.value = ''
     try {
-      await saveRole(editing.value?.id ?? null, form.value)
+      const payload = editing.value?.is_system
+        ? {
+            description: form.value.description,
+            permission_ids: [...form.value.permission_ids],
+          }
+        : { ...form.value, permission_ids: [...form.value.permission_ids] }
+      const saved = await saveRole(editing.value?.id ?? null, payload)
+      selectedRoleId.value = saved.id
       opened.value = false
       await load()
     } catch (reason) {
@@ -152,6 +179,11 @@ export function useRolesWorkspace() {
 
   return {
     roles,
+    search,
+    filteredRoles,
+    selectedRoleId,
+    selectedRole,
+    permissionGroups,
     permissions,
     error,
     permissionsError,

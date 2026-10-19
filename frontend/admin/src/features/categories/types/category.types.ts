@@ -1,4 +1,13 @@
 import type { Media } from '../../media/types/media.types'
+import type { Attribute } from '../../attributes/types/attribute.types'
+import type { AttributeGroup } from '../../attribute-groups/types/attributeGroup.types'
+
+export type CategoryOverview = {
+  attributes: Attribute[]
+  groups: AttributeGroup[]
+  loading: boolean
+  error: string
+}
 
 export type Category = {
   id: number
@@ -14,6 +23,8 @@ export type Category = {
   is_active: boolean
   sort_order: number
   children?: Category[]
+  attributes?: Attribute[]
+  attribute_groups?: AttributeGroup[]
   created_at: string
   updated_at: string
 }
@@ -24,9 +35,18 @@ export type CategoryPayload = Omit<
   | 'created_at'
   | 'updated_at'
   | 'children'
+  | 'attributes'
+  | 'attribute_groups'
   | 'image'
   | 'documents'
 > & { document_ids: number[] }
+export type CategoryNavigationItem = {
+  category: Category
+  depth: number
+  path: string
+  ancestorIds: number[]
+  count: number | null
+}
 export type CategoryAttributeAssignment = {
   id: number
   sort_order: number

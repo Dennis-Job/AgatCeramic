@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\HomePage;
 use App\Models\Media;
 use App\Models\User;
+use App\Queries\MediaUsageQuery;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -16,6 +18,7 @@ class MediaManagementService
         private readonly AuditLogService $auditLogService,
         private readonly StorageCleanupService $storageCleanupService,
         private readonly MediaThumbnailService $thumbnailService,
+        private readonly MediaUsageQuery $usageQuery,
     ) {}
 
     /** @param array{kind: string, title: string, alt?: string|null} $attributes */
@@ -74,22 +77,36 @@ class MediaManagementService
         DB::transaction(function () use ($actor, $media): void {
             $homePage = HomePage::query()->lockForUpdate()->find(1);
             $media = Media::query()->whereKey($media->id)->lockForUpdate()->firstOrFail();
-            $used = DB::table('categories')->where('image_id', $media->id)->exists()
-                || DB::table('brands')->where('logo_id', $media->id)->exists()
-                || DB::table('banners')->where('image_media_id', $media->id)->exists()
-                || DB::table('brand_media_documents')->where('media_id', $media->id)->exists()
-                || DB::table('category_media_documents')->where('media_id', $media->id)->exists();
-            $used = $used || ($homePage !== null && in_array($media->id, $homePage->referencedMediaIds(), true));
-            $used = $used || DB::table('page_media')->where('media_id', $media->id)->exists();
-            if ($used) {
+            if ($this->usageQuery->isReferenced($media, $homePage)) {
                 throw ValidationException::withMessages(['media' => 'Файл используется. Сначала удалите все ссылки на него.']);
             }
-            $this->auditLogService->record($actor, 'media.deleted', $media);
-            $this->storageCleanupService->schedule($media->disk, $media->path);
-            if ($media->thumbnail_path !== null) {
-                $this->storageCleanupService->schedule($media->disk, $media->thumbnail_path);
-            }
-            $media->delete();
+            $this->removeMedia($actor, $media);
         });
+    }
+
+    public function deleteIfUnused(User $actor, int $mediaId): bool
+    {
+        return DB::transaction(function () use ($actor, $mediaId): bool {
+            // Same lock order as explicit deletion and content publication.
+            $homePage = HomePage::query()->lockForUpdate()->find(1);
+            $media = Media::query()->whereKey($mediaId)->lockForUpdate()->first();
+            if ($media === null || ! Gate::forUser($actor)->allows('delete', $media)
+                || $this->usageQuery->isReferenced($media, $homePage)) {
+                return false;
+            }
+            $this->removeMedia($actor, $media);
+
+            return true;
+        });
+    }
+
+    private function removeMedia(User $actor, Media $media): void
+    {
+        $this->auditLogService->record($actor, 'media.deleted', $media);
+        $this->storageCleanupService->schedule($media->disk, $media->path);
+        if ($media->thumbnail_path !== null) {
+            $this->storageCleanupService->schedule($media->disk, $media->thumbnail_path);
+        }
+        $media->delete();
     }
 }

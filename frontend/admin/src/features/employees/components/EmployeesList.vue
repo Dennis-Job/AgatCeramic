@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Pencil, Trash2 } from '@lucide/vue'
+import { Clock, Mail, Pencil, Trash2 } from '@lucide/vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiCard from '../../../components/ui/UiCard.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
-import UiTable from '../../../components/ui/UiTable.vue'
 import type { Employee } from '../types/employee.types'
 
 defineProps<{
@@ -14,128 +14,160 @@ defineProps<{
   canEdit: boolean
 }>()
 defineEmits<{ edit: [employee: Employee]; remove: [employee: Employee] }>()
-const lastLogin = (value: string | null): string =>
-  value ? new Date(value).toLocaleString('ru-RU') : '—'
+const lastLogin = (value: string): string =>
+  new Date(value).toLocaleString('ru-RU')
+const initials = (name: string): string =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => Array.from(part)[0])
+    .join('')
+    .toLocaleUpperCase('ru-RU')
 </script>
 
 <template>
-  <UiLoadingState v-if="loading" label="Загрузка сотрудников…" />
-  <UiEmptyState v-else-if="!employees.length" label="Сотрудники не найдены." />
-  <template v-else>
-    <div class="divide-y divide-gray-100 xl:hidden">
-      <article v-for="employee in employees" :key="employee.id" class="p-4">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <h2 class="break-words font-semibold text-gray-700">
-              {{ employee.name }}
-            </h2>
-            <p class="break-all text-xs text-gray-500">{{ employee.email }}</p>
-          </div>
-          <UiBadge
-            :tone="employee.status === 'active' ? 'success' : 'danger'"
-            >{{
-              employee.status === 'active' ? 'Активен' : 'Заблокирован'
-            }}</UiBadge
-          >
-        </div>
-        <div class="mt-3 flex flex-wrap gap-1">
-          <UiBadge
-            v-for="role in employee.roles"
-            :key="role.id"
-            tone="primary"
-            >{{ role.name }}</UiBadge
-          ><span v-if="!employee.roles.length" class="text-sm text-gray-400"
-            >Роли не назначены</span
-          >
-        </div>
-        <p class="mt-3 text-xs text-gray-500">
-          Последний вход: {{ lastLogin(employee.last_login_at) }}
-        </p>
-        <div v-if="canManage" class="mt-3 flex justify-end gap-1">
-          <UiButton
-            variant="ghost"
-            size="sm"
-            :disabled="!canEdit"
-            :aria-label="`Редактировать сотрудника ${employee.name}`"
-            @click="$emit('edit', employee)"
-            ><Pencil :size="17" /></UiButton
-          ><UiButton
-            variant="danger-ghost"
-            size="sm"
-            :aria-label="`Удалить сотрудника ${employee.name}`"
-            @click="$emit('remove', employee)"
-            ><Trash2 :size="17"
-          /></UiButton>
-        </div>
-      </article>
-    </div>
-    <UiTable
-      class="hidden xl:block"
-      min-width="min-w-[680px]"
-      table-class="admin-table-employees"
-      label="Список сотрудников"
-    >
-      <thead class="bg-gray-25 text-xs font-medium text-gray-500">
-        <tr>
-          <th class="px-6 py-3">Сотрудник</th>
-          <th class="px-6 py-3">Роли</th>
-          <th class="px-6 py-3">Статус</th>
-          <th class="px-6 py-3">Последний вход</th>
-          <th v-if="canManage" class="px-6 py-3">
-            <span class="sr-only">Действия</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="employee in employees"
-          :key="employee.id"
-          class="border-t border-gray-100 text-gray-600"
+  <UiLoadingState
+    v-if="loading"
+    class="admin-container"
+    label="Загрузка сотрудников…"
+  />
+  <UiEmptyState
+    v-else-if="!employees.length"
+    class="admin-container"
+    label="Сотрудники не найдены."
+  />
+  <div
+    v-else
+    class="admin-container py-5"
+    role="region"
+    aria-label="Список сотрудников"
+  >
+    <ul class="employee-grid">
+      <li v-for="employee in employees" :key="employee.id" class="min-w-0">
+        <UiCard
+          :aria-labelledby="`employee-name-${employee.id}`"
+          class="h-full"
+          :padded="false"
         >
-          <td class="px-6 py-4">
-            <p class="font-semibold text-gray-700">{{ employee.name }}</p>
-            <p class="mt-0.5 text-xs text-gray-500">{{ employee.email }}</p>
-          </td>
-          <td class="px-6 py-4">
-            <UiBadge
-              v-for="role in employee.roles"
-              :key="role.id"
-              class="mr-1"
-              tone="primary"
-              >{{ role.name }}</UiBadge
-            >
-          </td>
-          <td class="px-6 py-4">
-            <UiBadge
-              :tone="employee.status === 'active' ? 'success' : 'danger'"
-              >{{
-                employee.status === 'active' ? 'Активен' : 'Заблокирован'
-              }}</UiBadge
-            >
-          </td>
-          <td class="px-6 py-4 text-gray-500">
-            {{ lastLogin(employee.last_login_at) }}
-          </td>
-          <td v-if="canManage" class="px-6 py-4">
-            <div class="flex justify-end gap-1">
-              <UiButton
-                variant="ghost"
-                size="sm"
-                :disabled="!canEdit"
-                :aria-label="`Редактировать сотрудника ${employee.name}`"
-                @click="$emit('edit', employee)"
-                ><Pencil :size="17" /></UiButton
-              ><UiButton
-                variant="danger-ghost"
-                size="sm"
-                :aria-label="`Удалить сотрудника ${employee.name}`"
-                @click="$emit('remove', employee)"
-                ><Trash2 :size="17"
-              /></UiButton>
+          <template #header>
+            <div class="flex min-w-0 items-start gap-3">
+              <span
+                class="employee-avatar text-xl font-bold"
+                aria-hidden="true"
+                >{{ initials(employee.name) }}</span
+              >
+              <div class="min-w-0 flex-1">
+                <h2
+                  :id="`employee-name-${employee.id}`"
+                  class="break-words text-base font-bold text-gray-500 [overflow-wrap:anywhere]"
+                >
+                  {{ employee.name }}
+                </h2>
+                <UiBadge
+                  class="mt-2"
+                  :tone="employee.status === 'active' ? 'success' : 'danger'"
+                  >{{
+                    employee.status === 'active' ? 'Активен' : 'Заблокирован'
+                  }}</UiBadge
+                >
+              </div>
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </UiTable>
-  </template>
+          </template>
+          <div class="flex h-full min-w-0 flex-col">
+            <div class="min-w-0 flex-1 space-y-5 p-4 sm:p-5">
+              <p class="flex min-w-0 items-start gap-2 text-sm text-gray-500">
+                <Mail :size="17" class="mt-0.5 shrink-0" aria-hidden="true" />
+                <span class="min-w-0 break-all">{{ employee.email }}</span>
+              </p>
+              <div>
+                <h3 class="mb-2 text-sm text-gray-500">Назначенные роли</h3>
+                <div v-if="employee.roles.length" class="flex flex-wrap gap-2">
+                  <UiBadge
+                    v-for="role in employee.roles"
+                    :key="role.id"
+                    tone="primary"
+                    >{{ role.name }}</UiBadge
+                  >
+                </div>
+                <p v-else class="text-sm text-gray-500">Роли не назначены</p>
+              </div>
+            </div>
+            <footer class="employee-footer">
+              <div class="flex min-w-0 items-start gap-2 text-xs text-gray-500">
+                <Clock :size="16" class="shrink-0" aria-hidden="true" />
+                <div class="min-w-0">
+                  <p class="mb-1">Последний вход</p>
+                  <time
+                    v-if="employee.last_login_at"
+                    :datetime="employee.last_login_at"
+                    >{{ lastLogin(employee.last_login_at) }}</time
+                  >
+                  <span v-else>Не входил</span>
+                </div>
+              </div>
+              <div v-if="canManage" class="flex flex-wrap items-center gap-1">
+                <UiButton
+                  variant="primary-ghost"
+                  size="sm"
+                  :disabled="!canEdit"
+                  :aria-label="`Редактировать сотрудника ${employee.name}`"
+                  @click="$emit('edit', employee)"
+                >
+                  <Pencil :size="16" aria-hidden="true" />Редактировать
+                </UiButton>
+                <UiButton
+                  variant="danger-ghost"
+                  size="sm"
+                  tooltip="Удалить сотрудника"
+                  :aria-label="`Удалить сотрудника ${employee.name}`"
+                  @click="$emit('remove', employee)"
+                >
+                  <Trash2 :size="16" aria-hidden="true" />
+                </UiButton>
+              </div>
+            </footer>
+          </div>
+        </UiCard>
+      </li>
+    </ul>
+  </div>
 </template>
+
+<style scoped>
+.employee-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--admin-spacing-5);
+  list-style: none;
+}
+.employee-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--admin-dialog-close-size);
+  height: var(--admin-dialog-close-size);
+  border-radius: 50%;
+  background: var(--admin-color-gray-200);
+  color: var(--admin-color-gray-500);
+}
+.employee-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--admin-spacing-3);
+  padding: var(--admin-spacing-4);
+  border-top: var(--admin-border-width) solid var(--admin-color-gray-100);
+}
+@media (min-width: 768px) {
+  .employee-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .employee-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+</style>

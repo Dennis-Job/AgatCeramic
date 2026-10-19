@@ -1,29 +1,44 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Copy, FileSpreadsheet, Pencil, Trash2, X } from '@lucide/vue'
+import AdminWorkspace from './AdminWorkspace.vue'
 import AuthCard from './AuthCard.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import PageHeader from './PageHeader.vue'
 import UiAlert from '../ui/UiAlert.vue'
+import UiNotification from '../ui/UiNotification.vue'
 import UiBadge from '../ui/UiBadge.vue'
 import UiButton from '../ui/UiButton.vue'
+import UiDialogFooter from '../ui/UiDialogFooter.vue'
 import UiCard from '../ui/UiCard.vue'
 import UiCheckbox from '../ui/UiCheckbox.vue'
+import UiSwitch from '../ui/UiSwitch.vue'
 import UiDialog from '../ui/UiDialog.vue'
 import UiDatePicker from '../ui/UiDatePicker.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
 import UiField from '../ui/UiField.vue'
+import UiFileDropzone from '../ui/UiFileDropzone.vue'
 import UiImagePreview from '../ui/UiImagePreview.vue'
 import UiInput from '../ui/UiInput.vue'
 import UiLoadingState from '../ui/UiLoadingState.vue'
 import UiPagination from '../ui/UiPagination.vue'
+import UiPopover from '../ui/UiPopover.vue'
+import UiProgressBar from '../ui/UiProgressBar.vue'
 import UiRadio from '../ui/UiRadio.vue'
+import UiSegmentedControl from '../ui/UiSegmentedControl.vue'
 import UiSelect from '../ui/UiSelect.vue'
 import UiTable from '../ui/UiTable.vue'
+import UiTabs from '../ui/UiTabs.vue'
 import UiTextarea from '../ui/UiTextarea.vue'
 
 type ConfirmMode = 'default' | 'busy' | 'error'
 
 const input = ref('')
+const demoFileInput = ref<HTMLInputElement | null>(null)
+const demoFile = ref<File | null>(null)
+function selectDemoFile(files: FileList | null) {
+  demoFile.value = files?.[0] ?? null
+}
 const populatedInput = ref('Керамогранит')
 const searchInput = ref('')
 const passwordInput = ref('надёжный-пароль')
@@ -36,13 +51,56 @@ const emptyDate = ref('')
 const message = ref('')
 const checked = ref(false)
 const checkedByDefault = ref(true)
+const switchChecked = ref(true)
 const checkboxValues = ref<Array<number | string>>(['porcelain'])
+const segmented = ref('')
+const editorTab = ref('blocks')
+const editorTabOptions = [
+  { value: 'blocks', label: 'Блоки' },
+  { value: 'settings', label: 'Настройки' },
+  { value: 'seo', label: 'SEO', disabled: true },
+]
+const importTypeDemo = ref('products')
+const importTypeDemoOptions = [
+  { value: 'products', label: 'Загрузка товаров' },
+  { value: 'images', label: 'Загрузка изображений' },
+]
+const segmentOptions = [
+  { value: '', label: 'Все' },
+  { value: '1', label: 'Активные', count: 124 },
+  { value: '0', label: 'Скрытые', count: 8 },
+]
 const radio = ref('standard')
 const disabledRadio = ref('disabled-selected')
 const isDialogOpen = ref(false)
+const isPopoverOpen = ref(false)
 const confirmMode = ref<ConfirmMode | null>(null)
 const confirmBusy = ref(false)
 const notice = ref('')
+type NotificationTone = 'success' | 'error' | 'warning' | 'info'
+const demoNotifications = ref<
+  Array<{ id: number; tone: NotificationTone; message: string }>
+>([])
+let notificationId = 0
+function showNotification(tone: NotificationTone): void {
+  const messages = {
+    success: 'Изменения сохранены.',
+    error:
+      'Не удалось сохранить изменения. Проверьте подключение и повторите действие. Сообщение с длинным названием: керамогранит для облицовки внутренних стен и пола.',
+    warning: 'Проверьте данные перед публикацией.',
+    info: 'Обработка файла продолжается в фоне.',
+  }
+  demoNotifications.value.push({
+    id: ++notificationId,
+    tone,
+    message: messages[tone],
+  })
+}
+function removeNotification(id: number): void {
+  demoNotifications.value = demoNotifications.value.filter(
+    (item) => item.id !== id,
+  )
+}
 const currentPage = ref(2)
 const isButtonLoading = ref(false)
 
@@ -60,19 +118,43 @@ const uiComponents = [
   'UiCheckbox',
   'UiDatePicker',
   'UiDialog',
+  'UiDialogFooter',
   'UiEmptyState',
   'UiField',
+  'UiFileDropzone',
   'UiImagePreview',
   'UiInput',
   'UiLoadingState',
+  'UiNotification',
+  'UiNotificationHost',
   'UiPagination',
+  'UiPopover',
+  'UiProgressBar',
   'UiRadio',
+  'UiSegmentedControl',
   'UiSelect',
+  'UiSwitch',
   'UiTable',
+  'UiTabs',
   'UiTextarea',
 ]
 
 const sharedComponents = ['AuthCard', 'ConfirmDialog', 'PageHeader']
+
+const semanticColorLevels = [
+  '25',
+  '50',
+  '100',
+  '200',
+  '300',
+  '400',
+  '500',
+  '600',
+  '700',
+  '800',
+  '900',
+  '950',
+]
 
 const colorGroups = [
   {
@@ -113,17 +195,17 @@ const colorGroups = [
   },
   {
     label: 'Success',
-    tokens: ['25', '50', '100', '200', '500', '600', '700'],
+    tokens: semanticColorLevels,
     prefix: '--admin-color-success-',
   },
   {
     label: 'Warning',
-    tokens: ['25', '50', '100', '200', '500', '600', '700'],
+    tokens: semanticColorLevels,
     prefix: '--admin-color-warning-',
   },
   {
     label: 'Error',
-    tokens: ['25', '50', '100', '200', '500', '600', '700'],
+    tokens: semanticColorLevels,
     prefix: '--admin-color-error-',
   },
   {
@@ -167,6 +249,10 @@ const colorGroups = [
 const standaloneColors = [
   { label: 'Page', token: '--admin-color-page' },
   { label: 'White', token: '--admin-color-white' },
+  { label: 'Card surface', token: '--admin-color-card-surface' },
+  { label: 'Card border', token: '--admin-color-card-border' },
+  { label: 'Card inset surface', token: '--admin-color-card-inset-surface' },
+  { label: 'Card inset border', token: '--admin-color-card-inset-border' },
   { label: 'Gray dark', token: '--admin-color-gray-dark' },
   { label: 'Text', token: '--admin-color-text' },
   { label: 'Blue 50', token: '--admin-color-blue-50' },
@@ -176,15 +262,42 @@ const standaloneColors = [
 ]
 
 const spacingTokens = ['1', '2', '3', '4', '5', '6']
-const radiusTokens = ['md', 'lg', 'xl', '2xl']
+const radiusTokens = ['md', 'lg', 'xl', '2xl', 'card', 'card-inset']
 const controlHeightTokens = ['sm', 'md', 'lg']
 const shadowTokens = ['card', 'input', 'dialog', 'dropdown', 'sm', 'xl']
 const foundationMetaTokens = [
+  '--admin-container-max-width',
+  '--admin-shell-max-width',
+  '--admin-workspace-overview-max-width',
+  '--admin-workspace-form-max-width',
+  '--admin-editor-navigation-width',
+  '--admin-editor-preview-min-width',
+  '--admin-dialog-backdrop-color',
+  '--admin-dialog-backdrop-filter',
+  '--admin-dialog-close-size',
+  '--admin-dialog-content-padding',
+  '--admin-dialog-radius',
+  '--admin-workspace-gutter',
+  '--admin-workspace-gutter-compact',
+  '--admin-workspace-inline-gutter',
+  '--admin-popover-width',
+  '--admin-popover-column-width',
+  '--admin-shell-top-height',
+  '--admin-shell-navigation-height',
+  '--admin-shell-height',
+  '--admin-logo-filter',
   '--admin-spacing-unit',
   '--admin-border-width',
   '--admin-focus-outline-width',
   '--admin-focus-outline-offset',
   '--admin-focus-ring',
+  '--admin-focus-color',
+  '--admin-focus-halo-color',
+  '--admin-focus-halo-width',
+  '--admin-notification-width',
+  '--admin-notification-offset',
+  '--admin-notification-gap',
+  '--admin-notification-z-index',
   '--admin-transition-duration',
   '--admin-transition-timing',
 ]
@@ -258,11 +371,19 @@ function submitAuthPreview(): void {
 </script>
 
 <template>
-  <section class="mx-auto admin-page space-y-6">
+  <UiNotification
+    v-for="item in demoNotifications"
+    :key="item.id"
+    :tone="item.tone"
+    @dismiss="removeNotification(item.id)"
+  >
+    {{ item.message }}
+  </UiNotification>
+  <AdminWorkspace mode="overview" class="space-y-6">
     <PageHeader
       eyebrow="Разработка"
       title="UI-kit"
-      description="Живой каталог UI primitives, shared-компонентов, их состояний и design tokens. Используйте эти компоненты в новых экранах вместо локальных копий."
+      description="Визуальная система Seller: белые поверхности, синий акцент и компактные controls. Общие компоненты, их состояния и design tokens для всех экранов Admin."
     >
       <template #actions>
         <UiButton
@@ -280,17 +401,33 @@ function submitAuthPreview(): void {
       <code>src/components/shared/</code>. Витрина использует сами компоненты,
       поэтому их вид и поведение не дублируются.
     </UiAlert>
-    <UiAlert v-if="notice" tone="success" live="polite">{{ notice }}</UiAlert>
+    <UiNotification v-if="notice" tone="success" live="polite">{{
+      notice
+    }}</UiNotification>
 
-    <UiCard data-ui-kit-section="inventory">
-      <h2 class="text-lg font-semibold text-gray-900">Состав UI-kit</h2>
-      <p class="mt-1 text-sm text-gray-500">
-        17 UI primitives и 3 shared-компонента, доступных для повторного
-        использования. Layout- и feature-компоненты в этот каталог не входят.
-      </p>
-      <div class="mt-4 grid gap-4 lg:grid-cols-2">
+    <UiCard
+      data-ui-kit-section="inventory"
+      aria-labelledby="ui-kit-inventory-title"
+    >
+      <template #header>
         <div>
-          <h3 class="text-sm font-semibold text-gray-700">components/ui</h3>
+          <h2
+            id="ui-kit-inventory-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Состав UI-kit
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            {{ uiComponents.length }} UI primitives и
+            {{ sharedComponents.length }} shared-компонента, доступных для
+            повторного использования. Layout- и feature-компоненты в этот
+            каталог не входят.
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-500">components/ui</h3>
           <div class="mt-2 flex flex-wrap gap-2">
             <UiBadge v-for="component in uiComponents" :key="component">
               {{ component }}
@@ -298,7 +435,7 @@ function submitAuthPreview(): void {
           </div>
         </div>
         <div>
-          <h3 class="text-sm font-semibold text-gray-700">components/shared</h3>
+          <h3 class="text-sm font-semibold text-gray-500">components/shared</h3>
           <div class="mt-2 flex flex-wrap gap-2">
             <UiBadge
               v-for="component in sharedComponents"
@@ -313,27 +450,65 @@ function submitAuthPreview(): void {
     </UiCard>
 
     <div class="grid gap-6 xl:grid-cols-2">
-      <UiCard data-ui-kit-section="buttons">
-        <h2 class="text-lg font-semibold text-gray-900">Кнопки</h2>
-        <p class="mt-1 text-sm text-gray-500"><code>ui/UiButton.vue</code></p>
+      <UiCard
+        data-ui-kit-section="buttons"
+        aria-labelledby="ui-kit-buttons-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-buttons-title"
+              class="text-lg font-semibold text-gray-500"
+            >
+              Кнопки
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiButton.vue</code>
+            </p>
+          </div>
+        </template>
 
-        <h3 class="mt-4 text-sm font-semibold text-gray-700">Варианты</h3>
+        <h3 class="text-sm font-semibold text-gray-500">Варианты</h3>
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton>Основная</UiButton>
           <UiButton variant="secondary">Вторичная</UiButton>
+          <UiButton variant="surface">На белой поверхности</UiButton>
+          <UiButton variant="surface" disabled>Поверхность недоступна</UiButton>
+          <UiButton variant="neutral-ghost">Нейтральная прозрачная</UiButton>
+          <UiButton variant="neutral-ghost" disabled
+            >Нейтральная недоступна</UiButton
+          >
           <UiButton variant="danger">Опасное действие</UiButton>
-          <UiButton variant="ghost">Прозрачная</UiButton>
+          <UiButton variant="primary-ghost">Синяя прозрачная</UiButton>
           <UiButton variant="danger-ghost">Удалить</UiButton>
         </div>
 
-        <h3 class="mt-5 text-sm font-semibold text-gray-700">Размеры</h3>
+        <h3 class="mt-5 text-sm font-semibold text-gray-500">Размеры</h3>
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton size="sm">Small</UiButton>
           <UiButton size="md">Medium</UiButton>
           <UiButton size="lg">Large</UiButton>
         </div>
 
-        <h3 class="mt-5 text-sm font-semibold text-gray-700">Состояния</h3>
+        <h3 class="mt-5 text-sm font-semibold text-gray-500">Состояния</h3>
+        <div
+          class="mt-2 flex flex-wrap gap-2"
+          aria-label="Кнопки управления с подсказками"
+        >
+          <UiButton
+            variant="neutral-ghost"
+            size="sm"
+            aria-label="Копировать"
+            tooltip="Копировать товар — создать похожий"
+            ><Copy :size="17" aria-hidden="true"
+          /></UiButton>
+          <UiButton variant="primary-ghost" size="sm" aria-label="Редактировать"
+            ><Pencil :size="17" aria-hidden="true"
+          /></UiButton>
+          <UiButton variant="danger-ghost" size="sm" aria-label="Удалить"
+            ><Trash2 :size="17" aria-hidden="true"
+          /></UiButton>
+        </div>
         <div class="mt-2 flex flex-wrap items-center gap-3">
           <UiButton :loading="isButtonLoading" @click="showLoadingState">
             Загрузка
@@ -342,29 +517,66 @@ function submitAuthPreview(): void {
           <UiButton disabled>Недоступна</UiButton>
           <UiButton variant="secondary" disabled>Вторичная недоступна</UiButton>
           <UiButton variant="danger" disabled>Опасная недоступна</UiButton>
-          <UiButton variant="ghost" disabled>Прозрачная недоступна</UiButton>
+          <UiButton variant="primary-ghost" disabled
+            >Редактирование недоступно</UiButton
+          >
           <UiButton variant="danger-ghost" disabled
             >Удаление недоступно</UiButton
           >
         </div>
       </UiCard>
 
-      <UiCard data-ui-kit-section="feedback">
-        <h2 class="text-lg font-semibold text-gray-900">
-          Статусы и оповещения
-        </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          <code>ui/UiAlert.vue</code>, <code>ui/UiBadge.vue</code>
-        </p>
-        <div class="mt-4 flex flex-wrap gap-2">
+      <UiCard
+        data-ui-kit-section="feedback"
+        aria-labelledby="ui-kit-feedback-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-feedback-title"
+              class="text-lg font-semibold text-gray-500"
+            >
+              Статусы и оповещения
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiAlert.vue</code>, <code>ui/UiBadge.vue</code>
+            </p>
+          </div>
+        </template>
+        <div class="flex flex-wrap gap-2">
           <UiBadge>Нейтральный</UiBadge>
           <UiBadge tone="primary">Основной</UiBadge>
+          <UiBadge tone="additional">Дополнительный</UiBadge>
           <UiBadge tone="success">Успешно</UiBadge>
           <UiBadge tone="warning">Внимание</UiBadge>
           <UiBadge tone="danger">Ошибка</UiBadge>
         </div>
         <div class="mt-4 space-y-2">
-          <UiAlert tone="info" live="polite">Информационное сообщение.</UiAlert>
+          <UiButton
+            variant="secondary"
+            @click="notice = 'Демонстрационное уведомление.'"
+            >Показать уведомление</UiButton
+          >
+          <div class="flex flex-wrap gap-2">
+            <UiButton variant="secondary" @click="showNotification('success')"
+              >Уведомление об успехе</UiButton
+            >
+            <UiButton variant="secondary" @click="showNotification('error')"
+              >Уведомление об ошибке</UiButton
+            >
+            <UiButton variant="secondary" @click="showNotification('warning')"
+              >Уведомление с предупреждением</UiButton
+            >
+            <UiButton variant="secondary" @click="showNotification('info')"
+              >Информационное уведомление</UiButton
+            >
+          </div>
+          <UiAlert tone="primary" live="polite"
+            >Информационное сообщение.</UiAlert
+          >
+          <UiAlert tone="additional" live="polite"
+            >Дополнительное информационное сообщение.</UiAlert
+          >
           <UiAlert tone="success" live="polite"
             >Операция выполнена успешно.</UiAlert
           >
@@ -376,50 +588,78 @@ function submitAuthPreview(): void {
       </UiCard>
     </div>
 
-    <UiCard data-ui-kit-section="cards-and-header">
-      <h2 class="text-lg font-semibold text-gray-900">
-        Карточки и заголовок страницы
-      </h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>ui/UiCard.vue</code>, <code>shared/PageHeader.vue</code>
-      </p>
-      <p class="mt-3 text-sm text-gray-600">
+    <UiCard
+      data-ui-kit-section="cards-and-header"
+      aria-labelledby="ui-kit-cards-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-cards-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Карточки и заголовок страницы
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiCard.vue</code>, <code>shared/PageHeader.vue</code>
+          </p>
+        </div>
+      </template>
+      <p class="text-sm text-gray-500">
         Текущий заголовок UI-kit выше показывает <code>PageHeader</code> с
         eyebrow, description и actions slot.
       </p>
       <div class="mt-4 grid gap-4 md:grid-cols-2">
-        <UiCard class="bg-gray-25">
-          <h3 class="font-semibold text-gray-900">Card с отступами</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            <code>padded=true</code> по умолчанию.
+        <UiCard>
+          <template #header>
+            <h3 class="font-semibold text-gray-500">Секционная панель</h3>
+          </template>
+          <p>
+            Заголовок находится в серой шапке, а содержимое — в отдельном белом
+            блоке со скруглёнными углами.
           </p>
         </UiCard>
-        <UiCard :padded="false" class="overflow-hidden bg-gray-25">
-          <div
-            class="border-b border-gray-200 px-5 py-3 font-semibold text-gray-900"
-          >
-            Card без отступов
-          </div>
-          <p class="px-5 py-4 text-sm text-gray-500">
-            <code>padded=false</code> для таблиц и кастомных секций.
+        <UiCard surface="white">
+          <template #header>
+            <h3 class="font-semibold text-gray-500">Белая поверхность</h3>
+          </template>
+          <p>Внешний фон, шапка и белое тело используют общие card tokens.</p>
+        </UiCard>
+        <UiCard class="md:col-span-2">
+          <template #header>
+            <h3 class="font-semibold text-gray-500">Общий паттерн</h3>
+          </template>
+          <p>
+            <code>UiCard</code> с именованным слотом <code>#header</code>
+            автоматически разделяет заголовок и основное содержимое.
           </p>
         </UiCard>
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="form-controls">
-      <h2 class="text-lg font-semibold text-gray-900">Поля формы</h2>
-      <p
-        class="mt-1 break-words text-sm text-gray-500 [overflow-wrap:anywhere]"
-      >
-        <code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>,
-        <code>ui/UiSelect.vue</code>, <code>ui/UiDatePicker.vue</code>,
-        <code>ui/UiTextarea.vue</code>
-      </p>
+    <UiCard
+      data-ui-kit-section="form-controls"
+      aria-labelledby="ui-kit-fields-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-fields-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Поля формы
+          </h2>
+          <p class="break-words text-sm text-gray-500 [overflow-wrap:anywhere]">
+            <code>ui/UiField.vue</code>, <code>ui/UiInput.vue</code>,
+            <code>ui/UiSelect.vue</code>, <code>ui/UiDatePicker.vue</code>,
+            <code>ui/UiTextarea.vue</code>
+          </p>
+        </div>
+      </template>
 
-      <div class="mt-5 grid min-w-0 gap-6 xl:grid-cols-2">
+      <div class="grid min-w-0 gap-6 xl:grid-cols-2">
         <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
-          <h3 class="text-sm font-semibold text-gray-700">Input и Textarea</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Input и Textarea</h3>
           <UiField
             label="Название"
             help="Подсказка отображается под полем."
@@ -483,7 +723,7 @@ function submitAuthPreview(): void {
         </div>
 
         <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
-          <h3 class="text-sm font-semibold text-gray-700">
+          <h3 class="text-sm font-semibold text-gray-500">
             Select и DatePicker
           </h3>
           <UiField label="Категория" error="Выберите один вариант.">
@@ -550,7 +790,7 @@ function submitAuthPreview(): void {
         class="mt-6 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 rounded-lg border border-gray-200 bg-gray-25 p-4 md:grid-cols-2 xl:grid-cols-4"
       >
         <div class="md:col-span-2 xl:col-span-4">
-          <h3 class="text-sm font-semibold text-gray-800">Недоступные поля</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Недоступные поля</h3>
           <p class="mt-1 text-xs text-gray-500">
             Значения видимы, но ввод и вспомогательные действия заблокированы.
           </p>
@@ -593,16 +833,27 @@ function submitAuthPreview(): void {
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="selection">
-      <h2 class="text-lg font-semibold text-gray-900">
-        Флажки и переключатели
-      </h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code>
-      </p>
-      <div class="mt-4 grid gap-6 lg:grid-cols-2">
+    <UiCard
+      data-ui-kit-section="selection"
+      aria-labelledby="ui-kit-selection-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-selection-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Флажки и переключатели
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiCheckbox.vue</code>, <code>ui/UiRadio.vue</code>,
+            <code>ui/UiSwitch.vue</code>
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-6 lg:grid-cols-2">
         <div class="grid content-start gap-3">
-          <h3 class="text-sm font-semibold text-gray-700">Checkbox</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Checkbox</h3>
           <UiCheckbox
             v-model:checked="checked"
             mode="boolean"
@@ -637,7 +888,31 @@ function submitAuthPreview(): void {
           >
         </div>
         <div class="grid content-start gap-3">
-          <h3 class="text-sm font-semibold text-gray-700">Radio</h3>
+          <h3 class="text-sm font-semibold text-gray-500">
+            Быстрые переключатели
+          </h3>
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="text-sm text-gray-500">Включён</span
+            ><UiSwitch
+              v-model:checked="switchChecked"
+              accessible-name="Демонстрационный переключатель"
+            /><span class="text-sm text-gray-500">Выключен</span
+            ><UiSwitch
+              :checked="false"
+              accessible-name="Выключенный переключатель"
+            /><span class="text-sm text-gray-500">Недоступен</span
+            ><UiSwitch
+              :checked="true"
+              disabled
+              accessible-name="Недоступный переключатель"
+            /><span class="text-sm text-gray-500">Сохранение</span
+            ><UiSwitch
+              :checked="true"
+              busy
+              accessible-name="Сохраняемый переключатель"
+            />
+          </div>
+          <h3 class="text-sm font-semibold text-gray-500">Radio</h3>
           <UiRadio v-model="radio" name="ui-kit-radio" value="standard">
             Выбранный
           </UiRadio>
@@ -664,12 +939,92 @@ function submitAuthPreview(): void {
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="table-and-pagination">
-      <h2 class="text-lg font-semibold text-gray-900">Таблица и пагинация</h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>ui/UiTable.vue</code>, <code>ui/UiPagination.vue</code>
-      </p>
-      <div class="mt-4">
+    <UiCard
+      data-ui-kit-section="segmented"
+      aria-labelledby="ui-kit-segmented-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-segmented-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Сегментированные переключатели
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiSegmentedControl.vue</code>
+          </p>
+        </div>
+      </template>
+      <div class="grid gap-6 lg:grid-cols-2">
+        <UiSegmentedControl
+          v-model="segmented"
+          name="ui-kit-segmented"
+          label="Состояние"
+          :options="segmentOptions"
+        />
+        <UiSegmentedControl
+          model-value="1"
+          name="ui-kit-segmented-disabled"
+          label="Недоступный переключатель"
+          :options="segmentOptions"
+          disabled
+        />
+        <UiSegmentedControl
+          v-model="importTypeDemo"
+          name="ui-kit-import-type"
+          label="Тип загрузки"
+          :options="importTypeDemoOptions"
+          fit-content
+        />
+      </div>
+    </UiCard>
+
+    <UiCard data-ui-kit-section="tabs" aria-labelledby="ui-kit-tabs-title">
+      <template #header
+        ><h2 id="ui-kit-tabs-title" class="text-lg font-semibold">
+          Вкладки редактора
+        </h2></template
+      >
+      <UiTabs
+        id="ui-kit-editor-tabs"
+        v-model="editorTab"
+        label="Разделы редактора"
+        :items="editorTabOptions"
+      />
+      <div
+        v-for="item in editorTabOptions"
+        v-show="editorTab === item.value"
+        :id="`ui-kit-editor-tabs-${item.value}-panel`"
+        :key="item.value"
+        role="tabpanel"
+        :aria-labelledby="`ui-kit-editor-tabs-${item.value}`"
+        tabindex="0"
+        class="py-4 admin-focus"
+      >
+        {{ item.label }}: переключение стрелками, Home и End. Неактивная вкладка
+        пропускается.
+      </div>
+    </UiCard>
+
+    <UiCard
+      data-ui-kit-section="table-and-pagination"
+      aria-labelledby="ui-kit-table-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-table-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Таблица и пагинация
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiTable.vue</code>, <code>ui/UiPagination.vue</code>
+          </p>
+        </div>
+      </template>
+      <div>
         <UiTable min-width="min-w-[680px]" label="Пример компонентов UI-kit">
           <thead class="bg-gray-25 text-xs font-medium text-gray-500">
             <tr>
@@ -679,55 +1034,104 @@ function submitAuthPreview(): void {
             </tr>
           </thead>
           <tbody>
-            <tr class="border-t border-gray-100 text-gray-700">
+            <tr class="border-t border-gray-100 text-gray-500">
               <td class="px-5 py-4 font-medium">UiButton</td>
               <td class="px-5 py-4"><code>components/ui</code></td>
               <td class="px-5 py-4">Действия и отправка форм</td>
             </tr>
-            <tr class="border-t border-gray-100 text-gray-700">
+            <tr class="border-t border-gray-100 text-gray-500">
               <td class="px-5 py-4 font-medium">PageHeader</td>
               <td class="px-5 py-4"><code>components/shared</code></td>
               <td class="px-5 py-4">Заголовок route-level страницы</td>
             </tr>
           </tbody>
         </UiTable>
-        <UiPagination :meta="pagination" @change="currentPage = $event" />
+        <UiPagination
+          :meta="pagination"
+          aria-label="Пагинация: интерактивный пример"
+          @change="currentPage = $event"
+        />
       </div>
 
       <div class="mt-6 grid gap-4 xl:grid-cols-2">
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">Первая страница</h3>
-          <UiPagination :meta="firstPage" :announce="false" />
+          <h3 class="text-sm font-semibold text-gray-500">Первая страница</h3>
+          <UiPagination
+            :meta="firstPage"
+            aria-label="Пагинация: первая страница"
+            :announce="false"
+          />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">
+          <h3 class="text-sm font-semibold text-gray-500">
             Последняя страница
           </h3>
-          <UiPagination :meta="lastPage" :announce="false" />
+          <UiPagination
+            :meta="lastPage"
+            aria-label="Пагинация: последняя страница"
+            :announce="false"
+          />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">Загрузка</h3>
-          <UiPagination :meta="pagination" loading :announce="false" />
+          <h3 class="text-sm font-semibold text-gray-500">Загрузка</h3>
+          <UiPagination
+            :meta="pagination"
+            aria-label="Пагинация: загрузка"
+            loading
+            :announce="false"
+          />
         </div>
         <div class="rounded-lg border border-gray-200 bg-gray-25 p-4">
-          <h3 class="text-sm font-semibold text-gray-700">Нулевой total</h3>
+          <h3 class="text-sm font-semibold text-gray-500">Нулевой total</h3>
           <p class="mt-2 text-sm text-gray-500">
             При <code>total=0</code> компонент не рендерит navigation.
           </p>
-          <UiPagination :meta="emptyPage" :announce="false" />
+          <UiPagination
+            :meta="emptyPage"
+            aria-label="Пагинация: пустой список"
+            :announce="false"
+          />
         </div>
       </div>
     </UiCard>
 
     <div class="grid gap-6 xl:grid-cols-2">
-      <UiCard data-ui-kit-section="collection-states">
-        <h2 class="text-lg font-semibold text-gray-900">Состояния коллекций</h2>
-        <p class="mt-1 text-sm text-gray-500">
-          <code>ui/UiLoadingState.vue</code>, <code>ui/UiEmptyState.vue</code>
-        </p>
+      <UiCard
+        data-ui-kit-section="collection-states"
+        aria-labelledby="ui-kit-collections-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-collections-title"
+              class="text-lg font-semibold text-gray-500"
+            >
+              Состояния коллекций
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiLoadingState.vue</code>,
+              <code>ui/UiEmptyState.vue</code>,
+              <code>ui/UiProgressBar.vue</code>
+            </p>
+          </div>
+        </template>
         <UiLoadingState label="Загрузка данных для примера…" />
+        <div class="mb-4 space-y-4">
+          <div>
+            <p class="mb-2 text-sm text-gray-500">Обработка файла: 65%</p>
+            <UiProgressBar
+              label="Обработка файла: 65%"
+              :value="65"
+              show-scale
+            />
+          </div>
+          <div>
+            <p class="mb-2 text-sm text-gray-500">Ожидание обработки файла</p>
+            <UiProgressBar label="Ожидание обработки файла" />
+          </div>
+        </div>
         <UiEmptyState label="В этой коллекции пока нет данных.">
-          <UiButton size="sm" variant="secondary" type="button"
+          <UiButton size="sm" variant="soft-blue" type="button"
             >Добавить элемент</UiButton
           >
         </UiEmptyState>
@@ -739,12 +1143,70 @@ function submitAuthPreview(): void {
         </div>
       </UiCard>
 
-      <UiCard data-ui-kit-section="dialogs">
-        <h2 class="text-lg font-semibold text-gray-900">Диалоги</h2>
-        <p class="mt-1 text-sm text-gray-500">
-          <code>ui/UiDialog.vue</code>, <code>shared/ConfirmDialog.vue</code>
-        </p>
-        <div class="mt-4 flex flex-wrap gap-3">
+      <UiCard data-ui-kit-section="file-upload">
+        <template #header>
+          <h2 class="text-lg font-semibold text-gray-500">
+            Выбор и перетаскивание файла
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>ui/UiFileDropzone.vue</code>
+          </p>
+        </template>
+        <input
+          ref="demoFileInput"
+          type="file"
+          accept=".xlsx"
+          aria-label="Файл Excel для примера"
+          tabindex="-1"
+          class="hidden"
+          @change="selectDemoFile(($event.target as HTMLInputElement).files)"
+        />
+        <UiFileDropzone
+          label="Выберите или перетащите Excel в эту область"
+          description="Формат — XLSX. Размер — не больше 10 МБ."
+          format-label="XLSX"
+          icon-tone="green"
+          @choose="demoFileInput?.click()"
+          @files="selectDemoFile"
+        >
+          <template #icon
+            ><FileSpreadsheet :size="44" :stroke-width="1.4"
+          /></template>
+        </UiFileDropzone>
+        <output
+          v-if="demoFile"
+          class="mt-3 block text-sm text-gray-500 [overflow-wrap:anywhere]"
+          aria-live="polite"
+          >{{ demoFile.name }}</output
+        >
+        <UiFileDropzone
+          class="mt-4"
+          label="Выбор файла недоступен"
+          description="Действие заблокировано на время загрузки."
+          format-label="IMG"
+          disabled
+        />
+      </UiCard>
+
+      <UiCard
+        data-ui-kit-section="dialogs"
+        aria-labelledby="ui-kit-dialogs-title"
+      >
+        <template #header>
+          <div>
+            <h2
+              id="ui-kit-dialogs-title"
+              class="text-lg font-semibold text-gray-500"
+            >
+              Диалоги
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              <code>ui/UiDialog.vue</code>,
+              <code>shared/ConfirmDialog.vue</code>
+            </p>
+          </div>
+        </template>
+        <div class="flex flex-wrap gap-3">
           <UiButton variant="secondary" @click="isDialogOpen = true">
             Открыть диалог
           </UiButton>
@@ -758,6 +1220,21 @@ function submitAuthPreview(): void {
             Confirm: error
           </UiButton>
         </div>
+        <UiPopover
+          v-model:open="isPopoverOpen"
+          class="mt-4"
+          label="Пример всплывающего окна"
+        >
+          <template #trigger="{ trigger }"
+            ><UiButton v-bind="trigger" variant="secondary"
+              >Всплывающее окно</UiButton
+            ></template
+          >
+          <p class="text-sm text-gray-500">
+            Наведите курсор или откройте окно с клавиатуры. Escape закроет его и
+            вернёт фокус.
+          </p>
+        </UiPopover>
         <p class="mt-3 text-xs text-gray-500">
           Busy-пример разблокируется через 1,2 секунды, чтобы из него можно было
           выйти.
@@ -765,10 +1242,21 @@ function submitAuthPreview(): void {
       </UiCard>
     </div>
 
-    <UiCard data-ui-kit-section="auth-card">
-      <h2 class="text-lg font-semibold text-gray-900">Auth shell</h2>
-      <p class="mt-1 text-sm text-gray-500"><code>shared/AuthCard.vue</code></p>
-      <div class="mt-4 rounded-xl bg-gray-50 p-4 sm:p-6">
+    <UiCard data-ui-kit-section="auth-card" aria-labelledby="ui-kit-auth-title">
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-auth-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Auth shell
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>shared/AuthCard.vue</code>
+          </p>
+        </div>
+      </template>
+      <div class="rounded-xl bg-gray-50 p-4 sm:p-6">
         <AuthCard
           class="mx-auto"
           heading-tag="h2"
@@ -789,18 +1277,30 @@ function submitAuthPreview(): void {
       </div>
     </UiCard>
 
-    <UiCard data-ui-kit-section="design-tokens">
-      <h2 class="text-lg font-semibold text-gray-900">Design tokens</h2>
-      <p class="mt-1 text-sm text-gray-500">
-        <code>styles/tokens.css</code> — единственный source of truth для
-        визуальных констант Admin.
-      </p>
+    <UiCard
+      data-ui-kit-section="design-tokens"
+      aria-labelledby="ui-kit-tokens-title"
+    >
+      <template #header>
+        <div>
+          <h2
+            id="ui-kit-tokens-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            Design tokens
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            <code>styles/tokens.css</code> — единственный source of truth для
+            визуальных констант Admin.
+          </p>
+        </div>
+      </template>
 
-      <section class="mt-6" data-ui-kit-tokens="colors">
-        <h3 class="text-base font-semibold text-gray-800">Цвета</h3>
+      <section data-ui-kit-tokens="colors">
+        <h3 class="text-base font-semibold text-gray-500">Цвета</h3>
         <div class="mt-4 space-y-5">
           <div v-for="group in colorGroups" :key="group.label">
-            <h4 class="text-sm font-semibold text-gray-700">
+            <h4 class="text-sm font-semibold text-gray-500">
               {{ group.label }}
             </h4>
             <div
@@ -812,7 +1312,7 @@ function submitAuthPreview(): void {
                   :style="{ backgroundColor: `var(${group.prefix}${token})` }"
                   aria-hidden="true"
                 />
-                <p class="mt-1 text-xs font-semibold text-gray-700">
+                <p class="mt-1 text-xs font-semibold text-gray-500">
                   {{ token }}
                 </p>
                 <code class="block break-all text-xs leading-4 text-gray-500">
@@ -822,7 +1322,7 @@ function submitAuthPreview(): void {
             </div>
           </div>
           <div>
-            <h4 class="text-sm font-semibold text-gray-700">Отдельные цвета</h4>
+            <h4 class="text-sm font-semibold text-gray-500">Отдельные цвета</h4>
             <div
               class="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8"
             >
@@ -836,7 +1336,7 @@ function submitAuthPreview(): void {
                   :style="{ backgroundColor: `var(${color.token})` }"
                   aria-hidden="true"
                 />
-                <p class="mt-1 text-xs font-semibold text-gray-700">
+                <p class="mt-1 text-xs font-semibold text-gray-500">
                   {{ color.label }}
                 </p>
                 <code class="block break-all text-xs leading-4 text-gray-500">
@@ -853,33 +1353,33 @@ function submitAuthPreview(): void {
         data-ui-kit-tokens="foundations"
       >
         <section>
-          <h3 class="text-base font-semibold text-gray-800">Типографика</h3>
+          <h3 class="text-base font-semibold text-gray-500">Типографика</h3>
           <div class="mt-3 space-y-4 rounded-lg border border-gray-200 p-4">
             <div>
-              <p class="font-sans text-lg font-normal text-gray-900">
+              <p class="font-sans text-lg font-normal text-gray-500">
                 Nunito 400 — основной текст
               </p>
-              <p class="font-sans text-lg font-medium text-gray-900">
+              <p class="font-sans text-lg font-medium text-gray-500">
                 Nunito 500 — medium
               </p>
-              <p class="font-sans text-lg font-semibold text-gray-900">
+              <p class="font-sans text-lg font-semibold text-gray-500">
                 Nunito 600 — semibold
               </p>
-              <p class="font-sans text-lg font-bold text-gray-900">
+              <p class="font-sans text-lg font-bold text-gray-500">
                 Nunito 700 — bold
               </p>
             </div>
             <div class="border-t border-gray-200 pt-4 font-poppins">
-              <p class="text-lg font-normal text-gray-900">
+              <p class="text-lg font-normal text-gray-500">
                 Poppins 400 — display
               </p>
-              <p class="text-lg font-medium text-gray-900">
+              <p class="text-lg font-medium text-gray-500">
                 Poppins 500 — medium
               </p>
-              <p class="text-lg font-semibold text-gray-900">
+              <p class="text-lg font-semibold text-gray-500">
                 Poppins 600 — semibold
               </p>
-              <p class="text-lg font-bold text-gray-900">Poppins 700 — bold</p>
+              <p class="text-lg font-bold text-gray-500">Poppins 700 — bold</p>
             </div>
             <code class="text-xs text-gray-500"
               >--admin-font-sans / --admin-font-display</code
@@ -888,7 +1388,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section>
-          <h3 class="text-base font-semibold text-gray-800">Spacing</h3>
+          <h3 class="text-base font-semibold text-gray-500">Spacing</h3>
           <div class="mt-3 space-y-3 rounded-lg border border-gray-200 p-4">
             <div
               v-for="token in spacingTokens"
@@ -908,7 +1408,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section>
-          <h3 class="text-base font-semibold text-gray-800">
+          <h3 class="text-base font-semibold text-gray-500">
             Радиусы и border
           </h3>
           <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -924,7 +1424,7 @@ function submitAuthPreview(): void {
             </div>
           </div>
           <div
-            class="mt-3 rounded-lg p-3 text-sm text-gray-600"
+            class="mt-3 rounded-lg p-3 text-sm text-gray-500"
             style="border: var(--admin-border-default)"
           >
             <code>--admin-border-default</code>
@@ -932,7 +1432,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section>
-          <h3 class="text-base font-semibold text-gray-800">Высота controls</h3>
+          <h3 class="text-base font-semibold text-gray-500">Высота controls</h3>
           <div
             class="mt-3 flex flex-wrap items-end gap-4 rounded-lg border border-gray-200 p-4"
           >
@@ -942,7 +1442,7 @@ function submitAuthPreview(): void {
               class="text-center"
             >
               <div
-                class="grid w-24 place-items-center rounded-lg border border-gray-300 bg-white text-xs text-gray-600"
+                class="grid w-24 place-items-center rounded-lg border border-gray-300 bg-white text-xs text-gray-500"
                 :style="{ height: `var(--admin-control-height-${token})` }"
               >
                 {{ token }}
@@ -955,7 +1455,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section class="xl:col-span-2">
-          <h3 class="text-base font-semibold text-gray-800">Тени</h3>
+          <h3 class="text-base font-semibold text-gray-500">Тени</h3>
           <div
             class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
           >
@@ -973,7 +1473,7 @@ function submitAuthPreview(): void {
         </section>
 
         <section class="xl:col-span-2">
-          <h3 class="text-base font-semibold text-gray-800">
+          <h3 class="text-base font-semibold text-gray-500">
             Focus и transition
           </h3>
           <div
@@ -1000,15 +1500,28 @@ function submitAuthPreview(): void {
       panel-class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
       @close="isDialogOpen = false"
     >
-      <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-900">
-        Обычный диалог
-      </h2>
-      <p id="ui-kit-dialog-description" class="mt-2 text-sm text-gray-500">
-        Проверьте закрытие через Escape, клик по фону и возврат фокуса.
-      </p>
-      <div class="mt-6 flex justify-end">
-        <UiButton @click="isDialogOpen = false">Закрыть</UiButton>
+      <div class="flex items-start justify-between gap-4">
+        <h2 id="ui-kit-dialog-title" class="text-lg font-bold text-gray-500">
+          Обычный диалог
+        </h2>
+        <UiButton
+          type="button"
+          variant="surface"
+          aria-label="Закрыть обычный диалог"
+          @click="isDialogOpen = false"
+        >
+          <X :size="20" />
+        </UiButton>
       </div>
+      <UiDialogFooter>
+        <template #note
+          ><span id="ui-kit-dialog-description"
+            >Проверьте закрытие через Escape, клик по фону и возврат
+            фокуса.</span
+          ></template
+        >
+        <UiButton @click="isDialogOpen = false">Закрыть</UiButton>
+      </UiDialogFooter>
     </UiDialog>
     <ConfirmDialog
       :open="confirmMode !== null"
@@ -1024,5 +1537,5 @@ function submitAuthPreview(): void {
       @close="closeConfirm"
       @confirm="confirmAction"
     />
-  </section>
+  </AdminWorkspace>
 </template>

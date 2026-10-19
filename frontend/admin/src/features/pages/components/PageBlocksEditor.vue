@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import {
   onBeforeRouteLeave,
   onBeforeRouteUpdate,
   useRoute,
   useRouter,
 } from 'vue-router'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
+import UiTabs from '../../../components/ui/UiTabs.vue'
+import UiField from '../../../components/ui/UiField.vue'
+import UiInput from '../../../components/ui/UiInput.vue'
+import UiTextarea from '../../../components/ui/UiTextarea.vue'
+import { ArrowUp, ArrowDown, Trash2, ChevronRight } from '@lucide/vue'
+import { systemPageSlugs } from '../validation/page'
+import { slugPattern } from '../../catalog/validation/slug'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -21,7 +27,10 @@ import { usePageBlocks } from '../composables/usePageBlocks'
 import BlockSettings from './BlockSettings.vue'
 import HomePageSeoEditor from '../../homepage/components/HomePageSeoEditor.vue'
 
-const props = defineProps<{ page: ContentPage }>()
+const props = withDefaults(
+  defineProps<{ page: ContentPage; showActions?: boolean }>(),
+  { showActions: true },
+)
 const emit = defineEmits<{
   saved: [page: ContentPage]
   pending: [value: boolean]
@@ -34,6 +43,13 @@ const editor = usePageBlocks(
 const route = useRoute()
 const router = useRouter()
 const adding = ref<BlockType>('text')
+const tab = ref('blocks')
+const tabsId = useId()
+const tabs = [
+  { value: 'blocks', label: 'Блоки' },
+  { value: 'settings', label: 'Настройки' },
+  { value: 'seo', label: 'SEO' },
+]
 const removing = ref<string | null>(null)
 const blockResourceDirty = ref(false)
 const blockResourceBusy = ref(false)
@@ -109,6 +125,14 @@ onBeforeRouteUpdate((to, from) => {
 })
 onBeforeRouteLeave(confirmLeave)
 onMounted(() => window.addEventListener('beforeunload', beforeUnload))
+defineExpose({
+  save: editor.save,
+  publish: editor.publish,
+  dirty: editor.dirty,
+  pending: editor.pending,
+  busy: computed(() => editor.busy.value || editor.resourceBusy.value),
+  resourceDirty: editor.resourceDirty,
+})
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', beforeUnload)
   emit('pending', false)
@@ -117,152 +141,236 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <UiCard class="mt-4 min-w-0 p-4 sm:p-6" aria-label="Блоки страницы">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="text-lg font-semibold">Блоки страницы</h2>
-      <UiBadge :tone="editor.dirty.value ? 'warning' : 'neutral'">{{
-        editor.dirty.value ? 'Не сохранено' : 'Сохранённый черновик'
-      }}</UiBadge>
-    </div>
-    <p class="mt-2 text-sm text-gray-500">
-      Порядок в списке соответствует порядку на сайте. Выключенный блок
-      сохранится в черновике.
-    </p>
-    <UiAlert v-if="editor.error.value" class="mt-4" role="alert">{{
+  <section class="min-w-0" aria-labelledby="page-blocks-title">
+    <UiTabs
+      :id="tabsId"
+      v-model="tab"
+      label="Редактор страницы"
+      :items="
+        tabs.map((item) => ({
+          ...item,
+          disabled: editor.busy.value || editor.resourceBusy.value,
+        }))
+      "
+    />
+    <UiNotification v-if="editor.error.value">{{
       editor.error.value
-    }}</UiAlert>
-    <UiAlert
-      v-if="editor.success.value"
-      class="mt-4"
-      tone="success"
-      role="status"
-      >{{ editor.success.value }}</UiAlert
+    }}</UiNotification>
+    <UiNotification v-if="editor.success.value" tone="success">{{
+      editor.success.value
+    }}</UiNotification>
+    <div
+      v-show="tab === 'blocks'"
+      :id="`${tabsId}-blocks-panel`"
+      role="tabpanel"
+      :aria-labelledby="`${tabsId}-blocks`"
+      tabindex="0"
+      class="min-w-0 admin-focus"
     >
-    <div class="mt-5 space-y-2" role="group" aria-label="Порядок блоков">
-      <div
-        v-for="(block, index) in blocks"
-        :key="block.id"
-        class="flex min-w-0 flex-wrap items-center gap-1 rounded-lg border border-gray-200 p-2"
-      >
-        <UiButton
-          variant="ghost"
-          size="sm"
-          class="min-w-0 flex-1 break-words"
-          :aria-pressed="selected?.id === block.id"
-          :disabled="editor.resourceDirty.value || editor.busy.value"
-          @click="select(block.id)"
-          >{{ index + 1 }}. {{ blockLabels[block.type]
-          }}{{ block.enabled ? '' : ' · Выключен' }}</UiButton
+      <div class="my-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 id="page-blocks-title" class="font-semibold">Блоки страницы</h2>
+        <UiBadge :tone="editor.dirty.value ? 'warning' : 'neutral'">{{
+          editor.dirty.value ? 'Не сохранено' : 'Сохранённый черновик'
+        }}</UiBadge>
+      </div>
+      <div class="mt-5 space-y-2" role="group" aria-label="Порядок блоков">
+        <div
+          v-for="(block, index) in blocks"
+          :key="block.id"
+          class="flex min-w-0 flex-wrap items-center gap-1 rounded-lg p-2"
+          :class="selected?.id === block.id ? 'bg-primary-50' : 'bg-gray-50'"
         >
-        <UiButton
-          variant="ghost"
-          size="sm"
-          :aria-label="`Поднять блок ${index + 1}`"
+          <UiButton
+            :variant="
+              selected?.id === block.id ? 'primary-ghost' : 'neutral-ghost'
+            "
+            size="sm"
+            class="min-w-0 flex-1 justify-start break-words text-left"
+            :aria-pressed="selected?.id === block.id"
+            :disabled="editor.resourceDirty.value || editor.busy.value"
+            @click="select(block.id)"
+            >{{ index + 1 }}. {{ blockLabels[block.type]
+            }}{{ block.enabled ? '' : ' · Выключен'
+            }}<ChevronRight
+              :size="16"
+              class="ml-auto shrink-0"
+              aria-hidden="true"
+          /></UiButton>
+          <UiButton
+            variant="surface"
+            size="sm"
+            :aria-label="`Поднять блок ${index + 1}`"
+            :disabled="
+              index === 0 || editor.busy.value || editor.resourceDirty.value
+            "
+            @click="editor.move(block.id, -1)"
+            ><ArrowUp :size="16" aria-hidden="true"
+          /></UiButton>
+          <UiButton
+            variant="surface"
+            size="sm"
+            :aria-label="`Опустить блок ${index + 1}`"
+            :disabled="
+              index === blocks.length - 1 ||
+              editor.busy.value ||
+              editor.resourceDirty.value
+            "
+            @click="editor.move(block.id, 1)"
+            ><ArrowDown :size="16" aria-hidden="true"
+          /></UiButton>
+          <UiButton
+            variant="danger-ghost"
+            size="sm"
+            :aria-label="`Удалить блок ${index + 1}`"
+            :disabled="editor.busy.value || editor.resourceDirty.value"
+            @click="removing = block.id"
+            ><Trash2 :size="16" aria-hidden="true"
+          /></UiButton>
+        </div>
+      </div>
+      <UiEmptyState
+        v-if="!blocks.length"
+        label="Блоков пока нет. Добавьте первый блок."
+      />
+      <div class="mt-4 flex min-w-0 flex-wrap items-center gap-2">
+        <UiSelect
+          v-model="adding"
+          class="min-w-0 flex-1"
+          :options="allowed"
+          accessible-name="Тип нового блока"
           :disabled="
-            index === 0 || editor.busy.value || editor.resourceDirty.value
-          "
-          @click="editor.move(block.id, -1)"
-          >↑</UiButton
-        >
-        <UiButton
-          variant="ghost"
-          size="sm"
-          :aria-label="`Опустить блок ${index + 1}`"
-          :disabled="
-            index === blocks.length - 1 ||
             editor.busy.value ||
-            editor.resourceDirty.value
+            editor.resourceDirty.value ||
+            blocks.length >= 40
           "
-          @click="editor.move(block.id, 1)"
-          >↓</UiButton
-        >
+        />
         <UiButton
-          variant="danger-ghost"
+          variant="secondary"
           size="sm"
-          :aria-label="`Удалить блок ${index + 1}`"
-          :disabled="editor.busy.value || editor.resourceDirty.value"
-          @click="removing = block.id"
-          >Удалить</UiButton
+          :disabled="
+            editor.busy.value ||
+            editor.resourceDirty.value ||
+            blocks.length >= 40
+          "
+          @click="add"
+          >Добавить блок</UiButton
         >
       </div>
-    </div>
-    <UiEmptyState
-      v-if="!blocks.length"
-      label="Блоков пока нет. Добавьте первый блок."
-    />
-    <div class="mt-4 flex min-w-0 flex-wrap items-center gap-2">
-      <UiSelect
-        v-model="adding"
-        class="min-w-0 flex-1"
-        :options="allowed"
-        accessible-name="Тип нового блока"
-        :disabled="
-          editor.busy.value || editor.resourceDirty.value || blocks.length >= 40
-        "
-      />
-      <UiButton
-        variant="secondary"
-        size="sm"
-        :disabled="
-          editor.busy.value || editor.resourceDirty.value || blocks.length >= 40
-        "
-        @click="add"
-        >Добавить блок</UiButton
+      <p
+        v-if="blocks.length >= 40"
+        class="mt-2 text-sm text-gray-500"
+        role="status"
       >
+        На странице может быть не более 40 блоков.
+      </p>
+      <div
+        v-if="selected"
+        class="mt-6 min-w-0 border-t border-gray-200 pt-5"
+        role="region"
+        :aria-label="`Настройки: ${blockLabels[selected.type]}`"
+      >
+        <h3 class="mb-4 font-semibold">
+          Настройки: {{ blockLabels[selected.type] }}
+        </h3>
+        <UiCheckbox
+          mode="boolean"
+          class="mb-4"
+          :checked="selected.enabled"
+          :disabled="editor.busy.value || editor.resourceDirty.value"
+          @update:checked="selected.enabled = $event"
+          >Показывать блок на сайте</UiCheckbox
+        >
+        <BlockSettings
+          :key="selected.id"
+          :block="selected"
+          :disabled="editor.busy.value"
+          @dirty="blockResourceDirty = $event"
+          @busy="blockResourceBusy = $event"
+        />
+      </div>
     </div>
-    <p
-      v-if="blocks.length >= 40"
-      class="mt-2 text-sm text-gray-500"
-      role="status"
-    >
-      На странице может быть не более 40 блоков.
-    </p>
     <div
-      v-if="selected"
-      class="mt-6 min-w-0 border-t border-gray-200 pt-5"
-      role="region"
-      :aria-label="`Настройки: ${blockLabels[selected.type]}`"
+      v-show="tab === 'settings'"
+      :id="`${tabsId}-settings-panel`"
+      role="tabpanel"
+      :aria-labelledby="`${tabsId}-settings`"
+      tabindex="0"
+      class="min-w-0 py-5 admin-focus"
     >
-      <h3 class="mb-4 font-semibold">
-        Настройки: {{ blockLabels[selected.type] }}
-      </h3>
-      <UiCheckbox
-        mode="boolean"
-        class="mb-4"
-        :checked="selected.enabled"
-        :disabled="editor.busy.value || editor.resourceDirty.value"
-        @update:checked="selected.enabled = $event"
-        >Показывать блок на сайте</UiCheckbox
+      <h2 class="mb-4 font-semibold">Настройки страницы</h2>
+      <fieldset :disabled="editor.busy.value" class="space-y-4">
+        <legend class="sr-only">Основные настройки страницы</legend>
+        <UiField label="Название страницы" required
+          ><UiInput v-model="editor.form.value.title" required maxlength="255"
+        /></UiField>
+        <UiField
+          label="Адрес страницы (slug)"
+          required
+          :help="
+            systemPageSlugs.includes(page.slug)
+              ? 'Адрес системной страницы закреплён.'
+              : 'Латинские строчные буквы, цифры и дефисы.'
+          "
+          ><UiInput
+            v-model="editor.form.value.slug"
+            :disabled="systemPageSlugs.includes(page.slug)"
+            required
+            :pattern="slugPattern"
+            maxlength="255"
+        /></UiField>
+        <UiField
+          label="Текст страницы"
+          help="Обычный текст. HTML будет показан как текст."
+          ><UiTextarea
+            v-model="editor.form.value.body"
+            rows="8"
+            maxlength="100000"
+        /></UiField>
+      </fieldset>
+      <div
+        v-if="$slots['settings-actions']"
+        class="mt-5 flex flex-wrap gap-2 border-t border-gray-200 pt-4"
       >
-      <BlockSettings
-        :key="selected.id"
-        :block="selected"
+        <slot name="settings-actions" />
+      </div>
+    </div>
+    <div
+      v-show="tab === 'seo'"
+      :id="`${tabsId}-seo-panel`"
+      role="tabpanel"
+      :aria-labelledby="`${tabsId}-seo`"
+      tabindex="0"
+      class="min-w-0 py-5 admin-focus"
+    >
+      <fieldset
+        v-if="page.slug === 'home' && editor.form.value.seo"
         :disabled="editor.busy.value"
-        @dirty="blockResourceDirty = $event"
-        @busy="blockResourceBusy = $event"
+      >
+        <legend class="sr-only">SEO страницы</legend>
+        <HomePageSeoEditor
+          :key="page.id"
+          v-model="editor.form.value.seo"
+          @pending="seoResourceDirty = $event"
+          @uploading="seoResourceBusy = $event"
+        />
+      </fieldset>
+      <UiEmptyState
+        v-else
+        label="SEO-параметры для этой страницы пока недоступны."
       />
     </div>
     <p
       v-if="editor.dirty.value"
-      class="mt-5 text-sm text-gray-600"
+      class="mt-5 text-sm text-gray-500"
       role="status"
     >
-      Есть несохранённые изменения блоков. Сохраните черновик перед публикацией.
+      Есть несохранённые изменения страницы. Сохраните черновик перед
+      публикацией.
     </p>
-    <fieldset
-      v-if="page.slug === 'home' && editor.form.value.seo"
-      class="mt-6 min-w-0 border-t border-gray-200 pt-5"
-      :disabled="editor.busy.value"
+    <div
+      v-if="showActions"
+      class="mt-6 flex flex-wrap gap-2 border-t border-gray-200 pt-4"
     >
-      <legend class="sr-only">SEO страницы</legend>
-      <HomePageSeoEditor
-        :key="page.id"
-        v-model="editor.form.value.seo"
-        @pending="seoResourceDirty = $event"
-        @uploading="seoResourceBusy = $event"
-      />
-    </fieldset>
-    <div class="mt-6 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
       <UiButton
         :loading="editor.busy.value"
         :disabled="editor.resourceDirty.value || !editor.dirty.value"
@@ -286,5 +394,5 @@ onBeforeUnmount(() => {
       @close="removing = null"
       @confirm="remove"
     />
-  </UiCard>
+  </section>
 </template>

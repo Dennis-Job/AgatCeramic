@@ -13,12 +13,14 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\ProductExportService;
 use App\Services\ProductGroupImportService;
+use App\Services\ProductGroupWorkbookReader;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Writer\XLSX\Writer;
@@ -84,6 +86,7 @@ class ProductGroupImportTest extends TestCase
         $this->assertDatabaseMissing('product_groups', ['code' => 'OTHER']);
         $this->assertDatabaseHas('product_group_members', ['product_id' => $products[2]->id, 'product_group_id' => ProductGroup::query()->where('code', 'NEW')->sole()->id]);
         $this->assertSame('completed', $import->fresh()->status);
+        $this->assertSame(2, $import->fresh()->processed_rows);
     }
 
     public function test_generated_template_ignores_hidden_axis_dropdown_rows_when_reimported(): void
@@ -106,6 +109,7 @@ class ProductGroupImportTest extends TestCase
 
         $this->assertSame('completed', $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->total_rows);
+        $this->assertSame(1, $import->fresh()->processed_rows);
         $this->assertSame(0, $import->fresh()->failed_rows);
     }
 
@@ -120,6 +124,87 @@ class ProductGroupImportTest extends TestCase
         @unlink($path);
     }
 
+    public function test_excel_saved_workbook_with_blank_helper_header_creates_four_product_group(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $actor = $this->actor(['imports.manage', 'catalog.manage']);
+        [, $axis, $products] = $this->products(4);
+        foreach ($products as $index => $product) {
+            $product->update(['sku' => (string) (6000030 + $index)]);
+        }
+        $file = app(ProductGroupImportService::class)->createTemplate();
+        $reader = new Reader;
+        $reader->open($file['path']);
+        $headers = [];
+        foreach ($reader->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $row) {
+                $headers = $row->toArray();
+                break;
+            }
+            break;
+        }
+        $reader->close();
+        @unlink($file['path']);
+        $path = $this->workbook([
+            'Группы' => [
+                [...$headers, null],
+                ['Не изменять', '1465', '1465', '1465', 'Существующая группа 1', $axis->name],
+                ['Не изменять', '4578', '4578', '4578', 'Существующая группа 2', $axis->name],
+                [...array_pad(['Создать', 1234567, '', 1234567, 'Раковины цвета', $axis->name], 25, null), $axis->name],
+                [...array_fill(0, 25, null), 'Скрытый справочник'],
+            ],
+            'Состав' => [
+                ['Ключ группы', 'SKU', null],
+                [1234567, 6000030],
+                [1234567, 6000031],
+                [1234567, 6000032],
+                [1234567, 6000033],
+            ],
+        ]);
+
+        try {
+            $response = $this->actingAs($actor)->post('/api/v1/admin/products/group-import', [
+                'file' => new UploadedFile($path, 'groups.xlsx', ProductExportService::CONTENT_TYPE, null, true),
+            ])->assertAccepted();
+            $importId = $response->json('data.id');
+            $this->app->call([new ProcessProductImport($importId), 'handle']);
+
+            $this->actingAs($actor)->get("/api/v1/admin/product-group-imports/{$importId}")
+                ->assertOk()->assertJsonPath('data.status', 'completed')
+                ->assertJsonPath('data.total_rows', 3)->assertJsonPath('data.processed_rows', 3)
+                ->assertJsonPath('data.failed_rows', 0)->assertJsonPath('data.created_rows', 1);
+            $group = ProductGroup::query()->where('code', '1234567')->sole();
+            $this->assertSame('Раковины цвета', $group->name);
+            $this->assertEqualsCanonicalizing(array_map(fn (Product $product): int => $product->id, $products), $group->products->modelKeys());
+            $this->assertSame([$axis->id], $group->axes->modelKeys());
+            $this->app->call([new ProcessProductImport($importId), 'handle']);
+            $this->assertSame(3, ProductImport::query()->findOrFail($importId)->processed_rows);
+            $this->assertDatabaseCount('product_groups', 1);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_workbook_still_rejects_changed_headers(): void
+    {
+        $path = $this->workbook([
+            'Группы' => [
+                ['Действие', 'Изменённый заголовок', 'Исходный код', 'Код группы', 'Название', 'Ось 1', 'Ось 2', 'Ось 3', 'Ось 4', 'Ось 5', 'Ось 6', 'Ось 7', 'Ось 8', 'Ось 9', 'Ось 10', 'Ось 11', 'Ось 12', 'Ось 13', 'Ось 14', 'Ось 15', 'Ось 16', 'Ось 17', 'Ось 18', 'Ось 19', 'Ось 20'],
+                ['Создать', '1234567', '', '1234567', 'Раковины цвета', 'Цвет'],
+            ],
+            'Состав' => [['Ключ группы', 'SKU'], ['1234567', '6000030'], ['1234567', '6000031']],
+        ]);
+
+        try {
+            $this->expectException(ValidationException::class);
+            $this->expectExceptionMessage('Лист «Группы»: не изменяйте заголовки шаблона.');
+            app(ProductGroupWorkbookReader::class)->read($path);
+        } finally {
+            @unlink($path);
+        }
+    }
+
     public function test_invalid_composition_is_reported_without_changing_any_group(): void
     {
         Storage::fake('local');
@@ -128,6 +213,7 @@ class ProductGroupImportTest extends TestCase
         $path = $this->workbook([
             'Группы' => [
                 ['Действие', 'Ключ группы', 'Исходный код', 'Код группы', 'Название', 'Ось 1', 'Ось 2', 'Ось 3', 'Ось 4', 'Ось 5', 'Ось 6', 'Ось 7', 'Ось 8', 'Ось 9', 'Ось 10', 'Ось 11', 'Ось 12', 'Ось 13', 'Ось 14', 'Ось 15', 'Ось 16', 'Ось 17', 'Ось 18', 'Ось 19', 'Ось 20'],
+                ['Не изменять', 'EXISTING', 'EXISTING', 'EXISTING', 'Existing', $axis->name],
                 ['Создать', 'BAD', '', 'BAD', 'Bad', $axis->id.': '.$axis->name],
             ],
             'Состав' => [['Ключ группы', 'SKU'], ['BAD', $products[0]->sku], ['BAD', 'MISSING']],
@@ -139,6 +225,8 @@ class ProductGroupImportTest extends TestCase
         $this->app->call([new ProcessProductImport($import->id), 'handle']);
         $this->assertSame('completed', $import->fresh()->status);
         $this->assertSame(1, $import->fresh()->failed_rows);
+        $this->assertSame(2, $import->fresh()->total_rows);
+        $this->assertSame(2, $import->fresh()->processed_rows);
         $this->assertDatabaseMissing('product_groups', ['code' => 'BAD']);
     }
 

@@ -20,6 +20,18 @@ const readSource = (relativePath: string) =>
   readFileSync(new URL(relativePath, import.meta.url), 'utf8')
 
 describe('products feature boundaries', () => {
+  test('uses the approved information alert and Excel dropzone on price status import', () => {
+    const source = readSource(
+      '../src/features/products/components/ProductPriceStatusImportWorkspace.vue',
+    )
+
+    expect(source).toMatch(/<UiAlert\s+tone="info"/)
+    expect(source).toMatch(/<UiFileDropzone[\s\S]*?format-label="XLSX"/)
+    expect(source).toMatch(
+      /description="XLSX до 10 МБ\. Строки с ошибками не помешают обработать остальные\."/,
+    )
+  })
+
   test('keeps product domain types in the feature types module', () => {
     const editorComposable = readSource(
       '../src/features/products/composables/useProductEditor.ts',
@@ -51,9 +63,9 @@ describe('products feature boundaries', () => {
       'ProductVariantsSection.vue',
       'ProductRelationsSection.vue',
       'ProductReviewSection.vue',
-      'ProductImportDialog.vue',
-      'ProductGroupImportDialog.vue',
-      'ProductPriceStatusImportDialog.vue',
+      'ProductImportWorkspace.vue',
+      'ProductGroupImportWorkspace.vue',
+      'ProductPriceStatusImportWorkspace.vue',
     ]
 
     for (const componentName of componentNames) {
@@ -200,10 +212,7 @@ describe('shared page patterns', () => {
       '[contain:paint]',
     )
     expect(wrapper.get('[role="region"]').classes()).toContain(
-      'focus-visible:ring-2',
-    )
-    expect(wrapper.get('[role="region"]').classes()).toContain(
-      'focus-visible:ring-inset',
+      'admin-focus-inset',
     )
     expect(wrapper.get('table').classes()).toContain('min-w-[680px]')
     expect(wrapper.get('table').classes()).toContain('admin-table-employees')
@@ -225,6 +234,18 @@ describe('shared feedback and destructive confirmation', () => {
     )
   })
 
+  test('keeps the approved palette for additional informational alerts', () => {
+    const wrapper = mount(UiAlert, {
+      props: { tone: 'additional', live: 'polite' },
+      slots: { default: 'Дополнительное информационное сообщение.' },
+    })
+    const alert = wrapper.get('[role="status"]')
+
+    expect(alert.classes()).toContain('bg-blue-light-50')
+    expect(alert.classes()).toContain('text-blue-light-500')
+    expect(alert.attributes('aria-live')).toBe('polite')
+  })
+
   test('uses the shared dialog controls for destructive confirmation', async () => {
     const wrapper = mount(ConfirmDialog, {
       props: {
@@ -234,10 +255,25 @@ describe('shared feedback and destructive confirmation', () => {
       },
     })
 
-    await wrapper.get('button.bg-error-500').trigger('click')
+    const description = wrapper.get('#confirm-dialog-description')
+    expect(description.element.tagName).toBe('P')
+    expect(description.classes()).toContain('text-gray-500')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    const confirmButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Удалить')
+    const cancelButton = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Отмена')
+    expect(confirmButton).toBeDefined()
+    expect(cancelButton).toBeDefined()
+    await confirmButton!.trigger('click')
     expect(wrapper.emitted('confirm')).toEqual([[]])
-    await wrapper.get('button.text-gray-600').trigger('click')
+    expect(wrapper.emitted('close')).toBeUndefined()
+    await cancelButton!.trigger('click')
     expect(wrapper.emitted('close')).toEqual([[]])
+    expect(wrapper.emitted('confirm')).toEqual([[]])
+    wrapper.unmount()
   })
 })
 

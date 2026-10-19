@@ -44,7 +44,7 @@ class CategoryProductImportService
                 }
                 try {
                     $editing = isset($entry['values']['sku']) && is_string($entry['values']['sku']) && $entry['values']['sku'] !== '';
-                    $operation = DB::transaction(fn () => $this->importService->createTemplateRow($actor, $category, $entry['values'], $entry['row'], $editing));
+                    $operation = DB::transaction(fn () => $this->importService->createTemplateRow($actor, $category, $entry['values'], $entry['row'], $editing, ['import_id' => $locked->id]));
                     $operation === 'updated' ? $locked->updated_rows++ : $locked->created_rows++;
                 } catch (ValidationException|UniqueConstraintViolationException $exception) {
                     $locked->rowErrors()->create([

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { X } from '@lucide/vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -13,6 +15,7 @@ import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useSettingsWorkspace } from '../composables/useSettingsWorkspace'
 import type {
@@ -97,27 +100,28 @@ async function confirmPublish(): Promise<void> {
 </script>
 
 <template>
-  <section class="mx-auto admin-page space-y-6">
+  <AdminWorkspace mode="form" class="space-y-6">
     <PageHeader
       eyebrow="Контент"
       title="Настройки сайта"
       description="Публичные реквизиты, юридические документы и внутренние согласования."
     />
-    <UiAlert v-if="error" role="alert"
+    <UiNotification v-if="error"
       >{{ error }}
-      <UiButton v-if="!loaded" variant="ghost" size="sm" @click="load"
+      <UiButton v-if="!loaded" variant="surface" size="sm" @click="load"
         >Повторить загрузку</UiButton
-      ></UiAlert
+      ></UiNotification
     >
-    <p v-if="success" class="text-sm text-success-700" role="status">
-      {{ success }}
-    </p>
+    <UiNotification v-if="success" tone="success">{{ success }}</UiNotification>
     <UiLoadingState v-if="loading" label="Загрузка настроек…" />
     <template v-else-if="loaded">
-      <UiCard>
-        <form class="space-y-5" @submit.prevent="save">
+      <UiCard aria-labelledby="seller-details-title">
+        <template #header>
           <div>
-            <h2 class="text-lg font-semibold text-gray-800">
+            <h2
+              id="seller-details-title"
+              class="text-lg font-semibold text-gray-500"
+            >
               Реквизиты продавца
             </h2>
             <p class="mt-1 text-sm text-gray-500">
@@ -125,6 +129,8 @@ async function confirmPublish(): Promise<void> {
               реквизиты открываются отдельным переключателем.
             </p>
           </div>
+        </template>
+        <form class="space-y-5" @submit.prevent="save">
           <div
             class="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 [&>*]:min-w-0"
           >
@@ -183,7 +189,7 @@ async function confirmPublish(): Promise<void> {
             /></UiField>
           </div>
           <div class="border-t border-gray-100 pt-5">
-            <h3 class="mb-4 font-semibold text-gray-800">
+            <h3 class="mb-4 font-semibold text-gray-500">
               Банковские реквизиты
             </h3>
             <div
@@ -235,15 +241,22 @@ async function confirmPublish(): Promise<void> {
         </form>
       </UiCard>
 
-      <UiCard>
-        <h2 class="text-lg font-semibold text-gray-800">
-          Юридические документы
-        </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          Новая версия сохраняется черновиком. Публикация делает текст доступным
-          публично.
-        </p>
-        <form class="mt-5 space-y-4" @submit.prevent="addDocument">
+      <UiCard aria-labelledby="legal-documents-title">
+        <template #header>
+          <div>
+            <h2
+              id="legal-documents-title"
+              class="text-lg font-semibold text-gray-500"
+            >
+              Юридические документы
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Новая версия сохраняется черновиком. Публикация делает текст
+              доступным публично.
+            </p>
+          </div>
+        </template>
+        <form class="space-y-4" @submit.prevent="addDocument">
           <div
             class="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 [&>*]:min-w-0"
           >
@@ -286,7 +299,7 @@ async function confirmPublish(): Promise<void> {
             class="flex flex-wrap items-center justify-between gap-3 py-4"
           >
             <div class="min-w-0">
-              <p class="break-words font-medium text-gray-800">
+              <p class="break-words font-medium text-gray-500">
                 {{ label(documentOptions, document.type) }} ·
                 {{ document.version }}
               </p>
@@ -317,32 +330,40 @@ async function confirmPublish(): Promise<void> {
       <UiDialog
         :open="Boolean(preview)"
         labelledby="legal-preview-title"
-        panel-class="w-full max-w-2xl rounded-xl bg-white p-5 shadow-xl"
+        panel-class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl"
         :close-disabled="Boolean(busyAction)"
         @close="preview = null"
       >
-        <h2
-          id="legal-preview-title"
-          class="text-lg font-semibold text-gray-800"
-        >
-          {{ preview ? label(documentOptions, preview.type) : '' }} ·
-          {{ preview?.version }}
-        </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          {{
-            preview?.published_at
-              ? 'Опубликованная версия'
-              : 'Черновик. Проверьте текст перед публикацией.'
-          }}
-        </p>
+        <div class="flex items-start justify-between gap-4">
+          <h2
+            id="legal-preview-title"
+            class="text-lg font-semibold text-gray-500"
+          >
+            {{ preview ? label(documentOptions, preview.type) : '' }} ·
+            {{ preview?.version }}
+          </h2>
+          <UiButton
+            variant="surface"
+            aria-label="Закрыть предпросмотр документа"
+            :disabled="Boolean(busyAction)"
+            @click="preview = null"
+          >
+            <X :size="20" />
+          </UiButton>
+        </div>
         <div
           class="mt-4 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-gray-25 p-4"
         >
           <pre
-            class="whitespace-pre-wrap break-words font-sans text-sm text-gray-700"
+            class="whitespace-pre-wrap break-words font-sans text-sm text-gray-500"
             >{{ preview?.body }}</pre>
         </div>
-        <div class="mt-5 flex flex-wrap justify-end gap-2">
+        <UiDialogFooter>
+          <template #note>{{
+            preview?.published_at
+              ? 'Опубликованная версия'
+              : 'Черновик. Проверьте текст перед публикацией.'
+          }}</template>
           <UiButton
             variant="secondary"
             :disabled="Boolean(busyAction)"
@@ -356,22 +377,25 @@ async function confirmPublish(): Promise<void> {
             @click="confirmPublish"
             >Опубликовать эту версию</UiButton
           >
-        </div>
+        </UiDialogFooter>
       </UiDialog>
 
-      <UiCard>
-        <h2 class="text-lg font-semibold text-gray-800">
-          Согласования ADR-014
-        </h2>
-        <p class="mt-1 text-sm text-gray-500">
-          Внутренний журнал решений. Запись не включает production-сбор ПДн и не
-          заменяет внешнюю юридическую проверку.
-        </p>
-        <form
-          v-if="canApprove"
-          class="mt-5 space-y-4"
-          @submit.prevent="addApproval"
-        >
+      <UiCard aria-labelledby="approvals-title">
+        <template #header>
+          <div>
+            <h2
+              id="approvals-title"
+              class="text-lg font-semibold text-gray-500"
+            >
+              Согласования ADR-014
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Внутренний журнал решений. Запись не включает production-сбор ПДн
+              и не заменяет внешнюю юридическую проверку.
+            </p>
+          </div>
+        </template>
+        <form v-if="canApprove" class="space-y-4" @submit.prevent="addApproval">
           <div
             class="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 [&>*]:min-w-0"
           >
@@ -430,7 +454,7 @@ async function confirmPublish(): Promise<void> {
             class="flex flex-wrap items-center justify-between gap-2 py-4 text-sm"
           >
             <div class="min-w-0 break-words">
-              <p class="font-medium text-gray-800">
+              <p class="font-medium text-gray-500">
                 {{ label(roleOptions, approval.role) }} ·
                 {{ approval.reviewer_name }}
               </p>
@@ -438,7 +462,7 @@ async function confirmPublish(): Promise<void> {
                 {{ approval.decided_on }} · запись #{{ approval.id }}
               </p>
               <UiButton
-                variant="ghost"
+                variant="surface"
                 size="sm"
                 :aria-label="`Просмотреть политику ПДн, документ ${approval.document_version_id}`"
                 @click="openApprovedDocument(approval.document_version_id)"
@@ -463,5 +487,5 @@ async function confirmPublish(): Promise<void> {
         />
       </UiCard>
     </template>
-  </section>
+  </AdminWorkspace>
 </template>

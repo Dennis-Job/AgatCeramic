@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures'
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { blankBlockData } from '../src/features/pages/validation/blocks'
 
 test('home route uses typed blocks with saved preview, pending notice and separate publication', async ({
@@ -93,12 +93,14 @@ test('home route uses typed blocks with saved preview, pending notice and separa
   await expect(
     page.getByRole('button', { name: 'Блоки и порядок', exact: true }),
   ).toHaveCount(0)
+  await page.getByRole('tab', { name: 'SEO', exact: true }).click()
   await expect(
     page.getByRole('heading', { name: 'SEO страницы' }),
   ).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Изображение Open Graph', exact: true }),
   ).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Блоки', exact: true }).click()
   const frame = page.frameLocator('iframe[title="Сохранённый черновик: home"]')
   await expect(frame.getByRole('heading')).toHaveText('Исходное промо')
   const loads = previewLoads
@@ -131,6 +133,16 @@ test('home route uses typed blocks with saved preview, pending notice and separa
   await expect(
     page.getByRole('link', { name: 'Открыть опубликованную страницу' }),
   ).toHaveAttribute('href', 'http://localhost:3000/')
+  // Audit the settled size control, after its secondary → primary transition.
+  await page
+    .getByRole('group', { name: 'Размер предпросмотра' })
+    .evaluate(async (element) => {
+      await Promise.all(
+        element
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished),
+      )
+    })
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })

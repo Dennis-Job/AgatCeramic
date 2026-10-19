@@ -26,7 +26,7 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
 <template>
   <div v-if="section === 'header'" class="space-y-5">
     <div>
-      <h2 class="text-lg font-semibold text-gray-800">Шапка сайта</h2>
+      <h2 class="text-lg font-semibold text-gray-500">Шапка сайта</h2>
       <p class="mt-1 text-sm text-gray-500">
         Эти тексты и ссылки видны на всех страницах сайта.
       </p>
@@ -54,26 +54,26 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
     <UiField label="Описание логотипа"
       ><UiInput v-model="content.header.logo_alt"
     /></UiField>
-    <h3 class="font-medium text-gray-800">Навигация</h3>
+    <h3 class="font-medium text-gray-500">Навигация</h3>
     <div
       v-for="(link, index) in content.header.navigation"
       :key="index"
-      class="rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset p-4"
     >
       <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <span class="text-sm font-medium text-gray-700"
+        <span class="text-sm font-medium text-gray-500"
           >Пункт {{ index + 1 }}</span
         >
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять пункт меню ${index + 1}`"
             @click="move(content.header.navigation, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.header.navigation.length - 1"
             :aria-label="`Опустить пункт меню ${index + 1}`"
@@ -105,7 +105,7 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
   </div>
   <div v-else class="space-y-5">
     <div>
-      <h2 class="text-lg font-semibold text-gray-800">Подвал сайта</h2>
+      <h2 class="text-lg font-semibold text-gray-500">Подвал сайта</h2>
       <p class="mt-1 text-sm text-gray-500">
         Изменения применяются на всех страницах сайта.
       </p>
@@ -113,26 +113,26 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
     <UiField label="Слоган под логотипом"
       ><UiInput v-model="content.footer.tagline"
     /></UiField>
-    <h3 class="font-medium text-gray-800">Ссылки «Исследовать»</h3>
+    <h3 class="font-medium text-gray-500">Ссылки «Исследовать»</h3>
     <div
       v-for="(link, index) in content.footer.explore_links"
       :key="index"
-      class="rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset p-4"
     >
       <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <span class="text-sm font-medium text-gray-700"
+        <span class="text-sm font-medium text-gray-500"
           >Ссылка {{ index + 1 }}</span
         >
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять ссылку ${index + 1}`"
             @click="move(content.footer.explore_links, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.footer.explore_links.length - 1"
             :aria-label="`Опустить ссылку ${index + 1}`"
@@ -160,7 +160,7 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
       @click="content.footer.explore_links.push({ label: '', to: '' })"
       >Добавить ссылку</UiButton
     >
-    <h3 class="border-t border-gray-200 pt-5 font-medium text-gray-800">
+    <h3 class="border-t border-gray-200 pt-5 font-medium text-gray-500">
       Текстовый блок
     </h3>
     <div class="grid gap-4 md:grid-cols-2">
@@ -176,7 +176,7 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
     <UiField label="Ссылка" help="Внутренний путь /... или HTTPS-адрес."
       ><UiInput v-model="content.footer.message.link_url"
     /></UiField>
-    <h3 class="border-t border-gray-200 pt-5 font-medium text-gray-800">
+    <h3 class="border-t border-gray-200 pt-5 font-medium text-gray-500">
       Нижняя строка
     </h3>
     <div class="grid gap-4 md:grid-cols-2">

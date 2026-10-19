@@ -96,6 +96,7 @@ Route::get('orders/{order}/status-history', [OrderController::class, 'statusHist
 Route::get('orders/{order}/comments', [OrderController::class, 'comments'])->name('orders.comments.index');
 Route::post('orders/{order}/comments', [OrderController::class, 'storeComment'])->name('orders.comments.store');
 Route::patch('orders/{order}/payment', [OrderController::class, 'updatePayment'])->name('orders.payment.update');
+Route::get('categories/overview', [CategoryController::class, 'overview'])->name('categories.overview');
 Route::get('categories/tree', [CategoryController::class, 'tree'])->name('categories.tree');
 Route::get('categories/{category}/attributes', [CategoryAttributeController::class, 'index'])->name('categories.attributes.index');
 Route::put('categories/{category}/attributes', [CategoryAttributeController::class, 'replace'])->name('categories.attributes.replace');
@@ -105,7 +106,9 @@ Route::apiResource('categories', CategoryController::class);
 Route::apiResource('attribute-groups', AttributeGroupController::class);
 Route::apiResource('attributes', AttributeController::class);
 Route::apiResource('brands', BrandController::class);
+Route::get('products/filter-counts', [ProductController::class, 'filterCounts'])->name('products.filter-counts');
 Route::get('products/export', ProductExportController::class)->name('products.export');
+Route::post('products/export', ProductExportController::class)->name('products.export-selected');
 Route::get('products/import-template', [ProductImportController::class, 'template'])->name('products.import-template');
 Route::post('products/import', [ProductImportController::class, 'store'])->name('products.import');
 Route::get('product-imports/{productImport}', [ProductImportController::class, 'show'])->name('product-imports.show');

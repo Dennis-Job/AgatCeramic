@@ -1,24 +1,23 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { BadgeCheck, Pencil, Plus, Trash2 } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
-import UiBadge from '../../../components/ui/UiBadge.vue'
+import { Plus } from '@lucide/vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
-import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
-import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
+import UiInput from '../../../components/ui/UiInput.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import { countryName } from '../../../constants/countries'
 import { useAuthStore } from '../../../stores/auth'
 import { useBrandCatalog } from '../composables/useBrandCatalog'
 import { useBrandForm } from '../composables/useBrandForm'
 import type { Brand } from '../types/brand.types'
 import BrandFormDialog from './BrandFormDialog.vue'
+import BrandsList from './BrandsList.vue'
 const auth = useAuthStore()
 const catalog = useBrandCatalog()
 const {
+  search,
   brands,
   pagination,
   error,
@@ -33,6 +32,8 @@ const {
   open,
   title,
   busy: saving,
+  mediaPending,
+  mediaUploading,
   error: formError,
   form,
   show,
@@ -61,54 +62,47 @@ async function remove() {
 onMounted(load)
 </script>
 <template>
-  <section class="mx-auto admin-page">
-    <PageHeader class="mb-7" eyebrow="Каталог" title="Бренды"
-      ><template #actions
-        ><UiButton v-if="canManage" @click="show()"
-          ><Plus :size="18" />Добавить бренд</UiButton
-        ></template
-      ></PageHeader
-    ><UiAlert v-if="error" class="mb-4">{{ error }}</UiAlert
-    ><UiCard class="overflow-hidden"
-      ><UiLoadingState v-if="loading" label="Загрузка брендов…" />
-      <div v-else-if="brands.length" class="divide-y">
-        <article
-          v-for="brand in brands"
-          :key="brand.id"
-          class="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:items-center"
-        >
-          <BadgeCheck class="shrink-0 text-primary-600" />
-          <div class="min-w-0 flex-[1_1_calc(100%-52px)] sm:flex-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <h2 class="break-words font-semibold">{{ brand.name }}</h2>
-              <UiBadge :tone="brand.is_active ? 'success' : 'neutral'">{{
-                brand.is_active ? 'Активен' : 'Скрыт'
-              }}</UiBadge>
-            </div>
-            <p class="break-words text-sm text-gray-500">
-              /{{ brand.slug }} · {{ countryName(brand.country_code ?? '') }}
-            </p>
-          </div>
-          <div v-if="canManage" class="ml-[52px] flex sm:ml-0">
-            <UiButton
-              variant="ghost"
-              size="sm"
-              :aria-label="`Редактировать бренд ${brand.name}`"
-              @click="show(brand)"
-              ><Pencil :size="17" /></UiButton
-            ><UiButton
-              variant="ghost"
-              size="sm"
-              :aria-label="`Удалить бренд ${brand.name}`"
-              @click="deleting = brand"
-              ><Trash2 :size="17"
-            /></UiButton>
-          </div>
-        </article>
-      </div>
-      <UiEmptyState v-else label="Брендов пока нет." /></UiCard
-    ><UiPagination
-      v-if="pagination"
+  <AdminWorkspace mode="list">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Каталог" title="Бренды"
+        ><template #actions>
+          <form
+            class="w-full sm:w-72"
+            role="search"
+            aria-label="Поиск брендов"
+            @submit.prevent
+          >
+            <UiInput
+              v-model="search"
+              searchable
+              maxlength="255"
+              aria-label="Поиск брендов"
+              placeholder="Название или slug бренда"
+            />
+          </form>
+          <UiButton v-if="canManage" class="shrink-0" @click="show()"
+            ><Plus :size="18" />Добавить бренд</UiButton
+          ></template
+        ></PageHeader
+      >
+    </template>
+    <UiNotification v-if="error">{{ error }}</UiNotification>
+    <div v-if="error" class="admin-container mb-4">
+      <UiButton variant="surface" :disabled="loading" @click="load()"
+        >Повторить загрузку</UiButton
+      >
+    </div>
+    <BrandsList
+      v-if="!error || loading"
+      :brands="brands"
+      :search="search"
+      :loading="loading"
+      :can-manage="canManage"
+      @edit="show"
+      @remove="deleting = $event"
+    /><UiPagination
+      v-if="pagination && !error"
+      class="admin-container"
       :meta="pagination"
       :loading="loading"
       @change="load"
@@ -116,10 +110,14 @@ onMounted(load)
       :open="open"
       :title="title"
       :busy="saving"
+      :media-pending="mediaPending"
+      :media-uploading="mediaUploading"
       :error="formError"
       :form="form"
       @close="close"
       @submit="submit"
+      @media-pending="mediaPending = $event"
+      @media-uploading="mediaUploading = $event"
       @update-name="updateName"
       @update-slug="updateSlug"
     /><ConfirmDialog
@@ -130,5 +128,5 @@ onMounted(load)
       @close="deleting = null"
       @confirm="remove"
     />
-  </section>
+  </AdminWorkspace>
 </template>

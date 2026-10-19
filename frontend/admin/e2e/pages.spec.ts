@@ -1,8 +1,69 @@
 import { expect, test } from './fixtures'
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
+import { mockContentWorkspace } from './contentWorkspaceApi'
 import type { ContentPage } from '../src/features/pages/types/page.types'
 
 const timestamp = '2026-09-25T10:00:00Z'
+
+test('new page dialog keeps actions reachable while its fields scroll', async ({
+  page,
+}) => {
+  await mockContentWorkspace(page)
+  await page.goto('/content')
+  const opener = page.getByRole('button', { name: 'Добавить страницу' })
+  await opener.click()
+  const dialog = page.getByRole('dialog', { name: 'Новая страница' })
+  const cancel = dialog.getByRole('button', { name: 'Отмена', exact: true })
+  const save = dialog.getByRole('button', {
+    name: 'Сохранить черновик',
+    exact: true,
+  })
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 600 })
+    await expect(cancel).toBeInViewport()
+    await expect(save).toBeInViewport()
+    const cancelBox = (await cancel.boundingBox())!
+    const saveBox = (await save.boundingBox())!
+    expect(Math.abs(cancelBox.y - saveBox.y)).toBeLessThan(1)
+    expect(
+      await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true)
+    const bounds = (await dialog.boundingBox())!
+    expect(bounds.y).toBeGreaterThanOrEqual(0)
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(600)
+    await page.screenshot({
+      path: test.info().outputPath(`page-dialog-${width}.png`),
+    })
+  }
+  await page.setViewportSize({ width: 1280, height: 400 })
+  const scrollArea = dialog
+    .locator('div')
+    .filter({ has: page.getByLabel('Заголовок') })
+    .last()
+  // Scroll the form area beside the controls, leaving the action row fixed.
+  const area = (await scrollArea.boundingBox())!
+  const before = (await save.boundingBox())!
+  await page.mouse.move(area.x + 2, area.y + area.height / 2)
+  await page.mouse.wheel(0, 800)
+  await expect
+    .poll(() =>
+      dialog.evaluate((el) =>
+        Array.from(el.querySelectorAll('div')).some((n) => n.scrollTop > 0),
+      ),
+    )
+    .toBe(true)
+  await expect(save).toBeInViewport()
+  expect((await save.boundingBox())!.y).toBe(before.y)
+  await page.screenshot({
+    path: test.info().outputPath('page-dialog-short.png'),
+  })
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  await expect(opener).toBeFocused()
+  await opener.click()
+  await cancel.click()
+  await expect(opener).toBeFocused()
+})
 
 test('content editor creates a draft, publishes it, and deletes it', async ({
   page,
@@ -109,31 +170,37 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   await expect(page.getByText('Черновик', { exact: true })).toBeVisible()
   expect(publishedBody).toBeNull()
 
-  await page.getByRole('button', { name: 'Опубликовать черновик' }).click()
+  await page
+    .getByRole('button', { name: 'Опубликовать блоки страницы' })
+    .click()
   await expect(page.getByRole('alert')).toHaveText(
     'Проверьте черновик перед публикацией.',
   )
-  await page.getByRole('button', { name: 'Опубликовать черновик' }).click()
+  await page
+    .getByRole('button', { name: 'Опубликовать блоки страницы' })
+    .click()
   await expect(page.getByText('Опубликована', { exact: true })).toBeVisible()
   expect(publishedBody).toBe('История компании.')
 
-  await page
-    .getByRole('button', { name: 'Редактировать страницу О компании' })
-    .click()
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
   await page.getByLabel('Текст страницы').fill('Новая история компании.')
   await page
-    .getByRole('button', { name: 'Сохранить черновик', exact: true })
+    .getByRole('button', { name: 'Сохранить черновик блоков', exact: true })
     .click()
   await expect(
     page.getByText('В черновике есть неопубликованные изменения.'),
   ).toBeVisible()
   expect(publishedBody).toBe('История компании.')
-  await page.getByRole('button', { name: 'Опубликовать черновик' }).click()
+  await page
+    .getByRole('button', { name: 'Опубликовать блоки страницы' })
+    .click()
   await expect(page.getByText('Опубликована', { exact: true })).toBeVisible()
   await expect(
-    page.getByRole('button', { name: 'Опубликовать черновик' }),
+    page.getByRole('button', { name: 'Опубликовать блоки страницы' }),
   ).toBeDisabled()
-  expect(publishedBody).toBe('Новая история компании.')
+  // The published badge is already visible and busy also disables this button;
+  // wait for the publication request to apply before asserting its snapshot.
+  await expect.poll(() => publishedBody).toBe('Новая история компании.')
   expect(submittedPublicationStates).toEqual([undefined, undefined])
   await page.screenshot({
     path: test.info().outputPath('page-published.png'),
@@ -160,7 +227,9 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   const navigation = await page
     .getByRole('navigation', { name: 'Выбор страницы сайта' })
     .boundingBox()
-  const preview = await page.getByLabel('Предпросмотр страницы').boundingBox()
+  const preview = await page
+    .getByRole('region', { name: 'Предпросмотр', exact: true })
+    .boundingBox()
   expect(navigation).not.toBeNull()
   expect(preview).not.toBeNull()
   expect(preview!.x).toBeGreaterThan(navigation!.x + navigation!.width)
@@ -169,6 +238,7 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   await expect(page.getByText('Черновик', { exact: true })).toBeVisible()
   expect(submittedPublicationStates).toEqual([undefined, undefined, false])
 
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
   await page
     .getByRole('button', { name: 'Удалить страницу О компании' })
     .click()
@@ -227,6 +297,9 @@ test('content editor opens a page outside the current list from its URL', async 
 
   await page.goto('/content?page=77')
   await expect(page.getByRole('heading', { name: 'Доставка' })).toBeVisible()
-  await expect(page.getByText('Информация о доставке.')).toBeVisible()
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
+  await expect(
+    page.getByRole('textbox', { name: /^Текст страницы/ }),
+  ).toHaveValue('Информация о доставке.')
   await expect(page.getByText('Страниц пока нет.')).toHaveCount(0)
 })

@@ -1,21 +1,87 @@
-.admin-page {
-  max-width: 1440px;
-}
-.admin-page > .grid,
-.admin-page > .grid > * {
+.admin-container {
+  width: 100%;
   min-width: 0;
-}
-.admin-sidebar {
-  width: 290px;
-}
-.admin-nav-heading {
-  letter-spacing: 0.08em;
-}
-.admin-header {
-  height: 76px;
+  max-width: var(--admin-container-max-width);
+  margin-inline: auto;
 }
 .admin-dialog-content {
   max-height: 90vh;
+  max-height: 90dvh;
+}
+/* Dialog sections stay visually connected without changing their spacing. */
+.admin-dialog-content [class~='border-t'],
+.admin-dialog-content [class*='border-t-'],
+.admin-dialog-content [class~='border-b'],
+.admin-dialog-content [class*='border-b-'],
+.admin-dialog-content [class~='border-y'],
+.admin-dialog-content [class*='border-y-'],
+[data-modal-floating-select-menu] [class~='border-t'],
+[data-modal-floating-select-menu] [class*='border-t-'],
+[data-modal-floating-select-menu] [class~='border-b'],
+[data-modal-floating-select-menu] [class*='border-b-'],
+[data-modal-floating-select-menu] [class~='border-y'],
+[data-modal-floating-select-menu] [class*='border-y-'] {
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+}
+.admin-dialog-content [class*='divide-y'] > *,
+[data-modal-floating-select-menu] [class*='divide-y'] > * {
+  border-block-color: transparent !important;
+}
+.admin-dialog-overlay {
+  background: var(--admin-dialog-backdrop-color);
+  -webkit-backdrop-filter: var(--admin-dialog-backdrop-filter);
+  backdrop-filter: var(--admin-dialog-backdrop-filter);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel) {
+  border-radius: var(--admin-dialog-radius);
+  background: var(--admin-color-white);
+  box-shadow: var(--admin-shadow-dialog);
+}
+.admin-dialog-content > form {
+  border-radius: var(--admin-dialog-radius);
+  background: var(--admin-color-white);
+  padding: var(--admin-dialog-content-padding);
+  box-shadow: none;
+}
+.admin-dialog-content > form > .sticky.bottom-0 {
+  margin-inline: calc(0px - var(--admin-dialog-content-padding));
+  margin-block-end: calc(0px - var(--admin-dialog-content-padding));
+  padding-inline: var(--admin-dialog-content-padding);
+  border-end-start-radius: var(--admin-dialog-radius);
+  border-end-end-radius: var(--admin-dialog-radius);
+}
+.admin-dialog-content > .sticky.bottom-0 {
+  border-end-start-radius: var(--admin-dialog-radius);
+  border-end-end-radius: var(--admin-dialog-radius);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel)
+  button[aria-label^='Закрыть']:not(.admin-notification-close) {
+  width: var(--admin-dialog-close-size);
+  height: var(--admin-dialog-close-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--admin-color-gray-50);
+  color: var(--admin-color-gray-500);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel)
+  button[aria-label^='Закрыть']:not(.admin-notification-close):hover:not(
+    :disabled
+  ) {
+  background: var(--admin-color-gray-100);
+  color: var(--admin-color-gray-500);
+}
+.admin-dialog-content:not(.admin-navigation-dialog-panel)
+  button[aria-label^='Закрыть']:not(.admin-notification-close):disabled {
+  cursor: not-allowed;
+  background: var(--admin-color-gray-100);
+  color: var(--admin-color-gray-500);
+}
+.admin-dialog-overlay.admin-navigation-dialog-overlay {
+  background: rgb(17 24 32 / 0.5);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .dashboard-sales-grid {
   grid-template-columns: 1fr;
@@ -30,8 +96,7 @@
   min-width: 850px;
 }
 .logo-primary {
-  filter: brightness(0) saturate(100%) invert(28%) sepia(98%) saturate(3000%)
-    hue-rotate(231deg) brightness(95%) contrast(101%);
+  filter: var(--admin-logo-filter);
 }
 @media (max-width: 639px) {
   .admin-dialog-content .mt-3.flex.gap-2 {
@@ -50,16 +115,6 @@
     grid-template-columns: minmax(0, 1fr) 180px auto;
   }
 }
-@media (min-width: 768px) {
-  .admin-header-search {
-    max-width: 360px;
-  }
-}
-@media (min-width: 1024px) {
-  .admin-layout-main {
-    padding-left: 290px;
-  }
-}
 @media (min-width: 1280px) {
   .dashboard-sales-grid {
     grid-template-columns: 1.65fr 1fr;
@@ -67,4 +122,21 @@
   .admin-audit-log-filter-grid {
     grid-template-columns: minmax(0, 1fr) 220px 170px 170px auto auto;
   }
+}
+
+/* Portalled tooltips remain visible outside scroll regions and dialogs. */
+.admin-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: min(20rem, calc(100vw - 1rem));
+  padding: var(--admin-spacing-2) var(--admin-spacing-3);
+  border-radius: var(--admin-radius-lg);
+  border: var(--admin-border-width) solid var(--admin-color-gray-200);
+  background: var(--admin-color-white);
+  color: var(--admin-color-gray-500);
+  box-shadow: var(--admin-shadow-dropdown);
+  font-family: var(--admin-font-sans);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }

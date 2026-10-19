@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AdminUserStatus;
+use App\Models\AuditLog;
 use App\Models\ProductImageImport;
 use App\Models\ProductImport;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ class ImportLifecycleService
         private readonly ImportDispatchService $dispatchService,
         private readonly PermissionChecker $permissionChecker,
         private readonly StorageCleanupService $cleanupService,
+        private readonly AuditLogService $audit,
     ) {}
 
     public function startProductImport(int $id): ?ProductImport
@@ -81,9 +83,13 @@ class ImportLifecycleService
     {
         DB::transaction(function () use ($import): void {
             $locked = ProductImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status === 'failed') {
+                return;
+            }
             if ($locked->status !== 'completed') {
                 $locked->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
             }
+            $this->recordTerminal($locked, 'import.completed');
             $this->cleanupService->schedule($locked->disk, $locked->path);
             $this->dispatchService->completeProductImport($locked);
         });
@@ -93,9 +99,13 @@ class ImportLifecycleService
     {
         DB::transaction(function () use ($import): void {
             $locked = ProductImageImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status === 'failed') {
+                return;
+            }
             if ($locked->status !== 'completed') {
                 $locked->forceFill(['status' => 'completed', 'error_message' => null, 'completed_at' => now()])->save();
             }
+            $this->recordTerminal($locked, 'image-import.completed');
             $this->cleanupService->schedule($locked->disk, $locked->path);
             $this->dispatchService->completeProductImageImport($locked);
         });
@@ -109,6 +119,7 @@ class ImportLifecycleService
                 return;
             }
             $import->forceFill(['status' => 'failed', 'error_message' => mb_substr($message, 0, 2000), 'completed_at' => now()])->save();
+            $this->recordTerminal($import, 'import.failed');
             $this->cleanupService->schedule($import->disk, $import->path);
             $this->dispatchService->completeProductImport($import);
         });
@@ -122,8 +133,31 @@ class ImportLifecycleService
                 return;
             }
             $import->forceFill(['status' => 'failed', 'error_message' => mb_substr($message, 0, 2000), 'completed_at' => now()])->save();
+            $this->recordTerminal($import, 'image-import.failed');
             $this->cleanupService->schedule($import->disk, $import->path);
             $this->dispatchService->completeProductImageImport($import);
         });
+    }
+
+    private function recordTerminal(ProductImport|ProductImageImport $import, string $action): void
+    {
+        // The import row is locked by the caller; preflight may already have completed it.
+        if (AuditLog::query()->where('entity_type', $import::class)->where('entity_id', $import->id)->where('action', $action)->exists()) {
+            return;
+        }
+
+        $counts = $import instanceof ProductImport
+            ? ['total' => $import->total_rows, 'processed' => $import->processed_rows, 'created' => $import->created_rows, 'updated' => $import->updated_rows, 'failed' => $import->failed_rows]
+            : ['total' => $import->total_folders, 'processed' => $import->processed_folders, 'created' => $import->created_images, 'replaced' => $import->replaced_images, 'failed' => $import->failed_folders];
+        // Employee deletion may clear user_id; the immutable submission retains its initiator.
+        $initiatedBy = $import->user === null
+            ? AuditLog::query()->where('entity_type', $import::class)->where('entity_id', $import->id)
+                ->where('action', $import instanceof ProductImport ? 'import.submitted' : 'image-import.submitted')->first()
+            : null;
+        $this->audit->record($import->user, $action, $import, [
+            'import_id' => $import->id,
+            'operation' => $import instanceof ProductImport ? ($import->operation ?? 'product') : 'image',
+            ...$counts,
+        ], $initiatedBy);
     }
 }

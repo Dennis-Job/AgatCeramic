@@ -41,9 +41,43 @@ class ProductSearchFilterTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $match->id);
     }
 
+    public function test_product_filter_counts_use_the_selected_filters_in_one_response(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $category = Category::factory()->create();
+        $otherCategory = Category::factory()->create();
+
+        Product::factory()->create(['category_id' => $category->id, 'is_active' => true, 'is_on_sale' => true]);
+        Product::factory()->create(['category_id' => $category->id, 'is_active' => true, 'is_on_sale' => false]);
+        Product::factory()->create(['category_id' => $category->id, 'is_active' => false, 'is_on_sale' => true]);
+        Product::factory()->create(['category_id' => $category->id, 'is_active' => false, 'is_on_sale' => false]);
+        Product::factory()->create(['category_id' => $otherCategory->id, 'is_active' => true, 'is_on_sale' => true]);
+
+        $this->actingAs($actor)
+            ->getJson("/api/v1/admin/products/filter-counts?category_id={$category->id}&is_active=1")
+            ->assertOk()
+            ->assertExactJson(['data' => [
+                'active' => 2,
+                'hidden' => 2,
+                'sale' => 1,
+                'regular' => 1,
+            ]]);
+
+        $this->actingAs($actor)
+            ->getJson("/api/v1/admin/products/filter-counts?category_id={$category->id}&is_on_sale=1")
+            ->assertOk()
+            ->assertExactJson(['data' => [
+                'active' => 1,
+                'hidden' => 1,
+                'sale' => 2,
+                'regular' => 2,
+            ]]);
+    }
+
     public function test_product_filters_validate_and_require_catalog_access(): void
     {
         $this->actingAs($this->userWithRole('analyst'))->getJson('/api/v1/admin/products?search=tile')->assertForbidden();
+        $this->actingAs($this->userWithRole('analyst'))->getJson('/api/v1/admin/products/filter-counts')->assertForbidden();
         $actor = $this->userWithRole('catalog-manager');
 
         $this->actingAs($actor)->getJson('/api/v1/admin/products?price_from=100&price_to=10&has_stock=invalid&is_on_sale=invalid')

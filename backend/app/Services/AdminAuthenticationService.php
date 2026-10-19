@@ -85,10 +85,13 @@ class AdminAuthenticationService
     public function updateProfile(User $user, array $attributes): User
     {
         return DB::transaction(function () use ($user, $attributes): User {
+            $user = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $before = $this->auditLogService->capture($user);
             $passwordChanged = array_key_exists('password', $attributes);
-            $changedFields = array_keys(array_diff_key($attributes, ['password' => true]));
 
             $user->fill($attributes);
+            $fields = array_keys(array_diff_key($user->getDirty(), ['remember_token' => true]));
+            $changedFields = array_values(array_diff($fields, ['password']));
 
             if ($passwordChanged) {
                 $user->forceFill(['remember_token' => Str::random(60)]);
@@ -100,7 +103,8 @@ class AdminAuthenticationService
                 DB::table('sessions')->where('user_id', $user->getKey())->delete();
             }
 
-            $this->auditLogService->record($user, 'auth.profile.updated', $user, [
+            $this->auditLogService->recordUpdated($user, 'auth.profile.updated', $user, $before, [
+                'fields' => $fields,
                 'changed_fields' => $changedFields,
                 'credentials_changed' => $passwordChanged,
             ]);

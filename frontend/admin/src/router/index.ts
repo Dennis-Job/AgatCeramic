@@ -20,6 +20,9 @@ import UiKitView from '../views/UiKitView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ContentView from '../views/ContentView.vue'
 import MediaView from '../views/MediaView.vue'
+import ProductImportView from '../views/ProductImportView.vue'
+import ProductPriceStatusImportView from '../views/ProductPriceStatusImportView.vue'
+import ProductGroupImportView from '../views/ProductGroupImportView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -51,7 +54,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
-        title: 'Группы характеристик',
+        title: 'Характеристики',
       },
     },
     {
@@ -72,6 +75,36 @@ const router = createRouter({
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
         title: 'Товары',
+      },
+    },
+    {
+      path: '/products/import',
+      component: ProductImportView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'imports.manage',
+        additionalPermission: 'catalog.manage',
+        title: 'Добавить массово товары',
+      },
+    },
+    {
+      path: '/products/price-status',
+      component: ProductPriceStatusImportView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'imports.manage',
+        additionalPermission: 'catalog.manage',
+        title: 'Цены и статусы',
+      },
+    },
+    {
+      path: '/products/combine',
+      component: ProductGroupImportView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'imports.manage',
+        additionalPermission: 'catalog.manage',
+        title: 'Объединить товары',
       },
     },
     {
@@ -111,7 +144,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'admin-users.view',
-        title: 'Сотрудники',
+        title: 'Команда и доступ — Сотрудники',
       },
     },
     {
@@ -121,7 +154,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'roles.view',
-        title: 'Роли',
+        title: 'Команда и доступ — Роли и права',
       },
     },
     {
@@ -131,7 +164,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         requiredPermission: 'permissions.view',
-        title: 'Права доступа',
+        title: 'Команда и доступ — Справочник прав',
       },
     },
     {
@@ -224,8 +257,10 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.user) return { name: 'login' }
   if (to.meta.guestOnly && auth.user) return { name: 'dashboard' }
   if (
-    to.meta.requiredPermission &&
-    !auth.hasPermission(to.meta.requiredPermission as string)
+    (to.meta.requiredPermission &&
+      !auth.hasPermission(to.meta.requiredPermission as string)) ||
+    (to.meta.additionalPermission &&
+      !auth.hasPermission(to.meta.additionalPermission as string))
   )
     return { name: 'dashboard' }
 })

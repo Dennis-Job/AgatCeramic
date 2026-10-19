@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import {
   attribute,
@@ -6,6 +6,7 @@ import {
   optionalSelectAttribute,
 } from './catalogApi'
 import { createDeferredApiRequests } from './deferredApi'
+import { mockAttributesWorkspace } from './attributesWorkspaceApi'
 
 const catalogRoutes = [
   {
@@ -17,7 +18,7 @@ const catalogRoutes = [
   },
   {
     path: '/categories',
-    apiPath: '/admin/categories/tree',
+    apiPath: '/admin/categories/overview',
     heading: 'Категории',
     item: 'Керамогранит',
     loadingLabel: 'Загрузка категорий…',
@@ -32,9 +33,9 @@ const catalogRoutes = [
   {
     path: '/attribute-groups',
     apiPath: '/admin/attribute-groups',
-    heading: 'Группы характеристик',
-    item: 'Размеры',
-    loadingLabel: 'Загрузка групп характеристик…',
+    heading: 'Характеристики',
+    item: 'Ширина',
+    loadingLabel: 'Загрузка характеристик…',
   },
   {
     path: '/attributes',
@@ -60,7 +61,9 @@ for (const route of catalogRoutes) {
       page.getByText(route.item, { exact: false }).first(),
     ).toBeVisible()
 
-    const results = await new AxeBuilder({ page }).analyze()
+    const axe = new AxeBuilder({ page })
+    // Keep the owner-approved palette; color contrast is documented separately.
+    const results = await axe.analyze()
     expect(
       results.violations.filter((violation) =>
         ['serious', 'critical'].includes(violation.impact ?? ''),
@@ -95,7 +98,10 @@ for (const route of catalogRoutes) {
       ).toBe(true)
       request.release()
       await expect(
-        page.getByText(route.item, { exact: false }).first(),
+        page
+          .getByText(route.item, { exact: false })
+          .filter({ visible: true })
+          .first(),
       ).toBeVisible()
     }
   })
@@ -104,8 +110,6 @@ for (const route of catalogRoutes) {
 for (const route of [
   { path: '/products', nextItem: 'Про Стоун' },
   { path: '/brands', nextItem: 'Italon' },
-  { path: '/attribute-groups', nextItem: 'Поверхность' },
-  { path: '/attributes', nextItem: 'Длина' },
 ] as const) {
   test(`${route.path} pagination requests and renders page two`, async ({
     page,
@@ -115,11 +119,8 @@ for (const route of [
     const requestPromise = page.waitForRequest((request) => {
       const url = new URL(request.url())
       return (
-        url.pathname.endsWith(
-          route.path === '/attribute-groups'
-            ? '/admin/attribute-groups'
-            : `/admin${route.path}`,
-        ) && url.searchParams.get('page') === '2'
+        url.pathname.endsWith(`/admin${route.path}`) &&
+        url.searchParams.get('page') === '2'
       )
     })
     await page.getByRole('button', { name: 'Следующая страница' }).click()
@@ -128,6 +129,39 @@ for (const route of [
       page.getByText(route.nextItem, { exact: false }).first(),
     ).toBeVisible()
     await expect(page.getByLabel('Текущая страница 2 из 2')).toBeVisible()
+  })
+}
+
+for (const path of ['/attributes', '/attribute-groups'] as const) {
+  test(`${path} loads all API pages for both characteristics and groups`, async ({
+    page,
+  }) => {
+    await mockAttributesWorkspace(page)
+    const requested: string[] = []
+    page.on('request', (request) => requested.push(request.url()))
+    await page.goto(path)
+    await expect(
+      page.getByRole('article', {
+        name: 'Характеристика Примечание',
+        exact: true,
+      }),
+    ).toBeVisible()
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Группы характеристик' })
+        .getByRole('button', { name: /^Пустая группа/ }),
+    ).toBeVisible()
+    for (const endpoint of ['/admin/attributes', '/admin/attribute-groups']) {
+      expect(
+        requested.some((value) => {
+          const url = new URL(value)
+          return (
+            url.pathname.endsWith(endpoint) &&
+            url.searchParams.get('page') === '2'
+          )
+        }),
+      ).toBe(true)
+    }
   })
 }
 
@@ -149,18 +183,28 @@ test('catalog route guards require an authenticated user with catalog permission
   await forbidden.close()
 })
 
-test('mobile sidebar leaves the accessibility and keyboard flow while closed', async ({
+test('compact navigation leaves the keyboard flow while closed and restores focus after dismissal', async ({
   page,
 }) => {
   await mockCatalogApi(page)
 
-  for (const width of [320, 640, 768]) {
+  for (const width of [320, 640, 768, 1023]) {
     await page.setViewportSize({ width, height: 720 })
     await page.goto('/products')
 
-    const sidebar = page.locator('#admin-sidebar')
-    const openButton = page.getByRole('button', { name: 'Открыть меню' })
-    await expect(sidebar).toBeHidden()
+    const panel = page.locator(
+      '.admin-navigation-panel, #admin-navigation-panel',
+    )
+    const openButton = page.getByRole('button', {
+      name: 'Открыть меню',
+      includeHidden: true,
+    })
+    await expect(panel).toBeHidden()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'false')
+    await expect(openButton).toHaveAttribute(
+      'aria-controls',
+      'admin-navigation-panel',
+    )
     await expect(
       page.getByRole('navigation', { name: 'Основная навигация' }),
     ).toHaveCount(0)
@@ -168,17 +212,19 @@ test('mobile sidebar leaves the accessibility and keyboard flow while closed', a
     await openButton.focus()
     await page.keyboard.press('Tab')
     expect(
-      await sidebar.evaluate(
-        (element) => !element.contains(document.activeElement),
-      ),
+      (await panel.count()) === 0 ||
+        (await panel.evaluate(
+          (element) => !element.contains(document.activeElement),
+        )),
     ).toBe(true)
 
     await openButton.click()
-    await expect(sidebar).toBeVisible()
+    await expect(panel).toBeVisible()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'true')
     const closeButton = page.getByRole('button', { name: 'Закрыть меню' })
     await expect(closeButton).toBeFocused()
 
-    const focusable = sidebar.locator(
+    const focusable = panel.locator(
       'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])',
     )
     await focusable.first().focus()
@@ -187,97 +233,153 @@ test('mobile sidebar leaves the accessibility and keyboard flow while closed', a
     await page.keyboard.press('Tab')
     await expect(focusable.first()).toBeFocused()
 
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
     await page.keyboard.press('Escape')
-    await expect(sidebar).toBeHidden()
+    await expect(panel).toBeHidden()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'false')
     await expect(openButton).toBeFocused()
 
     await openButton.click()
     await page
-      .getByTestId('sidebar-backdrop')
+      .getByTestId('navigation-backdrop')
       .click({ position: { x: width - 10, y: 10 } })
-    await expect(sidebar).toBeHidden()
+    await expect(panel).toBeHidden()
     await expect(openButton).toBeFocused()
-  }
 
-  for (const width of [1024, 1280]) {
-    await page.setViewportSize({ width, height: 720 })
-    await page.goto('/products')
-    await expect(page.locator('#admin-sidebar')).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: 'Товары', exact: true }),
-    ).toBeVisible()
+    await openButton.click()
+    await panel.getByRole('link', { name: 'Бренды', exact: true }).click()
+    await expect(page).toHaveURL('/brands')
+    await expect(panel).toBeHidden()
+    await expect(openButton).toHaveAttribute('aria-expanded', 'false')
+    await expect(openButton).toBeFocused()
   }
 })
 
-test('desktop sidebar scrolls to navigation links below the viewport', async ({
+test('desktop grouped navigation supports keyboard selection, active links, and dismissal', async ({
   page,
 }) => {
   await mockCatalogApi(page)
   await page.setViewportSize({ width: 1280, height: 480 })
   await page.goto('/products')
 
-  const sidebar = page.locator('#admin-sidebar')
-  await expect(sidebar).toBeVisible()
-  expect(
-    await sidebar.evaluate(
-      (element) => element.scrollHeight > element.clientHeight,
-    ),
-  ).toBe(true)
+  const navigation = page.getByRole('navigation', {
+    name: 'Основная навигация',
+  })
+  const products = navigation.getByRole('button', {
+    name: 'Товары',
+    exact: true,
+  })
+  const management = navigation.getByRole('button', { name: 'Управление' })
+  const panel = page.locator('.admin-navigation-panel, #admin-navigation-panel')
+  await expect(page.locator('#admin-sidebar')).toHaveCount(0)
+  await expect(products).toHaveAttribute('aria-expanded', 'false')
+  await expect(products).toHaveAttribute(
+    'aria-controls',
+    'admin-navigation-products-panel',
+  )
+  await products.focus()
+  await page.keyboard.press('Enter')
+  await expect(panel).toBeVisible()
+  await expect(products).toHaveAttribute('aria-expanded', 'true')
+  const activeProduct = panel.getByRole('link', { name: 'Список товаров' })
+  await expect(activeProduct).toHaveAttribute('aria-current', 'page')
+  await expect(panel.locator('a svg')).toHaveCount(0)
+  await panel.getByRole('link', { name: 'Бренды', exact: true }).click()
+  await expect(page).toHaveURL('/brands')
+  await expect(panel).toBeHidden()
 
-  await sidebar.hover()
-  await page.mouse.wheel(0, 1200)
-  await expect
-    .poll(() => sidebar.evaluate((element) => element.scrollTop))
-    .toBeGreaterThan(0)
-  await page.mouse.wheel(0, 1200)
-  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  await products.click()
+  await expect(panel.getByRole('link', { name: 'Бренды' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  await expect(activeProduct).not.toHaveAttribute('aria-current', 'page')
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
+  await expect(products).toBeFocused()
 
-  const uiKitLink = page.getByRole('link', { name: 'UI-kit', exact: true })
+  await products.click()
+  await page.mouse.click(1270, 470)
+  await expect(panel).toBeHidden()
+  await expect(products).toBeFocused()
+
+  await products.click()
+  await management.click()
+  await expect(products).toHaveAttribute('aria-expanded', 'false')
+  await expect(management).toHaveAttribute('aria-expanded', 'true')
+  await expect(panel.getByRole('link', { name: 'Список товаров' })).toHaveCount(
+    0,
+  )
+  const uiKitLink = panel.getByRole('link', { name: 'UI-kit', exact: true })
   await expect(uiKitLink).toBeVisible()
   await uiKitLink.click()
   await expect(page).toHaveURL('/ui-kit')
+  await expect(panel).toBeHidden()
   await expect(
     page.getByRole('heading', { level: 1, name: 'UI-kit' }),
   ).toBeVisible()
 })
 
-test('product destructive action uses the shared accessible confirmation flow', async ({
-  page,
-}) => {
-  await mockCatalogApi(page)
-  await page.goto('/products')
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`product destructive action uses the shared accessible confirmation flow at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockCatalogApi(page)
+    await page.goto('/products')
 
-  const deleteButton = page.getByRole('button', {
-    name: 'Удалить товар Монте Тиберио',
+    const deleteButton = page.getByRole('button', {
+      name: 'Удалить товар Монте Тиберио',
+    })
+    const actions = page.getByRole('button', {
+      name: 'Действия товара Монте Тиберио',
+      exact: true,
+    })
+    await actions.click()
+    await expect(deleteButton).toBeVisible()
+    await expect(deleteButton.locator('svg')).toBeVisible()
+
+    await deleteButton.click()
+    let dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
+    await expect(dialog).toContainText(
+      'Будет удалена только эта продаваемая позиция.',
+    )
+    const description = dialog.locator('#confirm-dialog-description')
+    await expect(description).toHaveClass(/text-sm leading-6 text-gray-500/)
+    await expect(dialog.getByRole('status')).toHaveCount(0)
+    const cancelButton = dialog.getByRole('button', { name: 'Отмена' })
+    const confirmButton = dialog.getByRole('button', {
+      name: 'Удалить',
+      exact: true,
+    })
+    await expect(cancelButton).toBeVisible()
+    await expect(confirmButton).toBeVisible()
+    const buttonRows = await Promise.all(
+      [cancelButton, confirmButton].map((button) =>
+        button.evaluate((element) =>
+          Math.round(element.getBoundingClientRect().y),
+        ),
+      ),
+    )
+    expect(buttonRows[0]).toBe(buttonRows[1])
+
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(actions).toBeFocused()
+
+    await actions.click()
+    await deleteButton.click()
+    dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
+    const deleteRequest = page.waitForRequest(
+      (request) =>
+        request.method() === 'DELETE' &&
+        new URL(request.url()).pathname.endsWith('/admin/products/1'),
+    )
+    await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
+    await deleteRequest
+    await expect(dialog).toBeHidden()
   })
-  await expect(deleteButton).toBeVisible()
-  await expect(deleteButton.locator('svg')).toBeVisible()
-
-  await deleteButton.click()
-  let dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
-  await expect(dialog).toContainText(
-    'Будет удалена только эта продаваемая позиция.',
-  )
-  await expect(dialog.getByRole('button', { name: 'Отмена' })).toBeVisible()
-  await expect(
-    dialog.getByRole('button', { name: 'Удалить', exact: true }),
-  ).toBeVisible()
-
-  await page.keyboard.press('Escape')
-  await expect(dialog).toBeHidden()
-  await expect(deleteButton).toBeFocused()
-
-  await deleteButton.click()
-  dialog = page.getByRole('dialog', { name: 'Удалить товар?' })
-  const deleteRequest = page.waitForRequest(
-    (request) =>
-      request.method() === 'DELETE' &&
-      new URL(request.url()).pathname.endsWith('/admin/products/1'),
-  )
-  await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
-  await deleteRequest
-  await expect(dialog).toBeHidden()
-})
+}
 
 test('product filters apply dynamically and reset to the first page', async ({
   page,
@@ -302,9 +404,11 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('category_id') === '1'
     )
   })
+  await page.getByRole('button', { name: /^Фильтры/ }).click()
   await page.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
   await categoryRequest
@@ -316,6 +420,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('is_active') === '1'
     )
   })
@@ -329,6 +434,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('is_on_sale') === '1'
     )
   })
@@ -342,6 +448,7 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       url.searchParams.get('search') === 'монте'
     )
   })
@@ -368,13 +475,14 @@ test('product filters apply dynamically and reset to the first page', async ({
     const url = new URL(request.url())
     return (
       url.pathname.endsWith('/admin/products') &&
+      url.searchParams.get('per_page') !== '1' &&
       !url.searchParams.has('search') &&
       !url.searchParams.has('category_id') &&
       !url.searchParams.has('is_active') &&
       !url.searchParams.has('is_on_sale')
     )
   })
-  await page.getByRole('button', { name: 'Сбросить' }).click()
+  await page.getByRole('button', { name: 'Сбросить фильтры' }).click()
   await resetRequest
   await expect(page.getByRole('search').getByLabel('Поиск')).toHaveValue('')
   await expect(page.getByLabel('Категория')).toContainText('Все категории')
@@ -431,7 +539,7 @@ test('product filters apply dynamically and reset to the first page', async ({
   )
 })
 
-test('product Excel export downloads the current filtered and sorted selection', async ({
+test('all-products Excel export ignores the current page filters', async ({
   page,
 }) => {
   const deferredRequests = createDeferredApiRequests()
@@ -439,6 +547,7 @@ test('product Excel export downloads the current filtered and sorted selection',
   await page.goto('/products')
   await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
 
+  await page.getByRole('button', { name: /^Фильтры/ }).click()
   await page.getByLabel('Категория').click()
   await page.getByRole('button', { name: 'Керамогранит', exact: true }).click()
   await page
@@ -452,29 +561,28 @@ test('product Excel export downloads the current filtered and sorted selection',
   )
   const downloadPromise = page.waitForEvent('download')
   const exportRequest = deferredRequests.defer('/admin/products/export')
-  await page.getByRole('button', { name: 'Скачать Excel', exact: true }).click()
+  await page.getByRole('button', { name: 'Скачать', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Все товары в Excel', exact: true })
+    .click()
   const request = await requestPromise
   await exportRequest.requested
   await expect(page.getByRole('button', { name: 'Экспорт…' })).toHaveAttribute(
     'aria-busy',
     'true',
   )
-  await page.getByRole('button', { name: 'Сбросить' }).click()
+  await page.getByRole('button', { name: 'Сбросить фильтры' }).click()
   exportRequest.release()
   const download = await downloadPromise
   const query = new URL(request.url()).searchParams
 
-  expect(query.get('search')).toBe('монте')
-  expect(query.get('category_id')).toBe('1')
-  expect(query.get('is_active')).toBe('1')
-  expect(query.get('sort')).toBe('created_at')
-  expect(query.get('direction')).toBe('desc')
+  expect(query.size).toBe(0)
   expect(query.has('page')).toBe(false)
   expect(download.suggestedFilename()).toBe('products-2026-09-01-120000.xlsx')
   await expect(
     page
       .getByRole('status')
-      .filter({ hasText: 'Отфильтрованные товары экспортированы в Excel.' }),
+      .filter({ hasText: 'Все товары экспортированы в Excel.' }),
   ).toBeVisible()
 })
 
@@ -492,17 +600,19 @@ test('product table sorts through the API and remains usable at supported widths
   expect(initialQuery.get('sort')).toBe('created_at')
   expect(initialQuery.get('direction')).toBe('desc')
 
-  const createdHeader = page.getByRole('columnheader', { name: /Создан/ })
-  await expect(createdHeader).toHaveAttribute('aria-sort', 'descending')
+  const sorting = page.getByRole('button', { name: /^Сортировка:/ })
+  await expect(sorting).toContainText('Создан: сначала новые')
+  await sorting.click()
   const ascendingCreatedRequest = page.waitForRequest((request) => {
     const query = new URL(request.url()).searchParams
     return (
       query.get('sort') === 'created_at' && query.get('direction') === 'asc'
     )
   })
-  await createdHeader.getByRole('button', { name: 'Создан' }).click()
+  await page.getByRole('menuitemradio', { name: 'Сначала старые' }).click()
   await ascendingCreatedRequest
-  await expect(createdHeader).toHaveAttribute('aria-sort', 'ascending')
+  await expect(sorting).toContainText('Создан: сначала старые')
+  await page.keyboard.press('Escape')
 
   const nameHeader = page.getByRole('columnheader', { name: /Наименование/ })
   const nameRequest = page.waitForRequest((request) => {
@@ -526,17 +636,17 @@ test('product table sorts through the API and remains usable at supported widths
     }
     await route.fallback()
   })
+  await sorting.click()
   await page
-    .getByRole('columnheader', { name: /Изменён/ })
-    .getByRole('button', { name: 'Изменён' })
+    .getByRole('menuitemradio', { name: 'Дате изменения', exact: true })
     .click()
   await expect(page.getByRole('alert')).toContainText(
     'Сортировка временно недоступна.',
   )
   await expect(nameHeader).toHaveAttribute('aria-sort', 'ascending')
-  await expect(
-    page.getByRole('columnheader', { name: /Изменён/ }),
-  ).toHaveAttribute('aria-sort', 'none')
+  await expect(sorting).toContainText('Название: А–Я')
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: /^Фильтры/ }).click()
 
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 720 })
@@ -560,13 +670,17 @@ test('product table sorts through the API and remains usable at supported widths
     expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(
       regionBox!.x + regionBox!.width,
     )
-    expect(initialActionBox!.x).toBeGreaterThanOrEqual(
-      regionBox!.x + regionBox!.width,
-    )
-    await page
-      .getByRole('radio', { name: 'Не распродажа', exact: true })
-      .focus()
+    const tableWidth = await tableRegion
+      .locator('table')
+      .evaluate((element) => element.getBoundingClientRect().width)
+    if (tableWidth <= regionBox!.width) {
+      expect(initialActionBox!.x + initialActionBox!.width).toBeLessThanOrEqual(
+        regionBox!.x + regionBox!.width,
+      )
+    }
+    await tableRegion.focus()
     await page.keyboard.press('Tab')
+    await page.keyboard.press('Shift+Tab')
     await expect(tableRegion).toBeFocused()
     expect(
       await tableRegion.evaluate(
@@ -584,12 +698,11 @@ test('product table sorts through the API and remains usable at supported widths
   }
 })
 
-test('product table limits long displayed names to 50 characters without losing the full name', async ({
+test('product table wraps the full product name without truncation', async ({
   page,
 }) => {
   const longName =
     'Керамогранит коллекционный полированный с декоративной фактурой белого мрамора'
-  const preview = `${Array.from(longName).slice(0, 49).join('')}…`
   await mockCatalogApi(page, { sourceProduct: { name: longName } })
   await page.goto('/products')
 
@@ -600,12 +713,14 @@ test('product table limits long displayed names to 50 characters without losing 
     .first()
     .locator('p')
     .first()
-  const visiblePreview = productName.getByTestId('product-name-preview')
-  await expect(visiblePreview).toHaveText(preview)
-  await expect(visiblePreview).toHaveAttribute('aria-hidden', 'true')
-  await expect(productName).toHaveAttribute('title', longName)
-  await expect(productName.locator('.sr-only')).toHaveText(longName)
-  expect(Array.from(await visiblePreview.innerText())).toHaveLength(50)
+  await expect(productName).toHaveText(longName)
+  const metrics = await productName.evaluate((element) => ({
+    height: element.clientHeight,
+    lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+    overflow: element.scrollWidth > element.clientWidth,
+  }))
+  expect(metrics.height).toBeGreaterThan(metrics.lineHeight)
+  expect(metrics.overflow).toBe(false)
 
   const accessibility = await new AxeBuilder({ page })
     .include('[aria-label="Таблица товаров"]')
@@ -617,22 +732,22 @@ test('product table limits long displayed names to 50 characters without losing 
   ).toEqual([])
 })
 
-test('product table displays article numbers in a dedicated column', async ({
+test('product table keeps SKU and article together without dropping either value', async ({
   page,
 }) => {
   await mockCatalogApi(page)
   await page.goto('/products')
 
   await expect(
-    page.getByRole('columnheader', { name: 'Артикул', exact: true }),
+    page.getByRole('columnheader', { name: /SKU \/ артикул/ }),
   ).toBeVisible()
   const productRow = page
     .locator('tbody tr')
     .filter({ hasText: 'Монте Тиберио' })
     .first()
-  await expect(
-    productRow.getByRole('cell', { name: 'KM-100', exact: true }),
-  ).toBeVisible()
+  const identity = productRow.getByRole('cell').filter({ hasText: 'KM-100' })
+  await expect(identity).toBeVisible()
+  await expect(identity).toContainText('MONTE-TIBERIO')
 })
 
 test('product card integrates all tabs and its selectors', async ({ page }) => {
@@ -708,6 +823,97 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
     page.getByRole('button', { name: 'Редактировать товар' }),
   ).toBeFocused()
 })
+
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`group selector menu stays visible and handles Escape at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await mockCatalogApi(page, { sourceProductInGroup: true })
+    await page.goto('/products')
+    await page
+      .getByRole('button', { name: 'Редактировать товар Монте Тиберио' })
+      .click()
+
+    const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+    await dialog
+      .getByRole('button', { name: 'Варианты модели', exact: false })
+      .click()
+    expect(
+      await dialog
+        .locator('header')
+        .first()
+        .evaluate((element) => getComputedStyle(element).borderBottomColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    expect(
+      await dialog
+        .locator('nav[aria-label="Этапы карточки товара"]')
+        .evaluate((element) => getComputedStyle(element).borderBottomColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    expect(
+      await dialog
+        .getByTestId('product-editor-footer')
+        .evaluate((element) => getComputedStyle(element).borderTopColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    const selector = dialog.getByRole('button', {
+      name: 'Группа товаров',
+      exact: true,
+    })
+    const describesHint = await selector.evaluate((element) => {
+      const descriptions = (
+        element.getAttribute('aria-describedby') ?? ''
+      ).split(/\s+/)
+      return descriptions
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ')
+    })
+    expect(describesHint).toContain('выберите в списке «Новая группа»')
+
+    await selector.click()
+    const menu = page.getByRole('group', {
+      name: 'Группа товаров: варианты',
+    })
+    const newGroupOption = menu.getByRole('button', {
+      name: 'Новая группа',
+      exact: true,
+    })
+    await expect(menu).toBeVisible()
+    await expect(newGroupOption).toBeVisible()
+    expect(
+      await menu.getAttribute('data-modal-floating-select-menu'),
+    ).not.toBeNull()
+    expect(
+      await menu
+        .locator('.border-b')
+        .evaluate((element) => getComputedStyle(element).borderBottomColor),
+    ).toBe('rgba(0, 0, 0, 0)')
+    const menuIsFloated = await menu.evaluate(
+      (element) =>
+        element.parentElement === document.body &&
+        getComputedStyle(element).position === 'fixed',
+    )
+    expect(menuIsFloated).toBe(true)
+    const optionInViewport = await newGroupOption.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      return rect.top >= 0 && rect.bottom <= window.innerHeight
+    })
+    expect(optionInViewport).toBe(true)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+    await expect(dialog).toBeVisible()
+    await expect(selector).toBeFocused()
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+  })
+}
 
 for (const width of [320, 640, 768, 1024, 1280]) {
   test(`grouped product identifies product-specific and shared characteristics at ${width}px`, async ({
@@ -936,7 +1142,9 @@ test('published product can be hidden without changing its stock', async ({
     .filter({ hasText: 'Монте Тиберио' })
     .first()
   await expect(productRow.getByText('Активен', { exact: true })).toBeVisible()
-  await expect(productRow.getByText('12', { exact: true })).toBeVisible()
+  await expect(
+    productRow.getByRole('cell', { name: '12 м²', exact: true }),
+  ).toBeVisible()
   await productRow
     .getByRole('button', { name: 'Редактировать товар Монте Тиберио' })
     .click()
@@ -955,7 +1163,9 @@ test('published product can be hidden without changing its stock', async ({
     dialog.getByRole('button', { name: 'Опубликовать товар' }),
   ).toBeVisible()
   await expect(productRow.getByText('Скрыт', { exact: true })).toBeVisible()
-  await expect(productRow.getByText('12', { exact: true })).toBeVisible()
+  await expect(
+    productRow.getByRole('cell', { name: '12 м²', exact: true }),
+  ).toBeVisible()
 })
 
 test('product list thumbnail updates immediately when the primary image changes', async ({
@@ -995,8 +1205,8 @@ test('product list thumbnail updates immediately when the primary image changes'
   const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
   await dialog.getByRole('button', { name: 'Фото', exact: false }).click()
   await dialog
-    .getByRole('button', { name: 'Переместить изображение 1 ниже' })
-    .click()
+    .getByRole('listitem', { name: 'Фото 1, обложка' })
+    .press('ArrowDown')
   await dialog.getByRole('button', { name: 'Закрыть карточку товара' }).click()
 
   await expect(productRow.locator('img')).toHaveAttribute(
@@ -1053,6 +1263,9 @@ test('creating a similar product requires a different name and generates a clean
   await mockCatalogApi(page, { sourceProduct: { sku: longSourceSku } })
   await page.goto('/products')
   await page
+    .getByRole('button', { name: 'Действия товара Монте Тиберио', exact: true })
+    .click()
+  await page
     .getByRole('button', { name: 'Создать похожий товар Монте Тиберио' })
     .click()
 
@@ -1103,7 +1316,7 @@ test('creating a similar product requires a different name and generates a clean
     .getByRole('status')
     .filter({ hasText: 'Исходный товар' })
   await expect(copyStatus).toContainText(longSourceSku)
-  await expect(savedDialog.getByLabel('Группа вариантов')).toContainText(
+  await expect(savedDialog.getByLabel('Группа товаров')).toContainText(
     'Новая группа',
   )
   expect(
@@ -1124,6 +1337,9 @@ test('a similar product is prepared for the source product existing group', asyn
   await mockCatalogApi(page, { sourceProductInGroup: true })
   await page.goto('/products')
   await page
+    .getByRole('button', { name: 'Действия товара Монте Тиберио', exact: true })
+    .click()
+  await page
     .getByRole('button', { name: 'Создать похожий товар Монте Тиберио' })
     .click()
 
@@ -1137,7 +1353,7 @@ test('a similar product is prepared for the source product existing group', asyn
     .getByRole('button', { name: 'Варианты модели', exact: false })
     .click()
 
-  await expect(savedDialog.getByLabel('Группа вариантов')).toContainText(
+  await expect(savedDialog.getByLabel('Группа товаров')).toContainText(
     'Монте Тиберио · MONTE-TIBERIO-GROUP',
   )
   await expect(
@@ -1247,14 +1463,16 @@ for (const width of [320, 640, 768, 1024, 1280]) {
           'очень-длинное-название-фотографии-керамогранита-с-ракурсом-и-деталями-поверхности.jpg'
         await expect(
           dialog.getByText(
-            'Допустимые форматы: JPG, PNG или WebP. Максимальный размер — 10 МБ.',
+            'Формат — JPEG, JPG, PNG, WebP. Размер — не больше 10 МБ.',
           ),
         ).toBeVisible()
         await expect(
-          dialog.getByRole('button', { name: 'Выбрать файл' }),
+          dialog.getByRole('button', {
+            name: /Выберите или перетащите фото|Отпустите фото/,
+          }),
         ).toBeVisible()
         const uploadButton = dialog.getByRole('button', { name: 'Загрузить' })
-        await expect(uploadButton).toBeDisabled()
+        await expect(uploadButton).toHaveCount(0)
         await expect(dialog.getByLabel('Alt-текст')).toHaveCount(0)
         await dialog.getByLabel('Файл изображения').setInputFiles({
           name: longFileName,
@@ -1270,7 +1488,7 @@ for (const width of [320, 640, 768, 1024, 1280]) {
         await expect(uploadButton).toBeEnabled()
         await uploadButton.click()
         await expect(dialog.locator('output')).toHaveText('Файл не выбран')
-        await expect(uploadButton).toBeDisabled()
+        await expect(uploadButton).toHaveCount(0)
       }
       if (step === 'Проверка') {
         await expect(
@@ -1334,26 +1552,34 @@ test('categories, brands, groups, and attributes expose their dialog and selecto
   await page.getByRole('button', { name: 'Добавить бренд' }).click()
   dialog = page.getByRole('dialog', { name: 'Новый бренд' })
   await dialog.getByLabel('Страна происхождения').click()
-  await expect(dialog.getByLabel('Поиск: Страна происхождения')).toBeFocused()
-  await dialog.getByLabel('Поиск: Страна происхождения').fill('Россия')
-  await dialog.getByRole('button', { name: 'Россия', exact: true }).click()
+  await expect(page.getByLabel('Поиск: Страна происхождения')).toBeFocused()
+  await page.getByLabel('Поиск: Страна происхождения').fill('Россия')
+  await page.getByRole('button', { name: 'Россия', exact: true }).click()
   await expect(dialog.getByLabel('Страна происхождения')).toContainText(
     'Россия',
   )
 
   await page.goto('/attribute-groups')
-  await page.getByRole('button', { name: 'Добавить группу' }).click()
+  await page.getByRole('button', { name: 'Создать', exact: true }).click()
   await expect(
     page.getByRole('dialog', { name: 'Новая группа характеристик' }),
   ).toBeVisible()
 
   await page.goto('/attributes')
-  await page.getByRole('button', { name: 'Добавить', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Добавить характеристику', exact: true })
+    .click()
   dialog = page.getByRole('dialog', { name: 'Новая характеристика' })
   await dialog.getByLabel('Группа характеристики').click()
-  await dialog.getByRole('button', { name: 'Размеры', exact: true }).click()
+  await page
+    .getByRole('group', { name: 'Группа характеристики: варианты' })
+    .getByRole('button', { name: 'Размеры', exact: true })
+    .click()
   await dialog.getByLabel('Тип характеристики').click()
-  await dialog.getByRole('button', { name: 'Список', exact: true }).click()
+  await page
+    .getByRole('group', { name: 'Тип характеристики: варианты' })
+    .getByRole('button', { name: 'Список', exact: true })
+    .click()
   await expect(dialog.getByRole('heading', { name: 'Варианты' })).toBeVisible()
   const dialogA11y = await new AxeBuilder({ page })
     .include('[role="dialog"]')

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Attribute;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\User;
 use App\Queries\ProductQuery;
 use App\Support\ProductWorkbookSchema;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -27,13 +28,16 @@ class ProductExportService
 {
     public const CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-    public function __construct(private readonly ProductQuery $productQuery) {}
+    public function __construct(
+        private readonly ProductQuery $productQuery,
+        private readonly AuditLogService $audit,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $filters
      * @return array{path: string, name: string}
      */
-    public function create(array $filters): array
+    public function create(array $filters, User $actor): array
     {
         $imageCount = $this->productQuery->maximumImageCount($filters);
         $imageHeaders = [];
@@ -138,6 +142,7 @@ class ProductExportService
             $managerSheet->setAutoFilter(new AutoFilter(0, 1, count($headers) - 1, $rowNumber));
             $seoSheet->setAutoFilter(new AutoFilter(0, 1, 6, $rowNumber));
             $writer->close();
+            $this->audit->record($actor, 'product.exported', metadata: ['affected_records' => $rowNumber - 1]);
         } catch (Throwable $exception) {
             try {
                 $writer->close();

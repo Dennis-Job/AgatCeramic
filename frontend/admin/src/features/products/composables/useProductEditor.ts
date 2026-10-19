@@ -32,19 +32,16 @@ import {
   ProductRelationRequestError,
   saveProductRelations,
 } from '../services/productRelations'
-import {
-  deleteProduct,
-  getProductExport,
-  getProducts,
-  saveProduct,
-} from '../services/products'
+import { deleteProduct, getProducts, saveProduct } from '../services/products'
 import { useAuthStore } from '../../../stores/auth'
 import { compareAlphabetically, sortByLabel } from '../../../utils/alphabetical'
+import { useProductFilterCounts } from './useProductFilterCounts'
 import { useProductEditorSteps } from './useProductEditorSteps'
 import {
   normalizedProductName,
   productSlug,
 } from '../validation/product.schema'
+import { validateProductImageFiles } from '../validation/productImages'
 import type {
   AttributeDraftValue,
   Product,
@@ -55,6 +52,7 @@ import type {
   ProductPayload,
   ProductRelationDraft,
   ProductSort,
+  ProductListFilters,
   ProductUnit,
   SortDirection,
 } from '../types/product.types'
@@ -65,9 +63,15 @@ export function useProductEditor() {
   const { items: products, pagination, error, loading } = list
   const categories = ref<Category[]>([])
   const brands = ref<Brand[]>([])
+  let categoriesRequest: Promise<Category[]> | null = null
+  let brandsRequest: Promise<Brand[]> | null = null
   const candidates = ref<Product[]>([])
   const groupProducts = ref<ProductGroup['products']>([])
   const opened = ref(false)
+  const photosOnly = ref(false)
+  const photosLoading = ref(false)
+  const photosLoadFailed = ref(false)
+  let photoRequest = 0
   const saving = ref(false)
   const editing = ref<Product | null>(null)
   const deleting = ref<Product | null>(null)
@@ -75,19 +79,36 @@ export function useProductEditor() {
   const success = ref('')
   const confirmError = ref('')
   const filterResultStatus = ref('')
-  const exportStatus = ref('')
-  const exporting = ref(false)
-  const importOpened = ref(false)
-  const priceStatusImportOpened = ref(false)
-  const groupImportOpened = ref(false)
   const productCountUnavailable = ref(false)
-  const filters = ref({
+  const filters = ref<ProductListFilters>({
     search: '',
     category_id: '',
     brand_id: '',
     is_active: '',
     is_on_sale: '',
   })
+  const {
+    counts: filterCounts,
+    loading: filterCountsLoading,
+    error: filterCountsError,
+    refresh: refreshFilterCounts,
+  } = useProductFilterCounts(() => ({
+    search: filters.value.search.trim() || undefined,
+    category_id: filters.value.category_id
+      ? Number(filters.value.category_id)
+      : undefined,
+    brand_id: filters.value.brand_id
+      ? Number(filters.value.brand_id)
+      : undefined,
+    is_active:
+      filters.value.is_active === ''
+        ? undefined
+        : filters.value.is_active === '1',
+    is_on_sale:
+      filters.value.is_on_sale === ''
+        ? undefined
+        : filters.value.is_on_sale === '1',
+  }))
   const sort = ref<ProductSort>('created_at')
   const direction = ref<SortDirection>('desc')
   const form = ref<ProductPayload>(emptyProduct())
@@ -152,33 +173,27 @@ export function useProductEditor() {
     { value: 'related', label: 'Сопутствующий товар' },
     { value: 'recommended', label: 'Рекомендуемый товар' },
   ])
-  const activityOptions = [
+  const activityOptions = computed(() => [
     { value: '', label: 'Все' },
-    { value: '1', label: 'Активные' },
-    { value: '0', label: 'Скрытые' },
-  ]
-  const saleOptions = [
+    { value: '1', label: 'Активные', count: filterCounts.value.active },
+    { value: '0', label: 'Скрытые', count: filterCounts.value.hidden },
+  ])
+  const saleOptions = computed(() => [
     { value: '', label: 'Все' },
-    { value: '1', label: 'Распродажа' },
-    { value: '0', label: 'Не распродажа' },
-  ]
-  function flatten(
-    nodes: Category[],
-    depth = 0,
-  ): Array<Category & { depth: number }> {
+    { value: '1', label: 'Распродажа', count: filterCounts.value.sale },
+    { value: '0', label: 'Не распродажа', count: filterCounts.value.regular },
+  ])
+  function flatten(nodes: Category[]): Category[] {
     return [...nodes]
       .sort((left, right) => compareAlphabetically(left.name, right.name))
-      .flatMap((item) => [
-        { ...item, depth },
-        ...flatten(item.children ?? [], depth + 1),
-      ])
+      .flatMap((item) => [item, ...flatten(item.children ?? [])])
   }
   const categoryOptions = computed(() =>
     flatten(categories.value)
       .filter((item) => item.is_active)
       .map((item) => ({
         value: String(item.id),
-        label: `${'— '.repeat(item.depth)}${item.name}`,
+        label: item.name,
       })),
   )
   const brandOptions = computed(() => [
@@ -394,17 +409,31 @@ export function useProductEditor() {
       direction: direction.value,
     }
   }
-  async function fetchPage(page: number) {
-    const [productPage, categoryList, brandList] = await Promise.all([
-      getProducts({ ...filtersPayload(), page }),
-      getCategories(),
-      getAllBrands(),
-    ])
-    return { ...productPage, categoryList, brandList }
+  function loadCatalogOptions() {
+    categoriesRequest ??= getCategories().catch((reason: unknown) => {
+      categoriesRequest = null
+      throw reason
+    })
+    brandsRequest ??= getAllBrands().catch((reason: unknown) => {
+      brandsRequest = null
+      throw reason
+    })
+    return Promise.all([categoriesRequest, brandsRequest]).then(
+      ([categoryList, brandList]) => ({ categoryList, brandList }),
+    )
   }
+  async function fetchPage(page: number) {
+    const [productPage, catalogOptions] = await Promise.all([
+      getProducts({ ...filtersPayload(), page, perPage: 50 }),
+      loadCatalogOptions(),
+    ])
+    return { ...productPage, ...catalogOptions }
+  }
+  let listLoadVersion = 0
   async function load(
     page = pagination.value?.current_page ?? 1,
   ): Promise<boolean> {
+    ++listLoadVersion
     filterResultStatus.value = ''
     productCountUnavailable.value = false
     const response = await list.load(page, fetchPage)
@@ -422,21 +451,31 @@ export function useProductEditor() {
         : `${hasActiveFilters.value ? 'Найдено товаров' : 'Всего товаров в каталоге'}: ${response.meta.total}. Показано ${from}–${to}.`
     return true
   }
-  async function changeSort(field: ProductSort) {
+  async function setSort(field: ProductSort, order: SortDirection) {
     if (loading.value) return
+    if (sort.value === field && direction.value === order) return
     const previousSort = sort.value
     const previousDirection = direction.value
-    if (sort.value === field)
-      direction.value = direction.value === 'asc' ? 'desc' : 'asc'
-    else {
-      sort.value = field
-      direction.value =
-        field === 'created_at' || field === 'updated_at' ? 'desc' : 'asc'
-    }
-    if (!(await load(1))) {
+    sort.value = field
+    direction.value = order
+    const requestVersion = listLoadVersion + 1
+    // A newer filter request already uses the selected sort; a stale response
+    // must not roll the controls back behind the displayed results.
+    if (!(await load(1)) && requestVersion === listLoadVersion) {
       sort.value = previousSort
       direction.value = previousDirection
     }
+  }
+  function changeSort(field: ProductSort) {
+    const order =
+      sort.value === field
+        ? direction.value === 'asc'
+          ? 'desc'
+          : 'asc'
+        : field === 'created_at' || field === 'updated_at'
+          ? 'desc'
+          : 'asc'
+    return setSort(field, order)
   }
   function ariaSort(field: ProductSort): 'none' | 'ascending' | 'descending' {
     return sort.value === field
@@ -448,13 +487,6 @@ export function useProductEditor() {
   function formatDate(value: string): string {
     return productDateFormatter.format(new Date(value))
   }
-  function isProductNameTruncated(value: string): boolean {
-    return Array.from(value).length > 50
-  }
-  function productNamePreview(value: string): string {
-    const symbols = Array.from(value)
-    return symbols.length > 50 ? `${symbols.slice(0, 49).join('')}…` : value
-  }
   function resetFilters() {
     filters.value = {
       search: '',
@@ -462,35 +494,6 @@ export function useProductEditor() {
       brand_id: '',
       is_active: '',
       is_on_sale: '',
-    }
-  }
-  async function exportFilteredProducts() {
-    if (exporting.value) return
-    const exportedFilteredSelection = hasActiveFilters.value
-    const exportedFilters = filtersPayload()
-    exporting.value = true
-    error.value = ''
-    exportStatus.value = ''
-    try {
-      const file = await getProductExport(exportedFilters)
-      const url = URL.createObjectURL(file.blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = file.filename
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(url)
-      exportStatus.value = exportedFilteredSelection
-        ? 'Отфильтрованные товары экспортированы в Excel.'
-        : 'Все товары экспортированы в Excel.'
-    } catch (reason) {
-      error.value =
-        reason instanceof Error
-          ? reason.message
-          : 'Не удалось экспортировать товары.'
-    } finally {
-      exporting.value = false
     }
   }
   function fillGroup(group: ProductGroup | null, id: number) {
@@ -598,6 +601,11 @@ export function useProductEditor() {
     ]
   }
   async function open(product: Product | null = null) {
+    photoRequest++
+    photosOnly.value = false
+    photosLoading.value = false
+    selectedFile.value = null
+    imageStatus.value = ''
     error.value = ''
     success.value = ''
     copiedFromProduct.value = null
@@ -633,6 +641,42 @@ export function useProductEditor() {
             : 'Не удалось загрузить карточку.'
       }
   }
+  async function loadPhotos() {
+    if (!editing.value || !photosOnly.value) return
+    const productId = editing.value.id
+    const request = ++photoRequest
+    photosLoading.value = true
+    photosLoadFailed.value = false
+    error.value = ''
+    try {
+      const photoList = await getAllProductImages(productId)
+      if (request !== photoRequest) return
+      images.value = photoList
+      syncProductThumbnail()
+    } catch (reason) {
+      if (request !== photoRequest) return
+      photosLoadFailed.value = true
+      error.value =
+        reason instanceof Error
+          ? reason.message
+          : 'Не удалось загрузить фотографии.'
+    } finally {
+      if (request === photoRequest) photosLoading.value = false
+    }
+  }
+  async function openPhotos(product: Product) {
+    if (!canManage.value || opened.value) return
+    photosOnly.value = true
+    editing.value = product
+    form.value = toPayload(product)
+    activeStep.value = 'images'
+    images.value = []
+    selectedFile.value = null
+    imageStatus.value = ''
+    success.value = ''
+    opened.value = true
+    await loadPhotos()
+  }
   async function cloneProduct(product: Product) {
     await open(null)
     copiedFromProduct.value = product
@@ -667,6 +711,9 @@ export function useProductEditor() {
   function close() {
     if (!saving.value) {
       opened.value = false
+      photoRequest++
+      photosLoading.value = false
+      selectedFile.value = null
       editing.value = null
     }
   }
@@ -710,6 +757,7 @@ export function useProductEditor() {
       editing.value = saved
       form.value = toPayload(saved)
       await load()
+      void refreshFilterCounts()
       await loadDetails(saved, copiedAttributes)
       success.value = 'Основные и коммерческие данные сохранены.'
       activeStep.value = 'attributes'
@@ -744,7 +792,15 @@ export function useProductEditor() {
     }
   }
   function selectFile(event: Event) {
-    selectedFile.value = (event.target as HTMLInputElement).files?.[0] ?? null
+    selectImageFiles((event.target as HTMLInputElement).files)
+  }
+  function selectImageFiles(files: FileList | null) {
+    if (saving.value || !canManage.value || !files?.length) return
+    const validationError = validateProductImageFiles(files)
+    error.value = validationError
+    success.value = ''
+    selectedFile.value = validationError ? null : (files[0] ?? null)
+    if (imageInput.value) imageInput.value.value = ''
   }
   function chooseFile() {
     imageInput.value?.click()
@@ -1005,6 +1061,7 @@ export function useProductEditor() {
       await deleteProduct(deleting.value.id)
       deleting.value = null
       await load()
+      void refreshFilterCounts()
     } catch (reason) {
       confirmError.value =
         reason instanceof Error ? reason.message : 'Не удалось удалить товар.'
@@ -1042,6 +1099,7 @@ export function useProductEditor() {
       form.value = toPayload(saved)
       success.value = 'Товар опубликован.'
       await load()
+      void refreshFilterCounts()
     } catch (reason) {
       error.value =
         reason instanceof Error
@@ -1064,6 +1122,7 @@ export function useProductEditor() {
       form.value = toPayload(saved)
       success.value = 'Товар скрыт и перемещён в черновики.'
       await load()
+      void refreshFilterCounts()
     } catch (reason) {
       error.value =
         reason instanceof Error ? reason.message : 'Не удалось скрыть товар.'
@@ -1077,7 +1136,7 @@ export function useProductEditor() {
     filters,
     (next) => {
       if (filterTimer) clearTimeout(filterTimer)
-      const delay = next.search !== previousFilterSearch ? 350 : 0
+      const delay = next.search !== previousFilterSearch ? 350 : 250
       previousFilterSearch = next.search
       filterTimer = setTimeout(() => {
         filterTimer = null
@@ -1100,6 +1159,9 @@ export function useProductEditor() {
     candidates,
     groupProducts,
     opened,
+    photosOnly,
+    photosLoading,
+    photosLoadFailed,
     saving,
     editing,
     deleting,
@@ -1108,11 +1170,8 @@ export function useProductEditor() {
     success,
     confirmError,
     filterResultStatus,
-    exportStatus,
-    exporting,
-    importOpened,
-    priceStatusImportOpened,
-    groupImportOpened,
+    filterCountsLoading,
+    filterCountsError,
     productCountUnavailable,
     filters,
     sort,
@@ -1165,8 +1224,6 @@ export function useProductEditor() {
     relationOptions,
     ariaSort,
     formatDate,
-    isProductNameTruncated,
-    productNamePreview,
     slugify,
     normalizedName,
     emptyProduct,
@@ -1179,19 +1236,22 @@ export function useProductEditor() {
     load,
     resetFilters,
     changeSort,
-    exportFilteredProducts,
+    setSort,
     enabled,
     fillGroup,
     prepareGroupDraft,
     copyAttributeDrafts,
     loadDetails,
     open,
+    openPhotos,
+    loadPhotos,
     cloneProduct,
     close,
     syncProductThumbnail,
     saveMain,
     saveAttributes,
     selectFile,
+    selectImageFiles,
     chooseFile,
     upload,
     reorderImage,

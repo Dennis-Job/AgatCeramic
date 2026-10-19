@@ -1,10 +1,14 @@
 <?php
 
+use App\Models\Banner;
 use App\Models\Category;
+use App\Models\Page;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
+use App\Services\BannerManagementService;
 use App\Services\CategoryManagementService;
+use App\Services\PageManagementService;
 use App\Services\ProductImageManagementService;
 use App\Services\ProductManagementService;
 use App\Services\ProductRelationManagementService;
@@ -26,6 +30,17 @@ DB::selectOne("select set_config('application_name', ?, false)", [$applicationNa
 DB::selectOne("select set_config('statement_timeout', '10000', false)");
 
 $work = match ($operation) {
+    'banner-create', 'banner-update', 'page-create', 'page-update', 'page-publish' => (function () use ($payload, $operation): Closure {
+        $actor = User::query()->findOrFail($payload['actor_id']);
+
+        return fn () => match ($operation) {
+            'banner-create' => app(BannerManagementService::class)->create($actor, ['title' => 'URL-only banner', 'image_url' => $payload['image_url']]),
+            'banner-update' => app(BannerManagementService::class)->update($actor, Banner::query()->findOrFail($payload['banner_id']), ['image_url' => $payload['image_url']]),
+            'page-create' => app(PageManagementService::class)->create($actor, ['title' => 'URL-only page', 'slug' => 'url-only-'.bin2hex(random_bytes(8)), 'seo' => ['og_image_url' => $payload['image_url']]]),
+            'page-update' => app(PageManagementService::class)->update($actor, Page::query()->findOrFail($payload['page_id']), ['seo' => ['og_image_url' => $payload['image_url']]]),
+            'page-publish' => app(PageManagementService::class)->publish($actor, Page::query()->findOrFail($payload['page_id'])),
+        };
+    })(),
     'primary-image' => function () use ($payload): void {
         ProductImage::query()->create([
             'product_id' => $payload['product_id'],

@@ -17,6 +17,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -60,6 +62,94 @@ class ProductImageImportTest extends TestCase
         $this->assertSame(1, $import->refresh()->failed_folders);
         $this->assertSame(1, $import->created_images);
         $this->assertDatabaseHas('product_images', ['product_id' => $product->id]);
+    }
+
+    public function test_mac_os_metadata_is_ignored_when_importing_a_sku_gallery(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+        Queue::fake();
+        $actor = $this->actor();
+        $product = Product::factory()->create(['sku' => '6000011']);
+        $zip = $this->zip([
+            '6000011/' => '',
+            '6000011/6000011_1.png' => $this->png(),
+            '__MACOSX/' => '',
+            '__MACOSX/6000011/' => '',
+            '__MACOSX/6000011/._6000011_1.png' => 'AppleDouble metadata',
+            '.DS_Store' => 'Finder metadata',
+            '6000011/.DS_Store' => 'Finder metadata',
+            '._6000011' => 'AppleDouble metadata',
+            '6000011/._6000011_1.png' => 'AppleDouble metadata',
+        ]);
+        try {
+            $response = $this->actingAs($actor)->post('/api/v1/admin/product-image-imports', ['file' => new UploadedFile($zip, 'images.zip', 'application/zip', null, true)]);
+            $response->assertAccepted();
+            $import = ProductImageImport::query()->findOrFail($response->json('data.id'));
+            $this->assertTrue(app(ProductImageImportService::class)->process($import->load('user')));
+            $import->refresh();
+            $this->assertSame(1, $import->total_folders);
+            $this->assertSame(1, $import->processed_folders);
+            $this->assertSame(1, $import->created_images);
+            $this->assertSame(0, $import->failed_folders);
+            $this->assertSame(['6000011'], $import->processed_skus);
+            $this->assertDatabaseHas('product_images', ['product_id' => $product->id, 'is_primary' => true]);
+            $this->assertDatabaseCount('product_image_import_errors', 0);
+        } finally {
+            @unlink($zip);
+        }
+    }
+
+    public function test_an_archive_containing_only_mac_os_metadata_is_rejected(): void
+    {
+        Storage::fake('local');
+        $actor = $this->actor();
+        $zip = $this->zip(['__MACOSX/' => '', '__MACOSX/._6000011' => 'metadata', '.DS_Store' => 'metadata']);
+        try {
+            Storage::disk('local')->put('product-image-imports/metadata.zip', file_get_contents($zip));
+            $import = ProductImageImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'metadata.zip', 'disk' => 'local', 'path' => 'product-image-imports/metadata.zip', 'status' => 'pending']);
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('ZIP-архив не содержит папок SKU.');
+            app(ProductImageImportService::class)->process($import->load('user'));
+        } finally {
+            @unlink($zip);
+        }
+    }
+
+    #[DataProvider('unsupportedArchiveEntries')]
+    public function test_archive_safety_checks_still_reject_unsupported_entries(string $name, int $size, bool $symlink, string $message): void
+    {
+        Storage::fake('local');
+        $actor = $this->actor();
+        $path = $this->zip([$name => str_repeat('x', $size)]);
+        try {
+            if ($symlink) {
+                $zip = new ZipArchive;
+                $zip->open($path);
+                $zip->setExternalAttributesIndex(0, ZipArchive::OPSYS_UNIX, 0120777 << 16);
+                $zip->close();
+            }
+            Storage::disk('local')->put('product-image-imports/metadata.zip', file_get_contents($path));
+            $import = ProductImageImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'metadata.zip', 'disk' => 'local', 'path' => 'product-image-imports/metadata.zip', 'status' => 'pending']);
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage($message);
+            app(ProductImageImportService::class)->process($import->load('user'));
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    /** @return array<string, array{string, int, bool, string}> */
+    public static function unsupportedArchiveEntries(): array
+    {
+        return [
+            'traversal' => ['__MACOSX/../._photo.png', 1, false, 'Архив содержит небезопасный путь.'],
+            'absolute path' => ['/.DS_Store', 1, false, 'Архив содержит небезопасный путь.'],
+            'backslash' => ['__MACOSX\\._photo.png', 1, false, 'Архив содержит небезопасный путь.'],
+            'symbolic link' => ['__MACOSX/6000011/._photo.png', 1, true, 'Архив не может содержать символические ссылки.'],
+            'oversized metadata' => ['__MACOSX/6000011/._photo.png', 10 * 1024 * 1024 + 1, false, 'Размер изображения в архиве превышает 10 МБ.'],
+            'nested real file' => ['6000011/nested/6000011_1.png', 1, false, 'Файлы должны находиться непосредственно в папке SKU.'],
+        ];
     }
 
     public function test_delayed_cleanup_of_a_replaced_image_cannot_delete_a_later_generation(): void

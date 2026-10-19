@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import type { ContentPage } from '../src/features/pages/types/page.types'
 import { blankBlockData } from '../src/features/pages/validation/blocks'
@@ -168,7 +168,10 @@ test('typed blocks preserve edits, order, state and publication; upload retries 
     page.getByRole('button', { name: 'Следующая страница', exact: true }),
   ).toBeDisabled()
   await expect(
-    page.getByRole('button', { name: 'Опубликовать черновик', exact: true }),
+    page.getByRole('button', {
+      name: 'Опубликовать блоки страницы',
+      exact: true,
+    }),
   ).toBeDisabled()
   page.once('dialog', (dialog) => dialog.dismiss())
   await page
@@ -548,6 +551,8 @@ test('home block and SEO files retain independent pending guards until both are 
   await page.goto('/content?page=home&block=about')
   const block = page.getByRole('region', { name: 'Настройки: О проекте' })
   const seo = page.getByRole('group', { name: 'SEO страницы' })
+  const selectTab = async (name: string) =>
+    page.getByRole('tab', { name, exact: true }).click()
   await block
     .getByRole('textbox', { name: /^Заголовок/ })
     .fill('Новый заголовок блока')
@@ -562,17 +567,21 @@ test('home block and SEO files retain independent pending guards until both are 
     buffer: Buffer.from('selected-file'),
   }
   for (const first of ['seo', 'block']) {
+    await selectTab('Блоки')
     await block
       .getByLabel('Загрузить файл — Изображение блока')
       .setInputFiles(file)
+    await selectTab('SEO')
     await seo
       .getByLabel('Загрузить файл — Изображение Open Graph')
       .setInputFiles(file)
     await expect(save).toBeDisabled()
+    await selectTab(first === 'seo' ? 'SEO' : 'Блоки')
     await (first === 'seo' ? seo : block)
       .getByRole('button', { name: 'Отменить выбор файла', exact: true })
       .click()
     await expect(save).toBeDisabled()
+    await selectTab(first === 'seo' ? 'Блоки' : 'SEO')
     await expect(
       (first === 'seo' ? block : seo).getByRole('button', {
         name: 'Отменить выбор файла',
@@ -582,6 +591,7 @@ test('home block and SEO files retain independent pending guards until both are 
     await expect(
       page.getByText('Несохранённые изменения ещё не вошли в предпросмотр.'),
     ).toBeVisible()
+    await selectTab(first === 'seo' ? 'Блоки' : 'SEO')
     await (first === 'seo' ? block : seo)
       .getByRole('button', { name: 'Отменить выбор файла', exact: true })
       .click()
@@ -591,4 +601,39 @@ test('home block and SEO files retain independent pending guards until both are 
     path: test.info().outputPath('home-independent-files.png'),
     fullPage: true,
   })
+})
+
+test('inspector tabs preserve block edits and page settings in one saved draft', async ({
+  page,
+}) => {
+  const state = await fixture(page)
+  await page.goto('/content?page=7')
+  await page
+    .getByRole('textbox', { name: /^Текст блока/ })
+    .fill('Несохранённый текст блока')
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
+  await page
+    .getByRole('textbox', { name: /^Название страницы/ })
+    .fill('Новое название страницы')
+  await page.getByRole('tab', { name: 'Блоки', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^Текст блока/ })).toHaveValue(
+    'Несохранённый текст блока',
+  )
+  await page
+    .getByRole('tab', { name: 'Блоки', exact: true })
+    .press('ArrowRight')
+  await expect(
+    page.getByRole('tab', { name: 'Настройки', exact: true }),
+  ).toBeFocused()
+  await expect(
+    page.getByRole('textbox', { name: /^Название страницы/ }),
+  ).toHaveValue('Новое название страницы')
+  await page
+    .getByRole('button', { name: 'Сохранить черновик блоков', exact: true })
+    .click()
+  await expect.poll(() => state.stored().title).toBe('Новое название страницы')
+  expect(state.stored().blocks?.[0]?.data).toMatchObject({
+    body: 'Несохранённый текст блока',
+  })
+  expect(state.published()).not.toBe(JSON.stringify(state.stored().blocks))
 })

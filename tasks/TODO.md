@@ -1,565 +1,238 @@
 # TODO
 
-Здесь находится только актуальный roadmap. Текущая задача — в `IN_PROGRESS.md`,
-завершённые результаты — в `DONE.md`; подробная история воспроизводима из Git, ADR,
+Здесь находится только актуальный roadmap. Текущая задача — в [`IN_PROGRESS.md`](IN_PROGRESS.md),
+завершённые результаты — в [`DONE.md`](DONE.md); подробная история воспроизводима из Git, ADR,
 canonical documentation и audit reports.
 
-## Interim Audit Phases 0–6
-
-Блок завершён; по результатам `TASK-A020`–`TASK-A022` переход к следующему prerequisite был разрешён. Refactoring не меняет подтверждённый
-API behaviour без migration plan и синхронного обновления OpenAPI.
-
-- [x] TASK-A001 Зафиксировать исходное состояние и карту реализации Phases 0–6
-  - Сопоставить каждую завершённую задачу с кодом, миграциями, маршрутами, permissions, тестами,
-    OpenAPI и экраном Admin/будущего Client; не считать отметку `[x]` доказательством приёмки.
-  - Зафиксировать версии зависимостей, состояние БД/очередей/storage и результаты полного набора
-    проверок, не изменяя рабочие данные.
-  - Составить единый реестр подтверждённых функций, дефектов, технического долга и намеренно
-    отложенных возможностей с владельцем в Phase 7–11.
-
-- [x] TASK-A002 Провести повторную приёмку Phases 0–6
-  - Проверить foundation, auth/RBAC/audit, Catalog, import/export, cart/orders и contacts по
-    требованиям, реальному коду и сквозным сценариям.
-  - Для каждого расхождения создать адресный follow-up в этом блоке или вернуть исходную задачу в
-    работу; не исправлять несвязанные дефекты внутри аудита.
-  - Результат аудита хранить как один компактный актуальный отчёт вместо набора повторяющихся
-    отчётов по датам.
-
-- [x] TASK-A003 Утвердить информационную архитектуру и единый стиль документации
-  - Сделать русский основным языком проектной документации; имена API, кода, технологий и
-    общепринятые технические термины оставлять без искусственного перевода.
-  - Назначить один канонический документ для каждой темы: обзор, требования, архитектура, данные,
-    API/OpenAPI, окружение/эксплуатация, решения и roadmap; остальные документы только ссылаются на
-    него и не копируют содержание.
-  - Зафиксировать шаблоны для задач, ADR, эксплуатационных инструкций и результатов аудита.
-
-- [x] TASK-A004 Переписать документацию текущего состояния и roadmap
-  - Кратко и однозначно описать фактически реализованное в Phases 0–6, принятые архитектурные
-    решения, ограничения и эксплуатационные требования.
-  - Отдельно перечислить ещё не реализованные возможности Phases 7–11 и все ранее заложенные
-    зависимости: Media, SEO, Analytics, Client и Production.
-  - Удалить устаревшие формулировки, смешение времён и языков, дублирование и журнальные подробности,
-    не нужные для следующей задачи; проверить все внутренние ссылки.
-
-- [x] TASK-A005 Сжать и нормализовать реестр задач
-  - Оставить в `tasks/TODO.md` только актуальный roadmap и критерии будущих работ, в
-    `tasks/IN_PROGRESS.md` — только текущую задачу, а в `tasks/DONE.md` — компактный индекс
-    завершённого с проверяемыми итогами.
-  - Перенести полезную подробную историю в один архивный формат либо удалить её, если она полностью
-    воспроизводится из Git и не содержит уникальных решений/инструкций восстановления.
-  - Устранить повторение одной и той же информации между `tasks/`, `docs/` и README-файлами.
-
-- [x] TASK-A006 Очистить audit-артефакты и служебный мусор репозитория
-  - Инвентаризировать `docs/audits/`, `.tmp/`, временные XLSX/ZIP/CSV, скриншоты, отчёты тестов,
-    логи, дампы и локальные артефакты; до удаления разделить их на обязательные доказательства,
-    recovery-материалы и воспроизводимый мусор.
-  - Удалить только устаревшие и неиспользуемые файлы, перенести сохраняемое в понятные постоянные
-    места и дополнить `.gitignore`, чтобы мусор не накапливался снова.
-  - Проверить, что документация, тесты, restore-процедуры и CI не ссылаются на удалённые файлы.
-
-- [x] TASK-A007 Ввести измеримый baseline качества Laravel backend
-  - Проверить структуру `backend/app`, namespaces, PSR-4, типизацию, зависимости и соответствие
-    Laravel conventions; зафиксировать нарушения по модулям и приоритету.
-  - Добавить или настроить статический анализ (предпочтительно Larastan/PHPStan) на максимально
-    строгом реально поддерживаемом уровне, сохраняя Pint, Composer validation/audit и PHPUnit.
-  - Зафиксировать воспроизводимые команды локальной и CI-проверки без baseline, скрывающего новые
-    ошибки.
-
-- [x] TASK-A008 Нормализовать HTTP/API-слой Laravel
-  - Сделать контроллеры тонкими, вынести validation/authorization в Form Requests и Policies,
-    унифицировать API Resources, пагинацию, фильтры, сортировку, статусы и формат ошибок.
-  - Проверить route model binding, именование маршрутов, вложенность ресурсов, HTTP verbs и status
-    codes на соответствие Laravel, REST и CRUD.
-  - Удалить мёртвые endpoints/classes и прямые Eloquent/SQL-операции из контроллеров, если они
-    принадлежат query/application layer.
-
-- [x] TASK-A009 Перестроить application/domain services по DRY и SOLID
-  - Найти дублирование в Catalog/import/export, orders, contacts, auth/audit и storage cleanup;
-    выделять общие компоненты только при совпадающих правилах, не создавая слои ради слоёв.
-  - Разделить слишком крупные сервисы на понятные use cases, validators, queries и infrastructure
-    adapters; определить явные транзакционные границы и идемпотентность.
-  - Сохранить одно бизнес-ядро Laravel для Admin и Client: интерфейсы доставки не должны дублировать
-    бизнес-правила или обращаться к БД в обход application layer.
-
-- [x] TASK-A010 Проверить модели, БД и целостность данных
-  - Пересмотреть Eloquent relationships/casts/scopes, mass assignment, factories/seeders, индексы,
-    foreign keys, unique/check constraints, блокировки и конкурентные инварианты.
-  - Проверить жизненный цикл legacy product-variant tables и placeholder media fields; удалить их
-    только отдельной безопасной миграцией после подтверждённой сверки данных и требований Phase 7.
-  - Для каждой корректирующей миграции предусмотреть PostgreSQL-проверку, rollback/forward policy и
-    отсутствие разрушения существующих данных.
-
-- [x] TASK-A011 Подтвердить API-only архитектуру и границы Admin/Client
-  - Убедиться, что Laravel не содержит пользовательских Blade/HTML flows, а `web` middleware,
-    session/cookie и Sanctum применяются только там, где требуются first-party Admin SPA.
-  - Разделить публичные и административные contracts, permissions и rate limits, сохранив общие
-    use cases и доменную модель.
-  - Проверить, что Phase 10 сможет использовать существующие Catalog/cart/order/contact capabilities
-    без копирования бизнес-логики в Nuxt.
-
-- [x] TASK-A012 Усилить безопасность, аудит и обработку персональных данных
-  - Повторно проверить auth/session/password reset, RBAC/least privilege, mass-assignment protection,
-    rate limits, upload/import boundaries, queue payloads, secrets и ownership checks.
-  - Проверить маскирование PII в логах, audit trail, exceptions и jobs, а также retention/deletion,
-    backup и доступ к данным в пределах ранее принятых требований 152-ФЗ.
-  - Закрыть найденные high/critical проблемы до функционального рефакторинга зависимых модулей.
-
-- [x] TASK-A013 Проверить надёжность очередей, импортов и файлового хранилища
-  - Свести общий lifecycle async operations: prepare, dispatch, progress, retry, terminal state,
-    ownership, error report и cleanup; убрать расхождения между типами импорта там, где правила общие.
-  - Проверить retry/backoff/timeout, транзакции, after-commit dispatch, идемпотентность, безопасную
-    работу с ZIP/XLSX и восстановление после остановки worker.
-  - Подтвердить отсутствие потерянных/осиротевших файлов и наличие операционной видимости для
-    неуспешных cleanup/jobs.
-
-- [x] TASK-A014 Привести OpenAPI и human-readable API guide к фактическому контракту
-  - Автоматически сопоставить все Laravel routes Phases 0–6 с `docs/openapi.json`, включая security,
-    parameters, request/response schemas, ошибки, пагинацию и примеры.
-  - Сделать OpenAPI каноническим машинным контрактом, а `docs/API.md` — коротким руководством по
-    сценариям и нетривиальным правилам без повторения каждой schema.
-  - Добавить CI-проверки валидности, route coverage и обнаружения несовместимого contract drift.
-
-- [x] TASK-A015 Перестроить тестовую пирамиду и CI quality gates
-  - Удалить placeholder/дублирующие тесты, разделить unit/feature/integration/contract/e2e и закрыть
-    негативные, permission, transaction, concurrency и PostgreSQL-specific сценарии.
-  - Проверить детерминированность factories/seeders, изоляцию test DB от локальных данных и
-    повторный полный прогон без зависимости от порядка тестов.
-  - Сделать обязательными Pint, static analysis, Composer audit, OpenAPI checks, backend suite и
-    релевантные PostgreSQL/Redis/queue проверки; устранить flaky-тесты, а не скрывать их retry.
-
-- [x] TASK-A016 Составить и закрыть матрицу покрытия Backend API → Admin UI
-  - Для каждого административного endpoint/permission указать экран, доступные действия и состояния
-    loading/empty/error/forbidden; отдельно пометить backend-only функции, намеренно ожидающие Phase 7–10.
-  - Проверить навигацию и route guards по фактическим permissions; менеджер не должен видеть пустую
-    ссылку либо терять доступ к разрешённой операции из-за чужого permission.
-  - Создать адресные follow-up задачи для каждого подтверждённого разрыва до финальной приёмки.
-
-- [x] TASK-A017 Нормализовать Admin UI-kit перед расширением панели
-  - Инвентаризировать tokens и shared-компоненты для кнопок, полей, selects, dialogs, таблиц,
-    пагинации, badges, alerts, skeleton/loading/empty/error и destructive confirmations.
-  - Заменить локальные копии паттернов общими доступными компонентами, документировать варианты и
-    состояния, сохранив визуальную основу TailAdmin Vue и требования `docs/UI_DESIGN_REVIEW.md`.
-  - Проверить keyboard/focus, screen readers, контраст и responsive 320/640/768/1024/1280 px;
-    подтвердить компонентными тестами и независимым UI Design Guard review.
-
-- [x] TASK-A018 Реализовать рабочее место менеджера по заказам
-  - Добавить permission-safe order list/show API и заменить `/orders` placeholder на list/detail,
-    snapshots, contacts/delivery, transitions/history, payments и comments.
-
-- [x] TASK-A019 Реализовать рабочее место менеджера по обращениям
-  - Добавить contacts navigation и list/detail для callback, email и partner requests с filters,
-    assignment, statuses, history и comments under `contacts.view/manage`.
-
-- [x] TASK-A020 Провести финальную регрессию Interim Audit и разрешить переход к Phase 7
-  - Повторить clean-environment backend/Admin/Compose, PostgreSQL concurrency, Redis/queue,
-    import/export, OpenAPI и key end-to-end scenarios.
-  - Подтвердить отсутствие undocumented gaps, high/critical findings, stale links и temporary files.
-  - Заблокирована результатами `TASK-A021` и `TASK-A022`; evidence и условия повторной приёмки —
-    в [`docs/INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md).
-
-- [x] TASK-A021 Стабилизировать проверку каталога ответственных обращений
-  - Устранить недетерминированное ожидание порядка в `ContactAssignmentTest`: проверять состав,
-    eligibility и контракт сортировки отдельно, не меняя поведение API без обновления OpenAPI.
-  - Повторить полный backend suite дважды.
-
-- [x] TASK-A022 Обеспечить запуск Admin Playwright E2E в локальном Compose
-  - Добавить в образ/команду необходимые зависимости Chromium либо выделить поддерживаемый
-    тестовый runner; production/dev Admin workflow не должен терять работоспособность.
-  - Подтвердить clean-install, полный E2E и axe scan в Compose без environment failures.
-
-## Admin frontend refactoring — prerequisite for Phase 7
-
-Блок повторно открыт после независимого аудита 2026-09-12 и завершён повторной приёмкой
-2026-09-13. `TASK-A031`–`TASK-A035` и `TASK-A030` закрыли выявленные findings; переход к Phase 7
-разрешён. Admin приведён к архитектуре из `frontend/admin/AGENTS.md` без изменения подтверждённого
-поведения API, permissions и пользовательских сценариев.
-
-- [x] TASK-A023 Зафиксировать baseline Admin и правила миграции
-  - Зафиксировать скриншоты и smoke/axe-проверки `/login`, `/forgot-password`, `/reset-password`,
-    `/`, `/profile`, `/products`, `/categories`, `/brands`, `/attribute-groups`, `/attributes`,
-    `/employees`, `/roles`, `/permissions`, `/audit-log`, `/orders`, `/contacts`, `/content` и
-    `/settings`; включить loading, empty, error, forbidden и destructive-dialog состояния там,
-    где они доступны.
-  - Создать карту каждого текущего `view`, компонента, composable, store и service: назначение,
-    владельца feature и целевой слой. Отдельно зафиксировать сохранённые публичные props/events
-    Base-компонентов для безопасной постепенной миграции.
-  - Не перемещать код в этой задаче; результат — воспроизводимый baseline, который не позволит
-    принять визуальный или accessibility-regression за «чистый рефакторинг».
-
-- [x] TASK-A024 Сформировать стабильный UI-kit и design tokens
-  - Ввести явные слои `styles/`, `components/ui/` и `components/shared/`, сохранив переходные
-    adapters для существующих `Base*` компонентов до перевода всех потребителей.
-  - Централизовать tokens цветов, типографики, spacing, radius, control heights, borders, shadows,
-    transitions и focus ring; удалить зависимость глобального поведения кнопок от селекторов
-    `class*` в `style.css`.
-  - Реализовать и задокументировать варианты/состояния `UiButton`, `UiInput`, `UiSelect`,
-    `UiTextarea`, `UiCheckbox`, `UiRadio`, `UiDialog`, `UiAlert`, `UiBadge`, `UiCard`, `UiTable`,
-    `UiField`, `UiLoadingState`, `UiEmptyState`, `UiPagination` и `ConfirmDialog`.
-
-- [x] TASK-A025 Выделить application shell и auth shell
-  - Разделить текущий `AppLayout` на `AdminLayout` и компоненты header/sidebar; создать
-    `AuthLayout` для login/forgot-password/reset-password без копирования каркаса и стилей.
-  - Вынести общие page header, уведомления, user menu и responsive-navigation в shared/layout
-    слой; сохранить route guards, focus management и keyboard-навигацию.
-  - Проверить sidebar, header, диалоги и таблицы на 320/640/768/1024/1280 px, включая отсутствие
-    непреднамеренного горизонтального overflow.
-
-- [x] TASK-A026 Нормализовать общие UI-паттерны страниц
-  - Заменить локальные копии заголовков, action bars, filters, alerts, status badges, table shells,
-    loading/empty/error blocks, пагинации и подтверждений удаления на shared/UI-компоненты.
-  - Единообразно реализовать label/help/error у полей, `role=status`/`role=alert`, visible focus,
-    disabled/loading/success/empty состояния и длинный русский контент.
-  - Не переносить доменные правила в UI-kit и не создавать одноразовые wrapper-компоненты.
-
-- [x] TASK-A027 Рефакторинг feature `products`
-  - Превратить `ProductsView.vue` в тонкую route-level композицию; выделить
-    `features/products/{components,composables,services,types,validation}`.
-  - Разделить редактор на `ProductEditor`, `ProductMainSection`, `ProductAttributesSection`,
-    `ProductImagesSection`, `ProductVariantsSection`, `ProductRelationsSection` и
-    `ProductReviewSection`; состояние, submit и validation перенести в composables/schema.
-  - Устранить горизонтальную прокрутку/обрезание stepper в редакторе на 320 px, сохранив
-    доступность шагов, текущий порядок операций, импорт/экспорт и API-contract.
-
-- [x] TASK-A028 Рефакторинг feature `catalog`
-  - Последовательно выделить feature-модули categories, brands, attribute-groups и attributes;
-    разложить крупные формы и dialogs на логические доменные секции.
-  - Вынести DTO/types и validation из Vue-файлов; сохранить services как единственный путь к API,
-    не создавая raw HTTP в компонентах.
-  - Привести list/detail/form состояния и responsive-представление таблиц к общему паттерну.
-
-- [x] TASK-A029 Рефакторинг feature `access`, `sales` и `contacts`
-  - Перевести profile, employees, roles, permissions, audit-log, orders и contacts на тонкие pages
-    и feature-level компоненты/composables; Pinia оставить только для действительно глобального
-    состояния.
-  - Убрать дублирование фильтров, форм, статусов и destructive flows, не изменяя permissions,
-    данные заказов, ПДн и audit semantics.
-  - Для узких list/detail экранов определить явную responsive-стратегию вместо случайного
-    горизонтального скролла.
-
-- [x] TASK-A031 Исправить mobile sidebar и контроль ошибок рендера
-  - Исключить закрытый mobile sidebar из accessibility tree и Tab-порядка вне desktop; сохранить
-    открытие, focus trap, Escape, backdrop, возврат фокуса и desktop-навигацию.
-  - Восстановить видимую и доступную иконку удаления; добавить проверки unresolved Vue components,
-    browser console errors и `pageerror`, чтобы такие дефекты не проходили E2E незамеченными.
-  - Проверить sidebar на 320/640/768/1024/1280 px, выполнить build, unit, релевантные E2E/axe,
-    responsive visual QA и независимый UI Design Guard review.
-
-- [x] TASK-A032 Довести design tokens и цветовой контраст до принятого стандарта
-  - Исправить все выявленные WCAG AA contrast failures, включая secondary/muted text, links,
-    controls и состояния disabled/hover/focus, без ухудшения визуальной иерархии.
-  - Сделать `tokens.css` фактическим source of truth для цветов, spacing, radius, control heights,
-    borders, shadows, transitions и focus ring; `@theme` должен ссылаться на tokens, а не дублировать
-    необоснованные raw values.
-  - Удалить необоснованные исключения `color-contrast` из full-page Axe scan; выполнить visual QA
-    обязательных маршрутов на всех контрольных ширинах и независимый UI Design Guard review.
-
-- [x] TASK-A033 Завершить products migration на UI-kit и feature-owned types
-  - Заменить повторяющиеся raw buttons, page headers, alerts, badges, table/empty/loading states,
-    fields, radios и destructive dialogs внутри `products` на UI/shared primitives; native elements
-    оставить только там, где это оправдано платформой, например file input и progress.
-  - Перенести `AttributeDraftValue` и остальные domain/DTO-типы из Vue/service файлов в
-    `features/products/types`; composables не должны зависеть от Vue-компонентов.
-  - Сохранить API-contract, permissions, импорт/экспорт и порядок операций; расширить unit/E2E/axe,
-    проверить 320/640/768/1024/1280 px и пройти независимый UI Design Guard review.
-
-- [x] TASK-A034 Устранить дублирование auth shell
-  - Вынести общий auth card, branding, title, description и layout из login, forgot-password и
-    reset-password в `AuthLayout` либо один shared auth-компонент без параллельных реализаций.
-  - Оставить page-specific формы и workflows во views; сохранить guards, autofocus, autocomplete,
-    keyboard navigation, API-contract и состояния loading/success/error.
-  - Выполнить build, unit, auth E2E/axe и visual QA трёх маршрутов на всех контрольных ширинах,
-    затем получить независимый UI Design Guard review.
-
-- [x] TASK-A035 Стабилизировать acceptance suite и актуализировать evidence
-  - Заменить timer-based loading fixtures на управляемые deferred fixtures и подтвердить
-    стабильность повторными параллельными запусками без flaky failures.
-  - Добавить воспроизводимое forbidden-state coverage; зафиксировать историческое отклонение
-    `TASK-A023`, не переписывая Git-историю.
-  - Исправить устаревшие пути/команды в `docs/UI_DESIGN_REVIEW.md`, включить `/contacts` в
-    обязательный маршрутный набор и синхронизировать связанную документацию.
-  - Дважды подряд выполнить полный локальный Admin suite и один раз Linux Compose suite.
-
-- [x] TASK-A030 Повторная финальная приёмка Admin frontend refactoring
-  - Предварительные исправления `TASK-A031`–`TASK-A035` завершены.
-  - Удалить временные compatibility adapters только после перевода всех потребителей; проверить,
-    что `views` не содержат raw HTTP, доменных DTO, крупных форм или копий UI primitives.
-  - Выполнить полный build, unit, production E2E и axe suite, visual QA обязательных маршрутов и
-    independent UI Design Guard review; устранить все blocking findings.
-  - Обновить `frontend/admin/AGENTS.md`, `docs/UI_DESIGN_REVIEW.md` и актуальную документацию
-    только при изменении фактических правил/контрактов; после этого разрешить Phase 7 — Content.
-
-## Admin frontend post-acceptance follow-up
-
-- [x] TASK-A036 Удалить hardcoded-роли и оставшийся compatibility adapter
-  - Использовать полученные от backend названия ролей без frontend-словаря системных slug и удалить
-    неиспользуемый service re-export `getRoles`; синхронизировать итоговую документацию TASK-A030.
-  - Сохранить текущие permissions, маршруты и API-contract; добавить адресную unit/E2E-проверку.
-
-- [x] TASK-A037 Завершить disabled-контракт UI-kit
-  - Заблокировать вспомогательные действия `UiInput` и `UiSelect` в disabled-состоянии и добавить
-    полноценный disabled-контракт для `UiDatePicker` без потери keyboard/focus semantics.
-  - Обновить UI-kit tests, axe и visual QA затронутых состояний на контрольных ширинах; пройти
-    независимый UI Design Guard review.
-
-- [x] TASK-A038 Вынести orchestration импортов товаров из Vue-компонентов
-  - Перенести state, загрузку, polling, download/upload flow и validation XLSX/ZIP из трёх import
-    dialogs в feature composables/validation, оставив компонентам представление и события.
-  - Не менять API-contract, permissions, лимиты файлов и поведение фоновой обработки; выполнить
-    unit, import E2E/axe, responsive QA и независимый UI Design Guard review.
-
-- [x] TASK-A039 Усилить Admin lint и flaky CI gates
-  - Добавить воспроизводимые lint и format-check команды в локальный workflow и CI.
-  - Не позволять Playwright retry скрывать flaky tests: отключить retries либо включить падение CI
-    при flaky-результате; подтвердить два последовательных локальных прогона и Linux Compose suite.
-
-- [x] TASK-A040 Дополнить живую витрину Admin UI-kit
-  - Показать на `/ui-kit` все 16 `Ui*`-компонентов, shared-компоненты, значимые варианты,
-    состояния и полный набор design tokens без изменения самих UI primitives.
-  - Закрепить полноту inventory и tokens unit-тестами; проверить responsive, visual, axe и
-    интерактивные состояния локально и в Linux Compose; пройти независимый UI Design Guard review.
-
-- [x] TASK-A041 Восстановить desktop-прокрутку Admin sidebar
-  - Сохранить `overflow-y-auto` на desktop и изолировать wheel/trackpad-прокрутку sidebar от
-    основной страницы через `overscroll-contain`.
-  - Закрепить на viewport 1280×480 переполнение, hover + wheel, отсутствие scroll chaining,
-    видимость нижней навигации и переход по ссылке; обновить просмотренные visual baselines.
-
-## Follow-up повторного аудита Phases 0–6 — 2026-09-14
-
-Функциональная приёмка Phases 0–6 сохраняется, однако повторная проверка выявила один
-критический security incident и несколько пробелов в lifecycle данных и production-like
-проверках. `TASK-A042` блокирует публикацию новых изменений до закрытия incident. Остальные
-задачи выполняются в указанном порядке зависимостей; подробное evidence находится в
-[`docs/INTERIM_AUDIT_FINAL.md`](../docs/INTERIM_AUDIT_FINAL.md).
-
-- [x] TASK-A042 Удалить опубликованные дампы БД и закрыть incident утечки
-  - Без вывода содержимого инвентаризировать четыре отслеживаемых PostgreSQL dump-файла и все их
-    Git-объекты. Считать административные записи, password hashes, session payloads и audit
-    snapshots скомпрометированными, пока не доказано обратное.
-  - После отдельного подтверждения destructive history rewrite удалить dump blobs из текущего
-    дерева, всех refs и публичной Git-истории; добавить обязательные ignore/secret-scan gates и
-    хранить recovery backups только вне репозитория в шифрованном хранилище с контролем доступа.
-  - Инвалидировать затронутые sessions/reset tokens, сменить пароли административных аккаунтов и
-    ротировать `APP_KEY`/связанные секреты по подтверждённому содержимому дампов. Зафиксировать
-    incident timeline, внешние копии/forks/caches, ответственного и результат проверки очистки.
-  - Обновить безопасный restore runbook и доказать восстановление из нового backup-канала без
-    помещения архива или чувствительных значений в Git, CI logs либо task evidence.
-
-- [x] TASK-A043 Утвердить политику жизненного цикла персональных данных
-  - Зафиксировать инженерный baseline сроков и правовых оснований для заказов, обращений,
-    комментариев, workflow history, administrative snapshots, sessions, failed jobs, логов и
-    backups; окончательную юридическую проверку выполнить до production activation.
-  - Зафиксировать threat model и решение по encryption at rest, key management, поиску по
-    зашифрованным полям, backup-копиям, доступу, выгрузке и уничтожению данных. Не считать
-    application encryption самостоятельным подтверждением соответствия 152-ФЗ.
-  - Принять ADR и проверяемую retention/deletion matrix до необратимой анонимизации либо удаления.
-  - Принято 2026-09-24: ADR-014, threat model и проверяемая матрица утверждены для реализации.
-    Персоналии, юридическая проверка и provider evidence перенесены в обязательный pre-production
-    gate `TASK-090`/`TASK-145`; safe defaults до его прохождения запрещают production apply.
-
-- [x] TASK-A044 Реализовать утверждённые retention, anonymization и deletion controls для ПДн
-  - На основе `TASK-A043` реализовать отдельные application services/commands для заказов,
-    обращений и связанных history/comments без обхода permissions, audit и юридически обязательных
-    сроков; операции должны быть идемпотентными, bounded и безопасными для повторного запуска.
-  - Добавить scheduler, dry-run/metrics, failure visibility и PostgreSQL tests; исключить PII из
-    command output, logs, queue payloads и аналитических агрегатов.
-  - Обновить `DATABASE.md`, `LOGGING.md`, `OPERATIONS.md` и recovery/backup правила; подтвердить
-    результат на обезличенных fixtures и в restore exercise.
-  - Закрыто 2026-09-24: repository-side controls, scheduler, evidence, PostgreSQL checks и
-    synthetic restore replay реализованы. Production activation остаётся отдельным fail-closed
-    gate `TASK-090`/`TASK-145` и не входит в критерий завершения этой implementation-задачи.
-
-- [x] TASK-A045 Защитить bearer-токены и ограничить срок жизни гостевых корзин
-  - Хранить необратимый HMAC/hash `X-Cart-Token` вместо raw bearer-токена, сохранив текущий wire
-    contract; предусмотреть безопасную migration/expiration strategy для существующих корзин.
-  - Утвердить configurable TTL для пустых, брошенных и оформленных корзин и добавить bounded
-    scheduled cleanup без удаления активной корзины во время конкурентного add/update/checkout.
-  - Закрепить ownership, expiry, replay/concurrency, индекс и cleanup tests на SQLite и PostgreSQL;
-    обновить OpenAPI, `API.md`, `DATABASE.md` и operations visibility.
-  - Реализовано 2026-09-15: raw tokens мигрируются в HMAC-SHA-256, lifecycle/TTL и bounded hourly
-    cleanup синхронизированы row locks; SQLite contract tests и отдельный PostgreSQL concurrency/index
-    suite добавлены в CI.
-
-- [x] TASK-A046 Усилить семантическую и compatibility-проверку OpenAPI
-  - Подключить воспроизводимый OpenAPI 3.1 validator/linter, проверяющий `$ref`, schemas, formats,
-    parameters, request/response media types и уникальность `operationId`, а не только JSON parse и
-    совпадение route registry.
-  - Заменить поверхностный compatibility check на рекурсивное сравнение request/response schemas,
-    типов, required/nullable, enum, bounds, parameters, headers и status codes с корректной
-    классификацией breaking/non-breaking изменений.
-  - Обычный patch/minor version bump не должен автоматически разрешать удаление operation или
-    несовместимый wire contract. Закрепить сам checker mutation/fixture-тестами и требовать явный
-    migration plan для разрешённого breaking change.
-  - Реализовано 2026-09-15: закреплённый Redocly OpenAPI 3.1 gate и project conventions проверяют
-    semantics/formats/media types; направленно-рекурсивный checker и mutation fixtures покрывают
-    request/response schemas, parameters, headers/status/security. Breaking разрешён только major
-    bump с явным versioned migration plan.
-
-- [x] TASK-A047 Сделать Compose bootstrap зависимостей lock-aware
-  - Заменить проверки только наличия `vendor/autoload.php`, `vite` или `nuxt` на детерминированную
-    сверку `composer.lock`/`package-lock.json` с содержимым named volumes для backend, queue,
-    scheduler, Admin и Client.
-  - Гарантировать, что `docker compose up --build` после изменения lock-файла устанавливает точный
-    набор зависимостей либо завершается с понятной ошибкой, не оставляя частично рабочие сервисы.
-  - Добавить clean-volume и stale-volume smoke tests, описать recovery без ручного удаления рабочих
-    данных и синхронизировать `ENVIRONMENT.md`/`CI.md`.
-  - Реализовано 2026-09-15: единый fail-closed bootstrap хранит атомарный fingerprint manifest,
-    lock-файла и runtime в dependency volume, сериализует общий Composer install и запускает
-    application process только после успешного `composer install`/`npm ci`. Lock-файлы являются
-    image rebuild inputs; отдельный CI smoke проверяет clean/stale volumes и безопасный recovery.
-
-- [x] TASK-A048 Прогонять Laravel feature suite на PostgreSQL
-  - Добавить безопасный CI job для полного либо обоснованно разделённого backend feature suite на
-    отдельной PostgreSQL database; существующий SQLite suite оставить быстрым feedback, а не
-    единственным доказательством большинства HTTP/business сценариев.
-  - Исключить destructive доступ к development/production DB теми же fail-closed guards, что и у
-    текущих integration tests; обеспечить deterministic reset и отсутствие зависимости от порядка.
-  - Зафиксировать PostgreSQL-specific различия constraints, JSON, decimal, locking и transactions;
-    не скрывать несовместимые тесты условными skip без адресной follow-up задачи.
-  - Реализовано 2026-09-16: отдельный blocking CI job поднимает PostgreSQL 17 с
-    `agatceramic_feature_test`, fail-closed проверяет окружение, делает deterministic reset и
-    запускает все 229 feature tests в воспроизводимом случайном порядке. Без skip исправлены
-    выявленные PostgreSQL-различия signed `smallint`, JSON equality и URL encoding.
-
-- [x] TASK-A049 Проверить реальную доставку queue jobs через Redis worker
-  - В изолированном CI/Compose profile отправить representative import, storage cleanup и order
-    confirmation jobs через реальную Redis queue и дождаться обработки отдельным worker process,
-    не вызывая `handle()` напрямую.
-  - Проверить after-commit dispatch, serialization только разрешённых identifiers, retry/backoff,
-    terminal failure, `failed_jobs`, stale-dispatch recovery и отсутствие дублей/потери cleanup.
-  - Использовать bounded timeouts и диагностический output без PII; сохранить быстрые fake/sync
-    tests для unit/feature уровня.
-  - Реализовано 2026-09-16: отдельный blocking Compose/CI profile с эфемерными PostgreSQL и Redis
-    доставляет representative import, cleanup и order confirmation jobs отдельным workers;
-    84 assertions покрывают after-commit, identifier-only payloads, retry/backoff, terminal
-    failure/`failed_jobs`, stale redispatch и идемпотентную duplicate delivery.
-
-- [x] TASK-A050 Добавить минимальный full-stack smoke Admin SPA → Laravel API
-  - В отдельном test profile поднять production build Admin, Laravel, PostgreSQL и Redis; создать
-    изолированные fixtures и пройти реальный Sanctum CSRF/login/logout flow без `page.route()` mocks.
-  - Проверить по одному representative read/mutation сценарию для Catalog, orders и contacts,
-    включая permissions и стандартный error envelope. Не дублировать полный visual suite.
-  - Не помещать credentials/PII fixtures в repository или logs; обеспечить cleanup и блокирующий CI
-    result. UI Design Guard нужен только если исправление smoke findings изменит интерфейс.
-  - Реализовано 2026-09-16: отдельный blocking Compose/CI profile поднимает production build Admin,
-    Laravel, эфемерные PostgreSQL/Redis и проходит настоящий Sanctum CSRF/login/logout без API mocks.
-    Browser проверяет Catalog read/create, orders/contacts read/status mutation, permissions и
-    стандартные `401/403` envelopes; runtime credentials живут во временном volume с mode `0600`,
-    синтетические PII — только в PostgreSQL tmpfs, trace/screenshots/video отключены, cleanup
-    выполняется через `if: always()`.
-
-- [x] TASK-A051 Нормализовать task ledger и исторические audit reports
-  - Выполнить обещание `TASK-A005`: оставить в `TODO.md` только незавершённые задачи, а завершённые
-    `TASK-A001`–`TASK-A041` держать в компактном `DONE.md`/Git без второго полного roadmap.
-  - Пометить audit evidence как историческое либо обновить изменяемые счётчики маршрутов, файлов и
-    тестов; убрать противоречия между `CURRENT_STATE.md`, `INTERIM_AUDIT_FINAL.md`, специализированными
-    audit reports и фактическими CI gates.
-  - Сохранить русский основным языком канонической документации и добавить автоматическую проверку
-    внутренних Markdown links и запрещённых tracked artifacts.
-
-- [x] TASK-A052 Декомпозировать импортный контур backend по ответственностям
-  - Разделить чтение workbook, parsing, validation, планирование изменений, применение,
-    формирование template/error report и cleanup на небольшие компоненты с явными контрактами.
-  - Сохранить текущий API, checkpoint/resume, transaction и locking contract; не вводить
-    repository/interface без реальной границы persistence или вариативности.
-  - Удалить неиспользуемые зависимости и покрыть каждый извлечённый workflow тестами; основные
-    orchestration-классы должны пройти review по эвристикам из `backend/AGENTS.md`.
-  - Реализовано 2026-09-16: общий product import разделён на workbook reader, value parser,
-    row mapper, plan builder и executor; category templates — на schema/reader/writer/OOXML
-    validation; group и price/status imports — на reader/planner, template, report и orchestration.
-    Публичный API, транзакции, блокировки, durable items, checkpoint/resume и cleanup сохранены.
-
-- [x] TASK-A053 Устранить скрытые зависимости и test-driven production API
-  - Заменить `app()`/`resolve()` в обычном production flow на явный constructor/method injection.
-  - Убрать nullable service-аргументы и container fallback, добавленные ради прямых legacy-вызовов
-    Jobs; тесты перевести на реальный production entry point/container invocation.
-  - Заменить глобальные `request()`/`auth()` в Controllers на типизированные зависимости. Для
-    неизбежных Laravel lifecycle callbacks оставить минимальный adapter, комментарий и тест.
-  - Реализовано 2026-09-16: Jobs, bootstrap, validation, console и Controller flows используют
-    явный constructor/method injection; import Job tests вызывают production `handle()` через
-    container. Только Laravel `failed()` callbacks оставляют документированный узкий container
-    adapter, покрытый отдельными unit-тестами; публичный API-контракт не изменён.
-
-- [x] TASK-A054 Вынести нетривиальные admin read queries из Controllers
-  - Вынести многоусловные filters/search/sort и metadata enrichment для audit logs, orders,
-    contact requests, admin users и других list endpoints в Query objects.
-  - Оставить простой локальный CRUD query в Controller там, где новый слой не улучшает код.
-  - Исключить N+1, проверить PostgreSQL indexes и сохранить текущие response/OpenAPI contracts;
-    каждый фильтр покрыть feature-тестом.
-  - Реализовано 2026-09-16: сложные admin reads для audit logs, orders, contacts, users,
-    assignee catalogue и product relation candidates вынесены в Query objects с eager loading и
-    пакетным metadata enrichment. Добавлены составные PostgreSQL indexes для equality filters с
-    сортировкой; все документированные фильтры и пагинация покрыты feature-тестами без изменения
-    HTTP/OpenAPI-контрактов.
-
-- [x] TASK-A055 Автоматизировать backend architecture guardrails
-  - Добавить проверку направлений зависимостей между HTTP, application, data/integration и
-    presentation слоями.
-  - Запретить в Controllers DB transactions/mutations, service locator и глобальные request/auth
-    helpers; временный allowlist допускается только с номером задачи на удаление долга.
-  - Добавить отчёт по чрезмерному размеру/complexity классов и методов с review-порогами из
-    `backend/AGENTS.md`, подключить guard к обязательному CI и документировать локальную команду.
-  - Реализовано 2026-09-16: PHP AST guard проверяет направления слоёв и запрещённые операции в
-    Controllers, task-bound allowlist отклоняет некорректный и stale debt, а size/complexity
-    review report выполняется обязательной Composer-командой в CI. Auth application service
-    больше не зависит от Form Requests/HTTP session lifecycle.
-
-## Phase 7 — Content
-
-- [x] TASK-090 Настройки сайта
-  - Добавить управляемые публичные реквизиты продавца: тип/наименование оператора, ФИО ИП,
-    ИНН/ОГРНИП, адрес, телефоны, email и отдельно контролируемые банковские реквизиты.
-  - Хранить версии оферты, политики ПДн и текстов согласий; отделить публичные поля от admin-only
-    compliance metadata и не публиковать банковские/служебные данные без явной настройки.
-  - Добавить admin-only operational approval block ADR-014: ответственные, юридический reviewer,
-    даты/решения и ссылку на утверждённую версию документа с audit trail.
-- [x] TASK-091 Страницы
-- [x] TASK-092 Баннеры
-- [x] TASK-093 Слайдеры
-- [x] TASK-094 Магазины
-- [x] TASK-095 Часы работы
-- [x] TASK-096 Медиатека
-  - Доставлять изображения категорий, логотипы брендов и документы через управляемые media
-    references; до добавления foreign keys сверить все существующие непустые placeholders.
-
-## Content workspace redesign — согласовано 2026-09-30
-
-Целевой UX и обязательные правила описаны в [`docs/CONTENT_WORKSPACE_UX.md`](../docs/CONTENT_WORKSPACE_UX.md).
-Работы выполняются отдельными законченными задачами, без удаления действующих маршрутов до
-замены их сценариев.
-
-- [x] TASK-C002 Типизированные блоки и публичные страницы
-  - Ввести проверяемую модель блоков с порядком и состояниями черновика/публикации; перенести
-    главную без потери данных и обновить OpenAPI.
-  - Реализовать «Контакты», «О нас» и «Каталог» в Nuxt с данными API, SSR/SEO и проверками.
-  - Выполнено 2026-09-30; результаты проверки и изменённые файлы — в
-    [`TASK_C002_REPORT.md`](../docs/TASK_C002_REPORT.md).
-- [x] TASK-C003 Редактор блоков и медиа внутри страниц
-  - Настройки блоков, выбор/загрузку медиа, баннеры и слайдеры разместить у страницы, где они
-    используются; показывать выбранное медиа и состояния загрузки/ошибок.
-  - Сохранить отдельное право `media.manage`; обеспечить повторное использование ресурсов.
-  - Выполнено 2026-09-30; проверки и файлы — в
-    [`TASK_C003_REPORT.md`](../docs/TASK_C003_REPORT.md).
-- [x] TASK-C004 Общее оформление и магазины в «Контенте»
-  - Перенести управление общими шапкой, подвалом и навигацией из редактора главной; оформить
-    настройки внешнего вида фильтров отдельно от данных каталога.
-  - Сделать магазины частью единой рабочей области и убрать дублирующие входы после проверки.
-  - Выполнено 2026-10-01; проверки, границы реализации и файлы — в
-    [`TASK_C004_REPORT.md`](../docs/TASK_C004_REPORT.md). Панель вида фильтров выделена;
-    действующие настройки подключаются вместе с клиентскими фильтрами в `TASK-120`.
-- [x] TASK-C005 Точный предпросмотр сохранённого черновика
-  - Показывать настоящий Nuxt-рендер с анимациями и режимами размеров экрана; доступ к черновику
-    ограничить авторизованным сотрудником с `content.manage` и исключить индексацию.
-  - Проверить публикацию, отзыв доступа, адаптивность и доступность; закрыть старые UI-входы и
-    обновить документацию/правила по итоговому интерфейсу.
-  - Выполнено 2026-10-01; реализация, проверки и ограничения — в
-    [`TASK_C005_REPORT.md`](../docs/TASK_C005_REPORT.md).
+## Исправления и рефакторинг по аудиту проекта — 2026-10-03
+
+TASK-A066–TASK-A081 внесены 2026-10-04 по проверке версии `39d5cb2`. При составлении списка на
+`7b0a020` повторно сверены места двух дефектов P1; они остаются открытыми. Результаты аудита
+описывают проверенную версию, а время запросов, нагрузка и реальные конкурентные PostgreSQL-сценарии
+требуют отдельного измерения. Все открытые задачи ниже ожидают реализации. TASK-A082–TASK-A086
+добавлены 2026-10-04 после дополнительного просмотра кода на `9140b92`; для TASK-A086 воспроизведено
+чередование ответов на действующем composable с mock API.
+
+Приоритеты: **P1** — корректность данных и рабочих сценариев, исправить в первую очередь; **P2** —
+сопровождаемость, производительность и автоматические проверки; **P3** — воспроизводимость
+инструментов и актуальность документации. Рекомендуемый порядок: P1 → Client CI → редактор товаров и
+HTTP-клиент → остальные P2 → P3.
+
+Общие критерии готовности: одна задача меняет один логический сценарий; сохраняет permissions,
+PII-защиту и действующее поведение; проходит релевантные tests, lint/static analysis/build.
+DB-зависимые изменения проверяются на изолированной PostgreSQL; API/schema changes отражаются в
+OpenAPI и канонической документации. Изменения интерфейса проходят независимый UI Design Guard по
+[UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
+индекс результатов; проверки аудита не заменяют приёмку исправления.
+
+- [ ] TASK-A066 **P1** Проверять инварианты группы по актуальному заблокированному товару
+  - Цель: исключить изменение категории/бренда товара, включённого в группу параллельным запросом.
+    [ProductManagementService](../backend/app/Services/ProductManagementService.php) читает
+    membership до блокировки Product; управляемое чередование операций воспроизводит группу с
+    товарами разных категорий на SQLite. Реальная PostgreSQL-гонка пока не проверена.
+  - План: согласовать порядок блокировок с ProductGroupManagementService; перечитать membership и
+    проверить инвариант по актуальной модели внутри транзакции. API-контракт сохранить.
+  - Готовность: regression tests конкурирующего создания/изменения группы и смены category/brand на
+    PostgreSQL; проверены отсутствие нарушения состава и обработка конфликтов/блокировок.
+
+- [ ] TASK-A067 **P1** Исключить устаревшие ответы в списках и деталях заказов/обращений
+  - Цель: после быстрого выбора B запоздавшие ответы A не заменяют список, запись, историю,
+    комментарии или draft формы. В
+    [useOrdersWorkspace](../frontend/admin/src/features/orders/composables/useOrdersWorkspace.ts)
+    воспроизведены откат страницы и история/комментарии другого заказа; аналогичный код найден в
+    [useContactsWorkspace](../frontend/admin/src/features/contacts/composables/useContactsWorkspace.ts).
+  - План: переиспользовать защиту usePaginatedCollection для списков; детали применять атомарно
+    только для актуального selection/request ID; отделить server value от редактируемого draft.
+  - Готовность: поведенческие unit/E2E проверяют ответы в обратном порядке, быструю смену выбора,
+    отказ одного запроса деталей, смену записи во время сохранения и корректные loading/error
+    states. API и permissions сохраняются.
+
+- [ ] TASK-A068 **P2** Включить Client E2E и форматирование в обязательный CI
+  - Цель: [Client job](../.github/workflows/ci.yml) проверяет поведение SSR, preview и
+    accessibility, а не только зависимости, TypeScript и build; существующие тесты не остаются
+    локальной проверкой.
+  - План: добавить format check и production Playwright после SSR build, установить необходимые
+    Chromium dependencies; использовать текущие изолированные mock API и конфигурацию runner.
+  - Готовность: чистый CI run проходит SSR/content/preview/axe suite и format check; failures
+    сохраняют диагностические артефакты. Не обращаться к рабочей БД и не отключать проверки доступа.
+
+- [ ] TASK-A069 **P2** Разделить состояние и композицию рабочей области товаров
+  - Цель:
+    [useProductEditor](../frontend/admin/src/features/products/composables/useProductEditor.ts) не
+    объединяет список, форму, характеристики, изображения, группы и связи в одном интерфейсе.
+  - План: выделить самостоятельные composables по этим сценариям, начать со списка; разделить список
+    и редактор в ProductEditor.vue, сузить контракты секций вместо полного ReturnType общего
+    composable. Локальные формы не переносить в глобальный Pinia store.
+  - Готовность: поведенческие тесты покрывают create/edit/clone/publish, изображения, группы, связи,
+    фильтры и экспорт; маршруты, API, permissions и видимое поведение сохранены. Изменение способа
+    загрузки групп вынесено в TASK-A081.
+
+- [ ] TASK-A070 **P2** Выделить общий HTTP transport и единый контракт API-ошибок Admin
+  - Цель: [services/auth.ts](../frontend/admin/src/services/auth.ts) содержит auth-сценарии, feature
+    services переиспользуют общий transport и error decoder без копий разбора envelope.
+  - План: выделить apiFetch/CSRF, ApiError со status/code/details и обработку отмены; проверить
+    response.ok при получении CSRF cookie. Endpoint и доменные payload оставить в features.
+    Дедупликация CSRF initialization сохраняет восстановление после истечения сессии.
+  - Готовность: тесты 401/403/419/422/429, network failure, abort и CSRF failure; field validation
+    details доступны формам, auth/permissions и существующие API-контракты сохраняются.
+
+- [ ] TASK-A071 **P2** Разделить ZIP image import и сократить файловый I/O под DB-блокировкой
+  - Цель: [ProductImageImportService](../backend/app/Services/ProductImageImportService.php)
+    разделяет archive inspection, validation/staging и применение галереи; большой SKU не требует
+    хранения всех старых изображений в памяти. Timeout/OOM пока не воспроизводились.
+  - План: подготовить новые файлы до транзакции, под блокировкой перечитать данные и применить
+    ссылки/checkpoint; сохранить durable cleanup, audit и retry semantics. Проверить необходимость
+    backup содержимого старых файлов при использовании уникальных новых путей.
+  - Готовность: fault tests file write/commit/cleanup, retry/resume и PostgreSQL checks проходят;
+    измерены память и время обработки большой галереи, существующие файлы не теряются.
+
+- [ ] TASK-A072 **P2** Ввести lazy loading route views Admin
+  - Цель: [router/index.ts](../frontend/admin/src/router/index.ts) не включает все экраны в
+    начальный JS asset; при аудите один chunk составлял около 600 kB, gzip 158 kB.
+  - План: заменить статические импорты route components динамическими, включая UiKitView; измерить
+    начальную сборку и загрузку маршрутов. Permissions и navigation guards сохранить.
+  - Готовность: build и navigation E2E проходят; cold/direct navigation работает; import workspaces
+    сохраняют состояние при SPA-переходах, ошибки загрузки chunk обработаны.
+
+- [ ] TASK-A073 **P2** Унифицировать денежные вычисления корзины, checkout и платежей
+  - Цель: единый decimal/minor-unit контракт вместо дублирования арифметики в OrderAmountCalculator,
+    [CartItemResource](../backend/app/Http/Resources/CartItemResource.php) и payment service;
+    подтверждённой потери копеек в текущем checkout нет.
+  - План: выделить небольшой чистый Money/Decimal primitive, убрать вычисления из Resource,
+    согласовать snapshot PHPDoc и decimal casts, исключить промежуточный float в точных расчётах.
+    API сохраняет decimal strings; представление цены во frontend не меняется.
+  - Готовность: cart/order totals совпадают для дробных, нулевых и предельных сумм; partial/full
+    payment и refund проверены; feature tests на PostgreSQL и OpenAPI contract checks проходят.
+
+- [ ] TASK-A074 **P2** Согласовать stock_quantity validation с диапазоном PostgreSQL
+  - Цель: значения, принятые
+    [StoreProductRequest](../backend/app/Http/Requests/Api/V1/Admin/StoreProductRequest.php) и
+    UpdateProductRequest, сохраняются в целевой БД. Сейчас max 4294967295 не соответствует
+    PostgreSQL integer, в который установленная Laravel grammar преобразует unsignedInteger.
+  - План: определить допустимый бизнес-диапазон; согласовать request/import/OpenAPI и DB schema. При
+    необходимости bigint подготовить безопасную миграцию и проверку существующих данных.
+  - Готовность: PostgreSQL API/import tests проверяют границы и отклонение превышения через
+    validation; миграция/rollback при изменении schema проверены, DATABASE/API документация
+    актуальна.
+
+- [ ] TASK-A075 **P2** Измерить и оптимизировать поиск и счётчики товаров на PostgreSQL
+  - Цель: [ProductQuery](../backend/app/Queries/ProductQuery.php) имеет измеримую стоимость
+    поиска/фильтров; один endpoint счётчиков сейчас выполняет четыре COUNT.
+  - План: зафиксировать query count, планы и время на представительном объёме; проверить условные
+    агрегаты и подходящие индексы по результатам измерений. Сохранить исключение собственного
+    activity/sale-фильтра из соответствующего счётчика.
+  - Готовность: до/после evidence, PostgreSQL correctness/performance checks и API tests; комбинации
+    фильтров, пустые результаты и сортировка работают без изменения контракта.
+
+- [ ] TASK-A076 **P3** Исключить временные отчёты из Admin format check
+  - Цель: `npm run format:check` проверяет сопровождаемые исходники/config, не зависит от generated
+    JSON/Markdown в `.tmp/`. При аудите исходники проходили, 65 временных файлов — нет.
+  - План: уточнить [.prettierignore](../frontend/admin/.prettierignore) и область проверки;
+    generated outputs не форматировать и не добавлять в Git.
+  - Готовность: format check проходит в чистом checkout и с временными отчётами, но по-прежнему
+    обнаруживает нарушение форматирования исходников и проверяемых конфигурационных файлов.
+
+- [ ] TASK-A077 **P3** Синхронизировать каноническую архитектурную документацию
+  - Цель: [ARCHITECTURE.md](../docs/ARCHITECTURE.md) отражает текущую feature-структуру и Seller UI
+    вместо прежнего TailAdmin style; правила между AGENTS/docs не противоречат друг другу.
+  - План: актуализировать описание слоёв и источников истины; сверить CURRENT_STATE/CI с кодом,
+    оставить завершённые audit reports историческим evidence без копирования roadmap/метрик.
+  - Готовность: repository hygiene/Markdown links и diff check проходят; источники по темам
+    соответствуют [DOCUMENTATION.md](../docs/DOCUMENTATION.md).
+
+- [ ] TASK-A078 **P2** Выделить общие Client mapper и media/link utilities из homePage service
+  - Цель: content pages, site appearance и preview не зависят от модуля конкретной главной ради
+    [общих преобразований](../frontend/client/app/services/homePage.ts).
+  - План: выделить mapping блоков/chrome и безопасные URL-преобразования по ответственности;
+    сохранить типизированные DTO и reuse публичного/preview renderer без новых универсальных слоёв.
+  - Готовность: SSR/typecheck/build и content/preview E2E проходят; SEO, безопасные ссылки, media
+    URL, no-store/noindex и отсутствие draft в SSR payload сохраняются.
+
+- [ ] TASK-A079 **P2** Упростить применение строки category-template import
+  - Цель: [CategoryProductRowImporter](../backend/app/Services/CategoryProductRowImporter.php) имеет
+    ясные шаги нормализации, определения сущностей и применения данных вместо сложного apply.
+  - План: использовать существующие mapper/parser/executor boundaries, выделить только
+    самостоятельные операции; сохранить транзакцию и checkpoint у вызывающего сценария.
+  - Готовность: category import regression tests покрывают create/update, validation errors,
+    повторный запуск, разрешённые характеристики и SKU; PostgreSQL suite подтверждает инварианты.
+
+- [ ] TASK-A080 **P2** Разделить операции SpreadsheetML в генераторе import template
+  - Цель:
+    [ProductImportTemplateValidationWriter](../backend/app/Services/ProductImportTemplateValidationWriter.php)
+    разделяет нормализацию styles, текстовые идентификаторы и dropdown validation.
+  - План: выделить осмысленные операции из apply, сохранить структуру XLSX, скрытый lookup sheet,
+    порядок worksheet elements и формат article_number/barcode без потери ведущих нулей.
+  - Готовность: существующие template tests и проверки SpreadsheetML/XLSX проходят; generated
+    workbook открывается без восстановления файла, значения справочников работают.
+
+- [ ] TASK-A081 **P2** Загружать группы и данные секций товара по необходимости
+  - Цель: [loadDetails](../frontend/admin/src/features/products/composables/useProductEditor.ts) не
+    загружает все группы с полными товарами/характеристиками при каждом открытии редактора.
+  - План: измерить запросы и payload, ввести компактный permission-protected поиск/lookup групп и
+    lazy section loading; выбранная группа доступна независимо от результатов поиска. Выполнять
+    после выделения state boundaries в TASK-A069; API change обновляет OpenAPI.
+  - Готовность: поведенческие/E2E tests открытия, смены шагов, повторного входа и load failure;
+    права и выбор группы сохраняются, объём данных не растёт со всем каталогом при открытии товара.
+
+- [ ] TASK-A082 **P2** Разделить панели и результаты массового импорта товаров
+  - Цель:
+    [ProductImportWorkspace.vue](../frontend/admin/src/features/products/components/ProductImportWorkspace.vue)
+    композирует самостоятельные XLSX- и ZIP-сценарии вместо объединения подготовки файла, загрузки,
+    прогресса и подробных результатов обоих сценариев в одном template.
+  - План: выделить панели импорта товаров и изображений с узкими props/events; разделить подготовку,
+    загрузку и результаты там, где есть самостоятельный контракт. Сохранить существующие
+    useProductImport/useFileImport; владелец polling и state остаётся в workspace, чтобы
+    переключение вкладки не сбрасывало job. Не дублировать транспорт или validation.
+  - Готовность: unit/import E2E покрывают XLSX create/edit, ZIP, частичный успех, ошибки, скачивание
+    отчётов и retry polling; состояние сохраняется при смене вкладок и SPA-маршрутов. Проверены
+    keyboard tabs, возврат фокуса, live announcements и responsive; UI Design Guard accepted.
+
+- [ ] TASK-A083 **P2** Разделить формы реквизитов, документов и согласований в настройках
+  - Цель:
+    [SettingsWorkspace.vue](../frontend/admin/src/features/settings/components/SettingsWorkspace.vue)
+    и
+    [useSettingsWorkspace](../frontend/admin/src/features/settings/composables/useSettingsWorkspace.ts)
+    имеют явные границы трёх сценариев: реквизиты продавца, версии документов и внутренние
+    согласования.
+  - План: выделить соответствующие form/section components и локальное состояние каждого сценария;
+    workspace координирует загрузку, общую блокировку действий и связь согласования с опубликованной
+    политикой. Передавать узкие контракты; labels/options и подготовку payload хранить вне разметки.
+    Сохранить текущую последовательность операций и API без добавления новых функций.
+  - Готовность: поведенческие unit/E2E проверяют save, создание черновика, preview/publish,
+    согласование выбранной версии, validation и ошибки; settings.approve, публичность банковских
+    реквизитов и сброс только отправленной формы сохраняются; UI Design Guard accepted.
+
+- [ ] TASK-A084 **P2** Убрать дублирование обхода дерева категорий в Admin
+  - Цель: рекурсивный обход не повторяется в
+    [useCategoriesWorkspace](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts),
+    [useProductEditor](../frontend/admin/src/features/products/composables/useProductEditor.ts) и
+    [useProductImport](../frontend/admin/src/features/products/composables/useProductImport.ts).
+  - План: выделить чистые типизированные операции обхода и получения потомков в categories feature;
+    правила сортировки, доступности и подписи options оставить явными у потребителей. Editor
+    по-прежнему скрывает неактивные категории, import показывает их с отметкой, parent selector
+    исключает саму категорию и её потомков. Не вводить универсальный tree framework.
+  - Готовность: unit tests проверяют пустое/вложенное дерево, отсутствие мутаций, порядок siblings,
+    разные правила hidden categories и исключение потомков; catalog/import E2E сохраняют выбор.
+    Согласовать изменение общего участка useProductEditor с TASK-A069.
+
+- [ ] TASK-A085 **P2** Отделить retention-выборки и унифицировать проверку legal hold
+  - Цель: [OrderRetentionService](../backend/app/Services/Retention/OrderRetentionService.php)
+    отделяет eligibility queries от batch orchestration; одинаковый predicate active legal hold не
+    дублируется в нём, ContactRequestRetentionService и TombstoneReplayService.
+  - План: перенести сложные eligibility queries в типизированные Query-компоненты; выделить общую
+    проверку hold для orders/contacts. Сохранить специализированные destruction services и
+    транзакцию у use case; не создавать универсальный retention engine или новые правила сроков.
+    Устранить дублирование unheld/heldCount/hasActiveHold без изменения смысла batch counters.
+  - Готовность: PostgreSQL retention/replay tests проверяют cutoff и terminal anchors, holds,
+    bounded batches/SKIP LOCKED, повторную проверку внутри транзакции, rollback и идемпотентность.
+    Dry-run counts, tombstones, evidence и запрет apply без утверждённой policy сохраняются;
+    действующая [retention matrix](../docs/PERSONAL_DATA_LIFECYCLE.md) не меняется.
 
 ## Phase 8 — SEO
 
 - [ ] TASK-100 SEO metadata
-  - Создать отдельный управляемый SEO-слой для товаров, категорий и брендов; не дублировать
-    значения в таблицах Catalog.
+  - Создать отдельный управляемый SEO-слой для товаров, категорий и брендов; не дублировать значения
+    в таблицах Catalog.
 - [ ] TASK-101 Canonical для индексируемых сущностей
 - [ ] TASK-102 Генерация sitemap
 - [ ] TASK-103 Robots metadata/directives и robots.txt
@@ -578,8 +251,8 @@ API behaviour без migration plan и синхронного обновлени
 ## Phase 10 — Client
 
 - [ ] TASK-120 Catalog pages
-  - Реализовать клиентские фильтры; параметры их представления разместить в
-    «Контент» → «Общее оформление» → «Вид фильтров», отдельно от каталожных данных.
+  - Реализовать клиентские фильтры; параметры их представления разместить в «Контент» → «Общее
+    оформление» → «Вид фильтров», отдельно от каталожных данных.
 - [ ] TASK-121 Category pages
 - [ ] TASK-122 Product pages
 - [ ] TASK-123 Cart

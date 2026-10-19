@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -81,9 +80,12 @@ const {
       <span id="product-sku-label">SKU</span>
       <p
         aria-labelledby="product-sku-label"
-        class="mt-1.5 flex min-h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 font-mono text-gray-700"
+        class="mt-1.5 flex min-h-[var(--admin-control-height-md)] w-full min-w-0 items-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-sm leading-5 text-gray-500"
+        :title="editing?.sku ?? 'Будет назначен автоматически после сохранения'"
       >
-        {{ editing?.sku ?? 'Будет назначен автоматически после сохранения' }}
+        <span class="truncate">{{
+          editing?.sku ?? 'Будет назначен автоматически после сохранения'
+        }}</span>
       </p>
     </div>
     <UiField label="Артикул"
@@ -111,7 +113,7 @@ const {
       ><UiInput
         v-model="form.price"
         class="mt-1.5"
-        type="number"
+        money
         min="0"
         step="0.01"
         required
@@ -120,7 +122,7 @@ const {
       ><UiInput
         :model-value="form.old_price ?? ''"
         class="mt-1.5"
-        type="number"
+        money
         min="0"
         step="0.01"
         @update:model-value="(v) => (form.old_price = v || null)"
@@ -144,9 +146,5 @@ const {
     <UiField class="sm:col-span-2" label="Описание"
       ><UiTextarea v-model="form.description" class="mt-1.5"
     /></UiField>
-    <UiAlert class="sm:col-span-2" tone="info" live="polite"
-      >Новый товар сохранится как черновик. Публикация доступна на шаге
-      «Проверка».</UiAlert
-    >
   </form>
 </template>

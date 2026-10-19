@@ -115,12 +115,13 @@ function productQuery(
   return query
 }
 
-async function fail(response: Response): Promise<never> {
+async function fail(response: Response, allErrors = false): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as {
     error?: { message?: string; details?: Record<string, string[]> }
   }
+  const details = Object.values(body.error?.details ?? {}).flat()
   throw new Error(
-    Object.values(body.error?.details ?? {}).flat()[0] ??
+    (allErrors ? details.join(' ') || undefined : details[0]) ??
       body.error?.message ??
       'Не удалось выполнить запрос.',
   )
@@ -142,12 +143,21 @@ export async function getAllProducts(
 }
 export async function getProductExport(
   filters: Omit<ProductFilters, 'page' | 'perPage'> = {},
+  skus?: readonly string[],
 ): Promise<{ blob: Blob; filename: string }> {
   const query = productQuery(filters, false)
+  if (skus !== undefined) await requestCsrfCookie()
   const response = await apiFetch(
-    `/admin/products/export${query.size ? `?${query}` : ''}`,
+    `/admin/products/export${skus === undefined && query.size ? `?${query}` : ''}`,
+    skus === undefined
+      ? {}
+      : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...filters, skus }),
+        },
   )
-  if (!response.ok) return fail(response)
+  if (!response.ok) return fail(response, true)
   const disposition = response.headers.get('Content-Disposition') ?? ''
   const filename =
     disposition.match(/filename="?([^";]+)"?/i)?.[1] ?? 'products.xlsx'

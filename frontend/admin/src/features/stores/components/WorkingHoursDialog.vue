@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import { X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
@@ -51,7 +52,7 @@ function setClosed(day: WorkingHour, closed: boolean): void {
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть часы работы"
           :disabled="busy"
@@ -59,14 +60,14 @@ function setClosed(day: WorkingHour, closed: boolean): void {
           ><X :size="20"
         /></UiButton>
       </div>
-      <p v-if="error" role="alert" class="mt-3 text-sm text-error-600">
+      <UiNotification v-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <div class="mt-6 space-y-3">
         <div
           v-for="day in hours"
           :key="day.weekday"
-          class="grid gap-3 rounded-lg border border-gray-100 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+          class="admin-panel--inset grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
         >
           <div class="min-w-0">
             <p class="font-medium">{{ dayNames[day.weekday - 1] }}</p>

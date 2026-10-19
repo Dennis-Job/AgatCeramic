@@ -42,6 +42,10 @@ final class ProductGroupWorkbookReader
                     $values = array_map(fn (mixed $value): string => $this->cellValue($value), $row->toArray());
                     $headers = $sheetName === 'Группы' ? self::GROUP_HEADERS : self::MEMBERS_HEADERS;
                     if ($number === 1) {
+                        // Excel can extend the header row to the hidden axis helper column.
+                        while ($values !== [] && end($values) === '') {
+                            array_pop($values);
+                        }
                         if ($values !== $headers) {
                             throw ValidationException::withMessages(['file' => ["Лист «{$sheetName}»: не изменяйте заголовки шаблона."]]);
                         }

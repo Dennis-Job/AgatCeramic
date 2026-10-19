@@ -1,0 +1,27 @@
+.admin-panel {
+  border: 0;
+  border-radius: var(--admin-radius-card);
+  background: var(--admin-color-card-surface);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.admin-panel--white {
+  background: var(--admin-color-white);
+}
+
+.admin-panel--elevated {
+  box-shadow: var(--admin-shadow-dialog);
+}
+
+.admin-panel--inset {
+  border: 0;
+  border-radius: var(--admin-radius-card-inset);
+  background: var(--admin-color-card-inset-surface);
+  box-shadow: none;
+}
+
+.admin-panel--state {
+  border: 0;
+  border-radius: var(--admin-radius-card);
+  box-shadow: none;
+}

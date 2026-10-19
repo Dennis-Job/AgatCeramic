@@ -38,11 +38,14 @@ class ProductRelationManagementService
 
             /** @var Product $product */
             $product = $lockedProducts->firstWhere('id', $product->id);
+            $before = $this->auditLogService->capture($product);
             $product->outgoingRelations()->delete();
             foreach ($relations as $index => $relation) {
                 $product->outgoingRelations()->create([...$relation, 'sort_order' => $relation['sort_order'] ?? $index]);
             }
-            $this->auditLogService->record($actor, 'product.relations-updated', $product, ['related_product_ids' => collect($relations)->pluck('related_product_id')->all()]);
+            $this->auditLogService->recordUpdated($actor, 'product.relations-updated', $product, $before, [
+                'related_product_ids' => collect($relations)->pluck('related_product_id')->all(),
+            ]);
 
             return $product->load('outgoingRelations.relatedProduct');
         });

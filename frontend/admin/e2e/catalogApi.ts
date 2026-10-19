@@ -198,6 +198,12 @@ export async function mockCatalogApi(
   pageContext: Page,
   options: ApiOptions = {},
 ): Promise<void> {
+  await pageContext.route('**/*.jpg', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60"><path fill="#ddd" d="M0 0h120v60H0z"/></svg>',
+    }),
+  )
   let catalogProduct = { ...product, ...options.sourceProduct }
   const createdProducts: Array<typeof product> = []
   const productImages = new Map<
@@ -280,6 +286,31 @@ export async function mockCatalogApi(
       return
     }
 
+    if (path === '/admin/categories/overview') {
+      const assignedAttributes = [
+        attribute,
+        ...(options.includeSharedAttribute ? [sharedAttribute] : []),
+        ...(options.includeOptionalSelectAttribute
+          ? [optionalSelectAttribute]
+          : []),
+      ]
+      await route.fulfill({
+        json: {
+          data:
+            options.emptyPath === path
+              ? []
+              : [
+                  {
+                    ...category,
+                    attributes: assignedAttributes,
+                    attribute_groups: [attributeGroup],
+                  },
+                ],
+        },
+      })
+      return
+    }
+
     if (path === '/admin/categories/tree') {
       await route.fulfill({
         json: { data: options.emptyPath === path ? [] : [category] },
@@ -298,6 +329,13 @@ export async function mockCatalogApi(
           options.emptyPath === path
             ? page([])
             : paginatedFixture(url, brand, 'Italon'),
+      })
+      return
+    }
+
+    if (path === '/admin/products/filter-counts') {
+      await route.fulfill({
+        json: { data: { active: 16, hidden: 16, sale: 16, regular: 16 } },
       })
       return
     }

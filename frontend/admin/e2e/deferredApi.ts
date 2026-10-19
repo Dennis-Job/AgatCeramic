@@ -18,8 +18,8 @@ export function createDeferredApiRequests(): DeferredApiRequests {
 
   return {
     defer(path) {
-      let markRequested = () => undefined
-      let release = () => undefined
+      let markRequested: () => void = () => undefined
+      let release: () => void = () => undefined
       const requested = new Promise<void>((resolve) => {
         markRequested = resolve
       })

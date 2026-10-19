@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthCard from '../components/shared/AuthCard.vue'
-import UiAlert from '../components/ui/UiAlert.vue'
+import UiNotification from '../components/ui/UiNotification.vue'
 import UiButton from '../components/ui/UiButton.vue'
 import UiField from '../components/ui/UiField.vue'
 import UiInput from '../components/ui/UiInput.vue'
@@ -38,16 +38,15 @@ async function submit(): Promise<void> {
     description="Используйте учётную запись сотрудника."
     @submit="submit"
   >
-    <UiAlert v-if="error" class="mt-5">{{ error }}</UiAlert>
-    <UiAlert
+    <UiNotification v-if="error">{{ error }}</UiNotification>
+    <UiNotification
       v-if="
         route.query.password_reset === '1' ||
         route.query.password_changed === '1'
       "
-      class="mt-5"
       tone="success"
       live="polite"
-      >Пароль изменён. Теперь войдите с новым паролем.</UiAlert
+      >Пароль изменён. Теперь войдите с новым паролем.</UiNotification
     >
     <UiField class="mt-6" label="Email" required
       ><UiInput
@@ -67,7 +66,7 @@ async function submit(): Promise<void> {
         required
     /></UiField>
     <RouterLink
-      class="mt-3 inline-block rounded text-sm font-semibold text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+      class="mt-3 inline-block rounded text-sm font-semibold text-primary-500 hover:text-primary-500 admin-focus"
       :to="{ name: 'forgot-password' }"
       >Забыли пароль?</RouterLink
     >

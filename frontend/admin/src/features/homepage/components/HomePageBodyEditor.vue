@@ -45,7 +45,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
 <template>
   <div v-if="section === 'marquee'" class="space-y-4">
     <div>
-      <h2 class="text-lg font-semibold text-gray-800">Бегущая строка</h2>
+      <h2 class="text-lg font-semibold text-gray-500">Бегущая строка</h2>
       <p class="mt-1 text-sm text-gray-500">
         Темы показываются в указанном порядке.
       </p>
@@ -62,7 +62,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         class="min-w-44 flex-1"
       />
       <UiButton
-        variant="ghost"
+        variant="surface"
         size="sm"
         :disabled="index === 0"
         :aria-label="`Поднять тему ${index + 1}`"
@@ -70,7 +70,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         >↑</UiButton
       >
       <UiButton
-        variant="ghost"
+        variant="surface"
         size="sm"
         :disabled="index === content.marquee.topics.length - 1"
         :aria-label="`Опустить тему ${index + 1}`"
@@ -96,7 +96,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
 
   <div v-else-if="section === 'categories'" class="space-y-5">
     <div>
-      <h2 class="text-lg font-semibold text-gray-800">Карточки материалов</h2>
+      <h2 class="text-lg font-semibold text-gray-500">Карточки материалов</h2>
       <p class="mt-1 text-sm text-gray-500">
         Эти же материалы используются во вкладках блока фактур.
       </p>
@@ -115,20 +115,20 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     <div
       v-for="(item, index) in content.categories.items"
       :key="itemKey(item)"
-      class="space-y-4 rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset space-y-4 p-4"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="font-medium text-gray-800">Материал {{ index + 1 }}</h3>
+        <h3 class="font-medium text-gray-500">Материал {{ index + 1 }}</h3>
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять материал ${index + 1}`"
             @click="move(content.categories.items, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.categories.items.length - 1"
             :aria-label="`Опустить материал ${index + 1}`"
@@ -208,7 +208,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
   </div>
 
   <div v-else-if="section === 'materials'" class="space-y-4">
-    <h2 class="text-lg font-semibold text-gray-800">Блок фактур</h2>
+    <h2 class="text-lg font-semibold text-gray-500">Блок фактур</h2>
     <div class="grid gap-4 md:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.materials.eyebrow" /></UiField
@@ -225,7 +225,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
   </div>
 
   <div v-else-if="section === 'promo'" class="space-y-4">
-    <h2 class="text-lg font-semibold text-gray-800">Промо блок</h2>
+    <h2 class="text-lg font-semibold text-gray-500">Промо блок</h2>
     <div class="grid gap-4 md:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.promo.eyebrow" /></UiField
@@ -248,7 +248,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
   </div>
 
   <div v-else-if="section === 'about'" class="space-y-4">
-    <h2 class="text-lg font-semibold text-gray-800">О проекте</h2>
+    <h2 class="text-lg font-semibold text-gray-500">О проекте</h2>
     <div class="grid gap-4 md:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.about.eyebrow" /></UiField
@@ -295,7 +295,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
   </div>
 
   <div v-else class="space-y-5">
-    <h2 class="text-lg font-semibold text-gray-800">Советы по выбору</h2>
+    <h2 class="text-lg font-semibold text-gray-500">Советы по выбору</h2>
     <div class="grid gap-4 md:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.guide.eyebrow" /></UiField
@@ -306,20 +306,20 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     <div
       v-for="(item, index) in content.guide.items"
       :key="index"
-      class="space-y-3 rounded-xl border border-gray-200 p-4"
+      class="admin-panel--inset space-y-3 p-4"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="font-medium text-gray-800">Совет {{ index + 1 }}</h3>
+        <h3 class="font-medium text-gray-500">Совет {{ index + 1 }}</h3>
         <div class="flex gap-1">
           <UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === 0"
             :aria-label="`Поднять совет ${index + 1}`"
             @click="move(content.guide.items, index, -1)"
             >↑</UiButton
           ><UiButton
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="index === content.guide.items.length - 1"
             :aria-label="`Опустить совет ${index + 1}`"

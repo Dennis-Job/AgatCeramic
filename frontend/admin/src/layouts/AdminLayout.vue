@@ -1,22 +1,37 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AdminHeader from './components/AdminHeader.vue'
-import AdminSidebar from './components/AdminSidebar.vue'
 
-const isSidebarOpen = ref(false)
+const condensed = ref(false)
 </script>
 
 <template>
-  <div class="min-h-screen bg-page text-gray-800">
-    <AdminSidebar :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
-    <main class="min-h-screen admin-layout-main">
-      <AdminHeader
-        :is-navigation-open="isSidebarOpen"
-        @open-navigation="isSidebarOpen = true"
-      />
-      <div class="p-4 sm:p-6 lg:p-8">
+  <div
+    class="min-h-screen bg-page text-gray-500 admin-layout"
+    :style="{
+      '--admin-shell-height': condensed
+        ? 'calc(var(--admin-shell-top-height) + var(--admin-border-width))'
+        : undefined,
+    }"
+  >
+    <AdminHeader @condensed-change="condensed = $event" />
+    <main id="admin-main" class="min-w-0 admin-layout-main">
+      <div class="admin-layout-content">
         <slot />
       </div>
     </main>
   </div>
 </template>
+
+<style scoped>
+.admin-layout-content {
+  --admin-workspace-inline-gutter: var(--admin-workspace-gutter-compact);
+  min-width: 0;
+  padding: var(--admin-workspace-inline-gutter);
+}
+@media (min-width: 640px) {
+  .admin-layout-content {
+    --admin-workspace-inline-gutter: var(--admin-workspace-gutter);
+  }
+}
+</style>

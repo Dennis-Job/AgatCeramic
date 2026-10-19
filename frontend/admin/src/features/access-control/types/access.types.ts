@@ -18,5 +18,9 @@ export type RolePayload = {
   description: string
   permission_ids: number[]
 }
+export type SystemRolePayload = Pick<
+  RolePayload,
+  'description' | 'permission_ids'
+>
 export type AssignedRole = { id: number; name: string; slug: string }
 export type CataloguePermission = Permission & { roles: AssignedRole[] }

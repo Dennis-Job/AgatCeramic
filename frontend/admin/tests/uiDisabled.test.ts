@@ -65,7 +65,9 @@ describe('UI-kit disabled contract', () => {
     const clear = wrapper.get('button[aria-label="Очистить дату"]')
     expect(input.attributes()).toHaveProperty('disabled')
     expect(clear.attributes()).toHaveProperty('disabled')
-    expect(wrapper.get('.flex.h-11').classes()).toContain('cursor-not-allowed')
+    expect(input.element.parentElement?.classList).toContain(
+      'cursor-not-allowed',
+    )
 
     await input.trigger('focus')
     ;(input.element as HTMLInputElement).value = '14.09.2026'

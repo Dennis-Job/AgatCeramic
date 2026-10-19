@@ -96,7 +96,7 @@ class ProductPriceStatusImportService
                     if ($actor === null || ! isset($operation['updates']) || ! is_array($operation['updates'])) {
                         throw ValidationException::withMessages(['sku' => ['Не удалось обработать данные импорта.']]);
                     }
-                    $this->products->update($actor, $product, $this->stringKeyed($operation['updates']));
+                    $this->products->update($actor, $product, $this->stringKeyed($operation['updates']), ['import_id' => $import->id]);
                     $locked->forceFill(['status' => 'completed'])->save();
                     $import->increment('updated_rows');
                 } catch (ValidationException $exception) {

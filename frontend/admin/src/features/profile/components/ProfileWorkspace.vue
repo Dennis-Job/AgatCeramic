@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import { useProfileEditor } from '../composables/useProfileEditor'
 
@@ -20,7 +21,7 @@ const {
 </script>
 
 <template>
-  <section class="mx-auto max-w-2xl">
+  <AdminWorkspace mode="form">
     <PageHeader
       class="mb-7"
       eyebrow="Учётная запись"
@@ -28,11 +29,21 @@ const {
       description="Изменяйте только свои имя, email и пароль."
     />
     <form @submit.prevent="submit">
-      <UiCard class="p-5 sm:p-6">
-        <UiAlert v-if="error" class="mb-5">{{ error }}</UiAlert>
-        <UiAlert v-if="success" class="mb-5" tone="success" live="polite">{{
+      <UiCard aria-labelledby="profile-form-title">
+        <template #header>
+          <div>
+            <h2 id="profile-form-title" class="font-semibold text-gray-500">
+              Данные профиля
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              Имя, email и пароль для входа в админ-панель.
+            </p>
+          </div>
+        </template>
+        <UiNotification v-if="error">{{ error }}</UiNotification>
+        <UiNotification v-if="success" tone="success" live="polite">{{
           success
-        }}</UiAlert>
+        }}</UiNotification>
         <div class="grid gap-4">
           <UiField label="Имя" required
             ><UiInput
@@ -55,7 +66,7 @@ const {
           >
             <h2
               id="profile-password-title"
-              class="text-base font-semibold text-gray-700"
+              class="text-base font-semibold text-gray-500"
             >
               Смена пароля
             </h2>
@@ -95,5 +106,5 @@ const {
         </div>
       </UiCard>
     </form>
-  </section>
+  </AdminWorkspace>
 </template>

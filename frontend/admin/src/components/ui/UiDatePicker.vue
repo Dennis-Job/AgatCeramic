@@ -212,26 +212,26 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="relative w-full min-w-0">
     <div
-      class="flex h-11 items-center rounded-lg border px-3 shadow-theme-xs transition"
+      class="flex min-h-[var(--admin-control-height-md)] items-center rounded-lg border px-3 shadow-theme-xs transition"
       :class="
         disabled
           ? 'cursor-not-allowed border-gray-200 bg-gray-50'
-          : 'border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2'
+          : 'border-gray-300 bg-white admin-control-focus'
       "
     >
       <CalendarDays
         :size="18"
-        class="shrink-0"
-        :class="disabled ? 'text-gray-500' : 'text-gray-400'"
+        class="shrink-0 text-gray-500"
         aria-hidden="true"
       />
       <input
         ref="input"
+        data-composite-control
         :value="typedValue"
         type="text"
         inputmode="numeric"
         maxlength="10"
-        class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-700 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:text-gray-500"
+        class="min-w-0 flex-1 bg-transparent px-2 text-sm text-gray-500 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
         :placeholder="placeholder"
         :aria-label="accessibleName"
         :disabled="disabled"
@@ -243,7 +243,7 @@ onBeforeUnmount(() => {
       <button
         v-if="modelValue"
         type="button"
-        class="rounded p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+        class="rounded p-1 text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
         aria-label="Очистить дату"
         :disabled="disabled"
         @click="clear"
@@ -262,18 +262,18 @@ onBeforeUnmount(() => {
       <div class="mb-3 flex items-center justify-between px-1">
         <button
           type="button"
-          class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus"
           aria-label="Предыдущий месяц"
           @click="changeMonth(-1)"
         >
           <ChevronLeft :size="18" aria-hidden="true" />
         </button>
-        <p class="capitalize text-sm font-semibold text-gray-800">
+        <p class="capitalize text-sm font-semibold text-gray-500">
           {{ monthLabel }}
         </p>
         <button
           type="button"
-          class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          class="rounded-lg p-2 text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus"
           aria-label="Следующий месяц"
           @click="changeMonth(1)"
         >
@@ -285,7 +285,7 @@ onBeforeUnmount(() => {
         <span
           v-for="weekday in weekdays"
           :key="weekday"
-          class="py-1 text-xs font-medium text-gray-400"
+          class="py-1 text-xs font-medium text-gray-500"
           >{{ weekday }}</span
         >
         <span
@@ -296,11 +296,11 @@ onBeforeUnmount(() => {
           <button
             v-if="date"
             type="button"
-            class="grid h-8 w-full max-w-8 place-items-center rounded-lg text-sm font-medium transition hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
+            class="grid h-8 w-full max-w-8 place-items-center rounded-lg text-sm font-medium transition hover:bg-primary-50 hover:text-primary-500 admin-focus"
             :class="[
               isSameDate(dateFromIso(modelValue), date)
                 ? 'bg-primary-600 text-white hover:bg-primary-700 hover:text-white'
-                : 'text-gray-700',
+                : 'text-gray-500',
               isSameDate(new Date(), date) &&
               !isSameDate(dateFromIso(modelValue), date)
                 ? 'ring-1 ring-primary-300'
@@ -323,14 +323,14 @@ onBeforeUnmount(() => {
       >
         <button
           type="button"
-          class="rounded text-sm font-medium text-primary-600 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          class="rounded text-sm font-medium text-primary-500 transition hover:bg-primary-100 hover:text-primary-500 admin-focus"
           @click="select(new Date())"
         >
           Сегодня
         </button>
         <button
           type="button"
-          class="rounded text-sm font-medium text-gray-500 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          class="rounded text-sm font-medium text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus"
           @click="clear"
         >
           Очистить

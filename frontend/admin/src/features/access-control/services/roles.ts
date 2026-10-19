@@ -1,5 +1,10 @@
 import { apiFetch, requestCsrfCookie } from '../../../services/auth'
-import type { AccessRole, Permission, RolePayload } from '../types/access.types'
+import type {
+  AccessRole,
+  Permission,
+  RolePayload,
+  SystemRolePayload,
+} from '../types/access.types'
 
 async function fail(response: Response): Promise<never> {
   const body = (await response.json().catch(() => ({}))) as {
@@ -26,7 +31,7 @@ export async function getPermissions(): Promise<Permission[]> {
 
 export async function saveRole(
   id: number | null,
-  payload: RolePayload,
+  payload: RolePayload | SystemRolePayload,
 ): Promise<AccessRole> {
   await requestCsrfCookie()
   const response = await apiFetch(

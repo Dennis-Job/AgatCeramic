@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from 'vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { FileText } from '@lucide/vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
+import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useInlineMediaUpload } from '../composables/useInlineMediaUpload'
 import { useMediaOptions } from '../composables/useMediaOptions'
@@ -18,6 +21,7 @@ const props = defineProps<{
   modelValue: number | null | number[]
   disabled?: boolean
   inlineUpload?: boolean
+  uploadSuccessMessage?: string
   requireManagePermission?: boolean
 }>()
 const emit = defineEmits<{
@@ -26,6 +30,8 @@ const emit = defineEmits<{
   uploading: [value: boolean]
 }>()
 const auth = useAuthStore()
+const documentInput = ref<HTMLInputElement | null>(null)
+const documentDropzone = ref<InstanceType<typeof UiFileDropzone> | null>(null)
 const canManage = computed(() => auth.hasPermission('media.manage'))
 const canPreview = computed(
   () =>
@@ -39,16 +45,20 @@ const { options, loading, error, load } = useMediaOptions(
   props.kind,
   () => canSelect.value || (canPreview.value && Boolean(props.modelValue)),
 )
-const upload = useInlineMediaUpload(props.kind, (media) => {
-  options.value = [
-    media,
-    ...options.value.filter((item) => item.id !== media.id),
-  ]
-  emit(
-    'update:modelValue',
-    props.kind === 'document' ? [...selected.value, media.id] : media.id,
-  )
-})
+const upload = useInlineMediaUpload(
+  props.kind,
+  (media) => {
+    options.value = [
+      media,
+      ...options.value.filter((item) => item.id !== media.id),
+    ]
+    emit(
+      'update:modelValue',
+      props.kind === 'document' ? [...selected.value, media.id] : media.id,
+    )
+  },
+  props.uploadSuccessMessage,
+)
 watch(
   () => upload.uploading.value || Boolean(upload.file.value),
   (value) => emit('pending', value),
@@ -73,11 +83,29 @@ function toggle(id: number, checked: boolean) {
       : selected.value.filter((value) => value !== id),
   )
 }
+function chooseDocumentFiles(files: FileList | null) {
+  if (
+    props.disabled ||
+    loading.value ||
+    upload.uploading.value ||
+    !canManage.value ||
+    !files?.length
+  )
+    return
+  upload.chooseFile(files[0]!)
+}
+async function cancelFile() {
+  upload.cancel()
+  if (props.kind === 'document') {
+    await nextTick()
+    documentDropzone.value?.$el.focus()
+  }
+}
 </script>
 
 <template>
   <div class="min-w-0">
-    <p class="text-sm font-medium text-gray-700">{{ label }}</p>
+    <p class="text-sm font-medium text-gray-500">{{ label }}</p>
     <template v-if="!canSelect">
       <p class="mt-1 text-sm text-gray-500" role="status">
         {{ modelValue ? `Выбран файл #${modelValue}.` : 'Файл не выбран.' }}
@@ -90,9 +118,9 @@ function toggle(id: number, checked: boolean) {
       >
         Загрузка выбранного изображения…
       </p>
-      <p v-else-if="error" class="mt-1 text-sm text-error-600" role="alert">
+      <UiNotification v-else-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <UiImagePreview
         v-if="kind === 'image' && modelValue && !loading"
         :url="preview?.thumbnail_url || preview?.url || null"
@@ -104,12 +132,13 @@ function toggle(id: number, checked: boolean) {
       Загрузка файлов…
     </p>
     <div v-else-if="error" class="mt-1">
-      <p class="text-sm text-error-600" role="alert">{{ error }}</p>
+      <UiNotification>{{ error }}</UiNotification>
       <UiButton
         type="button"
         variant="secondary"
         size="sm"
         class="mt-2"
+        :disabled="disabled || upload.uploading.value"
         @click="load"
         >Повторить загрузку</UiButton
       >
@@ -186,16 +215,51 @@ function toggle(id: number, checked: boolean) {
           target="_blank"
           rel="noopener noreferrer"
           :aria-label="`Открыть документ ${item.title}, файл ${item.id}`"
-          class="text-sm text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
+          class="text-sm text-primary-500 underline admin-focus"
           >Открыть</a
         >
       </div>
     </div>
     <div
       v-if="canManage && inlineUpload"
-      class="mt-4 space-y-3 rounded-lg border border-gray-200 p-3"
+      class="mt-4 space-y-3"
+      :class="{ 'rounded-lg border border-gray-200 p-3': kind === 'image' }"
     >
-      <label class="block text-sm font-medium text-gray-700"
+      <template v-if="kind === 'document'">
+        <input
+          ref="documentInput"
+          :key="upload.inputKey.value"
+          type="file"
+          accept="application/pdf"
+          :aria-label="`Загрузить файл — ${label}`"
+          :disabled="disabled || loading || upload.uploading.value"
+          class="hidden"
+          tabindex="-1"
+          @change="
+            chooseDocumentFiles(($event.target as HTMLInputElement).files)
+          "
+        />
+        <UiFileDropzone
+          ref="documentDropzone"
+          label="Перетащите PDF или нажмите для добавления"
+          drop-label="Отпустите PDF для добавления"
+          description="Формат — PDF. Размер — не больше 20 МБ."
+          format-label="PDF"
+          icon-tone="red"
+          :disabled="disabled || loading || upload.uploading.value"
+          @choose="documentInput?.click()"
+          @files="chooseDocumentFiles"
+        >
+          <template #icon><FileText :size="44" :stroke-width="1.4" /></template>
+        </UiFileDropzone>
+        <output
+          v-if="upload.file.value"
+          class="block break-words text-xs text-gray-500 [overflow-wrap:anywhere]"
+          aria-live="polite"
+          >{{ upload.file.value.name }}</output
+        >
+      </template>
+      <label v-else class="block text-sm font-medium text-gray-500"
         >Загрузить файл — {{ label }}
         <input
           :key="upload.inputKey.value"
@@ -226,34 +290,32 @@ function toggle(id: number, checked: boolean) {
             maxlength="255"
             :disabled="disabled || upload.uploading.value"
         /></UiField>
-        <UiButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          :loading="upload.uploading.value"
-          :disabled="disabled"
-          @click="upload.upload"
-          >Загрузить и выбрать</UiButton
-        >
-        <UiButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          :disabled="upload.uploading.value"
-          @click="upload.cancel"
-          >Отменить выбор файла</UiButton
-        >
+        <div class="flex flex-wrap gap-2">
+          <UiButton
+            type="button"
+            :variant="kind === 'document' ? 'primary' : 'secondary'"
+            size="sm"
+            :loading="upload.uploading.value"
+            :disabled="disabled || loading"
+            @click="upload.upload"
+            >Загрузить и выбрать</UiButton
+          >
+          <UiButton
+            type="button"
+            variant="surface"
+            size="sm"
+            :disabled="disabled || upload.uploading.value"
+            @click="cancelFile"
+            >Отменить выбор файла</UiButton
+          >
+        </div>
       </template>
-      <p v-if="upload.error.value" class="text-sm text-error-600" role="alert">
+      <UiNotification v-if="upload.error.value">
         {{ upload.error.value }}
-      </p>
-      <p
-        v-if="upload.success.value"
-        class="text-sm text-gray-600"
-        role="status"
-      >
+      </UiNotification>
+      <UiNotification v-if="upload.success.value" tone="success">
         {{ upload.success.value }}
-      </p>
+      </UiNotification>
     </div>
     <p v-else-if="canManage" class="mt-1 text-xs text-gray-500">
       Загрузка новых файлов доступна в разделе «Медиатека».

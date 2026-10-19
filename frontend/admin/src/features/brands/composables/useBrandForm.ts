@@ -9,13 +9,17 @@ export function useBrandForm(
   const open = ref(false)
   const editing = ref<Brand | null>(null)
   const busy = ref(false)
+  const mediaPending = ref(false)
+  const mediaUploading = ref(false)
   const error = ref('')
   const form = ref<BrandPayload>(emptyBrand())
   const manual = ref(false)
   const title = computed(() =>
-    editing.value ? `Бренд: ${editing.value.name}` : 'Новый бренд',
+    editing.value ? 'Редактирование бренда' : 'Новый бренд',
   )
   function show(brand: Brand | null = null) {
+    mediaPending.value = false
+    mediaUploading.value = false
     editing.value = brand
     manual.value = brand !== null
     error.value = ''
@@ -37,6 +41,7 @@ export function useBrandForm(
     if (!manual.value) form.value.slug = slugify(value)
   }
   async function submit() {
+    if (busy.value || mediaPending.value || mediaUploading.value) return
     error.value = validateBrand(form.value)
     if (error.value) return
     busy.value = true
@@ -54,11 +59,14 @@ export function useBrandForm(
   return {
     open,
     busy,
+    mediaPending,
+    mediaUploading,
     error,
     form,
     title,
     show,
     close: () => {
+      if (busy.value || mediaUploading.value) return
       open.value = false
     },
     updateName,

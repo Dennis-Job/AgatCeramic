@@ -13,10 +13,33 @@ Workflow получает только право `contents: read` и не ис�
 | Redis queue delivery | Реальные import, storage cleanup и order confirmation jobs через отдельный Redis worker и PostgreSQL 17 |
 | Admin full-stack smoke | Production build Admin, реальный Sanctum session/CSRF flow, Laravel, PostgreSQL 17 и Redis 7.4 без browser API mocks |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
+| Admin Windows approved UI | Отдельный native Windows workflow: unit/build, 99 утверждённых цветовых tokens, computed CSS состояний компонентов и строгие Windows visual baselines |
 | Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+
+Исправления падений PR #5, независимая приёмка platform screenshots и оставшийся
+Client audit описаны в [отчёте 2026-10-19](CI_PR5_REPAIR_2026-10-19.md).
+Admin jobs сохраняют browser `test-results/` при failure на семь дней для
+разбора remote-only расхождений без ослабления screenshot/palette gates.
+
+Frontend text checkout использует LF через `.gitattributes`; default Prettier
+проверяется без EOL override. Admin `.prettierignore` исключает локальные `.tmp`
+browser artifacts, чтобы обычный `format:check` оставался воспроизводимым.
+
+На 2026-10-14 совместимые npm lock updates очистили Admin audit. Client audit
+остаётся blocking: 11 high findings из unpatched braces/node-forge, без
+critical/moderate. Порог и классификация dependencies не менялись.
+[Исправления, reachability assessment и ограничения](WINDOWS_FIXES_2026-10-14.md).
+
+С 2026-10-13 текущая macOS-палитра утверждена владельцем также для Windows.
+Все Admin axe scans сначала сверяют замороженный цветовой контракт, затем
+проверяют доступность с точными документированными owner-approved contrast
+exceptions и сохранением raw findings. Новые пары цветов и остальные нарушения
+остаются blocking; blanket `disableRules(['color-contrast'])` удалены.
+Это не заявление полного WCAG AA compliance. Контракт, ограничения и порядок
+приёмки снимков описаны в [ADMIN_APPROVED_PALETTE_TESTS.md](ADMIN_APPROVED_PALETTE_TESTS.md).
 
 Client audit использует актуальную базу advisories, поэтому может перестать проходить даже без
 изменения зависимостей в последнем коммите. Исправление выполняется совместимым обновлением
@@ -213,6 +236,14 @@ Admin E2E в CI и локальном Compose запускает production-сб
 поддерживаемом `admin-e2e` Docker-окружении; CI явно передаёт безопасный `.env.example`. Это
 устраняет различия системных шрифтов и Chromium rasterization между hosted runner и средой, в
 которой создаются Linux visual snapshots, без ослабления pixel-diff threshold.
+С TASK-A062 обычный Playwright-прогон использует `updateSnapshots: 'none'`:
+отсутствующий или несовпадающий baseline завершает тест ошибкой. Новые actuals
+сначала проходят независимое UI Design Guard-ревью, затем копируются в эталоны
+и проверяются повторным строгим прогоном. `expect.soft` для набора UI-kit crops
+собирает все различия за один прогон, сохраняя failed-статус теста при любом diff.
+Полная responsive/axe матрица охватывает 20 маршрутов Admin/UI-kit × восемь
+ширин 320/640/768/1024/1280/1440/1920/2560 px; ошибки axe не исключаются.
+
 Playwright retries отключены во всех окружениях: каждый упавший тест немедленно делает suite
 неуспешным и не может быть скрыт успешной повторной попыткой.
 Visual-тест открытого `UiDatePicker` фиксирует системное время, чтобы подсветка текущего дня не
@@ -249,6 +280,27 @@ docker compose -p agatceramic-admin-smoke-test --env-file .env.example \
 ```
 
 Отдельный project name обязателен, чтобы cleanup не затронул development Compose.
+
+Cold preparation вынесена в one-shot `admin-smoke-backend-bootstrap`
+(Composer + safety guard + migrations + fixtures, bounded 300s) и
+`admin-smoke-bootstrap` (npm + build, bounded 360s). Runtime ждёт
+`service_completed_successfully`; прежний HTTP health budget начинается после
+подготовки. Build artifacts изолированы в `admin_smoke_dist`, shared только
+между двумя Admin test services. TERM kill grace — 10 секунд.
+
+Compose job проверяет конфигурационный regression gate. Полная локальная
+проверка independent bootstrap failures, clean volumes, readiness и настоящего
+browser smoke доступна отдельно:
+
+```sh
+node scripts/test-admin-smoke-bootstrap.mjs --config-only
+node scripts/test-admin-smoke-bootstrap.mjs --browser-smoke
+```
+
+Harness отказывается переиспользовать уже существующие project resources и
+в `finally` удаляет только свой отдельный project. Optional `--composer-audit`
+выполняет отдельный audit и передаёт nonzero exit; network failure не считается
+успешной security-проверкой.
 
 Полный локальный Admin workflow после `npm ci` запускается командой `npm run test:ci`: ESLint,
 Prettier check, unit-тесты, production build и Playwright выполняются последовательно с единым

@@ -1,39 +1,394 @@
 # UI-kit Admin
 
+`CatalogReferenceLayout` — общая компоновка справочников категорий и характеристик.
+Слоты `sidebar`, `mobile` и default разделяют навигацию и подробное содержимое.
+От 1024 px слева колонка 240 px, справа — сжимаемая область; на узких экранах
+выбор выводится над содержимым. Состояние выбора и доменные действия принадлежат
+feature. Общие границы и отступы используют Seller tokens; длинные значения
+не расширяют сетку за пределы страницы.
+
+`UiSwitch` — быстрый boolean control с `role="switch"`: props `checked`,
+`accessibleName`, `disabled`, `busy`; событие `update:checked`. Сохраняет native
+Space/Enter и общий `admin-focus`; busy блокирует повторное изменение. Primary
+500 означает включённое состояние, gray 400 — выключенное; положение индикатора
+и `aria-checked` дублируют цвет. Поддерживает reduced motion и forced colors.
+Сетевые запросы, optimistic update и rollback принадлежат feature, а не primitive.
+
 `components/ui` содержит примитивы без знания доменов. `components/shared` —
 повторно используемые композиции, не привязанные к feature. После финальной
 приёмки TASK-A030 все переходные `Base*` и shared-state adapters удалены:
 код импортирует `Ui*` и shared-компоненты напрямую.
 
-| Компонент                                        | Варианты / состояния                                                                                                               |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `UiButton`                                       | `primary`, `secondary`, `danger`, `ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading                                           |
-| `UiInput`                                        | default, populated/clear, search, password, focus, error через `UiField`, native disabled; disabled блокирует input и clear-action |
-| `UiSelect`                                       | placeholder, search/no-results, clear, keyboard, teleport menu; disabled блокирует trigger/clear и закрывает открытое menu         |
-| `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                             |
-| `UiDatePicker`                                   | input/calendar, Escape/focus return, responsive popup; disabled блокирует input/clear и закрывает открытый calendar                |
-| `UiCheckbox`, `UiRadio`                          | boolean/array mode, selected/unselected, keyboard focus, disabled через native control                                             |
-| `UiDialog`, `ConfirmDialog`                      | open/close, Escape, backdrop, focus trap/return, busy, error                                                                       |
-| `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                    |
-| `UiField`                                        | label, required, help, error (`role=alert`)                                                                                        |
-| `UiLoadingState`, `UiEmptyState`, `UiPagination` | status announcement, optional empty-state action; first/middle/last/zero/loading pagination                                        |
-| `UiImagePreview`                                 | изображение, пустое состояние и сообщение об ошибке загрузки                                                                       |
-| `AuthCard`                                       | общий guest-auth form shell: branding, title, description и card surface; `headingTag=h2` только для embedded preview              |
-| `PageHeader`                                     | eyebrow, title, description, actions slot                                                                                          |
+С 2026-10-01 визуальная основа — Seller UI-kit по предоставленным владельцем
+референсам Ozon Seller и [`плану редизайна`](../../../../../docs/ADMIN_SELLER_REDESIGN_PLAN.md).
+Бренд AgatCeramic сохраняется. TailAdmin — исторический контекст.
+
+Белый фон, primary `#005BFF` и серо-голубые подложки задаются tokens.
+По уточнению владельца от 2026-10-01 прежняя типографика сохраняется:
+Nunito для основного текста, Poppins для display, существующие размеры и
+межстрочные интервалы. Controls имеют минимальную высоту 32/36/40 px (`sm/md/lg`); длинный
+текст может увеличивать высоту. Кнопки и поля имеют радиус 8 px; dropdown —
+16 px, самостоятельные карточки — 24 px, вложенные поверхности — 20 px. У полей
+и карточек нет тени; меню и диалоги используют мягкую тень. Вторичные кнопки —
+светлые, статусы — компактные прямоугольные badges.
+`UiButton variant="danger"` использует фон `error-500` и hover `error-600`.
+Сплошные недоступные и loading кнопки `primary`/`danger` используют фон `gray-400`.
+`UiBadge` tone `additional` оформляется палитрой `blue-light`: светло-голубой фон
+`blue-light-50` и сине-голубой текст `blue-light-500`, в дополнение к `primary`.
+Цветные semantic tones используют уровни `50/500` своих палитр; нейтральный
+вариант сохраняет серые `gray-100/500`.
+
+Текстовые поля, выпадающие поля и выбор даты используют общую минимальную
+высоту `--admin-control-height-md` (36 px) и занимают доступную ширину своей
+колонки. Контейнеры и подписи должны допускать сжатие через `min-w-0`; длинные
+значения обрезаются внутри однострочного поля, если полный текст доступен
+пользователю через accessible description или подсказку. Длинные подписи
+вариантов переносятся внутри списка. `UiTextarea`, файловый control и
+чекбокс/радио сохраняют подходящий типу размер.
+
+`UiFileDropzone` — общая область выбора и перетаскивания файлов по референсу
+загрузки фото. Props: `label`, `dropLabel`, `description`, `formatLabel`,
+`iconTone=blue|green|yellow|red`, `disabled`, optional `descriptionId` для внешней подсказки.
+Slot `icon` задаёт тип файла; зелёный вариант использует существующий
+`green-500` для иконки и метки XLSX. Событие `choose` открывает файловый input
+родителя, `files` передаёт dropped FileList. Проверка формата/размера и загрузка
+остаются у feature. Disabled запрещает выбор и drop, очищает drag-состояние.
+Для PDF используется `FileText` в слоте `icon` и `iconTone="red"`: контур
+`error-500`, заливка `error-50`, плашка PDF `error-100`/`error-700`.
+Кнопка выбора, hover и focus сохраняют общие стили; красный обозначает формат файла.
+PDF-поле бренда поддерживает выбор с клавиатуры, drop и возврат фокуса после отмены.
+Компонент используется для фото товара и заполненного шаблона Excel;
+витрина показывает активную область XLSX, выбранный файл и disabled-вариант.
+
+`UiProgressBar` — общая нативная полоса выполнения с primary-индикатором и
+поддержкой неопределённого значения во время операции без доступного процента.
+Props: обязательный `label` для доступного имени, необязательный `value` (0–100)
+и `showScale` для отметок 0%/100%. Неопределённая полоса анимируется с учётом
+`prefers-reduced-motion`. Используется для передачи и серверной обработки
+товарных XLSX/ZIP-импортов.
+
+`UiCard` по умолчанию использует мягкую серо-голубую поверхность без рамки
+(`surface=muted`); `surface=white` оставляет белую поверхность без рамки.
+Внутренние поверхности также без рамок. Оба варианта поддерживают `padded`. Для самостоятельного блока с
+заголовком передавайте его через именованный слот `#header`: компонент создаёт
+серую шапку и отдельное белое скруглённое тело. Основное содержимое помещается
+в default slot; `:padded="false"` убирает внутренний отступ тела, когда в нём
+сразу начинается таблица или другая полноширинная область. В строке сетки тело
+растягивается вместе с карточкой и заполняет высоту более высокого соседа. Без
+`#header` `UiCard` сохраняет компактный вариант без секционной шапки.
+
+Общие классы `admin-panel`, `admin-panel--white`, `admin-panel--inset`,
+`admin-panel--state` и `admin-panel--elevated` используют те же card tokens в
+самостоятельных и вложенных блоках. Вложенная белая поверхность отделяет данные
+от внешней серо-голубой панели; semantic state панели сохраняют собственные
+success/warning/error цвета; все варианты панелей отображаются без рамок.
+Радиусы и поверхности собраны в
+`styles/tokens.css` и показаны в UI-kit.
+В TASK-A058 глобальная навигация перенесена в две строки верхней шапки.
+Единая конфигурация `layouts/navigation.ts` фильтрует ссылки по permissions;
+выпадающие группы и компактное меню используют текст без иконок.
+Компактный вариант переиспользует `UiDialog` и общую разметку ссылок;
+размеры шапки и её максимум задаются `--admin-shell-*` tokens.
+Уточнение от 2026-10-02 убирает глобальный поиск и помещает нижний разделитель
+в общий контейнер. Серые иконки уведомлений/пользователя используют общий
+цвет `gray-400`, включая hover и открытое состояние, и общий
+`UiPopover`; desktop-группы также открываются наведением. Окна иконок имеют
+`--admin-popover-width: 320px`, подменю — одну колонку
+`--admin-popover-column-width: 216px` на разрешённую группу плюс padding/gap 24 px.
+Меню сотрудника показывает актуальные имя/email, профиль, настройки по permission
+и выход; данные/сценарии референса не копируются.
+
+`UiPopover` — немодальное controlled окно (`v-model:open`, `label`, optional `id`,
+`align`, `boundarySelector`, `panelClass`, `closeDelay`, `teleport`). `boundarySelector` ограничивает
+горизонтальное позиционирование ближайшим matching ancestor и используется desktop-навигацией
+для соблюдения общего контейнера шапки.
+Slot `trigger` получает обязательные bindings
+`trigger` (`aria-expanded`, `aria-controls`, click/keydown), default slot — `close`.
+Hover не переводит фокус; задержка закрытия 180 ms позволяет перейти через зазор.
+Клавиатура: Enter/Space, ArrowDown/Up, Home/End, Tab наружу и Escape с возвратом
+фокуса. Tap переключает окно; focus/click снаружи закрывает его, click по другому
+control сохраняет фокус этого control. Окно остаётся в viewport с gutters 16 px,
+при нехватке места снизу открывается вверх; избыток высоты прокручивается внутри.
+Shared primitive не знает о сессии, permissions и маршрутах. Header координирует
+единственное открытое окно и закрывает его при смене маршрута.
+Опциональный `teleport` выводит panel в `body` с fixed-позиционированием,
+сохраняя привязку к trigger, viewport clamp/flip, outside close и Escape.
+Он используется для действий товара внутри `UiTable` с paint containment.
+Tab с последнего пункта продолжает порядок фокуса после trigger; Shift+Tab
+с первого возвращает фокус на trigger и закрывает panel. Portal-specific
+padding/width задаются через `panelClass` utilities, а не ancestor-dependent
+scoped selectors. По умолчанию прежний режим без portal сохраняется.
+`AdminWorkspace` выбирает `mode=overview/list/editor/form`. Общий
+`--admin-container-max-width: 1280px` ограничивает обзор, редактор и простую
+форму. В режиме списка slot `intro`, фильтры, feedback, мобильные карточки,
+пагинация и форма медиатеки используют общий utility `.admin-container`;
+рабочая таблица занимает всю доступную ширину без этого максимума.
+Шапка учитывает padding в своём максимуме, поэтому края меню и рабочих
+контейнеров совпадают. Gutters — 16 px до 640 px, затем 24 px.
+Товары, справочники каталога, сотрудники, роли, права, аудит, медиатека, заказы
+и обращения используют `list`; страницы и общее оформление — `editor`.
+Dashboard и магазины используют `overview`, профиль и настройки — `form`.
+`--admin-workspace-form-max-width` сохраняется для компактных внутренних
+редакторов/диалогов, но не ограничивает page-level контейнер.
+Layout-компоненты не входят в инвентарь primitives.
+
+Рабочие таблицы списков используют opt-in `UiTable fullBleed`: scroll shell
+расширяется до левого и правого краёв layout viewport, компенсируя реальный
+padding AdminLayout через `--admin-workspace-inline-gutter` (16/24 px).
+Ширина рассчитывается от родителя без `100vw`; `max-width: none` разрешает
+расширение, отрицательные margin компенсируют gutter. Controls, filters,
+pagination, loading/empty, mobile cards и detail panels сохраняют контейнер.
+Dashboard, UI-kit и вложенные таблицы редакторов/диалогов не включают fullBleed.
+Padding ячеек, sticky columns/header, локальный scroll и inset focus сохранены.
+
+`UiTable` по умолчанию сохраняет прежнюю локальную горизонтальную прокрутку.
+Опциональные `stickyHeader`/`stickyEdges` задают ограниченный по высоте scroll
+region с закреплёнными заголовками и крайними колонками от 1280 px. На узких
+экранах колонки не закрепляются. Первый и последний столбцы должны служить
+идентификации строки и действиям; feature задаёт ширины колонок.
+Для таблицы товаров `stickyHeader="page"` снимает ограничение высоты: вертикально
+прокручивается документ, а оригинальный `thead` закрепляется под шапкой меню
+через `--admin-shell-height` только после достижения её нижней границы.
+Закрепление заканчивается у нижнего края таблицы. Горизонтальная прокрутка,
+закреплённые крайние колонки, сортировка и доступная семантика сохраняются;
+обработчики прокрутки и ResizeObserver удаляются при размонтировании.
+Общий `tableClass="seller-table"` задаёт фиксированную раскладку, перенос длинных
+значений, отступы 16 px через tokens, разделители и hover. Feature задаёт
+колонки, ширины, данные и действия. В списках нет внешней `UiCard`; для узких
+экранов используется именованный локальный scroll, у сотрудников и аудита —
+карточки до 1280 px, у заказов и обращений — до 768 px. Числа выравниваются
+вправо, даты используют `time`/`datetime`.
+`AdminListDetail` композирует slots `list`/`detail`: таблица списка широкая,
+детали располагаются ниже в общем контейнере на всех ширинах. Только явный
+выбор записи вызывает `showDetail(loader)`: после загрузки UI переводит фокус
+и прокрутку к деталям; «Вернуться к списку» возвращает их к выбранной строке.
+Загрузка и бизнес-состояние принадлежат feature composable; shared-компонент
+управляет только представлением и фокусом. В медиатеке форма, feedback и
+пагинация следуют контейнеру 1280 px, список занимает доступную ширину.
+
+`AdminEditorLayout` — недоменная композиция slots `toolbar`, `navigation` (необязательные),
+`editor` и `preview`. `AdminWorkspace mode="editor"` не ограничивает ширину; `overview/form`
+сохраняют свои ограничения. До 960 px доступной ширины зоны последовательные, от 960 px
+список 240 px и инспектор рядом с preview ниже, от 1360 px все три зоны рядом: preview
+около 50%, инспектор получает оставшееся место. Без navigation две зоны рядом от 1120 px.
+Slot `toolbar-navigation` добавляет переключатель разделов слева в `toolbar`.
+Верхняя строка использует `admin-container` (1280 px), nav и title/status/actions
+располагаются рядом от 1120 px доступной ширины; ниже допускается перенос.
+Ограничение toolbar не сужает сетку редактора.
+Общие отступы, разделители и строка действий принадлежат layout; не оборачивать рабочие зоны
+в дополнительные вложенные карточки. Feature владеет dirty guards, сохранением и публикацией.
+`DraftPreview` использует настоящий Nuxt iframe 1280/375 px с масштабированием по ширине
+панели через ResizeObserver. Режим телефона центрируется; полноразмерная и публичная ссылки,
+обновление и переключение размеров имеют доступные имена.
+
+`UiTabs` — вкладки с подчёркнутым активным пунктом: `v-model`, `id`, `label`, `items`
+(`value`, `label`, `disabled`). Tablist и tab получают ARIA-связи с `<id>-<value>-panel`;
+потребитель создаёт панели `role="tabpanel"`, `aria-labelledby="<id>-<value>"`, `tabindex="0"`.
+ArrowLeft/Right и Home/End переводят фокус и активируют доступную вкладку, пропуская disabled.
+Панели с редактируемыми полями скрывать через `v-show`, чтобы сохранить файлы и локальные правки.
+Это навигация между панелями; `UiSegmentedControl` сохраняет native radio для выбора значения.
+Демонстрация вкладок и disabled находится в `/ui-kit`.
+
+Если несколько `UiPagination` присутствуют на одной странице, каждый `nav`
+должен иметь уникальное доступное имя через `aria-label` компонента (native
+attribute forwarding на корневой `nav`). Showcase подписывает интерактивный
+пример, первую/последнюю страницу и загрузку отдельно; стандартная пагинация
+рабочих списков сохраняет номер страницы и общее количество.
+
+`UiImagePreview compact` показывает квадратное фото 48 px с `object-fit: contain`
+и компактным fallback для отсутствующего/повреждённого изображения.
+
+`UiDialogFooter` размещает самостоятельное информационное пояснение в синем
+`UiAlert tone="info"` слева и действия справа; на узких экранах они становятся
+вертикально. Используйте слот `note` для краткой справки по активному окну или
+вкладке. Содержимое сохраняет семантику `role="status"`; ошибки и состояния
+загрузки/пустоты остаются в основном содержимом. `flush` убирает внешние
+отступы для диалогов с уже встроенным полноширинным footer. В модальных окнах
+не используется горизонтальное разделение header, содержимого и footer; внутренние
+горизонтальные линии также скрыты без изменения отступов и боковых контуров.
+Портальные select-меню внутри диалогов сохраняют это правило.
+`ConfirmDialog` показывает пояснение обычным текстом в теле окна, а кнопки
+отмены и подтверждения располагает рядом; информационный alert предназначен для
+самостоятельной справки, ошибки остаются уведомлениями.
+
+Прозрачные shadow tokens у карточек/полей используют валидную zero-shadow запись вместо
+`none`, чтобы Tailwind корректно совмещал её с focus ring.
+
+Уточнение владельца от 2026-10-02 смягчает active/focus состояния по новому
+референсу. Общий `styles/controls.css` задаёт тонкий край 1 px без белого offset
+и прозрачный halo 4 px. Semantic tokens: `--admin-focus-color: #647dd1`,
+`--admin-focus-halo-color: rgb(100 125 209 / 0.14)`, `--admin-focus-halo-width`,
+`--admin-focus-outline-width/offset` и `--admin-focus-ring`.
+
+`admin-focus` служит кнопкам, ссылкам и фокусируемым регионам;
+`admin-control-focus` — полям/select и composite wrappers. Native input внутри
+wrapper не рисует второй outline. Error+focus сохраняет красную границу и alert;
+disabled не получает halo. `admin-choice-focus` использует
+`:has(input:focus-visible)`: мышь выбирает спокойный wrapper `primary-200/25`,
+клавиатура добавляет мягкий halo. Выбранный dot/check остаётся контрастным.
+Невыбранный glyph скрывается через visibility, поэтому system colors не делают
+его видимым. `admin-focus-inset` удерживает фокус таблицы внутри paint containment.
+Forced colors использует системный Highlight outline; контраст края обычного
+фокуса проверен на белых/серых/выбранных поверхностях, включая прилегающий halo.
+Первичный акцент, размеры контролов и бизнес-состояния не меняются.
+
+Операционные уведомления используют `UiNotification` и единственный
+`UiNotificationHost` в App. Teleport не занимает места в page/dialog layout;
+справа сверху стоит стек шириной 360 px (на телефоне — доступная ширина с
+отступами 16 px). Tokens `--admin-notification-width/offset/gap/z-index`
+задают геометрию; цвета берутся из Seller UI-kit. Карточки используют радиус
+`--admin-radius-xl` и отображаются без тени, в том числе в стеке сообщений.
+
+Все уведомления закрываются через 5 секунд; hover, focus и скрытая вкладка
+приостанавливают таймер, после чего отсчёт продолжается с оставшимся временем.
+Закрытие и Escape из toast возвращают фокус к живому источнику/следующему
+уведомлению. Ошибка — alert/assertive, остальные tones — status/polite.
+Повтор после нового действия снова появляется; unmount источника убирает
+сообщение и таймер. Общий host переносится внутрь активного UiDialog для
+screen-reader и focus trap, после закрытия возвращается в body; suspended
+диалоги не владеют им. Retry controls остаются в уведомлении.
+
+`UiAlert` и построенные на нём `UiNotification` отображаются без рамок.
+`UiAlert tone="info"` и `UiAlert tone="additional"` используют дополнительный стиль с фоном
+`blue-light-50` и текстом `blue-light-500`, как у
+`UiBadge tone="additional"`.
+Это оформление применяется ко всем информационным сообщениям, заметкам в
+`UiDialogFooter` и информационным `UiNotification`.
+`UiAlert tone="primary"` использует `primary-50/500`: этот вариант показан в
+UI-kit в примере «Информационное сообщение.» рядом с дополнительным примером.
+Для информационных примеров используйте `live="polite"`; роль — `status`.
+`UiAlert` используется для объяснения контекста и ограничений рядом с
+данными, а `UiField` — для ошибок конкретного поля. Loading/empty states и
+прогресс задания отображают состояние рабочей области; уведомления о
+результате операций не заменяют эти состояния.
+
+| Компонент                                        | Варианты / состояния                                                                                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `UiButton`                                       | `primary`, `secondary`, `soft-blue`, `surface`, `danger`, `neutral-ghost`, `primary-ghost`, `danger-ghost`; `sm/md/lg`, disabled, loading |
+| `UiInput`                                        | default, populated/clear, search, password, focus, error через `UiField`, native disabled; disabled блокирует input и clear-action        |
+| `UiSelect`                                       | placeholder, search/no-results, clear, keyboard, teleport menu; disabled блокирует trigger/clear и закрывает открытое menu                |
+| `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                                    |
+| `UiDatePicker`                                   | input/calendar, Escape/focus return, responsive popup; disabled блокирует input/clear и закрывает открытый calendar                       |
+| `UiCheckbox`, `UiRadio`                          | boolean/array mode, selected/unselected, keyboard focus, disabled через native control                                                    |
+| `UiSegmentedControl`                             | выбор одного значения, обычная/компактная ширина, счётчики текстом, синяя нижняя линия, native radio, Home/End, disabled                  |
+| `UiPopover`                                      | hover/tap, open/close, keyboard, Escape/focus return, outside close, viewport clamp/flip/scroll                                           |
+| `UiDialog`, `ConfirmDialog`                      | open/close, Escape, backdrop, focus trap/return, busy, error                                                                              |
+| `UiAlert`, `UiBadge`, `UiCard`, `UiTable`        | semantic tone / padded-unpadded surface / именованный responsive scroll-region с containment и inset focus ring                           |
+| `UiField`                                        | label, required, help, error (`role=alert`)                                                                                               |
+| `UiLoadingState`, `UiEmptyState`, `UiPagination` | status announcement; borderless pale-blue Seller empty panel and optional `soft-blue` action; first/middle/last/zero/loading pagination   |
+| `UiImagePreview`                                 | изображение, пустое состояние и сообщение об ошибке загрузки                                                                              |
+| `AuthCard`                                       | общий guest-auth form shell: branding, title, description и card surface; `headingTag=h2` только для embedded preview                     |
+| `PageHeader`                                     | eyebrow, title, description, actions slot                                                                                                 |
 
 Все визуальные константы берутся из `src/styles/tokens.css`; Tailwind theme в
-`styles/index.css` отображает эти значения для общих utility classes. Семантические
-цвета текста и контролов подобраны с контрастом не ниже WCAG AA на закреплённых
-фоновых тонах; disabled-состояния используют отдельные токены цвета без снижения
-opacity. Общий focus outline также задаётся токенами и не должен отключаться без
-равноценной контрастной замены.
+`styles/index.css` отображает эти значения для общих utility classes. Текст Admin
+использует существующие значения палитр `500`: `gray`, `primary`, `blue-light`,
+`success`, `warning` и `error`. Отдельных текстовых цветовых tokens и
+переопределений utility classes нет. Эти оттенки выбраны пользователем.
+Disabled-состояния используют существующие токены цвета без снижения opacity.
+Общий focus outline также задаётся токенами.
 
-Живая витрина доступна авторизованному пользователю по `/ui-kit` и через sidebar →
-«Разработка» → «UI-kit». Она собрана в `components/shared/UiKitShowcase.vue` и показывает все
-17 `Ui*` primitives, `AuthCard`, `ConfirmDialog`, `PageHeader`, их значимые варианты и состояния,
+Живая витрина доступна авторизованному пользователю по `/ui-kit` и через верхнее меню →
+«Управление» → «Служебное» → «UI-kit». Она собрана в `components/shared/UiKitShowcase.vue` и показывает все
+26 `Ui*` primitives, `AuthCard`, `ConfirmDialog`, `PageHeader`, их значимые варианты и состояния,
 а также все CSS custom properties из `styles/tokens.css`. Layout- и feature-компоненты не являются
 частью UI-kit и на витрину не выносятся.
 
 Полнота инвентаря и tokens закреплена `tests/uiKitShowcase.test.ts`. E2E проверяет search/no-results,
 teleport menu, confirm busy/error, disabled-контракт, keyboard/focus, axe и responsive widths
 320/640/768/1024/1280 px.
+
+`UiSegmentedControl` — общий выбор одного значения из нескольких: `modelValue`,
+`options` (`value`, `label`, опциональный `disabled`), `name`, `label` и `disabled`.
+Общая серо-голубая подложка, белый выбранный сегмент с синим текстом и нижней
+синей линией 2 px по референсу владельца от 2026-10-15; размеры,
+радиусы и focus используют существующие tokens. Native radio сохраняют Tab,
+стрелки, Space и объявление выбранного значения; Home/End выбирают первый/последний
+доступный вариант. Fieldset/legend именуют группу.
+Длинные подписи переносятся, все сегменты получают одинаковую высоту.
+В фильтрах товаров поиск/категория/бренд используют доступные названия без
+видимых лейблов; activity/sale сохраняют три состояния и существующий API.
+
+У `UiSegmentedControl` `hideLabel` скрывает legend визуально, сохраняя название
+группы. Опция `count` добавляет число обычным текстом рядом с подписью,
+а `countsLoading` показывает «…»;
+`null` отображается как «—», ноль — как 0. Доступное имя radio остаётся подписью
+варианта, число связано через `aria-describedby`. На узком экране число может
+перенестись целиком под подпись. В `/products` счётчики учитывают поиск,
+категорию и бренд; activity/sale не ограничивают цифры соседних вариантов.
+
+Опциональный `fitContent` ограничивает ширину `UiSegmentedControl` содержимым
+и шириной контейнера. Он применяется к выбору типа загрузки в `/products/import`;
+фильтры товаров занимают доступную ширину. `idPrefix` задаёт стабильные id radio,
+а `options[].panelId` связывает выбор с именованным region через `aria-controls`.
+Старый компонент вкладок с контурной обводкой удалён; на витрине показан один
+переключатель в обычном, компактном и disabled-вариантах.
+
+`UiButton variant="surface"` — белая поверхность без border,
+hover primary100/primary600, обычный общий keyboard focus. Disabled состояние
+прозрачное и не принимает hover-оформление. Применяется к сбросу фильтров.
+
+Уточнение компактной шапки от 2026-10-02: рядом с «Меню» нет дублирующей
+подписи текущего раздела; он обозначен заголовком страницы и активной ссылкой
+внутри меню. `AdminLayout` локально задаёт базовый inline gutter 16 px,
+а от 640 px — 24 px; padding содержимого и full-bleed таблицы используют
+одну переменную, наследуемую от layout.
+
+При прокрутке дальше высоты ряда навигации (44 px) `AdminHeader` переносит
+тот же `AdminNavigation` между брендом и иконками в одну строку. Высота
+уменьшается с 109 до 65 px; spacer сохраняет положение документа без скачка.
+При возврате вверх десктопная двухстрочная компоновка восстанавливается.
+Перенесённое меню центрируется в свободном пространстве между брендом и
+действиями. На экранах уже 1024 px шапка всегда однострочная (65 px):
+бургер рядом с уведомлениями и профилем использует общий `admin-header-icon`,
+Lucide Menu 24 px, aria-label «Открыть меню» и прежний доступный dialog.
+`AdminLayout` обновляет общий
+`--admin-shell-height`: таблицы, scroll margins и компактное меню используют
+актуальную нижнюю границу шапки. Реализация не дублирует навигацию и controls.
+`styles/navigation.css` подключается напрямую из `main.ts` после основного
+CSS entry, чтобы Vite dev/HMR обновлял компоновку независимо от Tailwind imports.
+
+Отображаемые цены и денежные суммы форматируются через `src/utils/formatMoney.ts`:
+`ru-RU`, неразрывный пробел между группами тысяч и перед `₽`, запятая и две цифры
+копеек (`17 926,00 ₽`). Нулевая сумма — `0,00 ₽`; отсутствующее или некорректное
+значение — `—`. Для денежных полей применяется opt-in `UiInput money`: цена, старая цена и
+сумма оплаты показывают группы тысяч и десятичную запятую во время ввода.
+`inputmode="decimal"` поддерживает мобильную клавиатуру; допускаются точка,
+запятая и вставка суммы с обычными/неразрывными пробелами. После blur или Enter
+копейки дополняются до двух цифр. Промежуточный ввод `,5` сохраняется до blur
+и становится `0,50`. `v-model` хранит decimal string без группировки и с точкой;
+API получает исходный числовой формат. `required`, `min`, `max`, disabled и
+readonly сохраняются; обычные количественные поля остаются `type="number"`.
+
+Кнопки управления используют заметный фон `primary-100` при hover/focus-visible;
+опасные действия — `error-100`. Tooltip подключается явно через `tooltip` только
+к неоднозначным icon-only действиям: копированию товара, настройке характеристик,
+редактированию/удалению в таблицах товаров и категорий, а также к
+добавлению/редактированию фото в таблице товаров.
+Очевидные кнопки закрытия, очистки, календаря и shell controls визуальной
+подсказки не получают. Она появляется после 300 мс реального указательного
+движения над кнопкой; для перехода курсора с кнопки на саму подсказку даётся
+150 мс, после ухода курсора с обоих элементов она скрывается. Tooltip также
+скрывается при активации, Escape, прокрутке, отключении кнопки и размонтировании.
+Фокус клавиатуры не открывает визуальную подсказку; доступное имя остаётся на
+самой кнопке. Tooltip размещается в ближайшем dialog/landmark вне scroll-wrapper,
+учитывает viewport и сохраняет прочие `aria-describedby`. Не заменять доступные
+имена tooltip и не добавлять параллельный native `title`.
+
+Уточнение 2026-10-03: `UiButton variant="primary-ghost"` — единый синий
+вариант действий редактирования во всех разделах; цвет primary-500, фон
+hover/focus-visible primary-50, disabled остаётся серым. Tooltip использует
+белую поверхность, текст gray-900, границу gray-200 и общую dropdown-тень.
+Столбец действий товаров 176 px вмещает три кнопки и внутренние отступы,
+включая hover-фон и keyboard focus.
+
+Уточнение 2026-10-04 (TASK-A097/A098): `surface` оставляет белую поверхность
+без рамки. Для компактных иконок копирования и закрытия уведомлений используется
+`neutral-ghost`: фон прозрачен в обычном состоянии и становится `gray-100` при
+hover/focus-visible; недоступное состояние остаётся прозрачным с приглушённым
+`gray-400` текстом.
+Всплывающее уведомление внутри диалога сохраняет прозрачный фон кнопки закрытия;
+стиль круглой кнопки диалога на неё не распространяется.
+Остальные прежние использования `ghost` переведены на `surface`.
+Для `surface` и `primary-ghost` фон при наведении — `primary-50`,
+для `danger-ghost` — `error-50`.

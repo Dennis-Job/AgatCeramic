@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Attribute;
+use App\Models\AttributeGroup;
 use App\Models\Category;
 use App\Models\Role;
 use App\Models\User;
@@ -106,6 +108,44 @@ class CategoryManagementTest extends TestCase
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$root->id}", ['parent_id' => $root->id])->assertUnprocessable();
         $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$root->id}", ['parent_id' => $child->id])->assertUnprocessable();
+    }
+
+    public function test_overview_includes_category_assignments_in_one_response(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $root = Category::factory()->create(['sort_order' => 1]);
+        $child = Category::factory()->create(['parent_id' => $root->id, 'is_active' => false]);
+        $group = AttributeGroup::factory()->create();
+        $attribute = Attribute::factory()->create(['attribute_group_id' => $group->id, 'is_filterable' => true]);
+        $root->attributeGroups()->attach($group->id, ['sort_order' => 0]);
+        $child->attributeGroups()->attach($group->id, ['sort_order' => 0]);
+        $root->attributes()->attach($attribute->id, ['sort_order' => 2, 'is_required' => true]);
+        $child->attributes()->attach($attribute->id, ['sort_order' => 1, 'is_required' => false]);
+
+        $this->actingAs($actor)->getJson('/api/v1/admin/categories/overview')
+            ->assertOk()
+            ->assertJsonPath('data.0.attribute_groups.0.id', $group->id)
+            ->assertJsonPath('data.0.attributes.0.id', $attribute->id)
+            ->assertJsonPath('data.0.attributes.0.is_required', true)
+            ->assertJsonPath('data.0.attributes.0.is_filterable', true)
+            ->assertJsonPath('data.0.attributes.0.category_sort_order', 2)
+            ->assertJsonPath('data.0.children.0.is_active', false)
+            ->assertJsonPath('data.0.children.0.attributes.0.is_required', false)
+            ->assertJsonPath('data.0.children.0.attribute_groups.0.id', $group->id);
+
+        $this->actingAs($actor)->getJson('/api/v1/admin/categories/tree')
+            ->assertOk()->assertJsonMissingPath('data.0.attributes')
+            ->assertJsonMissingPath('data.0.attribute_groups');
+        $this->actingAs($this->userWithRole('analyst'))->getJson('/api/v1/admin/categories/overview')
+            ->assertForbidden();
+    }
+
+    public function test_overview_returns_explicit_empty_assignments(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        Category::factory()->create();
+        $this->actingAs($actor)->getJson('/api/v1/admin/categories/overview')
+            ->assertOk()->assertJsonPath('data.0.attributes', [])->assertJsonPath('data.0.attribute_groups', []);
     }
 
     public function test_only_parent_categories_can_be_selected_as_a_parent(): void

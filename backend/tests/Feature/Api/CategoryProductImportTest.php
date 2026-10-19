@@ -12,21 +12,200 @@ use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CategoryProductImportService;
+use App\Services\ProductImportTemplateCategoryValidator;
 use App\Services\ProductImportTemplateService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 use ZipArchive;
 
 class CategoryProductImportTest extends TestCase
 {
     use RefreshDatabase;
+
+    #[DataProvider('workbookCleanupCases')]
+    public function test_readers_release_workbook_immediately_without_garbage_collection(string $reader, bool $invalid): void
+    {
+        [$category] = $this->catalog();
+        $template = app(ProductImportTemplateService::class);
+        $file = $template->create($category, [$this->values('Товар')]);
+        if ($invalid) {
+            $zip = new ZipArchive;
+            $zip->open($file['path']);
+            $sheet = $reader === 'metadata' ? 'xl/worksheets/sheet2.xml' : 'xl/worksheets/sheet1.xml';
+            $xml = $zip->getFromName($sheet);
+            $zip->addFromString($sheet, $reader === 'metadata'
+                ? str_replace('AGAT_CATEGORY_TEMPLATE_V1', 'INVALID_MARKER', $xml)
+                : str_replace('Название', 'Invalid header', $xml));
+            $zip->close();
+        }
+
+        $garbageCollectionEnabled = gc_enabled();
+        gc_disable();
+        try {
+            try {
+                if ($reader === 'metadata') {
+                    app(ProductImportTemplateCategoryValidator::class)->validate($category, $file['path']);
+                } else {
+                    $entries = $template->read($category, $file['path']);
+                    $this->assertCount(1, $entries);
+                    $this->assertSame('Товар', $entries[0]['values']['name']);
+                }
+                $this->assertFalse($invalid, 'Invalid workbooks must be rejected.');
+            } catch (ValidationException $exception) {
+                $this->assertTrue($invalid);
+                $this->assertArrayHasKey('file', $exception->errors());
+            }
+
+            $this->assertTrue(unlink($file['path']), 'The reader must release its source workbook before returning or throwing.');
+            $this->assertFileDoesNotExist($file['path']);
+        } finally {
+            if ($garbageCollectionEnabled) {
+                gc_enable();
+            }
+        }
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function workbookCleanupCases(): iterable
+    {
+        yield 'preflight early return' => ['metadata', false];
+        yield 'preflight validation error' => ['metadata', true];
+        yield 'template success' => ['template', false];
+        yield 'template header error' => ['template', true];
+    }
+
+    public function test_upload_rejects_wrong_category_before_queueing_and_names_both_categories(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        [$category] = $this->catalog();
+        $selected = Category::factory()->create(['name' => 'Мозаика']);
+        $actor = $this->actor();
+        foreach ([false, true] as $editing) {
+            $file = app(ProductImportTemplateService::class)->create($category, [$this->values('Товар')], $editing);
+            try {
+                $response = $this->actingAs($actor)->postJson('/api/v1/admin/products/import', [
+                    'category_id' => $selected->id,
+                    'file' => new UploadedFile($file['path'], 'products-'.$selected->slug.'.xlsx', null, null, true),
+                ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['file']]]);
+                $message = $response->json('error.details.file.0');
+                $this->assertStringContainsString('«Плитка»', $message);
+                $this->assertStringContainsString('«Мозаика»', $message);
+            } finally {
+                unlink($file['path']);
+            }
+        }
+        $this->assertDatabaseCount('product_imports', 0);
+        $this->assertDatabaseCount('import_dispatch_tasks', 0);
+        $this->assertDatabaseCount('products', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+        Queue::assertNothingPushed();
+    }
+
+    public function test_upload_compares_category_ids_even_when_names_and_headers_are_identical(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $category = Category::factory()->create(['name' => 'Плитка']);
+        $selected = Category::factory()->create(['name' => 'Плитка']);
+        $file = app(ProductImportTemplateService::class)->create($category, [$this->values('Товар')]);
+        try {
+            $response = $this->actingAs($this->actor())->postJson('/api/v1/admin/products/import', [
+                'category_id' => $selected->id,
+                'file' => new UploadedFile($file['path'], 'renamed.xlsx', null, null, true),
+            ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['file']]]);
+            $this->assertStringContainsString('ID '.$category->id, $response->json('error.details.file.0'));
+            $this->assertStringContainsString('ID '.$selected->id, $response->json('error.details.file.0'));
+        } finally {
+            unlink($file['path']);
+        }
+        $this->assertDatabaseCount('product_imports', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_upload_accepts_renamed_create_and_edit_templates_for_the_same_category_id(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $category = Category::factory()->create(['name' => 'Старое название']);
+        $actor = $this->actor();
+        foreach ([false, true] as $editing) {
+            $file = app(ProductImportTemplateService::class)->create($category, [$this->values('Товар')], $editing);
+            $category->update(['name' => 'Новое название']);
+            try {
+                $this->actingAs($actor)->postJson('/api/v1/admin/products/import', [
+                    'category_id' => $category->id,
+                    'file' => new UploadedFile($file['path'], 'мой-файл.xlsx', null, null, true),
+                ])->assertAccepted()->assertJsonPath('data.category_id', $category->id)->assertJsonPath('data.status', 'pending');
+            } finally {
+                unlink($file['path']);
+            }
+        }
+        $this->assertDatabaseCount('product_imports', 2);
+        $this->assertDatabaseCount('products', 0);
+        Queue::assertPushed(ProcessProductImport::class, 2);
+    }
+
+    public function test_upload_rejects_missing_or_invalid_category_metadata_before_queueing(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $category = Category::factory()->create();
+        $actor = $this->actor();
+        foreach (['missing', 'invalid-marker', 'fractional-id'] as $case) {
+            $file = app(ProductImportTemplateService::class)->create($category, [$this->values('Товар')]);
+            $zip = new ZipArchive;
+            $zip->open($file['path']);
+            if ($case === 'missing') {
+                $zip->addFromString('xl/workbook.xml', str_replace('Справочники', 'Другой лист', $zip->getFromName('xl/workbook.xml')));
+            } else {
+                $source = $zip->getFromName('xl/worksheets/sheet2.xml');
+                $source = $case === 'invalid-marker'
+                    ? str_replace('AGAT_CATEGORY_TEMPLATE_V1', 'UNKNOWN_TEMPLATE', $source)
+                    : str_replace('<v>'.$category->id.'</v>', '<v>'.$category->id.'.5</v>', $source);
+                $zip->addFromString('xl/worksheets/sheet2.xml', $source);
+            }
+            $zip->close();
+            try {
+                $this->actingAs($actor)->postJson('/api/v1/admin/products/import', [
+                    'category_id' => $category->id,
+                    'file' => new UploadedFile($file['path'], 'products.xlsx', null, null, true),
+                ])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['file']]]);
+            } finally {
+                unlink($file['path']);
+            }
+        }
+        $this->assertDatabaseCount('product_imports', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles());
+        Queue::assertNothingPushed();
+    }
+
+    public function test_worker_checks_category_before_product_headers_and_uses_current_category_name(): void
+    {
+        [$category] = $this->catalog();
+        $selected = Category::factory()->create(['name' => 'Мозаика']);
+        $file = app(ProductImportTemplateService::class)->create($category, [$this->values('Товар')]);
+        $category->update(['name' => 'Керамическая плитка']);
+        try {
+            app(ProductImportTemplateService::class)->read($selected, $file['path']);
+            $this->fail('The category must be checked before product headers.');
+        } catch (ValidationException $exception) {
+            $message = $exception->errors()['file'][0];
+            $this->assertStringContainsString('«Керамическая плитка»', $message);
+            $this->assertStringContainsString('«Мозаика»', $message);
+        } finally {
+            unlink($file['path']);
+        }
+    }
 
     public function test_import_errors_use_russian_column_labels_for_required_and_invalid_values(): void
     {

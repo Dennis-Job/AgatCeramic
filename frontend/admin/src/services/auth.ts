@@ -115,7 +115,9 @@ export async function login(email: string, password: string): Promise<void> {
 
 export async function logout(): Promise<void> {
   await requestCsrfCookie()
-  await apiFetch('/admin/auth/logout', { method: 'POST' })
+  const response = await apiFetch('/admin/auth/logout', { method: 'POST' })
+  if (!response.ok)
+    return throwApiError(response, 'Не удалось выйти. Попробуйте ещё раз.')
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {

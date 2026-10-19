@@ -81,6 +81,10 @@ class ProductImageImportService
                 && (($attributes >> 16) & 0170000) === 0120000) {
                 throw new RuntimeException('Архив не может содержать символические ссылки.');
             }
+            // Finder metadata is not gallery content, but must pass the safety checks above.
+            if ($this->isMacMetadata($name)) {
+                continue;
+            }
             if (str_ends_with($name, '/')) {
                 if (substr_count(rtrim($name, '/'), '/') !== 0) {
                     throw new RuntimeException('Вложенные каталоги не поддерживаются.');
@@ -108,6 +112,19 @@ class ProductImageImportService
         }
 
         return $groups;
+    }
+
+    private function isMacMetadata(string $name): bool
+    {
+        if (str_starts_with($name, '__MACOSX/')) {
+            return true;
+        }
+        if (str_ends_with($name, '/')) {
+            return false;
+        }
+        $filename = basename($name);
+
+        return $filename === '.DS_Store' || str_starts_with($filename, '._');
     }
 
     /** @param list<array{name:string,index:int,extension:string,size:int}> $entries */
@@ -175,6 +192,7 @@ class ProductImageImportService
             }
             DB::transaction(function () use ($import, $product, $sku, $ordinals, $staged, &$created, &$replaced, &$written, &$backups): void {
                 $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+                $galleryBefore = $this->galleryState($product);
                 $existing = $product->images()->get()->keyBy(function (ProductImage $image) use ($sku): int {
                     return preg_match('/^'.preg_quote($sku, '/').'_(\\d+)(?:-i\\d+)?\\.[^.]+$/', basename($image->path), $m) ? (int) $m[1] : -$image->id;
                 });
@@ -225,7 +243,9 @@ class ProductImageImportService
                 if (! in_array($sku, $processed, true)) {
                     $import->forceFill(['processed_skus' => [...$processed, $sku]])->save();
                 }
-                $this->audit->record($import->user, 'product.image-imported', $product, ['import_id' => $import->id, 'created' => $created, 'replaced' => $replaced]);
+                $galleryAfter = $this->galleryState($product);
+                $changes = $galleryBefore === $galleryAfter ? [] : ['images' => ['before' => $galleryBefore, 'after' => $galleryAfter]];
+                $this->audit->record($import->user, 'product.image-imported', $product, ['import_id' => $import->id, 'created' => $created, 'replaced' => $replaced, 'changes' => $changes]);
             });
             foreach ($staged as $path) {
                 $this->cleanup->schedule($import->disk, $path);
@@ -246,6 +266,19 @@ class ProductImageImportService
             }
             $this->failSku($import, $sku, null, ['Не удалось применить изображения этой папки.']);
         }
+    }
+
+    /** @return list<array{image_id: int, file: string, mime_type: string, size: int, is_primary: bool, sort_order: int}> */
+    private function galleryState(Product $product): array
+    {
+        return array_values($product->images()->orderBy('id')->get()->map(fn (ProductImage $image): array => [
+            'image_id' => $image->id,
+            'file' => basename($image->path),
+            'mime_type' => $image->mime_type,
+            'size' => $image->size,
+            'is_primary' => $image->is_primary,
+            'sort_order' => $image->sort_order,
+        ])->all());
     }
 
     /** @param list<string> $messages */

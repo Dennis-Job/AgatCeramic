@@ -337,7 +337,7 @@ class ProductImportTest extends TestCase
             ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $attributeId, 'value' => $value]);
         }
         $sku = $product->sku;
-        $export = app(ProductExportService::class)->create([]);
+        $export = app(ProductExportService::class)->create([], $actor);
         $path = $this->editedExport($export['path'], [
             'Товары' => ['Название' => 'Обновлённая плитка', 'Цена' => 77.5, 'Старая цена' => null, 'Единица продажи' => 'Квадратный метр', 'Активность' => 'Нет', 'Распродажа' => 'Да', 'Цвет' => 'Серый', 'Свойства' => 'Матовая; Морозостойкая', 'Вес (кг)' => 20.25, 'Под заказ' => 'Да'],
             'SEO товаров' => ['URL товара (slug)' => 'updated-tile'],
@@ -369,7 +369,7 @@ class ProductImportTest extends TestCase
         $brand = Brand::factory()->create(['name' => 'Первый бренд']);
         $newBrand = Brand::factory()->create(['name' => 'Другой бренд']);
         $product = Product::factory()->create(['category_id' => $category->id, 'brand_id' => $brand->id, 'is_active' => false]);
-        $export = app(ProductExportService::class)->create([]);
+        $export = app(ProductExportService::class)->create([], $actor);
         $path = $this->editedExport($export['path'], ['Товары' => ['Категория' => 'Мозаика', 'Бренд' => 'Другой бренд']]);
 
         app(ProductImportService::class)->import($actor, $path);
@@ -390,7 +390,7 @@ class ProductImportTest extends TestCase
         $category->attributes()->attach($features);
         $product = Product::factory()->create(['category_id' => $category->id, 'is_active' => false]);
         ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $features->id, 'value' => ['matte', 'stone']]);
-        $export = app(ProductExportService::class)->create([]);
+        $export = app(ProductExportService::class)->create([], $actor);
 
         try {
             app(ProductImportService::class)->import($actor, $export['path']);
@@ -406,7 +406,7 @@ class ProductImportTest extends TestCase
         $actor = $this->userWithPermission('imports.manage');
         $category = Category::factory()->create(['sku_prefix' => '8']);
         $original = Product::factory()->create(['category_id' => $category->id, 'is_active' => false]);
-        $export = app(ProductExportService::class)->create([]);
+        $export = app(ProductExportService::class)->create([], $actor);
         $path = $this->editedExport($export['path'], [
             'Товары' => ['SKU' => 'NEW-1', 'Название' => 'Новая плитка', 'Артикул' => null, 'Штрихкод' => null],
             'SEO товаров' => ['SKU' => 'NEW-1', 'Название' => 'Новая плитка', 'URL товара (slug)' => 'new-localized-tile'],
@@ -426,7 +426,7 @@ class ProductImportTest extends TestCase
     {
         $actor = $this->userWithPermission('imports.manage');
         $product = Product::factory()->create(['is_active' => false]);
-        $export = app(ProductExportService::class)->create([]);
+        $export = app(ProductExportService::class)->create([], $actor);
         $path = $this->editedExport($export['path'], ['Товары' => ['SKU' => 'UNKNOWN-SKU']]);
 
         try {
@@ -452,7 +452,7 @@ class ProductImportTest extends TestCase
         $category->attributes()->attach($color);
         $product = Product::factory()->create(['category_id' => $category->id, 'is_active' => false, 'name' => 'Исходное название']);
         ProductAttributeValue::query()->create(['product_id' => $product->id, 'attribute_id' => $color->id, 'value' => 'white']);
-        $export = app(ProductExportService::class)->create([]);
+        $export = app(ProductExportService::class)->create([], $actor);
         $path = $this->editedExport($export['path'], ['Товары' => ['Название' => 'Не должно сохраниться']]);
 
         try {

@@ -4,7 +4,7 @@ import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { Clock3, Pencil, Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -45,6 +45,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
 
 <template>
   <section class="min-w-0">
+    <div v-if="$slots['toolbar-navigation']" class="mb-4">
+      <slot name="toolbar-navigation" />
+    </div>
     <PageHeader class="mb-7" eyebrow="Контент" title="Магазины">
       <template #actions>
         <UiButton @click="stores.openEditor()"
@@ -52,9 +55,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
         >
       </template>
     </PageHeader>
-    <UiAlert v-if="stores.error.value" class="mb-4">{{
+    <UiNotification v-if="stores.error.value">{{
       stores.error.value
-    }}</UiAlert>
+    }}</UiNotification>
     <UiButton
       v-if="stores.error.value"
       class="mb-4"
@@ -62,13 +65,19 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
       @click="stores.load()"
       >Повторить загрузку</UiButton
     >
-    <UiAlert v-if="stores.success.value" class="mb-4" tone="success">{{
+    <UiNotification v-if="stores.success.value" tone="success">{{
       stores.success.value
-    }}</UiAlert>
+    }}</UiNotification>
     <UiCard
       v-if="!stores.error.value || stores.loading.value"
       class="overflow-hidden"
+      aria-labelledby="stores-list-title"
     >
+      <template #header>
+        <h2 id="stores-list-title" class="font-semibold text-gray-500">
+          Список магазинов
+        </h2>
+      </template>
       <UiLoadingState v-if="stores.loading.value" label="Загрузка магазинов…" />
       <div v-else-if="stores.items.value.length" class="divide-y">
         <article
@@ -99,7 +108,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
               ></UiButton
             >
             <UiButton
-              variant="ghost"
+              variant="primary-ghost"
               size="sm"
               :aria-label="`Редактировать магазин ${store.name}`"
               @click="stores.openEditor(store)"

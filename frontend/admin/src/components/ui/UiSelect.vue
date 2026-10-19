@@ -11,6 +11,7 @@ const props = withDefaults(
     options: SelectOption[]
     placeholder?: string
     accessibleName: string
+    descriptionId?: string
     searchable?: boolean
     searchPlaceholder?: string
     clearable?: boolean
@@ -19,6 +20,7 @@ const props = withDefaults(
   }>(),
   {
     placeholder: 'Выберите значение',
+    descriptionId: '',
     searchable: false,
     searchPlaceholder: 'Начните вводить для поиска',
     clearable: false,
@@ -39,6 +41,12 @@ const search = ref('')
 const searchInput = ref<HTMLInputElement | null>(null)
 const menuId = useId()
 const selectedDescriptionId = useId()
+const describedBy = computed(() =>
+  [selectedDescriptionId, props.descriptionId].filter(Boolean).join(' '),
+)
+const isWithinDialog = computed(() =>
+  Boolean(root.value?.closest('.admin-dialog-content')),
+)
 const selectedLabel = computed(
   () =>
     props.options.find((option) => option.value === props.modelValue)?.label ??
@@ -126,7 +134,7 @@ function updateMenuPosition(): void {
     availableBelow < Math.min(preferredHeight, 160) &&
     availableAbove > availableBelow
   const availableHeight = Math.max(
-    96,
+    1,
     Math.min(264, placeAbove ? availableAbove : availableBelow),
   )
 
@@ -204,15 +212,15 @@ onBeforeUnmount(() => {
     <button
       ref="triggerButton"
       type="button"
-      class="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 shadow-input outline-none transition hover:border-primary-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
+      class="flex min-h-[var(--admin-control-height-md)] w-full items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-left text-sm font-medium text-gray-500 shadow-input outline-none transition hover:bg-primary-50 disabled:hover:bg-gray-50 hover:border-primary-200 admin-control-focus disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:hover:border-gray-200"
       :aria-expanded="isOpen"
       :aria-controls="isOpen ? menuId : undefined"
       :aria-label="accessibleName"
-      :aria-describedby="selectedDescriptionId"
+      :aria-describedby="describedBy"
       :disabled="disabled"
       @click="toggle"
     >
-      <span class="truncate">{{ selectedLabel }}</span>
+      <span class="min-w-0 flex-1 truncate">{{ selectedLabel }}</span>
       <span class="flex shrink-0 items-center gap-2">
         <span
           v-if="clearable && modelValue"
@@ -229,7 +237,7 @@ onBeforeUnmount(() => {
     <button
       v-if="clearable && modelValue"
       type="button"
-      class="absolute right-9 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
+      class="absolute right-9 top-1/2 z-10 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
       :aria-label="`Очистить выбор: ${accessibleName}`"
       :disabled="disabled"
       @click="clear"
@@ -242,7 +250,10 @@ onBeforeUnmount(() => {
         :id="menuId"
         ref="menu"
         :data-floating-select-menu="teleportMenu ? '' : undefined"
-        class="rounded-lg border border-gray-100 bg-white py-1 shadow-dropdown"
+        :data-modal-floating-select-menu="
+          teleportMenu && isWithinDialog ? '' : undefined
+        "
+        class="rounded-xl border border-gray-200 bg-white py-1 shadow-dropdown"
         :class="
           teleportMenu
             ? 'fixed z-[70] overflow-x-hidden overflow-y-auto'
@@ -258,7 +269,7 @@ onBeforeUnmount(() => {
             ref="searchInput"
             v-model="search"
             type="search"
-            class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary-500"
+            class="min-h-[var(--admin-control-height-md)] w-full min-w-0 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none admin-control-focus"
             :placeholder="searchPlaceholder"
             :aria-label="`Поиск: ${accessibleName}`"
           />
@@ -271,14 +282,16 @@ onBeforeUnmount(() => {
             :data-value="option.value"
             type="button"
             :aria-pressed="option.value === modelValue"
-            class="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-25"
+            class="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-gray-500 transition hover:bg-gray-25"
             :class="{
-              'bg-primary-50 font-semibold text-primary-600':
+              'bg-primary-50 font-semibold text-primary-500':
                 option.value === modelValue,
             }"
             @click="select(option.value)"
           >
-            {{ option.label }}
+            <span class="min-w-0 break-words [overflow-wrap:anywhere]">{{
+              option.label
+            }}</span>
             <Check v-if="option.value === modelValue" :size="17" />
           </button>
           <p

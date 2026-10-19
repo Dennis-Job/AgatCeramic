@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -40,9 +40,9 @@ onMounted(() => banners.load())
         ></template
       >
     </PageHeader>
-    <UiAlert v-if="banners.error.value" class="mb-4">{{
+    <UiNotification v-if="banners.error.value">{{
       banners.error.value
-    }}</UiAlert>
+    }}</UiNotification>
     <UiButton
       v-if="banners.error.value"
       class="mb-4"
@@ -50,13 +50,19 @@ onMounted(() => banners.load())
       @click="banners.load()"
       >Повторить загрузку</UiButton
     >
-    <UiAlert v-if="banners.success.value" class="mb-4" tone="success">{{
+    <UiNotification v-if="banners.success.value" tone="success">{{
       banners.success.value
-    }}</UiAlert>
+    }}</UiNotification>
     <UiCard
       v-if="!banners.error.value || banners.loading.value"
       class="overflow-hidden"
+      aria-labelledby="banners-list-title"
     >
+      <template #header>
+        <h2 id="banners-list-title" class="font-semibold text-gray-500">
+          Список баннеров
+        </h2>
+      </template>
       <UiLoadingState v-if="banners.loading.value" label="Загрузка баннеров…" />
       <div v-else-if="banners.items.value.length" class="divide-y">
         <article
@@ -85,7 +91,7 @@ onMounted(() => banners.load())
           </div>
           <div class="ml-auto flex sm:ml-0">
             <UiButton
-              variant="ghost"
+              variant="primary-ghost"
               size="sm"
               :aria-label="`Редактировать баннер ${banner.title}`"
               @click="banners.openEditor(banner)"

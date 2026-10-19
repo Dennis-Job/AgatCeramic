@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\StoreCategoryRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateCategoryRequest;
+use App\Http\Resources\Catalog\CategoryOverviewResource;
 use App\Http\Resources\Catalog\CategoryResource;
 use App\Models\Category;
 use App\Services\CategoryManagementService;
@@ -30,6 +31,13 @@ class CategoryController extends Controller
         Gate::authorize('viewAny', Category::class);
 
         return CategoryResource::collection($this->managementService->tree());
+    }
+
+    public function overview(): AnonymousResourceCollection
+    {
+        Gate::authorize('viewAny', Category::class);
+
+        return CategoryOverviewResource::collection($this->managementService->overview());
     }
 
     public function store(StoreCategoryRequest $request): JsonResponse

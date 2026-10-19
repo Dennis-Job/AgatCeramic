@@ -1,6 +1,62 @@
 # Текущее состояние проекта
 
-На 2026-10-01 Nuxt Client (`TASK-119`, `TASK-C002`–`TASK-C005`) подключён к управляемому
+Журнал аудита, этап 2 от 2026-10-16: выбранная владельцем «Лента по дням»
+заменила таблицу. Группировка по Москве, сотрудник/действие/объект и SKU,
+краткий итог, раскрываемые «Было / Стало»; фильтры и серверная пагинация
+сохранены. Shared UI/tokens и API не менялись. Независимый UI Design Guard
+принял результат. [Реализация и проверка](ADMIN_AUDIT_TIMELINE.md).
+
+Журнал аудита, этап 1 от 2026-10-16: содержательные изменения каталога и доступа
+с before/after, SKU, историческими названиями и контекстом массовых операций.
+Импорт/экспорт сохраняет инициатора и результаты; повторные сохранения и внутренние
+переключения активности XLSX не создают ложные изменения. Структура API сохранена,
+подробности доступны в прежнем `details`; отображение обновлено вторым этапом.
+Windows backend: 488 тестов / 1 PostgreSQL-only skip; PostgreSQL feature 407/407,
+immutability/concurrency 14/14; PHPStan, Pint, architecture и API compatibility PASS.
+Composer audit сообщил advisory для существующего symfony/http-foundation по кэшу
+при недоступном Packagist. [Покрытие, файлы и проверки](AUDIT_TRAIL_ENRICHMENT.md).
+
+Admin: категории используют утверждённую компоновку справочников — иерархия и
+поиск слева, подробности выбранной категории и назначенные характеристики
+справа; на мобильном выбор сверху. Формы и API сохранены. Unit 148/148,
+целевые E2E 58/58 и контрольные baseline/regression 65/65, независимый
+UI Design Guard принял результат. В полном прогоне остаются пять ранее
+известных product snapshot failures.
+[Отчёт от 2026-10-15](ADMIN_CATEGORIES_WORKSPACE_REPORT.md).
+
+Admin: характеристики и группы объединены в одну рабочую область с локальной
+навигацией по группам, подробными строками и быстрыми переключателями фильтров/
+карточки товара. Старый `/attribute-groups` сохранён; формы унифицированы с
+категориями. Unit 147/147, целевые E2E 99/99, baseline/responsive 24/24;
+независимое UI Design Guard-ревью принято. Полный прогон сохраняет пять
+устаревших snapshots кнопки скачивания товаров, не относящихся к этой задаче.
+[Отчёт от 2026-10-15](ADMIN_ATTRIBUTES_WORKSPACE_REPORT.md).
+
+Windows follow-up от 2026-10-14 закрывает XLSX file locks, preview matrix и
+test/infra nondeterminism: backend 403/403 дважды, Admin 523/523 E2E,
+real preview 24/24, Client production/dev 15/15 + 2/2. Cold full-stack readiness
+102.9s и browser smoke 1/1 прошли с изолированным dist; LF/format/hygiene PASS.
+Admin npm audit чистый; Client сохраняет 11 high unpatched findings,
+Composer audit недоступен из-за Packagist timeout. Общий security gate не зелёный.
+[Файлы, проверки и оставшийся пункт 5](WINDOWS_FIXES_2026-10-14.md).
+
+Утверждённая macOS-палитра закреплена для Windows 2026-10-13: 99 фиксированных
+цветов, computed CSS, точные contrast exceptions и native Windows CI.
+Windows unit 125/125; palette/baseline subset 230/230. Полный E2E дал 521/523,
+последние два сбоя синхронизации тестов закрыты повтором 10/10; остальные
+513 scenarios прошли в полном прогоне. UI Design Guard принял 70 Windows и
+66 Linux PNG; production palette/CSS и Darwin snapshots сохранены.
+[Отчёт, изменённые файлы и ограничения](ADMIN_WINDOWS_PALETTE_REPORT.md).
+
+Проверка Windows от 2026-10-13 выполнена на `5d7b58b`: Admin unit 114 PASS / 5 FAIL,
+полный E2E 224 PASS / 126 FAIL; Client production 15/15, dev 2/2 и повтор
+real Nuxt preview 3/3 PASS. Native backend имеет 6 Windows XLSX errors;
+Docker PostgreSQL/Redis/full-stack проверки прошли. Подробности и ограничения —
+в [отчёте Windows](WINDOWS_VERIFICATION_2026-10-13.md). Упоминания непроверенного
+Windows ниже относятся к историческим приёмкам; в первичной проверке эталоны
+не обновлялись, последующая приёмка описана выше.
+
+На 2026-10-02 Nuxt Client (`TASK-119`, `TASK-C002`–`TASK-C005`) подключён к управляемому
 контенту Phase 7: типизированным упорядоченным блокам страниц, опубликованному слайдеру,
 общим шапке/подвалу и SEO. Черновики отделены от опубликованных snapshots;
 публикация выполняется отдельным действием. Сайт сохраняет визуальный язык
@@ -32,6 +88,80 @@ layer декомпозирован, production dependencies сделаны яв�
 вынесены из Controllers, а направления зависимостей и тонкие Controllers защищены blocking
 architecture gate.
 
+Seller-редизайн Admin `TASK-A057`–`TASK-A062` завершён с финальной приёмкой Linux/macOS.
+TASK-A058 реализует две строки верхней шапки с текстовыми группами
+«Товары», «Контент», «Управление» и компактным меню; глобальная боковая панель
+удалена. Конфигурация ссылок общая, доступ фильтруется по permissions,
+медиатека сохраняет собственное право. TASK-A059 вводит общий `AdminWorkspace`
+с режимами обзора, списка, редактора и простой формы; список товаров использует
+широкую таблицу с полными названиями, единицами измерения, локальной прокруткой
+и закреплёнными заголовками/крайними колонками на desktop.
+TASK-A060 подключает справочники каталога, сотрудников, роли, права, аудит и
+медиатеку к широкому общему табличному паттерну. Заказы и обращения используют
+общую list/detail компоновку: таблица использует доступную ширину,
+детали ниже ограничены общим контейнером; явный выбор переводит к ним
+фокус/прокрутку, кнопка возврата возвращает к выбранной строке.
+TASK-A061 раскрывает страницы и общее оформление через общий
+`AdminEditorLayout` с container queries: две зоны от 960/1120 px доступной
+ширины, три зоны от 1240 px. После уточнения от 2026-10-02 все нетабличные
+блоки ограничены единым контейнером 1280 px: dashboard, магазины, редакторы,
+профиль, настройки, фильтры, feedback и пагинация. Края совпадают с меню;
+рабочие таблицы списков сохраняют доступную ширину. Настоящий Nuxt-preview сохраняет 1280/375 px
+viewport с локальным scroll; dirty guards и публикация сохранены. Проверки — в
+[`TASK_A058_REPORT.md`](TASK_A058_REPORT.md),
+[`TASK_A059_REPORT.md`](TASK_A059_REPORT.md),
+[`TASK_A060_REPORT.md`](TASK_A060_REPORT.md) и
+[`TASK_A061_REPORT.md`](TASK_A061_REPORT.md).
+TASK-A062 закрепляет полную матрицу 20 маршрутов × восемь ширин с axe без
+исключений; 223 E2E прошли на каждой Linux/macOS. Darwin baseline приведён
+к текущему UI после независимого review, Linux baseline совпадает без замены.
+Эти результаты A062 относятся к приёмке 2026-10-01; последующая доработка
+контейнеров и её фактические проверки описаны в
+[`ADMIN_CONTAINER_REFINEMENT_REPORT.md`](ADMIN_CONTAINER_REFINEMENT_REPORT.md).
+Актуальная Windows-проверка не выполнялась; CI использует канонический Linux
+Docker. Итог и ограничения — [`TASK_A062_REPORT.md`](TASK_A062_REPORT.md).
+
+Доработка контейнеров от 2026-10-02 завершена: UI Design Guard принял
+macOS/Linux и настоящий Nuxt-preview; lint/format/build, 64 unit и
+242 строгих E2E на каждой OS пройдены. 28 платформенных эталонов обновлены
+после независимого просмотра; 3 реальных preview-сценария пройдены.
+Windows остаётся непроверенным.
+
+Доработка шапки от 2026-10-02 завершена: глобальный поиск удалён,
+разделитель находится внутри контейнера, серые иконки и подменю открываются
+наведением через общий UiPopover. Подменю ограничено 1/2/3 колонками
+по разрешённым группам; клавиатура и touch сохранены. UI Design Guard принят;
+64 unit, lint/format/build, 250 строгих E2E каждой macOS/Linux и 3 real Nuxt
+пройдены. 112 platform baseline приняты до обновления; Windows не проверен.
+[Изменения, evidence и ограничения](ADMIN_HEADER_REFINEMENT_REPORT.md).
+
+Доработка active/focus от 2026-10-02 завершена: общие controls используют
+тонкий край 1 px и прозрачный halo, selected radio/checkbox — спокойную рамку
+и фон. Клавиатурный фокус, ошибки и системный forced-colors outline сохранены;
+unselected glyph скрыт независимо от system colors. UI Design Guard принят,
+16 platform baseline согласованы до замены. Lint/format/build, 64 unit,
+255 строгих E2E каждой macOS/Linux и 3 real Nuxt пройдены.
+[Результат, файлы и ограничения](ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).
+
+Доработка уведомлений от 2026-10-02 вывела операционные сообщения страниц и диалогов
+в общий стек справа сверху, без сдвига рабочего layout. Первоначальная реализация
+прошла UI Design Guard, 28 platform baseline, lint/format/build, 69 unit, 258
+строгих E2E каждой macOS/Linux и real Nuxt3.
+Изменение от 2026-10-04 задаёт всем tones авто-закрытие через 5 секунд; hover,
+focus и скрытая вкладка приостанавливают таймер. UI Design Guard принял code
+review; targeted notifications 10/10, lint/build/scoped format прошли. Более
+широкие текущие unit/E2E прогоны имеют несвязанные ошибки; детали и evidence —
+в [отчёте](ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
+
+Доработка ширины таблиц от 2026-10-02 завершена: 12 рабочих таблиц списков заполняют
+экран без боковых отступов; меню, кнопки, фильтры, пагинация и детали остаются
+в контейнере. Общий `UiTable fullBleed` использует активный gutter layout,
+вложенные таблицы сохраняют прежнюю ширину. UI Design Guard принял реализацию
+и 24 platform baseline до замены; lint/format/build, 69 unit и 258 строгих
+E2E каждой macOS/Linux, real Nuxt3 пройдены. Проверки выполнены в отдельных
+копиях из-за параллельной работы над инструментами товаров.
+[Результат и проверки](ADMIN_TABLE_FULL_BLEED_REPORT.md).
+
 ## Реализовано
 
 | Область | Фактическое состояние |
@@ -40,7 +170,7 @@ architecture gate.
 | Backend architecture | Нетривиальные admin filters/search/sort, eager loading и audit metadata enrichment изолированы в Query objects; основные equality-filter/sort paths подкреплены PostgreSQL indexes. AST guard блокирует обратные зависимости слоёв, DB/Eloquent mutations и service locator/global request/auth helpers в Controllers; размер и complexity публикуются как review-сигналы. |
 | Access control | Admin authentication, password reset, active-user guard, RBAC, granular permissions, audit log, snapshots, retention и PostgreSQL immutability. |
 | Catalog | Categories, brands, attribute groups/typed attributes, standalone sellable products, product groups, generated immutable SKU, images, related products, filters/search и durable storage cleanup. Legacy variants остаются read-only до отдельной verified migration. |
-| Import/export | XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. Workbook I/O, parsing/validation, planning, mutation и report/template generation разделены на небольшие сервисы; orchestration сохраняет прежние transaction, locking и checkpoint contracts. Queue entry points получают обязательные сервисы через container injection; только прямые Laravel `failed()` callbacks используют документированный узкий adapter. |
+| Import/export | Admin: отдельные страницы «Добавить массово товары», «Цены и статусы» и «Объединить товары» в меню «Товары» вместо модальных окон; состояние импорта сохраняется при SPA-переходах в текущей сессии. XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. Workbook I/O, parsing/validation, planning, mutation и report/template generation разделены на небольшие сервисы; orchestration сохраняет прежние transaction, locking и checkpoint contracts. Queue entry points получают обязательные сервисы через container injection; только прямые Laravel `failed()` callbacks используют документированный узкий adapter. |
 | Cart and orders | Public guest cart with HMAC-only bearer lookup, configurable TTL and lock-safe cleanup; locked checkout, immutable order snapshots, random order number, status/payment management, history, internal comments и confirmation email. |
 | Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
 | Content and Client | Типизированные блоки, изолированные snapshots публикаций и защита медиа обеих версий; явная публикация из Admin. Общее оформление имеет отдельный черновик и публикацию; магазины объединены с редактором в «Контенте». Nuxt `/`, `/contacts`, `/about`, `/catalog` используют API при SSR с SEO, адаптивностью и состояниями ошибок/пустых данных. C005 подключает точный защищённый предпросмотр сохранённых черновиков; legacy UI-входы закрыты. |

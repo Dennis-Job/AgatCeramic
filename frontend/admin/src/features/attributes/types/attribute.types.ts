@@ -32,3 +32,9 @@ export type AttributePayload = Omit<
   Attribute,
   'id' | 'is_required' | 'created_at' | 'updated_at'
 >
+export type AttributeDisplayField =
+  'is_filterable' | 'is_visible_on_product_page'
+export type AttributeDisplayPatch = Partial<
+  Pick<Attribute, AttributeDisplayField>
+>
+export type AttributeGroupItem = { value: string; label: string; count: number }

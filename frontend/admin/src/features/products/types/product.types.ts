@@ -31,7 +31,21 @@ export type ProductUnit =
   | 'liter'
   | 'set'
 export type ProductSort = 'sku' | 'name' | 'created_at' | 'updated_at'
+export type ProductListFilters = {
+  search: string
+  category_id: string
+  brand_id: string
+  is_active: string
+  is_on_sale: string
+}
 export type SortDirection = 'asc' | 'desc'
+
+export type ProductFilterCounts = {
+  active: number | null
+  hidden: number | null
+  sale: number | null
+  regular: number | null
+}
 
 export type Product = {
   id: number

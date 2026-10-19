@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
 import type { Banner } from '../src/features/banners/types/banner.types'
 import type { Slider } from '../src/features/sliders/types/slider.types'
@@ -226,6 +226,13 @@ test('page editor reuses and edits sliders and banners in context with guarded d
   expect(sliderWrites).toEqual([[11, 10]])
   expect(mediaRequests).toBe(0)
   expect(pageWrites).toBe(0)
+  // Saving re-enables the editor actions; scan their settled approved colors.
+  const deleteBlock = page.getByRole('button', {
+    name: 'Удалить блок 1',
+    exact: true,
+  })
+  await expect(deleteBlock).toBeEnabled()
+  await expect(deleteBlock).toHaveCSS('color', 'rgb(240, 68, 56)')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })

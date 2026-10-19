@@ -366,6 +366,15 @@ jobs:
         working-directory: .
         run: docker compose --env-file .env.example --profile test run --rm admin-e2e
 
+      - name: Preserve failed Admin browser evidence
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: admin-linux-browser-evidence
+          path: frontend/admin/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   client:
     name: Client checks
     runs-on: ubuntu-24.04
@@ -401,6 +410,9 @@ jobs:
 
       - name: Validate Docker Compose configuration
         run: docker compose --env-file .env.example config --quiet
+
+      - name: Check Admin bootstrap readiness gates
+        run: node scripts/test-admin-smoke-bootstrap.mjs --config-only
 
       - name: Test clean and stale dependency volumes
         run: bash scripts/test-compose-dependency-bootstrap.sh

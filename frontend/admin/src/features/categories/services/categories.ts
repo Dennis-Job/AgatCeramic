@@ -23,8 +23,14 @@ async function fail(response: Response): Promise<never> {
       'Не удалось выполнить запрос.',
   )
 }
-export async function getCategories(): Promise<Category[]> {
-  const response = await apiFetch('/admin/categories/tree')
+export async function getCategories(
+  includeAssignments = false,
+): Promise<Category[]> {
+  const response = await apiFetch(
+    includeAssignments
+      ? '/admin/categories/overview'
+      : '/admin/categories/tree',
+  )
   if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Category[] }).data
 }

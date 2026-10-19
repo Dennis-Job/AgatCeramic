@@ -2,10 +2,10 @@
 import { onMounted } from 'vue'
 import { Plus } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useEmployeesWorkspace } from '../composables/useEmployeesWorkspace'
@@ -22,30 +22,32 @@ onMounted(workspace.initialize)
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
-    <PageHeader class="mb-7" eyebrow="Управление доступом" title="Сотрудники"
-      ><template #actions
-        ><UiButton
-          v-if="workspace.canManage.value"
-          :disabled="!workspace.canEdit.value"
-          @click="workspace.openForm()"
-          ><Plus :size="18" aria-hidden="true" />Добавить сотрудника</UiButton
-        ></template
-      ></PageHeader
-    >
-    <UiAlert v-if="workspace.error.value" class="mb-4">{{
+  <AdminWorkspace mode="list">
+    <template #intro>
+      <PageHeader eyebrow="Управление" title="Команда и доступ"
+        ><template #actions
+          ><UiButton
+            v-if="workspace.canManage.value"
+            :disabled="!workspace.canEdit.value"
+            @click="workspace.openForm()"
+            ><Plus :size="18" aria-hidden="true" />Добавить сотрудника</UiButton
+          ></template
+        ></PageHeader
+      >
+      <slot name="navigation" />
+    </template>
+
+    <UiNotification v-if="workspace.error.value">{{
       workspace.error.value
-    }}</UiAlert>
-    <UiAlert
-      v-if="!workspace.error.value && workspace.rolesError.value"
-      class="mb-4"
+    }}</UiNotification>
+    <UiNotification v-if="!workspace.error.value && workspace.rolesError.value"
       >{{ workspace.rolesError.value }} Редактирование сотрудников временно
-      недоступно.</UiAlert
+      недоступно.</UiNotification
     >
-    <UiCard :padded="false" class="overflow-hidden">
+    <div class="min-w-0">
       <form
         role="search"
-        class="grid grid-cols-2 gap-3 border-b border-gray-100 p-5 admin-employees-filter-grid"
+        class="admin-container grid grid-cols-2 gap-3 border-b border-gray-100 py-4 admin-employees-filter-grid"
         @submit.prevent="workspace.load()"
       >
         <UiInput
@@ -74,7 +76,7 @@ onMounted(workspace.initialize)
         @edit="workspace.openForm"
         @remove="workspace.deleting.value = $event"
       />
-    </UiCard>
+    </div>
     <EmployeeFormDialog
       v-model:form="workspace.form.value"
       :open="workspace.isFormOpen.value"
@@ -95,5 +97,5 @@ onMounted(workspace.initialize)
       @close="workspace.cancelDelete"
       @confirm="workspace.remove"
     />
-  </section>
+  </AdminWorkspace>
 </template>

@@ -2438,6 +2438,35 @@
                 }
             }
         },
+        "/admin/categories/overview": {
+            "get": {
+                "operationId": "getCategoryOverview",
+                "summary": "Get the nested category overview with assigned attributes and groups",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Complete category overview; empty assignment arrays mean no assignments",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CategoryOverviewResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    }
+                }
+            }
+        },
         "/admin/categories/tree": {
             "get": {
                 "operationId": "getCategoryTree",
@@ -2583,7 +2612,7 @@
             "patch": {
                 "operationId": "updateCategory",
                 "summary": "Update a category",
-                "description": "Serialises category-tree mutations and rejects a concurrent change that would make the selected parent ineligible or introduce a cycle.",
+                "description": "Serialises category-tree mutations and rejects a concurrent change that would make the selected parent ineligible or introduce a cycle. Requires catalog.manage. When image_id changes, the previous image is removed from the media library only if it has no remaining references and the actor has media.manage. Original and thumbnail file cleanup is durably queued after commit; shared files are preserved.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -2619,6 +2648,7 @@
             },
             "delete": {
                 "operationId": "deleteCategory",
+                "description": "Requires catalog.manage. After category deletion, its image is removed from the media library only if it has no remaining references and the actor has media.manage. Original and thumbnail file cleanup is durably queued after commit; shared files are preserved.",
                 "summary": "Delete a category",
                 "security": [
                     {
@@ -3575,6 +3605,29 @@
             "get": {
                 "operationId": "listBrands",
                 "summary": "List brands",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "description": "Case-insensitive substring of name or slug. Whitespace is trimmed; an empty value returns all brands. Wildcard characters are treated literally.",
+                        "schema": {
+                            "type": ["string", "null"],
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "description": "Page number; each page contains up to 25 brands ordered by name.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    }
+                ],
                 "security": [
                     {
                         "sanctumSession": []
@@ -3596,6 +3649,9 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
                     }
                 }
             },
@@ -3684,6 +3740,7 @@
             "patch": {
                 "operationId": "updateBrand",
                 "summary": "Update a brand",
+                "description": "Clearing or replacing logo_id removes the previous media if unused and the actor may delete media. Original and thumbnail files are cleaned through durable jobs after commit; shared references are preserved.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -3727,6 +3784,7 @@
             "delete": {
                 "operationId": "deleteBrand",
                 "summary": "Delete a brand",
+                "description": "Deletes the brand and removes its previous logo media if unused and the actor may delete media. Original and thumbnail files are cleaned through durable jobs after commit; shared references are preserved.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -3750,6 +3808,7 @@
             "put": {
                 "operationId": "putUpdateBrand",
                 "summary": "Replace: Update a brand",
+                "description": "Clearing or replacing logo_id removes the previous media if unused and the actor may delete media. Original and thumbnail files are cleaned through durable jobs after commit; shared references are preserved.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -4280,11 +4339,49 @@
                 }
             }
         },
+        "/admin/products/filter-counts": {
+            "get": {
+                "operationId": "listProductFilterCounts",
+                "summary": "Count products for the selected catalog filters",
+                "description": "Returns the activity and sale facet totals in one request. Activity totals respect the selected sale filter; sale totals respect the selected activity filter. Search, category, brand, stock, and price filters apply to every total.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "parameters": [
+                    {"name": "search", "in": "query", "required": false, "schema": {"type": "string", "maxLength": 255}},
+                    {"name": "category_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "brand_id", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1}},
+                    {"name": "is_active", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "is_on_sale", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "has_stock", "in": "query", "required": false, "schema": {"type": "boolean"}},
+                    {"name": "price_from", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}},
+                    {"name": "price_to", "in": "query", "required": false, "schema": {"type": "number", "minimum": 0, "maximum": 9999999999.99}}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product filter totals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductFilterCountsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"},
+                    "429": {"$ref": "#/components/responses/TooManyRequests"}
+                }
+            }
+        },
         "/admin/products/export": {
             "get": {
                 "operationId": "exportProducts",
                 "summary": "Export products to Excel",
-                "description": "Downloads every product matching the list filters and sort order without pagination. Requires imports.manage. The Товары sheet uses Russian Admin labels, characteristic names with optional units in parentheses, Russian product units, Да/Нет booleans and option labels. No database IDs are included. Slugs are on SEO товаров and SEO характеристик sheets. SKU and barcode remain text; multiselect labels are semicolon-separated with CSV quoting. Trailing Изображение N columns contain absolute public URLs for every gallery image, primary first then gallery order. Their count matches the largest filtered gallery; missing images are blank. Includes filters, centered frozen headers and formatted numeric/date cells. The importer accepts both this localized workbook and legacy technical workbooks; image columns are informational and preserve the gallery.",
+                "description": "Downloads every product matching the list filters and sort order without pagination. SKU selection is only supported by POST /admin/products/export; supplying skus on GET returns 422. Requires imports.manage. The Товары sheet uses Russian Admin labels, characteristic names with optional units in parentheses, Russian product units, Да/Нет booleans and option labels. No database IDs are included. Slugs are on SEO товаров and SEO характеристик sheets. SKU and barcode remain text; multiselect labels are semicolon-separated with CSV quoting. Trailing Изображение N columns contain absolute public URLs for every gallery image, primary first then gallery order. Their count matches the largest filtered gallery; missing images are blank. Includes filters, centered frozen headers and formatted numeric/date cells. The importer accepts both this localized workbook and legacy technical workbooks; image columns are informational and preserve the gallery.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -4321,6 +4418,46 @@
                     "403": {"$ref": "#/components/responses/Forbidden"},
                     "422": {"$ref": "#/components/responses/ValidationFailed"}
                 }
+            },
+            "post": {
+                "operationId": "exportSelectedProducts",
+                "summary": "Export selected products to Excel",
+                "description": "Requires imports.manage and normal Sanctum SPA CSRF protection. Accepts a required JSON array of 1–1000 nonempty existing SKU strings, preserving leading zeros. Every SKU is validated before generating the workbook; any unknown entry returns 422 validation_failed with error.details.skus.N and prevents the entire download. Empty, omitted or malformed lists never fall back to the full catalog. Optional list filters and sort are combined with SKU selection. Workbook format matches GET /admin/products/export, including the Товары and SEO товаров sheets restricted to selected matching products and image columns sized from their galleries. SEO характеристик retains the full characteristic reference list. No catalog data is changed.",
+                "security": [{"sanctumSession": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["skus"],
+                                "properties": {
+                                    "skus": {"type": "array", "minItems": 1, "maxItems": 1000, "items": {"type": "string", "minLength": 1, "maxLength": 255}},
+                                    "search": {"type": ["string", "null"], "maxLength": 255},
+                                    "category_id": {"type": ["integer", "null"], "minimum": 1},
+                                    "brand_id": {"type": ["integer", "null"], "minimum": 1},
+                                    "is_active": {"type": ["boolean", "null"]},
+                                    "is_on_sale": {"type": ["boolean", "null"]},
+                                    "has_stock": {"type": ["boolean", "null"]},
+                                    "price_from": {"type": ["number", "null"], "minimum": 0, "maximum": 9999999999.99},
+                                    "price_to": {"type": ["number", "null"], "minimum": 0, "maximum": 9999999999.99},
+                                    "sort": {"type": ["string", "null"], "enum": ["sku", "name", "created_at", "updated_at", null], "default": "created_at"},
+                                    "direction": {"type": ["string", "null"], "enum": ["asc", "desc", null], "default": "desc"}
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "XLSX selected product export",
+                        "headers": {"Content-Disposition": {"description": "Attachment filename", "schema": {"type": "string"}}},
+                        "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {"schema": {"type": "string", "format": "binary"}}}
+                    },
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
             }
         },
         "/admin/products/import-template": {
@@ -4342,7 +4479,7 @@
             "post": {
                 "operationId": "importProducts",
                 "summary": "Upload a product Excel import",
-                "description": "Requires imports.manage. With category_id, creation templates create products with server-generated SKU, while SKU-based edit templates update only matching products in the selected category; both use independent row transactions and durable progress/errors. Duplicate names/slugs, invalid SKU and values absent from current option lists fail only that row. Every category attribute marked required must be supplied even when the product row is inactive. Without category_id, validates all rows before catalogue writes, including ordered unique-value and group constraints. Any validation errors are retained as named row errors and no catalogue rows are changed. Otherwise the server persists a normalized write plan and processes up to 100 rows or 35 seconds per Redis job; each row and checkpoint commit together, so retries skip completed rows. Write-time concurrency guards remain authoritative and conflicts become row errors. Limit: 5000 products, 10 MiB.",
+                "description": "Requires imports.manage. With category_id, the server checks the category ID in the first row of the hidden Справочники sheet before storing the file or creating an import/queue record. A mismatch returns 422 validation_failed with error.details.file naming the template and selected categories and their IDs; missing/invalid metadata also returns 422. Names and filenames do not determine equality. Existing AGAT_CATEGORY_TEMPLATE_V1 templates remain compatible; the worker repeats the check before reading product rows. With category_id, creation templates create products with server-generated SKU, while SKU-based edit templates update only matching products in the selected category; both use independent row transactions and durable progress/errors. Duplicate names/slugs, invalid SKU and values absent from current option lists fail only that row. Every category attribute marked required must be supplied even when the product row is inactive. Without category_id, validates all rows before catalogue writes, including ordered unique-value and group constraints. Any validation errors are retained as named row errors and no catalogue rows are changed. Otherwise the server persists a normalized write plan and processes up to 100 rows or 35 seconds per Redis job; each row and checkpoint commit together, so retries skip completed rows. Write-time concurrency guards remain authoritative and conflicts become row errors. Limit: 5000 products, 10 MiB.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {
                     "required": true,
@@ -4353,7 +4490,7 @@
                                 "required": ["file"],
                                 "properties": {
                                     "file": {"type": "string", "format": "binary", "description": "XLSX workbook, up to 10 MiB."},
-                                    "category_id": {"type": ["integer", "null"], "description": "Selected category for create-only template mode. Omit for legacy/export round-trip import."}
+                                    "category_id": {"type": ["integer", "null"], "description": "Selected category for creation or SKU-based edit templates; must match the hidden template category ID. Omit for legacy/export round-trip import."}
                                 }
                             }
                         }
@@ -4449,7 +4586,7 @@
             "post": {
                 "operationId": "importProductImages",
                 "summary": "Upload a ZIP archive of product images",
-                "description": "Requires imports.manage. Accepts one ZIP archive up to 500 MiB. Each image is JPG, PNG or WebP up to 10 MiB in SKU/SKU_ordinal.extension. Processing is queued; invalid SKU folders are reported without blocking valid folders.",
+                "description": "Requires imports.manage. Accepts one ZIP archive up to 500 MiB. Each image is JPG, PNG or WebP up to 10 MiB in SKU/SKU_ordinal.extension. Finder metadata under __MACOSX/ and files named .DS_Store or starting with ._ are ignored after archive safety and size checks. Processing is queued; invalid SKU folders are reported without blocking valid folders.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string", "format": "binary", "description": "ZIP archive, up to 500 MiB."}}}}}},
                 "responses": {"202": {"description": "Image import accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductImageImportResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}
@@ -8017,9 +8154,10 @@
                         },
                         "additionalProperties": false
                     },
-                    "metadata": {"type": ["object", "null"], "additionalProperties": true},
+                    "metadata": {"type": ["object", "null"], "description": "Очищенные сведения: changes содержит разрешённые изменённые поля с before/after, values — состояние созданного/удалённого объекта; import_id связывает массовую операцию с её изменениями. Персональные поля сотрудников представлены только именами полей. Старые записи могут содержать меньше сведений.", "additionalProperties": true},
                     "details": {
                         "type": "array",
+                        "description": "Человекочитаемые сведения: описание действия, SKU/номер заказа, безопасные поля и значения до/после. Структура ответа сохранена для прежних клиентов.",
                         "items": {
                             "type": "object",
                             "required": ["label", "value"],
@@ -10131,7 +10269,7 @@
                     "row_errors": {"type": "array", "items": {"type": "object", "required": ["row", "name", "messages"], "properties": {"row": {"type": "integer", "minimum": 2}, "name": {"type": ["string", "null"]}, "messages": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false}},
                     "created_rows": {"type": "integer", "minimum": 0},
                     "updated_rows": {"type": "integer", "minimum": 0},
-                    "processed_rows": {"type": "integer", "minimum": 0},
+                    "processed_rows": {"type": "integer", "minimum": 0, "description": "For group imports, counts handled group rows including unchanged rows, not atomic workbook jobs. Equals total_rows when status is completed, including workbook validation errors."},
                     "error_message": {"type": ["string", "null"]},
                     "created_at": {"type": ["string", "null"], "format": "date-time"},
                     "started_at": {"type": ["string", "null"], "format": "date-time"},
@@ -10176,6 +10314,24 @@
                     },
                     "meta": {
                         "type": "object"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "ProductFilterCountsResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "required": ["active", "hidden", "sale", "regular"],
+                        "properties": {
+                            "active": {"type": "integer", "minimum": 0},
+                            "hidden": {"type": "integer", "minimum": 0},
+                            "sale": {"type": "integer", "minimum": 0},
+                            "regular": {"type": "integer", "minimum": 0}
+                        },
+                        "additionalProperties": false
                     }
                 },
                 "additionalProperties": false
@@ -10639,6 +10795,140 @@
                                 }
                             },
                             "additionalProperties": false
+                        }
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CategoryOverview": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "parent_id",
+                    "name",
+                    "slug",
+                    "description",
+                    "sku_prefix",
+                    "is_parent",
+                    "is_active",
+                    "sort_order",
+                    "children",
+                    "created_at",
+                    "updated_at",
+                    "image_id",
+                    "image",
+                    "documents",
+                    "attributes",
+                    "attribute_groups"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "parent_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "sku_prefix": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^(?:[1-9]|[1-9][1-9])$",
+                        "description": "Server-owned one- or two-digit root product-type prefix inherited by descendants. Multiples of ten are not allocated. Null is possible only for a legacy or directly inserted category until first use."
+                    },
+                    "is_parent": {
+                        "type": "boolean"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "sort_order": {
+                        "type": "integer"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryOverview"
+                        }
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "image": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Media"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "documents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Media"
+                        }
+                    },
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Attribute"
+                        }
+                    },
+                    "attribute_groups": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AttributeGroup"
+                        }
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Category overview including all assigned groups and attributes. Required flags are specific to the category; filter flags come from the attribute definition."
+            },
+            "CategoryOverviewResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryOverview"
                         }
                     }
                 },
@@ -13057,7 +13347,7 @@
                 }
             },
             "TooManyRequests": {
-                "description": "Too many login attempts.",
+                "description": "Too many requests in the current rate-limit window.",
                 "content": {
                     "application/json": {
                         "schema": {

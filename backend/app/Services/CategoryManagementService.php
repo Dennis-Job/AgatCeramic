@@ -13,6 +13,7 @@ class CategoryManagementService
     public function __construct(
         private readonly AuditLogService $auditLogService,
         private readonly CatalogSkuService $skuService,
+        private readonly MediaManagementService $mediaService,
     ) {}
 
     /** @param array<string, mixed> $attributes */
@@ -45,7 +46,9 @@ class CategoryManagementService
                 : null;
             $category = $categories?->firstWhere('id', $category->id)
                 ?? Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+            $before = $this->auditLogService->capture($category);
             $originalParentId = $category->parent_id;
+            $originalImageId = $category->image_id;
             $parent = null;
 
             if (array_key_exists('parent_id', $attributes)) {
@@ -65,24 +68,48 @@ class CategoryManagementService
             if (array_key_exists('parent_id', $attributes) && $attributes['parent_id'] !== $originalParentId) {
                 $this->skuService->reassignSubtree($category, $parent);
             }
-            $this->auditLogService->record($actor, 'category.updated', $category);
+            $this->auditLogService->recordUpdated($actor, 'category.updated', $category, $before);
+            if ($originalImageId !== null && $category->image_id !== $originalImageId) {
+                $this->mediaService->deleteIfUnused($actor, $originalImageId);
+            }
 
             return $category->load(['image', 'documents']);
-        });
+        }, 3);
     }
 
     public function delete(User $actor, Category $category): void
     {
         DB::transaction(function () use ($actor, $category): void {
+            $category = Category::query()->whereKey($category->id)->lockForUpdate()->firstOrFail();
+            $imageId = $category->image_id;
             $this->auditLogService->record($actor, 'category.deleted', $category);
             $category->delete();
-        });
+            if ($imageId !== null) {
+                $this->mediaService->deleteIfUnused($actor, $imageId);
+            }
+        }, 3);
     }
 
     /** @return Collection<int, Category> */
     public function tree(): Collection
     {
-        $categories = Category::query()->with(['image', 'documents'])->orderBy('sort_order')->orderBy('name')->get();
+        return $this->buildTree(false);
+    }
+
+    /** @return Collection<int, Category> */
+    public function overview(): Collection
+    {
+        return $this->buildTree(true);
+    }
+
+    /** @return Collection<int, Category> */
+    private function buildTree(bool $includeAssignments): Collection
+    {
+        $relations = ['image', 'documents'];
+        if ($includeAssignments) {
+            $relations = [...$relations, 'attributes.options', 'attributeGroups'];
+        }
+        $categories = Category::query()->with($relations)->orderBy('sort_order')->orderBy('name')->get();
         $byParent = $categories->groupBy('parent_id');
         $attach = function (mixed $category) use (&$attach, $byParent): Category {
             if (! $category instanceof Category) {

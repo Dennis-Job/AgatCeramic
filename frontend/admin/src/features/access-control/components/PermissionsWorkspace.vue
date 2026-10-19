@@ -1,35 +1,57 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { KeyRound } from '@lucide/vue'
+import { RouterLink } from 'vue-router'
+import { ArrowLeft } from '@lucide/vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
+import UiButton from '../../../components/ui/UiButton.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
+import { useAuthStore } from '../../../stores/auth'
 import { usePermissionCatalogue } from '../composables/usePermissionCatalogue'
+import PermissionGroups from './PermissionGroups.vue'
 
+const auth = useAuthStore()
 const catalogue = usePermissionCatalogue()
 onMounted(catalogue.load)
 </script>
 
 <template>
-  <section class="mx-auto admin-page" :aria-busy="catalogue.loading.value">
-    <PageHeader
-      class="mb-7"
-      eyebrow="Управление доступом"
-      title="Права"
-      description="Каталог системных прав и ролей, которым они назначены."
-    />
-    <UiAlert v-if="catalogue.error.value" class="mb-4">{{
+  <AdminWorkspace mode="list" :aria-busy="catalogue.loading.value">
+    <template #intro>
+      <PageHeader eyebrow="Управление" title="Команда и доступ" />
+      <slot name="navigation" />
+    </template>
+    <UiNotification v-if="catalogue.error.value">{{
       catalogue.error.value
-    }}</UiAlert>
-    <UiCard :padded="false" class="overflow-hidden">
+    }}</UiNotification>
+    <section
+      class="admin-container border-t border-gray-200 py-5"
+      aria-labelledby="permission-catalogue-title"
+    >
+      <RouterLink
+        v-if="auth.hasPermission('roles.view')"
+        to="/roles"
+        class="admin-focus mb-4 inline-flex items-center gap-2 rounded-lg py-1 text-sm text-primary-500"
+        ><ArrowLeft :size="16" aria-hidden="true" />К ролям</RouterLink
+      >
+      <h2
+        id="permission-catalogue-title"
+        class="text-xl font-bold text-gray-500"
+      >
+        Справочник прав
+      </h2>
+      <p class="mt-1 text-sm text-gray-500">
+        Системные права и роли, которым они назначены. Настройка доступа
+        выполняется в роли.
+      </p>
       <form
         role="search"
-        class="grid gap-3 border-b border-gray-100 p-4 admin-permissions-filter-grid"
+        class="my-5 grid gap-3 admin-permissions-filter-grid"
         @submit.prevent
       >
         <UiInput
@@ -49,62 +71,44 @@ onMounted(catalogue.load)
         v-if="catalogue.loading.value"
         label="Загрузка каталога прав…"
       />
-      <UiEmptyState
-        v-else-if="
-          !catalogue.error.value && catalogue.permissions.value.length === 0
-        "
-        label="Каталог прав пока пуст."
-      />
-      <div v-else-if="!catalogue.error.value" class="divide-y divide-gray-100">
-        <article
-          v-for="permission in catalogue.filteredPermissions.value"
-          :key="permission.id"
-          class="flex gap-3 p-4 sm:p-5"
-        >
-          <span
-            class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-50 text-primary-600"
-            ><KeyRound :size="19" aria-hidden="true"
-          /></span>
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <div class="min-w-0">
-                <h2 class="break-words font-semibold text-gray-700">
-                  {{ permission.name }}
-                </h2>
-                <code
-                  class="mt-1 inline-block max-w-full break-all rounded bg-gray-25 px-1.5 py-0.5 text-xs text-gray-500"
-                  >{{ permission.code }}</code
-                >
-              </div>
-              <UiBadge tone="neutral"
-                >Ролей: {{ permission.roles.length }}</UiBadge
-              >
-            </div>
-            <p
-              v-if="permission.description"
-              class="mt-3 break-words text-sm text-gray-500"
-            >
-              {{ permission.description }}
+      <UiButton
+        v-else-if="catalogue.error.value"
+        variant="secondary"
+        @click="catalogue.load()"
+        >Повторить загрузку прав</UiButton
+      >
+      <div
+        v-else-if="catalogue.permissionGroups.value.length"
+        role="region"
+        aria-label="Каталог прав"
+      >
+        <PermissionGroups :groups="catalogue.permissionGroups.value">
+          <template #details="{ permission }">
+            <p class="mb-2 mt-3 text-xs text-gray-500">
+              Ролей: {{ permission.roles.length }}
             </p>
-            <div class="mt-3 flex flex-wrap gap-2">
+            <div v-if="permission.roles.length" class="flex flex-wrap gap-2">
               <UiBadge
                 v-for="role in permission.roles"
                 :key="role.id"
                 tone="primary"
                 >{{ role.name }}</UiBadge
-              ><span
-                v-if="!permission.roles.length"
-                class="text-sm text-gray-400"
-                >Не назначено ни одной роли</span
               >
             </div>
-          </div>
-        </article>
-        <UiEmptyState
-          v-if="!catalogue.filteredPermissions.value.length"
-          label="По выбранным условиям права не найдены."
-        />
+            <p v-else class="text-sm text-gray-500">
+              Не назначено ни одной роли
+            </p>
+          </template>
+        </PermissionGroups>
       </div>
-    </UiCard>
-  </section>
+      <UiEmptyState
+        v-else
+        :label="
+          catalogue.permissions.value.length
+            ? 'По выбранным условиям права не найдены.'
+            : 'Каталог прав пока пуст.'
+        "
+      />
+    </section>
+  </AdminWorkspace>
 </template>

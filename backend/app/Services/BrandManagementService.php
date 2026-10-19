@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class BrandManagementService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly MediaManagementService $mediaService,
+    ) {}
 
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): Brand
@@ -28,24 +31,35 @@ class BrandManagementService
     public function update(User $actor, Brand $brand, array $attributes): Brand
     {
         return DB::transaction(function () use ($actor, $brand, $attributes): Brand {
+            $brand = Brand::query()->whereKey($brand->id)->lockForUpdate()->firstOrFail();
+            $before = $this->auditLogService->capture($brand);
+            $originalLogoId = $brand->logo_id;
             $documentIds = $attributes['document_ids'] ?? null;
             unset($attributes['document_ids']);
             $brand->fill($attributes)->save();
             if ($documentIds !== null) {
                 $brand->documents()->sync($this->documentOrder($documentIds));
             }
-            $this->auditLogService->record($actor, 'brand.updated', $brand);
+            $this->auditLogService->recordUpdated($actor, 'brand.updated', $brand, $before);
+            if ($originalLogoId !== null && $brand->logo_id !== $originalLogoId) {
+                $this->mediaService->deleteIfUnused($actor, $originalLogoId);
+            }
 
             return $brand->load(['logo', 'documents']);
-        });
+        }, 3);
     }
 
     public function delete(User $actor, Brand $brand): void
     {
         DB::transaction(function () use ($actor, $brand): void {
+            $brand = Brand::query()->whereKey($brand->id)->lockForUpdate()->firstOrFail();
+            $logoId = $brand->logo_id;
             $this->auditLogService->record($actor, 'brand.deleted', $brand);
             $brand->delete();
-        });
+            if ($logoId !== null) {
+                $this->mediaService->deleteIfUnused($actor, $logoId);
+            }
+        }, 3);
     }
 
     /** @return array<int, array{sort_order: int}> */

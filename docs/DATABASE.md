@@ -431,7 +431,8 @@ TASK-025 creates the append-only audit trail for material administrative actions
 - `metadata` — optional minimal JSON context, sanitised before persistence;
 - `actor_snapshot` — the actor name at the event time, retained if the account is later deleted or renamed;
 - `entity_snapshot` — an allowlisted identity snapshot for the event target: employee name/email,
-  role name/slug, or permission name/code;
+  role name/slug, permission name/code, catalog title/SKU, image parent/product identifiers,
+  order number, or import identifier;
 - `occurred_at` — event time.
 
 The audit payload must never contain passwords, tokens, contact details, names, addresses, or
@@ -441,6 +442,17 @@ explicit action codes and an allowlisted minimal context through `AuditLogServic
 Snapshots are an explicit exception for administrative-account identification: they preserve only
 the fields listed above so that material actions remain understandable after a target is deleted.
 They are retained for five years and then deleted with the audit record.
+
+The 2026-10-16 enrichment adds `metadata.changes` with safe `before`/`after` business
+values and `metadata.values` for created/deleted catalog objects and access entities.
+Employee personal-field and password changes retain field names only, without their values.
+Catalog titles and technical SKU/barcode/article identifiers are explicitly allowlisted business
+data; generic metadata still masks sensitive keys, email addresses and phone-like strings.
+New historical role/permission labels come from saved state, never live reference lookups.
+Legacy records are read without backfill. Import row changes carry `import_id`; their temporary
+deactivation/reactivation is aggregated into one final mutation. Terminal import events retain
+the submission actor snapshot if the employee account was deleted. No schema migration is needed.
+See [stage 1 scope and checks](AUDIT_TRAIL_ENRICHMENT.md).
 
 PostgreSQL permits only INSERT operations on `audit_logs`. Database triggers reject every UPDATE
 and direct DELETE; the retention command is the sole exception, using a transaction-local database

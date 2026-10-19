@@ -73,7 +73,7 @@ class GenericProductImportService
                     return;
                 }
                 try {
-                    $operation = $this->importService->applyPreparedRow($locked->user()->firstOrFail(), $item->product_id, $this->itemPayload($item), $this->itemAttributePayload($item));
+                    $operation = $this->importService->applyPreparedRow($locked->user()->firstOrFail(), $item->product_id, $this->itemPayload($item), $this->itemAttributePayload($item), ['import_id' => $locked->id]);
                     $operation === 'created' ? $locked->created_rows++ : $locked->updated_rows++;
                     $item->status = 'completed';
                     $item->save();

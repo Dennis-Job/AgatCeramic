@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Support\AuditEventPresenter;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 
@@ -58,6 +59,10 @@ class AuditLogResource extends ApiResource
                 }
             }
             if ($normalized !== []) {
+                if (! isset($normalized['name']) && isset($normalized['order_number']) && is_string($normalized['order_number'])) {
+                    $normalized['name'] = 'Заказ №'.$normalized['order_number'];
+                }
+
                 return $normalized;
             }
         }
@@ -80,12 +85,13 @@ class AuditLogResource extends ApiResource
         }
 
         $roles = $this->getAttribute('audit_role_names');
-        if (is_array($roles) && $roles !== []) {
+        $hasHistoricalState = array_key_exists('values', $metadata) || array_key_exists('changes', $metadata);
+        if (! $hasHistoricalState && is_array($roles) && $roles !== []) {
             $details[] = ['label' => 'Роли', 'value' => implode(', ', array_map($this->stringValue(...), $roles))];
         }
 
         $permissions = $this->getAttribute('audit_permission_names');
-        if (is_array($permissions) && $permissions !== []) {
+        if (! $hasHistoricalState && is_array($permissions) && $permissions !== []) {
             $details[] = ['label' => 'Права', 'value' => implode(', ', array_map($this->stringValue(...), $permissions))];
         }
 
@@ -101,7 +107,19 @@ class AuditLogResource extends ApiResource
             $details[] = ['label' => 'IP-адрес', 'value' => $this->stringValue($metadata['ip'])];
         }
 
-        return $details;
+        $unique = [];
+        foreach ([...$details, ...AuditEventPresenter::details($metadata, $this->action)] as $detail) {
+            $unique[$detail['label']] = $detail;
+        }
+        $identity = $this->entitySnapshot();
+        foreach (['sku' => 'SKU', 'order_number' => 'Номер заказа', 'file' => 'Файл изображения', 'image_id' => 'Изображение (ID)'] as $key => $label) {
+            if (isset($identity[$key])) {
+                $unique[$label] = ['label' => $label, 'value' => $this->stringValue($identity[$key])];
+            }
+        }
+        $unique['Действие'] = ['label' => 'Действие', 'value' => AuditEventPresenter::summary($this->action, $identity, $this->entity_type ? class_basename($this->entity_type) : null, $this->entity_id)];
+
+        return array_values($unique);
     }
 
     private function dateValue(mixed $value): mixed

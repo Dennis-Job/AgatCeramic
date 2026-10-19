@@ -30,12 +30,14 @@ class RoleManagementService
     /** @param array<string, mixed> $attributes */
     public function update(User $actor, Role $role, array $attributes): Role
     {
-        $this->ensureSystemRoleIdentityIsUnchanged($role, $attributes);
         if (array_key_exists('permission_ids', $attributes)) {
             $this->ensureActorCanAssignPermissions($actor, $this->permissionIds($attributes['permission_ids']));
         }
 
         return DB::transaction(function () use ($actor, $role, $attributes): Role {
+            $role = Role::query()->whereKey($role->id)->lockForUpdate()->firstOrFail();
+            $this->ensureSystemRoleIdentityIsUnchanged($role, $attributes);
+            $before = $this->auditLogService->capture($role);
             $permissionIds = array_key_exists('permission_ids', $attributes) ? $this->permissionIds($attributes['permission_ids']) : null;
             unset($attributes['permission_ids']);
             $role->fill($attributes)->save();
@@ -43,7 +45,7 @@ class RoleManagementService
                 $role->permissions()->sync($permissionIds);
             }
 
-            $this->auditLogService->record($actor, 'role.updated', $role, [
+            $this->auditLogService->recordUpdated($actor, 'role.updated', $role, $before, [
                 'permission_ids' => $role->permissions()->pluck('permissions.id')->all(),
             ]);
 
@@ -53,11 +55,11 @@ class RoleManagementService
 
     public function delete(User $actor, Role $role): void
     {
-        if ($role->is_system) {
-            throw ValidationException::withMessages(['role' => ['System roles cannot be deleted.']]);
-        }
-
         DB::transaction(function () use ($actor, $role): void {
+            $role = Role::query()->whereKey($role->id)->lockForUpdate()->firstOrFail();
+            if ($role->is_system) {
+                throw ValidationException::withMessages(['role' => ['System roles cannot be deleted.']]);
+            }
             $this->auditLogService->record($actor, 'role.deleted', $role, ['slug' => $role->slug]);
             $role->delete();
         });

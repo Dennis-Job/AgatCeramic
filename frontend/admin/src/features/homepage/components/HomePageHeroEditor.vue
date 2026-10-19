@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import { loadAllPages } from '../../../services/pagination'
@@ -35,18 +35,18 @@ onMounted(load)
 <template>
   <div class="space-y-5">
     <div>
-      <h2 class="text-lg font-semibold text-gray-800">Главный слайдер</h2>
+      <h2 class="text-lg font-semibold text-gray-500">Главный слайдер</h2>
       <p class="mt-1 text-sm text-gray-500">
         Создайте баннеры, соберите их в слайдер и опубликуйте оба вида записей.
         Затем выберите этот слайдер здесь.
       </p>
     </div>
-    <UiAlert v-if="error" role="alert">{{ error }}</UiAlert>
+    <UiNotification v-if="error">{{ error }}</UiNotification>
     <UiButton v-if="error" variant="secondary" size="sm" @click="load"
       >Повторить загрузку</UiButton
     >
     <div>
-      <p class="mb-2 text-sm font-medium text-gray-700">Слайдер для главной</p>
+      <p class="mb-2 text-sm font-medium text-gray-500">Слайдер для главной</p>
       <UiSelect
         :model-value="model === null ? '' : String(model)"
         :options="[
@@ -66,12 +66,12 @@ onMounted(load)
     <div class="flex flex-wrap gap-3">
       <RouterLink
         to="/content?section=banners"
-        class="text-sm font-medium text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
+        class="text-sm font-medium text-primary-500 underline admin-focus"
         >Управлять баннерами</RouterLink
       >
       <RouterLink
         to="/content?section=sliders"
-        class="text-sm font-medium text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
+        class="text-sm font-medium text-primary-500 underline admin-focus"
         >Управлять слайдерами</RouterLink
       >
       <UiButton variant="secondary" size="sm" @click="load"
@@ -79,8 +79,8 @@ onMounted(load)
       >
     </div>
     <div v-if="slides.length" class="space-y-2">
-      <h3 class="font-medium text-gray-800">Опубликованные слайды сейчас</h3>
-      <ol class="list-inside list-decimal text-sm text-gray-600">
+      <h3 class="font-medium text-gray-500">Опубликованные слайды сейчас</h3>
+      <ol class="list-inside list-decimal text-sm text-gray-500">
         <li v-for="slide in slides" :key="slide.id">{{ slide.title }}</li>
       </ol>
     </div>

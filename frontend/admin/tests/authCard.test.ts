@@ -37,11 +37,11 @@ describe('AuthCard', () => {
   })
 
   test('is the only owner of the auth card shell used by all guest views', () => {
-    const authCard = readFileSync(
-      resolve(process.cwd(), 'src/components/shared/AuthCard.vue'),
-      'utf8',
-    )
-    expect(authCard).toContain('shadow-dialog')
+    const wrapper = mount(AuthCard, {
+      props: { title: 'Вход', description: 'Отдельная страница.' },
+    })
+    expect(wrapper.get('form').classes()).toContain('admin-panel--white')
+    expect(wrapper.get('form').classes()).toContain('admin-panel--elevated')
 
     for (const viewName of [
       'LoginView.vue',
@@ -54,7 +54,9 @@ describe('AuthCard', () => {
       )
       expect(source, viewName).toContain('components/shared/AuthCard.vue')
       expect(source, viewName).not.toContain('shadow-dialog')
+      expect(source, viewName).not.toContain('admin-panel--elevated')
       expect(source, viewName).not.toContain('AgatCeramic</p>')
     }
+    wrapper.unmount()
   })
 })

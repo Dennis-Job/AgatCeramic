@@ -2,6 +2,7 @@
 import { computed, onMounted, watch } from 'vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -41,11 +42,11 @@ onMounted(() => state.load())
       опубликованного ресурса сразу меняет его во всех местах использования,
       независимо от публикации страницы.
     </UiAlert>
-    <UiAlert v-if="state.success.value" tone="success" live="polite">
+    <UiNotification v-if="state.success.value" tone="success" live="polite">
       {{ state.success.value }}
-    </UiAlert>
+    </UiNotification>
     <div v-if="state.error.value" class="space-y-2">
-      <UiAlert>{{ state.error.value }}</UiAlert>
+      <UiNotification>{{ state.error.value }}</UiNotification>
       <UiButton
         type="button"
         variant="secondary"
@@ -98,13 +99,13 @@ onMounted(() => state.load())
         !state.selected.value
       "
       role="alert"
-      class="text-sm text-error-600"
+      class="text-sm text-error-500"
     >
       Выбранный слайдер недоступен. Выберите другой ресурс.
     </p>
     <template v-if="state.selected.value">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h4 class="min-w-0 break-words font-semibold text-gray-900">
+        <h4 class="min-w-0 break-words font-semibold text-gray-500">
           {{ state.selected.value.name }}
         </h4>
         <UiBadge
@@ -121,7 +122,7 @@ onMounted(() => state.load())
         <li
           v-for="(banner, index) in state.selected.value.banners"
           :key="banner.id"
-          class="min-w-0 space-y-2 rounded-lg border border-gray-200 p-3"
+          class="admin-panel--inset min-w-0 space-y-2 p-3"
         >
           <UiImagePreview
             :url="banner.image_url"

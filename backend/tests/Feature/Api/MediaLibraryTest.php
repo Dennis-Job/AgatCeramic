@@ -14,6 +14,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -23,6 +24,7 @@ class MediaLibraryTest extends TestCase
 
     public function test_managed_media_references_and_document_lifecycle(): void
     {
+        Queue::fake();
         Storage::fake('public');
         $actor = $this->userWithRole('catalog-manager');
         $image = $this->actingAs($actor)->post('/api/v1/admin/media', [
@@ -42,12 +44,11 @@ class MediaLibraryTest extends TestCase
         ])->assertCreated()->assertJsonPath('data.image.id', $image)->json('data.id');
 
         $this->actingAs($actor)->deleteJson("/api/v1/admin/media/{$image}")->assertUnprocessable();
-        $this->actingAs($actor)->patchJson("/api/v1/admin/brands/{$brand}", ['logo_id' => null, 'document_ids' => []])->assertOk();
         $this->actingAs($actor)->patchJson("/api/v1/admin/categories/{$category}", ['image_id' => null, 'document_ids' => []])->assertOk();
         $path = Media::query()->findOrFail($image)->path;
         $thumbnailPath = Media::query()->findOrFail($image)->thumbnail_path;
         Storage::disk('public')->assertExists($thumbnailPath);
-        $this->actingAs($actor)->deleteJson("/api/v1/admin/media/{$image}")->assertNoContent();
+        $this->actingAs($actor)->patchJson("/api/v1/admin/brands/{$brand}", ['logo_id' => null, 'document_ids' => []])->assertOk();
         $this->actingAs($actor)->deleteJson("/api/v1/admin/media/{$document}")->assertNoContent();
         $this->assertDatabaseMissing('media', ['id' => $image]);
         $task = StorageCleanupTask::query()->where('path', $path)->sole();

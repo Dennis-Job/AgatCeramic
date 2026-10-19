@@ -17,10 +17,18 @@ defineEmits<{ select: [contact: Contact] }>()
 </script>
 
 <template>
-  <UiLoadingState v-if="loading" label="Загрузка обращений…" />
-  <UiEmptyState v-else-if="!contacts.length" label="Обращения не найдены." />
+  <UiLoadingState
+    v-if="loading"
+    class="admin-container"
+    label="Загрузка обращений…"
+  />
+  <UiEmptyState
+    v-else-if="!contacts.length"
+    class="admin-container"
+    label="Обращения не найдены."
+  />
   <template v-else>
-    <div class="divide-y divide-gray-100 md:hidden xl:block">
+    <div class="admin-container divide-y divide-gray-100 md:hidden">
       <article
         v-for="contact in contacts"
         :key="contact.id"
@@ -29,23 +37,25 @@ defineEmits<{ select: [contact: Contact] }>()
       >
         <button
           type="button"
-          class="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          class="w-full rounded-lg text-left admin-focus"
           :aria-label="`Открыть обращение ${contact.id}`"
           :aria-current="selectedId === contact.id ? 'true' : undefined"
           @click="$emit('select', contact)"
         >
           <div class="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <span class="block font-semibold text-gray-800">{{
+              <span class="block font-semibold text-gray-500">{{
                 typeName(contact.type)
               }}</span
-              ><span class="mt-1 block text-xs text-gray-500">{{
-                date(contact.created_at)
-              }}</span>
+              ><time
+                class="mt-1 block text-xs text-gray-500"
+                :datetime="contact.created_at"
+                >{{ date(contact.created_at) }}</time
+              >
             </div>
             <UiBadge tone="primary">{{ statusName(contact.status) }}</UiBadge>
           </div>
-          <p class="mt-3 break-words text-sm font-medium text-gray-700">
+          <p class="mt-3 break-words text-sm font-medium text-gray-500">
             {{ contact.contact.name ?? 'Без имени' }}
           </p>
           <p class="break-all text-xs text-gray-500">
@@ -57,18 +67,21 @@ defineEmits<{ select: [contact: Contact] }>()
         </button>
       </article>
     </div>
-    <div class="xl:hidden">
+    <div class="min-w-0">
       <UiTable
+        full-bleed
         class="hidden md:block"
-        min-width="min-w-[680px]"
+        min-width="min-w-[760px]"
+        table-class="seller-table"
+        sticky-header
         label="Список обращений"
       >
         <thead class="bg-gray-25 text-xs text-gray-500">
           <tr>
-            <th class="px-5 py-3">Обращение</th>
-            <th class="px-5 py-3">Контакт</th>
-            <th class="px-5 py-3">Статус</th>
-            <th class="px-5 py-3">Ответственный</th>
+            <th scope="col" class="w-48 px-5 py-3">Обращение</th>
+            <th scope="col" class="px-5 py-3">Контакт</th>
+            <th scope="col" class="w-40 px-5 py-3">Статус</th>
+            <th scope="col" class="w-44 px-5 py-3">Ответственный</th>
           </tr>
         </thead>
         <tbody>
@@ -81,21 +94,23 @@ defineEmits<{ select: [contact: Contact] }>()
             <td class="px-5 py-4">
               <button
                 type="button"
-                class="-m-2 rounded-lg p-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                class="-m-2 rounded-lg p-2 text-left admin-focus"
                 :aria-label="`Открыть обращение ${contact.id}`"
                 :aria-current="selectedId === contact.id ? 'true' : undefined"
                 @click="$emit('select', contact)"
               >
-                <span class="block font-semibold text-gray-800">{{
+                <span class="block font-semibold text-gray-500">{{
                   typeName(contact.type)
                 }}</span
-                ><span class="mt-1 block text-xs text-gray-500">{{
-                  date(contact.created_at)
-                }}</span>
+                ><time
+                  class="mt-1 block text-xs text-gray-500"
+                  :datetime="contact.created_at"
+                  >{{ date(contact.created_at) }}</time
+                >
               </button>
             </td>
             <td class="px-5 py-4">
-              <p class="font-medium text-gray-700">
+              <p class="font-medium text-gray-500">
                 {{ contact.contact.name ?? 'Без имени' }}
               </p>
               <p class="mt-1 text-xs text-gray-500">
@@ -105,7 +120,7 @@ defineEmits<{ select: [contact: Contact] }>()
             <td class="px-5 py-4">
               <UiBadge tone="primary">{{ statusName(contact.status) }}</UiBadge>
             </td>
-            <td class="px-5 py-4 text-gray-600">
+            <td class="px-5 py-4 text-gray-500">
               {{ contact.assignee?.name ?? 'Не назначен' }}
             </td>
           </tr>

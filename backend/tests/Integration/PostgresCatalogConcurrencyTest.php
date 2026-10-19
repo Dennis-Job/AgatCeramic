@@ -2,21 +2,30 @@
 
 namespace Tests\Integration;
 
+use App\Models\Banner;
 use App\Models\Category;
+use App\Models\HomePage;
+use App\Models\Media;
+use App\Models\Page;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductRelation;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\CategoryManagementService;
 use App\Services\ProductImageManagementService;
 use App\Services\ProductManagementService;
 use App\Services\ProductRelationManagementService;
 use Closure;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
@@ -166,6 +175,42 @@ class PostgresCatalogConcurrencyTest extends TestCase
         $this->assertThrowableIs($outcome, ValidationException::class);
         $this->assertFalse($parent->fresh()->is_parent);
         $this->assertNull($child->fresh()->parent_id);
+    }
+
+    #[DataProvider('contentWriters')]
+    public function test_url_only_content_writers_wait_for_media_cleanup_lock(string $operation): void
+    {
+        $this->seed(RoleSeeder::class);
+        $this->seed(PermissionSeeder::class);
+        Queue::fake();
+        $actor = User::factory()->create();
+        $actor->roles()->attach(Role::query()->where('slug', 'catalog-manager')->sole());
+        $image = Media::query()->create([
+            'kind' => 'image', 'disk' => 'public', 'path' => 'media/concurrency-'.bin2hex(random_bytes(8)).'.png',
+            'mime_type' => 'image/png', 'size' => 5, 'title' => 'Synthetic shared image',
+        ]);
+        $category = Category::factory()->create(['image_id' => $image->id]);
+        $url = Storage::disk('public')->url($image->path);
+        $banner = Banner::query()->create(['title' => 'Concurrency URL']);
+        $page = Page::query()->create([
+            'title' => 'Concurrency URL', 'slug' => 'concurrency-'.bin2hex(random_bytes(8)), 'body' => '',
+            'blocks' => [], 'seo' => $operation === 'page-publish' ? ['og_image_url' => $url] : [],
+        ]);
+        $outcome = $this->runCompetingTransactions(
+            $operation,
+            fn () => HomePage::query()->lockForUpdate()->findOrFail(1),
+            $operation,
+            ['actor_id' => $actor->id, 'banner_id' => $banner->id, 'page_id' => $page->id, 'image_url' => $url],
+        );
+        $this->assertOutcomeOk($outcome);
+        app(CategoryManagementService::class)->update($actor, $category, ['image_id' => null]);
+        $this->assertDatabaseHas('media', ['id' => $image->id]);
+        Queue::assertNothingPushed();
+    }
+
+    public static function contentWriters(): array
+    {
+        return [['banner-create'], ['banner-update'], ['page-create'], ['page-update'], ['page-publish']];
     }
 
     /**

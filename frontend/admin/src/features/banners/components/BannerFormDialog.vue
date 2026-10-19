@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import { X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
@@ -46,7 +47,7 @@ const emit = defineEmits<{
         </h2>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно баннера"
           :disabled="busy"
@@ -54,9 +55,9 @@ const emit = defineEmits<{
           ><X :size="20"
         /></UiButton>
       </div>
-      <p v-if="error" role="alert" class="mt-3 text-sm text-error-600">
+      <UiNotification v-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <div class="mt-6 grid gap-4">
         <UiField label="Заголовок" required
           ><UiInput

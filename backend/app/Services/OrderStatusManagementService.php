@@ -51,6 +51,8 @@ class OrderStatusManagementService
             $this->auditLogService->record($actor, 'order.status-changed', $order, [
                 'from_status' => $previousStatus,
                 'to_status' => $targetStatus->code,
+                'from_status_label' => $currentStatus->name ?? $previousStatus,
+                'to_status_label' => $targetStatus->name,
             ]);
 
             return $order;

@@ -43,7 +43,7 @@ class ProductGroupImportService
                 if ($actor === null) {
                     throw new RuntimeException('Не удалось определить автора импорта.');
                 }
-                $this->groups->applyBulk($actor, $changes);
+                $this->groups->applyBulk($actor, $changes, ['import_id' => $import->id]);
                 DB::rollBack();
             } catch (ValidationException $exception) {
                 if (DB::transactionLevel() > 0) {
@@ -78,7 +78,13 @@ class ProductGroupImportService
                     'payload' => ['changes' => $changes], 'attribute_payload' => [], 'status' => 'pending',
                 ]);
             }
-            $import->forceFill(['total_rows' => count($workbook['groups']), 'failed_rows' => count($errors), 'processed_rows' => count($errors)])->save();
+            $totalRows = count($workbook['groups']);
+            $pendingRows = $errors === [] ? count($changes) : 0;
+            $import->forceFill([
+                'total_rows' => $totalRows,
+                'failed_rows' => count($errors),
+                'processed_rows' => $totalRows - $pendingRows,
+            ])->save();
         });
         $import->refresh();
     }
@@ -100,7 +106,7 @@ class ProductGroupImportService
                 if ($actor === null) {
                     throw new RuntimeException('Не удалось определить автора импорта.');
                 }
-                $this->groups->applyBulk($actor, $changes);
+                $this->groups->applyBulk($actor, $changes, ['import_id' => $import->id]);
                 $item->forceFill(['status' => 'completed'])->save();
                 $import->increment('created_rows', collect($changes)->where('action', 'create')->count());
                 $import->increment('updated_rows', collect($changes)->whereIn('action', ['update', 'disband'])->count());
@@ -109,7 +115,8 @@ class ProductGroupImportService
                 $import->rowErrors()->create(['row_number' => 1, 'name' => $item->name, 'messages' => collect($exception->errors())->flatten()->values()->all(), 'values' => ['sheet' => 'Группы', 'row' => '—', 'name' => $item->name, 'messages' => collect($exception->errors())->flatten()->values()->all()]]);
                 $import->increment('failed_rows');
             }
-            $import->increment('processed_rows');
+            // One item applies the entire workbook atomically, not one group row.
+            $import->forceFill(['processed_rows' => $import->total_rows])->save();
         });
 
         return true;

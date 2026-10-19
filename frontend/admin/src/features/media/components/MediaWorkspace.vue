@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { FileText, Pencil, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
@@ -10,6 +11,7 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
+import UiTable from '../../../components/ui/UiTable.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useMediaWorkspace } from '../composables/useMediaWorkspace'
 import MediaImagePreview from './MediaImagePreview.vue'
@@ -37,19 +39,28 @@ const {
 </script>
 
 <template>
-  <section class="mx-auto admin-page">
-    <PageHeader class="mb-7" eyebrow="Контент" title="Медиатека" />
-    <UiAlert v-if="success" class="mb-4" tone="success" role="status">{{
-      success
-    }}</UiAlert>
-    <UiCard class="mb-6">
-      <form
-        class="grid gap-4 p-5 sm:grid-cols-2"
-        @submit.prevent="editing ? saveEdit() : upload()"
-      >
-        <h2 class="text-base font-semibold sm:col-span-2">
+  <AdminWorkspace mode="list">
+    <template #intro>
+      <PageHeader class="mb-7" eyebrow="Контент" title="Медиатека" />
+    </template>
+
+    <UiNotification v-if="success" tone="success">{{ success }}</UiNotification>
+    <UiCard
+      class="admin-container mb-6"
+      :aria-labelledby="editing ? 'media-edit-title' : 'media-upload-title'"
+    >
+      <template #header>
+        <h2
+          :id="editing ? 'media-edit-title' : 'media-upload-title'"
+          class="font-semibold text-gray-500"
+        >
           {{ editing ? 'Редактировать файл' : 'Загрузить файл' }}
         </h2>
+      </template>
+      <form
+        class="grid gap-4 sm:grid-cols-2"
+        @submit.prevent="editing ? saveEdit() : upload()"
+      >
         <UiField label="Название" required
           ><UiInput v-model="title" required maxlength="255" :disabled="busy"
         /></UiField>
@@ -79,7 +90,7 @@ const {
             "
             required
             :disabled="busy"
-            class="mt-1.5 block w-full min-w-0 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary-700 focus-visible:outline-2 focus-visible:outline-primary-500"
+            class="mt-1.5 block w-full min-w-0 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary-500 admin-focus"
             @change="chooseFile"
           />
         </UiField>
@@ -89,9 +100,7 @@ const {
           help="Кратко опишите изображение для доступности."
           ><UiInput v-model="alt" maxlength="255" :disabled="busy"
         /></UiField>
-        <UiAlert v-if="formError" class="sm:col-span-2">{{
-          formError
-        }}</UiAlert>
+        <UiNotification v-if="formError">{{ formError }}</UiNotification>
         <div class="flex flex-wrap gap-2 sm:col-span-2">
           <UiButton :loading="busy">{{
             editing ? 'Сохранить' : 'Загрузить'
@@ -107,74 +116,98 @@ const {
         </div>
       </form>
     </UiCard>
-    <UiAlert v-if="list.error.value" class="mb-4">{{
+    <UiNotification v-if="list.error.value">{{
       list.error.value
-    }}</UiAlert>
-    <UiButton
-      v-if="list.error.value"
-      class="mb-4"
-      variant="secondary"
-      @click="load()"
-      >Повторить загрузку</UiButton
-    >
-    <UiCard
-      v-if="!list.error.value || list.items.value.length"
-      class="overflow-hidden"
-    >
-      <UiLoadingState v-if="list.loading.value" label="Загрузка файлов…" />
-      <div v-else-if="list.items.value.length" class="divide-y">
-        <article
-          v-for="item in list.items.value"
-          :key="item.id"
-          class="grid grid-cols-[4rem_minmax(0,1fr)] items-center gap-3 p-4 sm:flex sm:flex-nowrap"
-        >
-          <MediaImagePreview
-            v-if="item.kind === 'image'"
-            :url="item.thumbnail_url || item.url"
-            :alt="item.alt || item.title"
-            class="h-16 w-16"
-          />
-          <FileText
-            v-else
-            :size="32"
-            class="shrink-0 text-primary-600"
-            aria-hidden="true"
-          />
-          <div class="min-w-0 flex-1">
-            <a
-              :href="item.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="break-all font-medium text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-500"
-              >{{ item.title }}</a
-            >
-            <p class="text-xs text-gray-500">
-              {{ item.kind === 'image' ? 'Изображение' : 'PDF документ' }} ·
-              {{ Math.ceil(item.size / 1024) }} КБ · #{{ item.id }}
-            </p>
-          </div>
-          <div class="col-span-2 flex justify-self-end gap-1 sm:ml-auto">
-            <UiButton
-              variant="ghost"
-              size="sm"
-              :aria-label="`Изменить файл ${item.title}`"
-              @click="startEdit(item)"
-              ><Pencil :size="17"
-            /></UiButton>
-            <UiButton
-              variant="danger-ghost"
-              size="sm"
-              :aria-label="`Удалить файл ${item.title}`"
-              @click="confirmDelete(item)"
-              ><Trash2 :size="17"
-            /></UiButton>
-          </div>
-        </article>
-      </div>
-      <UiEmptyState v-else label="Файлов пока нет." />
-    </UiCard>
+    }}</UiNotification>
+    <div v-if="list.error.value" class="admin-container mb-4">
+      <UiButton variant="secondary" @click="load()"
+        >Повторить загрузку</UiButton
+      >
+    </div>
+    <div v-if="!list.error.value || list.items.value.length">
+      <UiLoadingState
+        v-if="list.loading.value"
+        class="admin-container"
+        label="Загрузка файлов…"
+      />
+      <UiTable
+        v-else-if="list.items.value.length"
+        full-bleed
+        label="Список файлов"
+        min-width="min-w-[880px]"
+        table-class="seller-table"
+        sticky-header
+        sticky-edges
+      >
+        <thead>
+          <tr>
+            <th scope="col">Файл</th>
+            <th scope="col" class="w-40">Тип / размер</th>
+            <th scope="col" class="w-72">Alt текст</th>
+            <th scope="col" class="w-28">
+              <span class="sr-only">Действия</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in list.items.value" :key="item.id">
+            <td>
+              <div class="flex items-start gap-3">
+                <MediaImagePreview
+                  v-if="item.kind === 'image'"
+                  :url="item.thumbnail_url || item.url"
+                  :alt="item.alt || item.title"
+                  class="h-16 w-16 shrink-0"
+                /><FileText
+                  v-else
+                  :size="32"
+                  class="shrink-0 text-primary-500"
+                  aria-hidden="true"
+                />
+                <div class="min-w-0">
+                  <a
+                    :href="item.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-medium text-primary-500 underline admin-focus"
+                    >{{ item.title }}</a
+                  >
+                  <p class="mt-1 text-xs text-gray-500">#{{ item.id }}</p>
+                </div>
+              </div>
+            </td>
+            <td>
+              {{ item.kind === 'image' ? 'Изображение' : 'PDF документ' }}
+              <p class="mt-1 text-xs text-gray-500">
+                {{ Math.ceil(item.size / 1024) }} КБ
+              </p>
+            </td>
+            <td>{{ item.alt || '—' }}</td>
+            <td>
+              <div class="flex justify-end gap-1">
+                <UiButton
+                  variant="primary-ghost"
+                  size="sm"
+                  :aria-label="`Изменить файл ${item.title}`"
+                  @click="startEdit(item)"
+                  ><Pencil :size="17"
+                /></UiButton>
+                <UiButton
+                  variant="danger-ghost"
+                  size="sm"
+                  :aria-label="`Удалить файл ${item.title}`"
+                  @click="confirmDelete(item)"
+                  ><Trash2 :size="17"
+                /></UiButton>
+              </div>
+            </td>
+          </tr></tbody
+      ></UiTable>
+      <UiEmptyState v-else class="admin-container" label="Файлов пока нет." />
+    </div>
     <UiPagination
       v-if="list.pagination.value"
+      class="admin-container"
       :meta="list.pagination.value"
       :loading="list.loading.value"
       @change="load"
@@ -188,5 +221,5 @@ const {
       @close="deleting = null"
       @confirm="remove"
     />
-  </section>
+  </AdminWorkspace>
 </template>

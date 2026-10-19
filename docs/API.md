@@ -409,6 +409,10 @@ article number, or barcode. It also supports `category_id`, `brand_id`,
 The default order is `created_at desc`, so newly created products appear first. Price and stock
 filters apply directly to products; all filters can be combined.
 
+`GET /admin/products/filter-counts` returns the four activity/sale totals in one request. Activity
+totals respect the selected sale filter, sale totals respect the selected activity filter, and
+search/category/brand/stock/price filters apply to every total.
+
 `GET /admin/products/export` downloads every product matching the same filters and sort order as
 `GET /admin/products`; pagination is deliberately not accepted. The endpoint requires
 `imports.manage` and returns a streaming XLSX attachment. The first sheet, `Товары`, uses the
@@ -428,6 +432,20 @@ Products with fewer images have blank remaining cells. URLs use the configured d
 for the public disk), so local exports point to the local server.
 `SEO товаров` links SKU to product/category/brand names and slugs; `SEO характеристик` lists
 characteristic names, units and slugs. No sheet contains database IDs.
+
+`POST /admin/products/export` downloads the same workbook for a required JSON `skus` array
+of 1–1000 existing strings, each at most 255 characters. Leading zeros are preserved.
+The endpoint requires `imports.manage` before validation and normal Sanctum SPA CSRF protection.
+Unknown SKU entries return `422` with Russian messages in `error.details.skus.N`; no partial file
+is generated. Empty, omitted or malformed selections never fall back to exporting all products.
+Optional list filters/sort may be combined with the selection. Both product sheets and the gallery
+column count respect the selection; `SEO характеристик` retains the full characteristic reference.
+SKU selection on GET is rejected: lists use POST to avoid URL and query parsing limits.
+
+The Admin `/products` button **Скачать** opens on hover, click/tap or keyboard. **Все товары в Excel**
+calls GET without page filters. **Товары по SKU** opens a dialog with comma-separated input;
+whitespace and duplicates are removed, and the normalized strings are posted as `skus`.
+The dialog preserves input after errors and prevents repeated submission while creating the file.
 
 `POST /admin/products/import` accepts that workbook as multipart field `file`, stores it on the
 private `local` disk, creates a persistent import-status record, and dispatches processing to the
@@ -459,8 +477,17 @@ The `Инструкция` sheet explains the limit and filling rules. Current d
 validated again on import; editing/pasting into Excel cannot create new catalogue options.
 
 To import this template, submit the selected `category_id` alongside multipart `file`. The file's
-category marker and current category headers must match. At most 5000 rows (2–5001) and 10 MiB are
-accepted. Each valid row commits independently; invalid rows retain their original values and
+category marker and current category headers must match. Before storing the workbook or creating
+an import/queue record, the endpoint reads only the first row of the hidden `Справочники` sheet:
+`AGAT_CATEGORY_TEMPLATE_V1`, category ID, and category name. A different category ID returns `422`
+(`error.code=validation_failed`, `error.details.file`) naming both the template and selected
+categories with their IDs. The current catalogue name is used when available; the saved template
+name is the fallback for a deleted category. Missing or invalid metadata also returns `422`.
+Filenames and category names are never used to determine equality; renamed files and categories
+remain supported. Existing V1 templates need no regeneration. The worker repeats the category
+check before validating headers/reading product rows. The source file still has to reach the
+server; the early check avoids waiting for queue processing. At most 5000 rows (2–5001) and 10 MiB
+are accepted. Each valid row commits independently; invalid rows retain their original values and
 named messages. The status resource adds `category_id`, `total_rows`, `failed_rows`, `row_errors`
 (`row`, `name`, `messages`), and `has_error_file`. `processed_rows` includes successful and failed
 rows; `created_rows` counts successes. `completed` means all rows were checked, including partial
@@ -491,6 +518,8 @@ attribute axes represented as human-readable names. Its `Состав` sheet map
 the `Инструкция` sheet explains the supported actions and every required field for managers. The
 The axis columns expose names through an Excel dropdown backed by a hidden technical column, while
 the importer resolves each selected name to its current attribute ID.
+Empty cells appended to the end of a header row by Excel are ignored, including the blank
+header above the hidden axis helper column. Required header names and their order remain strict.
 `POST /admin/products/group-import` accepts the edited workbook as multipart `file` (up to 10 MiB),
 requires both `imports.manage` and `catalog.manage`, and runs in the queue. `Изменить` replaces the
 complete membership and axes; a product can move between groups in one workbook. Groups are never
@@ -498,6 +527,9 @@ removed by omission: `Расформировать` is required. The entire work
 atomically, so a conflict leaves no partial group changes. The initiating user polls
 `GET /admin/product-group-imports/{productImport}` and may download terminal row errors from
 `GET /admin/product-group-imports/{productImport}/errors`.
+For group imports, `total_rows` counts all non-empty group rows, including `Не изменять`.
+`processed_rows` counts handled group rows rather than the single atomic workbook job;
+when the workbook completes it equals `total_rows`, including files rejected with row errors.
 
 `POST /admin/product-image-imports` accepts a ZIP archive in multipart field `file` and requires
 `imports.manage`. The archive may be up to 500 MiB and is retained only on the private disk while
@@ -507,6 +539,10 @@ every contained filename, image numbers must be positive and unique per SKU, and
 unsafe paths and unsupported files are rejected. The worker validates the real MIME type, limits
 archive entries and uncompressed size, and records a folder-level error for an unknown SKU or an
 invalid gallery without blocking other valid folders.
+
+Finder metadata under `__MACOSX/` and files named `.DS_Store` or starting with `._`
+are ignored; they do not count as SKU folders, images or folder errors. Archive entry/size
+limits, unsafe-path and symbolic-link checks still apply before metadata is skipped.
 
 The initiating manager polls `GET /admin/product-image-imports/{productImageImport}`. The status
 includes folder progress, created/replaced image counts, folder errors and a terminal error-report
@@ -739,6 +775,22 @@ POST /api/v1/admin/attribute-groups
 `logo_id` принимает ID managed image или `null`; `document_ids` заменяет упорядоченный список
 PDF-вложений. Ответы содержат `logo` и `documents` с публичными URL. SEO fields остаются
 за `TASK-100` и связанными задачами Phase 8.
+
+В форме создания и редактирования бренда PDF можно загрузить напрямую через
+существующий `POST /admin/media` с `kind=document`, `title` и `file` (до 20 MiB).
+Требуется `media.manage`; полученный ID автоматически выбирается в документах
+формы и передаётся в `document_ids` при сохранении бренда. Доступен выбор нескольких
+документов. До завершения загрузки или отмены выбора файла сохранение блокируется.
+Отмена формы после успешной загрузки оставляет файл в медиатеке. API payload,
+маршруты и схема БД для этого UI-сценария не менялись.
+
+После снятия или замены `logo_id`, а также после удаления бренда, прежний логотип
+автоматически удаляется из медиатеки, если он больше нигде не используется и
+сотрудник имеет право удаления медиа. Проверяются общие привязки и ссылки на
+оригинал/миниатюру в контенте. Оригинал и миниатюра очищаются штатными durable
+заданиями `DeleteStoredFile` после успешного commit. Ошибка или rollback изменения
+бренда не удаляет изображение. Само снятие изображения в несохранённой форме
+не удаляет серверный файл.
 
 ```json
 PATCH /api/v1/admin/brands/8

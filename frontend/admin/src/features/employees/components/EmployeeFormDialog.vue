@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
-import UiAlert from '../../../components/ui/UiAlert.vue'
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -35,7 +36,7 @@ const statusOptions = [
     labelledby="employee-dialog-title"
     describedby="employee-dialog-description"
     :close-disabled="busy"
-    panel-class="w-full max-w-xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl"
+    panel-class="w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-xl"
     @close="emit('close')"
   >
     <form @submit.prevent="emit('submit')">
@@ -43,20 +44,14 @@ const statusOptions = [
         <div>
           <h2
             id="employee-dialog-title"
-            class="text-lg font-bold text-gray-900"
+            class="text-lg font-bold text-gray-500"
           >
             {{ title }}
           </h2>
-          <p
-            id="employee-dialog-description"
-            class="mt-1 text-sm text-gray-500"
-          >
-            Укажите учётные данные, статус и роли.
-          </p>
         </div>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно сотрудника"
           :disabled="busy"
@@ -64,7 +59,7 @@ const statusOptions = [
           ><X :size="20"
         /></UiButton>
       </div>
-      <UiAlert v-if="error" class="mt-4">{{ error }}</UiAlert>
+      <UiNotification v-if="error">{{ error }}</UiNotification>
       <div class="mt-6 grid gap-4">
         <UiField label="Имя" required
           ><UiInput
@@ -116,7 +111,7 @@ const statusOptions = [
             :disabled="busy"
         /></UiField>
         <fieldset :disabled="busy">
-          <legend class="text-sm font-medium text-gray-700">Роли</legend>
+          <legend class="text-sm font-medium text-gray-500">Роли</legend>
           <div class="mt-2 grid gap-2 sm:grid-cols-2">
             <UiCheckbox
               v-for="role in roles"
@@ -128,17 +123,22 @@ const statusOptions = [
           </div>
         </fieldset>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          ><span id="employee-dialog-description"
+            >Укажите учётные данные, статус и роли.</span
+          ></template
+        >
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           :disabled="busy"
           @click="emit('close')"
           >Отмена</UiButton
         ><UiButton type="submit" :loading="busy" :disabled="busy">{{
           busy ? 'Сохранение…' : 'Сохранить'
         }}</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>

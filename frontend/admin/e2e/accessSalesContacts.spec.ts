@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright'
+import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import {
   createDeferredApiRequests,
@@ -206,9 +206,9 @@ test('TASK-A029 routes render without serious accessibility violations', async (
   await mockApi(page)
   const routes = [
     ['/profile', 'Мой профиль'],
-    ['/employees', 'Сотрудники'],
-    ['/roles', 'Роли'],
-    ['/permissions', 'Права'],
+    ['/employees', 'Команда и доступ'],
+    ['/roles', 'Команда и доступ'],
+    ['/permissions', 'Команда и доступ'],
     ['/audit-log', 'Журнал аудита'],
     ['/orders', 'Заказы'],
     ['/contacts', 'Обращения'],
@@ -241,6 +241,7 @@ test('employee editor keeps keyboard close and opener focus', async ({
   await expect(
     page.getByText('Руководитель доступа', { exact: true }).last(),
   ).toBeVisible()
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(opener).toBeFocused()
@@ -299,7 +300,9 @@ test('contact detail exposes protected workflow and activity data without overfl
 test('employee mutations require the manage permission', async ({ page }) => {
   await mockApi(page, { grantedPermissions: ['admin-users.view'] })
   await page.goto('/employees')
-  await expect(page.getByRole('heading', { name: 'Сотрудники' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Команда и доступ' }),
+  ).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Добавить сотрудника' }),
   ).toHaveCount(0)

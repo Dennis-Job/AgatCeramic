@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import UiNotification from '../../../components/ui/UiNotification.vue'
 import { ref, watch } from 'vue'
 import { ArrowDown, ArrowUp, X } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
@@ -58,7 +60,7 @@ watch(
         </h2>
         <UiButton
           type="button"
-          variant="ghost"
+          variant="surface"
           size="sm"
           aria-label="Закрыть окно слайдера"
           :disabled="busy"
@@ -66,9 +68,9 @@ watch(
           ><X :size="20"
         /></UiButton>
       </div>
-      <p v-if="error" role="alert" class="mt-3 text-sm text-error-600">
+      <UiNotification v-if="error">
         {{ error }}
-      </p>
+      </UiNotification>
       <div class="mt-6 grid gap-4">
         <UiField label="Название" required>
           <UiInput
@@ -102,9 +104,6 @@ watch(
       </div>
 
       <h3 class="mt-6 font-semibold">Баннеры в порядке показа</h3>
-      <p class="mt-1 text-sm text-gray-500">
-        В публичном слайдере показываются только опубликованные баннеры.
-      </p>
       <ol v-if="selectedBanners.length" class="mt-3 space-y-2">
         <li
           v-for="(banner, index) in selectedBanners"
@@ -119,7 +118,7 @@ watch(
           </span>
           <UiButton
             type="button"
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="busy || index === 0"
             :aria-label="`Поднять баннер ${banner.title}`"
@@ -128,7 +127,7 @@ watch(
           /></UiButton>
           <UiButton
             type="button"
-            variant="ghost"
+            variant="surface"
             size="sm"
             :disabled="busy || index === selectedBanners.length - 1"
             :aria-label="`Опустить баннер ${banner.title}`"
@@ -167,9 +166,9 @@ watch(
           >Найти</UiButton
         >
       </div>
-      <p v-if="optionsError" role="alert" class="mt-2 text-sm text-error-600">
+      <UiNotification v-if="optionsError">
         {{ optionsError }}
-      </p>
+      </UiNotification>
       <p v-else-if="optionsLoading" role="status" class="mt-2 text-sm">
         Поиск баннеров…
       </p>
@@ -203,7 +202,11 @@ watch(
           Баннеры не найдены.
         </p>
       </div>
-      <div class="mt-6 flex flex-wrap justify-end gap-3">
+      <UiDialogFooter>
+        <template #note
+          >В публичном слайдере показываются только опубликованные
+          баннеры.</template
+        >
         <UiButton
           type="button"
           variant="secondary"
@@ -212,7 +215,7 @@ watch(
           >Отмена</UiButton
         >
         <UiButton :loading="busy">Сохранить</UiButton>
-      </div>
+      </UiDialogFooter>
     </form>
   </UiDialog>
 </template>
