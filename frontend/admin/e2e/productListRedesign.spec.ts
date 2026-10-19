@@ -279,6 +279,42 @@ test('sort menu keeps all supported fields and restores focus after Escape', asy
     ).toHaveCount(0)
 })
 
+test('a long unbroken category name stays inside its table cell', async ({
+  page,
+}) => {
+  await mockCatalogApi(page, {
+    sourceProduct: {
+      category: {
+        ...product.category,
+        name: 'Крупноформатныйкерамогранитдлявнутреннейинаружнойотделкипомещений',
+      },
+    },
+  })
+  await page.setViewportSize({ width: 1035, height: 707 })
+  await page.goto('/products')
+  const table = page.getByRole('table', { name: 'Таблица товаров' })
+  await expect(table).toBeVisible()
+  await page.evaluate(() => document.fonts.ready)
+  expect(
+    await table
+      .locator('tbody td')
+      .evaluateAll((cells) =>
+        cells.every((cell) => cell.scrollWidth <= cell.clientWidth),
+      ),
+  ).toBe(true)
+  const category = table.locator('tbody tr').first().locator('td').nth(2)
+  expect(
+    await category
+      .locator('span')
+      .evaluate((badge) => badge.scrollWidth <= badge.clientWidth),
+  ).toBe(true)
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+})
+
 test('four filters retain useful select widths with large counts at 1024px', async ({
   page,
 }) => {
@@ -335,6 +371,18 @@ for (const width of [320, 640, 768, 1024, 1035, 1280, 1349, 1440]) {
     const row = table.locator('tbody tr').first()
     const category = row.locator('td').nth(2)
     await expect(category.locator('span')).toHaveClass(/bg-blue-light-50/)
+    await page.evaluate(() => document.fonts.ready)
+    const badgeIsOneLine = await category.locator('span').evaluate((badge) => {
+      const style = getComputedStyle(badge)
+      return (
+        badge.getBoundingClientRect().height <=
+        parseFloat(style.lineHeight) +
+          parseFloat(style.paddingTop) +
+          parseFloat(style.paddingBottom) +
+          1
+      )
+    })
+    expect(badgeIsOneLine).toBe(true)
     for (const index of [2, 5]) {
       await expect(table.locator('th').nth(index)).toHaveCSS(
         'text-align',

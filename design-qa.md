@@ -119,6 +119,16 @@ typography, page-size pagination and omission of the mock annotation.
 
 ## Implementation checklist and limits
 
+- Category badge word wrapping: local overflow-wrap normal preserves whole
+  words and wraps multiword names at spaces. Eight viewport checks confirm
+  the standard category remains on one line, including 1035 px. Build/lint/
+  format, 159 unit and 21 targeted production E2E pass. Removing the category
+  cell max-width lets long unbroken words expand the column within the local
+  table scroll area; the stress check verifies no badge/cell/page overflow.
+  Independent UI Design Guard accepted single/multiword names at 320/1035/
+  1440 px. Whole long words can widen the category column; neighboring cells
+  may wrap more, without intersections or lost content.
+
 - Browser comment fix for the All option: both product segmented controls
   keep the first option unshrunk and on one line. Eight viewport checks now
   include 1035 px and measure the text height. Build/lint/format, 159 unit and
