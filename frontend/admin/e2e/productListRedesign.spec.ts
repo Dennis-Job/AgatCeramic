@@ -1,7 +1,91 @@
 import AxeBuilder from './approvedAccessibility'
 import { expect, test } from './fixtures'
-import { mockCatalogApi } from './catalogApi'
+import { mockCatalogApi, product } from './catalogApi'
 import { createDeferredApiRequests } from './deferredApi'
+
+test('products paginate by 50 and keep activity inside collapsible filters', async ({
+  page,
+}) => {
+  await mockCatalogApi(page)
+  const requests: URLSearchParams[] = []
+  await page.route('**/api/v1/admin/products?*', (route) => {
+    const query = new URL(route.request().url()).searchParams
+    requests.push(query)
+    const currentPage = Number(query.get('page') ?? 1)
+    const perPage = Number(query.get('per_page') ?? 15)
+    const total = query.has('is_active') ? 50 : 51
+    const from = (currentPage - 1) * perPage
+    const data = Array.from(
+      { length: Math.min(perPage, total - from) },
+      (_, index) => ({
+        ...product,
+        id: from + index + 1,
+        name: `Товар ${from + index + 1}`,
+      }),
+    )
+    return route.fulfill({
+      json: {
+        data,
+        meta: {
+          current_page: currentPage,
+          last_page: Math.ceil(total / perPage),
+          per_page: perPage,
+          total,
+          from: from + 1,
+          to: from + data.length,
+        },
+      },
+    })
+  })
+  await page.goto('/products')
+  const rows = page
+    .getByRole('table', { name: 'Таблица товаров' })
+    .locator('tbody tr')
+  await expect(rows).toHaveCount(50)
+  await expect(
+    page.getByText('Показано 1–50 из 51', { exact: true }),
+  ).toBeVisible()
+  await page
+    .getByRole('button', { name: 'Следующая страница', exact: true })
+    .click()
+  await expect(rows).toHaveCount(1)
+  await expect(
+    page.getByText('Показано 51–51 из 51', { exact: true }),
+  ).toBeVisible()
+  const toggle = page.getByRole('button', { name: /^Фильтры/ })
+  const activity = page.getByRole('group', {
+    name: 'Активность',
+    includeHidden: true,
+  })
+  await expect(activity).toBeHidden()
+  await toggle.click()
+  await activity
+    .getByRole('radio', { name: 'Активные', exact: true })
+    .locator('..')
+    .click()
+  await expect(rows).toHaveCount(50)
+  await expect(
+    page.getByText('Показано 1–50 из 50', { exact: true }),
+  ).toBeVisible()
+  expect(requests.at(-1)?.get('is_active')).toBe('1')
+  expect(requests.at(-1)?.get('page') ?? '1').toBe('1')
+  expect(requests.every((query) => query.get('per_page') === '50')).toBe(true)
+  await toggle.click()
+  await expect(activity).toBeHidden()
+  await expect(
+    page.getByRole('button', { name: 'Убрать фильтр: Активные', exact: true }),
+  ).toBeVisible()
+  await page
+    .getByRole('button', { name: 'Убрать фильтр: Активные', exact: true })
+    .click()
+  await expect(
+    page.getByText('Показано 1–50 из 51', { exact: true }),
+  ).toBeVisible()
+  await toggle.click()
+  await expect(
+    activity.getByRole('radio', { name: 'Все', exact: true }),
+  ).toBeChecked()
+})
 
 test('a superseded sorting response cannot roll back the sort used by a newer filter request', async ({
   page,
@@ -195,7 +279,51 @@ test('sort menu keeps all supported fields and restores focus after Escape', asy
     ).toHaveCount(0)
 })
 
-for (const width of [320, 640, 768, 1024, 1280, 1440]) {
+test('four filters retain useful select widths with large counts at 1024px', async ({
+  page,
+}) => {
+  await mockCatalogApi(page)
+  await page.route('**/api/v1/admin/products/filter-counts*', (route) =>
+    route.fulfill({
+      json: {
+        data: { active: 999999, hidden: 999999, sale: 999999, regular: 999999 },
+      },
+    }),
+  )
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await page.goto('/products')
+  await page.getByRole('button', { name: /^Фильтры/ }).click()
+  const filters = page.getByRole('search')
+  await expect(
+    filters.getByRole('radio', { name: 'Активные', exact: true }).locator('..'),
+  ).toContainText(/999\s999/)
+  for (const name of ['Категория', 'Бренд']) {
+    const select = filters.getByLabel(name, { exact: true })
+    expect((await select.boundingBox())!.width).toBeGreaterThanOrEqual(128)
+    const textWidth = await select
+      .locator('span')
+      .first()
+      .evaluate((element) => element.getBoundingClientRect().width)
+    expect(textWidth).toBeGreaterThan(60)
+  }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+  expect(
+    await filters.evaluate((element) =>
+      [...element.querySelectorAll('label')].every(
+        (label) => label.scrollWidth <= label.clientWidth,
+      ),
+    ),
+  ).toBe(true)
+  await filters.screenshot({
+    path: '.tmp/products-redesign/four-filters-large-1024.png',
+  })
+})
+
+for (const width of [320, 640, 768, 1024, 1280, 1349, 1440]) {
   test(`product filters and sorting fit and remain accessible at ${width}px`, async ({
     page,
   }) => {
@@ -203,11 +331,91 @@ for (const width of [320, 640, 768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 1024 })
     await page.goto('/products')
     await expect(page.getByText('Монте Тиберио', { exact: true })).toBeVisible()
+    const table = page.getByRole('table', { name: 'Таблица товаров' })
+    const row = table.locator('tbody tr').first()
+    const category = row.locator('td').nth(2)
+    await expect(category.locator('span')).toHaveClass(/bg-blue-light-50/)
+    for (const index of [2, 5]) {
+      await expect(table.locator('th').nth(index)).toHaveCSS(
+        'text-align',
+        'center',
+      )
+      const cell = row.locator('td').nth(index)
+      const alignment = await cell.evaluate((element) => {
+        const bounds = element.getBoundingClientRect()
+        return [...element.querySelectorAll('span')].every((badge) => {
+          const rect = badge.getBoundingClientRect()
+          return (
+            Math.abs(
+              rect.left + rect.width / 2 - bounds.left - bounds.width / 2,
+            ) <= 1
+          )
+        })
+      })
+      expect(alignment).toBe(true)
+    }
+    const actionSpace = await row
+      .locator('td')
+      .last()
+      .evaluate((cell) => {
+        const buttons = [...cell.querySelectorAll('button')]
+        const contentWidth = buttons.reduce(
+          (sum, button) => sum + button.getBoundingClientRect().width,
+          0,
+        )
+        const style = getComputedStyle(cell)
+        return (
+          cell.getBoundingClientRect().width -
+          contentWidth -
+          parseFloat(style.paddingLeft) -
+          parseFloat(style.paddingRight)
+        )
+      })
+    expect(actionSpace).toBeLessThanOrEqual(1)
     const toggle = page.getByRole('button', { name: /^Фильтры/ })
     await toggle.click()
     await expect(
       page.getByRole('group', { name: 'Распродажа', exact: true }),
     ).toBeVisible()
+    const filters = page.getByRole('search')
+    const sale = filters.getByRole('group', { name: 'Распродажа', exact: true })
+    await expect(
+      sale
+        .getByRole('radio', { name: 'Распродажа', exact: true })
+        .locator('..'),
+    ).toContainText('16')
+    await page.evaluate(() => document.fonts.ready)
+    await expect(sale.locator('legend')).toHaveClass('sr-only')
+    await expect(
+      filters.locator('p').filter({ hasText: /^(Категория|Бренд)$/ }),
+    ).toHaveCount(0)
+    if (width >= 1024) {
+      const bounds = await Promise.all(
+        [
+          filters.getByLabel('Категория', { exact: true }),
+          filters.getByLabel('Бренд', { exact: true }),
+          sale,
+          filters.getByRole('group', { name: 'Активность', exact: true }),
+        ].map((control) =>
+          control.evaluate((element) => {
+            const rect = element.getBoundingClientRect()
+            return {
+              center: rect.top + rect.height / 2,
+              left: rect.left,
+              right: rect.right,
+            }
+          }),
+        ),
+      )
+      const centers = bounds.map((rect) => rect.center)
+      expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1)
+      for (let index = 1; index < bounds.length; index++) {
+        expect(bounds[index]!.left - bounds[index - 1]!.right).toBeCloseTo(
+          16,
+          0,
+        )
+      }
+    }
     await page.getByRole('button', { name: /^Сортировка:/ }).click()
     await expect(
       page.getByRole('menu', { name: 'Параметры сортировки' }),

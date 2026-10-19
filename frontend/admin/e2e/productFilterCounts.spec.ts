@@ -63,7 +63,7 @@ test('product badges show scoped totals and reset has surface and hover states',
   const activity = filters.getByRole('group', { name: 'Активность' })
   const sale = filters.getByRole('group', { name: 'Распродажа', exact: true })
   await expect(activity.locator('legend')).toHaveClass('sr-only')
-  await expect(sale.locator('legend')).toBeVisible()
+  await expect(sale.locator('legend')).toHaveClass('sr-only')
   for (const [name, value] of [
     ['Активные', '137'],
     ['Скрытые', '21'],

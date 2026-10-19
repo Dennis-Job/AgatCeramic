@@ -138,6 +138,12 @@ test('wide product workspace keeps details, page sticky headers and horizontal a
       expect(nameShare).toBeLessThan(0.4)
       if (desktopColumnWidths) {
         dimensions.columnWidths.forEach((columnWidth, index) => {
+          if (index === dimensions.columnWidths.length - 1) {
+            expect(columnWidth, 'actions keep their content width').toBe(
+              desktopColumnWidths![index]!,
+            )
+            return
+          }
           expect(
             columnWidth,
             `column ${index} grows at ${width}`,

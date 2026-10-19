@@ -111,39 +111,43 @@ async function clearAll() {
       :id="`${id}-panel`"
       class="mt-4 rounded-xl bg-gray-50 p-4 sm:p-5"
     >
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="min-w-0">
-          <p class="mb-2 text-sm font-semibold text-gray-500">Категория</p>
-          <UiSelect
-            v-model="filters.category_id"
-            :options="filterCategoryOptions"
-            accessible-name="Категория"
-            search-placeholder="Начните вводить название категории"
-            searchable
-          />
-        </div>
-        <div class="min-w-0">
-          <p class="mb-2 text-sm font-semibold text-gray-500">Бренд</p>
-          <UiSelect
-            v-model="filters.brand_id"
-            :options="filterBrandOptions"
-            accessible-name="Бренд"
-            search-placeholder="Начните вводить название бренда"
-            searchable
-          />
-        </div>
-      </div>
-      <div class="mt-4 flex flex-wrap items-end justify-between gap-3">
+      <div
+        class="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(8rem,1fr)_minmax(8rem,1fr)_minmax(0,max-content)_minmax(0,max-content)] lg:items-center"
+      >
+        <UiSelect
+          v-model="filters.category_id"
+          :options="filterCategoryOptions"
+          accessible-name="Категория"
+          search-placeholder="Начните вводить название категории"
+          searchable
+        />
+        <UiSelect
+          v-model="filters.brand_id"
+          :options="filterBrandOptions"
+          accessible-name="Бренд"
+          search-placeholder="Начните вводить название бренда"
+          searchable
+        />
         <UiSegmentedControl
           v-model="filters.is_on_sale"
-          class="w-full sm:w-auto"
+          class="sm:col-span-2 lg:col-span-1"
           label="Распродажа"
+          hide-label
           :counts-loading="filterCountsLoading"
           name="product-sale-filter"
           :options="saleOptions"
           fit-content
         />
-        <p class="text-xs text-gray-500">Фильтры применяются автоматически</p>
+        <UiSegmentedControl
+          v-model="filters.is_active"
+          class="sm:col-span-2 lg:col-span-1"
+          label="Активность"
+          hide-label
+          :counts-loading="filterCountsLoading"
+          name="product-activity-filter"
+          :options="activityOptions"
+          fit-content
+        />
       </div>
     </div>
     <div v-if="hasActiveFilters" class="mt-3 flex flex-wrap items-center gap-2">
@@ -170,24 +174,13 @@ async function clearAll() {
       >
     </div>
     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex min-w-0 flex-wrap items-center gap-3">
-        <UiSegmentedControl
-          v-model="filters.is_active"
-          label="Активность"
-          hide-label
-          :counts-loading="filterCountsLoading"
-          name="product-activity-filter"
-          :options="activityOptions"
-          fit-content
-        />
-        <p
-          data-testid="product-count"
-          class="text-sm text-gray-500"
-          :class="{ 'text-error-500': productCountUnavailable }"
-        >
-          {{ productCountLabel }}
-        </p>
-      </div>
+      <p
+        data-testid="product-count"
+        class="text-sm text-gray-500"
+        :class="{ 'text-error-500': productCountUnavailable }"
+      >
+        {{ productCountLabel }}
+      </p>
       <ProductSortMenu />
     </div>
     <p v-if="filterCountsError" class="mt-2 text-xs text-gray-500" role="alert">

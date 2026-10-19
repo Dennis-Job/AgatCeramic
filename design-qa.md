@@ -119,6 +119,45 @@ typography, page-size pagination and omission of the mock annotation.
 
 ## Implementation checklist and limits
 
+- Browser comment spacing refinement: all adjacent filter gaps are 16 px;
+  bounded content tracks for sale/activity give spare width to both selects.
+  Geometry includes 1349 px, fonts/counts are awaited, and large counts at
+  1024 px preserve select width. Build/lint/format, 159 unit and targeted E2E
+  pass; the 1280 px geometry check repeats 3/3 successfully.
+  Independent UI Design Guard accepted: all gaps are 16 px at 1349 px and
+  at 1024 px with large counts; selects retain 128 px, with no page overflow.
+
+- Latest owner refinement puts activity fourth in the same centered desktop
+  row as category, brand and sale from 1024 px. Smaller screens wrap within
+  the panel. Four-control geometry passes at 1024/1280/1440; all 17 targeted
+  E2E, 159 unit and build/lint/format checks pass.
+  UI Design Guard accepted after fixing auto tracks that squeezed selects at
+  1024 px with large counts. Selects keep an 8rem minimum, segmented controls
+  use bounded fractional tracks. Additional six-digit-count stress E2E passes;
+  independent 1024/1440 captures confirm useful select text and no overflow.
+
+- Owner pagination/filter refinement on 2026-10-19: product list requests
+  50 items per page; activity lives in the collapsible filter panel, with
+  removable selected conditions still visible outside. Production E2E covers
+  51 items across two pages and filter reset to page one. All 17 targeted E2E,
+  159 unit, build/lint/format pass.
+  Independent UI Design Guard accepted fresh responsive captures, hidden
+  panel accessibility and the existing API pagination contract.
+
+- Owner table refinement on 2026-10-19: categories use the existing additional
+  badge tone; category/status headers and badges are centered. Actions use
+  intrinsic content width. Six viewport geometry/axe checks and all 11 targeted
+  production E2E pass; build/lint/format and 159 unit tests pass.
+  Independent UI Design Guard accepted long Russian values, two status badges
+  and open action menus at narrow/wide sizes: actions stay 98 px, no clipping
+  or page overflow; Escape returns focus to the trigger.
+
+- Owner refinement on 2026-10-19 supersedes the source mock's filter layout:
+  category, brand and sale share one centered row from 1024 px and have no
+  visible labels. Accessible names and a hidden legend remain; narrow screens
+  wrap intentionally. Fresh six-width captures and 16 production E2E checks
+  verify the refinement, including row geometry and axe.
+
 - Filters/chips/reset, both sort directions, API failure rollback, stale
   request handling, CRUD/export/photo workflows checked by production E2E.
 - Keyboard Escape during busy sort, focus return and portal Tab/Shift+Tab

@@ -424,7 +424,7 @@ export function useProductEditor() {
   }
   async function fetchPage(page: number) {
     const [productPage, catalogOptions] = await Promise.all([
-      getProducts({ ...filtersPayload(), page }),
+      getProducts({ ...filtersPayload(), page, perPage: 50 }),
       loadCatalogOptions(),
     ])
     return { ...productPage, ...catalogOptions }

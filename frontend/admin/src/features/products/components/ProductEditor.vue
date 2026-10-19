@@ -188,13 +188,13 @@ function closeGroupDeletion(): void {
           Сортировка по датам доступна в меню над таблицей.
         </caption>
         <colgroup>
-          <col style="width: 32%" />
+          <col />
           <col style="width: 13%" />
           <col style="width: 12%" />
           <col style="width: 12%" />
           <col style="width: 9%" />
           <col style="width: 12%" />
-          <col style="width: 10%" />
+          <col style="width: 1px" />
         </colgroup>
         <thead
           class="border-b border-gray-200 bg-gray-50 text-xs font-semibold tracking-wide text-gray-500"
@@ -235,11 +235,11 @@ function closeGroupDeletion(): void {
                   class="text-gray-500"
               /></UiButton>
             </th>
-            <th scope="col" class="px-4 py-3">Категория</th>
+            <th scope="col" class="px-4 py-3 text-center">Категория</th>
             <th scope="col" class="px-4 py-3 text-right">Цена</th>
             <th scope="col" class="px-4 py-3 text-right">Остаток</th>
-            <th scope="col" class="px-4 py-3">Статус</th>
-            <th scope="col" class="px-4 py-3 text-right">
+            <th scope="col" class="px-4 py-3 text-center">Статус</th>
+            <th scope="col" class="px-2 py-3 text-right">
               <span class="sr-only">Действия</span>
             </th>
           </tr>
@@ -276,8 +276,10 @@ function closeGroupDeletion(): void {
               <p class="font-mono">{{ product.sku }}</p>
               <p class="mt-0.5 text-xs">{{ product.article_number || '—' }}</p>
             </td>
-            <td class="max-w-48 px-4 py-3">
-              <span class="text-gray-500">{{ product.category.name }}</span>
+            <td class="max-w-48 px-4 py-3 text-center">
+              <UiBadge tone="additional" class="max-w-full">{{
+                product.category.name
+              }}</UiBadge>
             </td>
             <td class="px-4 py-3 text-right font-medium text-gray-500">
               {{ formatMoney(product.price) }}
@@ -291,8 +293,8 @@ function closeGroupDeletion(): void {
                 {{ productUnitLabel(product.unit) }}
               </p>
             </td>
-            <td class="px-4 py-3">
-              <div class="flex min-w-0 flex-col items-start gap-1">
+            <td class="px-4 py-3 text-center">
+              <div class="flex min-w-0 flex-col items-center gap-1">
                 <UiBadge :tone="product.is_active ? 'success' : 'neutral'">{{
                   product.is_active ? 'Активен' : 'Скрыт'
                 }}</UiBadge
@@ -303,6 +305,7 @@ function closeGroupDeletion(): void {
             </td>
             <td class="px-2 py-3">
               <ProductRowActions
+                class="w-max"
                 :name="product.name"
                 @edit="open(product)"
                 @clone="cloneProduct(product)"
@@ -534,7 +537,7 @@ function closeGroupDeletion(): void {
 
 <style scoped>
 :deep(.product-table) {
-  table-layout: fixed;
+  table-layout: auto;
 }
 :deep(.product-table td) {
   overflow-wrap: anywhere;
