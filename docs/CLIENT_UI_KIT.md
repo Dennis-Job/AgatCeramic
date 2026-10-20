@@ -38,6 +38,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField и крупный поиск; не копировать focus-стили в feature |
 | Модальное окно | [`UiDialog.vue`](../frontend/client/app/components/ui/UiDialog.vue) | Общий фон, размеры, focus trap, Escape, возврат фокуса и UiCloseButton |
 | Появление слоёв | [`overlays.css`](../frontend/client/app/assets/css/overlays.css), motion-токены в tokens.css | Vue Transition: drawer, search, modal, backdrop; общие длительности и кривая, без копий в feature |
+| Стабильная ширина при scroll lock | [`base.css`](../frontend/client/app/assets/css/base.css), `html { scrollbar-gutter: stable }` | Все страницы, меню, поиск и native modal; единое резервирование места под классический scrollbar |
 | Основное действие | [`UiButton.vue`](../frontend/client/app/components/ui/UiButton.vue) | CTA, варианты dark/light; не дублировать button-стили в страницах |
 
 ## Реестр утверждённых уточнений владельца
@@ -54,6 +55,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | UI-004 / 2026-10-20 | Верхняя строка: текст слева; справа «заказать звонок · email · телефон», строчная буква, без подчёркивания; разделители только у заполненных контактов | StorefrontHeader; `phone-mask.spec.ts`, `callback.spec.ts` |
 | UI-005 / 2026-10-20 | Один телефон настроек; автоматический +7 и ввод 10 цифр, вывод +7 (XXX) XXX-XX-XX, модель/API +7XXXXXXXXXX | UiTextField, utils/phone.ts, StorefrontHeader; `phone-mask.spec.ts`; глобальный контракт в корневом AGENTS |
 | UI-006 / 2026-10-20 | Плавные слои по шаблону: drawer справа translateX(102%) за .65 s, backdrop opacity .5 s, easing cubic-bezier(.22,1,.36,1); пункты .6 s с задержкой .15+i×.07 s, нижний блок .45 s. Modal opacity + translateY(20px) за .65 s, search сверху; закрытие симметричное. Reduced motion отключает движения/задержки | overlays.css + tokens.css, SiteHeader, UiDialog; `overlay-motion.spec.ts` — обычное движение, удержание слоя/scroll lock до конца, reduced motion; callback/preview регрессии |
+| UI-007 / 2026-10-20 | При скрытии/возврате scrollbar ширина страницы сохраняется; общий `scrollbar-gutter: stable` на html, без локальных padding-компенсаций | base.css; `scrollbar-stability.spec.ts` — геометрия меню/поиска/modal с классическим scrollbar |
 
 `UiDialog` остаётся native modal в top layer до завершения leave. Только затем
 закрывает dialog, восстанавливает scroll/focus и сообщает `close` родителю.
@@ -61,6 +63,20 @@ PIETRA — демонстрационное имя в образце. Бренд
 не размонтировать окно напрямую для обычного закрытия. При уходе со страницы
 cleanup выполняется сразу. Уходящие меню/поиск становятся inert; scroll lock
 и возврат фокуса снимаются после окончания анимации. Формы не получают autofocus.
+
+### UI-007 / 2026-10-20 — Без сдвига страницы при scroll lock
+
+На корневом `html` задан `scrollbar-gutter: stable` в `base.css`. Место под
+классическую вертикальную полосу сохраняется при блокировке/возврате прокрутки,
+поэтому ширина страницы и положение контента не меняются. Для overlay-scrollbars
+лишний отступ не создаётся. Не дублировать компенсации через JS padding/margin
+в меню, поиске или модальных окнах. Существующие scroll lock, анимации и
+cleanup сохраняются.
+Минимальная ширина body ограничена доступной шириной (`min(320px, 100%)`),
+чтобы классическая полоса не создавала горизонтальный overflow на узком окне.
+Проверка `scrollbar-stability.spec.ts` принудительно
+включает настоящие классические scrollbars и сравнивает геометрию до/во время/
+после каждого слоя. Обычный headless без полосы не доказывает отсутствие бага.
 
 ## Design tokens
 

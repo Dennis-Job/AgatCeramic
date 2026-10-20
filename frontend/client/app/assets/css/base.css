@@ -6,11 +6,12 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: min(320px, 100%);
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: Inter, Arial, sans-serif;
