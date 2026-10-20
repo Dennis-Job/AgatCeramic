@@ -4,6 +4,7 @@ import { X } from '@lucide/vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
@@ -18,6 +19,7 @@ import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useSettingsWorkspace } from '../composables/useSettingsWorkspace'
+import { formatPhone } from '../../../utils/phone'
 import type {
   ComplianceApproval,
   LegalDocument,
@@ -28,7 +30,11 @@ const auth = useAuthStore()
 const workspace = useSettingsWorkspace()
 const {
   settings,
-  phonesText,
+  phone,
+  phoneSelectionRequired,
+  legacyPhones,
+  updatePhone,
+  clearPhone,
   documents,
   approvals,
   policyVersions,
@@ -182,11 +188,42 @@ async function confirmPublish(): Promise<void> {
                 maxlength="2000"
                 @update:model-value="settings.address = $event"
             /></UiField>
-            <UiField
-              label="Телефоны"
-              help="Один номер на строку, не более пяти."
-              ><UiTextarea v-model="phonesText"
-            /></UiField>
+            <div class="space-y-3">
+              <UiField
+                label="Телефон"
+                help="Введите 10 цифр номера без кода страны."
+              >
+                <UiInput
+                  :model-value="phone"
+                  type="tel"
+                  @update:model-value="updatePhone"
+                />
+              </UiField>
+              <UiAlert
+                v-if="phoneSelectionRequired"
+                tone="warning"
+                live="polite"
+              >
+                <span>
+                  Ранее сохранено несколько телефонов. Выберите один телефон
+                  магазина или введите новый номер перед сохранением.
+                </span>
+                <span class="mt-2 flex flex-wrap gap-2">
+                  <UiButton
+                    v-for="(number, index) in legacyPhones"
+                    :key="index"
+                    variant="surface"
+                    size="sm"
+                    @click="updatePhone(number)"
+                  >
+                    {{ formatPhone(number) }}
+                  </UiButton>
+                  <UiButton variant="surface" size="sm" @click="clearPhone"
+                    >Убрать телефон</UiButton
+                  >
+                </span>
+              </UiAlert>
+            </div>
           </div>
           <div class="border-t border-gray-100 pt-5">
             <h3 class="mb-4 font-semibold text-gray-500">

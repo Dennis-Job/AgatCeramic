@@ -47,7 +47,7 @@ class OrderCreationTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'order_number' => $number,
             'customer_name' => 'Иван Петров',
-            'customer_phone' => '+7 (999) 123-45-67',
+            'customer_phone' => '+79991234567',
             'total_amount' => '4000.00',
         ]);
         $this->assertDatabaseHas('order_items', [
@@ -137,7 +137,7 @@ class OrderCreationTest extends TestCase
             ->assertCreated();
         $second = $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', $key)
-            ->postJson('/api/v1/orders', $this->checkoutPayload())
+            ->postJson('/api/v1/orders', $this->checkoutPayload(['customer_phone' => '9991234567']))
             ->assertOk()
             ->assertHeader('Idempotent-Replayed', 'true');
 

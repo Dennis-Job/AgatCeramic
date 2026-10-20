@@ -2,7 +2,7 @@
 import { useDraftPreview } from '~/features/preview/composables/useDraftPreview'
 import ContentPageBody from '~/features/content/components/ContentPageBody.vue'
 import HomePageBody from '~/features/home/components/HomePageBody.vue'
-import SiteHeader from '~/components/shared/SiteHeader.vue'
+import StorefrontHeader from '~/features/callback/components/StorefrontHeader.vue'
 import SiteFooter from '~/components/shared/SiteFooter.vue'
 import PageState from '~/components/shared/PageState.vue'
 
@@ -19,7 +19,7 @@ useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
 
 <template>
   <template v-if="data">
-    <SiteHeader
+    <StorefrontHeader
       :content="data.appearance.header"
       :tagline="data.appearance.footer.tagline"
       :current-path="data.page.slug === 'home' ? '/' : `/${data.page.slug}`"

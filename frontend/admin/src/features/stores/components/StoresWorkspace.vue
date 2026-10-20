@@ -15,6 +15,7 @@ import { useStores } from '../composables/useStores'
 import type { Store } from '../types/store.types'
 import StoreFormDialog from './StoreFormDialog.vue'
 import WorkingHoursDialog from './WorkingHoursDialog.vue'
+import { formatPhone } from '../../../utils/phone'
 
 const stores = useStores()
 const deleting = ref<Store | null>(null)
@@ -94,7 +95,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
             </div>
             <p class="break-words text-sm text-gray-500">{{ store.address }}</p>
             <p v-if="store.phone" class="text-sm text-gray-500">
-              {{ store.phone }}
+              {{ formatPhone(store.phone) }}
             </p>
           </div>
           <div class="ml-auto flex flex-wrap items-center gap-1">

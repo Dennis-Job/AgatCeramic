@@ -9,7 +9,7 @@ export type OrderItem = {
 export type Order = {
   id: number
   order_number: string
-  customer: { name: string; phone: string; email: string | null }
+  customer: { name: string; phone: string | null; email: string | null }
   delivery_address: string
   customer_comment: string | null
   status: string

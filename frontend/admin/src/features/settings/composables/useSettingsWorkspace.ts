@@ -1,4 +1,5 @@
 import { computed, onMounted, ref } from 'vue'
+import { normalizePhoneInput } from '../../../utils/phone'
 import {
   createComplianceApproval,
   createLegalDocument,
@@ -39,7 +40,9 @@ function message(reason: unknown): string {
 
 export function useSettingsWorkspace() {
   const settings = ref<SiteSettings>(emptySettings())
-  const phonesText = ref('')
+  const phone = ref('')
+  const phoneSelectionRequired = ref(false)
+  const legacyPhones = ref<string[]>([])
   const documents = ref<LegalDocument[]>([])
   const approvals = ref<ComplianceApproval[]>([])
   const loading = ref(true)
@@ -77,7 +80,7 @@ export function useSettingsWorkspace() {
           getComplianceApprovals(),
         ])
       settings.value = loadedSettings
-      phonesText.value = loadedSettings.phones.join('\n')
+      setLoadedPhones(loadedSettings.phones)
       documents.value = loadedDocuments
       approvals.value = loadedApprovals
       loaded.value = true
@@ -86,6 +89,24 @@ export function useSettingsWorkspace() {
     } finally {
       loading.value = false
     }
+  }
+
+  function setLoadedPhones(phones: string[]): void {
+    legacyPhones.value = [...phones]
+    phoneSelectionRequired.value = phones.length > 1
+    phone.value = phoneSelectionRequired.value ? '' : (phones[0] ?? '')
+  }
+
+  function updatePhone(value: string): void {
+    phone.value = value
+    if (/^\+7\d{10}$/.test(normalizePhoneInput(value) ?? '')) {
+      phoneSelectionRequired.value = false
+    }
+  }
+
+  function clearPhone(): void {
+    phone.value = ''
+    phoneSelectionRequired.value = false
   }
 
   async function run(
@@ -110,16 +131,25 @@ export function useSettingsWorkspace() {
   function save(): Promise<void> {
     return run(
       async () => {
+        if (phoneSelectionRequired.value) {
+          throw new Error(
+            'Выберите один телефон магазина или введите новый номер перед сохранением.',
+          )
+        }
+        const normalizedPhone = normalizePhoneInput(phone.value)
+        if (
+          normalizedPhone === null ||
+          (normalizedPhone && !/^\+7\d{10}$/.test(normalizedPhone))
+        ) {
+          throw new Error('Введите 10 цифр номера телефона после +7.')
+        }
         const payload = { ...settings.value }
         delete (payload as Partial<SiteSettings>).updated_at
         settings.value = await saveSettings({
           ...payload,
-          phones: phonesText.value
-            .split('\n')
-            .map((phone) => phone.trim())
-            .filter(Boolean),
+          phones: normalizedPhone ? [normalizedPhone] : [],
         })
-        phonesText.value = settings.value.phones.join('\n')
+        setLoadedPhones(settings.value.phones)
       },
       'Реквизиты сохранены.',
       'settings',
@@ -178,7 +208,11 @@ export function useSettingsWorkspace() {
   onMounted(load)
   return {
     settings,
-    phonesText,
+    phone,
+    phoneSelectionRequired,
+    legacyPhones,
+    updatePhone,
+    clearPhone,
     documents,
     approvals,
     policyVersions,

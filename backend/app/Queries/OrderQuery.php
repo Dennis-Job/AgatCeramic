@@ -3,6 +3,7 @@
 namespace App\Queries;
 
 use App\Models\Order;
+use App\Support\RussianPhoneNumber;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class OrderQuery
@@ -18,11 +19,15 @@ class OrderQuery
         $search = $filters['search'] ?? null;
         $search = is_string($search) ? trim($search) : '';
         if ($search !== '') {
-            $query->where(function ($query) use ($search): void {
+            $phoneSearch = RussianPhoneNumber::normalize($search);
+            $query->where(function ($query) use ($search, $phoneSearch): void {
                 $query->where('order_number', 'like', '%'.$search.'%')
                     ->orWhere('customer_name', 'like', '%'.$search.'%')
                     ->orWhere('customer_phone', 'like', '%'.$search.'%')
                     ->orWhere('customer_email', 'like', '%'.$search.'%');
+                if ($phoneSearch !== null) {
+                    $query->orWhere('customer_phone', $phoneSearch);
+                }
             });
         }
 

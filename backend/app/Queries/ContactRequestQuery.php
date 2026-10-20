@@ -3,6 +3,7 @@
 namespace App\Queries;
 
 use App\Models\ContactRequest;
+use App\Support\RussianPhoneNumber;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ContactRequestQuery
@@ -18,11 +19,15 @@ class ContactRequestQuery
         $search = $filters['search'] ?? null;
         $search = is_string($search) ? trim($search) : '';
         if ($search !== '') {
-            $query->where(function ($query) use ($search): void {
+            $phoneSearch = RussianPhoneNumber::normalize($search);
+            $query->where(function ($query) use ($search, $phoneSearch): void {
                 $query->where('name', 'like', '%'.$search.'%')
                     ->orWhere('phone', 'like', '%'.$search.'%')
                     ->orWhere('email', 'like', '%'.$search.'%')
                     ->orWhere('message', 'like', '%'.$search.'%');
+                if ($phoneSearch !== null) {
+                    $query->orWhere('phone', $phoneSearch);
+                }
             });
         }
 

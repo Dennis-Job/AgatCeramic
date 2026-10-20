@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Support\RussianPhoneNumber;
+
 class StoreOrderRequest extends CartTokenRequest
 {
     /** @return array<string, list<mixed>> */
@@ -11,7 +13,7 @@ class StoreOrderRequest extends CartTokenRequest
         return [
             ...parent::rules(),
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['required', 'string', 'regex:/^\\+?[0-9()\\s-]{10,30}$/'],
+            'customer_phone' => ['required', 'string', 'regex:'.RussianPhoneNumber::PATTERN],
             'customer_email' => ['nullable', 'email:rfc', 'max:255'],
             'delivery_address' => ['required', 'string', 'max:1000'],
             'customer_comment' => ['nullable', 'string', 'max:2000'],
@@ -33,10 +35,14 @@ class StoreOrderRequest extends CartTokenRequest
         $this->merge(['idempotency_key' => $this->header('Idempotency-Key')]);
 
         foreach (['customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment'] as $field) {
-            if ($this->has($field)) {
+            if (is_string($this->input($field))) {
                 $value = trim($this->string($field)->toString());
                 $this->merge([$field => $value === '' ? null : $value]);
             }
+        }
+
+        if ($this->has('customer_phone')) {
+            $this->merge(['customer_phone' => RussianPhoneNumber::normalize($this->input('customer_phone')) ?? $this->input('customer_phone')]);
         }
     }
 

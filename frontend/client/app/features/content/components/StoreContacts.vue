@@ -2,6 +2,7 @@
 import { fetchSellerContacts, fetchStores } from '~/services/contentPages'
 import PageState from '~/components/shared/PageState.vue'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
+import { formatPhone, normalizePhoneInput } from '~/utils/phone'
 
 defineProps<{ title: string }>()
 const { requestBase } = usePublicApiConfig()
@@ -37,7 +38,10 @@ const hasContacts = computed(
       seller.value.phones.length),
 )
 function phoneUrl(phone: string) {
-  return `tel:${phone.replace(/[^+0-9]/g, '')}`
+  const normalized = normalizePhoneInput(phone)
+  return normalized && /^\+7\d{10}$/.test(normalized)
+    ? `tel:${normalized}`
+    : undefined
 }
 </script>
 
@@ -60,12 +64,9 @@ function phoneUrl(phone: string) {
       <div v-else-if="hasContacts" class="seller">
         <h3 v-if="seller?.seller_name">{{ seller.seller_name }}</h3>
         <p v-if="seller?.address">{{ seller.address }}</p>
-        <a
-          v-for="phone in seller?.phones"
-          :key="phone"
-          :href="phoneUrl(phone)"
-          >{{ phone }}</a
-        >
+        <a v-if="seller?.phones[0]" :href="phoneUrl(seller.phones[0])">{{
+          formatPhone(seller.phones[0])
+        }}</a>
         <a v-if="seller?.email" :href="`mailto:${seller.email}`">{{
           seller.email
         }}</a>
@@ -90,7 +91,7 @@ function phoneUrl(phone: string) {
           <h3>{{ store.name }}</h3>
           <p>{{ store.address }}</p>
           <a v-if="store.phone" :href="phoneUrl(store.phone)">{{
-            store.phone
+            formatPhone(store.phone)
           }}</a>
           <dl aria-label="Часы работы" class="hours">
             <div

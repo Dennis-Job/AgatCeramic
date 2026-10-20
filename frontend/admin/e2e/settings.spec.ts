@@ -34,6 +34,7 @@ test('settings preserve edits after a failed save and require legal text review 
   let saveAttempts = 0
   let published = false
   let savedName = ''
+  let savedPhones: string[] = []
   await page.route('**/sanctum/csrf-cookie', (route) =>
     route.fulfill({ status: 204 }),
   )
@@ -58,6 +59,7 @@ test('settings preserve edits after a failed save and require legal text review 
     ) {
       saveAttempts += 1
       savedName = route.request().postDataJSON().seller_name
+      savedPhones = route.request().postDataJSON().phones
       return saveAttempts === 1
         ? route.fulfill({
             status: 422,
@@ -99,6 +101,16 @@ test('settings preserve edits after a failed save and require legal text review 
     page.getByRole('heading', { name: 'Настройки сайта' }),
   ).toBeVisible()
   const sellerName = page.getByLabel('Наименование продавца')
+  const phone = page.getByRole('textbox', { name: /^Телефон/ })
+  await expect(phone).toHaveValue('+7 (999) 000-00-00')
+  await phone.fill('')
+  await expect(phone).toHaveValue('+7')
+  await phone.pressSequentially('495')
+  await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
+  expect(saveAttempts).toBe(0)
+  await expect(phone).toHaveValue('+7 (495)')
+  await phone.pressSequentially('1204567')
+  await expect(phone).toHaveValue('+7 (495) 120-45-67')
   await sellerName.fill('ИП Исправленный')
   await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
   await expect(page.getByRole('alert')).toContainText('Проверьте реквизиты.')
@@ -109,6 +121,7 @@ test('settings preserve edits after a failed save and require legal text review 
   ).toBeVisible()
   expect(saveAttempts).toBe(2)
   expect(savedName).toBe('ИП Исправленный')
+  expect(savedPhones).toEqual(['+74951204567'])
 
   await page
     .getByRole('button', { name: 'Просмотреть Политика ПДн версии v1' })
@@ -121,4 +134,102 @@ test('settings preserve edits after a failed save and require legal text review 
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByText('Опубликован', { exact: true })).toBeVisible()
   expect(published).toBe(true)
+})
+
+test('legacy phones require explicit selection and a single masked phone remains usable at every width', async ({
+  page,
+}, testInfo) => {
+  let savedPhones: string[] | null = null
+  await page.route('**/sanctum/csrf-cookie', (route) =>
+    route.fulfill({ status: 204 }),
+  )
+  await page.route('**/api/v1/**', (route) => {
+    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    if (path === '/admin/auth/me')
+      return route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            name: 'Редактор',
+            email: 'editor@example.test',
+            status: 'active',
+            permissions: ['settings.manage'],
+          },
+        },
+      })
+    if (path === '/admin/site-settings') {
+      if (route.request().method() === 'PATCH') {
+        savedPhones = route.request().postDataJSON().phones
+        return route.fulfill({
+          json: { data: { ...settings, phones: savedPhones } },
+        })
+      }
+      return route.fulfill({
+        json: {
+          data: { ...settings, phones: ['+74951204567', '+79991112233'] },
+        },
+      })
+    }
+    if (
+      ['/admin/legal-documents', '/admin/compliance-approvals'].includes(path)
+    )
+      return route.fulfill({ json: { data: [] } })
+    return route.fulfill({
+      status: 404,
+      json: { error: { message: 'Unknown endpoint' } },
+    })
+  })
+  await page.goto('/settings')
+  await expect(
+    page.getByText('Ранее сохранено несколько телефонов.', { exact: false }),
+  ).toBeVisible()
+  const phone = page.getByRole('textbox', { name: /^Телефон/ })
+  await expect(phone).toHaveValue('+7')
+  await phone.focus()
+  await phone.evaluate((input: HTMLInputElement) =>
+    input.setSelectionRange(0, 2),
+  )
+  await phone.press('Backspace')
+  await expect(phone).toHaveValue('+7')
+  await phone.pressSequentially('495')
+  await phone.press('ControlOrMeta+A')
+  await phone.press('Backspace')
+  await expect(phone).toHaveValue('+7')
+  await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
+  await expect(page.getByRole('alert')).toContainText('Выберите один телефон')
+  expect(savedPhones).toBeNull()
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect(phone).toBeVisible()
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    await page.screenshot({
+      path: testInfo.outputPath(`settings-legacy-phone-${width}.png`),
+      fullPage: true,
+    })
+  }
+  await page
+    .getByRole('button', { name: '+7 (999) 111-22-33', exact: true })
+    .click()
+  await expect(phone).toHaveValue('+7 (999) 111-22-33')
+  await phone.focus()
+  await phone.press('End')
+  await phone.press('Backspace')
+  await expect(phone).toHaveValue('+7 (999) 111-22-3')
+  await phone.pressSequentially('3')
+  await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
+  await expect(
+    page.getByText('Реквизиты сохранены.', { exact: true }),
+  ).toBeVisible()
+  expect(savedPhones).toEqual(['+79991112233'])
+  await page.reload()
+  await page
+    .getByRole('button', { name: 'Убрать телефон', exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
+  await expect(
+    page.getByText('Реквизиты сохранены.', { exact: true }),
+  ).toBeVisible()
+  expect(savedPhones).toEqual([])
 })

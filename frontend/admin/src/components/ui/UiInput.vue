@@ -7,6 +7,13 @@ import {
   moneyInputCaret,
   normalizeMoneyInput,
 } from '../../utils/moneyInput'
+import {
+  editPhoneInput,
+  formatPhoneInput,
+  normalizePhoneInput,
+  phoneInputCaret,
+  phoneNationalDigits,
+} from '../../utils/phone'
 defineOptions({ inheritAttrs: false })
 const props = withDefaults(
   defineProps<{
@@ -21,7 +28,11 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const attrs = useAttrs()
 const input = ref<HTMLInputElement | null>(null)
 const displayValue = computed(() =>
-  props.money ? formatMoneyInput(props.modelValue) : props.modelValue,
+  props.type === 'tel'
+    ? formatPhoneInput(props.modelValue)
+    : props.money
+      ? formatMoneyInput(props.modelValue)
+      : props.modelValue,
 )
 const hasValue = computed(() => props.modelValue.length > 0)
 const isDisabled = computed(
@@ -40,8 +51,53 @@ const inputAttrs = computed(() => {
     delete attributes.step
     attributes.inputmode = 'decimal'
   }
+  if (props.type === 'tel') {
+    delete attributes.maxlength
+    attributes.inputmode = 'tel'
+  }
   return attributes
 })
+
+function validatePhone(value: string): void {
+  if (props.type !== 'tel' || !input.value) return
+  const raw = normalizePhoneInput(value)
+  const required = attrs.required !== undefined && attrs.required !== false
+  input.value.setCustomValidity(
+    raw === null || (raw && !/^\+7\d{10}$/.test(raw)) || (!raw && required)
+      ? 'Введите 10 цифр номера телефона после +7.'
+      : '',
+  )
+}
+
+function applyPhoneEdit(
+  target: HTMLInputElement,
+  inputType: string,
+  data = '',
+): void {
+  const previous = normalizePhoneInput(target.value) ?? target.value
+  const result = editPhoneInput(
+    target.value,
+    target.selectionStart ?? 0,
+    target.selectionEnd ?? 0,
+    inputType,
+    data,
+  )
+  target.value = result.display
+  target.setSelectionRange(result.caret, result.caret)
+  if (result.value !== previous) updateValue(result.value)
+  validatePhone(result.value)
+}
+
+function handlePaste(event: ClipboardEvent): void {
+  if (props.type !== 'tel') return
+  event.preventDefault()
+  if (isDisabled.value || isReadonly.value || !event.clipboardData) return
+  applyPhoneEdit(
+    event.target as HTMLInputElement,
+    'insertFromPaste',
+    event.clipboardData.getData('text'),
+  )
+}
 
 function validateMoney(value: string): void {
   if (!props.money || !input.value) return
@@ -62,6 +118,29 @@ function validateMoney(value: string): void {
 
 function handleInput(event: Event): void {
   const target = event.target as HTMLInputElement
+  if (props.type === 'tel') {
+    if (isDisabled.value || isReadonly.value) {
+      target.value = displayValue.value
+      return
+    }
+    const prefix = target.value.slice(
+      0,
+      target.selectionStart ?? target.value.length,
+    )
+    const raw = normalizePhoneInput(target.value)
+    if (raw === null) target.value = displayValue.value
+    else {
+      target.value = formatPhoneInput(raw)
+      updateValue(raw)
+      validatePhone(raw)
+    }
+    const caret = phoneInputCaret(
+      target.value,
+      phoneNationalDigits(prefix).length,
+    )
+    target.setSelectionRange(caret, caret)
+    return
+  }
   if (!props.money) return updateValue(target.value)
   if (isDisabled.value || isReadonly.value) return
   const caret = target.selectionStart ?? target.value.length
@@ -81,6 +160,31 @@ function handleInput(event: Event): void {
 }
 
 function handleBeforeInput(event: Event): void {
+  if (props.type === 'tel') {
+    const phoneEvent = event as InputEvent
+    if (
+      ![
+        'insertText',
+        'insertFromPaste',
+        'insertReplacementText',
+        'deleteContentBackward',
+        'deleteContentForward',
+        'deleteByCut',
+      ].includes(phoneEvent.inputType)
+    )
+      return
+    event.preventDefault()
+    if (isDisabled.value || isReadonly.value) return
+    // Paste is handled by the clipboard event, which supplies complete clipboard data.
+    if (phoneEvent.inputType === 'insertFromPaste' && phoneEvent.data === null)
+      return
+    applyPhoneEdit(
+      event.target as HTMLInputElement,
+      phoneEvent.inputType,
+      phoneEvent.data ?? '',
+    )
+    return
+  }
   if (!props.money) return
   const target = event.target as HTMLInputElement
   const start = target.selectionStart ?? 0
@@ -109,18 +213,24 @@ function commitMoney(): void {
   validateMoney(raw)
 }
 
-onMounted(() => validateMoney(props.modelValue))
-watch(() => props.modelValue, validateMoney)
+function validate(value: string): void {
+  validateMoney(value)
+  validatePhone(value)
+}
+onMounted(() => validate(props.modelValue))
+watch(() => props.modelValue, validate)
 
 function updateValue(value: string): void {
   if (!isDisabled.value) emit('update:modelValue', value)
 }
 
 function clear(): void {
-  if (props.money && isReadonly.value) return
+  if ((props.money || props.type === 'tel') && isReadonly.value) return
   if (!isDisabled.value) {
     emit('update:modelValue', '')
     validateMoney('')
+    validatePhone('')
+    if (props.type === 'tel' && input.value) input.value.value = '+7'
   }
 }
 </script>
@@ -149,6 +259,7 @@ function clear(): void {
       class="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-gray-500 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
       @beforeinput="handleBeforeInput"
       @input="handleInput"
+      @paste="handlePaste"
       @blur="commitMoney"
       @keydown.enter="commitMoney"
     />
@@ -157,7 +268,7 @@ function clear(): void {
       type="button"
       class="grid h-5 w-5 shrink-0 place-items-center rounded text-gray-500 transition hover:bg-primary-100 hover:text-gray-500 admin-focus disabled:cursor-not-allowed disabled:bg-transparent disabled:text-gray-500 disabled:hover:bg-transparent disabled:hover:text-gray-500"
       aria-label="Очистить поле"
-      :disabled="isDisabled || (money && isReadonly)"
+      :disabled="isDisabled || ((money || type === 'tel') && isReadonly)"
       @click="clear"
     >
       <X :size="16" aria-hidden="true" />

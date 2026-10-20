@@ -140,6 +140,10 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
 }) => {
   const api = await mockWorkspace(page)
   await page.goto('/content?section=appearance&panel=header')
+  await expect(page.getByLabel('Верхняя строка справа')).toHaveCount(0)
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Справа в верхней строке' }),
+  ).toContainText('Настройки сайта')
   const publish = page.getByRole('button', { name: 'Опубликовать оформление' })
   await expect(publish).toBeDisabled()
   await page.getByLabel('Верхняя строка слева').fill('Изменённая шапка')
@@ -157,16 +161,16 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
   expect(api.patches).toEqual([
     {
       header: {
-        topbar_right: appearanceFixture().header.topbar_right,
+        topbar_left: appearanceFixture().header.topbar_left,
         logo_media_id: null,
         logo_alt: appearanceFixture().header.logo_alt,
         navigation: appearanceFixture().header.navigation,
-        topbar_left: 'Изменённая шапка',
+        topbar_right: 'Изменённая шапка',
       },
     },
   ])
-  expect(api.published().header.topbar_left).toBe(
-    appearanceFixture().header.topbar_left,
+  expect(api.published().header.topbar_right).toBe(
+    appearanceFixture().header.topbar_right,
   )
   await expect(publish).toBeDisabled()
   await page.getByRole('button', { name: /^Подвал/ }).click()
@@ -180,7 +184,7 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
   })
   await publish.click()
   await expect(page.getByText('Общее оформление опубликовано.')).toBeVisible()
-  expect(api.published().header.topbar_left).toBe('Изменённая шапка')
+  expect(api.published().header.topbar_right).toBe('Изменённая шапка')
   expect(api.published().footer.tagline).toBe('Изменённый подвал')
   expect(api.mutations).toEqual([
     `PATCH ${appearancePath}`,
@@ -217,7 +221,7 @@ test('appearance confirms leaving dirty edits while panel changes remain safe', 
     .getByRole('button', { name: 'Общее оформление', exact: true })
     .click()
   await expect(page.getByLabel('Верхняя строка слева')).toHaveValue(
-    appearanceFixture().header.topbar_left,
+    appearanceFixture().header.topbar_right,
   )
 })
 

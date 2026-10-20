@@ -3,6 +3,7 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
 import type { SiteAppearance, SiteLink } from '../types/appearance.types'
 
@@ -31,10 +32,12 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
         Эти тексты и ссылки видны на всех страницах сайта.
       </p>
     </div>
-    <div class="grid gap-4 md:grid-cols-2">
+    <UiAlert tone="info" live="polite">
+      Справа в верхней строке — «Заказать звонок», телефон и email из раздела
+      «Настройки сайта». Заявки на обратный звонок поступают в «Обращения».
+    </UiAlert>
+    <div>
       <UiField label="Верхняя строка слева"
-        ><UiInput v-model="content.header.topbar_left" /></UiField
-      ><UiField label="Верхняя строка справа"
         ><UiInput v-model="content.header.topbar_right"
       /></UiField>
     </div>

@@ -17,7 +17,7 @@ class ContactRequestFactory extends Factory
         return [
             'type' => 'callback',
             'name' => fake()->name(),
-            'phone' => '+7 (999) 123-45-67',
+            'phone' => '+79991234567',
             'email' => null,
             'message' => null,
             'source' => 'website',

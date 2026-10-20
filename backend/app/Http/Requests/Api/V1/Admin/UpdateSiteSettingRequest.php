@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Admin;
 
+use App\Support\RussianPhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,8 +23,8 @@ class UpdateSiteSettingRequest extends FormRequest
             'inn' => ['sometimes', 'nullable', 'string', 'regex:/^(?:\d{10}|\d{12})$/'],
             'ogrnip' => ['sometimes', 'nullable', 'string', 'regex:/^\d{15}$/'],
             'address' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'phones' => ['sometimes', 'array', 'max:5'],
-            'phones.*' => ['required', 'string', 'max:32', 'regex:/^\+?[0-9()\-\s]{7,32}$/'],
+            'phones' => ['sometimes', 'array', 'list', 'max:1'],
+            'phones.*' => ['required', 'string', 'regex:'.RussianPhoneNumber::PATTERN],
             'email' => ['sometimes', 'nullable', 'email:rfc', 'max:255'],
             'bank_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'bank_bik' => ['sometimes', 'nullable', 'string', 'regex:/^\d{9}$/'],
@@ -31,5 +32,17 @@ class UpdateSiteSettingRequest extends FormRequest
             'bank_correspondent_account' => ['sometimes', 'nullable', 'string', 'regex:/^\d{20}$/'],
             'publish_bank_details' => ['sometimes', 'boolean'],
         ];
+    }
+
+    #[\Override]
+    protected function prepareForValidation(): void
+    {
+        $phones = $this->input('phones');
+        if (is_array($phones)) {
+            $this->merge(['phones' => array_map(
+                static fn (mixed $phone): mixed => RussianPhoneNumber::normalize($phone) ?? $phone,
+                $phones,
+            )]);
+        }
     }
 }

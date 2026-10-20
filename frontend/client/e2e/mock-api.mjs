@@ -189,7 +189,7 @@ createServer(async (request, response) => {
           seo: { ...seo, title: 'Сохранённый черновик' },
         },
         appearance: {
-          header: { ...home.header, topbar_left: 'Черновая шапка' },
+          header: { ...home.header, topbar_right: 'Черновая шапка' },
           footer: home.footer,
         },
       },
@@ -219,7 +219,8 @@ createServer(async (request, response) => {
       data: {
         header: {
           ...home.header,
-          topbar_left: 'Общее оформление сайта',
+          topbar_left: 'Прежний текст слева',
+          topbar_right: 'Общее оформление сайта',
           navigation,
         },
         footer: home.footer,
@@ -402,7 +403,7 @@ createServer(async (request, response) => {
                 scenario === 'long-strings'
                   ? 'Адрес'.repeat(80)
                   : 'Тестовый адрес',
-              phones: ['+7 (900) 000-00-00'],
+              phones: ['+7 (900) 000-00-00', '+7 (900) 111-11-11'],
               email: 'shop@example.test',
             },
     })

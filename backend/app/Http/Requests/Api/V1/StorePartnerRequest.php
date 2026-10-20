@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Support\RussianPhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePartnerRequest extends FormRequest
@@ -16,7 +17,7 @@ class StorePartnerRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'regex:/^\\+?[0-9()\\s-]{10,30}$/'],
+            'phone' => ['required', 'string', 'regex:'.RussianPhoneNumber::PATTERN],
             'email' => ['required', 'email:rfc', 'max:255'],
             'message' => ['required', 'string', 'max:2000'],
             'website' => ['prohibited'],
@@ -31,10 +32,14 @@ class StorePartnerRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         foreach (['name', 'phone', 'email', 'message'] as $field) {
-            if ($this->has($field)) {
+            if (is_string($this->input($field))) {
                 $value = trim($this->string($field)->toString());
                 $this->merge([$field => $value === '' ? null : $value]);
             }
+        }
+
+        if ($this->has('phone')) {
+            $this->merge(['phone' => RussianPhoneNumber::normalize($this->input('phone')) ?? $this->input('phone')]);
         }
     }
 

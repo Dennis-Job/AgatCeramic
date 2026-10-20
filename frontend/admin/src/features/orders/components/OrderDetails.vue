@@ -7,6 +7,7 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
+import { formatPhone } from '../../../utils/phone'
 import type {
   Order,
   OrderComment,
@@ -73,7 +74,8 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
           <div>
             <dt class="text-xs text-gray-500">Клиент</dt>
             <dd class="break-words">
-              {{ selected.customer.name }} · {{ selected.customer.phone }}
+              {{ selected.customer.name }} ·
+              {{ formatPhone(selected.customer.phone) }}
             </dd>
             <dd v-if="selected.customer.email" class="break-all">
               {{ selected.customer.email }}

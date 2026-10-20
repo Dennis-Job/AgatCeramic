@@ -5,6 +5,7 @@ import UiCard from '../../../components/ui/UiCard.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
+import { formatPhone } from '../../../utils/phone'
 import type {
   Contact,
   ContactAssignee,
@@ -75,7 +76,7 @@ defineEmits<{
           v-if="selected.contact.phone"
           class="break-all text-sm text-gray-500"
         >
-          {{ selected.contact.phone }}
+          {{ formatPhone(selected.contact.phone) }}
         </p>
         <p
           v-if="selected.contact.email"

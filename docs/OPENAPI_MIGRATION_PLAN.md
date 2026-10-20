@@ -7,6 +7,44 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v6.0 — single Russian phone contract
+
+Date: 2026-10-20. Owner-approved unified telephone input, display and storage.
+HTTP route URLs remain `/api/v1`; this version identifies the contract revision.
+
+### Breaking change
+
+Phone inputs now accept only a complete Russian number: canonical `+7` and ten
+digits, the same formatted with separators, ten national digits, or legacy `8`
+and ten digits. Foreign, incomplete, extension and ambiguous values return `422`.
+Response phones and stored values are canonical `+7xxxxxxxxxx`. Site settings
+retain the `phones` array key but allow at most one item; `[]` clears the phone.
+Clients display `+7 (xxx) xxx-xx-xx` and use canonical values in `tel:` links.
+
+### Client migration
+
+Use the shared telephone primitive with automatic `+7` and ten national digits;
+send canonical values. Replace multi-phone settings editors with one field.
+If legacy settings contain multiple values, require an explicit choice and never
+discard additional entries during an unrelated save. Existing legacy input
+formats remain accepted when they identify a complete supported Russian number.
+
+### Rollout and rollback
+
+Deploy the backend and compatible Admin/Client together. No schema migration is
+required. Run the default dry-run `phones:normalize` first; unambiguous historical
+conversions require backup, verification on a copy and explicit `--apply`.
+Invalid/multiple data stays unchanged for owner review. Details are in
+[PHONE_NUMBER_NORMALIZATION.md](PHONE_NUMBER_NORMALIZATION.md).
+
+Checkout keys created before normalization may have a different payload HMAC
+for up to 24 hours; verify an existing order before retrying, and do not
+automatically generate another key after `409`. On backup restore, replay old
+retention tombstones before normalizing phones. Never rewrite tombstone HMACs.
+Rollback backend and clients together; canonical numbers remain valid in the
+previous contract. Restore a protected preconversion backup only if original
+formatting is required; do not automatically expand a single-phone setting.
+
 ## v5.0 — page indexing controls
 
 Date: 2026-10-20. Managed content pages support a separate `is_indexable` boolean.

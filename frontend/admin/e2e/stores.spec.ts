@@ -102,8 +102,20 @@ test('content editor creates a store, sets its hours, publishes and deletes it',
   await page.getByRole('button', { name: 'Добавить магазин' }).click()
   await page.getByLabel('Название').fill('Тёплый дом')
   await page.getByLabel('Адрес').fill('Москва, ул. Ленина, 1')
+  const phone = page.getByRole('textbox', { name: /^Телефон/ })
+  await expect(phone).toHaveValue('+7')
+  await phone.fill('8 (495) 120-45-67')
+  await expect(phone).toHaveValue('+7 (495) 120-45-67')
+  const createRequest = page.waitForRequest(
+    (request) =>
+      request.method() === 'POST' && request.url().endsWith('/admin/stores'),
+  )
   await page.getByRole('button', { name: 'Сохранить' }).click()
+  expect((await createRequest).postDataJSON().phone).toBe('+74951204567')
   await expect(page.getByText('Тёплый дом')).toBeVisible()
+  await expect(
+    page.getByText('+7 (495) 120-45-67', { exact: true }),
+  ).toBeVisible()
   await expect(page.getByText('Черновик')).toBeVisible()
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 800 })

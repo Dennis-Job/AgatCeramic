@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v5.0",
+        "version": "v6.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -6835,9 +6835,17 @@
                         "type": "string"
                     },
                     "phone": {
-                        "type": [
-                            "string",
-                            "null"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "description": "Canonical Russian phone for storage and tel: links. Interfaces display +7 (xxx) xxx-xx-xx.",
+                                "pattern": "^\\+7[0-9]{10}$",
+                                "minLength": 12,
+                                "maxLength": 12
+                            },
+                            {
+                                "type": "null"
+                            }
                         ]
                     },
                     "is_published": {
@@ -6919,11 +6927,16 @@
                         "maxLength": 255
                     },
                     "phone": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 50
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "description": "Russian phone: canonical +7 and 10 digits, formatted +7 (xxx) xxx-xx-xx, ten national digits, or legacy 8 and 10 digits. Normalized before validation and stored as +7xxxxxxxxxx. Foreign prefixes, incomplete numbers, letters and extensions are rejected.",
+                                "pattern": "^\\s*(?:\\+[()\\s-]*7(?:[()\\s-]*[0-9]){10}|[()\\s-]*8(?:[()\\s-]*[0-9]){10}|(?:[()\\s-]*[0-9]){10})[()\\s-]*$"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "is_published": {
                         "type": "boolean"
@@ -6943,11 +6956,16 @@
                         "maxLength": 255
                     },
                     "phone": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "maxLength": 50
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "description": "Russian phone: canonical +7 and 10 digits, formatted +7 (xxx) xxx-xx-xx, ten national digits, or legacy 8 and 10 digits. Normalized before validation and stored as +7xxxxxxxxxx. Foreign prefixes, incomplete numbers, letters and extensions are rejected.",
+                                "pattern": "^\\s*(?:\\+[()\\s-]*7(?:[()\\s-]*[0-9]){10}|[()\\s-]*8(?:[()\\s-]*[0-9]){10}|(?:[()\\s-]*[0-9]){10})[()\\s-]*$"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "is_published": {
                         "type": "boolean"
@@ -7686,8 +7704,14 @@
                     },
                     "phones": {
                         "type": "array",
+                        "maxItems": 1,
+                        "description": "One store phone at most; [] clears the setting. Existing multiple legacy numbers require explicit owner review and are never silently truncated.",
                         "items": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Canonical Russian phone for storage and tel: links. Interfaces display +7 (xxx) xxx-xx-xx.",
+                            "pattern": "^\\+7[0-9]{10}$",
+                            "minLength": 12,
+                            "maxLength": 12
                         }
                     },
                     "email": {
@@ -7858,9 +7882,12 @@
                     },
                     "phones": {
                         "type": "array",
-                        "maxItems": 5,
+                        "maxItems": 1,
+                        "description": "One store phone at most; [] clears the setting. Existing multiple legacy numbers require explicit owner review and are never silently truncated.",
                         "items": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Russian phone: canonical +7 and 10 digits, formatted +7 (xxx) xxx-xx-xx, ten national digits, or legacy 8 and 10 digits. Normalized before validation and stored as +7xxxxxxxxxx. Foreign prefixes, incomplete numbers, letters and extensions are rejected.",
+                            "pattern": "^\\s*(?:\\+[()\\s-]*7(?:[()\\s-]*[0-9]){10}|[()\\s-]*8(?:[()\\s-]*[0-9]){10}|(?:[()\\s-]*[0-9]){10})[()\\s-]*$"
                         }
                     },
                     "publish_bank_details": {
@@ -9038,7 +9065,11 @@
                 "required": ["customer_name", "customer_phone", "delivery_address"],
                 "properties": {
                     "customer_name": {"type": "string", "maxLength": 255},
-                    "customer_phone": {"type": "string", "pattern": "^\\+?[0-9()\\s-]{10,30}$"},
+                    "customer_phone": {
+                        "type": "string",
+                        "description": "Russian phone: canonical +7 and 10 digits, formatted +7 (xxx) xxx-xx-xx, ten national digits, or legacy 8 and 10 digits. Normalized before validation and stored as +7xxxxxxxxxx. Foreign prefixes, incomplete numbers, letters and extensions are rejected.",
+                        "pattern": "^\\s*(?:\\+[()\\s-]*7(?:[()\\s-]*[0-9]){10}|[()\\s-]*8(?:[()\\s-]*[0-9]){10}|(?:[()\\s-]*[0-9]){10})[()\\s-]*$"
+                    },
                     "customer_email": {"type": ["string", "null"], "format": "email", "maxLength": 255},
                     "delivery_address": {"type": "string", "maxLength": 1000},
                     "customer_comment": {"type": ["string", "null"], "maxLength": 2000},
@@ -9051,7 +9082,11 @@
                 "required": ["phone"],
                 "properties": {
                     "name": {"type": ["string", "null"], "maxLength": 255},
-                    "phone": {"type": "string", "pattern": "^\\+?[0-9()\\s-]{10,30}$"}
+                    "phone": {
+                        "type": "string",
+                        "description": "Russian phone: canonical +7 and 10 digits, formatted +7 (xxx) xxx-xx-xx, ten national digits, or legacy 8 and 10 digits. Normalized before validation and stored as +7xxxxxxxxxx. Foreign prefixes, incomplete numbers, letters and extensions are rejected.",
+                        "pattern": "^\\s*(?:\\+[()\\s-]*7(?:[()\\s-]*[0-9]){10}|[()\\s-]*8(?:[()\\s-]*[0-9]){10}|(?:[()\\s-]*[0-9]){10})[()\\s-]*$"
+                    }
                 },
                 "additionalProperties": false
             },
@@ -9070,7 +9105,11 @@
                 "required": ["name", "phone", "email", "message"],
                 "properties": {
                     "name": {"type": "string", "minLength": 1, "maxLength": 255},
-                    "phone": {"type": "string", "pattern": "^\\+?[0-9()\\s-]{10,30}$"},
+                    "phone": {
+                        "type": "string",
+                        "description": "Russian phone: canonical +7 and 10 digits, formatted +7 (xxx) xxx-xx-xx, ten national digits, or legacy 8 and 10 digits. Normalized before validation and stored as +7xxxxxxxxxx. Foreign prefixes, incomplete numbers, letters and extensions are rejected.",
+                        "pattern": "^\\s*(?:\\+[()\\s-]*7(?:[()\\s-]*[0-9]){10}|[()\\s-]*8(?:[()\\s-]*[0-9]){10}|(?:[()\\s-]*[0-9]){10})[()\\s-]*$"
+                    },
                     "email": {"type": "string", "format": "email", "maxLength": 255},
                     "message": {"type": "string", "minLength": 1, "maxLength": 2000}
                 },
@@ -9089,7 +9128,45 @@
             "ContactAssigneeCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactAssignee"}}}, "additionalProperties": false},
             "ContactStatus": {"type": "object", "required": ["code", "name", "is_terminal"], "properties": {"code": {"$ref": "#/components/schemas/ContactRequestStatus"}, "name": {"type": "string"}, "is_terminal": {"type": "boolean"}}, "additionalProperties": false},
             "ContactStatusCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactStatus"}}}, "additionalProperties": false},
-            "ContactRequest": {"type": "object", "required": ["id", "type", "contact", "message", "source", "status", "assigned_at", "completed_at", "created_at"], "properties": {"id": {"type": "integer"}, "type": {"type": "string", "enum": ["callback", "email", "partner"]}, "contact": {"type": "object", "required": ["name", "phone", "email"], "properties": {"name": {"type": ["string", "null"]}, "phone": {"type": ["string", "null"]}, "email": {"type": ["string", "null"], "format": "email"}}, "additionalProperties": false}, "message": {"type": ["string", "null"]}, "source": {"type": "string"}, "status": {"$ref": "#/components/schemas/ContactRequestStatus"}, "assignee": {"type": ["object", "null"], "required": ["id", "name"], "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}, "additionalProperties": false}, "assigned_at": {"type": ["string", "null"], "format": "date-time"}, "completed_at": {"type": ["string", "null"], "format": "date-time"}, "created_at": {"type": ["string", "null"], "format": "date-time"}}, "additionalProperties": false},
+            "ContactRequest": {
+                "type": "object",
+                "required": ["id", "type", "contact", "message", "source", "status", "assigned_at", "completed_at", "created_at"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "type": {"type": "string", "enum": ["callback", "email", "partner"]},
+                    "contact": {
+                        "type": "object",
+                        "required": ["name", "phone", "email"],
+                        "properties": {
+                            "name": {"type": ["string", "null"]},
+                            "phone": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "description": "Canonical Russian phone for storage and tel: links. Interfaces display +7 (xxx) xxx-xx-xx.",
+                                        "pattern": "^\\+7[0-9]{10}$",
+                                        "minLength": 12,
+                                        "maxLength": 12
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "email": {"type": ["string", "null"], "format": "email"}
+                        },
+                        "additionalProperties": false
+                    },
+                    "message": {"type": ["string", "null"]},
+                    "source": {"type": "string"},
+                    "status": {"$ref": "#/components/schemas/ContactRequestStatus"},
+                    "assignee": {"type": ["object", "null"], "required": ["id", "name"], "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}, "additionalProperties": false},
+                    "assigned_at": {"type": ["string", "null"], "format": "date-time"},
+                    "completed_at": {"type": ["string", "null"], "format": "date-time"},
+                    "created_at": {"type": ["string", "null"], "format": "date-time"}
+                },
+                "additionalProperties": false
+            },
             "ContactRequestResponse": {"type": "object", "required": ["data"], "properties": {"data": {"$ref": "#/components/schemas/ContactRequest"}}, "additionalProperties": false},
             "ContactRequestCollection": {"type": "object", "required": ["data", "links", "meta"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactRequest"}}, "links": {"type": "object"}, "meta": {"type": "object"}}, "additionalProperties": false},
             "UpdateContactRequestStatusRequest": {"type": "object", "required": ["status"], "properties": {"status": {"$ref": "#/components/schemas/ContactRequestStatus"}}, "additionalProperties": false},
@@ -9118,7 +9195,29 @@
                 "properties": {
                     "id": {"type": "integer"},
                     "order_number": {"type": "string", "pattern": "^AC-\\d{8}-[A-F0-9]{10}$"},
-                    "customer": {"type": "object", "required": ["name", "phone", "email"], "properties": {"name": {"type": "string"}, "phone": {"type": "string", "maxLength": 30}, "email": {"type": ["string", "null"], "format": "email"}}, "additionalProperties": false},
+                    "customer": {
+                        "type": "object",
+                        "required": ["name", "phone", "email"],
+                        "properties": {
+                            "name": {"type": "string"},
+                            "phone": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "description": "Canonical Russian phone for storage and tel: links. Interfaces display +7 (xxx) xxx-xx-xx.",
+                                        "pattern": "^\\+7[0-9]{10}$",
+                                        "minLength": 12,
+                                        "maxLength": 12
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "email": {"type": ["string", "null"], "format": "email"}
+                        },
+                        "additionalProperties": false
+                    },
                     "delivery_address": {"type": "string", "maxLength": 1000},
                     "customer_comment": {"type": ["string", "null"]},
                     "status": {"type": "string", "maxLength": 50},

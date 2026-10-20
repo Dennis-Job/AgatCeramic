@@ -126,6 +126,12 @@ test('orders workspace exposes protected snapshot, keyboard selection, and manag
     page.getByRole('heading', { level: 3, name: 'Клиент и доставка' }),
   ).toBeVisible()
   await expect(page.getByText(order.delivery_address)).toBeVisible()
+  await expect(
+    page
+      .getByText('+7 (999) 000-00-00', { exact: true })
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible()
   await expect(opener).toHaveAttribute('aria-current', 'true')
   await expect(
     page.getByRole('heading', { name: 'Статус заказа' }),

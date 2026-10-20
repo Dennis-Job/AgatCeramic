@@ -25,7 +25,6 @@ const searchQuery = ref('')
 const menuTrigger = ref<HTMLButtonElement | null>(null)
 const menuPanel = ref<HTMLElement | null>(null)
 const searchPanel = ref<HTMLElement | null>(null)
-const searchInput = ref<HTMLInputElement | null>(null)
 
 const searchResults = computed(() => {
   const query = searchQuery.value.trim().toLocaleLowerCase('ru')
@@ -59,7 +58,10 @@ function trapFocus(event: KeyboardEvent) {
 
   const first = focusable[0]
   const last = focusable[focusable.length - 1]
-  if (event.shiftKey && document.activeElement === first) {
+  if (
+    event.shiftKey &&
+    (document.activeElement === first || document.activeElement === activePanel)
+  ) {
     event.preventDefault()
     last?.focus()
   } else if (!event.shiftKey && document.activeElement === last) {
@@ -78,9 +80,8 @@ watch(panel, async (next, previous) => {
   if (!import.meta.client) return
   document.body.classList.toggle('has-overlay', next !== null)
   await nextTick()
-  if (next === 'menu')
-    menuPanel.value?.querySelector<HTMLElement>('button')?.focus()
-  if (next === 'search') searchInput.value?.focus()
+  if (next === 'menu') menuPanel.value?.focus({ preventScroll: true })
+  if (next === 'search') searchPanel.value?.focus({ preventScroll: true })
   if (!next && previous === 'menu') menuTrigger.value?.focus()
   if (!next && previous === 'search') menuTrigger.value?.focus()
 })
@@ -96,14 +97,16 @@ onUnmounted(() => {
 
 <template>
   <div
-    v-if="content?.topbarLeft || content?.topbarRight"
+    v-if="$slots['topbar-right'] || content?.topbarRight"
     class="topbar"
     role="region"
     aria-label="Информация магазина"
   >
     <div class="container topbar__inner">
-      <span v-if="content?.topbarLeft">{{ content.topbarLeft }}</span>
-      <span v-if="content?.topbarRight">{{ content.topbarRight }}</span>
+      <span v-if="content?.topbarRight" class="topbar__text">{{
+        content.topbarRight
+      }}</span>
+      <slot name="topbar-right" />
     </div>
   </div>
 
@@ -169,6 +172,7 @@ onUnmounted(() => {
     id="site-menu"
     ref="menuPanel"
     class="menu-panel"
+    tabindex="-1"
     role="dialog"
     aria-modal="true"
     aria-label="Меню сайта"
@@ -221,6 +225,7 @@ onUnmounted(() => {
     id="site-search"
     ref="searchPanel"
     class="search-panel"
+    tabindex="-1"
     role="dialog"
     aria-modal="true"
     aria-label="Поиск по разделам страницы"
@@ -242,7 +247,6 @@ onUnmounted(() => {
       >
       <input
         id="section-search"
-        ref="searchInput"
         v-model="searchQuery"
         type="search"
         placeholder="Например: материалы"
@@ -266,6 +270,10 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.menu-panel,
+.search-panel {
+  outline: none;
+}
 .topbar {
   border-bottom: 1px solid var(--color-line);
   color: var(--color-muted);
@@ -274,10 +282,11 @@ onUnmounted(() => {
 }
 .topbar__inner {
   display: flex;
+  flex-wrap: wrap;
   min-height: 40px;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 4px 20px;
 }
 .topbar__inner span {
   min-width: 0;
@@ -500,7 +509,7 @@ onUnmounted(() => {
 .search-panel input {
   width: 100%;
   border: 0;
-  border-bottom: 1px solid var(--color-ink);
+  border-bottom: 1px solid var(--field-border-color, var(--color-line));
   border-radius: 0;
   padding: 14px 0;
   outline: 0;
@@ -509,10 +518,6 @@ onUnmounted(() => {
   font-size: clamp(26px, 4vw, 44px);
   font-weight: 500;
   letter-spacing: -0.01em;
-}
-.search-panel input:focus-visible {
-  outline: 2px solid var(--color-ink);
-  outline-offset: 5px;
 }
 .search-panel__results {
   display: grid;
@@ -543,7 +548,7 @@ onUnmounted(() => {
   }
 }
 @media (max-width: 760px) {
-  .topbar__inner span:first-child:not(:last-child) {
+  .topbar__text {
     display: none;
   }
   .site-header__inner {

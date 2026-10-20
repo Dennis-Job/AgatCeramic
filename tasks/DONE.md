@@ -8,6 +8,38 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-20 — Активные текстовые поля Client приведены к footer «Ваш e-mail»
+из `exampleSite.html`: тонкая ink-граница без внешнего outline/тени, переход
+0.3 s. Общий паттерн для формы и поиска; click/Tab и reduced motion сохранены.
+Client build/typecheck/format и 30 production E2E PASS; UI Design Guard accepted.
+[Файлы и проверки](../docs/CALLBACK_UI_REFINEMENTS_2026-10-20.md).
+
+2026-10-20 — Уточнён порядок контактов: «заказать звонок» со строчной буквы,
+email, телефон; разделители и стили сохранены. Client build/typecheck/format
+и 10 адресных E2E PASS, ширины 320–1280 px проверены; независимый UI review
+по коду accepted. Актуальные правила — в `docs/CLIENT_UI_KIT.md`.
+
+2026-10-20 — «Заказать звонок» с прописной буквы и без подчёркивания; между
+контактами разделители `·`. Начальный фокус формы, меню и поиска на контейнере
+без обводки; клавиатурная навигация и возврат фокуса сохранены. Правила Client
+обновлены. Client 30 production / 2 development E2E, typecheck/build/format PASS;
+независимый UI Design Guard accepted. [Файлы и проверки](../docs/CALLBACK_UI_REFINEMENTS_2026-10-20.md).
+
+2026-10-20 — Единый телефон: верхняя строка по `exampleSite.html` (текст слева,
+контакты справа), один телефон настроек, маска `+7 (XXX) XXX-XX-XX` в Client/Admin,
+каноническое хранение/API `+7XXXXXXXXXX`, форматированный вывод заказов/обращений/
+магазинов и поиск. Правила закреплены в AGENTS/UI-kit, OpenAPI v6.0 и migration plan.
+Client 29+2 E2E, Admin 188 unit и телефонные E2E, PostgreSQL адресные 28 PASS;
+общие прогоны и известные ограничения, UI-ревью и файлы —
+[в отчёте](../docs/PHONE_STANDARD_2026-10-20.md). Рабочие данные не требовали преобразования.
+
+2026-10-20 — Верхняя строка шапки: «Заказать звонок», первый телефон и email из
+настроек сайта; модальная форма создаёт существующие callback-обращения.
+Редактор контента сохраняет правый текст и поясняет источник левого блока.
+Client 25 production / 2 development E2E, Admin 165 unit / 55 E2E, backend
+7 tests, typecheck/build/lint/format PASS; независимый UI Design Guard accepted.
+API и миграции сохранены. [Отчёт](../docs/CALLBACK_TOPBAR_2026-10-20.md).
+
 2026-10-20 — Исправлено падение SEO-вкладки при `og_image_url: null`: nullable
 API-тип отражён в Admin DTO, поле получает пустую строку только для отображения.
 Модель/медиа не мутируют при открытии. Реальный nullable fixture и два regression

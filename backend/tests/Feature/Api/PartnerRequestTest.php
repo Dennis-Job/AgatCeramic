@@ -23,7 +23,7 @@ class PartnerRequestTest extends TestCase
         $this->assertDatabaseHas('contact_requests', [
             'type' => 'partner',
             'name' => 'Иван Петров',
-            'phone' => '+7 (999) 123-45-67',
+            'phone' => '+79991234567',
             'email' => 'ivan@example.test',
             'message' => 'Предлагаем сотрудничество.',
             'source' => 'website',

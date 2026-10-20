@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import SiteHeader from '~/components/shared/SiteHeader.vue'
+import StorefrontHeader from '~/features/callback/components/StorefrontHeader.vue'
 import SiteFooter from '~/components/shared/SiteFooter.vue'
 const { data: appearance } = await useSiteAppearance()
 </script>
 
 <template>
-  <SiteHeader
+  <StorefrontHeader
     :content="appearance?.header"
     :tagline="appearance?.footer.tagline"
   />

@@ -49,6 +49,28 @@ img {
   outline-offset: 4px;
 }
 
+:where(
+  input[type='text'],
+  input[type='tel'],
+  input[type='email'],
+  input[type='search'],
+  textarea
+) {
+  transition: border-color 0.3s;
+}
+
+:where(
+  input[type='text'],
+  input[type='tel'],
+  input[type='email'],
+  input[type='search'],
+  textarea
+):focus {
+  --field-border-color: var(--color-ink);
+  outline: none;
+  box-shadow: none;
+}
+
 .container {
   width: min(100%, var(--content-width));
   margin-inline: auto;

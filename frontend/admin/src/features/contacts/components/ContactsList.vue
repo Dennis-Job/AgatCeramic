@@ -4,6 +4,7 @@ import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
 import type { Contact } from '../types/contact.types'
+import { formatPhone } from '../../../utils/phone'
 
 defineProps<{
   contacts: Contact[]
@@ -59,7 +60,9 @@ defineEmits<{ select: [contact: Contact] }>()
             {{ contact.contact.name ?? 'Без имени' }}
           </p>
           <p class="break-all text-xs text-gray-500">
-            {{ contact.contact.phone ?? contact.contact.email ?? '—' }}
+            {{
+              formatPhone(contact.contact.phone) || contact.contact.email || '—'
+            }}
           </p>
           <p class="mt-3 text-xs text-gray-500">
             Ответственный: {{ contact.assignee?.name ?? 'Не назначен' }}
@@ -114,7 +117,11 @@ defineEmits<{ select: [contact: Contact] }>()
                 {{ contact.contact.name ?? 'Без имени' }}
               </p>
               <p class="mt-1 text-xs text-gray-500">
-                {{ contact.contact.phone ?? contact.contact.email ?? '—' }}
+                {{
+                  formatPhone(contact.contact.phone) ||
+                  contact.contact.email ||
+                  '—'
+                }}
               </p>
             </td>
             <td class="px-5 py-4">

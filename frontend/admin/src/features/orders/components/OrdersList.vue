@@ -4,6 +4,7 @@ import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
 import type { Order } from '../types/order.types'
+import { formatPhone } from '../../../utils/phone'
 
 defineProps<{
   orders: Order[]
@@ -68,7 +69,7 @@ defineEmits<{ select: [order: Order] }>()
             {{ order.customer.name }}
           </p>
           <p class="break-all text-xs text-gray-500">
-            {{ order.customer.phone }}
+            {{ formatPhone(order.customer.phone) }}
           </p>
         </button>
       </article>
@@ -117,7 +118,7 @@ defineEmits<{ select: [order: Order] }>()
             <td class="px-5 py-4">
               <p class="font-medium text-gray-500">{{ order.customer.name }}</p>
               <p class="mt-1 text-xs text-gray-500">
-                {{ order.customer.phone }}
+                {{ formatPhone(order.customer.phone) }}
               </p>
             </td>
             <td class="px-5 py-4">
