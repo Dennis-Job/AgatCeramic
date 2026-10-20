@@ -15,6 +15,7 @@ export async function fetchContentPage(
 ): Promise<ContentPage> {
   const { data } = await $fetch<{
     data: {
+      is_indexable?: boolean
       title: string
       slug: string
       body: string
@@ -23,6 +24,7 @@ export async function fetchContentPage(
     }
   }>(apiUrl(`pages/${encodeURIComponent(slug)}`, requestBase))
   return {
+    isIndexable: data.is_indexable !== false,
     title: data.title,
     slug: data.slug,
     body: data.body,

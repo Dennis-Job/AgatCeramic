@@ -2,9 +2,10 @@
 import { setResponseStatus } from 'h3'
 import ContentPageBody from './ContentPageBody.vue'
 import PageState from '~/components/shared/PageState.vue'
+import { contentPagePath, siteOrigin } from '#shared/utils/pageUrls'
 
 const props = defineProps<{
-  slug: 'contacts' | 'about' | 'catalog'
+  slug: string
   fallbackTitle: string
 }>()
 const {
@@ -18,8 +19,10 @@ const event = useRequestEvent()
 if (event && error.value) setResponseStatus(event, missing.value ? 404 : 503)
 
 const route = useRoute()
-const origin = useRuntimeConfig().public.siteUrl || useRequestURL().origin
-const canonical = new URL(`/${props.slug}`, origin).toString()
+const origin = siteOrigin(
+  useRuntimeConfig().public.siteUrl || useRequestURL().origin,
+)
+const canonical = new URL(contentPagePath(props.slug)!, origin).toString()
 const seo = computed(() => content.value?.seo)
 useSeoMeta({
   title: () => seo.value?.title || `${props.fallbackTitle} — AgatCeramic`,
@@ -35,6 +38,7 @@ useSeoMeta({
   ogType: 'website',
   robots: () =>
     error.value ||
+    content.value?.isIndexable === false ||
     (props.slug === 'catalog' && route.query.page && route.query.page !== '1')
       ? 'noindex,follow'
       : 'index,follow',
@@ -52,7 +56,9 @@ useHead(() => ({
                 ? 'ContactPage'
                 : props.slug === 'about'
                   ? 'AboutPage'
-                  : 'CollectionPage',
+                  : props.slug === 'catalog'
+                    ? 'CollectionPage'
+                    : 'WebPage',
             name: content.value.title,
             description: seo.value?.description || '',
             url: canonical,

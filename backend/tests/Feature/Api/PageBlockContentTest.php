@@ -8,6 +8,7 @@ use App\Models\Media;
 use App\Models\Page;
 use App\Models\Product;
 use App\Models\Role;
+use App\Models\Slider;
 use App\Models\User;
 use App\Services\MediaManagementService;
 use Database\Seeders\PermissionSeeder;
@@ -22,6 +23,59 @@ use Tests\TestCase;
 class PageBlockContentTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_about_page_editor_can_save_a_slider_with_empty_body_and_default_seo(): void
+    {
+        $actor = $this->manager();
+        $page = Page::query()->where('slug', 'about')->sole();
+        $slider = Slider::query()->create(['name' => 'О нас', 'slug' => 'about-slider', 'is_published' => true]);
+        $original = $this->getJson('/api/v1/pages/about')->assertOk()->json('data.blocks');
+        $payload = $this->actingAs($actor)->getJson('/api/v1/admin/pages/'.$page->id)->assertOk()->json('data');
+        $blocks = [...$payload['blocks'], ['id' => 'hero-about', 'type' => 'hero', 'enabled' => true, 'data' => ['slider_id' => $slider->id]]];
+
+        $this->patchJson('/api/v1/admin/pages/'.$page->id, [
+            'title' => $payload['title'], 'slug' => $payload['slug'], 'body' => $payload['body'],
+            'blocks' => $blocks, 'seo' => $payload['seo'],
+        ])->assertOk()->assertJsonPath('data.body', '')->assertJsonPath('data.seo.description', '')
+            ->assertJsonPath('data.seo.og_description', '')->assertJsonPath('data.blocks', $blocks);
+
+        $this->getJson('/api/v1/pages/about')->assertJsonPath('data.blocks', $original);
+        $this->postJson('/api/v1/admin/pages/'.$page->id.'/publish')->assertOk();
+        $this->getJson('/api/v1/pages/about')->assertOk()->assertJsonPath('data.blocks.1.data.slider_id', $slider->id);
+    }
+
+    public function test_page_editor_can_create_and_clear_optional_text_without_weakening_validation(): void
+    {
+        $this->actingAs($this->manager());
+        $blocks = [
+            ['id' => 'text', 'type' => 'text', 'enabled' => true, 'data' => ['title' => 'Текст', 'body' => '']],
+            ['id' => 'catalog', 'type' => 'catalog', 'enabled' => true, 'data' => ['title' => 'Каталог', 'description' => '']],
+        ];
+        $seo = ['title' => 'Страница', 'description' => '', 'og_title' => '', 'og_description' => '', 'og_image_url' => '', 'og_image_media_id' => null];
+        $id = $this->postJson('/api/v1/admin/pages', [
+            'title' => 'Страница', 'slug' => 'empty-text', 'body' => '', 'blocks' => $blocks, 'seo' => $seo,
+        ])->assertCreated()->assertJsonPath('data.body', '')->assertJsonPath('data.blocks', $blocks)
+            ->assertJsonPath('data.seo.og_title', '')->assertJsonPath('data.seo.og_image_url', null)->json('data.id');
+
+        $url = '/api/v1/admin/pages/'.$id;
+        $this->patchJson($url, ['body' => 'Текст'])->assertOk();
+        $this->patchJson($url, ['body' => ''])->assertOk()->assertJsonPath('data.body', '');
+        $emptyBlocks = $blocks;
+        $emptyBlocks[0]['data']['body'] = null;
+        $emptyBlocks[1]['data']['description'] = null;
+        $this->patchJson($url, ['body' => null, 'blocks' => $emptyBlocks, 'seo' => [
+            ...$seo, 'description' => null, 'og_title' => null, 'og_description' => null,
+        ]])->assertOk()->assertJsonPath('data.body', '')->assertJsonPath('data.blocks', $blocks)
+            ->assertJsonPath('data.seo.description', '')->assertJsonPath('data.seo.og_title', '')->assertJsonPath('data.seo.og_description', '');
+        $this->patchJson($url, ['title' => ''])->assertUnprocessable()->assertJsonValidationErrors('title', 'error.details');
+        $this->patchJson($url, ['body' => []])->assertUnprocessable()->assertJsonValidationErrors('body', 'error.details');
+        $this->patchJson($url, ['seo' => [...$seo, 'description' => 123]])->assertUnprocessable()->assertJsonValidationErrors('seo.description', 'error.details');
+        $this->patchJson($url, ['seo' => ['title' => 'Страница']])->assertUnprocessable()->assertJsonValidationErrors('seo.description', 'error.details');
+        unset($blocks[0]['data']['body']);
+        $this->patchJson($url, ['blocks' => $blocks])->assertUnprocessable()->assertJsonValidationErrors('blocks.0.data.body', 'error.details');
+        $this->postJson('/api/v1/admin/pages', ['title' => 'Без текста', 'slug' => 'missing-text', 'body' => ''])
+            ->assertUnprocessable()->assertJsonValidationErrors('body', 'error.details');
+    }
 
     public function test_drafts_do_not_change_public_snapshot_until_explicit_publication(): void
     {

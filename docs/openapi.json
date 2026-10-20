@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v4.2",
+        "version": "v5.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -5743,6 +5743,10 @@
             "HomePage": {
                 "type": "object",
                 "properties": {
+                    "is_indexable": {
+                        "type": "boolean",
+                        "description": "Published indexing choice. Legacy snapshots without this field remain indexable."
+                    },
                     "hero_slider_id": {
                         "type": [
                             "integer",
@@ -7434,6 +7438,10 @@
                     "has_unpublished_changes"
                 ],
                 "properties": {
+                    "is_indexable": {
+                        "type": "boolean",
+                        "description": "Draft indexing choice. Publication is required before public robots directives change."
+                    },
                     "id": {
                         "type": "integer"
                     },
@@ -7529,6 +7537,11 @@
                     "slug"
                 ],
                 "properties": {
+                    "is_indexable": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Allow search indexing. Saved to the draft; takes effect only on explicit page publication."
+                    },
                     "title": {
                         "type": "string",
                         "maxLength": 255
@@ -7536,7 +7549,9 @@
                     "slug": {
                         "type": "string",
                         "maxLength": 255,
-                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                        "not": { "const": "preview" },
+                        "description": "The preview slug is reserved for protected draft previews."
                     },
                     "body": {
                         "type": "string",
@@ -7559,7 +7574,7 @@
                     }
                 },
                 "additionalProperties": false,
-                "description": "Save validated draft content. Does not change the published snapshot or published URL. Reserved home/contacts/about/catalog slugs cannot be renamed or deleted.",
+                "description": "Save validated draft content. Empty optional body, text/catalog descriptions and SEO text fields remain empty strings. Required titles and field presence are still validated. Does not change the published snapshot or published URL. Reserved home/contacts/about/catalog slugs cannot be renamed or deleted.",
                 "anyOf": [
                     {
                         "required": [
@@ -7576,6 +7591,10 @@
             "UpdatePageRequest": {
                 "type": "object",
                 "properties": {
+                    "is_indexable": {
+                        "type": "boolean",
+                        "description": "Allow search indexing. Saved to the draft; takes effect only on explicit page publication."
+                    },
                     "title": {
                         "type": "string",
                         "maxLength": 255
@@ -7583,7 +7602,9 @@
                     "slug": {
                         "type": "string",
                         "maxLength": 255,
-                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                        "not": { "const": "preview" },
+                        "description": "The preview slug is reserved for protected draft previews."
                     },
                     "body": {
                         "type": "string",
@@ -7606,7 +7627,7 @@
                     }
                 },
                 "additionalProperties": false,
-                "description": "Save validated draft content. Does not change the published snapshot or published URL. Reserved home/contacts/about/catalog slugs cannot be renamed or deleted."
+                "description": "Save validated draft content. Empty optional body, text/catalog descriptions and SEO text fields remain empty strings. Required titles and field presence are still validated. Does not change the published snapshot or published URL. Reserved home/contacts/about/catalog slugs cannot be renamed or deleted."
             },
             "PublicSiteSettings": {
                 "type": "object",
@@ -11975,6 +11996,10 @@
                     "published_at"
                 ],
                 "properties": {
+                    "is_indexable": {
+                        "type": "boolean",
+                        "description": "Published indexing choice. Legacy snapshots without this field remain indexable."
+                    },
                     "id": {
                         "type": "integer"
                     },
@@ -12064,6 +12089,10 @@
             "AdminHomePage": {
                 "type": "object",
                 "properties": {
+                    "is_indexable": {
+                        "type": "boolean",
+                        "description": "Draft indexing choice. Publication is required before public robots directives change."
+                    },
                     "hero_slider_id": {
                         "type": [
                             "integer",

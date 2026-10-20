@@ -39,6 +39,7 @@ class HomePageContentQuery
         $draft = Page::query()->where('slug', 'home')->firstOrFail();
 
         return [...$result, 'blocks' => $draft->blocks, 'page_id' => $draft->id,
+            'is_indexable' => $draft->is_indexable,
             'is_published' => $draft->is_published, 'published_at' => $draft->published_at?->toAtomString(),
             'has_unpublished_changes' => PageBlocks::hasUnpublishedChanges($draft)];
     }
@@ -65,6 +66,7 @@ class HomePageContentQuery
         $result['hero_slides'] = [];
         $result['blocks'] = $published['blocks'];
         $result['seo'] = $published['seo'];
+        $result['is_indexable'] = $published['is_indexable'];
         /** @var list<array{id: string, type: string, enabled: bool, data: array<string, mixed>}> $blocks */
         $blocks = $published['blocks'];
         foreach ($blocks as $block) {

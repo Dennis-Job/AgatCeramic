@@ -8,6 +8,7 @@ export type ContentPage = {
   body: string
   blocks?: PageBlock[]
   seo?: HomePageContent['seo']
+  is_indexable?: boolean
   is_published: boolean
   has_unpublished_changes: boolean
   published_at: string | null
@@ -17,5 +18,5 @@ export type ContentPage = {
 
 export type PagePayload = Pick<
   ContentPage,
-  'title' | 'slug' | 'body' | 'blocks' | 'seo'
+  'title' | 'slug' | 'body' | 'blocks' | 'seo' | 'is_indexable'
 >

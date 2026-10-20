@@ -20,7 +20,7 @@ class StorePageRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:pages,slug', Rule::unique('pages', 'published_slug')],
+            'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::notIn(['preview']), 'unique:pages,slug', Rule::unique('pages', 'published_slug')],
             'body' => ['required_without:blocks', 'string', 'max:100000'],
             'is_published' => ['sometimes', 'boolean', 'declined'],
             ...$this->contentRules(),

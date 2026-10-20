@@ -7,6 +7,7 @@ interface LinkDto {
 }
 
 export interface HomePageDto {
+  is_indexable?: boolean
   blocks: ContentBlockDto[]
   hero_slides: {
     id: number
@@ -149,6 +150,7 @@ export function mapSiteAppearance(
 
 function mapHomePage(dto: HomePageDto, apiBase: string): HomePageContent {
   return {
+    isIndexable: dto.is_indexable !== false,
     blocks: dto.blocks.map((block) => mapContentBlock(block, apiBase)),
     heroSlides: mapSlides(dto.hero_slides, apiBase),
     marqueeTopics: dto.marquee.topics,

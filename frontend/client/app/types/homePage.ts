@@ -32,6 +32,7 @@ export interface SectionIntro {
 }
 
 export interface HomePageContent {
+  isIndexable?: boolean
   blocks: ContentBlock[]
   heroSlides: HomeSlide[]
   marqueeTopics: string[]

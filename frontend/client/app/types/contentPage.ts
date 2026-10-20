@@ -34,6 +34,7 @@ export type ContentBlockDto =
   | Extract<ContentBlock, { type: 'text' | 'stores' | 'catalog' }>
 
 export interface ContentPage {
+  isIndexable?: boolean
   title: string
   slug: string
   body: string

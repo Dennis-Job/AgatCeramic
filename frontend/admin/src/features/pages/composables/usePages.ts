@@ -8,11 +8,13 @@ import {
   unpublishPage,
 } from '../services/pages'
 import type { ContentPage, PagePayload } from '../types/page.types'
+import { defaultPageSeo } from '../validation/seo'
 
 const blankForm = (): PagePayload => ({
   title: '',
   slug: '',
   body: '',
+  is_indexable: false,
 })
 
 export function usePages() {
@@ -41,6 +43,8 @@ export function usePages() {
           title: page.title,
           slug: page.slug,
           body: page.body,
+          is_indexable: page.is_indexable ?? true,
+          seo: page.seo ?? defaultPageSeo(page.title),
         }
       : blankForm()
     formError.value = ''
@@ -55,7 +59,10 @@ export function usePages() {
     busy.value = true
     formError.value = ''
     try {
-      const savedPage = await savePage(editing.value?.id ?? null, form.value)
+      const savedPage = await savePage(editing.value?.id ?? null, {
+        ...form.value,
+        seo: form.value.seo ?? defaultPageSeo(form.value.title),
+      })
       editorOpen.value = false
       success.value = 'Черновик страницы сохранён.'
       await load()

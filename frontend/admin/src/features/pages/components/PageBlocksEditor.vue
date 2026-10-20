@@ -343,10 +343,23 @@ onBeforeUnmount(() => {
       class="min-w-0 py-5 admin-focus"
     >
       <fieldset
-        v-if="page.slug === 'home' && editor.form.value.seo"
+        v-if="editor.form.value.seo"
         :disabled="editor.busy.value"
+        class="space-y-4"
       >
         <legend class="sr-only">SEO страницы</legend>
+        <UiCheckbox
+          mode="boolean"
+          :checked="editor.form.value.is_indexable ?? true"
+          :disabled="editor.busy.value || editor.resourceBusy.value"
+          @update:checked="editor.form.value.is_indexable = $event"
+          >Разрешить индексацию поисковыми системами</UiCheckbox
+        >
+        <p class="text-sm text-gray-500">
+          Изменение индексации и SEO-параметров начнёт действовать после
+          сохранения черновика и публикации страницы. Отключение индексации
+          сохраняет заполненные поля.
+        </p>
         <HomePageSeoEditor
           :key="page.id"
           v-model="editor.form.value.seo"
@@ -354,10 +367,6 @@ onBeforeUnmount(() => {
           @uploading="seoResourceBusy = $event"
         />
       </fieldset>
-      <UiEmptyState
-        v-else
-        label="SEO-параметры для этой страницы пока недоступны."
-      />
     </div>
     <p
       v-if="editor.dirty.value"

@@ -228,6 +228,11 @@ createServer(async (request, response) => {
   }
   if (url.pathname === '/api/v1/home-page') {
     if (scenario === 'missing') return fail(404)
+    if (scenario === 'error') return fail(503)
+    if (scenario === 'noindex')
+      return send({ data: { ...home, is_indexable: false } })
+    if (scenario === 'indexable')
+      return send({ data: { ...home, is_indexable: true } })
     if (scenario === 'standalone-categories')
       return send({
         data: {
@@ -262,13 +267,53 @@ createServer(async (request, response) => {
       })
     return send({ data: home })
   }
+  if (url.pathname === '/api/v1/pages') {
+    const page = Number(url.searchParams.get('page') || 1)
+    if (
+      scenario === 'sitemap-error' ||
+      (scenario === 'sitemap-page-error' && page === 2)
+    )
+      return fail(503)
+    if (scenario === 'sitemap-malformed')
+      return send({ data: [], meta: { current_page: 1 } })
+    return send({
+      data:
+        scenario === 'sitemap-empty'
+          ? []
+          : page === 1
+            ? [
+                {
+                  slug: 'home',
+                  is_indexable: true,
+                  published_at: '2026-10-19T10:00:00Z',
+                },
+                {
+                  slug: 'delivery',
+                  is_indexable: true,
+                  published_at: '2026-10-18T10:00:00Z',
+                },
+                { slug: 'hidden-page', is_indexable: false },
+              ]
+            : [
+                { slug: 'legacy-page' },
+                { slug: 'published-address', is_indexable: true },
+                { slug: 'preview', is_indexable: true },
+                { slug: '//evil.example', is_indexable: true },
+              ],
+      meta: {
+        current_page: page,
+        last_page: scenario === 'sitemap-empty' ? 1 : 2,
+      },
+    })
+  }
   if (url.pathname.startsWith('/api/v1/pages/')) {
     if (scenario === 'missing') return fail(404)
     if (scenario === 'error') return fail(503)
     const slug = url.pathname.split('/').at(-1)
-    const title = { contacts: 'Контакты', about: 'О нас', catalog: 'Каталог' }[
-      slug
-    ]
+    if (slug === 'draft-only') return fail(404)
+    const title =
+      { contacts: 'Контакты', about: 'О нас', catalog: 'Каталог' }[slug] ||
+      'Доставка керамической плитки и материалов для ремонта'
     let blocks =
       slug === 'contacts'
         ? [
@@ -328,6 +373,8 @@ createServer(async (request, response) => {
       ]
     return send({
       data: {
+        ...(scenario === 'noindex' ? { is_indexable: false } : {}),
+        ...(scenario === 'indexable' ? { is_indexable: true } : {}),
         title,
         slug,
         body: '',

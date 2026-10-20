@@ -7,6 +7,7 @@ import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
+import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import { slugPattern } from '../../catalog/validation/slug'
 import type { PagePayload } from '../types/page.types'
 import { systemPageSlugs } from '../validation/page'
@@ -75,6 +76,17 @@ const emit = defineEmits<{ close: []; submit: [] }>()
               maxlength="255"
               :pattern="slugPattern"
           /></UiField>
+          <UiCheckbox
+            mode="boolean"
+            :checked="form.is_indexable ?? false"
+            :disabled="busy"
+            @update:checked="form.is_indexable = $event"
+            >Разрешить индексацию поисковыми системами</UiCheckbox
+          >
+          <p class="text-sm text-gray-500">
+            Настройка индексации начнёт действовать после публикации страницы.
+            SEO-параметры можно заполнить во вкладке «SEO» после создания.
+          </p>
           <UiField
             label="Текст страницы"
             help="Обычный текст. HTML будет показан как текст."

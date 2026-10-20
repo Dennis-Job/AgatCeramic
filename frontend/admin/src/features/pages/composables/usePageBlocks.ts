@@ -3,6 +3,7 @@ import { savePage, publishPage } from '../services/pages'
 import type { ContentPage, PagePayload } from '../types/page.types'
 import type { BlockType } from '../types/block.types'
 import { createBlock, moveBlock } from '../validation/blocks'
+import { defaultPageSeo } from '../validation/seo'
 
 export function usePageBlocks(
   source: MaybeRefOrGetter<ContentPage>,
@@ -33,7 +34,8 @@ export function usePageBlocks(
           slug: page.slug,
           body: page.body,
           blocks: page.blocks ?? [],
-          ...(page.seo ? { seo: page.seo } : {}),
+          is_indexable: page.is_indexable ?? true,
+          seo: page.seo ?? defaultPageSeo(page.title),
         }),
       ) as PagePayload
       baseline.value = JSON.stringify(form.value)

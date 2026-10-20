@@ -8,6 +8,24 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-20 — Исправлено падение SEO-вкладки при `og_image_url: null`: nullable
+API-тип отражён в Admin DTO, поле получает пустую строку только для отображения.
+Модель/медиа не мутируют при открытии. Реальный nullable fixture и два regression
+теста закрывают пропуск предыдущей проверки. Admin 165 unit / 21 E2E, lint/format/build
+PASS. [Подробности](../docs/PAGE_SEO_INDEXING_2026-10-20.md).
+
+2026-10-20 — Индексация и SEO контентных страниц: новые страницы по умолчанию
+noindex, чекбокс создания/SEO, метаданные всех страниц, публикация snapshot,
+произвольные Nuxt slug, sitemap и robots.txt. Существующие страницы сохранены.
+Backend SQLite 495 PASS / 1 SKIP, PostgreSQL 415 PASS; Admin 163 unit / 21 E2E;
+Client 20 production / 2 dev E2E; UI Design Guard approved. Локальная миграция
+применена. [Поведение, файлы и проверки](../docs/PAGE_SEO_INDEXING_2026-10-20.md).
+
+2026-10-19 — Исправлен 422 при сохранении слайдера на странице «О нас»:
+Form Request страниц сохраняет пустые необязательные тексты строками после middleware.
+Backend: 489 PASS / 1 PostgreSQL-only SKIP; Pint/architecture/PHPStan PASS.
+Composer audit ограничен таймаутом Packagist. [Причина, файлы и проверки](../docs/PAGE_SLIDER_422_FIX_2026-10-19.md).
+
 2026-10-19 — Редизайн списка товаров по утверждённой «Рабочей таблице»:
 раскрывающиеся фильтры, метки условий, отдельная сортировка, SKU/артикул вместе,
 даты в карточке и компактные действия строки. Сохранены API, счётчики, CRUD,

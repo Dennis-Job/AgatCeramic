@@ -20,7 +20,7 @@ class UpdatePageRequest extends FormRequest
     {
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'slug' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('pages', 'slug')->ignore($this->route('page')), Rule::unique('pages', 'published_slug')->ignore($this->route('page'))],
+            'slug' => ['sometimes', 'required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::notIn(['preview']), Rule::unique('pages', 'slug')->ignore($this->route('page')), Rule::unique('pages', 'published_slug')->ignore($this->route('page'))],
             'body' => ['sometimes', 'present', 'string', 'max:100000'],
             'is_published' => ['sometimes', 'boolean', 'declined'],
             ...$this->contentRules(),

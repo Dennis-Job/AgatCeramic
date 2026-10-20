@@ -36,7 +36,22 @@ uses the development database. It checks SSR, safe text, block order/disabled st
 retry/empty/404/503 states, hydration, axe, and 320/640/768/1024/1280 layouts. Screenshots are saved
 in ignored `.tmp/client-e2e` at the repository root.
 
-Set `NUXT_PUBLIC_SITE_URL` to the production origin for canonical and Open Graph URLs. Without it, pages use the current request origin. Full catalog/category/product flows, cart, checkout, entity SEO, sitemap, and robots remain separate tasks.
+Managed pages also render at `/<slug>` using the same content view. `/home` permanently
+redirects to `/`; `/preview` remains reserved. Published `is_indexable: false` produces
+`noindex,follow`; an absent legacy flag defaults to `index,follow`. Errors, preview and
+catalog pagination retain their stricter robots rules. Missing public pages return 404;
+upstream failures return 503 with noindex.
+
+`/sitemap.xml` collects every page of the public `GET /api/v1/pages` collection and
+includes only indexable published content, with `home` mapped to `/`. It uses published
+slugs and optional `published_at` values, never drafts. Any upstream or pagination failure
+returns 503 without a partial sitemap; successful empty lists remain valid XML. The
+response is not cached. `/robots.txt` advertises this sitemap and blocks only `/preview/`;
+noindex pages remain crawlable so robots metadata can be read.
+
+Set `NUXT_PUBLIC_SITE_URL` to the production origin for canonical, Open Graph and sitemap
+URLs. Without it, pages use the current request origin. Full catalog/category/product
+flows, cart, checkout and entity SEO remain separate tasks.
 Set `NUXT_PUBLIC_API_BASE` to the Laravel API v1 base URL (default `http://localhost:8000/api/v1`).
 When Nuxt runs in Docker, `NUXT_API_BASE_INTERNAL` points server-side requests to
 `http://backend:8000/api/v1`; browser requests and media URLs continue to use

@@ -42,6 +42,7 @@ class PublishedPageQuery
             'id' => $page->id, 'slug' => $page->published_slug, 'title' => $snapshot['title'], 'body' => $snapshot['body'],
             'blocks' => $this->blocks->resolve($contentBlocks), 'seo' => $this->blocks->seo($seo),
             'is_published' => true, 'published_at' => $page->published_at?->toAtomString(),
+            'is_indexable' => $snapshot['is_indexable'] ?? true,
             'created_at' => $page->created_at?->toAtomString(), 'updated_at' => $page->published_at?->toAtomString(),
             'site_layout' => $this->blocks->seo($layout),
         ];

@@ -25,13 +25,25 @@ const emit = defineEmits<{
     <UiField label="Заголовок страницы"
       ><UiInput v-model="model.title"
     /></UiField>
-    <UiField label="Описание страницы"
+    <UiField
+      label="Описание страницы"
+      :help="
+        !model.description.trim()
+          ? 'Рекомендуем добавить описание для поисковых систем. Это необязательное поле.'
+          : undefined
+      "
       ><UiTextarea v-model="model.description" rows="3"
     /></UiField>
     <UiField label="Заголовок Open Graph"
       ><UiInput v-model="model.og_title"
     /></UiField>
-    <UiField label="Описание Open Graph"
+    <UiField
+      label="Описание Open Graph"
+      :help="
+        !model.og_description.trim()
+          ? 'Рекомендуем добавить описание для социальных сетей. Это необязательное поле.'
+          : undefined
+      "
       ><UiTextarea v-model="model.og_description" rows="3"
     /></UiField>
     <MediaReferenceField
@@ -49,7 +61,9 @@ const emit = defineEmits<{
     <UiField
       label="Локальное изображение"
       help="Путь /images/... используется, пока файл не выбран в медиатеке."
-      ><UiInput v-model="model.og_image_url"
+      ><UiInput
+        :model-value="model.og_image_url ?? ''"
+        @update:model-value="model.og_image_url = $event"
     /></UiField>
     <UiImagePreview
       v-if="!model.og_image_media_id"

@@ -30,6 +30,57 @@ const page = (): ContentPage => ({
 
 describe('page block draft workflow', () => {
   beforeEach(() => vi.clearAllMocks())
+  it('normalizes legacy indexing and SEO without dirtying the loaded draft', async () => {
+    const scope = effectScope()
+    const editor = scope.run(() => usePageBlocks(page(), vi.fn()))!
+    expect(editor.form.value).toMatchObject({
+      is_indexable: true,
+      seo: { title: 'Страница', description: '', og_image_media_id: null },
+    })
+    expect(editor.dirty.value).toBe(false)
+    editor.form.value.is_indexable = false
+    editor.form.value.seo!.description = 'Описание компании'
+    vi.mocked(savePage).mockResolvedValue({ ...page(), ...editor.form.value })
+    await editor.save()
+    expect(savePage).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({
+        is_indexable: false,
+        seo: expect.objectContaining({
+          title: 'Страница',
+          description: 'Описание компании',
+        }),
+      }),
+    )
+    scope.stop()
+  })
+  it('preserves an explicit noindex setting and existing SEO on load', () => {
+    const scope = effectScope()
+    const editor = scope.run(() =>
+      usePageBlocks(
+        {
+          ...page(),
+          is_indexable: false,
+          seo: {
+            title: 'SEO title',
+            description: 'Описание',
+            og_title: 'Social',
+            og_description: '',
+            og_image_url: '',
+            og_image_media_id: 5,
+          },
+        },
+        vi.fn(),
+      ),
+    )!
+    expect(editor.form.value.is_indexable).toBe(false)
+    expect(editor.form.value.seo).toMatchObject({
+      title: 'SEO title',
+      og_image_media_id: 5,
+    })
+    expect(editor.dirty.value).toBe(false)
+    scope.stop()
+  })
   it('isolates local edits, retains errors for retry, and publishes only saved content', async () => {
     const source = ref(page())
     const scope = effectScope()

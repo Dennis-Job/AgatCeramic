@@ -7,6 +7,31 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v5.0 — page indexing controls
+
+Date: 2026-10-20. Managed content pages support a separate `is_indexable` boolean.
+New pages default to false; existing rows and old published snapshots retain true.
+Saving the flag changes only the draft. Page publication activates the choice;
+appearance publication does not change indexing.
+
+### Breaking change
+
+Page, published page, homepage and admin homepage responses add `is_indexable`.
+Their previous closed schemas rejected unknown properties, so strict consumers
+must update their response DTO/schema before rollout. Request payloads accept the
+optional boolean on page creation/update; omission preserves the existing draft
+choice on update. The `preview` slug is reserved for the protected Nuxt service
+route and is rejected on creation/rename. `/api/v1` URLs and all existing fields remain available.
+
+Deploy the additive database migration and backend before the Admin and Nuxt
+clients. Existing clients may ignore the extra field. New clients interpret a
+missing flag as true for old snapshots. Nuxt renders `noindex,follow` for excluded
+pages and lists only published indexable content pages in `/sitemap.xml`.
+Rollback clients first; retain the column and snapshots until the saved choices
+are no longer needed. Dropping the column discards draft indexing choices and
+requires a backup. Old code retains the content but may show unpublished changes
+because its snapshot comparison does not recognize the added indexing property.
+
 ## v4.2 — authenticated saved-draft preview
 
 Date: 2026-10-01. TASK-C005. Additive `GET /admin/content-preview/{slug}` returns

@@ -9,7 +9,7 @@ class PageBlocks
     /** @return array<string, mixed> */
     public static function snapshot(Page $page): array
     {
-        $snapshot = ['title' => $page->title, 'slug' => $page->slug, 'body' => $page->body, 'blocks' => $page->blocks, 'seo' => $page->seo];
+        $snapshot = ['title' => $page->title, 'slug' => $page->slug, 'body' => $page->body, 'blocks' => $page->blocks, 'seo' => $page->seo, 'is_indexable' => $page->is_indexable];
         if ($page->site_layout !== null) {
             $snapshot['site_layout'] = $page->site_layout;
         }
@@ -20,6 +20,9 @@ class PageBlocks
     public static function hasUnpublishedChanges(Page $page): bool
     {
         $published = $page->published_snapshot;
+        if ($published !== null) {
+            $published['is_indexable'] ??= true;
+        }
         $draft = self::snapshot($page);
         unset($published['site_layout'], $draft['site_layout']);
 

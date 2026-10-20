@@ -51,7 +51,7 @@ export type HomePageContent = {
     description: string
     og_title: string
     og_description: string
-    og_image_url: string
+    og_image_url: string | null
     og_image_media_id: number | null
   }
 }

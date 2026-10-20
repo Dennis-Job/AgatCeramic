@@ -5,15 +5,39 @@ namespace App\Http\Requests\Api\V1\Admin\Concerns;
 use App\Http\Requests\Api\V1\Admin\UpdateHomePageRequest;
 use App\Rules\SafeSiteUrl;
 use App\Support\PageBlocks;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 trait ValidatesPageContent
 {
+    #[\Override]
+    protected function prepareForValidation(): void
+    {
+        $input = $this->all();
+        $fields = ['body', 'seo.description', 'seo.og_title', 'seo.og_description'];
+        $blocks = $this->input('blocks', []);
+        foreach (is_array($blocks) ? $blocks : [] as $index => $block) {
+            $type = is_array($block) ? ($block['type'] ?? null) : null;
+            if (in_array($type, ['text', 'catalog'], true)) {
+                $fields[] = 'blocks.'.$index.'.data.'.($type === 'text' ? 'body' : 'description');
+            }
+        }
+        // Restore optional text converted to null by Laravel's request middleware.
+        // Missing fields must stay missing so presence validation still applies.
+        foreach ($fields as $field) {
+            if (Arr::has($input, $field) && Arr::get($input, $field) === null) {
+                Arr::set($input, $field, '');
+            }
+        }
+        $this->replace($input);
+    }
+
     /** @return array<string, list<mixed>> */
     private function contentRules(): array
     {
         $rules = [
+            'is_indexable' => ['sometimes', 'required', 'boolean'],
             'blocks' => ['sometimes', 'present', 'array', 'max:40', 'list'],
             'blocks.*' => ['required', 'array:id,type,enabled,data'],
             'blocks.*.id' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'distinct'],
@@ -72,7 +96,7 @@ trait ValidatesPageContent
     public function after(): array
     {
         return [function (Validator $validator): void {
-            foreach (array_diff(array_keys($this->all()), ['title', 'slug', 'body', 'is_published', 'blocks', 'seo']) as $key) {
+            foreach (array_diff(array_keys($this->all()), ['title', 'slug', 'body', 'is_published', 'is_indexable', 'blocks', 'seo']) as $key) {
                 $validator->errors()->add((string) $key, 'Неизвестное поле страницы.');
             }
             $seen = [];

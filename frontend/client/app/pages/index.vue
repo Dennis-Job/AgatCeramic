@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import HomePage from '~/features/home/components/HomePage.vue'
+import { setResponseStatus } from 'h3'
+import { siteOrigin } from '#shared/utils/pageUrls'
 
-const { data: content, status, error, refresh } = useHomePageContent()
+const { data: content, status, error, refresh } = await useHomePageContent()
+const event = useRequestEvent()
+if (event && error.value) {
+  setResponseStatus(event, error.value.statusCode === 404 ? 404 : 503)
+}
 
-const siteOrigin = useRuntimeConfig().public.siteUrl || useRequestURL().origin
-const canonicalUrl = new URL('/', siteOrigin).toString()
+const origin = siteOrigin(
+  useRuntimeConfig().public.siteUrl || useRequestURL().origin,
+)
+const canonicalUrl = new URL('/', origin).toString()
 const seo = computed(() => content.value?.seo)
 const imageUrl = computed(() => {
   const image = seo.value?.ogImage || content.value?.heroSlides[0]?.image
@@ -20,7 +28,12 @@ useSeoMeta({
   ogImage: imageUrl,
   ogUrl: canonicalUrl,
   ogType: 'website',
-  robots: () => (error.value ? 'noindex' : 'index,follow'),
+  robots: () =>
+    error.value
+      ? 'noindex'
+      : content.value?.isIndexable === false
+        ? 'noindex,follow'
+        : 'index,follow',
 })
 
 useHead(() => ({

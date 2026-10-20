@@ -24,6 +24,7 @@ class PageManagementService
                 throw new \LogicException('Validated page title must be a string.');
             }
             $attributes['body'] ??= '';
+            $attributes['is_indexable'] ??= false;
             $attributes['blocks'] ??= [['id' => 'body', 'type' => 'text', 'enabled' => true, 'data' => ['title' => $attributes['title'], 'body' => $attributes['body']]]];
             $attributes['seo'] ??= PageBlocks::defaultSeo($attributes['title']);
             $page = Page::query()->create($attributes);

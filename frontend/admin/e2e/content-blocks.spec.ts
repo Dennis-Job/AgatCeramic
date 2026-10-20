@@ -339,10 +339,12 @@ test('content-only editor hides media management and preserves selected resource
   ]
   await page.goto('/content?page=7')
   await expect(
-    page.getByText(
-      'Выбор и загрузка доступны сотруднику с правом управления медиа.',
-      { exact: false },
-    ),
+    page
+      .getByRole('region', { name: 'Настройки: О проекте' })
+      .getByText(
+        'Выбор и загрузка доступны сотруднику с правом управления медиа.',
+        { exact: false },
+      ),
   ).toBeVisible()
   await expect(page.getByRole('img', { name: 'Образцы плитки' })).toBeVisible()
   expect(state.mediaReads()).toBe(1)
