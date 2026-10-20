@@ -8,6 +8,16 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-20 — Владелец отменил маленький знак: UiWordmark оставляет только
+текст AGATCERAMIC в шапке, меню и подвале. UI-008/AGENTS и проверка UI-kit
+обновлены. Build/typecheck/format, 17 релевантных E2E и финальный wordmark-тест
+PASS; независимый UI Design Guard accepted. [Результат](../docs/CLIENT_WORDMARK_2026-10-20.md).
+
+2026-10-20 — Вместо ° у текстового AGATCERAMIC — маленький logo.svg сверху
+справа. Общий UiWordmark используется в шапке, меню и подвале; UI-008 закреплён
+в каталоге UI-kit и Client AGENTS. Build/typecheck/format и 17 адресных E2E PASS;
+независимый UI Design Guard accepted. [Файлы и проверки](../docs/CLIENT_WORDMARK_2026-10-20.md).
+
 2026-10-20 — Устранён сдвиг Client при исчезновении/возврате scrollbar:
 общий scrollbar-gutter:stable и minimum body в пределах доступной ширины.
 Реально воспроизведены 15 px сдвига и classic320 overflow; исправления защищены

@@ -34,6 +34,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | Элемент | Общий источник | Где применять |
 | --- | --- | --- |
 | Крестик закрытия | [`UiCloseButton.vue`](../frontend/client/app/components/ui/UiCloseButton.vue) | Меню, поиск, модальные окна, будущие панели; изменяются только label, disabled и действие |
+| Текстовое название бренда | [`UiWordmark.vue`](../frontend/client/app/components/ui/UiWordmark.vue) | Шапка, боковое меню, подвал: чистая надпись AGATCERAMIC без декоративных знаков; размеры текста наследуются от места использования |
 | Поле формы | [`UiTextField.vue`](../frontend/client/app/components/ui/UiTextField.vue) | Текст, имя, телефон; телефонная маска принадлежит компоненту |
 | Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField и крупный поиск; не копировать focus-стили в feature |
 | Модальное окно | [`UiDialog.vue`](../frontend/client/app/components/ui/UiDialog.vue) | Общий фон, размеры, focus trap, Escape, возврат фокуса и UiCloseButton |
@@ -56,6 +57,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | UI-005 / 2026-10-20 | Один телефон настроек; автоматический +7 и ввод 10 цифр, вывод +7 (XXX) XXX-XX-XX, модель/API +7XXXXXXXXXX | UiTextField, utils/phone.ts, StorefrontHeader; `phone-mask.spec.ts`; глобальный контракт в корневом AGENTS |
 | UI-006 / 2026-10-20 | Плавные слои по шаблону: drawer справа translateX(102%) за .65 s, backdrop opacity .5 s, easing cubic-bezier(.22,1,.36,1); пункты .6 s с задержкой .15+i×.07 s, нижний блок .45 s. Modal opacity + translateY(20px) за .65 s, search сверху; закрытие симметричное. Reduced motion отключает движения/задержки | overlays.css + tokens.css, SiteHeader, UiDialog; `overlay-motion.spec.ts` — обычное движение, удержание слоя/scroll lock до конца, reduced motion; callback/preview регрессии |
 | UI-007 / 2026-10-20 | При скрытии/возврате scrollbar ширина страницы сохраняется; общий `scrollbar-gutter: stable` на html, без локальных padding-компенсаций | base.css; `scrollbar-stability.spec.ts` — геометрия меню/поиска/modal с классическим scrollbar |
+| UI-008 / 2026-10-20 | Только текст AGATCERAMIC: AGAT — 600, CERAMIC — 400; без °, маленького SVG и других декоративных знаков. Сохраняются Inter, регистр и разрядка из утверждённого оформления | UiWordmark в SiteHeader/SiteFooter; маленький знак отменён владельцем. Загруженный через настройки основной logoUrl сохраняется по существующему контракту |
 
 `UiDialog` остаётся native modal в top layer до завершения leave. Только затем
 закрывает dialog, восстанавливает scroll/focus и сообщает `close` родителю.

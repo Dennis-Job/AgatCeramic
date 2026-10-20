@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Menu, Search } from '@lucide/vue'
 import UiCloseButton from '~/components/ui/UiCloseButton.vue'
+import UiWordmark from '~/components/ui/UiWordmark.vue'
 import type { HomePageContent } from '~/types/homePage'
 
 type Panel = 'menu' | 'search' | null
@@ -141,7 +142,7 @@ onUnmounted(() => {
           width="240"
           height="48"
         />
-        <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
+        <UiWordmark v-else />
       </NuxtLink>
 
       <nav
@@ -211,7 +212,7 @@ onUnmounted(() => {
             width="200"
             height="40"
           />
-          <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
+          <UiWordmark v-else />
         </span>
         <UiCloseButton label="Закрыть меню" @click="closePanel" />
       </div>
@@ -340,18 +341,6 @@ onUnmounted(() => {
   height: 48px;
   object-fit: contain;
   object-position: left center;
-}
-.wordmark span {
-  font-weight: 400;
-}
-.wordmark sup {
-  position: relative;
-  top: -0.4em;
-  margin-left: 3px;
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0;
 }
 .wordmark--small {
   font-size: 16px;

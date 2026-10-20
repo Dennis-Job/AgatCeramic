@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HomePageContent, SiteLink } from '~/types/homePage'
+import UiWordmark from '~/components/ui/UiWordmark.vue'
 
 defineProps<{
   content?: HomePageContent['footer']
@@ -26,7 +27,7 @@ defineProps<{
               width="240"
               height="48"
             />
-            <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
+            <UiWordmark v-else />
           </NuxtLink>
           <p v-if="content?.tagline">{{ content.tagline }}</p>
         </div>
@@ -102,18 +103,6 @@ defineProps<{
   height: 48px;
   object-fit: contain;
   object-position: left center;
-}
-.site-footer__logo span {
-  font-weight: 400;
-}
-.site-footer__logo sup {
-  position: relative;
-  top: -0.4em;
-  margin-left: 3px;
-  color: var(--color-muted);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0;
 }
 .site-footer__brand p {
   margin: 0;
