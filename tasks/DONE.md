@@ -8,6 +8,13 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-20 — Общий Client `UiCloseButton` для меню, поиска и callback;
+единые иконка/default/hover/disabled. Каталог компонентов и реестр утверждённых
+уточнений владельца в CLIENT_UI_KIT; обязательное чтение/обновление и запрет
+локальных копий закреплены в Client AGENTS и UI review. Build/typecheck/format,
+31 production E2E, 2 dev E2E при повторе, три дополнительных UI-kit повтора PASS;
+независимый UI Design Guard accepted. [Файлы и проверки](../docs/CLIENT_UI_REUSE_2026-10-20.md).
+
 2026-10-20 — Активные текстовые поля Client приведены к footer «Ваш e-mail»
 из `exampleSite.html`: тонкая ink-граница без внешнего outline/тени, переход
 0.3 s. Общий паттерн для формы и поиска; click/Tab и reduced motion сохранены.

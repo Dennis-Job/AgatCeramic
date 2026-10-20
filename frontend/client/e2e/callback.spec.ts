@@ -245,6 +245,10 @@ test('invalid input never submits and a pending submission blocks duplicates and
     dialog.getByRole('button', { name: 'Отправляем…', exact: true }),
   ).toBeDisabled()
   await expect(dialog.getByRole('button', { name: 'Закрыть' })).toBeDisabled()
+  const close = dialog.getByRole('button', { name: 'Закрыть' })
+  await close.hover()
+  await expect(close).toHaveCSS('opacity', '0.55')
+  await expect(close).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   await page.keyboard.press('Escape')
   await expect(dialog).toBeVisible()
   await page.screenshot({ path: '.tmp/callback-pending.png' })

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Menu, Search, X } from '@lucide/vue'
+import { Menu, Search } from '@lucide/vue'
+import UiCloseButton from '~/components/ui/UiCloseButton.vue'
 import type { HomePageContent } from '~/types/homePage'
 
 type Panel = 'menu' | 'search' | null
@@ -188,14 +189,7 @@ onUnmounted(() => {
         />
         <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
       </span>
-      <button
-        class="close-button"
-        type="button"
-        aria-label="Закрыть меню"
-        @click="closePanel"
-      >
-        <X :size="18" :stroke-width="1.6" aria-hidden="true" />
-      </button>
+      <UiCloseButton label="Закрыть меню" @click="closePanel" />
     </div>
     <nav class="menu-panel__nav" aria-label="Мобильная навигация">
       <NuxtLink
@@ -233,14 +227,7 @@ onUnmounted(() => {
     <div class="container">
       <div class="search-panel__top">
         <span class="eyebrow">Поиск по разделам страницы</span>
-        <button
-          class="close-button"
-          type="button"
-          aria-label="Закрыть поиск"
-          @click="closePanel"
-        >
-          <X :size="18" :stroke-width="1.6" aria-hidden="true" />
-        </button>
+        <UiCloseButton label="Закрыть поиск" @click="closePanel" />
       </div>
       <label class="visually-hidden" for="section-search"
         >Название раздела</label
@@ -427,23 +414,6 @@ onUnmounted(() => {
 }
 .menu-panel__top {
   margin-bottom: 56px;
-}
-.close-button {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid var(--color-line);
-  border-radius: 50%;
-  background: transparent;
-  transition:
-    background 0.25s,
-    color 0.25s;
-}
-.close-button:hover {
-  background: var(--color-ink);
-  color: var(--color-white);
 }
 .menu-panel__nav {
   display: flex;

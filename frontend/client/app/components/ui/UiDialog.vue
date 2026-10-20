@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X } from '@lucide/vue'
+import UiCloseButton from './UiCloseButton.vue'
 
 defineProps<{ title: string; busy?: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -65,15 +65,7 @@ function trapFocus(event: KeyboardEvent) {
   >
     <div class="ui-dialog__heading">
       <h2 :id="titleId">{{ title }}</h2>
-      <button
-        type="button"
-        class="ui-dialog__close"
-        aria-label="Закрыть"
-        :disabled="busy"
-        @click="emit('close')"
-      >
-        <X :size="20" aria-hidden="true" />
-      </button>
+      <UiCloseButton :disabled="busy" @click="emit('close')" />
     </div>
     <slot />
   </dialog>
@@ -107,23 +99,6 @@ h2 {
   font-size: clamp(24px, 4vw, 30px);
   font-weight: 500;
   letter-spacing: -0.01em;
-}
-.ui-dialog__close {
-  display: grid;
-  place-items: center;
-  flex: 0 0 44px;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--color-line);
-  border-radius: 50%;
-  background: transparent;
-  color: inherit;
-}
-.ui-dialog__close:hover:not(:disabled) {
-  background: var(--color-beige);
-}
-.ui-dialog__close:disabled {
-  opacity: 0.55;
 }
 @media (max-width: 640px) {
   .ui-dialog {
