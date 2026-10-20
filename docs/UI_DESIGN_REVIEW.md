@@ -91,6 +91,9 @@ default/hover/focus/disabled у всех потребителей, отсутс�
 переопределений. Каждое новое замечание должно быть отражено в актуальном
 правиле и общем компоненте. Для закрытия панелей/окон обязателен
 `UiCloseButton`; для focus текстовых полей — общий паттерн `base.css`.
+Анимации слоёв сверять с UI-006 и `overlays.css` в normal/reduced motion:
+появление/уход без скачка, завершение cleanup, удержание модальности/scroll lock,
+отсутствие autofocus, повторное открытие и переход между панелями.
 
 Текущие точки входа: `frontend/client/app/app.vue`,
 `frontend/client/app/layouts/default.vue`, `frontend/client/app/pages/index.vue`.

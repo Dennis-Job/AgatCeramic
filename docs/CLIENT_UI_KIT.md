@@ -37,6 +37,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | Поле формы | [`UiTextField.vue`](../frontend/client/app/components/ui/UiTextField.vue) | Текст, имя, телефон; телефонная маска принадлежит компоненту |
 | Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField и крупный поиск; не копировать focus-стили в feature |
 | Модальное окно | [`UiDialog.vue`](../frontend/client/app/components/ui/UiDialog.vue) | Общий фон, размеры, focus trap, Escape, возврат фокуса и UiCloseButton |
+| Появление слоёв | [`overlays.css`](../frontend/client/app/assets/css/overlays.css), motion-токены в tokens.css | Vue Transition: drawer, search, modal, backdrop; общие длительности и кривая, без копий в feature |
 | Основное действие | [`UiButton.vue`](../frontend/client/app/components/ui/UiButton.vue) | CTA, варианты dark/light; не дублировать button-стили в страницах |
 
 ## Реестр утверждённых уточнений владельца
@@ -52,6 +53,14 @@ PIETRA — демонстрационное имя в образце. Бренд
 | UI-003 / 2026-10-20 | При загрузке страницы и открытии панели поля/кнопки не выделяются автоматически; начальный фокус на контейнере без обводки; Tab/Shift+Tab внутри, возврат инициатору | UiDialog, SiteHeader; `callback.spec.ts` |
 | UI-004 / 2026-10-20 | Верхняя строка: текст слева; справа «заказать звонок · email · телефон», строчная буква, без подчёркивания; разделители только у заполненных контактов | StorefrontHeader; `phone-mask.spec.ts`, `callback.spec.ts` |
 | UI-005 / 2026-10-20 | Один телефон настроек; автоматический +7 и ввод 10 цифр, вывод +7 (XXX) XXX-XX-XX, модель/API +7XXXXXXXXXX | UiTextField, utils/phone.ts, StorefrontHeader; `phone-mask.spec.ts`; глобальный контракт в корневом AGENTS |
+| UI-006 / 2026-10-20 | Плавные слои по шаблону: drawer справа translateX(102%) за .65 s, backdrop opacity .5 s, easing cubic-bezier(.22,1,.36,1); пункты .6 s с задержкой .15+i×.07 s, нижний блок .45 s. Modal opacity + translateY(20px) за .65 s, search сверху; закрытие симметричное. Reduced motion отключает движения/задержки | overlays.css + tokens.css, SiteHeader, UiDialog; `overlay-motion.spec.ts` — обычное движение, удержание слоя/scroll lock до конца, reduced motion; callback/preview регрессии |
+
+`UiDialog` остаётся native modal в top layer до завершения leave. Только затем
+закрывает dialog, восстанавливает scroll/focus и сообщает `close` родителю.
+Внутренние кнопки завершения используют slot `close`, как крестик/Escape/фон;
+не размонтировать окно напрямую для обычного закрытия. При уходе со страницы
+cleanup выполняется сразу. Уходящие меню/поиск становятся inert; scroll lock
+и возврат фокуса снимаются после окончания анимации. Формы не получают autofocus.
 
 ## Design tokens
 

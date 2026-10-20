@@ -17,6 +17,8 @@
   --color-hero-control-surface: rgb(255 255 255 / 55%);
   --color-card-label-surface: rgb(255 255 255 / 92%);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-panel-duration: 0.65s;
+  --motion-backdrop-duration: 0.5s;
   --content-width: 1280px;
   --page-gutter: 40px;
   --section-space: 110px;

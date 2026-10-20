@@ -9,12 +9,17 @@ const { name, phone, busy, success, error, submit } = useCallbackRequest()
 </script>
 
 <template>
-  <UiDialog title="Заказать звонок" :busy="busy" @close="emit('close')">
+  <UiDialog
+    v-slot="{ close }"
+    title="Заказать звонок"
+    :busy="busy"
+    @close="emit('close')"
+  >
     <div v-if="success" class="callback-result">
       <p role="status">
         Заявка отправлена. Мы перезвоним вам по указанному номеру.
       </p>
-      <UiButton @click="emit('close')">Готово</UiButton>
+      <UiButton @click="close">Готово</UiButton>
     </div>
     <form
       v-else

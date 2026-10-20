@@ -28,6 +28,7 @@ export default defineNuxtConfig({
     '@fontsource/inter/latin-600.css',
     '~/assets/css/tokens.css',
     '~/assets/css/base.css',
+    '~/assets/css/overlays.css',
   ],
   app: {
     head: {

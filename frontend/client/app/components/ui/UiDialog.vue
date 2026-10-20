@@ -1,25 +1,44 @@
 <script setup lang="ts">
 import UiCloseButton from './UiCloseButton.vue'
 
-defineProps<{ title: string; busy?: boolean }>()
+const props = defineProps<{ title: string; busy?: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
 const titleId = useId()
+const visible = ref(false)
+let openedDialog: HTMLDialogElement | null = null
 let previousFocus: HTMLElement | null = null
 let previousOverflow = ''
 
-onMounted(() => {
+function showDialog(element: Element) {
   previousFocus = document.activeElement as HTMLElement | null
   previousOverflow = document.body.style.overflow
   document.body.style.overflow = 'hidden'
-  dialog.value?.showModal()
-  dialog.value?.focus({ preventScroll: true })
-})
-onBeforeUnmount(() => {
-  dialog.value?.close()
+  openedDialog = element as HTMLDialogElement
+  openedDialog.showModal()
+  openedDialog.focus({ preventScroll: true })
+}
+function cleanup() {
+  if (!openedDialog) return
+  openedDialog.close()
+  openedDialog = null
   document.body.style.overflow = previousOverflow
   if (previousFocus?.isConnected) previousFocus.focus()
+}
+function requestClose() {
+  if (!props.busy) visible.value = false
+}
+function deactivateDialog(element: Element) {
+  ;(element as HTMLElement).inert = true
+}
+function finishClose() {
+  cleanup()
+  emit('close')
+}
+onMounted(() => {
+  visible.value = true
 })
+onBeforeUnmount(cleanup)
 
 function isBackdrop(event: MouseEvent) {
   if (!dialog.value || event.target !== dialog.value) return false
@@ -55,20 +74,28 @@ function trapFocus(event: KeyboardEvent) {
 </script>
 
 <template>
-  <dialog
-    ref="dialog"
-    class="ui-dialog"
-    :aria-labelledby="titleId"
-    @keydown.tab="trapFocus"
-    @cancel.prevent="!busy && emit('close')"
-    @click="!busy && isBackdrop($event) && emit('close')"
+  <Transition
+    name="ui-modal"
+    @enter="showDialog"
+    @before-leave="deactivateDialog"
+    @after-leave="finishClose"
   >
-    <div class="ui-dialog__heading">
-      <h2 :id="titleId">{{ title }}</h2>
-      <UiCloseButton :disabled="busy" @click="emit('close')" />
-    </div>
-    <slot />
-  </dialog>
+    <dialog
+      v-if="visible"
+      ref="dialog"
+      class="ui-dialog"
+      :aria-labelledby="titleId"
+      @keydown.tab="trapFocus"
+      @cancel.prevent="requestClose"
+      @click="isBackdrop($event) && requestClose()"
+    >
+      <div class="ui-dialog__heading">
+        <h2 :id="titleId">{{ title }}</h2>
+        <UiCloseButton :disabled="busy" @click="requestClose" />
+      </div>
+      <slot :close="requestClose" />
+    </dialog>
+  </Transition>
 </template>
 
 <style scoped>

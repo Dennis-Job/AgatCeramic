@@ -8,6 +8,13 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-20 — Плавные Client menu/search/modal и backdrop по `exampleSite.html`:
+общие motion-токены и CSS, последовательные пункты меню, симметричное закрытие,
+reduced motion без задержек. Native modality/scroll lock удерживаются до конца;
+быстрое переключение панелей и «Готово» покрыты регрессиями. UI-006 внесён
+в UI-kit. Build/typecheck/format, 35 production / 2 dev E2E PASS; независимый UI Design
+Guard accepted. [Файлы и проверки](../docs/CLIENT_OVERLAY_MOTION_2026-10-20.md).
+
 2026-10-20 — Общий Client `UiCloseButton` для меню, поиска и callback;
 единые иконка/default/hover/disabled. Каталог компонентов и реестр утверждённых
 уточнений владельца в CLIENT_UI_KIT; обязательное чтение/обновление и запрет

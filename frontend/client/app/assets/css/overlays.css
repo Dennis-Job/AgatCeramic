@@ -1,0 +1,47 @@
+.ui-drawer-enter-active,
+.ui-drawer-leave-active,
+.ui-search-enter-active,
+.ui-search-leave-active {
+  transition: transform var(--motion-panel-duration) var(--ease-out);
+}
+.ui-drawer-enter-from,
+.ui-drawer-leave-to {
+  transform: translateX(102%);
+}
+.ui-search-enter-from,
+.ui-search-leave-to {
+  transform: translateY(-102%);
+}
+.ui-backdrop-enter-active,
+.ui-backdrop-leave-active,
+.ui-modal-enter-active::backdrop,
+.ui-modal-leave-active::backdrop {
+  transition: opacity var(--motion-backdrop-duration) ease;
+}
+.ui-backdrop-enter-from,
+.ui-backdrop-leave-to,
+.ui-modal-enter-from::backdrop,
+.ui-modal-leave-to::backdrop {
+  opacity: 0;
+}
+.ui-modal-enter-active,
+.ui-modal-leave-active {
+  transition:
+    opacity var(--motion-panel-duration) var(--ease-out),
+    transform var(--motion-panel-duration) var(--ease-out);
+}
+.ui-modal-enter-from,
+.ui-modal-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-drawer-enter-from,
+  .ui-drawer-leave-to,
+  .ui-search-enter-from,
+  .ui-search-leave-to,
+  .ui-modal-enter-from,
+  .ui-modal-leave-to {
+    transform: none;
+  }
+}

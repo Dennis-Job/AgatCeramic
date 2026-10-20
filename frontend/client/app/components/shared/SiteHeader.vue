@@ -26,6 +26,7 @@ const searchQuery = ref('')
 const menuTrigger = ref<HTMLButtonElement | null>(null)
 const menuPanel = ref<HTMLElement | null>(null)
 const searchPanel = ref<HTMLElement | null>(null)
+const leavingPanels = new Set<Element>()
 
 const searchResults = computed(() => {
   const query = searchQuery.value.trim().toLocaleLowerCase('ru')
@@ -77,14 +78,29 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Tab') trapFocus(event)
 }
 
-watch(panel, async (next, previous) => {
+function activatePanel(element: Element) {
+  leavingPanels.delete(element)
+  ;(element as HTMLElement).inert = false
+}
+
+function deactivatePanel(element: Element) {
+  leavingPanels.add(element)
+  ;(element as HTMLElement).inert = true
+}
+
+function finishPanelClose(element: Element) {
+  leavingPanels.delete(element)
+  if (panel.value || leavingPanels.size) return
+  document.body.classList.remove('has-overlay')
+  menuTrigger.value?.focus({ preventScroll: true })
+}
+
+watch(panel, async (next) => {
   if (!import.meta.client) return
-  document.body.classList.toggle('has-overlay', next !== null)
+  if (next) document.body.classList.add('has-overlay')
   await nextTick()
   if (next === 'menu') menuPanel.value?.focus({ preventScroll: true })
   if (next === 'search') searchPanel.value?.focus({ preventScroll: true })
-  if (!next && previous === 'menu') menuTrigger.value?.focus()
-  if (!next && previous === 'search') menuTrigger.value?.focus()
 })
 
 watch(() => route.fullPath, closePanel)
@@ -159,101 +175,118 @@ onUnmounted(() => {
     </div>
   </header>
 
-  <button
-    v-if="panel"
-    class="backdrop"
-    type="button"
-    tabindex="-1"
-    aria-label="Закрыть панель"
-    @click="closePanel"
-  />
-
-  <div
-    v-if="panel === 'menu'"
-    id="site-menu"
-    ref="menuPanel"
-    class="menu-panel"
-    tabindex="-1"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Меню сайта"
-  >
-    <div class="menu-panel__top">
-      <span class="wordmark wordmark--small">
-        <img
-          v-if="content?.logoUrl"
-          :src="content.logoUrl"
-          :alt="content.logoAlt"
-          width="200"
-          height="40"
-        />
-        <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
-      </span>
-      <UiCloseButton label="Закрыть меню" @click="closePanel" />
-    </div>
-    <nav class="menu-panel__nav" aria-label="Мобильная навигация">
-      <NuxtLink
-        v-for="(link, index) in navigation"
-        :key="link.to"
-        :to="link.to"
-        :aria-current="isCurrent(link.to) ? 'page' : undefined"
-        @click="closePanel"
-      >
-        {{ link.label }} <span>{{ String(index + 1).padStart(2, '0') }}</span>
-      </NuxtLink>
-    </nav>
+  <Transition name="ui-backdrop">
     <button
-      class="menu-panel__search"
+      v-if="panel"
+      class="backdrop"
       type="button"
-      aria-haspopup="dialog"
-      @click="openPanel('search')"
-    >
-      <Search :size="18" :stroke-width="1.6" aria-hidden="true" />
-      Поиск по разделам страницы
-    </button>
-    <p v-if="tagline" class="menu-panel__note">{{ tagline }}</p>
-  </div>
+      tabindex="-1"
+      aria-label="Закрыть панель"
+      @click="closePanel"
+    />
+  </Transition>
 
-  <div
-    v-if="panel === 'search'"
-    id="site-search"
-    ref="searchPanel"
-    class="search-panel"
-    tabindex="-1"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Поиск по разделам страницы"
+  <Transition
+    name="ui-drawer"
+    @before-enter="activatePanel"
+    @before-leave="deactivatePanel"
+    @after-leave="finishPanelClose"
   >
-    <div class="container">
-      <div class="search-panel__top">
-        <span class="eyebrow">Поиск по разделам страницы</span>
-        <UiCloseButton label="Закрыть поиск" @click="closePanel" />
+    <div
+      v-if="panel === 'menu'"
+      id="site-menu"
+      ref="menuPanel"
+      class="menu-panel"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Меню сайта"
+    >
+      <div class="menu-panel__top">
+        <span class="wordmark wordmark--small">
+          <img
+            v-if="content?.logoUrl"
+            :src="content.logoUrl"
+            :alt="content.logoAlt"
+            width="200"
+            height="40"
+          />
+          <template v-else>AGAT<span>CERAMIC</span><sup>°</sup></template>
+        </span>
+        <UiCloseButton label="Закрыть меню" @click="closePanel" />
       </div>
-      <label class="visually-hidden" for="section-search"
-        >Название раздела</label
-      >
-      <input
-        id="section-search"
-        v-model="searchQuery"
-        type="search"
-        placeholder="Например: материалы"
-        autocomplete="off"
-      />
-      <nav class="search-panel__results" aria-label="Найденные разделы">
+      <nav class="menu-panel__nav" aria-label="Мобильная навигация">
         <NuxtLink
-          v-for="link in searchResults"
+          v-for="(link, index) in navigation"
           :key="link.to"
           :to="link.to"
+          :aria-current="isCurrent(link.to) ? 'page' : undefined"
+          :style="{ '--menu-link-index': index }"
           @click="closePanel"
         >
-          {{ link.label }} <span aria-hidden="true">→</span>
+          {{ link.label }} <span>{{ String(index + 1).padStart(2, '0') }}</span>
         </NuxtLink>
-        <p v-if="!searchResults.length" role="status">
-          Раздел не найден. Попробуйте другое название.
-        </p>
       </nav>
+      <button
+        class="menu-panel__search"
+        type="button"
+        aria-haspopup="dialog"
+        @click="openPanel('search')"
+      >
+        <Search :size="18" :stroke-width="1.6" aria-hidden="true" />
+        Поиск по разделам страницы
+      </button>
+      <p v-if="tagline" class="menu-panel__note">{{ tagline }}</p>
     </div>
-  </div>
+  </Transition>
+
+  <Transition
+    name="ui-search"
+    @before-enter="activatePanel"
+    @before-leave="deactivatePanel"
+    @after-leave="finishPanelClose"
+  >
+    <div
+      v-if="panel === 'search'"
+      id="site-search"
+      ref="searchPanel"
+      class="search-panel"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Поиск по разделам страницы"
+    >
+      <div class="container">
+        <div class="search-panel__top">
+          <span class="eyebrow">Поиск по разделам страницы</span>
+          <UiCloseButton label="Закрыть поиск" @click="closePanel" />
+        </div>
+        <label class="visually-hidden" for="section-search"
+          >Название раздела</label
+        >
+        <input
+          id="section-search"
+          v-model="searchQuery"
+          type="search"
+          placeholder="Например: материалы"
+          autocomplete="off"
+        />
+        <nav class="search-panel__results" aria-label="Найденные разделы">
+          <NuxtLink
+            v-for="link in searchResults"
+            :key="link.to"
+            :to="link.to"
+            @click="closePanel"
+          >
+            {{ link.label }} <span aria-hidden="true">→</span>
+          </NuxtLink>
+          <p v-if="!searchResults.length" role="status">
+            Раздел не найден. Попробуйте другое название.
+          </p>
+        </nav>
+      </div>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -431,6 +464,8 @@ onUnmounted(() => {
   font-size: clamp(26px, 3vw, 34px);
   font-weight: 500;
   letter-spacing: -0.01em;
+  animation: menu-link-enter 0.6s var(--ease-out) both;
+  animation-delay: calc(0.15s + var(--menu-link-index) * 0.07s);
 }
 .menu-panel__nav a:hover {
   color: var(--color-muted);
@@ -453,6 +488,7 @@ onUnmounted(() => {
   background: transparent;
   font-size: 13px;
   text-align: left;
+  animation: menu-footer-enter 0.6s var(--ease-out) 0.45s both;
 }
 .menu-panel__search:hover {
   color: var(--color-muted);
@@ -463,6 +499,27 @@ onUnmounted(() => {
   color: var(--color-muted);
   font-size: 12px;
   line-height: 1.7;
+  animation: menu-footer-enter 0.6s var(--ease-out) 0.45s both;
+}
+@keyframes menu-link-enter {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes menu-footer-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .search-panel {
   top: 0;
