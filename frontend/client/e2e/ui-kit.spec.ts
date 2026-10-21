@@ -4,6 +4,69 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
 })
 
+test('header actions follow the reference order, fit narrow screens and return search focus to its trigger', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/about')
+  await page.evaluate(() => document.fonts.ready)
+  const actions = page.locator('.site-header__actions')
+  const search = actions.getByRole('button', { name: 'Открыть поиск' })
+  const cart = actions.getByRole('button', { name: 'Корзина', exact: true })
+  await expect(actions.getByRole('button')).toHaveCount(3)
+  expect(
+    await actions
+      .getByRole('button')
+      .evaluateAll((buttons) =>
+        buttons.map((button) => button.getAttribute('aria-label')),
+      ),
+  ).toEqual(['Открыть поиск', 'Корзина', 'Открыть меню'])
+  await expect(cart).toBeDisabled()
+  await expect(cart).toHaveAttribute('title', 'Корзина будет доступна позже')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 707 })
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    )
+    for (const button of await actions.getByRole('button').all()) {
+      await expect(button).toBeVisible()
+      await expect(button).toHaveCSS('width', '44px')
+      await expect(button).toHaveCSS('height', '44px')
+    }
+    const brandRect = (await page
+      .locator('.site-header .ui-wordmark')
+      .boundingBox())!
+    const actionsRect = (await actions.boundingBox())!
+    expect(brandRect.x + brandRect.width).toBeLessThanOrEqual(actionsRect.x)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    await search.hover()
+    await expect(search).toHaveCSS('background-color', 'rgb(233, 230, 224)')
+    await cart.hover()
+    await expect(cart).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await page.mouse.move(0, 0)
+    await page
+      .locator('.site-header')
+      .screenshot({ path: testInfo.outputPath(`header-actions-${width}.png`) })
+    await search.click()
+    const dialog = page.getByRole('dialog', {
+      name: 'Поиск по разделам страницы',
+    })
+    await expect(dialog).toBeFocused()
+    await expect(dialog.getByRole('searchbox')).not.toBeFocused()
+    await dialog.getByRole('searchbox').fill('Главная')
+    await expect(dialog.getByRole('link', { name: 'Главная' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    await expect(search).toBeFocused()
+  }
+})
+
 test('header, menu and footer share a text-only wordmark without decorative symbols', async ({
   page,
   request,

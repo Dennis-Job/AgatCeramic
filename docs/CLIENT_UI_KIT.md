@@ -34,6 +34,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | Элемент | Общий источник | Где применять |
 | --- | --- | --- |
 | Крестик закрытия | [`UiCloseButton.vue`](../frontend/client/app/components/ui/UiCloseButton.vue) | Меню, поиск, модальные окна, будущие панели; изменяются только label, disabled и действие |
+| Кнопка с иконкой | [`UiIconButton.vue`](../frontend/client/app/components/ui/UiIconButton.vue) | Действия шапки: поиск, корзина, меню; круглая цель 44 px, единый hover/disabled/focus |
 | Текстовое название бренда | [`UiWordmark.vue`](../frontend/client/app/components/ui/UiWordmark.vue) | Шапка, боковое меню, подвал: чистая надпись AGATCERAMIC без декоративных знаков; размеры текста наследуются от места использования |
 | Поле формы | [`UiTextField.vue`](../frontend/client/app/components/ui/UiTextField.vue) | Текст, имя, телефон; телефонная маска принадлежит компоненту |
 | Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField и крупный поиск; не копировать focus-стили в feature |
@@ -58,6 +59,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | UI-006 / 2026-10-20 | Плавные слои по шаблону: drawer справа translateX(102%) за .65 s, backdrop opacity .5 s, easing cubic-bezier(.22,1,.36,1); пункты .6 s с задержкой .15+i×.07 s, нижний блок .45 s. Modal opacity + translateY(20px) за .65 s, search сверху; закрытие симметричное. Reduced motion отключает движения/задержки | overlays.css + tokens.css, SiteHeader, UiDialog; `overlay-motion.spec.ts` — обычное движение, удержание слоя/scroll lock до конца, reduced motion; callback/preview регрессии |
 | UI-007 / 2026-10-20 | При скрытии/возврате scrollbar ширина страницы сохраняется; общий `scrollbar-gutter: stable` на html, без локальных padding-компенсаций | base.css; `scrollbar-stability.spec.ts` — геометрия меню/поиска/modal с классическим scrollbar |
 | UI-008 / 2026-10-20 | Только текст AGATCERAMIC: AGAT — 600, CERAMIC — 400; без °, маленького SVG и других декоративных знаков. Сохраняются Inter, регистр и разрядка из утверждённого оформления | UiWordmark в SiteHeader/SiteFooter; маленький знак отменён владельцем. Загруженный через настройки основной logoUrl сохраняется по существующему контракту |
+| UI-009 / 2026-10-21 | В шапке справа порядок поиска, корзины и меню, как в референсе; общий UiIconButton 44×44 px, hover beige за .3 s, disabled .55 без hover. Search/ShoppingBag 19 px stroke1.6, существующий Menu22/stroke1.6 сохранён; desktop gap8, до480 px gap0 и межколоночный gap4 без уменьшения целей и изменения текстового бренда | SiteHeader + UiIconButton, `ui-kit.spec.ts`. Поиск открывает существующую панель разделов и возвращает focus инициатору; внутри меню — прежний возврат к menu-trigger. Корзина временно disabled с пояснением до отдельной реализации Phase10; счётчик/пустая корзина не имитируются |
 
 `UiDialog` остаётся native modal в top layer до завершения leave. Только затем
 закрывает dialog, восстанавливает scroll/focus и сообщает `close` родителю.

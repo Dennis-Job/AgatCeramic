@@ -8,6 +8,12 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-21 — В хедер Client добавлены поиск и корзина перед кнопкой меню по
+референсу exampleSite.html. Поиск открывает существующую панель разделов;
+корзина пока неактивна по указанию владельца. UiIconButton и UI-009 закрепляют
+общие состояния и адаптивность. Build/typecheck/format и 39/39 production E2E
+PASS; независимый UI Design Guard accepted. [Файлы и проверки](../docs/CLIENT_HEADER_ACTIONS_2026-10-21.md).
+
 2026-10-20 — Владелец отменил маленький знак: UiWordmark оставляет только
 текст AGATCERAMIC в шапке, меню и подвале. UI-008/AGENTS и проверка UI-kit
 обновлены. Build/typecheck/format, 17 релевантных E2E и финальный wordmark-тест

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Menu, Search } from '@lucide/vue'
+import { Menu, Search, ShoppingBag } from '@lucide/vue'
 import UiCloseButton from '~/components/ui/UiCloseButton.vue'
+import UiIconButton from '~/components/ui/UiIconButton.vue'
 import UiWordmark from '~/components/ui/UiWordmark.vue'
 import type { HomePageContent } from '~/types/homePage'
 
@@ -24,7 +25,7 @@ function isCurrent(to: string): boolean {
 }
 const panel = ref<Panel>(null)
 const searchQuery = ref('')
-const menuTrigger = ref<HTMLButtonElement | null>(null)
+let panelTrigger: HTMLElement | null = null
 const menuPanel = ref<HTMLElement | null>(null)
 const searchPanel = ref<HTMLElement | null>(null)
 const leavingPanels = new Set<Element>()
@@ -42,7 +43,8 @@ function closePanel() {
   panel.value = null
 }
 
-function openPanel(nextPanel: Exclude<Panel, null>) {
+function openPanel(nextPanel: Exclude<Panel, null>, event: MouseEvent) {
+  if (!panel.value) panelTrigger = event.currentTarget as HTMLElement
   searchQuery.value = ''
   panel.value = nextPanel
 }
@@ -93,7 +95,7 @@ function finishPanelClose(element: Element) {
   leavingPanels.delete(element)
   if (panel.value || leavingPanels.size) return
   document.body.classList.remove('has-overlay')
-  menuTrigger.value?.focus({ preventScroll: true })
+  if (panelTrigger?.isConnected) panelTrigger.focus({ preventScroll: true })
 }
 
 watch(panel, async (next) => {
@@ -160,18 +162,33 @@ onUnmounted(() => {
         </NuxtLink>
       </nav>
 
-      <div v-if="navigation.length" class="site-header__actions">
-        <button
-          ref="menuTrigger"
-          class="icon-button"
-          type="button"
-          aria-label="Открыть меню"
-          :aria-expanded="panel === 'menu'"
-          aria-controls="site-menu"
-          @click="openPanel('menu')"
+      <div class="site-header__actions">
+        <UiIconButton
+          label="Открыть поиск"
+          :expanded="panel === 'search'"
+          controls="site-search"
+          :disabled="!navigation.length"
+          title="Поиск по разделам сайта"
+          @click="openPanel('search', $event)"
+        >
+          <Search :size="19" :stroke-width="1.6" aria-hidden="true" />
+        </UiIconButton>
+        <UiIconButton
+          label="Корзина"
+          disabled
+          title="Корзина будет доступна позже"
+        >
+          <ShoppingBag :size="19" :stroke-width="1.6" aria-hidden="true" />
+        </UiIconButton>
+        <UiIconButton
+          v-if="navigation.length"
+          label="Открыть меню"
+          :expanded="panel === 'menu'"
+          controls="site-menu"
+          @click="openPanel('menu', $event)"
         >
           <Menu :size="22" :stroke-width="1.6" aria-hidden="true" />
-        </button>
+        </UiIconButton>
       </div>
     </div>
   </header>
@@ -232,7 +249,7 @@ onUnmounted(() => {
         class="menu-panel__search"
         type="button"
         aria-haspopup="dialog"
-        @click="openPanel('search')"
+        @click="openPanel('search', $event)"
       >
         <Search :size="18" :stroke-width="1.6" aria-hidden="true" />
         Поиск по разделам страницы
@@ -329,7 +346,8 @@ onUnmounted(() => {
   gap: 24px;
 }
 .wordmark {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   font-size: 19px;
   font-weight: 600;
   letter-spacing: 0.19em;
@@ -338,6 +356,7 @@ onUnmounted(() => {
 .wordmark img {
   display: block;
   width: min(240px, 50vw);
+  max-width: 100%;
   height: 48px;
   object-fit: contain;
   object-position: left center;
@@ -386,20 +405,15 @@ onUnmounted(() => {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
-.icon-button {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  transition: background 0.25s;
-}
-.icon-button:hover {
-  background: var(--color-beige);
+@media (max-width: 480px) {
+  .site-header__inner {
+    gap: 4px;
+  }
+  .site-header__actions {
+    gap: 0;
+  }
 }
 .backdrop {
   position: fixed;
