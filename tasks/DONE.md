@@ -8,6 +8,16 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-21 — Восстановлен локальный запуск `docker compose up --build -d`:
+недоступный PECL заменён официальным архивом PhpRedis 6.3.0 с SHA-256;
+Admin `/app/.tmp` изолирован через tmpfs от накопленных host QA artifacts,
+которые блокировали HTTP Vite. Все семь сервисов работают, PostgreSQL/Redis
+healthy; Client, Admin, Admin main/CSS и API health отвечают HTTP 200.
+Подключения Laravel к PostgreSQL/Redis и статус миграций проверены без reset.
+Изменены `compose.yaml`, `infrastructure/docker/backend/Dockerfile`,
+[`infrastructure/README.md`](../infrastructure/README.md),
+[`docs/REDIS.md`](../docs/REDIS.md) и этот индекс; API и UI не менялись.
+
 2026-10-21 — В хедер Client добавлены поиск и корзина перед кнопкой меню по
 референсу exampleSite.html. Поиск открывает существующую панель разделов;
 корзина пока неактивна по указанию владельца. UiIconButton и UI-009 закрепляют

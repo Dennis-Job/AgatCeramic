@@ -30,6 +30,12 @@ Available services:
 The `queue` and `scheduler` services are background Laravel processes. Their
 operation is documented in [`docs/QUEUE.md`](../docs/QUEUE.md).
 
+The Admin development container mounts `/app/.tmp` as an empty temporary
+filesystem. Accumulated host QA artifacts in `frontend/admin/.tmp` otherwise
+can stall Vite on Windows bind mounts even after it reports that it is ready.
+Host artifacts remain intact; files created in this container directory are
+temporary and are discarded when the container stops.
+
 Stop containers with `docker compose down`. Add `--volumes` only when local database and cache data may be discarded.
 
 Dependency volumes are synchronized with Composer/npm lock files before an application process

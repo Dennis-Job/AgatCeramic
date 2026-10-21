@@ -352,6 +352,9 @@ services:
     volumes:
       - ./frontend/admin:/app
       - admin_node_modules:/app/node_modules
+    # Host QA artifacts can stall Vite while scanning a Windows bind mount.
+    tmpfs:
+      - /app/.tmp
     ports:
       - "${ADMIN_PORT:-5173}:5173"
 

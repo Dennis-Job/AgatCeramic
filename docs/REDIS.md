@@ -11,6 +11,14 @@ Laravel использует расширение `phpredis`. В Docker backend 
 и `REDIS_PORT` для доступного экземпляра Redis (по умолчанию:
 `127.0.0.1:6379`).
 
+Dockerfile backend собирает PhpRedis 6.3.0 из официального GitHub-архива
+`phpredis/phpredis` с проверкой SHA-256. Установка не обращается к PECL:
+недоступность его channel API приводила к ошибке
+`No releases available for package "pecl.php.net/redis"` при `docker compose up --build -d`.
+При обновлении расширения изменяйте вместе `PHPREDIS_VERSION` и `PHPREDIS_SHA256`
+в `infrastructure/docker/backend/Dockerfile`. Способ сборки из исходников описан
+в [официальной инструкции PhpRedis](https://github.com/phpredis/phpredis/blob/6.3.0/INSTALL.md#installation-from-sources).
+
 ## Использование
 
 Redis — хранилище кеша по умолчанию (`CACHE_STORE=redis`). База `0` используется
