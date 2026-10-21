@@ -285,6 +285,17 @@ TASK-083 добавляет nullable `assignee_id` с `nullOnDelete` и `assigne
 хронологическое постраничное чтение. История переходов хранится отдельно в
 `contact_request_status_histories` с начальным/целевым статусом, снимком автора и `occurred_at`.
 
+### callback_mail_deliveries
+Устойчивые задачи писем по новым обратным звонкам: FK `contact_request_id` с
+`cascadeOnDelete`, получатель `admin`, статус `pending`/`sent`/`skipped`,
+число попыток, время dispatch/attempt/success. Unique `(contact_request_id, recipient)`
+защищает от повторного создания; `(status, last_dispatched_at)` поддерживает recovery.
+Контактные данные и тексты SMTP-ошибок не копируются. Очередь содержит только ID;
+успешная доставка отмечается под row lock. Удаление обращения удаляет задачи;
+после обезличивания контакт без телефона не отправляется.
+Клиентские письма отключены по решению владельца; прежние задачи с получателем,
+отличным от `admin`, безопасно помечаются `skipped` без отправки.
+
 Обращение, comments и workflow history удаляются как единый lifecycle aggregate по матрице из
 [`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Bounded service повторно проверяет
 `completed_at` и active legal hold под транзакционной блокировкой; missing terminal timestamp и

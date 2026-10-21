@@ -41,7 +41,7 @@ export async function getContacts(
   Object.entries(filters).forEach(([key, value]) => {
     if (value) query.set(key, String(value))
   })
-  withPage(query, { ...page, perPage: 25 })
+  withPage(query, { perPage: 25, ...page })
   const response = await apiFetch(`/admin/contact-requests?${query}`)
   if (!response.ok) await unwrap(response, 'Не удалось загрузить обращения.')
   return response.json() as Promise<PaginatedResponse<Contact>>

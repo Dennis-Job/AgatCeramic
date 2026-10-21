@@ -64,8 +64,19 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
     },
   }
   await page.route('**/api/v1/**', async (route) => {
-    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    const url = new URL(route.request().url())
+    const path = url.pathname.replace('/api/v1', '')
     if (route.request().method() !== 'GET') mutations.push(path)
+    if (
+      path === '/admin/contact-requests' &&
+      url.searchParams.get('per_page') === '5'
+    )
+      return route.fulfill({
+        json: {
+          data: [],
+          meta: { current_page: 1, last_page: 1, per_page: 5, total: 0 },
+        },
+      })
     if (path === '/admin/auth/me')
       return route.fulfill({
         json: {

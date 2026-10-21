@@ -10,6 +10,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('audit:prune')->daily();
 Schedule::command('storage-cleanup:retry')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('callbacks:retry-mail')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('imports:retry-dispatch')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('checkout-idempotency:prune')->hourly()->withoutOverlapping();
 Schedule::command('cart:prune')->hourly()->withoutOverlapping();

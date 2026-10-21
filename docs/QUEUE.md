@@ -42,6 +42,48 @@ reports aggregate deleted/remaining counts only. Cart writes and checkout lock t
 PostgreSQL cleanup uses `SKIP LOCKED`, leaves in-flight carts for a later run and rechecks
 `expires_at` before deletion.
 
+## Письма по обратным звонкам
+
+`POST /api/v1/callback-requests` в одной транзакции создаёт обращение и
+`callback_mail_deliveries` только для администратора. Email клиента не собирается,
+письмо клиенту не отправляется; прежние customer-задачи безопасно пропускаются.
+После commit dispatch выполняется безопасно: недоступность Redis не превращает
+сохранённую заявку в ошибку формы. `SendCallbackMail` несёт только ID доставки,
+получает актуальные контакты из БД, отправляет через настроенный Laravel mailer.
+`ADMIN_EMAIL` — адрес получателя новых заявок, не команда изменения email аккаунта
+и не источник permissions. `ADMIN_APP_URL` задаёт ссылку на обращение в письме.
+
+SMTP использует `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
+`MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME`, `MAIL_SCHEME` при необходимости.
+Для порта 465 Laravel автоматически выбирает implicit TLS; для 587 используется
+SMTP с STARTTLS согласно поддержке сервера. `MAIL_TIMEOUT=30` ограничивает операцию,
+job timeout=60 ниже Redis retry_after=90. После изменения `.env` очистить config cache
+и перезапустить долгоживущие `queue`/`scheduler`; Laravel API читает конфигурацию заново
+на запрос, если cache отсутствует. Драйвер `log` не использовать для реальных контактов.
+
+Отправка администратору выполняется с тремя попытками и backoff 30/120 секунд.
+Row lock и `status=sent` исключают повтор уже отмеченного успеха, в том числе при
+повторном dispatch. SMTP не предоставляет exactly-once: разрыв после приёма письма
+сервером до сохранения `sent_at` может привести к повтору. Transport exception
+заменяется безопасным сообщением без предыдущего exception; queue/failed_jobs не
+сохраняют адрес, пароль или тело письма. Удалённые/обезличенные обращения пропускаются.
+
+Scheduler каждые пять минут выполняет `callbacks:retry-mail`: до 100 pending записей,
+последний dispatch не позже пяти минут назад; после девяти попыток отправки
+автоматический recovery останавливается. Ручной запуск той же команды:
+
+```powershell
+docker compose exec backend php artisan callbacks:retry-mail
+```
+
+При pending сначала проверить очередь и SMTP; счётчики/статусы доступны в
+`callback_mail_deliveries`. После исправления SMTP командой
+`callbacks:retry-mail --retry-exhausted` можно явно сбросить лимит до 100 исчерпанных
+pending-доставок. Проверка лимита есть и под row lock job; успешные доставки не
+сбрасываются и повторно не отправляются.
+Пустой/некорректный `ADMIN_EMAIL` оставляет admin-доставку pending до настройки.
+Исторические обращения автоматически не рассылаются.
+
 ## Durable storage cleanup
 
 Product and product-image deletion writes one `storage_cleanup_tasks` record per

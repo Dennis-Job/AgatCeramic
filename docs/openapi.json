@@ -3190,6 +3190,7 @@
             "post": {
                 "operationId": "createCallbackRequest",
                 "summary": "Request a callback from the website",
+                "description": "Anonymous rate-limited form. No session or CSRF token required. Customer email is not accepted or notified. ADMIN_EMAIL receives the new callback notification asynchronously. Acceptance does not imply email delivery.",
                 "requestBody": {
                     "required": true,
                     "content": {

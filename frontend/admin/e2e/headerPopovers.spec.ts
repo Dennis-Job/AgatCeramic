@@ -123,7 +123,7 @@ for (const width of widths) {
         ).toHaveAttribute('href', '/settings')
       } else
         await expect(panel.getByRole('status')).toContainText(
-          'Новых уведомлений нет',
+          'Новых заявок на звонок нет',
         )
       await page.screenshot({
         path: `.tmp/header-popovers/${id.slice(1)}-${width}.png`,
@@ -167,7 +167,11 @@ test('keyboard disclosures support arrows, Escape, focus return and Tab dismissa
   await expect(page.locator('#admin-notifications-panel')).toBeVisible()
   await notifications.focus()
   await page.keyboard.press('ArrowDown')
-  await expect(page.locator('#admin-notifications-panel')).toBeFocused()
+  await expect(
+    page
+      .locator('#admin-notifications-panel')
+      .getByRole('link', { name: 'Все обращения' }),
+  ).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(notifications).toBeFocused()
   await user.focus()

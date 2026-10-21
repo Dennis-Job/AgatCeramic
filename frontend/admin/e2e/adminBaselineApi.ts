@@ -46,7 +46,15 @@ export async function mockAdminBaseline(
     route.fulfill({ status: 204 }),
   )
   await pageContext.route('**/api/v1/**', async (route) => {
-    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    const url = new URL(route.request().url())
+    const path = url.pathname.replace('/api/v1', '')
+    // Shell notifications have their own scenarios; route-state fixtures model the workspace only.
+    if (
+      path === '/admin/contact-requests' &&
+      url.searchParams.get('per_page') === '5'
+    ) {
+      return route.fulfill({ json: page([]) })
+    }
     const user = {
       id: 1,
       name: 'Тестовый администратор',

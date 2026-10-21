@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, ref, watch } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
 import {
   addContactComment,
@@ -51,6 +51,11 @@ export function useContactsWorkspace() {
   const actionError = ref('')
   const commentBody = ref('')
   const meta = ref({ current_page: 1, last_page: 1, per_page: 25, total: 0 })
+  let detailRequest = 0
+  if (getCurrentScope())
+    onScopeDispose(() => {
+      detailRequest++
+    })
   const canManage = computed(() => auth.hasPermission('contacts.manage'))
   const canManageStatus = computed(
     () =>
@@ -109,22 +114,32 @@ export function useContactsWorkspace() {
     }
   }
 
-  async function select(contact: Contact): Promise<void> {
+  async function select(contact: Pick<Contact, 'id'>): Promise<void> {
+    const request = ++detailRequest
     detailLoading.value = true
+    selected.value = null
+    history.value = []
+    comments.value = []
     actionError.value = ''
     try {
-      selected.value = await getContact(contact.id)
-      ;[history.value, comments.value] = await Promise.all([
+      const details = await getContact(contact.id)
+      if (request !== detailRequest) return
+      const [nextHistory, nextComments] = await Promise.all([
         getContactHistory(contact.id),
         getContactComments(contact.id),
       ])
+      if (request !== detailRequest) return
+      selected.value = details
+      history.value = nextHistory
+      comments.value = nextComments
     } catch (reason) {
+      if (request !== detailRequest) return
       actionError.value =
         reason instanceof Error
           ? reason.message
           : 'Не удалось загрузить детали обращения.'
     } finally {
-      detailLoading.value = false
+      if (request === detailRequest) detailLoading.value = false
     }
   }
 

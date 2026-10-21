@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AdminListDetail from '../../../components/shared/AdminListDetail.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
@@ -17,8 +18,33 @@ import ContactDetails from './ContactDetails.vue'
 import ContactsList from './ContactsList.vue'
 
 const listDetail = ref<InstanceType<typeof AdminListDetail> | null>(null)
+const list = ref<HTMLElement | null>(null)
 const workspace = useContactsWorkspace()
-onMounted(workspace.initialize)
+const route = useRoute()
+const router = useRouter()
+const initialized = ref(false)
+
+function openDetails(id: number) {
+  if (!list.value?.contains(document.activeElement)) {
+    list.value?.focus({ preventScroll: true })
+  }
+  void listDetail.value?.showDetail(() => workspace.select({ id }))
+}
+
+function selectContact(contact: { id: number }) {
+  if (route.query.contact === String(contact.id)) openDetails(contact.id)
+  else void router.replace({ query: { ...route.query, contact: contact.id } })
+}
+onMounted(async () => {
+  await workspace.initialize()
+  initialized.value = true
+})
+watch([initialized, () => route.query.contact], ([ready, value]) => {
+  if (!ready || typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return
+  const id = Number(value)
+  if (!Number.isSafeInteger(id)) return
+  openDetails(id)
+})
 </script>
 
 <template>
@@ -46,7 +72,13 @@ onMounted(workspace.initialize)
     >
     <AdminListDetail ref="listDetail">
       <template #list>
-        <div class="min-w-0">
+        <div
+          ref="list"
+          class="admin-focus min-w-0"
+          role="region"
+          aria-label="Очередь обращений"
+          tabindex="-1"
+        >
           <form
             role="search"
             class="admin-container grid gap-3 border-b border-gray-100 py-4 sm:grid-cols-2"
@@ -84,9 +116,7 @@ onMounted(workspace.initialize)
             :date="workspace.date"
             :status-name="workspace.statusName"
             :type-name="workspace.typeName"
-            @select="
-              (item) => listDetail?.showDetail(() => workspace.select(item))
-            "
+            @select="selectContact"
           />
           <UiPagination
             v-if="!workspace.error.value"

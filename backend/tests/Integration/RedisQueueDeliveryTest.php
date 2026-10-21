@@ -4,14 +4,18 @@ namespace Tests\Integration;
 
 use App\Jobs\DeleteStoredFile;
 use App\Jobs\ProcessProductImport;
+use App\Jobs\SendCallbackMail;
 use App\Jobs\SendOrderConfirmation;
+use App\Models\CallbackMailDelivery;
 use App\Models\Category;
+use App\Models\ContactRequest;
 use App\Models\ImportDispatchTask;
 use App\Models\Order;
 use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\StorageCleanupTask;
 use App\Models\User;
+use App\Services\CallbackMailService;
 use App\Services\ImportDispatchService;
 use App\Services\OrderConfirmationService;
 use App\Support\ProductWorkbookSchema;
@@ -63,6 +67,7 @@ class RedisQueueDeliveryTest extends TestCase
     {
         $this->runImportAndCleanupFlow();
         $this->runOrderConfirmationFlow();
+        $this->runCallbackConfirmationFlow();
         $this->runStaleCleanupRecoveryFlow();
         $this->runTerminalFailureFlow();
     }
@@ -156,6 +161,64 @@ class RedisQueueDeliveryTest extends TestCase
         $worker = $this->runWorker(stopWhenEmpty: true, maxTime: 15);
 
         $this->assertStringContainsString(SendOrderConfirmation::class, $worker);
+        $this->assertSame(0, $this->queueSize());
+        $this->assertDatabaseCount('failed_jobs', 0);
+    }
+
+    private function runCallbackConfirmationFlow(): void
+    {
+        $contact = DB::transaction(function (): ContactRequest {
+            $contact = ContactRequest::factory()->create([
+                'type' => 'callback',
+                'name' => 'Callback Queue Recipient',
+                'phone' => '+79991234567',
+                'email' => 'payload-sentinel-callback@example.test',
+            ]);
+            app(CallbackMailService::class)->schedule($contact);
+            $this->assertSame(0, $this->queueSize(), 'Callback mail must not be visible before commit.');
+
+            return $contact;
+        });
+
+        $deliveries = CallbackMailDelivery::query()->where('contact_request_id', $contact->id)->orderBy('id')->get();
+        $this->assertCount(1, $deliveries, 'A historical customer email must not create a customer delivery.');
+        $this->assertSame(['admin'], $deliveries->pluck('recipient')->all());
+        $this->assertSame(1, $this->queueSize());
+        $queuedIds = [];
+        foreach ($this->readyPayloads() as $payload) {
+            $job = unserialize($payload['data']['command'], ['allowed_classes' => [SendCallbackMail::class]]);
+            $this->assertInstanceOf(SendCallbackMail::class, $job);
+            $queuedIds[] = $job->deliveryId;
+            $this->assertIdentifierOnlyPayload(
+                $payload,
+                SendCallbackMail::class,
+                'deliveryId',
+                $job->deliveryId,
+                [$contact->name, $contact->phone, $contact->email, 'queue-admin@example.test'],
+            );
+        }
+        $this->assertEqualsCanonicalizing($deliveries->modelKeys(), $queuedIds);
+
+        $worker = $this->runWorker(stopWhenEmpty: true, maxTime: 15);
+        $this->assertStringContainsString(SendCallbackMail::class, $worker);
+        $this->assertSame(0, $this->queueSize());
+        foreach ($deliveries as $delivery) {
+            $delivery->refresh();
+            $this->assertSame('sent', $delivery->status);
+            $this->assertSame(1, $delivery->attempts);
+            $this->assertNotNull($delivery->sent_at);
+            SendCallbackMail::dispatch($delivery->id);
+        }
+
+        $this->assertSame(1, $this->queueSize());
+        $this->runWorker(stopWhenEmpty: true, maxTime: 15);
+        foreach ($deliveries as $delivery) {
+            $sentAt = $delivery->sent_at;
+            $delivery->refresh();
+            $this->assertSame('sent', $delivery->status);
+            $this->assertSame(1, $delivery->attempts, 'Duplicate callback delivery must not resend successful mail.');
+            $this->assertTrue($sentAt->equalTo($delivery->sent_at));
+        }
         $this->assertSame(0, $this->queueSize());
         $this->assertDatabaseCount('failed_jobs', 0);
     }
@@ -306,7 +369,10 @@ class RedisQueueDeliveryTest extends TestCase
             $command[] = '--stop-when-empty';
         }
 
-        $process = new Process($command, base_path(), null, null, $maxTime + 7);
+        $process = new Process($command, base_path(), [
+            'MAIL_MAILER' => 'array',
+            'ADMIN_EMAIL' => 'queue-admin@example.test',
+        ], null, $maxTime + 7);
         $process->run();
         $this->assertTrue($process->isSuccessful(), 'Queue worker exited unsuccessfully.');
 
