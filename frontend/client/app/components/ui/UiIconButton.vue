@@ -4,6 +4,7 @@ defineProps<{
   disabled?: boolean
   expanded?: boolean
   controls?: string
+  plain?: boolean
 }>()
 defineEmits<{ click: [event: MouseEvent] }>()
 </script>
@@ -12,6 +13,7 @@ defineEmits<{ click: [event: MouseEvent] }>()
   <button
     type="button"
     class="ui-icon-button"
+    :class="{ 'ui-icon-button--plain': plain }"
     :aria-label="label"
     :aria-expanded="expanded"
     :aria-controls="controls"
@@ -34,10 +36,15 @@ defineEmits<{ click: [event: MouseEvent] }>()
   border-radius: 50%;
   background: transparent;
   color: var(--color-ink);
-  transition: background-color 0.3s;
+  transition:
+    background-color 0.3s,
+    opacity 0.3s;
 }
-.ui-icon-button:hover:not(:disabled) {
+.ui-icon-button:hover:not(:disabled):not(.ui-icon-button--plain) {
   background: var(--color-beige);
+}
+.ui-icon-button--plain:hover:not(:disabled) {
+  opacity: 0.65;
 }
 .ui-icon-button:disabled {
   opacity: 0.55;

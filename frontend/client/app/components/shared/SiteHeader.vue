@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Menu, Search, ShoppingBag } from '@lucide/vue'
+import { Menu, Search, ShoppingBag, X } from '@lucide/vue'
 import UiCloseButton from '~/components/ui/UiCloseButton.vue'
 import UiIconButton from '~/components/ui/UiIconButton.vue'
 import UiWordmark from '~/components/ui/UiWordmark.vue'
@@ -28,7 +28,20 @@ const searchQuery = ref('')
 let panelTrigger: HTMLElement | null = null
 const menuPanel = ref<HTMLElement | null>(null)
 const searchPanel = ref<HTMLElement | null>(null)
+const searchInput = ref<HTMLInputElement | null>(null)
+const header = ref<HTMLElement | null>(null)
+const searchTop = ref(0)
+const backdropPanel = ref<Exclude<Panel, null>>('menu')
+const searchPosition = computed(() => ({
+  '--search-top': `${searchTop.value}px`,
+}))
+let headerObserver: ResizeObserver | undefined
 const leavingPanels = new Set<Element>()
+
+function updateSearchPosition() {
+  if (header.value)
+    searchTop.value = header.value.getBoundingClientRect().bottom
+}
 
 const searchResults = computed(() => {
   const query = searchQuery.value.trim().toLocaleLowerCase('ru')
@@ -43,8 +56,15 @@ function closePanel() {
   panel.value = null
 }
 
+function clearSearch() {
+  searchQuery.value = ''
+  searchInput.value?.focus({ preventScroll: true })
+}
+
 function openPanel(nextPanel: Exclude<Panel, null>, event: MouseEvent) {
   if (!panel.value) panelTrigger = event.currentTarget as HTMLElement
+  updateSearchPosition()
+  backdropPanel.value = nextPanel
   searchQuery.value = ''
   panel.value = nextPanel
 }
@@ -108,9 +128,18 @@ watch(panel, async (next) => {
 
 watch(() => route.fullPath, closePanel)
 
-onMounted(() => document.addEventListener('keydown', onKeydown))
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown)
+  window.addEventListener('resize', updateSearchPosition)
+  window.addEventListener('scroll', updateSearchPosition, { passive: true })
+  headerObserver = new ResizeObserver(updateSearchPosition)
+  if (header.value) headerObserver.observe(header.value)
+})
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('resize', updateSearchPosition)
+  window.removeEventListener('scroll', updateSearchPosition)
+  headerObserver?.disconnect()
   document.body.classList.remove('has-overlay')
 })
 </script>
@@ -119,6 +148,7 @@ onUnmounted(() => {
   <div
     v-if="$slots['topbar-right'] || content?.topbarRight"
     class="topbar"
+    :inert="panel === 'search'"
     role="region"
     aria-label="Информация магазина"
   >
@@ -130,7 +160,7 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <header class="site-header">
+  <header ref="header" class="site-header" :inert="panel === 'search'">
     <div class="container site-header__inner">
       <NuxtLink
         to="/#home"
@@ -197,6 +227,8 @@ onUnmounted(() => {
     <button
       v-if="panel"
       class="backdrop"
+      :class="{ 'backdrop--search': backdropPanel === 'search' }"
+      :style="searchPosition"
       type="button"
       tabindex="-1"
       aria-label="Закрыть панель"
@@ -269,27 +301,45 @@ onUnmounted(() => {
       id="site-search"
       ref="searchPanel"
       class="search-panel"
+      :style="searchPosition"
       tabindex="-1"
       role="dialog"
       aria-modal="true"
       aria-label="Поиск по разделам страницы"
     >
       <div class="container">
-        <div class="search-panel__top">
-          <span class="eyebrow">Поиск по разделам страницы</span>
-          <UiCloseButton label="Закрыть поиск" @click="closePanel" />
+        <div class="search-panel__row">
+          <Search
+            class="search-panel__icon"
+            :size="19"
+            :stroke-width="1.6"
+            aria-hidden="true"
+          />
+          <label class="visually-hidden" for="section-search"
+            >Поисковый запрос</label
+          >
+          <input
+            id="section-search"
+            ref="searchInput"
+            v-model="searchQuery"
+            type="search"
+            placeholder="Поиск по названию, коллекции, артикулу..."
+            autocomplete="off"
+          />
+          <UiIconButton
+            v-if="searchQuery"
+            label="Очистить поиск"
+            plain
+            @click="clearSearch"
+          >
+            <X :size="16" :stroke-width="1.2" aria-hidden="true" />
+          </UiIconButton>
         </div>
-        <label class="visually-hidden" for="section-search"
-          >Название раздела</label
+        <nav
+          v-if="searchQuery.trim()"
+          class="search-panel__results"
+          aria-label="Найденные разделы"
         >
-        <input
-          id="section-search"
-          v-model="searchQuery"
-          type="search"
-          placeholder="Например: материалы"
-          autocomplete="off"
-        />
-        <nav class="search-panel__results" aria-label="Найденные разделы">
           <NuxtLink
             v-for="link in searchResults"
             :key="link.to"
@@ -424,6 +474,9 @@ onUnmounted(() => {
   background: var(--color-overlay);
   backdrop-filter: blur(3px);
 }
+.backdrop--search {
+  top: var(--search-top);
+}
 .menu-panel,
 .search-panel {
   position: fixed;
@@ -441,8 +494,7 @@ onUnmounted(() => {
   overflow-y: auto;
   padding: 36px 48px;
 }
-.menu-panel__top,
-.search-panel__top {
+.menu-panel__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -525,35 +577,48 @@ onUnmounted(() => {
   }
 }
 .search-panel {
-  top: 0;
+  top: var(--search-top);
   right: 0;
-  bottom: 0;
   left: 0;
+  max-height: max(0px, calc(100dvh - var(--search-top)));
   overflow-y: auto;
-  padding: 40px 0 80px;
+  padding: 12px 0;
   background: var(--color-bg);
+  border-bottom: 1px solid var(--color-line);
 }
-.search-panel__top {
-  margin-bottom: 60px;
+.search-panel__row {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 20px;
+}
+.search-panel__icon {
+  flex-shrink: 0;
 }
 .search-panel input {
+  min-width: 0;
   width: 100%;
   border: 0;
-  border-bottom: 1px solid var(--field-border-color, var(--color-line));
   border-radius: 0;
-  padding: 14px 0;
+  padding: 8px 0;
   outline: 0;
   background: transparent;
   color: var(--color-ink);
-  font-size: clamp(26px, 4vw, 44px);
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.8;
+  letter-spacing: normal;
+}
+.search-panel input::-webkit-search-cancel-button {
+  appearance: none;
 }
 .search-panel__results {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 32px;
-  margin-top: 56px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-top: 20px;
 }
 .search-panel__results a {
   display: flex;
@@ -592,10 +657,10 @@ onUnmounted(() => {
     padding: 24px 20px;
   }
   .search-panel {
-    padding-top: 24px;
+    padding: 8px 0;
   }
-  .search-panel__top {
-    margin-bottom: 44px;
+  .search-panel__row {
+    gap: 12px;
   }
   .search-panel__results {
     grid-template-columns: 1fr;

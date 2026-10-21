@@ -34,15 +34,21 @@ test('page and header overlays leave controls unselected until keyboard navigati
     search.locator('input:focus, button:focus, a:focus'),
   ).toHaveCount(0)
   await page.keyboard.press('Tab')
-  await expect(
-    search.getByRole('button', { name: 'Закрыть поиск' }),
-  ).toBeFocused()
-  await page.keyboard.press('Tab')
   const input = search.getByRole('searchbox')
   await expect(input).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(input).toBeFocused()
+  await input.fill('Главная')
+  await page.keyboard.press('Tab')
+  await expect(
+    search.getByRole('button', { name: 'Очистить поиск' }),
+  ).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(input).toHaveValue('')
+  await expect(input).toBeFocused()
   await expect(input).toHaveCSS('outline-style', 'none')
-  await expect(input).toHaveCSS('border-bottom-width', '1px')
-  await expect(input).toHaveCSS('border-bottom-color', 'rgb(20, 20, 20)')
+  await expect(input).toHaveCSS('border-bottom-width', '0px')
+  await expect(input).toHaveCSS('box-shadow', 'none')
   expect(
     await input.evaluate((control) => control.matches(':focus-visible')),
   ).toBe(true)

@@ -1,8 +1,13 @@
 .ui-drawer-enter-active,
-.ui-drawer-leave-active,
+.ui-drawer-leave-active {
+  transition: transform var(--motion-panel-duration) var(--ease-out);
+}
 .ui-search-enter-active,
 .ui-search-leave-active {
-  transition: transform var(--motion-panel-duration) var(--ease-out);
+  clip-path: inset(0);
+  transition:
+    clip-path var(--motion-panel-duration) var(--ease-out),
+    opacity var(--motion-panel-duration) var(--ease-out);
 }
 .ui-drawer-enter-from,
 .ui-drawer-leave-to {
@@ -10,7 +15,8 @@
 }
 .ui-search-enter-from,
 .ui-search-leave-to {
-  transform: translateY(-102%);
+  clip-path: inset(0 0 100%);
+  opacity: 0;
 }
 .ui-backdrop-enter-active,
 .ui-backdrop-leave-active,
@@ -43,5 +49,9 @@
   .ui-modal-enter-from,
   .ui-modal-leave-to {
     transform: none;
+  }
+  .ui-search-enter-from,
+  .ui-search-leave-to {
+    clip-path: none;
   }
 }

@@ -4,6 +4,96 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
 })
 
+test('search opens as a compact full-width strip below the sticky header', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/about')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 707 })
+    await page.evaluate(() => window.scrollTo(0, 250))
+    const trigger = page.getByRole('button', { name: 'Открыть поиск' })
+    await trigger.click()
+    const search = page.locator('#site-search')
+    await expect(search).toBeFocused()
+    await expect(search).not.toHaveClass(/ui-search-enter/)
+    await expect(search).toHaveCSS('opacity', '1')
+    await expect(page.locator('.backdrop')).toHaveCSS('opacity', '1')
+    await expect(search.getByRole('searchbox')).not.toBeFocused()
+    await expect(search.getByRole('navigation')).toHaveCount(0)
+    await expect(page.locator('.topbar')).toHaveAttribute('inert', '')
+    const header = (await page.locator('.site-header').boundingBox())!
+    const strip = (await search.boundingBox())!
+    expect(Math.abs(strip.y - header.y - header.height)).toBeLessThan(1)
+    expect(strip.x).toBe(0)
+    expect(strip.width).toBe(
+      await page.evaluate(() => document.body.clientWidth),
+    )
+    expect(strip.height).toBeLessThanOrEqual(70)
+    const input = search.getByRole('searchbox')
+    await expect(input).toHaveAttribute(
+      'placeholder',
+      'Поиск по названию, коллекции, артикулу...',
+    )
+    await expect(input).toHaveCSS('border-bottom-width', '0px')
+    await expect(input).toHaveCSS('font-size', '15px')
+    await expect(input).toHaveCSS('font-weight', '400')
+    await expect(
+      search.getByRole('button', { name: 'Закрыть поиск' }),
+    ).toHaveCount(0)
+    await expect(
+      search.getByRole('button', { name: 'Очистить поиск' }),
+    ).toHaveCount(0)
+    await page.screenshot({
+      animations: 'disabled',
+      path: testInfo.outputPath(`search-strip-${width}.png`),
+    })
+    await page.keyboard.press('Tab')
+    await expect(search.getByRole('searchbox')).toBeFocused()
+    await search.getByRole('searchbox').fill('Главная')
+    const clear = search.getByRole('button', { name: 'Очистить поиск' })
+    await expect(clear).toHaveCSS('width', '44px')
+    await expect(clear.locator('svg')).toHaveAttribute('stroke-width', '1.2')
+    expect(await clear.evaluate((node) => getComputedStyle(node).color)).toBe(
+      await search
+        .locator('.search-panel__icon')
+        .evaluate((node) => getComputedStyle(node).color),
+    )
+    await clear.hover()
+    await expect(clear).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    await expect(search.getByRole('link', { name: 'Главная' })).toBeVisible()
+    await page.screenshot({
+      animations: 'disabled',
+      path: testInfo.outputPath(`search-results-${width}.png`),
+    })
+    await search.getByRole('searchbox').fill('несуществующий раздел')
+    await expect(search.getByRole('status')).toBeVisible()
+    await clear.click()
+    await expect(input).toHaveValue('')
+    await expect(input).toBeFocused()
+    await expect(search).toBeVisible()
+    await expect(search.getByRole('navigation')).toHaveCount(0)
+    await page.locator('.backdrop').click({ position: { x: 5, y: 400 } })
+    await expect(search).toHaveCount(0)
+    await expect(trigger).toBeFocused()
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+  }
+  await page.getByRole('button', { name: 'Открыть поиск' }).click()
+  await page.setViewportSize({ width: 320, height: 420 })
+  await expect
+    .poll(async () => {
+      const header = (await page.locator('.site-header').boundingBox())!
+      const search = (await page.locator('#site-search').boundingBox())!
+      return Math.abs(search.y - header.y - header.height)
+    })
+    .toBeLessThan(1)
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#site-search')).toHaveCount(0)
+})
+
 test('header actions follow the reference order, fit narrow screens and return search focus to its trigger', async ({
   page,
 }, testInfo) => {
@@ -111,7 +201,7 @@ test('header, menu and footer share a text-only wordmark without decorative symb
   }
 })
 
-test('menu, search and callback share the approved close control and hover', async ({
+test('menu and callback share the approved close control and hover', async ({
   page,
 }, testInfo) => {
   await page.goto('/about')
@@ -152,12 +242,7 @@ test('menu, search and callback share the approved close control and hover', asy
       page.getByRole('button', { name: 'Закрыть меню' }),
       `menu-${width}`,
     )
-    await page
-      .getByRole('button', { name: 'Поиск по разделам страницы' })
-      .click()
-    const searchClose = page.getByRole('button', { name: 'Закрыть поиск' })
-    await checkClose(searchClose, `search-${width}`)
-    await searchClose.click()
+    await page.keyboard.press('Escape')
     await page
       .getByRole('button', { name: 'заказать звонок', exact: true })
       .click()

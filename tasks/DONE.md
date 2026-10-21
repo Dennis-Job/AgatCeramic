@@ -8,6 +8,14 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-21 — Поиск Client заменён пробной компактной полосой под sticky header
+на всю ширину окна. После уточнений владельца: placeholder по названию/коллекции/
+артикулу, текст 15/400, без underline/close, тонкая очистка UiIconButton plain,
+padding 12/8 px. Результаты после ввода; Escape/фон/focus/motion сохранены.
+UI-010 закреплён в UI-kit/AGENTS. Build/typecheck/format, полный E2E 40/40 PASS;
+UI Design Guard accepted.
+[Файлы и проверки](../docs/CLIENT_SEARCH_STRIP_2026-10-21.md).
+
 2026-10-21 — Восстановлен локальный запуск `docker compose up --build -d`:
 недоступный PECL заменён официальным архивом PhpRedis 6.3.0 с SHA-256;
 Admin `/app/.tmp` изолирован через tmpfs от накопленных host QA artifacts,

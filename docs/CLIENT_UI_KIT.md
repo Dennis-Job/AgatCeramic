@@ -33,11 +33,11 @@ PIETRA — демонстрационное имя в образце. Бренд
 
 | Элемент | Общий источник | Где применять |
 | --- | --- | --- |
-| Крестик закрытия | [`UiCloseButton.vue`](../frontend/client/app/components/ui/UiCloseButton.vue) | Меню, поиск, модальные окна, будущие панели; изменяются только label, disabled и действие |
-| Кнопка с иконкой | [`UiIconButton.vue`](../frontend/client/app/components/ui/UiIconButton.vue) | Действия шапки: поиск, корзина, меню; круглая цель 44 px, единый hover/disabled/focus |
+| Крестик закрытия | [`UiCloseButton.vue`](../frontend/client/app/components/ui/UiCloseButton.vue) | Меню, модальные окна, будущие панели; у полосы поиска кнопки закрытия нет |
+| Кнопка с иконкой | [`UiIconButton.vue`](../frontend/client/app/components/ui/UiIconButton.vue) | Действия шапки; цель 44 px, единый hover/disabled/focus. Вариант plain для очистки поиска: без фона, hover opacity .65 |
 | Текстовое название бренда | [`UiWordmark.vue`](../frontend/client/app/components/ui/UiWordmark.vue) | Шапка, боковое меню, подвал: чистая надпись AGATCERAMIC без декоративных знаков; размеры текста наследуются от места использования |
 | Поле формы | [`UiTextField.vue`](../frontend/client/app/components/ui/UiTextField.vue) | Текст, имя, телефон; телефонная маска принадлежит компоненту |
-| Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField и крупный поиск; не копировать focus-стили в feature |
+| Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField; поисковая полоса — согласованное исключение без границ по UI-010 |
 | Модальное окно | [`UiDialog.vue`](../frontend/client/app/components/ui/UiDialog.vue) | Общий фон, размеры, focus trap, Escape, возврат фокуса и UiCloseButton |
 | Появление слоёв | [`overlays.css`](../frontend/client/app/assets/css/overlays.css), motion-токены в tokens.css | Vue Transition: drawer, search, modal, backdrop; общие длительности и кривая, без копий в feature |
 | Стабильная ширина при scroll lock | [`base.css`](../frontend/client/app/assets/css/base.css), `html { scrollbar-gutter: stable }` | Все страницы, меню, поиск и native modal; единое резервирование места под классический scrollbar |
@@ -51,15 +51,16 @@ PIETRA — демонстрационное имя в образце. Бренд
 
 | ID / дата | Правило | Реализация и проверка |
 | --- | --- | --- |
-| UI-001 / 2026-10-20 | Все крестики одинаковы: круг 44×44 px, граница 1 px line, прозрачный фон, X 16 px / stroke 1.6; hover — ink-фон и граница, белая иконка, переход 0.3 s; disabled opacity .55 без hover; клавиатурная обводка сохраняется | Только UiCloseButton; меню, поиск, UiDialog. `e2e/ui-kit.spec.ts` — default/hover, размеры, иконка; `callback.spec.ts` — disabled/Tab/Escape |
-| UI-002 / 2026-10-20 | Активное поле как footer «Ваш e-mail» в шаблоне: граница 1 px ink, без внешнего outline/тени, переход цвета 0.3 s; одинаково при клике и Tab, reduced motion учитывается | UiTextField + base.css; поиск сохраняет нижнюю границу. `callback.spec.ts` — активное поле, click/Tab и пять ширин |
+| UI-001 / 2026-10-20 | Все крестики закрытия одинаковы: круг 44×44 px, граница 1 px line, прозрачный фон, X 16 px / stroke 1.6; hover — ink-фон и граница, белая иконка, переход 0.3 s; disabled opacity .55 без hover; клавиатурная обводка сохраняется. Очистка поля — отдельное действие по UI-010 | Только UiCloseButton; меню, UiDialog. `e2e/ui-kit.spec.ts` — default/hover, размеры, иконка; `callback.spec.ts` — disabled/Tab/Escape |
+| UI-002 / 2026-10-20 | Активное поле как footer «Ваш e-mail» в шаблоне: граница 1 px ink, без внешнего outline/тени, переход цвета 0.3 s; одинаково при клике и Tab, reduced motion учитывается. По уточнению владельца поисковая полоса — исключение без границ даже при focus | UiTextField + base.css; поиск по UI-010. `callback.spec.ts` — активное поле, click/Tab и пять ширин |
 | UI-003 / 2026-10-20 | При загрузке страницы и открытии панели поля/кнопки не выделяются автоматически; начальный фокус на контейнере без обводки; Tab/Shift+Tab внутри, возврат инициатору | UiDialog, SiteHeader; `callback.spec.ts` |
 | UI-004 / 2026-10-20 | Верхняя строка: текст слева; справа «заказать звонок · email · телефон», строчная буква, без подчёркивания; разделители только у заполненных контактов | StorefrontHeader; `phone-mask.spec.ts`, `callback.spec.ts` |
 | UI-005 / 2026-10-20 | Один телефон настроек; автоматический +7 и ввод 10 цифр, вывод +7 (XXX) XXX-XX-XX, модель/API +7XXXXXXXXXX | UiTextField, utils/phone.ts, StorefrontHeader; `phone-mask.spec.ts`; глобальный контракт в корневом AGENTS |
-| UI-006 / 2026-10-20 | Плавные слои по шаблону: drawer справа translateX(102%) за .65 s, backdrop opacity .5 s, easing cubic-bezier(.22,1,.36,1); пункты .6 s с задержкой .15+i×.07 s, нижний блок .45 s. Modal opacity + translateY(20px) за .65 s, search сверху; закрытие симметричное. Reduced motion отключает движения/задержки | overlays.css + tokens.css, SiteHeader, UiDialog; `overlay-motion.spec.ts` — обычное движение, удержание слоя/scroll lock до конца, reduced motion; callback/preview регрессии |
+| UI-006 / 2026-10-20 | Плавные слои по шаблону: drawer справа translateX(102%) за .65 s, backdrop opacity .5 s, easing cubic-bezier(.22,1,.36,1); пункты .6 s с задержкой .15+i×.07 s, нижний блок .45 s. Modal opacity + translateY(20px) за .65 s; search по UI-010 плавно раскрывается сверху вниз через clip-path + opacity за .65 s под хедером, не перекрывая его; закрытие симметричное. Reduced motion отключает движения/задержки | overlays.css + tokens.css, SiteHeader, UiDialog; `overlay-motion.spec.ts` — обычное движение, удержание слоя/scroll lock до конца, reduced motion; callback/preview регрессии |
 | UI-007 / 2026-10-20 | При скрытии/возврате scrollbar ширина страницы сохраняется; общий `scrollbar-gutter: stable` на html, без локальных padding-компенсаций | base.css; `scrollbar-stability.spec.ts` — геометрия меню/поиска/modal с классическим scrollbar |
 | UI-008 / 2026-10-20 | Только текст AGATCERAMIC: AGAT — 600, CERAMIC — 400; без °, маленького SVG и других декоративных знаков. Сохраняются Inter, регистр и разрядка из утверждённого оформления | UiWordmark в SiteHeader/SiteFooter; маленький знак отменён владельцем. Загруженный через настройки основной logoUrl сохраняется по существующему контракту |
 | UI-009 / 2026-10-21 | В шапке справа порядок поиска, корзины и меню, как в референсе; общий UiIconButton 44×44 px, hover beige за .3 s, disabled .55 без hover. Search/ShoppingBag 19 px stroke1.6, существующий Menu22/stroke1.6 сохранён; desktop gap8, до480 px gap0 и межколоночный gap4 без уменьшения целей и изменения текстового бренда | SiteHeader + UiIconButton, `ui-kit.spec.ts`. Поиск открывает существующую панель разделов и возвращает focus инициатору; внутри меню — прежний возврат к menu-trigger. Корзина временно disabled с пояснением до отдельной реализации Phase10; счётчик/пустая корзина не имитируются |
+| UI-010 / 2026-10-21 | Компактная полоса поиска во всю доступную ширину окна под sticky header. Placeholder «Поиск по названию, коллекции, артикулу...». Иконка 19 px, поле как основной текст сайта: Inter 15 px / 400, line-height 1.8, обычная разрядка; без границ в default/focus, без outline/тени; строка от44 px, padding 12 px desktop / 8 px до760 px. Кнопки закрытия нет. При непустом запросе UiIconButton plain очищает поле: X16/stroke1.2, ink как иконка поиска, без фона/границы, hover opacity .65; native cancel скрыт. Очистка сохраняет открытую полосу и возвращает focus полю. Без списка до ввода; результаты ниже, до280 px с прокруткой. Начальный фокус контейнеру, Tab с поля, Escape/фон закрывают, возврат инициатору | SiteHeader, UiIconButton, overlays.css; `ui-kit.spec.ts` — пять ширин, padding/placeholder/clear, позиция/resize/overflow; `callback.spec.ts` — keyboard/focus. Backdrop под хедером; header/topbar inert при открытии. ResizeObserver/scroll/resize с cleanup; логика/API поиска не меняются |
 
 `UiDialog` остаётся native modal в top layer до завершения leave. Только затем
 закрывает dialog, восстанавливает scroll/focus и сообщает `close` родителю.
@@ -120,8 +121,9 @@ custom properties под `frontend/client/app/assets/css/`. Дальше ком�
 `--color-line` на `--color-ink` за 0.3 s, без внешнего outline и box-shadow.
 Стиль одинаков для клика и Tab; при reduced motion переход отключён общим
 правилом. Общий паттерн задан в `base.css` через `--field-border-color`;
-`UiTextField` и поиск используют его в существующей границе. Для поиска
-сохраняется только нижняя граница. Обводка кнопок и ссылок не меняется.
+`UiTextField` использует его в существующей границе. По уточнению владельца
+полоса поиска по UI-010 не имеет границ, в том числе при focus; outline и тень
+поля также отсутствуют. Обводка кнопок и ссылок не меняется.
 
 Контраст, размер клика и читаемость проверять в реальном контексте.
 Утверждённые цвета и стили самостоятельно не менять: найденную проблему
@@ -214,7 +216,7 @@ retryable error и empty: заголовок, пояснение, стандар
 | Товар | Фото близко к квадрату, короткая метаинформация, цена с реальной единицей продажи, сдержанный статус/скидка. Кнопка корзины доступна без hover и отражает loading/error/disabled. |
 | Фильтры и tabs | Текстовые controls с тонким индикатором active, достаточно крупной зоной нажатия; состояние выражено не одним цветом и доступно клавиатуре. |
 | Промо | Тёмная полноширинная секция с контрастной светлой CTA. Показывать только подтверждённые предложения и условия. |
-| Menu, search, cart | Светлые полноэкранный поиск или боковые панели поверх приглушённого backdrop; ясный заголовок, close, фокус и scroll management. Стиль панелей единый на всех маршрутах. |
+| Menu, search, cart | Светлые боковые панели; поиск — компактная полоса под хедером по UI-010 поверх приглушённого backdrop, с подписью поля для скринридера, очисткой запроса и закрытием по Escape/фону. Фокус и scroll management едины на всех маршрутах. |
 | Footer | Воздушная многоколонная сетка на светлом фоне, реальные ссылки и реквизиты, тонкий нижний разделитель; на узком экране колонки складываются. |
 
 Существующие паттерны развивать через `app/components/ui/`,
