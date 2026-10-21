@@ -8,6 +8,13 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-21 — Общие уведомления успеха Client по референсу: заявки на звонок
+и партнёрство показывают нижний toast; ошибки оставлены inline. Callback
+закрывается штатно, Partner очищает и сохраняет форму. Typecheck/build/format PASS;
+полный E2E 48 PASS + исправленный responsive assertion 1 PASS на пяти ширинах.
+Независимый UI Design Guard accepted, normal/reduced motion проверены.
+[Изменённые файлы и результаты](../docs/CLIENT_SUCCESS_NOTIFICATIONS_2026-10-21.md).
+
 2026-10-21 — В настройках разделены клиентская, партнёрская и внутренняя почта.
 Callback-письма получают адрес из `notification_email`, без fallback на ADMIN_EMAIL;
 внутренний адрес исключён из публичного API. Клиентская почта сохранена и перенесена

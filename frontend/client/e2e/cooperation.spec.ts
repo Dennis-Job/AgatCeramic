@@ -140,17 +140,14 @@ test('cooperation submits only required contact fields, blocks repeat submission
     fullPage: true,
   })
   expect(submissions).toBe(1)
+  const scrollBeforeSuccess = await page.evaluate(() => scrollY)
   complete()
-  const confirmation = page.locator('main').getByRole('status')
-  await expect(confirmation).toContainText('Предложение получено')
-  await expect(form).toHaveCount(0)
-  await expect
-    .poll(async () => {
-      const box = (await confirmation.boundingBox())!
-      const header = (await page.locator('.site-header').boundingBox())!
-      return box.y >= header.y + header.height && box.y + box.height <= 720
-    })
-    .toBe(true)
+  const confirmation = page
+    .getByRole('status')
+    .filter({ hasText: 'Предложение получено' })
+  await expect(confirmation).toHaveText(
+    'Предложение получено. Мы рассмотрим его и свяжемся с вами по указанным контактам.',
+  )
   await page.screenshot({
     path: testInfo.outputPath('cooperation-success-keyboard-viewport.png'),
   })
@@ -158,6 +155,16 @@ test('cooperation submits only required contact fields, blocks repeat submission
     path: testInfo.outputPath('cooperation-success.png'),
     fullPage: true,
   })
+  expect(
+    await confirmation.evaluate((node) => node.closest('main, dialog')),
+  ).toBeNull()
+  await expect(form).toBeVisible()
+  await expect(form.getByLabel('Ваше имя')).toHaveValue('')
+  await expect(form.getByLabel('Телефон', { exact: true })).toHaveValue('+7')
+  await expect(form.getByLabel('Email', { exact: true })).toHaveValue('')
+  await expect(form.getByLabel('Ваше предложение')).toHaveValue('')
+  await expect(send).toBeEnabled()
+  expect(await page.evaluate(() => scrollY)).toBe(scrollBeforeSuccess)
   expect(submissions).toBe(1)
   expect(page.url()).not.toContain('ivan')
   expect(
@@ -243,7 +250,7 @@ test('missing partner contacts and contact errors retain a working form and neve
   ).toBeLessThanOrEqual(320)
 })
 
-test('success confirmation remains visible below the sticky header after the form collapses', async ({
+test('success toast remains in the viewport without collapsing or scrolling the form', async ({
   page,
 }, testInfo) => {
   await page.route('**/api/v1/partner-requests', (route) =>
@@ -261,18 +268,31 @@ test('success confirmation remains visible below the sticky header after the for
     await expect(
       form.getByRole('button', { name: 'Отправить предложение' }),
     ).toBeFocused()
+    const scrollBeforeSuccess = await page.evaluate(() => scrollY)
     await page.keyboard.press('Enter')
-    const result = page.locator('main').getByRole('status')
-    await expect(result).toContainText('Предложение получено')
-    await expect
-      .poll(async () => {
-        const box = (await result.boundingBox())!
-        const header = (await page.locator('.site-header').boundingBox())!
-        return box.y >= header.y + header.height && box.y + box.height <= 720
-      })
-      .toBe(true)
+    const result = page
+      .getByRole('status')
+      .filter({ hasText: 'Предложение получено' })
+    await expect(result).toHaveText(
+      'Предложение получено. Мы рассмотрим его и свяжемся с вами по указанным контактам.',
+    )
     await page.screenshot({
       path: testInfo.outputPath(`cooperation-success-visible-${width}.png`),
     })
+    const box = (await result.boundingBox())!
+    const layoutWidth = await page.evaluate(
+      () => document.documentElement.getBoundingClientRect().width,
+    )
+    expect(box.x).toBeGreaterThanOrEqual(20)
+    expect(box.x + box.width).toBeLessThanOrEqual(layoutWidth - 20)
+    expect(box.x + box.width / 2).toBeCloseTo(layoutWidth / 2, 0)
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(720 - box.y - box.height).toBeCloseTo(32, 0)
+    expect(await page.evaluate(() => scrollY)).toBe(scrollBeforeSuccess)
+    await expect(form).toBeVisible()
+    await expect(form.getByLabel('Ваше имя')).toHaveValue('')
+    await expect(form.getByLabel('Телефон', { exact: true })).toHaveValue('+7')
+    await expect(form.getByLabel('Email', { exact: true })).toHaveValue('')
+    await expect(form.getByLabel('Ваше предложение')).toHaveValue('')
   }
 })

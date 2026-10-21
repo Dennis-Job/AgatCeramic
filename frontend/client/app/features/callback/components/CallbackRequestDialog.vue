@@ -6,6 +6,19 @@ import { useCallbackRequest } from '../composables/useCallbackRequest'
 
 const emit = defineEmits<{ close: [] }>()
 const { name, phone, busy, success, error, submit } = useCallbackRequest()
+const { showSuccess } = useSuccessNotification()
+
+async function submitRequest(close: () => void) {
+  await submit()
+  if (success.value) close()
+}
+
+function finishClose() {
+  if (success.value) {
+    showSuccess('Заявка отправлена. Мы перезвоним вам по указанному номеру.')
+  }
+  emit('close')
+}
 </script>
 
 <template>
@@ -13,19 +26,12 @@ const { name, phone, busy, success, error, submit } = useCallbackRequest()
     v-slot="{ close }"
     title="Заказать звонок"
     :busy="busy"
-    @close="emit('close')"
+    @close="finishClose"
   >
-    <div v-if="success" class="callback-result">
-      <p role="status">
-        Заявка отправлена. Мы перезвоним вам по указанному номеру.
-      </p>
-      <UiButton @click="close">Готово</UiButton>
-    </div>
     <form
-      v-else
       class="callback-form"
       :aria-busy="busy"
-      @submit.prevent="submit"
+      @submit.prevent="submitRequest(close)"
     >
       <p class="callback-description">
         Оставьте номер телефона, и сотрудник магазина свяжется с вами. Имя можно
@@ -58,8 +64,7 @@ const { name, phone, busy, success, error, submit } = useCallbackRequest()
 </template>
 
 <style scoped>
-.callback-form,
-.callback-result {
+.callback-form {
   display: grid;
   gap: 24px;
 }

@@ -7,11 +7,10 @@ export function usePartnerRequest() {
   const email = ref('')
   const message = ref('')
   const busy = ref(false)
-  const success = ref(false)
   const error = ref('')
 
   async function submit() {
-    if (busy.value || success.value) return
+    if (busy.value) return false
     busy.value = true
     error.value = ''
     try {
@@ -21,19 +20,20 @@ export function usePartnerRequest() {
         email: email.value.trim(),
         message: message.value.trim(),
       })
-      success.value = true
       name.value = ''
       phone.value = ''
       email.value = ''
       message.value = ''
+      return true
     } catch (failure) {
       error.value =
         failure instanceof Error
           ? failure.message
           : 'Не удалось отправить предложение. Попробуйте ещё раз.'
+      return false
     } finally {
       busy.value = false
     }
   }
-  return { name, phone, email, message, busy, success, error, submit }
+  return { name, phone, email, message, busy, error, submit }
 }

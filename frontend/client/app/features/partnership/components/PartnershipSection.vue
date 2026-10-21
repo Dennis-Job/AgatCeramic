@@ -5,14 +5,16 @@ import UiButton from '~/components/ui/UiButton.vue'
 import PartnerContact from './PartnerContact.vue'
 import { usePartnerRequest } from '../composables/usePartnerRequest'
 
-const { name, phone, email, message, busy, success, error, submit } =
-  usePartnerRequest()
-const result = ref<HTMLElement | null>(null)
-watch(success, async (received) => {
-  if (!received) return
-  await nextTick()
-  result.value?.scrollIntoView({ block: 'center', behavior: 'instant' })
-})
+const { name, phone, email, message, busy, error, submit } = usePartnerRequest()
+const { showSuccess } = useSuccessNotification()
+
+async function submitRequest() {
+  if (await submit()) {
+    showSuccess(
+      'Предложение получено. Мы рассмотрим его и свяжемся с вами по указанным контактам.',
+    )
+  }
+}
 </script>
 
 <template>
@@ -26,16 +28,11 @@ watch(success, async (received) => {
         </p>
         <PartnerContact />
       </div>
-      <p v-if="success" ref="result" class="partnership-result" role="status">
-        Предложение получено. Мы рассмотрим его и свяжемся с вами по указанным
-        контактам.
-      </p>
       <form
-        v-else
         class="partnership-form"
         aria-label="Предложить сотрудничество"
         :aria-busy="busy"
-        @submit.prevent="submit"
+        @submit.prevent="submitRequest"
       >
         <UiTextField
           v-model="name"

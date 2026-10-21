@@ -69,9 +69,10 @@ test('phone mask supplies fixed +7, edits ten local digits and submits canonical
   await expect(phone).toHaveValue('+7')
   await phone.pressSequentially('9991234567')
   await page.getByRole('button', { name: 'Отправить заявку' }).click()
-  await expect(page.getByRole('dialog').getByRole('status')).toContainText(
-    'Заявка отправлена',
-  )
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Заявка отправлена' }),
+  ).toHaveText('Заявка отправлена. Мы перезвоним вам по указанному номеру.')
+  await expect(page.locator('dialog')).toHaveCount(0)
 })
 
 test('paste, middle deletion, prefix protection and incomplete input work without storing a mask', async ({

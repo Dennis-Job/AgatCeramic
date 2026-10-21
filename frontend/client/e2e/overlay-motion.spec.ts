@@ -177,7 +177,7 @@ test('switching layers and closing during entry restore focus and scroll only af
   await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
 })
 
-test('successful callback uses the same animated close for Done', async ({
+test('successful callback automatically uses the same animated close', async ({
   page,
 }) => {
   await page.route('**/api/v1/callback-requests', (route) =>
@@ -190,12 +190,25 @@ test('successful callback uses the same animated close for Done', async ({
   })
   await trigger.click()
   const dialog = page.locator('dialog[open]')
+  await finishMotion(dialog)
   await dialog.getByLabel('Телефон', { exact: true }).fill('9991234567')
   await dialog.getByRole('button', { name: 'Отправить заявку' }).click()
-  await dialog.getByRole('button', { name: 'Готово' }).click()
   await expect(dialog).toBeAttached()
   await expect(dialog).toHaveAttribute('inert', '')
   await expect(page.locator('body')).toHaveCSS('overflow', 'hidden')
+  await expect
+    .poll(() =>
+      dialog.evaluate((node) =>
+        node
+          .getAnimations()
+          .some((animation) => animation.effect?.getTiming().duration === 650),
+      ),
+    )
+    .toBe(true)
   await expect(dialog).toHaveCount(0)
   await expect(trigger).toBeFocused()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Заявка отправлена' }),
+  ).toHaveText('Заявка отправлена. Мы перезвоним вам по указанному номеру.')
+  await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
 })

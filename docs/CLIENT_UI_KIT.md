@@ -43,6 +43,7 @@ PIETRA — демонстрационное имя в образце. Бренд
 | Появление слоёв | [`overlays.css`](../frontend/client/app/assets/css/overlays.css), motion-токены в tokens.css | Vue Transition: drawer, search, modal, backdrop; общие длительности и кривая, без копий в feature |
 | Стабильная ширина при scroll lock | [`base.css`](../frontend/client/app/assets/css/base.css), `html { scrollbar-gutter: stable }` | Все страницы, меню, поиск и native modal; единое резервирование места под классический scrollbar |
 | Основное действие | [`UiButton.vue`](../frontend/client/app/components/ui/UiButton.vue) | CTA, варианты dark/light; не дублировать button-стили в страницах |
+| Уведомление об успехе | [`UiSuccessNotification.vue`](../frontend/client/app/components/ui/UiSuccessNotification.vue), `useSuccessNotification` | Единый host в app.vue; успешные заявки на звонок и партнёрство, будущие подтверждения |
 
 ## Реестр утверждённых уточнений владельца
 
@@ -62,6 +63,23 @@ PIETRA — демонстрационное имя в образце. Бренд
 | UI-008 / 2026-10-20 | Только текст AGATCERAMIC: AGAT — 600, CERAMIC — 400; без °, маленького SVG и других декоративных знаков. Сохраняются Inter, регистр и разрядка из утверждённого оформления | UiWordmark в SiteHeader/SiteFooter; маленький знак отменён владельцем. Загруженный через настройки основной logoUrl сохраняется по существующему контракту |
 | UI-009 / 2026-10-21 | В шапке справа порядок поиска, корзины и меню, как в референсе; общий UiIconButton 44×44 px, hover beige за .3 s, disabled .55 без hover. Search/ShoppingBag 19 px stroke1.6, существующий Menu22/stroke1.6 сохранён; desktop gap8, до480 px gap0 и межколоночный gap4 без уменьшения целей и изменения текстового бренда | SiteHeader + UiIconButton, `ui-kit.spec.ts`. Поиск открывает существующую панель разделов и возвращает focus инициатору; внутри меню — прежний возврат к menu-trigger. Корзина временно disabled с пояснением до отдельной реализации Phase10; счётчик/пустая корзина не имитируются |
 | UI-010 / 2026-10-21 | Компактная полоса поиска во всю доступную ширину окна под sticky header. Placeholder «Поиск по названию, коллекции, артикулу...». Иконка 19 px, поле как основной текст сайта: Inter 15 px / 400, line-height 1.8, обычная разрядка; без границ в default/focus, без outline/тени; строка от44 px, padding 12 px desktop / 8 px до760 px. Кнопки закрытия нет. При непустом запросе UiIconButton plain очищает поле: X16/stroke1.2, ink как иконка поиска, без фона/границы, hover opacity .65; native cancel скрыт. Очистка сохраняет открытую полосу и возвращает focus полю. Без списка до ввода; результаты ниже, до280 px с прокруткой. Начальный фокус контейнеру, Tab с поля, Escape/фон закрывают, возврат инициатору | SiteHeader, UiIconButton, overlays.css; `ui-kit.spec.ts` — пять ширин, padding/placeholder/clear, позиция/resize/overflow; `callback.spec.ts` — keyboard/focus. Backdrop под хедером; header/topbar inert при открытии. ResizeObserver/scroll/resize с cleanup; логика/API поиска не меняются |
+| UI-011 / 2026-10-21 | Успех — нижний центрированный toast из референса; 2600 ms, плавное появление, reduced motion без движения. Callback закрывается, Partner очищает и сохраняет форму; ошибки inline сохранены. Подробности ниже | UiSuccessNotification + useSuccessNotification, app.vue; success-notification/callback/cooperation/overlay-motion/phone-mask E2E |
+
+UI-011 / 2026-10-21 — По указанию владельца подтверждение успеха повторяет toast
+из `exampleSite.html`: ink-фон, белый текст 12 px с разрядкой .1em,
+padding 15×28 px, без скругления/тени, по центру экрана снизу с отступом 32 px
+(плюс safe area), z-index 200. Появление/уход снизу за .5 s с общей ease-out;
+reduced motion отключает движение. Уведомление скрывается через 2600 ms;
+новый успех заменяет текст и перезапускает таймер. На узком экране ширина
+ограничена viewport минус 40 px, длинный текст переносится. Постоянный
+`role=status`/`aria-atomic` объявляет текст без перемещения фокуса;
+pointer-events:none сохраняет доступ к controls. Общий SSR-safe composable,
+один host в app.vue (включая preview), очистка таймера при unmount.
+Callback закрывает окно штатной leave-анимацией, затем показывает toast и
+возвращает фокус инициатору. Partner очищает и сохраняет форму на месте,
+без принудительной прокрутки. Ошибки остаются inline с `role=alert` и сохранением ввода.
+Проверки: `success-notification.spec.ts`, `callback.spec.ts`,
+`cooperation.spec.ts`, `overlay-motion.spec.ts`, `phone-mask.spec.ts`.
 
 `UiDialog` остаётся native modal в top layer до завершения leave. Только затем
 закрывает dialog, восстанавливает scroll/focus и сообщает `close` родителю.
@@ -179,7 +197,8 @@ custom properties под `frontend/client/app/assets/css/`. Дальше ком�
 закрывается по Escape/фону и возвращает фокус инициатору. Во время отправки
 поля, повторный submit и закрытие блокируются. Ошибки (включая 422/429) объявляются
 через `role=alert`, loading/success — через `role=status`; ошибку можно исправить
-без потери введённых данных. После успеха поля очищаются и убираются. Контакты
+без потери введённых данных. После успеха поля очищаются, окно закрывается,
+а подтверждение показывает общий toast по UI-011. Контакты
 клиента не попадают в URL, storage или application logs.
 
 Страница `/cooperation` использует опубликованную CMS-страницу и отдельный
@@ -192,7 +211,8 @@ custom properties под `frontend/client/app/assets/css/`. Дальше ком�
 Partner submit создаёт обращение `partner`, не отправляет письмо-подтверждение.
 Имя/email ограничены 255 символами, предложение — 2000; телефон канонический.
 Все четыре поля обязательны. Ошибки 422/429/сети сохраняют ввод, ожидание блокирует
-поля и submit, успех очищает и скрывает форму; `retry: 0` исключает автоматические повторы.
+поля и submit, успех очищает форму и показывает общий toast по UI-011,
+форма остаётся на месте; `retry: 0` исключает автоматические повторы.
 SSR/preview, пять ширин, ошибки/успех/ожидание и сохранность ввода проверяются
 в `cooperation.spec.ts`; персональные данные не записываются в URL/storage/logs.
 

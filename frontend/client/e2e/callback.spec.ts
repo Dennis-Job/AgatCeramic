@@ -107,12 +107,19 @@ test('topbar uses site contacts in SSR and submits a callback without exposing p
   await dialog.getByLabel('Ваше имя').fill('  Иван  ')
   await dialog.getByLabel('Телефон', { exact: true }).fill('+7 (999) 123-45-67')
   await dialog.getByRole('button', { name: 'Отправить заявку' }).click()
-  await expect(dialog.getByRole('status')).toContainText('Заявка отправлена')
+  const confirmation = page
+    .getByRole('status')
+    .filter({ hasText: 'Заявка отправлена' })
+  await expect(confirmation).toHaveText(
+    'Заявка отправлена. Мы перезвоним вам по указанному номеру.',
+  )
+  expect(
+    await confirmation.evaluate((node) => node.closest('main, dialog')),
+  ).toBeNull()
   expect(submissions).toBe(1)
-  await expect(dialog.getByRole('textbox')).toHaveCount(0)
-  await page.keyboard.press('Escape')
   await expect(dialog).toHaveCount(0)
   await expect(trigger).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Готово' })).toHaveCount(0)
   expect(page.url()).not.toContain('999')
   expect(issues).toEqual([])
 })
@@ -200,7 +207,10 @@ test('server validation, rate limiting and network errors preserve input and all
   await expect(dialog.getByRole('alert')).toContainText('Не удалось отправить')
   status = 201
   await dialog.getByRole('button', { name: 'Отправить заявку' }).click()
-  await expect(dialog.getByRole('status')).toContainText('Заявка отправлена')
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Заявка отправлена' }),
+  ).toHaveText('Заявка отправлена. Мы перезвоним вам по указанному номеру.')
+  await expect(page.locator('dialog')).toHaveCount(0)
 })
 
 test('empty or unavailable contacts retain the callback action and right text on every page', async ({
@@ -259,6 +269,9 @@ test('invalid input never submits and a pending submission blocks duplicates and
   await expect(dialog).toBeVisible()
   await page.screenshot({ path: '.tmp/callback-pending.png' })
   finish?.()
-  await expect(dialog.getByRole('status')).toContainText('Заявка отправлена')
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Заявка отправлена' }),
+  ).toHaveText('Заявка отправлена. Мы перезвоним вам по указанному номеру.')
+  await expect(page.locator('dialog')).toHaveCount(0)
   expect(requests).toBe(1)
 })
