@@ -12,6 +12,7 @@ class AdminSiteSettingResource extends SiteSettingResource
     {
         return [
             ...parent::toArray($request),
+            'notification_email' => $this->notification_email,
             'bank_name' => $this->bank_name,
             'bank_bik' => $this->bank_bik,
             'bank_account' => $this->bank_account,

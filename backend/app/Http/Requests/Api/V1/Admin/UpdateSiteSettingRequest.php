@@ -26,6 +26,8 @@ class UpdateSiteSettingRequest extends FormRequest
             'phones' => ['sometimes', 'array', 'list', 'max:1'],
             'phones.*' => ['required', 'string', 'regex:'.RussianPhoneNumber::PATTERN],
             'email' => ['sometimes', 'nullable', 'email:rfc', 'max:255'],
+            'partner_email' => ['sometimes', 'nullable', 'string', 'email:rfc', 'max:255'],
+            'notification_email' => ['sometimes', 'nullable', 'string', 'email:rfc', 'max:255'],
             'bank_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'bank_bik' => ['sometimes', 'nullable', 'string', 'regex:/^\d{9}$/'],
             'bank_account' => ['sometimes', 'nullable', 'string', 'regex:/^\d{20}$/'],

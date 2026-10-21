@@ -8,6 +8,16 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-21 — В настройках разделены клиентская, партнёрская и внутренняя почта.
+Callback-письма получают адрес из `notification_email`, без fallback на ADMIN_EMAIL;
+внутренний адрес исключён из публичного API. Клиентская почта сохранена и перенесена
+в начальный адрес уведомлений. Создана `/cooperation`: форма сохраняет обращения
+типа «Партнёр», партнёрский адрес заполняется отдельно в настройках.
+Backend 529 PASS/1 SKIP, PostgreSQL 20 PASS, Redis worker PASS, Admin 201 unit PASS;
+settings/baseline Windows и Linux 4/4 PASS, Client полный E2E 45/45 PASS.
+UI Design Guard accepted. Composer audit повторно недоступен по timeout Packagist.
+[Файлы, проверки и ограничения](../docs/SITE_EMAIL_DESTINATIONS_2026-10-21.md).
+
 2026-10-21 — Исправлена отправка обратного звонка с сайта (CSRF 419).
 По окончательному указанию владельца форма содержит только телефон и необязательное
 имя; письмо отправляется только на `ADMIN_EMAIL`. Durable queue сохраняет заявки

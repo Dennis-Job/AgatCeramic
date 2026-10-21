@@ -3190,7 +3190,7 @@
             "post": {
                 "operationId": "createCallbackRequest",
                 "summary": "Request a callback from the website",
-                "description": "Anonymous rate-limited form. No session or CSRF token required. Customer email is not accepted or notified. ADMIN_EMAIL receives the new callback notification asynchronously. Acceptance does not imply email delivery.",
+                "description": "Anonymous rate-limited form. No session or CSRF token required. Customer email is not accepted or notified. The current private site_settings.notification_email receives the new callback notification asynchronously, with no ADMIN_EMAIL fallback. Acceptance does not imply email delivery.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -3245,6 +3245,7 @@
             "post": {
                 "operationId": "createPartnerRequest",
                 "summary": "Submit a partnership request from the website",
+                "description": "Anonymous rate-limited cooperation form. No session or CSRF token required. Creates an admin contact request with server-assigned type partner and source website. No inbox synchronization or customer email confirmation.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -7659,6 +7660,7 @@
                     "address",
                     "phones",
                     "email",
+                    "partner_email",
                     "bank_details"
                 ],
                 "properties": {
@@ -7720,7 +7722,13 @@
                             "string",
                             "null"
                         ],
-                        "format": "email"
+                        "format": "email",
+                        "description": "Public customer contact email used throughout the storefront."
+                    },
+                    "partner_email": {
+                        "type": ["string", "null"],
+                        "format": "email",
+                        "description": "Public partnership contact email for the cooperation page. Private notification_email is never included in this public schema."
                     },
                     "bank_details": {
                         "oneOf": [
@@ -7762,6 +7770,7 @@
                     {
                         "type": "object",
                         "required": [
+                            "notification_email",
                             "bank_name",
                             "bank_bik",
                             "bank_account",
@@ -7770,6 +7779,11 @@
                             "updated_at"
                         ],
                         "properties": {
+                            "notification_email": {
+                                "type": ["string", "null"],
+                                "format": "email",
+                                "description": "Private destination for site notifications. Returned only by settings.manage-protected admin API."
+                            },
                             "bank_name": {
                                 "type": [
                                     "string",
@@ -7810,6 +7824,12 @@
             "UpdateSiteSettingsRequest": {
                 "type": "object",
                 "properties": {
+                    "partner_email": {
+                        "type": ["string", "null"], "format": "email", "maxLength": 255
+                    },
+                    "notification_email": {
+                        "type": ["string", "null"], "format": "email", "maxLength": 255
+                    },
                     "seller_name": {
                         "type": [
                             "string",

@@ -60,6 +60,7 @@ export interface SellerContacts {
   address: string | null
   phones: string[]
   email: string | null
+  partner_email?: string | null
 }
 
 export interface CatalogCategory {

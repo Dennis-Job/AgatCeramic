@@ -313,8 +313,12 @@ createServer(async (request, response) => {
     const slug = url.pathname.split('/').at(-1)
     if (slug === 'draft-only') return fail(404)
     const title =
-      { contacts: 'Контакты', about: 'О нас', catalog: 'Каталог' }[slug] ||
-      'Доставка керамической плитки и материалов для ремонта'
+      {
+        contacts: 'Контакты',
+        about: 'О нас',
+        catalog: 'Каталог',
+        cooperation: 'Сотрудничество',
+      }[slug] || 'Доставка керамической плитки и материалов для ремонта'
     let blocks =
       slug === 'contacts'
         ? [
@@ -379,7 +383,8 @@ createServer(async (request, response) => {
         title,
         slug,
         body: '',
-        blocks: scenario === 'empty-page' ? [] : blocks,
+        blocks:
+          scenario === 'empty-page' || slug === 'cooperation' ? [] : blocks,
         seo: {
           ...seo,
           title: `${title} — AgatCeramic`,
@@ -405,6 +410,14 @@ createServer(async (request, response) => {
                   : 'Тестовый адрес',
               phones: ['+7 (900) 000-00-00', '+7 (900) 111-11-11'],
               email: 'shop@example.test',
+              ...(scenario === 'legacy-contacts'
+                ? {}
+                : {
+                    partner_email:
+                      scenario === 'partner-long'
+                        ? `${'business'.repeat(25)}@example.test`
+                        : 'partners@example.test',
+                  }),
             },
     })
   }

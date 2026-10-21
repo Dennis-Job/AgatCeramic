@@ -21,6 +21,7 @@ class SiteSettingResource extends ApiResource
             'address' => $this->address,
             'phones' => $this->phones ?? [],
             'email' => $this->email,
+            'partner_email' => $this->partner_email,
             'bank_details' => $this->publish_bank_details ? [
                 'name' => $this->bank_name,
                 'bik' => $this->bank_bik,

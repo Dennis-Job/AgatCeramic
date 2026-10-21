@@ -7,6 +7,8 @@ export type SiteSettings = {
   address: string | null
   phones: string[]
   email: string | null
+  partner_email: string | null
+  notification_email: string | null
   bank_name: string | null
   bank_bik: string | null
   bank_account: string | null

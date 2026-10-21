@@ -2,12 +2,32 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Role;
+use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PartnerRequestTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_storefront_partner_form_creates_an_admin_partner_contact_without_csrf_session(): void
+    {
+        $this->app['env'] = 'local';
+        config(['sanctum.stateful' => ['localhost:3000']]);
+        $this->withHeaders(['Origin' => 'http://localhost:3000', 'Referer' => 'http://localhost:3000/cooperation'])
+            ->postJson('/api/v1/partner-requests', $this->payload('partner@example.test'))
+            ->assertCreated()->assertContent('');
+        $this->seed([RoleSeeder::class, PermissionSeeder::class]);
+        $employee = User::factory()->create();
+        $employee->roles()->attach(Role::query()->where('slug', 'order-manager')->sole());
+        $this->actingAs($employee)->getJson('/api/v1/admin/contact-requests?type=partner')
+            ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.type', 'partner')
+            ->assertJsonPath('data.0.contact.email', 'partner@example.test')
+            ->assertJsonPath('data.0.message', 'Предлагаем сотрудничество.');
+    }
 
     public function test_guest_can_create_a_partner_request_without_receiving_contact_data(): void
     {

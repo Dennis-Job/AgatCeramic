@@ -6,6 +6,7 @@ use App\Jobs\SendCallbackMail;
 use App\Mail\CallbackRequestMail;
 use App\Models\CallbackMailDelivery;
 use App\Models\ContactRequest;
+use App\Models\SiteSetting;
 use App\Services\CallbackMailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -20,7 +21,7 @@ class CallbackNotificationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['mail.callback_admin_address' => 'admin@example.test']);
+        SiteSetting::query()->whereKey(1)->update(['notification_email' => 'admin@example.test']);
         Bus::fake();
     }
 
@@ -98,6 +99,26 @@ class CallbackNotificationTest extends TestCase
         (new SendCallbackMail($delivery->id))->handle($this->app->make(CallbackMailService::class));
         Mail::assertNothingSent();
         $this->assertSame('skipped', $delivery->fresh()->status);
+    }
+
+    public function test_mail_uses_current_site_notification_email_and_never_falls_back_to_other_addresses(): void
+    {
+        Mail::fake();
+        config(['mail.callback_admin_address' => 'old-env@example.test']);
+        SiteSetting::query()->whereKey(1)->update([
+            'email' => 'customers@example.test', 'partner_email' => 'partners@example.test', 'notification_email' => null,
+        ]);
+        $contact = ContactRequest::factory()->create(['type' => 'callback']);
+        $delivery = CallbackMailDelivery::query()->create(['contact_request_id' => $contact->id, 'recipient' => 'admin']);
+        $job = new SendCallbackMail($delivery->id);
+        $job->handle($this->app->make(CallbackMailService::class));
+        Mail::assertNothingSent();
+        $this->assertSame('pending', $delivery->fresh()->status);
+        $this->assertSame(0, $delivery->fresh()->attempts);
+        SiteSetting::query()->whereKey(1)->update(['notification_email' => 'new-notifications@example.test']);
+        $job->handle($this->app->make(CallbackMailService::class));
+        Mail::assertSent(CallbackRequestMail::class, fn (CallbackRequestMail $mail): bool => $mail->hasTo('new-notifications@example.test'));
+        Mail::assertSentCount(1);
     }
 
     public function test_transport_errors_are_sanitized_and_delivery_can_be_retried(): void

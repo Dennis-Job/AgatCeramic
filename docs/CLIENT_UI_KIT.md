@@ -36,8 +36,9 @@ PIETRA — демонстрационное имя в образце. Бренд
 | Крестик закрытия | [`UiCloseButton.vue`](../frontend/client/app/components/ui/UiCloseButton.vue) | Меню, модальные окна, будущие панели; у полосы поиска кнопки закрытия нет |
 | Кнопка с иконкой | [`UiIconButton.vue`](../frontend/client/app/components/ui/UiIconButton.vue) | Действия шапки; цель 44 px, единый hover/disabled/focus. Вариант plain для очистки поиска: без фона, hover opacity .65 |
 | Текстовое название бренда | [`UiWordmark.vue`](../frontend/client/app/components/ui/UiWordmark.vue) | Шапка, боковое меню, подвал: чистая надпись AGATCERAMIC без декоративных знаков; размеры текста наследуются от места использования |
-| Поле формы | [`UiTextField.vue`](../frontend/client/app/components/ui/UiTextField.vue) | Текст, имя, телефон; телефонная маска принадлежит компоненту |
-| Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField; поисковая полоса — согласованное исключение без границ по UI-010 |
+| Поле формы | [`UiTextField.vue`](../frontend/client/app/components/ui/UiTextField.vue) | Текст, имя, email, телефон; телефонная маска принадлежит компоненту |
+| Многострочный текст | [`UiTextarea.vue`](../frontend/client/app/components/ui/UiTextarea.vue) | Подписанное поле, required/maxlength, disabled/readonly; общий focus, вертикальный resize |
+| Активное текстовое поле | [`base.css`](../frontend/client/app/assets/css/base.css), `--field-border-color` | UiTextField/UiTextarea; поисковая полоса — согласованное исключение без границ по UI-010 |
 | Модальное окно | [`UiDialog.vue`](../frontend/client/app/components/ui/UiDialog.vue) | Общий фон, размеры, focus trap, Escape, возврат фокуса и UiCloseButton |
 | Появление слоёв | [`overlays.css`](../frontend/client/app/assets/css/overlays.css), motion-токены в tokens.css | Vue Transition: drawer, search, modal, backdrop; общие длительности и кривая, без копий в feature |
 | Стабильная ширина при scroll lock | [`base.css`](../frontend/client/app/assets/css/base.css), `html { scrollbar-gutter: stable }` | Все страницы, меню, поиск и native modal; единое резервирование места под классический scrollbar |
@@ -165,7 +166,8 @@ custom properties под `frontend/client/app/assets/css/`. Дальше ком�
 Обратный звонок — отдельный feature: обязательный телефон, необязательное имя,
 отправка через существующий `POST /callback-requests` и подтверждение успеха.
 По уточнению владельца от 2026-10-21 email клиента не запрашивается, письмо
-клиенту по заявке не отправляется. Уведомление получает только `ADMIN_EMAIL`.
+клиенту по заявке не отправляется. Получатель уведомления берётся из внутренней
+«Почты для уведомлений» в настройках сайта (`notification_email`), не из `ADMIN_EMAIL`.
 `UiDialog` — общий native modal с тёплым светлым фоном, тонкой границей,
 затемнением, круглым close control и прямоугольной CTA. Ширина до 520 px,
 отступы от края 20 px; на коротком экране прокручивается сам dialog.
@@ -179,6 +181,20 @@ custom properties под `frontend/client/app/assets/css/`. Дальше ком�
 через `role=alert`, loading/success — через `role=status`; ошибку можно исправить
 без потери введённых данных. После успеха поля очищаются и убираются. Контакты
 клиента не попадают в URL, storage или application logs.
+
+Страница `/cooperation` использует опубликованную CMS-страницу и отдельный
+`partnership` feature. Контакт рядом с формой берётся из `partner_email`; общая
+почта шапки и контактов остаётся `email`. Форма имени/телефона/email/предложения
+использует общие `UiTextField`, `UiTextarea`, `UiButton`. `UiTextField type="email"`
+использует native email validation. `UiTextarea` повторяет прямоугольную геометрию,
+токены и focus полей по UI-002, имеет label, required/maxlength, disabled/readonly
+и вертикальный resize; reduced motion наследуется из общих правил.
+Partner submit создаёт обращение `partner`, не отправляет письмо-подтверждение.
+Имя/email ограничены 255 символами, предложение — 2000; телефон канонический.
+Все четыре поля обязательны. Ошибки 422/429/сети сохраняют ввод, ожидание блокирует
+поля и submit, успех очищает и скрывает форму; `retry: 0` исключает автоматические повторы.
+SSR/preview, пять ширин, ошибки/успех/ожидание и сохранность ввода проверяются
+в `cooperation.spec.ts`; персональные данные не записываются в URL/storage/logs.
 
 `UiTextField type="tel"` автоматически применяет маску `+7 (XXX) XXX-XX-XX`.
 Пустая модель отображается с `+7`; код страны не вводится и не удаляется.

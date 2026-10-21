@@ -8,7 +8,7 @@ import {
 
 const props = defineProps<{
   label: string
-  type?: 'text' | 'tel'
+  type?: 'text' | 'tel' | 'email'
   autocomplete?: string
   required?: boolean
   maxlength?: number

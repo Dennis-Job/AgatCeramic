@@ -20,8 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
-        // This anonymous, rate-limited form never authorizes actions using a session.
-        $middleware->validateCsrfTokens(except: ['api/v1/callback-requests']);
+        // These anonymous, rate-limited forms never authorize actions using a session.
+        $middleware->validateCsrfTokens(except: ['api/v1/callback-requests', 'api/v1/partner-requests']);
         $middleware->api(prepend: [ProtectContentPreviewResponse::class]);
         $middleware->throttleApi('api');
         $middleware->alias([

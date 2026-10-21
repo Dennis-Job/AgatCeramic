@@ -24,6 +24,8 @@ const emptySettings = (): SiteSettings => ({
   address: null,
   phones: [],
   email: null,
+  partner_email: null,
+  notification_email: null,
   bank_name: null,
   bank_bik: null,
   bank_account: null,

@@ -50,8 +50,10 @@ PostgreSQL cleanup uses `SKIP LOCKED`, leaves in-flight carts for a later run an
 После commit dispatch выполняется безопасно: недоступность Redis не превращает
 сохранённую заявку в ошибку формы. `SendCallbackMail` несёт только ID доставки,
 получает актуальные контакты из БД, отправляет через настроенный Laravel mailer.
-`ADMIN_EMAIL` — адрес получателя новых заявок, не команда изменения email аккаунта
-и не источник permissions. `ADMIN_APP_URL` задаёт ссылку на обращение в письме.
+Получатель новых заявок берётся из актуального `site_settings.notification_email`
+во время выполнения job. `ADMIN_EMAIL`, клиентский и партнёрский адреса не
+используются как fallback; изменение настройки применяется и к ещё не отправленным
+задачам без перезапуска worker. `ADMIN_APP_URL` задаёт ссылку на обращение в письме.
 
 SMTP использует `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
 `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME`, `MAIL_SCHEME` при необходимости.
@@ -81,7 +83,8 @@ docker compose exec backend php artisan callbacks:retry-mail
 `callbacks:retry-mail --retry-exhausted` можно явно сбросить лимит до 100 исчерпанных
 pending-доставок. Проверка лимита есть и под row lock job; успешные доставки не
 сбрасываются и повторно не отправляются.
-Пустой/некорректный `ADMIN_EMAIL` оставляет admin-доставку pending до настройки.
+Пустой/некорректный `notification_email` оставляет admin-доставку pending до настройки
+без расходования SMTP-попыток; после настройки recovery отправляет письмо.
 Исторические обращения автоматически не рассылаются.
 
 ## Durable storage cleanup

@@ -6,6 +6,7 @@ use App\Jobs\SendCallbackMail;
 use App\Mail\CallbackRequestMail;
 use App\Models\CallbackMailDelivery;
 use App\Models\ContactRequest;
+use App\Models\SiteSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -47,9 +48,9 @@ class CallbackMailService
 
                 return true;
             }
-            $address = config('mail.callback_admin_address');
+            $address = SiteSetting::query()->whereKey(1)->value('notification_email');
             if (! is_string($address) || ! filter_var($address, FILTER_VALIDATE_EMAIL)) {
-                // Keep an unconfigured admin destination pending for recovery after configuration.
+                // Keep the delivery pending until a valid notification address is configured in site settings.
                 return true;
             }
             $delivery->update(['attempts' => $delivery->attempts + 1, 'last_attempted_at' => now()]);

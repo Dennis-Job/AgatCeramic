@@ -2,6 +2,7 @@
 import type { ContentPage } from '~/types/contentPage'
 import PageBlocks from './PageBlocks.vue'
 import PageState from '~/components/shared/PageState.vue'
+import PartnershipSection from '~/features/partnership/components/PartnershipSection.vue'
 
 const props = defineProps<{ content: ContentPage }>()
 const hasHero = computed(() =>
@@ -20,7 +21,14 @@ const hasHero = computed(() =>
     :title="content.title"
     :description="content.seo.description"
   />
-  <div v-if="!content.blocks.some((block) => block.enabled)" class="container">
+  <PartnershipSection v-if="content.slug === 'cooperation'" />
+  <div
+    v-if="
+      content.slug !== 'cooperation' &&
+      !content.blocks.some((block) => block.enabled)
+    "
+    class="container"
+  >
     <PageState
       title="Содержимое пока не добавлено"
       message="Информация появится после публикации."

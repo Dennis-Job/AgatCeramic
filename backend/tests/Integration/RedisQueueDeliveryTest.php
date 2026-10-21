@@ -13,6 +13,7 @@ use App\Models\ImportDispatchTask;
 use App\Models\Order;
 use App\Models\ProductImport;
 use App\Models\Role;
+use App\Models\SiteSetting;
 use App\Models\StorageCleanupTask;
 use App\Models\User;
 use App\Services\CallbackMailService;
@@ -167,6 +168,7 @@ class RedisQueueDeliveryTest extends TestCase
 
     private function runCallbackConfirmationFlow(): void
     {
+        SiteSetting::query()->whereKey(1)->update(['notification_email' => 'queue-admin@example.test']);
         $contact = DB::transaction(function (): ContactRequest {
             $contact = ContactRequest::factory()->create([
                 'type' => 'callback',
@@ -371,7 +373,6 @@ class RedisQueueDeliveryTest extends TestCase
 
         $process = new Process($command, base_path(), [
             'MAIL_MAILER' => 'array',
-            'ADMIN_EMAIL' => 'queue-admin@example.test',
         ], null, $maxTime + 7);
         $process->run();
         $this->assertTrue($process->isSuccessful(), 'Queue worker exited unsuccessfully.');

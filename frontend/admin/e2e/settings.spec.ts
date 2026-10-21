@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures'
+import AxeBuilder from './approvedAccessibility'
 
 const settings = {
   operator_type: 'individual_entrepreneur',
@@ -9,6 +10,8 @@ const settings = {
   address: 'Москва',
   phones: ['+79990000000'],
   email: 'seller@example.test',
+  partner_email: 'partners@example.test',
+  notification_email: 'callbacks@example.test',
   bank_name: null,
   bank_bik: null,
   bank_account: null,
@@ -35,6 +38,7 @@ test('settings preserve edits after a failed save and require legal text review 
   let published = false
   let savedName = ''
   let savedPhones: string[] = []
+  let savedEmails: Record<string, string> = {}
   await page.route('**/sanctum/csrf-cookie', (route) =>
     route.fulfill({ status: 204 }),
   )
@@ -60,13 +64,19 @@ test('settings preserve edits after a failed save and require legal text review 
       saveAttempts += 1
       savedName = route.request().postDataJSON().seller_name
       savedPhones = route.request().postDataJSON().phones
+      const { email, partner_email, notification_email } = route
+        .request()
+        .postDataJSON()
+      savedEmails = { email, partner_email, notification_email }
       return saveAttempts === 1
         ? route.fulfill({
             status: 422,
             json: { error: { message: 'Проверьте реквизиты.' } },
           })
         : route.fulfill({
-            json: { data: { ...settings, seller_name: savedName } },
+            json: {
+              data: { ...settings, ...savedEmails, seller_name: savedName },
+            },
           })
     }
     if (path === '/admin/site-settings')
@@ -101,6 +111,21 @@ test('settings preserve edits after a failed save and require legal text review 
     page.getByRole('heading', { name: 'Настройки сайта' }),
   ).toBeVisible()
   const sellerName = page.getByLabel('Наименование продавца')
+  const customerEmail = page.getByRole('textbox', {
+    name: /^Email для покупателей/,
+  })
+  const partnerEmail = page.getByRole('textbox', {
+    name: /^Email для сотрудничества/,
+  })
+  const notificationEmail = page.getByRole('textbox', {
+    name: /^Email для уведомлений/,
+  })
+  await expect(customerEmail).toHaveValue('seller@example.test')
+  await expect(partnerEmail).toHaveValue('partners@example.test')
+  await expect(notificationEmail).toHaveValue('callbacks@example.test')
+  await customerEmail.fill('shop@example.test')
+  await partnerEmail.fill('business@example.test')
+  await notificationEmail.fill('staff@example.test')
   const phone = page.getByRole('textbox', { name: /^Телефон/ })
   await expect(phone).toHaveValue('+7 (999) 000-00-00')
   await phone.fill('')
@@ -115,6 +140,9 @@ test('settings preserve edits after a failed save and require legal text review 
   await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
   await expect(page.getByRole('alert')).toContainText('Проверьте реквизиты.')
   await expect(sellerName).toHaveValue('ИП Исправленный')
+  await expect(customerEmail).toHaveValue('shop@example.test')
+  await expect(partnerEmail).toHaveValue('business@example.test')
+  await expect(notificationEmail).toHaveValue('staff@example.test')
   await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
   await expect(
     page.getByText('Реквизиты сохранены.', { exact: true }),
@@ -122,6 +150,11 @@ test('settings preserve edits after a failed save and require legal text review 
   expect(saveAttempts).toBe(2)
   expect(savedName).toBe('ИП Исправленный')
   expect(savedPhones).toEqual(['+74951204567'])
+  expect(savedEmails).toEqual({
+    email: 'shop@example.test',
+    partner_email: 'business@example.test',
+    notification_email: 'staff@example.test',
+  })
 
   await page
     .getByRole('button', { name: 'Просмотреть Политика ПДн версии v1' })
@@ -232,4 +265,72 @@ test('legacy phones require explicit selection and a single masked phone remains
     page.getByText('Реквизиты сохранены.', { exact: true }),
   ).toBeVisible()
   expect(savedPhones).toEqual([])
+})
+
+test('three email settings remain accessible and usable at every width', async ({
+  page,
+}, testInfo) => {
+  await page.route('**/api/v1/**', (route) => {
+    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    if (path === '/admin/auth/me')
+      return route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            name: 'Редактор',
+            email: 'editor@example.test',
+            status: 'active',
+            permissions: ['settings.manage'],
+          },
+        },
+      })
+    if (path === '/admin/site-settings')
+      return route.fulfill({ json: { data: settings } })
+    if (
+      ['/admin/legal-documents', '/admin/compliance-approvals'].includes(path)
+    )
+      return route.fulfill({ json: { data: [] } })
+    return route.fulfill({
+      status: 404,
+      json: { error: { message: 'Unknown endpoint' } },
+    })
+  })
+  await page.goto('/settings')
+  await expect(
+    page.getByRole('textbox', { name: /^Email для уведомлений/ }),
+  ).toHaveValue('callbacks@example.test')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(page.locator('.admin-header')).toHaveCount(1)
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    await page.screenshot({
+      path: testInfo.outputPath(`settings-emails-${width}.png`),
+      fullPage: true,
+      animations: 'disabled',
+    })
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  }
+  const customer = page.getByRole('textbox', { name: /^Email для покупателей/ })
+  const partner = page.getByRole('textbox', {
+    name: /^Email для сотрудничества/,
+  })
+  const notification = page.getByRole('textbox', {
+    name: /^Email для уведомлений/,
+  })
+  await customer.focus()
+  await page.keyboard.press('Tab')
+  await expect(
+    customer.locator('..').getByRole('button', { name: 'Очистить поле' }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(partner).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
+    partner.locator('..').getByRole('button', { name: 'Очистить поле' }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(notification).toBeFocused()
 })

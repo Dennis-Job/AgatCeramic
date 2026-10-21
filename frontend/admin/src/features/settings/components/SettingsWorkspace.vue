@@ -110,7 +110,7 @@ async function confirmPublish(): Promise<void> {
     <PageHeader
       eyebrow="Контент"
       title="Настройки сайта"
-      description="Публичные реквизиты, юридические документы и внутренние согласования."
+      description="Контакты, реквизиты, юридические документы и внутренние согласования."
     />
     <UiNotification v-if="error"
       >{{ error }}
@@ -131,7 +131,8 @@ async function confirmPublish(): Promise<void> {
               Реквизиты продавца
             </h2>
             <p class="mt-1 text-sm text-gray-500">
-              Заполненные контактные поля доступны в публичном API. Банковские
+              Контакты для покупателей и сотрудничества публикуются на сайте.
+              Email для уведомлений доступен только сотрудникам. Банковские
               реквизиты открываются отдельным переключателем.
             </p>
           </div>
@@ -175,12 +176,35 @@ async function confirmPublish(): Promise<void> {
                 maxlength="15"
                 @update:model-value="settings.ogrnip = $event"
             /></UiField>
-            <UiField label="Email"
+            <UiField
+              label="Email для покупателей"
+              help="Публичный адрес для покупателей: шапка сайта, контакты и другие разделы."
               ><UiInput
                 :model-value="settings.email ?? ''"
                 type="email"
                 maxlength="255"
+                :disabled="busyAction === 'settings'"
                 @update:model-value="settings.email = $event"
+            /></UiField>
+            <UiField
+              label="Email для сотрудничества"
+              help="Публичный адрес для партнёров на странице «Сотрудничество»."
+              ><UiInput
+                :model-value="settings.partner_email ?? ''"
+                type="email"
+                maxlength="255"
+                :disabled="busyAction === 'settings'"
+                @update:model-value="settings.partner_email = $event"
+            /></UiField>
+            <UiField
+              label="Email для уведомлений"
+              help="Служебный адрес для уведомлений о заявках на обратный звонок. На сайте не публикуется."
+              ><UiInput
+                :model-value="settings.notification_email ?? ''"
+                type="email"
+                maxlength="255"
+                :disabled="busyAction === 'settings'"
+                @update:model-value="settings.notification_email = $event"
             /></UiField>
             <UiField label="Адрес"
               ><UiTextarea
