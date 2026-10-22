@@ -442,16 +442,21 @@ test('contact table stays in its container under the sliding inspector and uses 
   await page.keyboard.press('Escape')
   await expect(panel).toHaveCount(0)
   await page.setViewportSize({ width: 320, height: 800 })
-  const awaitingTab = page.getByRole('tab', { name: /^Ожидает клиента/ })
-  await awaitingTab.click()
+  await page
+    .getByRole('button', { name: 'Статус обращения', exact: true })
+    .click()
+  const statusOptions = page.getByRole('group', {
+    name: 'Статус обращения: варианты',
+  })
   await expect(
-    page.getByRole('tab', { name: /^Новое/ }).locator('.bg-success-50'),
-  ).toHaveText('1')
+    statusOptions.getByRole('button', { name: 'Новое (1)', exact: true }),
+  ).toBeVisible()
   await expect(
-    page
-      .getByRole('tab', { name: /^В обработке/ })
-      .locator('.bg-blue-light-50'),
-  ).toHaveText('1')
+    statusOptions.getByRole('button', { name: 'В обработке (1)', exact: true }),
+  ).toBeVisible()
+  await statusOptions
+    .getByRole('button', { name: 'Ожидает клиента (1)', exact: true })
+    .click()
   const awaitingOpener = page
     .getByRole('button', { name: 'Открыть обращение 182', exact: true })
     .filter({ visible: true })

@@ -151,10 +151,8 @@ async function navigate(event: KeyboardEvent) {
         /></UiButton>
         <UiInput
           v-model="year"
-          type="number"
-          min="1900"
-          max="9998"
-          step="1"
+          type="text"
+          inputmode="numeric"
           aria-label="Год"
           :aria-invalid="!validYear"
           :aria-describedby="validYear ? undefined : yearHelpId"

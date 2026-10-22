@@ -8,6 +8,19 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-22 — Убраны нативные стрелки поля года `UiMonthPicker`: сохранены
+собственные кнопки, ручной ввод и диапазон 1900–9998. UI-kit обновлён;
+237 unit и 9 целевых E2E PASS, UI Guard accepted. Полный E2E выявил
+несоответствия visual baseline и контраста вне этой правки; результаты
+и исправление старого теста мобильных вкладок отражены в
+[отчёте](../docs/ADMIN_CONTACTS_MONTHLY_STATISTICS_2026-10-22.md).
+
+2026-10-22 — На странице обращений статусы переключаются через `UiSelect`
+до 1024 px; на широких экранах остаются вкладки. Счётчики и выбранный фильтр
+сохраняются при resize. Lint/format/build, 237 unit и 16 E2E PASS;
+браузерная проверка 320–1280 px и независимый UI Design Guard accepted.
+[Подробности](../docs/ADMIN_CONTACTS_MONTHLY_STATISTICS_2026-10-22.md).
+
 2026-10-22 — Устранена 500 при создании CMS-страницы: применена оставшаяся
 миграция `add_page_indexing`, добавляющая `pages.is_indexable`. Pending migrations
 нет; создание через service проверено с откатом, PostgreSQL page tests 8/8 PASS.

@@ -31,6 +31,11 @@ const workspace = useContactsWorkspace()
 const route = useRoute()
 const router = useRouter()
 const initialized = ref(false)
+const compactStatusQuery = window.matchMedia?.('(max-width: 1023px)')
+const compactStatuses = ref(compactStatusQuery?.matches ?? false)
+function updateStatusLayout(event: MediaQueryListEvent) {
+  compactStatuses.value = event.matches
+}
 const list = ref<HTMLElement | null>(null)
 const drawerOpen = ref(false)
 const contactId = ref<number | null>(null)
@@ -47,6 +52,15 @@ const tabs = computed(() => [
     disabled: !workspace.statusReady.value,
   })),
 ])
+const statusSelectOptions = computed(() =>
+  tabs.value.map(({ value, label }) => {
+    const count =
+      workspace.statusCounts.value?.[
+        value as 'new' | 'processing' | 'awaiting_client'
+      ]
+    return { value, label: count === undefined ? label : `${label} (${count})` }
+  }),
+)
 
 function openDetails(id: number) {
   if (workspace.saving.value) return
@@ -119,12 +133,14 @@ watch([workspace.detailLoading, workspace.saving], async () => {
       ?.focus({ preventScroll: true })
 })
 onBeforeUnmount(() => {
+  compactStatusQuery?.removeEventListener('change', updateStatusLayout)
   if (previousOverflow !== null) document.body.style.overflow = previousOverflow
   if (previousPaddingRight !== null)
     document.body.style.paddingRight = previousPaddingRight
   discardResolve?.(false)
 })
 onMounted(async () => {
+  compactStatusQuery?.addEventListener('change', updateStatusLayout)
   await workspace.initialize()
   initialized.value = true
 })
@@ -182,7 +198,15 @@ watch([initialized, () => route.query.contact], ([ready, value]) => {
       tabindex="-1"
     >
       <div class="admin-container">
+        <UiSelect
+          v-if="compactStatuses"
+          v-model="workspace.status.value"
+          :options="statusSelectOptions"
+          accessible-name="Статус обращения"
+          :disabled="!workspace.statusReady.value"
+        />
         <UiTabs
+          v-else
           id="contact-status-tabs"
           v-model="workspace.status.value"
           label="Статус обращения"
@@ -212,8 +236,15 @@ watch([initialized, () => route.query.contact], ([ready, value]) => {
       </div>
       <div
         :id="`contact-status-tabs-${workspace.status.value}-panel`"
-        role="tabpanel"
-        :aria-labelledby="`contact-status-tabs-${workspace.status.value}`"
+        :role="compactStatuses ? 'region' : 'tabpanel'"
+        :aria-label="
+          compactStatuses ? 'Обращения по выбранному статусу' : undefined
+        "
+        :aria-labelledby="
+          compactStatuses
+            ? undefined
+            : `contact-status-tabs-${workspace.status.value}`
+        "
       >
         <form
           role="search"

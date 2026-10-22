@@ -334,6 +334,12 @@ test('contacts use page scrolling and the original table header pins under the s
 
   for (const width of [768, 1024, 1280, 1920]) {
     await page.setViewportSize({ width, height: 900 })
+    await expect(
+      page.getByRole(width < 1024 ? 'button' : 'tablist', {
+        name: 'Статус обращения',
+        exact: true,
+      }),
+    ).toBeVisible()
     await page.evaluate(() => window.scrollTo(0, 0))
     await expect(page.locator('.admin-header')).not.toHaveClass(/is-condensed/)
     await region.evaluate((element) => {
