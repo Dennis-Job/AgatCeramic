@@ -672,7 +672,7 @@ function submitAuthPreview(): void {
           <h3 class="text-sm font-semibold text-gray-500">Input и Textarea</h3>
           <UiField
             label="Название"
-            help="Подсказка отображается под полем."
+            help="Подсказка открывается у иконки справа от названия поля."
             required
           >
             <UiInput

@@ -199,7 +199,9 @@ test('typed blocks preserve edits, order, state and publication; upload retries 
     .getByLabel('Описание изображения для доступности')
     .fill('Образцы керамики')
   await page.getByLabel('Текст ссылки').fill('Каталог')
-  await page.getByRole('textbox', { name: /^Ссылка / }).fill('/catalog')
+  await page
+    .getByRole('textbox', { name: 'Ссылка', exact: true })
+    .fill('/catalog')
   await page.getByLabel('Загрузить файл — Изображение блока').setInputFiles({
     name: 'tile.webp',
     mimeType: 'image/webp',

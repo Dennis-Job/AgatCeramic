@@ -339,6 +339,14 @@ test('three email settings remain accessible and usable at every width', async (
     customer.locator('..').getByRole('button', { name: 'Очистить поле' }),
   ).toBeFocused()
   await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', {
+      name: 'Подсказка: Email для покупателей',
+      exact: true,
+    }),
+  ).toBeFocused()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Tab')
   const phone = page.getByRole('textbox', { name: /^Телефон/ })
   await expect(phone).toBeFocused()
   await page.keyboard.press('Tab')
@@ -346,11 +354,24 @@ test('three email settings remain accessible and usable at every width', async (
     phone.locator('..').getByRole('button', { name: 'Очистить поле' }),
   ).toBeFocused()
   await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', { name: 'Подсказка: Телефон', exact: true }),
+  ).toBeFocused()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Tab')
   await expect(notification).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(
     notification.locator('..').getByRole('button', { name: 'Очистить поле' }),
   ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', {
+      name: 'Подсказка: Email для уведомлений',
+      exact: true,
+    }),
+  ).toBeFocused()
+  await page.keyboard.press('Escape')
   await page.keyboard.press('Tab')
   await expect(
     page.getByRole('textbox', { name: 'Адрес', exact: true }),

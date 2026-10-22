@@ -255,7 +255,9 @@ test('page editor reuses and edits sliders and banners in context with guarded d
     .click()
   const creating = page.getByRole('dialog', { name: 'Новый слайдер' })
   await creating.getByLabel(/^Название/).fill('Слайдер этой страницы')
-  await creating.getByLabel('Код (slug)').fill('materials-new')
+  await creating
+    .getByRole('textbox', { name: 'Код (slug)', exact: true })
+    .fill('materials-new')
   await creating.getByRole('button', { name: 'Сохранить', exact: true }).click()
   await expect(creating).not.toBeVisible()
   await expect(

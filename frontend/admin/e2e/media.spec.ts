@@ -71,7 +71,9 @@ test('media manager uploads, edits and deletes an image', async ({
   await page.goto('/media')
   await expect(page.getByText('Файлов пока нет.')).toBeVisible()
   await page.getByLabel('Название').fill('Плитка')
-  await page.getByLabel('Alt текст').fill('Белая плитка')
+  await page
+    .getByRole('textbox', { name: 'Alt текст', exact: true })
+    .fill('Белая плитка')
   await page.locator('input[type="file"]').setInputFiles({
     name: 'tile.png',
     mimeType: 'image/png',

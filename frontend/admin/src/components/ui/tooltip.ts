@@ -14,6 +14,9 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
     const doc = el.ownerDocument
     const win = doc.defaultView!
     const id = `admin-tooltip-${++sequence}`
+    const helpMode = binding.modifiers.help === true
+    let focused = false
+    let pinned = false
     let value = binding.value
     let tooltip: HTMLDivElement | undefined
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -51,6 +54,7 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
     function hide() {
       clearTimeout(timer)
       tooltipHovered = false
+      pinned = false
       tooltip?.remove()
       tooltip = undefined
       const descriptions = (el.getAttribute('aria-describedby') || '')
@@ -62,6 +66,7 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
       win.removeEventListener('keydown', onKeydown, true)
       win.removeEventListener('resize', hide)
       doc.removeEventListener('scroll', hide, true)
+      doc.removeEventListener('pointerdown', onOutside)
     }
 
     function show() {
@@ -90,12 +95,13 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
       win.addEventListener('keydown', onKeydown, true)
       win.addEventListener('resize', hide)
       doc.addEventListener('scroll', hide, true)
+      if (helpMode) doc.addEventListener('pointerdown', onOutside)
     }
     function onKeydown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault()
         event.stopPropagation()
-        dismissed = pointerOver
+        dismissed = pointerOver || (helpMode && focused)
         hide()
       }
     }
@@ -103,6 +109,7 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
       if (event.pointerType === 'touch') return
       pointerOver = true
       clearTimeout(timer)
+      if (helpMode) timer = setTimeout(show, 300)
     }
     function onMove(event: PointerEvent) {
       if (event.pointerType === 'touch') return
@@ -128,13 +135,43 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
     function scheduleHide() {
       clearTimeout(timer)
       timer = setTimeout(() => {
-        if (!pointerOver && !tooltipHovered) {
+        if (!pointerOver && !tooltipHovered && !focused && !pinned) {
           dismissed = false
           hide()
         }
       }, 150)
     }
+    function onFocus() {
+      if (!helpMode) return
+      focused = true
+      dismissed = false
+      show()
+    }
+    function onBlur() {
+      if (!helpMode) return
+      focused = false
+      pinned = false
+      if (!pointerOver) dismissed = false
+      scheduleHide()
+    }
+    function onOutside(event: Event) {
+      const target = event.target as Node
+      if (el.contains(target) || tooltip?.contains(target)) return
+      dismissed = pointerOver || focused
+      hide()
+    }
     function onClick() {
+      if (helpMode) {
+        if (pinned) {
+          dismissed = true
+          hide()
+        } else {
+          pinned = true
+          dismissed = false
+          show()
+        }
+        return
+      }
       dismissed = pointerOver
       tooltipHovered = false
       hide()
@@ -144,6 +181,8 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerleave', onLeave)
     el.addEventListener('click', onClick)
+    el.addEventListener('focus', onFocus)
+    el.addEventListener('blur', onBlur)
     states.set(el, {
       update(next) {
         value = next
@@ -164,6 +203,8 @@ export const vTooltip: ObjectDirective<HTMLElement, TooltipValue> = {
         el.removeEventListener('pointermove', onMove)
         el.removeEventListener('pointerleave', onLeave)
         el.removeEventListener('click', onClick)
+        el.removeEventListener('focus', onFocus)
+        el.removeEventListener('blur', onBlur)
       },
     })
   },

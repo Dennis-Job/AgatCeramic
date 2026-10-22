@@ -1270,14 +1270,20 @@ test('creating a similar product requires a different name and generates a clean
     .click()
 
   const dialog = page.getByRole('dialog', { name: 'Новый товар' })
-  const nameInput = dialog.getByLabel('Название')
+  const nameInput = dialog.getByRole('textbox', {
+    name: /^Название(?:\s|$)/,
+  })
   const slugInput = dialog.getByLabel('URL (slug)')
 
   await expect(nameInput).toHaveValue('')
   await expect(slugInput).toHaveValue('')
-  await expect(
-    dialog.getByText('Укажите название, отличающееся от «Монте Тиберио».'),
-  ).toBeVisible()
+  await dialog
+    .getByRole('button', { name: 'Подсказка: Название', exact: true })
+    .hover()
+  await expect(dialog.getByRole('tooltip')).toHaveText(
+    'Укажите название, отличающееся от «Монте Тиберио».',
+  )
+  await page.keyboard.press('Escape')
   await expect(
     dialog
       .getByRole('status')
@@ -1344,7 +1350,9 @@ test('a similar product is prepared for the source product existing group', asyn
     .click()
 
   const dialog = page.getByRole('dialog', { name: 'Новый товар' })
-  await dialog.getByLabel('Название').fill('Монте Тиберио Светлый')
+  await dialog
+    .getByRole('textbox', { name: 'Название', exact: true })
+    .fill('Монте Тиберио Светлый')
   await dialog.getByRole('button', { name: 'Сохранить и продолжить' }).click()
   const savedDialog = page.getByRole('dialog', {
     name: 'Монте Тиберио Светлый',

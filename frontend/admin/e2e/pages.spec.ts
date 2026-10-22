@@ -162,8 +162,12 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   await expect(page.getByText('Страниц пока нет.')).toBeVisible()
   await page.getByRole('button', { name: 'Добавить страницу' }).click()
   await page.getByLabel('Заголовок').fill('О компании')
-  await page.getByLabel('Адрес страницы (slug)').fill('company')
-  await page.getByLabel('Текст страницы').fill('История компании.')
+  await page
+    .getByRole('textbox', { name: 'Адрес страницы (slug)', exact: true })
+    .fill('company')
+  await page
+    .getByRole('textbox', { name: 'Текст страницы', exact: true })
+    .fill('История компании.')
   await page
     .getByRole('button', { name: 'Сохранить черновик', exact: true })
     .click()
@@ -183,7 +187,9 @@ test('content editor creates a draft, publishes it, and deletes it', async ({
   expect(publishedBody).toBe('История компании.')
 
   await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
-  await page.getByLabel('Текст страницы').fill('Новая история компании.')
+  await page
+    .getByRole('textbox', { name: 'Текст страницы', exact: true })
+    .fill('Новая история компании.')
   await page
     .getByRole('button', { name: 'Сохранить черновик блоков', exact: true })
     .click()

@@ -8,6 +8,13 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-22 — Общие подсказки Admin `UiField help` перенесены к иконке «!»
+справа от label: hover/focus/tap, Escape/outside, доступный portal; ошибки inline.
+242 unit и build/lint/format PASS, 14/14 профильных macOS E2E PASS;
+Linux полный 656/657, оставшийся test-only locator исправлен и repeat 1/1 PASS.
+UI Guard accepted, 10 Darwin/Linux baseline приняты; палитра сохранена.
+[Файлы, проверки и ограничения](../docs/ADMIN_FIELD_HELP_2026-10-22.md).
+
 2026-10-22 — Убраны нативные стрелки поля года `UiMonthPicker`: сохранены
 собственные кнопки, ручной ввод и диапазон 1900–9998. UI-kit обновлён;
 237 unit и 9 целевых E2E PASS, UI Guard accepted. Полный E2E выявил
