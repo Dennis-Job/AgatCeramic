@@ -21,6 +21,20 @@ export type ContactStatusCounts = Record<
   'new' | 'processing' | 'awaiting_client',
   number
 >
+export type ContactStatisticMetric = {
+  count: number
+  previous_count: number
+  change_percent: number | null
+}
+export type ContactStatistics = {
+  month: string
+  previous_month: string
+  timezone: 'Europe/Moscow'
+  metrics: Record<
+    'partner' | 'callback' | 'completed' | 'rejected',
+    ContactStatisticMetric
+  >
+}
 export type ContactHistory = {
   id: number
   from_status: string

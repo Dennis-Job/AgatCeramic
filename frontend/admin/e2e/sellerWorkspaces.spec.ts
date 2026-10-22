@@ -204,16 +204,44 @@ for (const [path, label, cardsBelow] of [
           expect(dimensions.width).toBe(dimensions.containerWidth)
           expect(dimensions.width).toBeLessThanOrEqual(1280)
         } else expect(dimensions.width).toBe(dimensions.viewportWidth)
-        await region.evaluate((element) => {
-          element.scrollTop = 500
-          element.scrollLeft = 500
-        })
-        const top = await region.evaluate(
-          (element) =>
-            element.querySelector('th')!.getBoundingClientRect().top -
-            element.getBoundingClientRect().top,
-        )
-        expect(top).toBeCloseTo(0, 0)
+        if (path === '/contacts') {
+          expect(
+            await region.evaluate(
+              (element) => element.scrollHeight > element.clientHeight,
+            ),
+          ).toBe(false)
+          await region.evaluate((element) => {
+            window.scrollTo(
+              0,
+              element.getBoundingClientRect().top + scrollY + 200,
+            )
+            element.scrollLeft = 500
+          })
+          await expect
+            .poll(() =>
+              region
+                .locator('thead')
+                .evaluate(
+                  (element) =>
+                    element.getBoundingClientRect().top -
+                    document
+                      .querySelector('.admin-header')!
+                      .getBoundingClientRect().bottom,
+                ),
+            )
+            .toBeCloseTo(0, 0)
+        } else {
+          await region.evaluate((element) => {
+            element.scrollTop = 500
+            element.scrollLeft = 500
+          })
+          const top = await region.evaluate(
+            (element) =>
+              element.querySelector('th')!.getBoundingClientRect().top -
+              element.getBoundingClientRect().top,
+          )
+          expect(top).toBeCloseTo(0, 0)
+        }
         if (
           width >= 1280 &&
           (await region.evaluate((element) =>
@@ -237,6 +265,7 @@ for (const [path, label, cardsBelow] of [
         await region.evaluate((element) => {
           element.scrollTop = 0
           element.scrollLeft = 0
+          window.scrollTo(0, 0)
         })
         if (width === 320) {
           await region.focus()

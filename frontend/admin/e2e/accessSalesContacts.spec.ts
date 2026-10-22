@@ -1,6 +1,7 @@
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { contactStatuses } from './contactStatusFixtures'
+import { contactStatistics } from './contactStatisticsFixtures'
 import {
   createDeferredApiRequests,
   type DeferredApiRequests,
@@ -105,7 +106,8 @@ async function mockApi(page: Page, options: MockOptions = {}): Promise<void> {
     route.fulfill({ status: 204 }),
   )
   await page.route('**/api/v1/**', async (route) => {
-    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    const url = new URL(route.request().url())
+    const path = url.pathname.replace('/api/v1', '')
     await options.deferredRequests?.wait(path)
     if (failingPaths.has(path))
       return route.fulfill({
@@ -168,6 +170,12 @@ async function mockApi(page: Page, options: MockOptions = {}): Promise<void> {
     if (path === '/admin/contact-request-counts')
       return route.fulfill({
         json: { data: { new: 1, processing: 0, awaiting_client: 0 } },
+      })
+    if (path === '/admin/contact-statistics')
+      return route.fulfill({
+        json: {
+          data: contactStatistics(url.searchParams.get('month') ?? '2026-10'),
+        },
       })
     if (path === '/admin/contact-assignees')
       return route.fulfill({ json: { data: [{ id: 1, name: employee.name }] } })

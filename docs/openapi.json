@@ -3329,6 +3329,21 @@
         "/admin/contact-request-counts": {
             "get": {"operationId": "getContactRequestCounts", "summary": "Count all contacts in active statuses, independently of list filters", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Global contact counts; requires contacts.view", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCountsResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
         },
+        "/admin/contact-statistics": {
+            "get": {
+                "operationId": "getContactStatistics",
+                "summary": "Read monthly contact creation cohorts and compare the previous month",
+                "description": "Requires contacts.view. Ignores list filters. Uses full Europe/Moscow calendar months with UTC half-open created_at ranges. partner/callback count those types; completed/rejected count current statuses of contacts created in the month, across all types. Status-change dates do not determine the cohort. Metrics overlap and must not be summed. No caching or personal data.",
+                "security": [{"sanctumSession": []}],
+                "parameters": [{"name": "month", "in": "query", "required": true, "description": "Calendar month in YYYY-MM format, year 1900 through 9998 inclusive", "schema": {"type": "string", "pattern": "^(?!9999)(19[0-9]{2}|[2-9][0-9]{3})-(0[1-9]|1[0-2])$", "example": "2026-10"}}],
+                "responses": {
+                    "200": {"description": "Monthly contact statistics", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactStatisticsResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            }
+        },
         "/admin/contact-requests": {
             "get": {"operationId": "listContactRequests", "summary": "List contact requests", "security": [{"sanctumSession": []}], "parameters": [{"name": "search", "in": "query", "schema": {"type": "string"}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["callback", "email", "partner"]}}, {"name": "status", "in": "query", "schema": {"$ref": "#/components/schemas/ContactRequestStatus"}}, {"name": "assignee_id", "in": "query", "schema": {"type": "integer"}}, {"name": "unassigned", "in": "query", "schema": {"type": "boolean"}}, {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}}], "responses": {"200": {"description": "Contact requests", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
         },
@@ -9154,6 +9169,44 @@
             "ContactAssignee": {"type": "object", "required": ["id", "name"], "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}, "additionalProperties": false},
             "ContactAssigneeCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactAssignee"}}}, "additionalProperties": false},
             "ContactRequestCountsResponse": {"type": "object", "required": ["data"], "properties": {"data": {"type": "object", "required": ["new", "processing", "awaiting_client"], "properties": {"new": {"type": "integer", "minimum": 0}, "processing": {"type": "integer", "minimum": 0}, "awaiting_client": {"type": "integer", "minimum": 0}}, "additionalProperties": false}}, "additionalProperties": false},
+            "ContactStatisticMetric": {
+                "type": "object",
+                "required": ["count", "previous_count", "change_percent"],
+                "properties": {
+                    "count": {"type": "integer", "minimum": 0},
+                    "previous_count": {"type": "integer", "minimum": 0},
+                    "change_percent": {"type": ["number", "null"], "description": "(count - previous_count) / previous_count * 100 rounded to one decimal. Null when previous_count is zero and count is positive; zero when both counts are zero."}
+                },
+                "additionalProperties": false
+            },
+            "ContactStatisticsResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "required": ["month", "previous_month", "timezone", "metrics"],
+                        "properties": {
+                            "month": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"},
+                            "previous_month": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"},
+                            "timezone": {"type": "string", "enum": ["Europe/Moscow"]},
+                            "metrics": {
+                                "type": "object",
+                                "required": ["partner", "callback", "completed", "rejected"],
+                                "properties": {
+                                    "partner": {"$ref": "#/components/schemas/ContactStatisticMetric"},
+                                    "callback": {"$ref": "#/components/schemas/ContactStatisticMetric"},
+                                    "completed": {"$ref": "#/components/schemas/ContactStatisticMetric"},
+                                    "rejected": {"$ref": "#/components/schemas/ContactStatisticMetric"}
+                                },
+                                "additionalProperties": false
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            },
             "ContactStatus": {"type": "object", "required": ["code", "name", "is_terminal"], "properties": {"code": {"$ref": "#/components/schemas/ContactRequestStatus"}, "name": {"type": "string"}, "is_terminal": {"type": "boolean"}}, "additionalProperties": false},
             "ContactStatusCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactStatus"}}}, "additionalProperties": false},
             "ContactWorkflowStatus": {"type": "object", "required": ["code", "name", "is_terminal", "allowed_transitions"], "properties": {"code": {"$ref": "#/components/schemas/ContactRequestStatus"}, "name": {"type": "string"}, "is_terminal": {"type": "boolean"}, "allowed_transitions": {"type": "array", "description": "Allowed next status codes from the server workflow; empty for terminal statuses.", "items": {"$ref": "#/components/schemas/ContactRequestStatus"}, "uniqueItems": true}}, "additionalProperties": false},

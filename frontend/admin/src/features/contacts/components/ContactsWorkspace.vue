@@ -25,6 +25,7 @@ import {
 } from '../composables/useContactsWorkspace'
 import ContactDetails from './ContactDetails.vue'
 import ContactsList from './ContactsList.vue'
+import ContactStatistics from './ContactStatistics.vue'
 
 const workspace = useContactsWorkspace()
 const route = useRoute()
@@ -149,6 +150,7 @@ watch([initialized, () => route.query.contact], ([ready, value]) => {
         description="Список и обработка звонков, писем и партнёрских запросов."
       />
     </template>
+    <ContactStatistics />
     <UiNotification v-if="workspace.error.value">{{
       workspace.error.value
     }}</UiNotification>

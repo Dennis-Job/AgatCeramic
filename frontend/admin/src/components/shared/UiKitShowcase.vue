@@ -126,6 +126,7 @@ const uiComponents = [
   'UiImagePreview',
   'UiInput',
   'UiLoadingState',
+  'UiMonthPicker',
   'UiNotification',
   'UiNotificationCount',
   'UiNotificationHost',

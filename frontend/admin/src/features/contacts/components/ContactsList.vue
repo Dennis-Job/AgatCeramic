@@ -80,7 +80,7 @@ defineEmits<{ select: [contact: Contact] }>()
         class="hidden md:block"
         min-width="min-w-[960px]"
         table-class="seller-table"
-        sticky-header
+        sticky-header="page"
         label="Список обращений"
       >
         <thead class="bg-gray-25 text-xs text-gray-500">

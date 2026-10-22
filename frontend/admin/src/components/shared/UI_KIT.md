@@ -1,5 +1,20 @@
 # UI-kit Admin
 
+`UiMonthPicker` — выбор календарного месяца, значение `YYYY-MM`. Общий
+`UiPopover` отвечает за позиционирование, viewport clamp/flip, Escape и клик
+снаружи; `UiInput` позволяет ввести год, `UiButton` выбирает месяц в сетке 3×4.
+Доступны стрелки месяцев, PageUp/PageDown для года, Home/End; выбор возвращает
+фокус к trigger. Годы 1900–9998 соответствуют API; disabled не открывает popup.
+Месячная статистика обращений использует отдельный feature-компонент:
+четыре показателя в общей рамке (4 колонки от 1024 px, 2 от 640 px, 1 ниже).
+Считаются обращения по дате поступления в московском календарном месяце;
+завершённые/отклонённые — их текущие статусы. Сравнение — с предыдущим
+календарным месяцем. При нулевой базе и ненулевом значении вместо процента
+выводится «Нет базы», оба нуля дают 0%. Неполный текущий месяц явно отмечен.
+Таблица обращений использует `stickyHeader="page"`, как таблица товаров:
+прокручивается документ, оригинальный thead следует под общей шапкой и
+освобождается у нижней границы таблицы; горизонтальный scroll остаётся локальным.
+
 `UiInput type="tel"` автоматически показывает `+7` и форматирует 10 вводимых
 национальных цифр по маске `+7 (495) 120-45-67`. Поддерживает вставку номера с
 `+7`/`8`, редактирование в середине, выделение, Backspace/Delete и очистку.
@@ -185,7 +200,7 @@ Padding ячеек, sticky columns/header, локальный scroll и inset fo
 region с закреплёнными заголовками и крайними колонками от 1280 px. На узких
 экранах колонки не закрепляются. Первый и последний столбцы должны служить
 идентификации строки и действиям; feature задаёт ширины колонок.
-Для таблицы товаров `stickyHeader="page"` снимает ограничение высоты: вертикально
+Для таблиц товаров и обращений `stickyHeader="page"` снимает ограничение высоты: вертикально
 прокручивается документ, а оригинальный `thead` закрепляется под шапкой меню
 через `--admin-shell-height` только после достижения её нижней границы.
 Закрепление заканчивается у нижнего края таблицы. Горизонтальная прокрутка,
@@ -335,6 +350,7 @@ UI-kit в примере «Информационное сообщение.» р
 | `UiSelect`                                       | placeholder, search/no-results, clear, keyboard, teleport menu; disabled блокирует trigger/clear и закрывает открытое menu                |
 | `UiTextarea`                                     | default, focus, native disabled, error через `UiField`                                                                                    |
 | `UiDatePicker`                                   | input/calendar, Escape/focus return, responsive popup; disabled блокирует input/clear и закрывает открытый calendar                       |
+| `UiMonthPicker`                                  | month grid и прямой ввод года, keyboard navigation, viewport clamp/flip, Escape/focus return; disabled не открывает календарь             |
 | `UiCheckbox`, `UiRadio`                          | boolean/array mode, selected/unselected, keyboard focus, disabled через native control                                                    |
 | `UiSegmentedControl`                             | выбор одного значения, обычная/компактная ширина, счётчики текстом, синяя нижняя линия, native radio, Home/End, disabled                  |
 | `UiPopover`                                      | hover/tap, open/close, keyboard, Escape/focus return, outside close, viewport clamp/flip/scroll                                           |

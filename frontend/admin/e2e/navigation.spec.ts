@@ -2,6 +2,7 @@ import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
 import type { SiteAppearance } from '../src/features/appearance/types/appearance.types'
+import { contactStatistics } from './contactStatisticsFixtures'
 
 const allPermissions = [
   'catalog.manage',
@@ -92,6 +93,12 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
     if (path === '/admin/contact-request-counts')
       return route.fulfill({
         json: { data: { new: 0, processing: 0, awaiting_client: 0 } },
+      })
+    if (path === '/admin/contact-statistics')
+      return route.fulfill({
+        json: {
+          data: contactStatistics(url.searchParams.get('month') ?? '2026-10'),
+        },
       })
     if (path === '/admin/site-appearance')
       return route.fulfill({ json: { data: appearance } })

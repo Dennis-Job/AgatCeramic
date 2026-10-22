@@ -39,11 +39,17 @@ for (const path of stateRoutes) {
     const deferredRequests = createDeferredApiRequests()
     const request = deferredRequests.defer(stateApiPaths[path])
     await mockAdminBaseline(page, false, 'loading', deferredRequests)
+    if (path === '/contacts')
+      await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
     await page.goto(path, { waitUntil: 'commit' })
     await request.requested
     await expect(
       page.getByRole('status').filter({ hasText: 'Загрузка' }).first(),
     ).toBeVisible()
+    if (path === '/contacts')
+      await expect(
+        page.getByRole('region', { name: 'Статистика обращений', exact: true }),
+      ).toHaveAttribute('aria-busy', 'false')
     await expect(page).toHaveScreenshot(`route-${path.slice(1)}-loading.png`, {
       fullPage: true,
       animations: 'disabled',
@@ -89,6 +95,8 @@ for (const path of stateRoutes) {
       if (state === 'error')
         browserIssueGuard.allowApiError(500, /^\/api\/v1\/admin\//)
       await mockAdminBaseline(page, false, state)
+      if (path === '/contacts')
+        await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
       await page.goto(path, { waitUntil: 'networkidle' })
       if (state === 'error') {
         const error =
@@ -137,6 +145,8 @@ const authenticatedRoutes = [
 for (const [path, heading] of authenticatedRoutes) {
   test(`Admin baseline: ${path}`, async ({ page }) => {
     await mockAdminBaseline(page)
+    if (path === '/contacts')
+      await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
     await page.goto(path)
     await expect(
       page.getByRole('heading', { level: 1, name: heading }),
@@ -410,6 +420,8 @@ for (const path of [
         path.startsWith('/reset')
       if (guest) browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
       await mockAdminBaseline(page, guest)
+      if (path === '/contacts')
+        await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
 
       await page.setViewportSize({ width, height: 800 })
       await page.goto(path)

@@ -1,6 +1,7 @@
 import type { Page } from './fixtures'
 import type { DeferredApiRequests } from './deferredApi'
 import { contactStatuses } from './contactStatusFixtures'
+import { contactStatistics } from './contactStatisticsFixtures'
 
 const timestamp = '2026-09-11T10:00:00.000Z'
 const permissions = [
@@ -301,6 +302,15 @@ export async function mockAdminBaseline(
             processing: 0,
             awaiting_client: 0,
           },
+        },
+      })
+    if (path === '/admin/contact-statistics')
+      return route.fulfill({
+        json: {
+          data: contactStatistics(
+            url.searchParams.get('month') ?? '2026-10',
+            state === 'empty',
+          ),
         },
       })
     if (path === '/admin/contact-requests')

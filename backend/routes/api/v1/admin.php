@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\ComplianceApprovalController;
 use App\Http\Controllers\Api\V1\Admin\ContactAssignmentController;
 use App\Http\Controllers\Api\V1\Admin\ContactRequestController;
+use App\Http\Controllers\Api\V1\Admin\ContactStatisticsController;
 use App\Http\Controllers\Api\V1\Admin\ContentPreviewController;
 use App\Http\Controllers\Api\V1\Admin\HomePageController;
 use App\Http\Controllers\Api\V1\Admin\LegalDocumentController;
@@ -80,6 +81,7 @@ Route::get('contact-assignees', [ContactAssignmentController::class, 'candidates
 Route::get('contact-statuses', [ContactRequestController::class, 'statuses'])->name('contact-statuses.index');
 Route::get('contact-workflow', [ContactRequestController::class, 'workflow'])->name('contact-workflow.index');
 Route::get('contact-request-counts', [ContactRequestController::class, 'counts'])->name('contact-request-counts.index');
+Route::get('contact-statistics', ContactStatisticsController::class)->name('contact-statistics.index');
 Route::get('contact-requests', [ContactRequestController::class, 'index'])->name('contact-requests.index');
 Route::get('contact-requests/{contactRequest}', [ContactRequestController::class, 'show'])->name('contact-requests.show');
 Route::patch('contact-requests/{contactRequest}/status', [ContactRequestController::class, 'updateStatus'])

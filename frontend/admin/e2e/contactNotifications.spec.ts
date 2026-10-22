@@ -1,6 +1,7 @@
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { contactStatuses } from './contactStatusFixtures'
+import { contactStatistics } from './contactStatisticsFixtures'
 
 const contact = {
   id: 42,
@@ -84,6 +85,12 @@ async function mockApi(page: Page, permissions = ['contacts.view']) {
     if (path === '/admin/contact-request-counts')
       return route.fulfill({
         json: { data: { new: 8, processing: 0, awaiting_client: 0 } },
+      })
+    if (path === '/admin/contact-statistics')
+      return route.fulfill({
+        json: {
+          data: contactStatistics(url.searchParams.get('month') ?? '2026-10'),
+        },
       })
     return route.fulfill({ json: { data: [] } })
   })
