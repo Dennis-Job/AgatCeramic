@@ -94,7 +94,9 @@ for (const path of stateRoutes) {
         const error =
           path === '/products'
             ? page.getByRole('main').getByRole('alert')
-            : page.getByRole('alert')
+            : path === '/contacts'
+              ? page.getByRole('alert').first()
+              : page.getByRole('alert')
         await expect(error).toBeVisible({ timeout: 10_000 })
         if (path === '/products') {
           await expect(error).toContainText('Baseline API error')

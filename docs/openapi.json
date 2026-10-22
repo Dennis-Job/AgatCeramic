@@ -3323,6 +3323,12 @@
         "/admin/contact-statuses": {
             "get": {"operationId": "listContactStatuses", "summary": "List server-managed contact statuses", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Contact statuses", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactStatusCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
         },
+        "/admin/contact-workflow": {
+            "get": {"operationId": "listContactWorkflow", "summary": "List contact statuses with allowed workflow transitions", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Contact workflow status catalogue", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactWorkflowStatusCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
+        },
+        "/admin/contact-request-counts": {
+            "get": {"operationId": "getContactRequestCounts", "summary": "Count all contacts in active statuses, independently of list filters", "security": [{"sanctumSession": []}], "responses": {"200": {"description": "Global contact counts; requires contacts.view", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCountsResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
+        },
         "/admin/contact-requests": {
             "get": {"operationId": "listContactRequests", "summary": "List contact requests", "security": [{"sanctumSession": []}], "parameters": [{"name": "search", "in": "query", "schema": {"type": "string"}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["callback", "email", "partner"]}}, {"name": "status", "in": "query", "schema": {"$ref": "#/components/schemas/ContactRequestStatus"}}, {"name": "assignee_id", "in": "query", "schema": {"type": "integer"}}, {"name": "unassigned", "in": "query", "schema": {"type": "boolean"}}, {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}}], "responses": {"200": {"description": "Contact requests", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}
         },
@@ -9147,8 +9153,11 @@
             "ContactRequestStatus": {"type": "string", "enum": ["new", "processing", "awaiting_client", "completed", "rejected"]},
             "ContactAssignee": {"type": "object", "required": ["id", "name"], "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}, "additionalProperties": false},
             "ContactAssigneeCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactAssignee"}}}, "additionalProperties": false},
+            "ContactRequestCountsResponse": {"type": "object", "required": ["data"], "properties": {"data": {"type": "object", "required": ["new", "processing", "awaiting_client"], "properties": {"new": {"type": "integer", "minimum": 0}, "processing": {"type": "integer", "minimum": 0}, "awaiting_client": {"type": "integer", "minimum": 0}}, "additionalProperties": false}}, "additionalProperties": false},
             "ContactStatus": {"type": "object", "required": ["code", "name", "is_terminal"], "properties": {"code": {"$ref": "#/components/schemas/ContactRequestStatus"}, "name": {"type": "string"}, "is_terminal": {"type": "boolean"}}, "additionalProperties": false},
             "ContactStatusCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactStatus"}}}, "additionalProperties": false},
+            "ContactWorkflowStatus": {"type": "object", "required": ["code", "name", "is_terminal", "allowed_transitions"], "properties": {"code": {"$ref": "#/components/schemas/ContactRequestStatus"}, "name": {"type": "string"}, "is_terminal": {"type": "boolean"}, "allowed_transitions": {"type": "array", "description": "Allowed next status codes from the server workflow; empty for terminal statuses.", "items": {"$ref": "#/components/schemas/ContactRequestStatus"}, "uniqueItems": true}}, "additionalProperties": false},
+            "ContactWorkflowStatusCollection": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ContactWorkflowStatus"}}}, "additionalProperties": false},
             "ContactRequest": {
                 "type": "object",
                 "required": ["id", "type", "contact", "message", "source", "status", "assigned_at", "completed_at", "created_at"],

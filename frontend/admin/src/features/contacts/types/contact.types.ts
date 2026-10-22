@@ -10,8 +10,17 @@ export type Contact = {
   completed_at: string | null
   created_at: string
 }
-export type ContactStatus = { code: string; name: string; is_terminal: boolean }
+export type ContactStatus = {
+  code: string
+  name: string
+  is_terminal: boolean
+  allowed_transitions?: string[]
+}
 export type ContactAssignee = { id: number; name: string }
+export type ContactStatusCounts = Record<
+  'new' | 'processing' | 'awaiting_client',
+  number
+>
 export type ContactHistory = {
   id: number
   from_status: string
@@ -29,5 +38,6 @@ export type ContactFilters = {
   search?: string
   type?: string
   status?: string
+  assignee_id?: string
   unassigned?: boolean
 }

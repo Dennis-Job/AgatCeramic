@@ -278,6 +278,16 @@ describe('shared feedback and destructive confirmation', () => {
 })
 
 describe('UiDialog', () => {
+  test('Escape inside the panel requests closing only once', async () => {
+    const wrapper = mount(UiDialog, {
+      attachTo: document.body,
+      props: { open: true, labelledby: 'dialog-title' },
+      slots: { default: '<h2 id="dialog-title">Обращение</h2><input>' },
+    })
+    await wrapper.get('input').trigger('keydown', { key: 'Escape' })
+    expect(wrapper.emitted('close')).toEqual([[]])
+    wrapper.unmount()
+  })
   test('does not close when a text-selection drag starts inside the panel and ends on the backdrop', async () => {
     const wrapper = mount(UiDialog, {
       props: { open: true, labelledby: 'dialog-title' },

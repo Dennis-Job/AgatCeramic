@@ -1,5 +1,6 @@
 import type { Page } from './fixtures'
 import type { DeferredApiRequests } from './deferredApi'
+import { contactStatuses } from './contactStatusFixtures'
 
 const timestamp = '2026-09-11T10:00:00.000Z'
 const permissions = [
@@ -286,12 +287,22 @@ export async function mockAdminBaseline(
       })
     if (path === '/admin/orders')
       return route.fulfill({ json: collection([order]) })
-    if (path === '/admin/contact-statuses')
+    if (path === '/admin/contact-workflow')
       return route.fulfill({
-        json: data([{ code: 'new', name: 'Новое', is_terminal: false }]),
+        json: data(contactStatuses),
       })
     if (path === '/admin/contact-assignees')
       return route.fulfill({ json: data([{ id: 1, name: user.name }]) })
+    if (path === '/admin/contact-request-counts')
+      return route.fulfill({
+        json: {
+          data: {
+            new: state === 'empty' ? 0 : 1,
+            processing: 0,
+            awaiting_client: 0,
+          },
+        },
+      })
     if (path === '/admin/contact-requests')
       return route.fulfill({ json: collection([contact]) })
     if (path === '/admin/pages')

@@ -15,6 +15,7 @@ const props = withDefaults(
     suspended?: boolean
     overlayClass?: string
     panelClass?: string
+    transitionName?: string
   }>(),
   {
     describedby: undefined,
@@ -22,6 +23,7 @@ const props = withDefaults(
     suspended: false,
     overlayClass: 'z-50 grid place-items-center p-4',
     panelClass: '',
+    transitionName: undefined,
   },
 )
 
@@ -97,7 +99,7 @@ function resetBackdropPointer(): void {
 }
 
 function handleKeydown(event: KeyboardEvent): void {
-  if (!props.open) return
+  if (!props.open || event.defaultPrevented) return
   if (props.suspended) return
   if (event.key === 'Escape') {
     if (
@@ -140,7 +142,7 @@ watch(
         panel.value?.querySelector<HTMLElement>('[data-autofocus]') ??
         focusableElements()[0] ??
         panel.value
-      initial?.focus()
+      initial?.focus({ preventScroll: true })
     } else if (opener) {
       await nextTick()
       if (opener.isConnected) opener.focus()
@@ -162,28 +164,30 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    v-if="open"
-    class="admin-dialog-overlay fixed inset-0"
-    :class="overlayClass"
-    :aria-hidden="suspended ? 'true' : undefined"
-    :inert="suspended ? true : undefined"
-    @pointerdown="handleBackdropPointerDown"
-    @pointerup="handleBackdropPointerUp"
-    @pointercancel="resetBackdropPointer"
-    @keydown="handleKeydown"
-  >
-    <section
-      ref="panel"
-      class="admin-dialog-content"
-      :class="panelClass"
-      :role="suspended ? undefined : 'dialog'"
-      :aria-modal="suspended ? undefined : 'true'"
-      :aria-labelledby="suspended ? undefined : labelledby"
-      :aria-describedby="suspended ? undefined : describedby"
-      tabindex="-1"
+  <Transition :name="transitionName" :css="Boolean(transitionName)">
+    <div
+      v-if="open"
+      class="admin-dialog-overlay fixed inset-0"
+      :class="overlayClass"
+      :aria-hidden="suspended ? 'true' : undefined"
+      :inert="suspended ? true : undefined"
+      @pointerdown="handleBackdropPointerDown"
+      @pointerup="handleBackdropPointerUp"
+      @pointercancel="resetBackdropPointer"
+      @keydown="handleKeydown"
     >
-      <slot />
-    </section>
-  </div>
+      <section
+        ref="panel"
+        class="admin-dialog-content"
+        :class="panelClass"
+        :role="suspended ? undefined : 'dialog'"
+        :aria-modal="suspended ? undefined : 'true'"
+        :aria-labelledby="suspended ? undefined : labelledby"
+        :aria-describedby="suspended ? undefined : describedby"
+        tabindex="-1"
+      >
+        <slot />
+      </section>
+    </div>
+  </Transition>
 </template>

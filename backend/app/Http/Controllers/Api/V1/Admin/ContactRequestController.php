@@ -44,6 +44,13 @@ class ContactRequestController extends Controller
         return new ContactRequestResource($this->contactRequests->prepare($contactRequest));
     }
 
+    public function counts(): JsonResponse
+    {
+        Gate::authorize('viewAny', ContactRequest::class);
+
+        return response()->json(['data' => $this->contactRequests->statusCounts()]);
+    }
+
     public function statuses(): JsonResponse
     {
         Gate::authorize('viewAny', ContactRequest::class);
@@ -52,6 +59,18 @@ class ContactRequestController extends Controller
             'code' => $status->value,
             'name' => $status->label(),
             'is_terminal' => $status->isTerminal(),
+        ], ContactRequestStatus::cases())]);
+    }
+
+    public function workflow(): JsonResponse
+    {
+        Gate::authorize('viewAny', ContactRequest::class);
+
+        return response()->json(['data' => array_map(static fn (ContactRequestStatus $status): array => [
+            'code' => $status->value,
+            'name' => $status->label(),
+            'is_terminal' => $status->isTerminal(),
+            'allowed_transitions' => array_map(static fn (ContactRequestStatus $target): string => $target->value, $status->allowedTransitions()),
         ], ContactRequestStatus::cases())]);
     }
 

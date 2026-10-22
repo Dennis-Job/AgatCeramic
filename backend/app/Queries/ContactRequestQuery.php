@@ -5,9 +5,26 @@ namespace App\Queries;
 use App\Models\ContactRequest;
 use App\Support\RussianPhoneNumber;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class ContactRequestQuery
 {
+    /** @return array{new: int, processing: int, awaiting_client: int} */
+    public function statusCounts(): array
+    {
+        /** @var Collection<string, int|numeric-string> $counts */
+        $counts = ContactRequest::query()
+            ->selectRaw('status, COUNT(*) as total')
+            ->whereIn('status', ['new', 'processing', 'awaiting_client'])
+            ->groupBy('status')->toBase()->pluck('total', 'status');
+
+        return [
+            'new' => (int) ($counts['new'] ?? 0),
+            'processing' => (int) ($counts['processing'] ?? 0),
+            'awaiting_client' => (int) ($counts['awaiting_client'] ?? 0),
+        ];
+    }
+
     /**
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, ContactRequest>

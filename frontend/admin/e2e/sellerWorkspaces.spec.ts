@@ -193,12 +193,17 @@ for (const [path, label, cardsBelow] of [
         const dimensions = await region.evaluate((element) => ({
           width: element.clientWidth,
           viewportWidth: document.documentElement.clientWidth,
+          containerWidth: element.closest('.admin-container')?.clientWidth,
           cellsOverflow: Array.from(
             element.querySelectorAll('tbody td'),
           ).filter((cell) => cell.scrollWidth > cell.clientWidth).length,
         }))
         expect(dimensions.cellsOverflow, `${path} cells at ${width}`).toBe(0)
-        expect(dimensions.width).toBe(dimensions.viewportWidth)
+        if (path === '/contacts') {
+          expect(dimensions.containerWidth).toBeDefined()
+          expect(dimensions.width).toBe(dimensions.containerWidth)
+          expect(dimensions.width).toBeLessThanOrEqual(1280)
+        } else expect(dimensions.width).toBe(dimensions.viewportWidth)
         await region.evaluate((element) => {
           element.scrollTop = 500
           element.scrollLeft = 500
@@ -281,7 +286,48 @@ for (const [path, label, cardsBelow] of [
     const region = page.getByRole('region', { name: label, exact: true })
     await region.focus()
     await expect(region).toBeFocused()
-    if (['/orders', '/contacts'].includes(path)) {
+    if (path === '/contacts') {
+      const opener = region.getByRole('button', {
+        name: 'Открыть обращение 1',
+        exact: true,
+      })
+      await opener.focus()
+      await page.keyboard.press('Enter')
+      const dialog = page.getByRole('dialog', {
+        name: 'Обращение #1',
+        exact: true,
+      })
+      await expect(dialog).toBeVisible()
+      await expect(page.locator('.contacts-panel-enter-active')).toHaveCount(0)
+      await expect(
+        dialog.getByRole('heading', { name: 'Обращение #1', exact: true }),
+      ).toBeFocused()
+      await expect(region).toBeVisible()
+      await expect(page.locator('.admin-list-detail')).toHaveCount(0)
+      for (const width of widths) {
+        await page.setViewportSize({ width, height: 900 })
+        await expect(dialog).toBeInViewport()
+        const bounds = await dialog.boundingBox()
+        expect(bounds).not.toBeNull()
+        expect(bounds!.width).toBeCloseTo(Math.min(544, width), 2)
+        expect(bounds!.x + bounds!.width).toBeCloseTo(width, 2)
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+          `selected ${path} at ${width}`,
+        ).toBe(true)
+        await dialog.screenshot({
+          path: `.tmp/a060-visual/contacts-selected-${width}.png`,
+        })
+      }
+      await page.setViewportSize({ width: 1280, height: 900 })
+      await dialog.getByRole('button', { name: 'Закрыть обращение' }).click()
+      await expect(dialog).toHaveCount(0)
+      await expect(page).toHaveURL(/\/contacts$/)
+      await expect(opener).toBeFocused()
+      await expect(opener).toBeInViewport()
+    } else if (path === '/orders') {
       const opener = region.getByRole('button').first()
       await opener.focus()
       await page.keyboard.press('Enter')

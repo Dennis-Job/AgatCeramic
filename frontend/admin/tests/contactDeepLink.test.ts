@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
   getContacts: vi.fn(),
   getContact: vi.fn(),
   getContactStatuses: vi.fn(),
+  getContactStatusCounts: vi.fn(),
   getContactAssignees: vi.fn(),
   getContactHistory: vi.fn(),
   getContactComments: vi.fn(),
@@ -48,6 +49,11 @@ beforeEach(() => {
     meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 },
   })
   api.getContactStatuses.mockResolvedValue([])
+  api.getContactStatusCounts.mockResolvedValue({
+    new: 0,
+    processing: 0,
+    awaiting_client: 0,
+  })
   api.getContact.mockImplementation(async (id: number) => contact(id))
   api.getContactHistory.mockResolvedValue([])
   api.getContactComments.mockResolvedValue([])

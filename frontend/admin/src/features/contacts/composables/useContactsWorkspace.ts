@@ -10,6 +10,7 @@ import {
   getContactHistory,
   getContacts,
   getContactStatuses,
+  getContactStatusCounts,
   updateContactStatus,
 } from '../services/contacts'
 import type {
@@ -18,6 +19,7 @@ import type {
   ContactComment,
   ContactHistory,
   ContactStatus,
+  ContactStatusCounts,
 } from '../types/contact.types'
 
 export const contactTypeOptions = [
@@ -32,6 +34,8 @@ export function useContactsWorkspace() {
   const contacts = ref<Contact[]>([])
   const selected = ref<Contact | null>(null)
   const statuses = ref<ContactStatus[]>([])
+  const statusCounts = ref<ContactStatusCounts | null>(null)
+  const countsError = ref('')
   const assignees = ref<ContactAssignee[]>([])
   const history = ref<ContactHistory[]>([])
   const comments = ref<ContactComment[]>([])
@@ -39,6 +43,7 @@ export function useContactsWorkspace() {
   const type = ref('')
   const status = ref('')
   const unassigned = ref(false)
+  const assigneeFilter = ref('')
   const loading = ref(true)
   const detailLoading = ref(false)
   const saving = ref(false)
@@ -53,11 +58,30 @@ export function useContactsWorkspace() {
   const commentBody = ref('')
   const meta = ref({ current_page: 1, last_page: 1, per_page: 25, total: 0 })
   let detailRequest = 0
+  let countsRequest = 0
+  let selectedId: number | null = null
   if (getCurrentScope())
     onScopeDispose(() => {
       detailRequest++
+      countsRequest++
     })
   const canManage = computed(() => auth.hasPermission('contacts.manage'))
+  const currentStatus = computed(() =>
+    statuses.value.find((item) => item.code === selected.value?.status),
+  )
+  const allowedStatuses = computed(() =>
+    (currentStatus.value?.allowed_transitions ?? [])
+      .map((code) => statuses.value.find((item) => item.code === code))
+      .filter((item): item is ContactStatus => !!item),
+  )
+  const transitionReady = computed(
+    () =>
+      !!currentStatus.value &&
+      Array.isArray(currentStatus.value.allowed_transitions) &&
+      statusReady.value &&
+      !statusLoading.value &&
+      !statusError.value,
+  )
   const canManageStatus = computed(
     () =>
       canManage.value &&
@@ -83,12 +107,33 @@ export function useContactsWorkspace() {
       value: String(item.id),
     })),
   ])
+  const assigneeFilterOptions = computed(() => [
+    { value: '', label: 'Все сотрудники' },
+    { value: 'unassigned', label: 'Не назначен' },
+    ...assigneeOptions.value.filter((item) => item.value),
+  ])
   const date = (value: string | null): string =>
     value ? new Date(value).toLocaleString('ru-RU') : '—'
   const statusName = (code: string): string =>
     statuses.value.find((item) => item.code === code)?.name ?? code
   const typeName = (value: string): string =>
     contactTypeOptions.find((item) => item.value === value)?.label ?? value
+
+  async function refreshStatusCounts(): Promise<void> {
+    const request = ++countsRequest
+    countsError.value = ''
+    try {
+      const counts = await getContactStatusCounts()
+      if (request === countsRequest) statusCounts.value = counts
+    } catch (reason) {
+      if (request !== countsRequest) return
+      statusCounts.value = null
+      countsError.value =
+        reason instanceof Error
+          ? reason.message
+          : 'Не удалось загрузить счётчики обращений.'
+    }
+  }
 
   async function load(page = 1): Promise<void> {
     loading.value = true
@@ -99,7 +144,13 @@ export function useContactsWorkspace() {
           search: search.value,
           type: type.value,
           status: status.value,
-          unassigned: unassigned.value,
+          assignee_id:
+            assigneeFilter.value && assigneeFilter.value !== 'unassigned'
+              ? assigneeFilter.value
+              : undefined,
+          unassigned:
+            assigneeFilter.value === 'unassigned' ||
+            (!assigneeFilter.value && unassigned.value),
         },
         { page },
       )
@@ -117,10 +168,15 @@ export function useContactsWorkspace() {
 
   async function select(contact: Pick<Contact, 'id'>): Promise<void> {
     const request = ++detailRequest
+    const differentContact = selectedId !== contact.id
+    selectedId = contact.id
     detailLoading.value = true
-    selected.value = null
-    history.value = []
-    comments.value = []
+    if (differentContact) {
+      selected.value = null
+      history.value = []
+      comments.value = []
+      commentBody.value = ''
+    }
     actionError.value = ''
     try {
       const details = await getContact(contact.id)
@@ -144,60 +200,94 @@ export function useContactsWorkspace() {
     }
   }
 
-  async function changeStatus(): Promise<void> {
-    if (!selected.value || !canManageStatus.value) return
+  function clearSelection(): void {
+    detailRequest++
+    selectedId = null
+    selected.value = null
+    history.value = []
+    comments.value = []
+    detailLoading.value = false
+    actionError.value = ''
+    commentBody.value = ''
+  }
+
+  async function changeStatus(targetStatus: string): Promise<void> {
+    if (
+      saving.value ||
+      !selected.value ||
+      !canManageStatus.value ||
+      !transitionReady.value ||
+      !allowedStatuses.value.some((item) => item.code === targetStatus)
+    )
+      return
+    const contact = { id: selected.value.id }
+    const request = detailRequest
     saving.value = true
     actionError.value = ''
     try {
-      await updateContactStatus(selected.value.id, selected.value.status)
+      await updateContactStatus(contact.id, targetStatus)
       notifyAdminNotificationsChanged()
-      await select(selected.value)
-      await load(meta.value.current_page)
+      const countsRefresh = refreshStatusCounts()
+      if (request === detailRequest) await select(contact)
+      await Promise.all([load(meta.value.current_page), countsRefresh])
     } catch (reason) {
-      actionError.value =
-        reason instanceof Error ? reason.message : 'Не удалось изменить статус.'
+      if (selectedId === contact.id)
+        actionError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось изменить статус.'
     } finally {
       saving.value = false
     }
   }
 
   async function changeAssignee(value: string): Promise<void> {
-    if (!selected.value || !canAssign.value) return
+    if (saving.value || !selected.value || !canAssign.value) return
+    const contact = { id: selected.value.id }
+    const request = detailRequest
     saving.value = true
     actionError.value = ''
     try {
-      await assignContact(selected.value.id, value ? Number(value) : null)
-      await select(selected.value)
+      await assignContact(contact.id, value ? Number(value) : null)
+      if (request === detailRequest) await select(contact)
       await load(meta.value.current_page)
     } catch (reason) {
-      actionError.value =
-        reason instanceof Error
-          ? reason.message
-          : 'Не удалось назначить ответственного.'
+      if (selectedId === contact.id)
+        actionError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось назначить ответственного.'
     } finally {
       saving.value = false
     }
   }
 
   async function submitComment(): Promise<void> {
-    if (!selected.value || !commentBody.value.trim()) return
+    if (saving.value || !selected.value || !commentBody.value.trim()) return
+    const contact = { id: selected.value.id }
+    const body = commentBody.value
+    const request = detailRequest
     saving.value = true
     actionError.value = ''
     try {
-      await addContactComment(selected.value.id, commentBody.value)
-      commentBody.value = ''
-      comments.value = await getContactComments(selected.value.id)
+      await addContactComment(contact.id, body)
+      if (request !== detailRequest) return
+      if (commentBody.value === body) commentBody.value = ''
+      const nextComments = await getContactComments(contact.id)
+      if (request === detailRequest) comments.value = nextComments
     } catch (reason) {
-      actionError.value =
-        reason instanceof Error
-          ? reason.message
-          : 'Не удалось добавить комментарий.'
+      if (request === detailRequest)
+        actionError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось добавить комментарий.'
     } finally {
       saving.value = false
     }
   }
 
   async function initialize(): Promise<void> {
+    const countsRefresh = refreshStatusCounts()
     loading.value = true
     statusError.value = ''
     assigneeError.value = ''
@@ -229,14 +319,16 @@ export function useContactsWorkspace() {
         assigneeLoading.value = false
       }
     }
-    await load()
+    await Promise.all([load(), countsRefresh])
   }
 
-  watch([type, status, unassigned], () => void load())
+  watch([type, status, unassigned, assigneeFilter], () => void load())
   return {
     contacts,
     selected,
     statuses,
+    statusCounts,
+    countsError,
     assignees,
     history,
     comments,
@@ -244,6 +336,7 @@ export function useContactsWorkspace() {
     type,
     status,
     unassigned,
+    assigneeFilter,
     loading,
     detailLoading,
     saving,
@@ -259,17 +352,23 @@ export function useContactsWorkspace() {
     meta,
     canManage,
     canManageStatus,
+    currentStatus,
+    allowedStatuses,
+    transitionReady,
     canAssign,
     statusOptions,
     assigneeOptions,
+    assigneeFilterOptions,
     date,
     statusName,
     typeName,
     load,
     select,
+    clearSelection,
     changeStatus,
     changeAssignee,
     submitComment,
     initialize,
+    refreshStatusCounts,
   }
 }

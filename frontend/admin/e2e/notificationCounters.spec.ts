@@ -1,6 +1,7 @@
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
+import { contactStatuses } from './contactStatusFixtures'
 
 async function counters(page: Page, permissions?: string[]) {
   await mockAdminBaseline(page)
@@ -9,6 +10,13 @@ async function counters(page: Page, permissions?: string[]) {
     orders: 1715,
     requests: { contacts: 0, orders: 0 },
   }
+  await page.route('**/api/v1/admin/contact-request-counts', (route) =>
+    route.fulfill({
+      json: {
+        data: { new: state.contacts, processing: 0, awaiting_client: 0 },
+      },
+    }),
+  )
   if (permissions)
     await page.route('**/api/v1/admin/auth/me', (route) =>
       route.fulfill({
@@ -47,6 +55,7 @@ async function counters(page: Page, permissions?: string[]) {
                     email: null,
                   },
                   status: 'new',
+                  assignee: null,
                   message: null,
                   source: 'site',
                   created_at: '2026-10-21T10:00:00Z',
@@ -197,19 +206,17 @@ test('saving a contact status immediately updates the bell and navigation withou
     type: 'callback',
     contact: { name: 'Покупатель', phone: '+79991234567', email: null },
     status: 'new',
+    assignee: null,
     message: null,
     source: 'site',
     created_at: '2026-10-21T10:00:00Z',
     assigned_at: null,
     completed_at: null,
   }
-  await page.route('**/api/v1/admin/contact-statuses', (route) =>
+  await page.route('**/api/v1/admin/contact-workflow', (route) =>
     route.fulfill({
       json: {
-        data: [
-          { code: 'new', name: 'Новое', is_terminal: false },
-          { code: 'in_progress', name: 'В работе', is_terminal: false },
-        ],
+        data: contactStatuses,
       },
     }),
   )
@@ -217,12 +224,14 @@ test('saving a contact status immediately updates the bell and navigation withou
     route.fulfill({ json: { data: contact } }),
   )
   await page.route('**/api/v1/admin/contact-requests/1/status', (route) => {
+    expect(route.request().method()).toBe('PATCH')
+    expect(route.request().postDataJSON()).toEqual({ status: 'processing' })
     if (fail)
       return route.fulfill({
         status: 503,
         json: { error: { message: 'Не удалось сохранить статус.' } },
       })
-    contact.status = 'in_progress'
+    contact.status = 'processing'
     state.contacts = 0
     return route.fulfill({ json: { data: contact } })
   })
@@ -241,13 +250,9 @@ test('saving a contact status immediately updates the bell and navigation withou
   await page.goto('/contacts?contact=1')
   const bell = page.getByRole('button', { name: 'Уведомления', exact: true })
   await expect(bell).toHaveAccessibleDescription('Новых уведомлений: 1')
-  await page
-    .getByRole('button', { name: 'Новый статус обращения', exact: true })
-    .click()
-  await page.getByRole('button', { name: 'В работе', exact: true }).click()
   const requestsBeforeSave = state.requests.contacts
   await page
-    .getByRole('button', { name: 'Сохранить статус', exact: true })
+    .getByRole('button', { name: 'Начать обработку', exact: true })
     .click()
   await expect(page.getByRole('alert')).toContainText(
     'Не удалось сохранить статус.',
@@ -256,7 +261,7 @@ test('saving a contact status immediately updates the bell and navigation withou
   await expect(bell).toHaveAccessibleDescription('Новых уведомлений: 1')
   fail = false
   await page
-    .getByRole('button', { name: 'Сохранить статус', exact: true })
+    .getByRole('button', { name: 'Начать обработку', exact: true })
     .click()
   await expect(bell.locator('.admin-notification-count')).toHaveCount(0)
   await expect(

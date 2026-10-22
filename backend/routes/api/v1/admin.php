@@ -78,6 +78,8 @@ Route::patch('contact-requests/{contactRequest}/assignee', [ContactAssignmentCon
     ->name('contact-requests.assignee.update');
 Route::get('contact-assignees', [ContactAssignmentController::class, 'candidates'])->name('contact-assignees.index');
 Route::get('contact-statuses', [ContactRequestController::class, 'statuses'])->name('contact-statuses.index');
+Route::get('contact-workflow', [ContactRequestController::class, 'workflow'])->name('contact-workflow.index');
+Route::get('contact-request-counts', [ContactRequestController::class, 'counts'])->name('contact-request-counts.index');
 Route::get('contact-requests', [ContactRequestController::class, 'index'])->name('contact-requests.index');
 Route::get('contact-requests/{contactRequest}', [ContactRequestController::class, 'show'])->name('contact-requests.show');
 Route::patch('contact-requests/{contactRequest}/status', [ContactRequestController::class, 'updateStatus'])

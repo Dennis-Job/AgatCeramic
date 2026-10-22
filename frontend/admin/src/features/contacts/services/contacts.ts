@@ -11,6 +11,7 @@ import type {
   ContactFilters,
   ContactHistory,
   ContactStatus,
+  ContactStatusCounts,
 } from '../types/contact.types'
 
 type Envelope<T> = {
@@ -54,8 +55,13 @@ export const getContact = (id: number) =>
   )
 export const getContactStatuses = () =>
   unwrap<ContactStatus[]>(
-    apiFetch('/admin/contact-statuses'),
+    apiFetch('/admin/contact-workflow'),
     'Не удалось загрузить статусы.',
+  )
+export const getContactStatusCounts = () =>
+  unwrap<ContactStatusCounts>(
+    apiFetch('/admin/contact-request-counts'),
+    'Не удалось загрузить счётчики обращений.',
   )
 export const getContactAssignees = () =>
   unwrap<ContactAssignee[]>(

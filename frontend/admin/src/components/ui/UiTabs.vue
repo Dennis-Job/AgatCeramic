@@ -53,7 +53,7 @@ function navigate(event: KeyboardEvent): void {
       :disabled="item.disabled"
       @click="model = item.value"
     >
-      {{ item.label }}
+      <slot name="item" :item="item">{{ item.label }}</slot>
     </button>
   </div>
 </template>

@@ -1,5 +1,6 @@
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
+import { contactStatuses } from './contactStatusFixtures'
 import {
   createDeferredApiRequests,
   type DeferredApiRequests,
@@ -160,9 +161,13 @@ async function mockApi(page: Page, options: MockOptions = {}): Promise<void> {
       return route.fulfill({ json: { data: [] } })
     if (path === '/admin/orders/1/comments')
       return route.fulfill({ json: { data: [] } })
-    if (path === '/admin/contact-statuses')
+    if (path === '/admin/contact-workflow')
       return route.fulfill({
-        json: { data: [{ code: 'new', name: 'Новое', is_terminal: false }] },
+        json: { data: contactStatuses },
+      })
+    if (path === '/admin/contact-request-counts')
+      return route.fulfill({
+        json: { data: { new: 1, processing: 0, awaiting_client: 0 } },
       })
     if (path === '/admin/contact-assignees')
       return route.fulfill({ json: { data: [{ id: 1, name: employee.name }] } })
@@ -285,10 +290,16 @@ test('contact detail exposes protected workflow and activity data without overfl
   await mockApi(page)
   await page.goto('/contacts')
   await page.getByRole('button', { name: 'Открыть обращение 1' }).click()
-  await page.keyboard.press('End')
-  await expect(page.getByRole('heading', { name: 'Обработка' })).toBeVisible()
+  const dialog = page.getByRole('dialog', { name: 'Обращение #1', exact: true })
+  await expect(dialog).toBeVisible()
   await expect(
-    page.getByText('Внутренний комментарий', { exact: true }),
+    dialog.getByRole('heading', { name: 'Обращение #1', exact: true }),
+  ).toBeFocused()
+  await expect(
+    dialog.getByRole('button', { name: 'Начать обработку' }),
+  ).toBeVisible()
+  await expect(
+    dialog.getByText('Внутренний комментарий', { exact: true }),
   ).toBeVisible()
   expect(
     await page.evaluate(
@@ -316,9 +327,9 @@ test('dependent mutations are blocked when reference data is unavailable', async
   browserIssueGuard,
 }) => {
   browserIssueGuard.allowApiError(500, '/api/v1/admin/users/roles')
-  browserIssueGuard.allowApiError(500, '/api/v1/admin/contact-statuses')
+  browserIssueGuard.allowApiError(500, '/api/v1/admin/contact-workflow')
   await mockApi(page, {
-    failingPaths: ['/admin/users/roles', '/admin/contact-statuses'],
+    failingPaths: ['/admin/users/roles', '/admin/contact-workflow'],
   })
   await page.goto('/employees')
   await expect(page.getByRole('alert')).toContainText(
@@ -334,9 +345,13 @@ test('dependent mutations are blocked when reference data is unavailable', async
   )
   await page.getByRole('button', { name: 'Открыть обращение 1' }).click()
   await expect(
-    page.getByRole('button', { name: 'Сохранить статус' }),
+    page.getByRole('button', { name: 'Начать обработку' }),
   ).toHaveCount(0)
-  await expect(page.getByLabel('Ответственный')).toBeVisible()
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Обращение #1', exact: true })
+      .getByLabel('Ответственный'),
+  ).toBeVisible()
 })
 
 test('dependent controls wait for their reference data', async ({ page }) => {
@@ -379,21 +394,33 @@ test('dependent controls wait for their reference data', async ({ page }) => {
     page.getByRole('button', { name: 'Сохранить', exact: true }),
   ).toBeVisible()
 
-  const contactStatuses = deferredRequests.defer('/admin/contact-statuses')
+  const contactStatuses = deferredRequests.defer('/admin/contact-workflow')
   const contactAssignees = deferredRequests.defer('/admin/contact-assignees')
   await page.goto('/contacts')
   await contactStatuses.requested
-  const contactStatusFilter = page.getByLabel('Статус обращения', {
+  const contactStatusTabs = page.getByRole('tablist', {
+    name: 'Статус обращения',
     exact: true,
   })
-  await expect(contactStatusFilter).toBeDisabled()
-  await expect(page.getByRole('heading', { name: 'Обработка' })).toHaveCount(0)
+  const allContactsTab = contactStatusTabs.getByRole('tab', {
+    name: 'Все',
+    exact: true,
+  })
+  await expect(allContactsTab).toBeDisabled()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   contactStatuses.release()
   await contactAssignees.requested
   contactAssignees.release()
-  await expect(contactStatusFilter).toBeEnabled()
+  await expect(allContactsTab).toBeEnabled()
   await page.getByRole('button', { name: 'Открыть обращение 1' }).click()
-  await expect(page.getByLabel('Ответственный')).toBeVisible()
+  const contactDialog = page.getByRole('dialog', {
+    name: 'Обращение #1',
+    exact: true,
+  })
+  await expect(contactDialog.getByLabel('Ответственный')).toBeVisible()
+  await expect(
+    contactDialog.getByRole('button', { name: 'Начать обработку' }),
+  ).toBeEnabled()
 })
 
 test('initial detail failures remain visible', async ({

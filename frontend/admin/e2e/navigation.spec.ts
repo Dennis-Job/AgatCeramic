@@ -89,6 +89,10 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
           },
         },
       })
+    if (path === '/admin/contact-request-counts')
+      return route.fulfill({
+        json: { data: { new: 0, processing: 0, awaiting_client: 0 } },
+      })
     if (path === '/admin/site-appearance')
       return route.fulfill({ json: { data: appearance } })
     if (['/admin/pages', '/admin/stores'].includes(path))

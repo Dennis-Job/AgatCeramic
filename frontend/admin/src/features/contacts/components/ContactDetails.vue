@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { UserRound, Phone, Mail, MessageSquare } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
+import UiBadge from '../../../components/ui/UiBadge.vue'
+import ContactStatusActions from './ContactStatusActions.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import { formatPhone } from '../../../utils/phone'
+import { contactStatusTone } from '../utils/contactStatusTone'
 import type {
   Contact,
   ContactAssignee,
@@ -17,6 +20,9 @@ import type {
 defineProps<{
   selected: Contact | null
   statuses: ContactStatus[]
+  currentStatus?: ContactStatus
+  allowedStatuses: ContactStatus[]
+  transitionReady: boolean
   assignees: ContactAssignee[]
   history: ContactHistory[]
   comments: ContactComment[]
@@ -33,84 +39,83 @@ defineProps<{
 }>()
 const commentBody = defineModel<string>('commentBody', { required: true })
 defineEmits<{
-  changeStatus: []
+  changeStatus: [status: string]
+  retry: []
+  retryDetail: []
   changeAssignee: [value: string]
   submitComment: []
 }>()
 </script>
 
 <template>
-  <UiCard
-    class="min-w-0"
-    role="complementary"
-    aria-labelledby="contact-details-title"
+  <div
+    class="contact-details min-w-0"
+    role="region"
+    aria-label="Детали выбранной записи"
   >
-    <template #header>
-      <div>
-        <p class="text-xs text-gray-500">
-          {{ selected ? typeName(selected.type) : 'Обращение' }}
-        </p>
-        <h2
-          id="contact-details-title"
-          class="mt-1 break-words font-bold text-gray-500"
-        >
-          {{ selected ? `Обращение #${selected.id}` : 'Детали обращения' }}
-        </h2>
-      </div>
-    </template>
     <UiNotification v-if="actionError && !selected">{{
       actionError
     }}</UiNotification>
     <UiLoadingState v-if="detailLoading" label="Загрузка деталей обращения…" />
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
-      Выберите обращение в списке.
+      <template v-if="actionError"
+        ><p>Не удалось открыть обращение.</p>
+        <UiButton class="mt-3" variant="secondary" @click="$emit('retryDetail')"
+          >Повторить загрузку обращения</UiButton
+        ></template
+      >
+      <template v-else>Выберите обращение в списке.</template>
     </div>
     <div v-else class="space-y-6">
       <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
-      <section>
-        <h3 class="text-sm font-semibold text-gray-500">Контакт</h3>
-        <p class="mt-2 break-words text-sm text-gray-500">
-          {{ selected.contact.name ?? 'Без имени' }}
+      <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+        <UiBadge
+          class="shrink-0 whitespace-nowrap"
+          :tone="contactStatusTone(selected.status)"
+          >{{ statusName(selected.status) }}</UiBadge
+        >
+        <span>{{ typeName(selected.type) }}</span>
+        <time :datetime="selected.created_at">{{
+          date(selected.created_at)
+        }}</time>
+      </div>
+      <section class="space-y-3">
+        <h3 class="sr-only">Контакт</h3>
+        <p class="flex items-start gap-3 text-base font-semibold text-gray-500">
+          <UserRound :size="18" class="mt-0.5 shrink-0" aria-hidden="true" />
+          <span class="min-w-0 break-words">{{
+            selected.contact.name ?? 'Без имени'
+          }}</span>
         </p>
         <p
           v-if="selected.contact.phone"
-          class="break-all text-sm text-gray-500"
+          class="flex items-start gap-3 text-sm text-gray-500"
         >
-          {{ formatPhone(selected.contact.phone) }}
+          <Phone :size="18" class="shrink-0" aria-hidden="true" />
+          <span class="min-w-0 break-all">{{
+            formatPhone(selected.contact.phone)
+          }}</span>
         </p>
         <p
           v-if="selected.contact.email"
-          class="break-all text-sm text-gray-500"
+          class="flex items-start gap-3 text-sm text-gray-500"
         >
-          {{ selected.contact.email }}
+          <Mail :size="18" class="shrink-0" aria-hidden="true" />
+          <span class="min-w-0 break-all">{{ selected.contact.email }}</span>
         </p>
         <p
           v-if="selected.message"
-          class="admin-panel--inset mt-3 whitespace-pre-line break-words p-3 text-sm text-gray-500"
+          class="contact-message flex items-start gap-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-500"
         >
-          {{ selected.message }}
+          <MessageSquare :size="18" class="shrink-0" aria-hidden="true" />
+          <span class="min-w-0 whitespace-pre-line break-words">{{
+            selected.message
+          }}</span>
         </p>
       </section>
-      <section
-        v-if="canManageStatus || canAssign"
-        class="admin-panel--inset grid gap-3 p-4"
-      >
-        <h3 class="text-sm font-semibold text-gray-500">Обработка</h3>
-        <template v-if="canManageStatus"
-          ><UiSelect
-            v-model="selected.status"
-            :options="
-              statuses.map((item) => ({ label: item.name, value: item.code }))
-            "
-            accessible-name="Новый статус обращения"
-            :disabled="saving"
-          /><UiButton
-            :loading="saving"
-            :disabled="saving"
-            @click="$emit('changeStatus')"
-            >Сохранить статус</UiButton
-          ></template
-        ><UiSelect
+      <section v-if="canManageStatus || canAssign" class="grid gap-3">
+        <h3 class="text-sm font-semibold text-gray-500">Ответственный</h3>
+        <UiSelect
           v-if="canAssign"
           :model-value="selected.assignee ? String(selected.assignee.id) : ''"
           :options="assigneeOptions"
@@ -119,6 +124,16 @@ defineEmits<{
           @update:model-value="$emit('changeAssignee', $event)"
         />
       </section>
+      <ContactStatusActions
+        :current-status="currentStatus"
+        :allowed-statuses="allowedStatuses"
+        :statuses="statuses"
+        :ready="transitionReady"
+        :can-manage="canManage"
+        :disabled="saving || detailLoading"
+        @change-status="$emit('changeStatus', $event)"
+        @retry="$emit('retry')"
+      />
       <section>
         <h3 class="text-sm font-semibold text-gray-500">История статусов</h3>
         <ol class="mt-3 space-y-2 border-l border-gray-200 pl-4 text-sm">
@@ -180,5 +195,5 @@ defineEmits<{
         </form>
       </section>
     </div>
-  </UiCard>
+  </div>
 </template>

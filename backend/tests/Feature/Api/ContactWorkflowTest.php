@@ -14,6 +14,58 @@ class ContactWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_legacy_status_catalog_keeps_its_existing_response_shape(): void
+    {
+        $viewer = $this->userWithRole('order-manager');
+
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-statuses')
+            ->assertOk()->assertExactJson(['data' => [
+                ['code' => 'new', 'name' => 'Новое', 'is_terminal' => false],
+                ['code' => 'processing', 'name' => 'В обработке', 'is_terminal' => false],
+                ['code' => 'awaiting_client', 'name' => 'Ожидает клиента', 'is_terminal' => false],
+                ['code' => 'completed', 'name' => 'Завершено', 'is_terminal' => true],
+                ['code' => 'rejected', 'name' => 'Отклонено', 'is_terminal' => true],
+            ]]);
+    }
+
+    public function test_workflow_catalog_exposes_the_server_allowed_transitions(): void
+    {
+        $viewer = $this->userWithRole('order-manager');
+
+        $this->actingAs($viewer)->getJson('/api/v1/admin/contact-workflow')
+            ->assertOk()->assertExactJson(['data' => [
+                ['code' => 'new', 'name' => 'Новое', 'is_terminal' => false, 'allowed_transitions' => ['processing', 'rejected']],
+                ['code' => 'processing', 'name' => 'В обработке', 'is_terminal' => false, 'allowed_transitions' => ['awaiting_client', 'completed', 'rejected']],
+                ['code' => 'awaiting_client', 'name' => 'Ожидает клиента', 'is_terminal' => false, 'allowed_transitions' => ['processing', 'completed', 'rejected']],
+                ['code' => 'completed', 'name' => 'Завершено', 'is_terminal' => true, 'allowed_transitions' => []],
+                ['code' => 'rejected', 'name' => 'Отклонено', 'is_terminal' => true, 'allowed_transitions' => []],
+            ]]);
+    }
+
+    public function test_workflow_catalog_requires_contact_view_permission(): void
+    {
+        $this->getJson('/api/v1/admin/contact-workflow')->assertUnauthorized();
+
+        $analyst = $this->userWithRole('analyst');
+        $this->actingAs($analyst)->getJson('/api/v1/admin/contact-workflow')->assertForbidden();
+    }
+
+    public function test_new_contacts_cannot_skip_processing_to_awaiting_or_completed(): void
+    {
+        $manager = $this->userWithRole('order-manager');
+        $contact = ContactRequest::factory()->create();
+
+        foreach (['awaiting_client', 'completed'] as $target) {
+            $this->actingAs($manager)->patchJson("/api/v1/admin/contact-requests/{$contact->id}/status", ['status' => $target])
+                ->assertUnprocessable()->assertJsonPath('error.details.status.0', 'Недопустимый переход статуса обращения.');
+            $this->assertSame('new', $contact->fresh()->getRawOriginal('status'));
+            $this->assertNull($contact->fresh()->completed_at);
+        }
+
+        $this->assertSame(0, $contact->statusHistory()->count());
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'contact.status-changed', 'entity_id' => $contact->id]);
+    }
+
     public function test_contact_viewer_can_list_filter_and_read_contact_requests_without_management_access(): void
     {
         $viewer = $this->userWithRole('order-manager');

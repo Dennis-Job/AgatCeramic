@@ -1,5 +1,6 @@
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
+import { contactStatuses } from './contactStatusFixtures'
 
 const contact = {
   id: 42,
@@ -12,6 +13,7 @@ const contact = {
   message: null,
   source: 'site',
   status: 'new',
+  assignee: null,
   assigned_at: null,
   completed_at: null,
   created_at: '2026-10-21T10:00:00Z',
@@ -77,6 +79,12 @@ async function mockApi(page: Page, permissions = ['contacts.view']) {
       return route.fulfill({
         json: { data: { ...contact, id: Number(path.split('/').at(-1)) } },
       })
+    if (path === '/admin/contact-workflow')
+      return route.fulfill({ json: { data: contactStatuses } })
+    if (path === '/admin/contact-request-counts')
+      return route.fulfill({
+        json: { data: { new: 8, processing: 0, awaiting_client: 0 } },
+      })
     return route.fulfill({ json: { data: [] } })
   })
   return state
@@ -124,6 +132,9 @@ test('notification list opens contact details, remains keyboard usable and fits 
   await expect(page).toHaveURL(/\/contacts\?contact=42$/)
   await expect(
     page.getByRole('heading', { name: 'Обращение #42', exact: true }),
+  ).toBeFocused()
+  await expect(
+    page.getByRole('dialog', { name: 'Обращение #42', exact: true }),
   ).toBeVisible()
   await expect(
     page.getByRole('region', { name: 'Детали выбранной записи' }),
@@ -131,7 +142,8 @@ test('notification list opens contact details, remains keyboard usable and fits 
   await expect(
     page.getByRole('region', { name: 'Уведомления', exact: true }),
   ).toHaveCount(0)
-  await page.getByRole('button', { name: 'Вернуться к списку' }).click()
+  await page.getByRole('button', { name: 'Закрыть обращение' }).click()
+  await expect(page).toHaveURL(/\/contacts$/)
   await expect(
     page.getByRole('region', { name: 'Очередь обращений' }),
   ).toBeFocused()
@@ -142,7 +154,13 @@ test('notification list opens contact details, remains keyboard usable and fits 
   await expect(page).toHaveURL(/\/contacts\?contact=43$/)
   await expect(
     page.getByRole('heading', { name: 'Обращение #43', exact: true }),
-  ).toBeVisible()
+  ).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(
+    page
+      .getByRole('button', { name: 'Открыть обращение 43', exact: true })
+      .filter({ visible: true }),
+  ).toBeFocused()
   await page.getByRole('button', { name: 'Уведомления', exact: true }).click()
   await page.getByRole('link', { name: /Обратный звонок #42/ }).click()
   await expect(

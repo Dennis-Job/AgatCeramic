@@ -1002,10 +1002,29 @@ checkout.
 
 ### Обращения
 
-`GET /admin/contact-statuses` возвращает серверный каталог статусов. Список и
+`GET /admin/contact-statuses` сохраняет каталог статусов с полями `code`, `name`
+и `is_terminal`. `GET /admin/contact-workflow` при том же `contacts.view`
+возвращает каталог для действий со статусами с полями
+`code`, `name`, `is_terminal` и `allowed_transitions` (массив кодов допустимых
+следующих статусов из серверного workflow). Для `new` это `processing` и
+`rejected`; для `processing` — `awaiting_client`, `completed`, `rejected`;
+для `awaiting_client` — `processing`, `completed`, `rejected`. Терминальные
+`completed` и `rejected` возвращают пустой массив. Клиент использует этот
+каталог для действий, backend независимо проверяет переход: прямой переход
+`new` → `awaiting_client` или `completed` возвращает `422` без изменения
+обращения или истории. Список и
 деталь обращений доступны через `GET /admin/contact-requests` и
 `GET /admin/contact-requests/{contactRequest}` при `contacts.view`. Список
 поддерживает `search`, `type`, `status`, `assignee_id`, `unassigned` и `per_page`.
+
+`GET /admin/contact-request-counts` при `contacts.view` возвращает
+`{"data":{"new":0,"processing":0,"awaiting_client":0}}` с целыми
+неотрицательными количествами всех обращений соответствующих статусов.
+Счётчики глобальные: тип, поиск, ответственный, статус выбранной вкладки и
+пагинация списка на них не влияют. Терминальные статусы в ответ не входят;
+статусы без обращений представлены нулём. Ответ читается из БД без кеша и
+отражает сохранённые переходы сразу. Admin обновляет счётчики после успешного
+сохранения статуса; при ошибке загрузки не подставляет фиктивные нули.
 
 `PATCH /admin/contact-requests/{contactRequest}/assignee` требует
 `contacts.manage`; тело содержит `assignee_id` (nullable для снятия назначения).
