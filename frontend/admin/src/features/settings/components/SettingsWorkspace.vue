@@ -186,32 +186,6 @@ async function confirmPublish(): Promise<void> {
                 :disabled="busyAction === 'settings'"
                 @update:model-value="settings.email = $event"
             /></UiField>
-            <UiField
-              label="Email для сотрудничества"
-              help="Публичный адрес для партнёров на странице «Сотрудничество»."
-              ><UiInput
-                :model-value="settings.partner_email ?? ''"
-                type="email"
-                maxlength="255"
-                :disabled="busyAction === 'settings'"
-                @update:model-value="settings.partner_email = $event"
-            /></UiField>
-            <UiField
-              label="Email для уведомлений"
-              help="Служебный адрес для уведомлений о заявках на обратный звонок. На сайте не публикуется."
-              ><UiInput
-                :model-value="settings.notification_email ?? ''"
-                type="email"
-                maxlength="255"
-                :disabled="busyAction === 'settings'"
-                @update:model-value="settings.notification_email = $event"
-            /></UiField>
-            <UiField label="Адрес"
-              ><UiTextarea
-                :model-value="settings.address"
-                maxlength="2000"
-                @update:model-value="settings.address = $event"
-            /></UiField>
             <div class="space-y-3">
               <UiField
                 label="Телефон"
@@ -248,6 +222,32 @@ async function confirmPublish(): Promise<void> {
                 </span>
               </UiAlert>
             </div>
+            <UiField
+              label="Email для уведомлений"
+              help="Служебный адрес для уведомлений о новых заявках: обратный звонок, сотрудничество и email. На сайте не публикуется."
+              ><UiInput
+                :model-value="settings.notification_email ?? ''"
+                type="email"
+                maxlength="255"
+                :disabled="busyAction === 'settings'"
+                @update:model-value="settings.notification_email = $event"
+            /></UiField>
+            <UiField label="Адрес"
+              ><UiTextarea
+                :model-value="settings.address"
+                maxlength="2000"
+                @update:model-value="settings.address = $event"
+            /></UiField>
+            <UiField
+              label="Email для сотрудничества"
+              help="Публичный адрес для партнёров на странице «Сотрудничество»."
+              ><UiInput
+                :model-value="settings.partner_email ?? ''"
+                type="email"
+                maxlength="255"
+                :disabled="busyAction === 'settings'"
+                @update:model-value="settings.partner_email = $event"
+            /></UiField>
           </div>
           <div class="border-t border-gray-100 pt-5">
             <h3 class="mb-4 font-semibold text-gray-500">

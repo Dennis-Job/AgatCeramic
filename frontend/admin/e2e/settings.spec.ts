@@ -247,7 +247,9 @@ test('legacy phones require explicit selection and a single masked phone remains
     .click()
   await expect(phone).toHaveValue('+7 (999) 111-22-33')
   await phone.focus()
-  await phone.press('End')
+  await phone.evaluate((input: HTMLInputElement) =>
+    input.setSelectionRange(input.value.length, input.value.length),
+  )
   await phone.press('Backspace')
   await expect(phone).toHaveValue('+7 (999) 111-22-3')
   await phone.pressSequentially('3')
@@ -306,6 +308,17 @@ test('three email settings remain accessible and usable at every width', async (
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(width)
+    if (width >= 768) {
+      const emails = await Promise.all(
+        ['покупателей', 'уведомлений', 'сотрудничества'].map((kind) =>
+          page
+            .getByRole('textbox', { name: new RegExp(`^Email для ${kind}`) })
+            .boundingBox(),
+        ),
+      )
+      expect(emails[0]?.x).toBe(emails[1]?.x)
+      expect(emails[1]?.x).toBe(emails[2]?.x)
+    }
     await page.screenshot({
       path: testInfo.outputPath(`settings-emails-${width}.png`),
       fullPage: true,
@@ -326,11 +339,26 @@ test('three email settings remain accessible and usable at every width', async (
     customer.locator('..').getByRole('button', { name: 'Очистить поле' }),
   ).toBeFocused()
   await page.keyboard.press('Tab')
+  const phone = page.getByRole('textbox', { name: /^Телефон/ })
+  await expect(phone).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
+    phone.locator('..').getByRole('button', { name: 'Очистить поле' }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(notification).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
+    notification.locator('..').getByRole('button', { name: 'Очистить поле' }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('textbox', { name: 'Адрес', exact: true }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
   await expect(partner).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(
     partner.locator('..').getByRole('button', { name: 'Очистить поле' }),
   ).toBeFocused()
-  await page.keyboard.press('Tab')
-  await expect(notification).toBeFocused()
 })

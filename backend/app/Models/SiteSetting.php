@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
+/** @property list<string>|null $phones */
 #[Fillable(['operator_type', 'seller_name', 'entrepreneur_name', 'inn', 'ogrnip', 'address', 'phones', 'email', 'partner_email', 'notification_email', 'bank_name', 'bank_bik', 'bank_account', 'bank_correspondent_account', 'publish_bank_details'])]
 class SiteSetting extends Model
 {

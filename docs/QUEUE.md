@@ -42,11 +42,15 @@ reports aggregate deleted/remaining counts only. Cart writes and checkout lock t
 PostgreSQL cleanup uses `SKIP LOCKED`, leaves in-flight carts for a later run and rechecks
 `expires_at` before deletion.
 
-## Письма по обратным звонкам
+## Письма по заявкам сайта
 
 `POST /api/v1/callback-requests` в одной транзакции создаёт обращение и
 `callback_mail_deliveries` только для администратора. Email клиента не собирается,
-письмо клиенту не отправляется; прежние customer-задачи безопасно пропускаются.
+письмо клиенту не отправляется; прежние callback customer-задачи безопасно пропускаются.
+`POST /api/v1/partner-requests` и `POST /api/v1/email-requests` в той же схеме
+создают две доставки `admin` и `customer`. Каждая имеет собственный статус/лимит
+попыток: сбой одной не повторяет уже отправленную другую. Название таблицы/job
+сохранено для совместимости; новых миграций для расширения типов нет.
 После commit dispatch выполняется безопасно: недоступность Redis не превращает
 сохранённую заявку в ошибку формы. `SendCallbackMail` несёт только ID доставки,
 получает актуальные контакты из БД, отправляет через настроенный Laravel mailer.
@@ -57,6 +61,8 @@ PostgreSQL cleanup uses `SKIP LOCKED`, leaves in-flight carts for a later run an
 
 SMTP использует `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`,
 `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME`, `MAIL_SCHEME` при необходимости.
+При `MAIL_MAILER=log` или цепочке failover/roundrobin с log отправка не выполняется: delivery остаётся pending без
+расхода попыток и без записи персональных данных письма в application log.
 Для порта 465 Laravel автоматически выбирает implicit TLS; для 587 используется
 SMTP с STARTTLS согласно поддержке сервера. `MAIL_TIMEOUT=30` ограничивает операцию,
 job timeout=60 ниже Redis retry_after=90. После изменения `.env` очистить config cache

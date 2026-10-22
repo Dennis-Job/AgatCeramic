@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Services\CallbackMailService;
 use App\Services\ImportDispatchService;
 use App\Services\OrderConfirmationService;
+use App\Services\PartnerRequestService;
 use App\Support\ProductWorkbookSchema;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -69,6 +70,7 @@ class RedisQueueDeliveryTest extends TestCase
         $this->runImportAndCleanupFlow();
         $this->runOrderConfirmationFlow();
         $this->runCallbackConfirmationFlow();
+        $this->runPartnerConfirmationFlow();
         $this->runStaleCleanupRecoveryFlow();
         $this->runTerminalFailureFlow();
     }
@@ -163,6 +165,42 @@ class RedisQueueDeliveryTest extends TestCase
 
         $this->assertStringContainsString(SendOrderConfirmation::class, $worker);
         $this->assertSame(0, $this->queueSize());
+        $this->assertDatabaseCount('failed_jobs', 0);
+    }
+
+    private function runPartnerConfirmationFlow(): void
+    {
+        $contact = DB::transaction(function (): ContactRequest {
+            $contact = app(PartnerRequestService::class)->create([
+                'name' => 'Synthetic Partner', 'phone' => '+79991234567',
+                'email' => 'payload-sentinel-partner@example.test', 'message' => 'Synthetic proposal',
+            ]);
+            $this->assertSame(0, $this->queueSize(), 'Partner mail must wait for commit.');
+
+            return $contact;
+        });
+        $deliveries = CallbackMailDelivery::query()->where('contact_request_id', $contact->id)->orderBy('id')->get();
+        $this->assertSame(['admin', 'customer'], $deliveries->pluck('recipient')->all());
+        $this->assertSame(2, $this->queueSize());
+        foreach ($this->readyPayloads() as $payload) {
+            $job = unserialize($payload['data']['command'], ['allowed_classes' => [SendCallbackMail::class]]);
+            $this->assertInstanceOf(SendCallbackMail::class, $job);
+            $this->assertIdentifierOnlyPayload(
+                $payload, SendCallbackMail::class, 'deliveryId', $job->deliveryId,
+                [$contact->name, $contact->phone, $contact->email, $contact->message],
+            );
+        }
+        $this->runWorker(stopWhenEmpty: true, maxTime: 15);
+        $this->assertSame(0, $this->queueSize());
+        foreach ($deliveries as $delivery) {
+            $this->assertSame('sent', $delivery->refresh()->status);
+            $this->assertSame(1, $delivery->attempts);
+            SendCallbackMail::dispatch($delivery->id);
+        }
+        $this->runWorker(stopWhenEmpty: true, maxTime: 15);
+        foreach ($deliveries as $delivery) {
+            $this->assertSame(1, $delivery->refresh()->attempts);
+        }
         $this->assertDatabaseCount('failed_jobs', 0);
     }
 

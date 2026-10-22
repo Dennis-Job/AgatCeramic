@@ -3218,6 +3218,7 @@
             "post": {
                 "operationId": "createEmailRequest",
                 "summary": "Request a reply by email from the website",
+                "description": "After commit, independently queues staff notification to current private site_settings.notification_email and a branded confirmation to the submitted email. Acceptance does not imply email delivery. No inbox synchronization.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -3245,7 +3246,7 @@
             "post": {
                 "operationId": "createPartnerRequest",
                 "summary": "Submit a partnership request from the website",
-                "description": "Anonymous rate-limited cooperation form. No session or CSRF token required. Creates an admin contact request with server-assigned type partner and source website. No inbox synchronization or customer email confirmation.",
+                "description": "Anonymous rate-limited cooperation form. No session or CSRF token required. Creates an admin contact request with server-assigned type partner and source website. After commit, independently queues staff notification to current private site_settings.notification_email and a branded confirmation to the submitted email. No inbox synchronization. Acceptance does not imply email delivery.",
                 "requestBody": {
                     "required": true,
                     "content": {

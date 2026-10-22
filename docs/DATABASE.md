@@ -286,15 +286,17 @@ TASK-083 добавляет nullable `assignee_id` с `nullOnDelete` и `assigne
 `contact_request_status_histories` с начальным/целевым статусом, снимком автора и `occurred_at`.
 
 ### callback_mail_deliveries
-Устойчивые задачи писем по новым обратным звонкам: FK `contact_request_id` с
-`cascadeOnDelete`, получатель `admin`, статус `pending`/`sent`/`skipped`,
+Устойчивые задачи писем по новым обратным звонкам, партнёрским и email-обращениям: FK `contact_request_id` с
+`cascadeOnDelete`, получатель `admin` или `customer`, статус `pending`/`sent`/`skipped`,
 число попыток, время dispatch/attempt/success. Unique `(contact_request_id, recipient)`
 защищает от повторного создания; `(status, last_dispatched_at)` поддерживает recovery.
 Контактные данные и тексты SMTP-ошибок не копируются. Очередь содержит только ID;
 успешная доставка отмечается под row lock. Удаление обращения удаляет задачи;
-после обезличивания контакт без телефона не отправляется.
-Клиентские письма отключены по решению владельца; прежние задачи с получателем,
-отличным от `admin`, безопасно помечаются `skipped` без отправки.
+после обезличивания письма не отправляются. Callback без телефона пропускается;
+partner/email без валидного email пропускаются для обеих доставок.
+У callback создаётся только `admin`, legacy `customer` пропускается.
+У partner/email создаются обе независимые доставки; значения контактов
+читаются из обращения и настроек в момент выполнения job.
 
 Обращение, comments и workflow history удаляются как единый lifecycle aggregate по матрице из
 [`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). Bounded service повторно проверяет

@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\ContactRequest;
+use App\Support\RussianPhoneNumber;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -18,10 +19,7 @@ class CallbackRequestMail extends Mailable
 
     public function content(): Content
     {
-        $phone = $this->contact->phone ?? '';
-        if (preg_match('/^\+7([0-9]{3})([0-9]{3})([0-9]{2})([0-9]{2})$/D', $phone, $matches)) {
-            $phone = "+7 ({$matches[1]}) {$matches[2]}-{$matches[3]}-{$matches[4]}";
-        }
+        $phone = RussianPhoneNumber::format($this->contact->phone ?? '');
         $title = 'Новая заявка на обратный звонок';
         $intro = 'Клиент просит перезвонить.';
         $details = '<p>Номер заявки: <strong>'.$this->contact->id.'</strong></p>'
