@@ -123,7 +123,7 @@ for (const width of widths) {
         ).toHaveAttribute('href', '/settings')
       } else
         await expect(panel.getByRole('status')).toContainText(
-          'Новых заявок на звонок нет',
+          'Новых уведомлений нет',
         )
       await page.screenshot({
         path: `.tmp/header-popovers/${id.slice(1)}-${width}.png`,

@@ -68,7 +68,7 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
     const path = url.pathname.replace('/api/v1', '')
     if (route.request().method() !== 'GET') mutations.push(path)
     if (
-      path === '/admin/contact-requests' &&
+      (path === '/admin/contact-requests' || path === '/admin/orders') &&
       url.searchParams.get('per_page') === '5'
     )
       return route.fulfill({

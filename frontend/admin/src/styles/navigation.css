@@ -110,6 +110,7 @@
 .admin-nav-trigger {
   display: inline-flex;
   align-items: center;
+  gap: var(--admin-spacing-2);
   min-height: var(--admin-shell-navigation-height);
   border-bottom: 2px solid transparent;
   font-size: 0.875rem;

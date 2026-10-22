@@ -1,11 +1,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { effectScope, nextTick } from 'vue'
+import { effectScope, reactive, type EffectScope } from 'vue'
 import AdminNotifications from '../src/layouts/components/AdminNotifications.vue'
 import UiPopover from '../src/components/ui/UiPopover.vue'
 import { useAuthStore } from '../src/stores/auth'
-import { useContactNotifications } from '../src/features/contacts/composables/useContactNotifications'
+import { useAdminNotifications } from '../src/features/notifications/composables/useAdminNotifications'
 import type { Contact } from '../src/features/contacts/types/contact.types'
 
 const api = vi.hoisted(() => ({ getContacts: vi.fn() }))
@@ -41,91 +41,21 @@ beforeEach(() => {
   vi.useFakeTimers()
   api.getContacts.mockResolvedValue(page())
 })
-afterEach(() => vi.useRealTimers())
-
-test('loads only new callbacks, counts all results, polls and stops on disposal', async () => {
-  authorize()
+const scopes: EffectScope[] = []
+function createState() {
   const scope = effectScope()
-  const notifications = scope.run(() => useContactNotifications())!
-  await flushPromises()
-  expect(api.getContacts).toHaveBeenCalledWith(
-    { type: 'callback', status: 'new' },
-    { perPage: 5 },
-  )
-  expect(notifications.total.value).toBe(8)
-  expect(notifications.contacts.value).toEqual([contact])
-  api.getContacts.mockResolvedValue({ ...page(0), data: [] })
-  await vi.advanceTimersByTimeAsync(30_000)
-  expect(notifications.contacts.value).toEqual([])
-  expect(notifications.total.value).toBe(0)
-  scope.stop()
-  const calls = api.getContacts.mock.calls.length
-  await vi.advanceTimersByTimeAsync(60_000)
-  expect(api.getContacts).toHaveBeenCalledTimes(calls)
-})
-
-test('does not request without permission and clears private data after permission loss', async () => {
-  const scope = effectScope()
-  const notifications = scope.run(() => useContactNotifications())!
-  await flushPromises()
-  expect(api.getContacts).not.toHaveBeenCalled()
-  authorize()
-  await flushPromises()
-  expect(notifications.total.value).toBe(8)
-  useAuthStore().user!.permissions = []
-  await nextTick()
-  expect(notifications.contacts.value).toEqual([])
-  expect(notifications.total.value).toBe(0)
-  await vi.advanceTimersByTimeAsync(30_000)
-  expect(api.getContacts).toHaveBeenCalledTimes(1)
-  scope.stop()
-})
-
-test.each(['logout', 'different user', 'unmount'])(
-  'ignores a late notification response after %s',
-  async (change) => {
-    let finish!: (result: ReturnType<typeof page>) => void
-    api.getContacts.mockReturnValueOnce(
-      new Promise((resolve) => {
-        finish = resolve
-      }),
-    )
-    authorize()
-    const scope = effectScope()
-    const notifications = scope.run(() => useContactNotifications())!
-    if (change === 'logout') useAuthStore().user = null
-    if (change === 'different user') {
-      api.getContacts.mockResolvedValue({ ...page(0), data: [] })
-      authorize(2)
-    }
-    if (change === 'unmount') scope.stop()
-    await nextTick()
-    finish(page())
-    await flushPromises()
-    expect(notifications.contacts.value).toEqual([])
-    expect(notifications.total.value).toBe(0)
-    scope.stop()
-  },
-)
-
-test('shows failures as errors and supports retry', async () => {
-  authorize()
-  api.getContacts.mockRejectedValueOnce(new Error('Сервер недоступен'))
-  const scope = effectScope()
-  const notifications = scope.run(() => useContactNotifications())!
-  await flushPromises()
-  expect(notifications.error.value).toBe('Сервер недоступен')
-  expect(notifications.loading.value).toBe(false)
-  await notifications.refresh()
-  expect(notifications.error.value).toBe('')
-  expect(notifications.total.value).toBe(8)
-  scope.stop()
+  scopes.push(scope)
+  return scope.run(() => reactive(useAdminNotifications()))!
+}
+afterEach(() => {
+  scopes.splice(0).forEach((scope) => scope.stop())
+  vi.useRealTimers()
 })
 
 test('renders real notification links, formatted phone and an accessible total', async () => {
   authorize()
   const wrapper = mount(AdminNotifications, {
-    props: { open: true },
+    props: { open: true, state: createState() },
     global: {
       stubs: {
         RouterLink: {
@@ -157,7 +87,7 @@ test('a background refresh keeps the focused notification link mounted', async (
   authorize()
   const wrapper = mount(AdminNotifications, {
     attachTo: document.body,
-    props: { open: true },
+    props: { open: true, state: createState() },
     global: {
       stubs: {
         RouterLink: {
@@ -190,7 +120,7 @@ test('retry retains focus inside the stable panel while loading and after succes
   api.getContacts.mockRejectedValueOnce(new Error('Недоступно'))
   const wrapper = mount(AdminNotifications, {
     attachTo: document.body,
-    props: { open: true },
+    props: { open: true, state: createState() },
     global: {
       stubs: { RouterLink: { template: '<a href="/contacts"><slot /></a>' } },
     },
@@ -223,6 +153,7 @@ test('repeated hover-open emissions do not refetch an already open panel', async
   authorize()
   const wrapper = mount(AdminNotifications, {
     props: {
+      state: createState(),
       open: false,
       'onUpdate:open': (value: boolean) => {
         void wrapper.setProps({ open: value })

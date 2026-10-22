@@ -8,6 +8,7 @@ import PageHeader from './PageHeader.vue'
 import UiAlert from '../ui/UiAlert.vue'
 import UiNotification from '../ui/UiNotification.vue'
 import UiBadge from '../ui/UiBadge.vue'
+import UiNotificationCount from '../ui/UiNotificationCount.vue'
 import UiButton from '../ui/UiButton.vue'
 import UiDialogFooter from '../ui/UiDialogFooter.vue'
 import UiCard from '../ui/UiCard.vue'
@@ -126,6 +127,7 @@ const uiComponents = [
   'UiInput',
   'UiLoadingState',
   'UiNotification',
+  'UiNotificationCount',
   'UiNotificationHost',
   'UiPagination',
   'UiPopover',
@@ -249,6 +251,7 @@ const colorGroups = [
 const standaloneColors = [
   { label: 'Page', token: '--admin-color-page' },
   { label: 'White', token: '--admin-color-white' },
+  { label: 'Notification count', token: '--admin-color-count-background' },
   { label: 'Card surface', token: '--admin-color-card-surface' },
   { label: 'Card border', token: '--admin-color-card-border' },
   { label: 'Card inset surface', token: '--admin-color-card-inset-surface' },
@@ -266,6 +269,9 @@ const radiusTokens = ['md', 'lg', 'xl', '2xl', 'card', 'card-inset']
 const controlHeightTokens = ['sm', 'md', 'lg']
 const shadowTokens = ['card', 'input', 'dialog', 'dropdown', 'sm', 'xl']
 const foundationMetaTokens = [
+  '--admin-count-height',
+  '--admin-count-font-size',
+  '--admin-count-radius',
   '--admin-container-max-width',
   '--admin-shell-max-width',
   '--admin-workspace-overview-max-width',
@@ -550,6 +556,9 @@ function submitAuthPreview(): void {
           <UiBadge tone="success">Успешно</UiBadge>
           <UiBadge tone="warning">Внимание</UiBadge>
           <UiBadge tone="danger">Ошибка</UiBadge>
+          <span class="inline-flex items-center gap-2 text-sm"
+            >Новые записи <UiNotificationCount :count="9857"
+          /></span>
         </div>
         <div class="mt-4 space-y-2">
           <UiButton

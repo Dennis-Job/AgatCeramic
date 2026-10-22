@@ -45,7 +45,7 @@ async function mockApi(page: Page, permissions = ['contacts.view']) {
       if (isNotification) {
         state.notifications++
         await state.pending
-        expect(url.searchParams.get('type')).toBe('callback')
+        expect(url.searchParams.has('type')).toBe(false)
         expect(url.searchParams.get('status')).toBe('new')
         if (state.fail)
           return route.fulfill({
@@ -94,9 +94,7 @@ test('notification list opens contact details, remains keyboard usable and fits 
       exact: true,
     })
     await trigger.click()
-    await expect(trigger).toHaveAccessibleDescription(
-      'Новых заявок на звонок: 8',
-    )
+    await expect(trigger).toHaveAccessibleDescription('Новых уведомлений: 8')
     const panel = page.getByRole('region', { name: 'Уведомления', exact: true })
     await expect(
       panel.getByRole('link', { name: /Обратный звонок #42/ }),
@@ -163,7 +161,7 @@ test('notification error supports retry and a processed queue becomes empty', as
   await page.getByRole('button', { name: 'Уведомления', exact: true }).click()
   const panel = page.getByRole('region', { name: 'Уведомления', exact: true })
   await expect(panel.getByRole('alert')).toContainText(
-    'Уведомления временно недоступны',
+    'Не удалось загрузить обращения.',
   )
   await page.screenshot({
     path: testInfo.outputPath('notifications-error.png'),
@@ -171,9 +169,7 @@ test('notification error supports retry and a processed queue becomes empty', as
   state.fail = false
   state.empty = true
   await panel.getByRole('button', { name: 'Повторить' }).click()
-  await expect(panel.getByRole('status')).toContainText(
-    'Новых заявок на звонок нет',
-  )
+  await expect(panel.getByRole('status')).toContainText('Новых уведомлений нет')
   await page.screenshot({
     path: testInfo.outputPath('notifications-empty.png'),
   })

@@ -18,6 +18,10 @@
   --admin-color-primary-950: #001c52;
 
   --admin-color-white: #ffffff;
+  --admin-color-count-background: #ff6b52;
+  --admin-count-height: 1rem;
+  --admin-count-font-size: 0.75rem;
+  --admin-count-radius: 0.25rem;
   --admin-color-page: #ffffff;
   --admin-color-gray-25: #fcfcfd;
   --admin-color-gray-50: #f9fafb;

@@ -1,5 +1,6 @@
 import { computed, getCurrentScope, onScopeDispose, ref, watch } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
+import { notifyAdminNotificationsChanged } from '../../notifications/services/notificationChanges'
 import {
   addContactComment,
   assignContact,
@@ -149,6 +150,7 @@ export function useContactsWorkspace() {
     actionError.value = ''
     try {
       await updateContactStatus(selected.value.id, selected.value.status)
+      notifyAdminNotificationsChanged()
       await select(selected.value)
       await load(meta.value.current_page)
     } catch (reason) {

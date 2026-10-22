@@ -14,6 +14,7 @@ export const approvedAdminColors: Record<string, string> = {
   '--admin-color-primary-900': '#003080',
   '--admin-color-primary-950': '#001c52',
   '--admin-color-white': '#ffffff',
+  '--admin-color-count-background': '#ff6b52',
   '--admin-color-page': '#ffffff',
   '--admin-color-gray-25': '#fcfcfd',
   '--admin-color-gray-50': '#f9fafb',

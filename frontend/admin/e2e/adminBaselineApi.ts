@@ -50,7 +50,7 @@ export async function mockAdminBaseline(
     const path = url.pathname.replace('/api/v1', '')
     // Shell notifications have their own scenarios; route-state fixtures model the workspace only.
     if (
-      path === '/admin/contact-requests' &&
+      (path === '/admin/contact-requests' || path === '/admin/orders') &&
       url.searchParams.get('per_page') === '5'
     ) {
       return route.fulfill({ json: page([]) })

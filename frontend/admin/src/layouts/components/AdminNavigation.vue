@@ -5,11 +5,15 @@ import { Menu } from '@lucide/vue'
 import UiButton from '../../components/ui/UiButton.vue'
 import UiDialog from '../../components/ui/UiDialog.vue'
 import UiPopover from '../../components/ui/UiPopover.vue'
+import UiNotificationCount from '../../components/ui/UiNotificationCount.vue'
 import AdminNavigationLinks from './AdminNavigationLinks.vue'
 import { useAuthStore } from '../../stores/auth'
 import { isNavigationLinkActive, visibleNavigation } from '../navigation'
 
 const emit = defineEmits<{ 'compact-open': [open: boolean] }>()
+withDefaults(defineProps<{ counts?: Record<string, number> }>(), {
+  counts: () => ({}),
+})
 const openId = defineModel<string | null>('openId', { default: null })
 const auth = useAuthStore()
 const route = useRoute()
@@ -97,8 +101,14 @@ onBeforeUnmount(() => {
           class="admin-nav-trigger"
           :class="{ 'is-active': activeSection?.id === section.id }"
           :aria-current="activeSection?.id === section.id ? 'page' : undefined"
-          >{{ section.label }}</RouterLink
-        >
+          :aria-description="
+            counts[section.id]
+              ? `Новых ${section.id === 'contacts' ? 'обращений' : 'заказов'}: ${counts[section.id]}`
+              : undefined
+          "
+          >{{ section.label
+          }}<UiNotificationCount :count="counts[section.id] ?? 0"
+        /></RouterLink>
         <UiPopover
           v-else
           :id="`admin-navigation-${section.id}-panel`"
@@ -172,6 +182,7 @@ onBeforeUnmount(() => {
         </div>
         <AdminNavigationLinks
           :groups="compactGroups"
+          :counts="counts"
           label="Основная навигация"
           @select="updatePopup('compact', false)"
         />

@@ -1,17 +1,33 @@
 <script setup lang="ts">
 import { Bell } from '@lucide/vue'
-import { watch } from 'vue'
+import { toRefs, watch } from 'vue'
 import UiPopover from '../../components/ui/UiPopover.vue'
 import UiEmptyState from '../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../components/ui/UiLoadingState.vue'
 import UiAlert from '../../components/ui/UiAlert.vue'
 import UiButton from '../../components/ui/UiButton.vue'
-import UiBadge from '../../components/ui/UiBadge.vue'
-import { useContactNotifications } from '../../features/contacts/composables/useContactNotifications'
+import UiNotificationCount from '../../components/ui/UiNotificationCount.vue'
+import type { AdminNotificationState } from '../../features/notifications/composables/useAdminNotifications'
 import { formatPhone } from '../../utils/phone'
 const open = defineModel<boolean>('open', { default: false })
-const { contacts, total, loading, error, canView, refresh } =
-  useContactNotifications()
+const props = defineProps<{ state: AdminNotificationState }>()
+const {
+  contacts,
+  contactsTotal,
+  ordersTotal,
+  total,
+  loading,
+  error,
+  canView,
+  canViewContacts,
+  canViewOrders,
+} = toRefs(props.state)
+const refresh = () => props.state.refresh()
+const contactLabels = {
+  callback: 'Обратный звонок',
+  email: 'Email',
+  partner: 'Партнёрство',
+}
 watch(open, (value) => {
   if (value) void refresh()
 })
@@ -46,37 +62,42 @@ function retry(event: MouseEvent) {
           :stroke-width="1.5"
           aria-hidden="true"
         />
-        <UiBadge
-          v-if="total"
-          tone="primary"
+        <UiNotificationCount
+          :count="total"
+          :max="99"
           class="absolute -right-2 -top-1"
-          aria-hidden="true"
-          >{{ total > 99 ? '99+' : total }}</UiBadge
-        >
+        />
       </button>
       <span v-if="total" id="admin-notifications-count" class="sr-only"
-        >Новых заявок на звонок: {{ total }}</span
+        >Новых уведомлений: {{ total }}</span
       >
     </template>
     <h2 class="text-base font-bold text-gray-500">Уведомления</h2>
     <template v-if="canView">
       <p class="mt-2 text-xs text-gray-500">
-        Новые заявки на звонок · {{ total }}. Остаются здесь до смены статуса
-        обращения.
+        <span v-if="canViewContacts"
+          >Новые обращения · {{ contactsTotal }}.
+        </span>
+        <span v-if="canViewOrders">Новые заказы · {{ ordersTotal }}. </span>
+        Остаются здесь до смены статуса.
       </p>
       <UiLoadingState
-        v-if="loading && !contacts.length"
+        v-if="loading && !contacts.length && !ordersTotal"
         label="Загрузка уведомлений…"
       />
-      <div v-else-if="error" class="mt-4 space-y-3">
+      <div v-if="error" class="mt-4 space-y-3">
         <UiAlert>{{ error }}</UiAlert>
         <UiButton variant="secondary" @click.stop="retry">Повторить</UiButton>
       </div>
       <UiEmptyState
-        v-else-if="!contacts.length"
-        label="Новых заявок на звонок нет"
+        v-if="!loading && !error && !total"
+        label="Новых уведомлений нет"
       />
-      <ul v-else class="mt-4 divide-y divide-gray-100" :aria-busy="loading">
+      <ul
+        v-if="contacts.length"
+        class="mt-4 divide-y divide-gray-100"
+        :aria-busy="loading"
+      >
         <li v-for="item in contacts" :key="item.id">
           <RouterLink
             :to="{ path: '/contacts', query: { contact: item.id } }"
@@ -84,7 +105,7 @@ function retry(event: MouseEvent) {
             @click="open = false"
           >
             <span class="block font-semibold"
-              >Обратный звонок #{{ item.id }}</span
+              >{{ contactLabels[item.type] }} #{{ item.id }}</span
             >
             <span class="block">{{ item.contact.name || 'Без имени' }}</span>
             <span v-if="item.contact.phone" class="block">{{
@@ -97,6 +118,14 @@ function retry(event: MouseEvent) {
         </li>
       </ul>
       <RouterLink
+        v-if="canViewOrders && ordersTotal"
+        to="/orders"
+        class="admin-focus mt-4 block rounded-lg py-3 text-sm font-semibold text-primary-500"
+        @click="open = false"
+        >Новые заказы · {{ ordersTotal }}</RouterLink
+      >
+      <RouterLink
+        v-if="canViewContacts"
         to="/contacts"
         class="admin-focus mt-4 inline-block text-sm font-semibold text-primary-500"
         @click="open = false"

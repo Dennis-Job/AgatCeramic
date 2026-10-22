@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { formatMoney } from '../../../utils/formatMoney'
 import { useAuthStore } from '../../../stores/auth'
+import { notifyAdminNotificationsChanged } from '../../notifications/services/notificationChanges'
 import {
   addOrderComment,
   getOrder,
@@ -139,6 +140,7 @@ export function useOrdersWorkspace() {
     actionError.value = ''
     try {
       await updateOrderStatus(selected.value.id, selected.value.status)
+      notifyAdminNotificationsChanged()
       await selectOrder(selected.value)
       await load(page.value)
     } catch (reason) {

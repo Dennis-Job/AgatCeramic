@@ -7,6 +7,8 @@ type ContrastNode = {
 // Exact owner-approved foreground/background pairs, not a rule-wide axe opt-out.
 // Keep WCAG findings as evidence; any new pair still fails accessibility checks.
 export const approvedContrastPairs = [
+  // Owner's 2026-10-21 reference: notification count, white on coral red.
+  ['#ffffff', '#ff6b52'],
   ['#12b76a', '#ecfdf3'],
   ['#0ba5ec', '#f0f9ff'],
   ['#ffffff', '#f04438'],
