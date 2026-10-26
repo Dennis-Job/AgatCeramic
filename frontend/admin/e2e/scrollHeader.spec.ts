@@ -81,7 +81,7 @@ for (const width of widths) {
       await expect(menu.locator('svg')).toBeVisible()
       const menuRect = (await menu.boundingBox())!
       const bellRect = (await header
-        .getByRole('button', { name: 'Уведомления', exact: true })
+        .getByRole('link', { name: 'Уведомления', exact: true })
         .boundingBox())!
       expect(menuRect.width).toBe(bellRect.width)
       expect(menuRect.height).toBe(bellRect.height)

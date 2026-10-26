@@ -16,6 +16,7 @@ import ProfileView from '../views/ProfileView.vue'
 import ProductsView from '../views/ProductsView.vue'
 import OrdersView from '../views/OrdersView.vue'
 import ContactsView from '../views/ContactsView.vue'
+import NotificationsView from '../views/NotificationsView.vue'
 import UiKitView from '../views/UiKitView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ContentView from '../views/ContentView.vue'
@@ -27,6 +28,12 @@ import ProductGroupImportView from '../views/ProductGroupImportView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: NotificationsView,
+      meta: { requiresAuth: true, title: 'Уведомления' },
+    },
     {
       path: '/brands',
       name: 'brands',

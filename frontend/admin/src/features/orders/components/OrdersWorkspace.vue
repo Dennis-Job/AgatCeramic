@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { RefreshCw } from '@lucide/vue'
 import AdminListDetail from '../../../components/shared/AdminListDetail.vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
@@ -18,7 +19,19 @@ import OrdersList from './OrdersList.vue'
 
 const listDetail = ref<InstanceType<typeof AdminListDetail> | null>(null)
 const workspace = useOrdersWorkspace()
+const route = useRoute()
 onMounted(workspace.initialize)
+watch(
+  () => route.query.order,
+  async (value) => {
+    if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return
+    const id = Number(value)
+    if (!Number.isSafeInteger(id)) return
+    await nextTick()
+    await listDetail.value?.showDetail(() => workspace.selectOrder({ id }))
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

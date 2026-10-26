@@ -179,19 +179,26 @@ test('mobile navigation close control does not show a tooltip', async ({
   }
 })
 
-test('header popovers remain readable without a tooltip over the open panel', async ({
+test('header controls remain readable without a tooltip and only the user icon opens a popover', async ({
   page,
 }) => {
   await mockCatalogApi(page)
   await page.goto('/products')
   for (const name of ['Уведомления', 'Меню пользователя']) {
-    const trigger = page.getByRole('button', { name, exact: true })
+    const trigger = page.getByRole(name === 'Уведомления' ? 'link' : 'button', {
+      name,
+      exact: true,
+    })
     await trigger.hover()
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    if (name === 'Уведомления') {
+      await expect(trigger).toHaveAttribute('href', '/notifications')
+      await expect(page.locator('#admin-notifications-panel')).toHaveCount(0)
+    } else await expect(trigger).toHaveAttribute('aria-expanded', 'true')
     // Wait beyond tooltip's hover delay to detect the popup/tooltip conflict.
     await page.waitForTimeout(350)
     await expect(page.getByRole('tooltip')).toHaveCount(0)
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    if (name === 'Меню пользователя')
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
     await page.screenshot({
       path: test
         .info()
@@ -200,7 +207,8 @@ test('header popovers remain readable without a tooltip over the open panel', as
         ),
     })
     await page.keyboard.press('Escape')
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    if (name === 'Меню пользователя')
+      await expect(trigger).toHaveAttribute('aria-expanded', 'false')
     await page.getByRole('heading', { name: 'Товары', exact: true }).hover()
   }
 })

@@ -1,4 +1,4 @@
-import { computed, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { formatMoney } from '../../../utils/formatMoney'
 import { useAuthStore } from '../../../stores/auth'
 import { notifyAdminNotificationsChanged } from '../../notifications/services/notificationChanges'
@@ -43,6 +43,10 @@ export function useOrdersWorkspace() {
   const meta = ref({ current_page: 1, last_page: 1, per_page: 25, total: 0 })
   const loading = ref(true)
   const detailLoading = ref(false)
+  let detailRequest = 0
+  onScopeDispose(() => {
+    detailRequest++
+  })
   const error = ref('')
   const statusLoading = ref(false)
   const statusReady = ref(false)
@@ -114,23 +118,33 @@ export function useOrdersWorkspace() {
     }
   }
 
-  async function selectOrder(order: Order): Promise<void> {
+  async function selectOrder(order: Pick<Order, 'id'>): Promise<void> {
+    const request = ++detailRequest
     detailLoading.value = true
     actionError.value = ''
+    selected.value = null
+    histories.value = []
+    comments.value = []
     try {
-      selected.value = await getOrder(order.id)
-      ;[histories.value, comments.value] = await Promise.all([
+      const item = await getOrder(order.id)
+      if (request !== detailRequest) return
+      selected.value = item
+      const [history, activity] = await Promise.all([
         getOrderHistory(order.id),
         getOrderComments(order.id),
       ])
+      if (request !== detailRequest) return
+      histories.value = history
+      comments.value = activity
       syncPaymentForm()
     } catch (reason) {
+      if (request !== detailRequest) return
       actionError.value =
         reason instanceof Error
           ? reason.message
           : 'Не удалось загрузить детали заказа.'
     } finally {
-      detailLoading.value = false
+      if (request === detailRequest) detailLoading.value = false
     }
   }
 

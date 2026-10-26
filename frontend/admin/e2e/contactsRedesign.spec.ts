@@ -262,7 +262,7 @@ test('guided actions respect the server graph, confirm terminal changes and upda
     .click()
   await expect(
     page
-      .getByRole('button', { name: 'Уведомления', exact: true })
+      .getByRole('link', { name: 'Уведомления', exact: true })
       .locator('.admin-notification-count'),
   ).toHaveCount(0)
 })

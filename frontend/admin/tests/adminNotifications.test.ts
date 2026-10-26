@@ -121,6 +121,29 @@ test('a saved status immediately refreshes counters without waiting for polling'
   expect(api.getContacts).toHaveBeenCalledTimes(2)
 })
 
+test('pagination ignores a superseded response', async () => {
+  authorize()
+  const { state } = start()
+  await flushPromises()
+  const pending = deferred<PaginatedResponse<Contact>>()
+  api.getContacts.mockReturnValueOnce(pending.promise)
+  const stale = state.setPage('contacts', 2)
+  api.getContacts.mockResolvedValue(page([contacts[2]!], 8))
+  await state.setPage('contacts', 1)
+  pending.resolve({
+    ...page([contacts[1]!], 8),
+    meta: { current_page: 2, last_page: 2, per_page: 5, total: 8 },
+  })
+  await stale
+  expect(api.getContacts).toHaveBeenCalledWith(
+    { status: 'new' },
+    { perPage: 5, page: 2 },
+  )
+  expect(state.contacts.value).toEqual([contacts[2]])
+  expect(state.contactsMeta.value.current_page).toBe(1)
+  expect(state.ordersTotal.value).toBe(12)
+})
+
 test('a saved status invalidates a pending background result and immediately requests fresh totals', async () => {
   authorize()
   const oldContacts = deferred<PaginatedResponse<Contact>>()

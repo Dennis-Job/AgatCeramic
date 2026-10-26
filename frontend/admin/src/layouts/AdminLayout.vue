@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { provide, reactive, ref } from 'vue'
 import AdminHeader from './components/AdminHeader.vue'
+import { useAdminNotifications } from '../features/notifications/composables/useAdminNotifications'
+import { adminNotificationKey } from '../features/notifications/composables/notificationContext'
 
 const condensed = ref(false)
+provide(adminNotificationKey, reactive(useAdminNotifications()))
 </script>
 
 <template>

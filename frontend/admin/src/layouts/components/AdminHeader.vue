@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminNavigation from './AdminNavigation.vue'
 import AdminNotifications from './AdminNotifications.vue'
 import AdminUserMenu from './AdminUserMenu.vue'
-import { useAdminNotifications } from '../../features/notifications/composables/useAdminNotifications'
+import { useNotificationContext } from '../../features/notifications/composables/notificationContext'
 
-const notifications = reactive(useAdminNotifications())
+const notifications = useNotificationContext()
 const compactOpen = ref(false)
 const openPopup = ref<string | null>(null)
 const route = useRoute()
@@ -75,11 +75,7 @@ watch(
         class="admin-header-actions flex min-w-0 items-center gap-2 sm:gap-3"
         :inert="compactOpen"
       >
-        <AdminNotifications
-          :state="notifications"
-          :open="openPopup === 'notifications'"
-          @update:open="updatePopup('notifications', $event)"
-        />
+        <AdminNotifications :state="notifications" />
         <AdminUserMenu
           :open="openPopup === 'user'"
           @update:open="updatePopup('user', $event)"

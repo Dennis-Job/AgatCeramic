@@ -89,7 +89,7 @@ test('desktop submenus open on hover, stay hoverable, use group-sized columns an
 })
 
 for (const width of widths) {
-  test(`account and notifications open on hover at every width, stay within the viewport and expose existing actions at ${width}px`, async ({
+  test(`account menu opens on hover and the notification link stays within the viewport at ${width}px`, async ({
     page,
   }) => {
     await mockAdminBaseline(page)
@@ -97,8 +97,11 @@ for (const width of widths) {
 
     await page.setViewportSize({ width, height: 900 })
     await page.mouse.move(0, 800)
+    const bell = page.getByRole('link', { name: 'Уведомления', exact: true })
+    await expect(bell).toHaveAttribute('href', '/notifications')
+    await bell.hover()
+    await expect(page.locator('#admin-notifications-panel')).toHaveCount(0)
     for (const [label, id] of [
-      ['Уведомления', '#admin-notifications-panel'],
       ['Меню пользователя', '#admin-user-panel'],
     ] as const) {
       const trigger = page
@@ -112,19 +115,14 @@ for (const width of widths) {
       expect(box.x).toBeGreaterThanOrEqual(16)
       expect(box.x + box.width).toBeLessThanOrEqual(width - 16)
       expect(box.width).toBe(Math.min(320, width - 32))
-      if (label === 'Меню пользователя') {
-        await expect(panel).toContainText('Тестовый администратор')
-        await expect(panel).toContainText('admin@example.test')
-        await expect(
-          panel.getByRole('link', { name: 'Мой профиль' }),
-        ).toHaveAttribute('href', '/profile')
-        await expect(
-          panel.getByRole('link', { name: 'Настройки' }),
-        ).toHaveAttribute('href', '/settings')
-      } else
-        await expect(panel.getByRole('status')).toContainText(
-          'Новых уведомлений нет',
-        )
+      await expect(panel).toContainText('Тестовый администратор')
+      await expect(panel).toContainText('admin@example.test')
+      await expect(
+        panel.getByRole('link', { name: 'Мой профиль' }),
+      ).toHaveAttribute('href', '/profile')
+      await expect(
+        panel.getByRole('link', { name: 'Настройки' }),
+      ).toHaveAttribute('href', '/settings')
       await page.screenshot({
         path: `.tmp/header-popovers/${id.slice(1)}-${width}.png`,
       })
@@ -140,7 +138,7 @@ for (const width of widths) {
   })
 }
 
-test('keyboard disclosures support arrows, Escape, focus return and Tab dismissal; only one header popup is open', async ({
+test('keyboard disclosures support arrows, Escape, focus return and Tab dismissal beside the notification link', async ({
   page,
 }) => {
   await mockAdminBaseline(page)
@@ -161,19 +159,13 @@ test('keyboard disclosures support arrows, Escape, focus return and Tab dismissa
   await expect(panel).toBeVisible()
   const notifications = page
     .getByRole('banner')
-    .getByRole('button', { name: 'Уведомления', exact: true })
-  await notifications.hover()
-  await expect(panel).toBeHidden()
-  await expect(page.locator('#admin-notifications-panel')).toBeVisible()
+    .getByRole('link', { name: 'Уведомления', exact: true })
   await notifications.focus()
-  await page.keyboard.press('ArrowDown')
-  await expect(
-    page
-      .locator('#admin-notifications-panel')
-      .getByRole('link', { name: 'Все обращения' }),
-  ).toBeFocused()
-  await page.keyboard.press('Escape')
-  await expect(notifications).toBeFocused()
+  await expect(page.locator('#admin-notifications-panel')).toHaveCount(0)
+  await expect(notifications).toHaveAttribute('href', '/notifications')
+  await page.keyboard.press('Tab')
+  await expect(user).toBeFocused()
+  await expect(panel).toBeHidden()
   await user.focus()
   await page.keyboard.press('Enter')
   await page.keyboard.press('End')
@@ -342,10 +334,12 @@ test.describe('touch', () => {
     await expect(page.locator('#admin-user-panel')).toBeVisible()
     await user.tap()
     await expect(page.locator('#admin-user-panel')).toBeHidden()
-    await page.getByRole('button', { name: 'Уведомления', exact: true }).tap()
-    await expect(page.locator('#admin-notifications-panel')).toBeVisible()
-    await page.touchscreen.tap(4, 600)
-    await expect(page.locator('#admin-notifications-panel')).toBeHidden()
+    await page.getByRole('link', { name: 'Уведомления', exact: true }).tap()
+    await expect(page).toHaveURL('/notifications')
+    await expect(
+      page.getByRole('heading', { name: 'Уведомления', exact: true }),
+    ).toBeVisible()
+    await expect(page.locator('#admin-notifications-panel')).toHaveCount(0)
     await page.getByRole('button', { name: 'Открыть меню' }).tap()
     await expect(
       page.getByRole('dialog', { name: 'Разделы панели' }),

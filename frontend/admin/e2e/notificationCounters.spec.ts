@@ -81,7 +81,7 @@ test('red counters share totals in desktop and compact navigation at all widths'
 }, testInfo) => {
   const state = await counters(page)
   await page.goto('/profile')
-  const bell = page.getByRole('button', { name: 'Уведомления', exact: true })
+  const bell = page.getByRole('link', { name: 'Уведомления', exact: true })
   await expect(bell).toHaveAccessibleDescription('Новых уведомлений: 11572')
   // Navigation and bell consume one header scope rather than duplicate polling.
   expect(state.requests).toEqual({ contacts: 1, orders: 1 })
@@ -143,7 +143,13 @@ test('red counters share totals in desktop and compact navigation at all widths'
     }
   }
   await bell.click()
+  await expect(page).toHaveURL('/notifications')
   const panel = page.getByRole('region', { name: 'Уведомления', exact: true })
+  const sections = page.getByRole('navigation', { name: 'Разделы уведомлений' })
+  await expect(
+    sections.getByRole('link', { name: 'Заказы', exact: true }),
+  ).toHaveAccessibleDescription('Новых заказов: 1715')
+  await sections.getByRole('link', { name: 'Обращения', exact: true }).click()
   await expect(
     panel.getByRole('link', { name: /Обратный звонок #1/ }),
   ).toBeVisible()
@@ -151,21 +157,15 @@ test('red counters share totals in desktop and compact navigation at all widths'
   await expect(
     panel.getByRole('link', { name: /Партнёрство #3/ }),
   ).toBeVisible()
-  await expect(
-    panel.getByRole('link', { name: 'Новые заказы · 1715' }),
-  ).toHaveAttribute('href', '/orders')
   await expect(bell.locator('.admin-notification-count')).toHaveText('99+')
   await page.screenshot({
     path: testInfo.outputPath('notification-counters-panel.png'),
   })
-  await page.keyboard.press('Escape')
-  await expect(bell).toBeFocused()
   state.contacts = 0
   state.orders = 0
-  await bell.click()
+  await page.reload()
   await expect(bell.locator('.admin-notification-count')).toHaveCount(0)
   await expect(panel.getByRole('status')).toContainText('Новых уведомлений нет')
-  await page.keyboard.press('Escape')
   await expect(
     page
       .getByRole('navigation', { name: 'Основная навигация' })
@@ -183,7 +183,7 @@ for (const [permissions, expected, requests] of [
   }) => {
     const state = await counters(page, [...permissions])
     await page.goto('/profile')
-    const bell = page.getByRole('button', { name: 'Уведомления', exact: true })
+    const bell = page.getByRole('link', { name: 'Уведомления', exact: true })
     if (expected)
       await expect(bell).toHaveAccessibleDescription(
         `Новых уведомлений: ${expected}`,
@@ -248,7 +248,7 @@ test('saving a contact status immediately updates the bell and navigation withou
       navigations++
   })
   await page.goto('/contacts?contact=1')
-  const bell = page.getByRole('button', { name: 'Уведомления', exact: true })
+  const bell = page.getByRole('link', { name: 'Уведомления', exact: true })
   await expect(bell).toHaveAccessibleDescription('Новых уведомлений: 1')
   const requestsBeforeSave = state.requests.contacts
   await page
