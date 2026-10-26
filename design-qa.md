@@ -190,3 +190,38 @@ typography, page-size pagination and omission of the mock annotation.
   remain documented in `docs/ADMIN_PRODUCTS_REDESIGN.md`.
 
 final result: passed
+
+---
+
+# Content header sections — design QA
+
+Date: 2026-10-26. Route: `/content?section=appearance&panel=header`.
+
+**final result: passed**
+
+Independent UI Design Guard accepted the implementation with no blocking findings.
+
+## Evidence
+
+- Selected reference: first displayed concept, `exec-677f5fed-e940-4ee5-9340-2b51290e254a.png` in this chat's generated images.
+- Live implementation: `.tmp/content-header-design/final-live-1440.png` and `final-live-full.png`; actual Nuxt preview, not the fixture iframe.
+- Combined comparison: `.tmp/content-header-design/comparison.png` and `comparison-inspector.png`.
+- Responsive pending-file evidence: appearance E2E captures at 320/640/768/1024/1280/1440 CSS px. API fixtures are used for these interaction/accessibility checks, not as proof of real Nuxt rendering.
+
+## Findings and resolution
+
+- Initial compact thumbnail clipped the empty-image caption. Reused `UiImagePreview`'s existing compact mode, which keeps the fallback accessible with visually hidden text. Fresh live capture confirms the fix.
+- At the narrow desktop inspector, reduced only the opt-in thumbnail size to make room for the approved dropzone. Default image-editor consumers retain their existing size.
+- Three clear sections, approved gray headers/white bodies and existing tokens match the selected direction. Real empty logo and six menu items replace illustrative mock content. The existing preview/inspector proportions, readable field labels, non-collapsing sections and ordinary page scrolling are intentional constraints, not defects.
+
+## Fidelity and interaction checks
+
+- Typography: existing Nunito/Poppins and UI-kit type scale retained.
+- Spacing/layout rhythm: existing `UiCard`, shared control spacing and three-zone layout; no new shell or global styles.
+- Colors/tokens: approved palette retained without contrast-driven replacement.
+- Image quality: actual Nuxt assets preserved; selected-logo thumbnail uses contain and honest fallback. No fabricated logo.
+- Copy/content: actual settings retained, contacts source clearly identified, descriptive names for icon actions.
+- Accessibility: named sections, labels, keyboard controls, image fallback and restored dropzone focus on cancellation. Automated responsive/axe coverage includes the narrow desktop inspector.
+- Permissions/guards: `media.manage` still gates select/remove/upload; content editors retain read-only preview. Existing pending/uploading and draft/publish boundaries remain.
+
+No remaining actionable P0/P1/P2 findings.

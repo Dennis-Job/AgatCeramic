@@ -22,6 +22,9 @@ const props = defineProps<{
   uploadSuccessMessage?: string
   previewLabel?: string
   removeLabel?: string
+  requireManagePermission?: boolean
+  uploadLabel?: string
+  compact?: boolean
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: number | null]
@@ -31,14 +34,20 @@ const emit = defineEmits<{
 }>()
 const auth = useAuthStore()
 const canUpload = computed(() => auth.hasPermission('media.manage'))
-const canSelect = computed(
+const canPreview = computed(
   () =>
-    canUpload.value ||
     auth.hasPermission('catalog.manage') ||
     auth.hasPermission('content.manage'),
 )
-const { options, loading, error, load } = useMediaOptions('image', canSelect)
+const canSelect = computed(
+  () => canUpload.value || (!props.requireManagePermission && canPreview.value),
+)
+const { options, loading, error, load } = useMediaOptions(
+  'image',
+  () => canSelect.value || (canPreview.value && props.modelValue !== null),
+)
 const input = ref<HTMLInputElement | null>(null)
+const dropzone = ref<InstanceType<typeof UiFileDropzone> | null>(null)
 const libraryOpen = ref(false)
 const libraryButton = ref<InstanceType<typeof UiButton> | null>(null)
 const viewerOpen = ref(false)
@@ -102,6 +111,7 @@ function toggleNoImage(value: boolean) {
   }
 }
 async function selectImage(value: string) {
+  if (!canSelect.value || controlsDisabled.value) return
   noImage.value = value === ''
   emit('update:modelValue', value ? Number(value) : null)
   libraryOpen.value = false
@@ -128,14 +138,16 @@ function chooseFiles(files: FileList | null) {
   upload.chooseFile(file)
   noImage.value = false
 }
-function cancelFile() {
+async function cancelFile() {
   upload.cancel()
   noImage.value = props.modelValue === null
+  await nextTick()
+  dropzone.value?.$el.focus()
 }
 </script>
 
 <template>
-  <div class="min-w-0 space-y-3">
+  <div class="min-w-0 space-y-3" :class="{ 'image-editor-compact': compact }">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm font-medium text-gray-500">{{ label }}</p>
       <UiCheckbox
@@ -148,7 +160,17 @@ function cancelFile() {
         >Без изображения</UiCheckbox
       >
     </div>
-    <div class="grid items-start gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
+    <p v-if="!canSelect" class="text-sm text-gray-500" role="status">
+      Выбор и загрузка доступны сотруднику с правом управления медиа.
+    </p>
+    <div
+      class="grid items-start gap-4"
+      :class="
+        compact
+          ? 'sm:grid-cols-[5rem_minmax(0,1fr)]'
+          : 'sm:grid-cols-[8rem_minmax(0,1fr)]'
+      "
+    >
       <div class="min-w-0">
         <div v-if="preview" class="image-editor-photo">
           <UiButton
@@ -161,6 +183,7 @@ function cancelFile() {
             <UiImagePreview
               :url="preview.thumbnail_url || preview.url"
               :alt="preview.alt || label"
+              :compact="compact"
             />
           </UiButton>
           <UiButton
@@ -180,6 +203,7 @@ function cancelFile() {
           v-else
           :url="null"
           :alt="label"
+          :compact="compact"
           class="image-editor-preview"
         />
         <p
@@ -204,7 +228,8 @@ function cancelFile() {
             @change="chooseFiles(($event.target as HTMLInputElement).files)"
           />
           <UiFileDropzone
-            label="Выберите или перетащите фото в эту область"
+            ref="dropzone"
+            :label="uploadLabel || 'Выберите или перетащите фото в эту область'"
             drop-label="Отпустите фото для добавления"
             description="Формат — JPEG, JPG, PNG, WebP. Размер — не больше 10 МБ."
             format-label="IMG"
@@ -268,7 +293,7 @@ function cancelFile() {
           }}</UiButton
         >
         <UiSelect
-          v-if="libraryOpen"
+          v-if="canSelect && libraryOpen"
           :model-value="modelValue === null ? '' : String(modelValue)"
           :options="[
             { label: 'Без изображения', value: '' },
@@ -284,7 +309,7 @@ function cancelFile() {
           @update:model-value="selectImage"
         />
         <p
-          v-if="libraryOpen && !options.length"
+          v-if="canSelect && libraryOpen && !options.length"
           class="text-xs text-gray-500"
           role="status"
         >
@@ -358,7 +383,7 @@ function cancelFile() {
 }
 .image-editor-preview {
   display: flex;
-  width: calc(var(--admin-spacing-4) * 8);
+  width: var(--media-image-preview-size, calc(var(--admin-spacing-4) * 8));
   max-width: 100%;
   padding: 0;
   aspect-ratio: 1;
@@ -372,8 +397,18 @@ function cancelFile() {
 }
 .image-editor-photo {
   position: relative;
-  width: calc(var(--admin-spacing-4) * 8);
+  width: var(--media-image-preview-size, calc(var(--admin-spacing-4) * 8));
   max-width: 100%;
+}
+.image-editor-compact {
+  --media-image-preview-size: calc(var(--admin-spacing-4) * 5);
+}
+.image-editor-compact .image-editor-preview {
+  height: var(--media-image-preview-size);
+}
+.image-editor-compact .image-editor-preview :deep(.ui-image-preview-compact) {
+  width: 100%;
+  height: 100%;
 }
 .image-editor-remove {
   position: absolute;

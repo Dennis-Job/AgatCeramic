@@ -186,8 +186,8 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
   await page.goto('/content?section=appearance&panel=header')
   await expect(page.getByLabel('Верхняя строка справа')).toHaveCount(0)
   await expect(
-    page.getByRole('status').filter({ hasText: 'Справа в верхней строке' }),
-  ).toContainText('Настройки сайта')
+    page.getByRole('region', { name: 'Верхняя строка', exact: true }),
+  ).toContainText('Настроек сайта')
   const publish = page.getByRole('button', { name: 'Опубликовать оформление' })
   await expect(publish).toBeDisabled()
   await page.getByLabel('Верхняя строка слева').fill('Изменённая шапка')
@@ -382,11 +382,60 @@ test('appearance exposes media selection and upload for a media manager', async 
 }) => {
   await mockWorkspace(page, ['content.manage', 'media.manage'])
   await page.goto('/content?section=appearance')
+  for (const name of ['Верхняя строка', 'Логотип', 'Навигация']) {
+    await expect(page.getByRole('region', { name, exact: true })).toBeVisible()
+  }
+  await expect(
+    page.getByRole('button', { name: 'Выберите или перетащите логотип' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Выбрать из загруженных' }).click()
   await expect(
     page.getByRole('button', { name: 'Логотип сайта', exact: true }),
   ).toBeVisible()
-  await expect(page.getByLabel('Загрузить файл — Логотип сайта')).toBeVisible()
   await expect(page.getByText('Изображений пока нет.')).toBeVisible()
+})
+
+test('logo selection stays usable and accessible in narrow screens and the desktop inspector', async ({
+  page,
+}) => {
+  await mockWorkspace(page, ['content.manage', 'media.manage'])
+  await page.goto('/content?section=appearance&panel=header')
+  await page.getByLabel('Загрузить файл — Логотип сайта').setInputFiles({
+    name: 'logo.webp',
+    mimeType: 'image/webp',
+    buffer: Buffer.from('fixture'),
+  })
+  for (const width of [320, 640, 768, 1024, 1280, 1440]) {
+    await page.setViewportSize({ width, height: 1024 })
+    await expect(page.getByLabel('Название файла')).toHaveValue('logo')
+    await expect(
+      page.getByRole('button', { name: 'Выберите или перетащите логотип' }),
+    ).toBeVisible()
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+      ),
+      `logo overflow at ${width}px`,
+    ).toBe(false)
+    expect(
+      (await new AxeBuilder({ page }).analyze()).violations,
+      `logo axe at ${width}px`,
+    ).toEqual([])
+    await page.screenshot({
+      path: test.info().outputPath(`logo-${width}.png`),
+      fullPage: true,
+      animations: 'disabled',
+    })
+  }
+  await page.getByRole('button', { name: 'Отменить выбор файла' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Выберите или перетащите логотип' }),
+  ).toBeFocused()
+  await expect(
+    page.getByRole('button', { name: 'Подвал', exact: true }),
+  ).toBeEnabled()
 })
 
 for (const width of [320, 640, 768, 1024, 1280]) {
