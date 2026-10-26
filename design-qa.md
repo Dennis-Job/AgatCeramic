@@ -225,3 +225,18 @@ Independent UI Design Guard accepted the implementation with no blocking finding
 - Permissions/guards: `media.manage` still gates select/remove/upload; content editors retain read-only preview. Existing pending/uploading and draft/publish boundaries remain.
 
 No remaining actionable P0/P1/P2 findings.
+
+## 2026-10-26 — тот же паттерн для подвала
+
+**final result: passed**
+
+По указанию владельца footer-редактор разделён на четыре секции `UiCard`:
+слоган, ссылки «Исследовать», текстовый блок и нижняя строка. Использованы
+те же approved tokens, typography, интервалы и кнопки списка, что в шапке.
+Общие primitives/layout, медиа, API и guards не менялись.
+
+Evidence: `.tmp/footer-sections/before.png`, `after-1440.png` (реальный Nuxt),
+`e2e/**/appearance-footer-{320,640,768,1024,1280}.png` (responsive controls).
+Независимый UI Design Guard просмотрел diff и снимки: accepted, blocking findings нет.
+Appearance E2E/axe 16/16 и unit 245/245 PASS; live CRUD ссылки проверен с восстановлением
+исходных значений без сохранения/публикации. Новых визуальных дефектов не выявлено.
