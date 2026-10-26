@@ -7,6 +7,7 @@ import {
   useRouter,
 } from 'vue-router'
 import AdminEditorLayout from '../../../components/shared/AdminEditorLayout.vue'
+import AdminStickyActions from '../../../components/shared/AdminStickyActions.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
@@ -90,7 +91,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
             }}</UiBadge
           >
         </div>
-        <div v-if="workspace.content.value" class="flex flex-wrap gap-2">
+        <AdminStickyActions v-if="workspace.content.value">
           <UiButton
             v-if="panel !== 'filters'"
             variant="secondary"
@@ -110,7 +111,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
             @click="workspace.publish()"
             >Опубликовать оформление</UiButton
           >
-        </div>
+        </AdminStickyActions>
       </template>
       <template #navigation>
         <nav aria-label="Разделы общего оформления" class="space-y-2">

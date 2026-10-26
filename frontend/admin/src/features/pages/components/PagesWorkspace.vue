@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Plus, Trash2 } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import AdminEditorLayout from '../../../components/shared/AdminEditorLayout.vue'
+import AdminStickyActions from '../../../components/shared/AdminStickyActions.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
@@ -165,7 +166,7 @@ onMounted(() => pages.load())
             >В черновике есть неопубликованные изменения.</span
           >
         </div>
-        <div v-if="activeEditor && currentPage" class="flex flex-wrap gap-2">
+        <AdminStickyActions v-if="activeEditor && currentPage">
           <UiButton
             variant="secondary"
             aria-label="Сохранить черновик блоков"
@@ -189,7 +190,7 @@ onMounted(() => pages.load())
             @click="activeEditor.publish"
             >Опубликовать</UiButton
           >
-        </div>
+        </AdminStickyActions>
       </template>
       <template #navigation>
         <section class="min-w-0" aria-labelledby="site-pages-title">

@@ -253,6 +253,47 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
   await expect(publish).toBeDisabled()
 })
 
+for (const [panel, label, value] of [
+  ['header', 'Верхняя строка слева', 'Закреплённая шапка'],
+  ['footer', 'Слоган под логотипом', 'Закреплённый подвал'],
+] as const) {
+  test(`appearance ${panel} floating actions save and publish with keyboard focus and busy states`, async ({
+    page,
+  }) => {
+    const api = await mockWorkspace(page)
+    await page.goto(`/content?section=appearance&panel=${panel}`)
+    await page.getByLabel(label).fill(value)
+    const save = page.getByRole('button', {
+      name: 'Сохранить черновик раздела',
+    })
+    const publish = page.getByRole('button', {
+      name: 'Опубликовать оформление',
+    })
+    await save.focus()
+    await page.evaluate(() => window.scrollTo(0, 600))
+    await expect(page.locator('.admin-sticky-actions--floating')).toBeVisible()
+    await expect(save).toBeFocused()
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(
+      page
+        .locator('.admin-editor-toolbar')
+        .getByRole('button', { name: 'Сохранить черновик раздела' }),
+    ).toBeVisible()
+    await expect(save).toBeFocused()
+    await page.evaluate(() => window.scrollTo(0, 600))
+    const saving = api.deferred.defer(`PATCH ${appearancePath}`)
+    await save.press('Enter')
+    await saving.requested
+    await expect(save).toBeDisabled()
+    await expect(publish).toBeDisabled()
+    saving.release()
+    await expect(publish).toBeEnabled()
+    await publish.click()
+    await expect(publish).toBeDisabled()
+    expect(JSON.stringify(api.published()[panel])).toContain(value)
+  })
+}
+
 test('appearance confirms leaving dirty edits while panel changes remain safe', async ({
   page,
 }) => {
