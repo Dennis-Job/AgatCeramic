@@ -135,6 +135,50 @@ async function mockWorkspace(page: Page, permissions = ['content.manage']) {
   }
 }
 
+test('header menu supports adding, editing, reordering, deleting and publishing links', async ({
+  page,
+}) => {
+  const api = await mockWorkspace(page)
+  await page.goto('/content?section=appearance&panel=header')
+  const names = page.getByLabel('Название', { exact: true })
+  const links = page.getByLabel('Ссылка', { exact: true })
+  await names.nth(0).fill('Каталог')
+  await links.nth(0).fill('/catalog')
+  for (const [label, to] of [
+    ['О нас', '/about'],
+    ['Главная', '/'],
+    ['Сотрудничество', '/cooperation'],
+    ['Удаляемый пункт', '/unused'],
+  ]) {
+    await page.getByRole('button', { name: 'Добавить пункт меню' }).click()
+    await names.last().fill(label!)
+    await links.last().fill(to!)
+  }
+  await page
+    .getByRole('button', { name: 'Удалить пункт меню 6', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Поднять пункт меню 4', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Опустить пункт меню 2', exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Сохранить черновик раздела' }).click()
+  expect(api.published().header.navigation).toHaveLength(2)
+  await page.getByRole('button', { name: 'Опубликовать оформление' }).click()
+  await expect(page.getByText('Общее оформление опубликовано.')).toBeVisible()
+  expect(api.published().header.navigation).toEqual([
+    { label: 'Каталог', to: '/catalog' },
+    { label: 'Главная', to: '/' },
+    { label: 'Контакты наших магазинов', to: '/contacts' },
+    { label: 'О нас', to: '/about' },
+    { label: 'Сотрудничество', to: '/cooperation' },
+  ])
+  await page.reload()
+  await expect(names).toHaveCount(5)
+  await expect(names.nth(1)).toHaveValue('Главная')
+})
+
 test('appearance retains panel drafts and publishes only saved appearance sections', async ({
   page,
 }) => {

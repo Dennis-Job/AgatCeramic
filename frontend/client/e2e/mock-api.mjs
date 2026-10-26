@@ -214,7 +214,9 @@ createServer(async (request, response) => {
                 to: `/about#section-${index}`,
               })),
             ]
-          : home.header.navigation
+          : scenario === 'header-navigation'
+            ? [...nav, { label: 'Сотрудничество', to: '/cooperation' }]
+            : home.header.navigation
     return send({
       data: {
         header: {

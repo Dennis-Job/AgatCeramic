@@ -178,7 +178,7 @@ onUnmounted(() => {
       </NuxtLink>
 
       <nav
-        v-if="navigation.length && navigation.length <= 4"
+        v-if="navigation.length"
         class="site-nav"
         :aria-label="navigationLabel || 'Основная навигация'"
       >
@@ -420,10 +420,16 @@ onUnmounted(() => {
 }
 .site-nav {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: center;
   min-width: 0;
-  gap: clamp(18px, 3vw, 44px);
+  max-height: min(144px, 25dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  gap: 4px clamp(18px, 3vw, 44px);
+  padding: 8px 6px;
+  scroll-padding-block: 8px;
 }
 .site-nav a {
   position: relative;

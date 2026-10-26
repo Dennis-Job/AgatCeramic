@@ -57,7 +57,15 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
     <UiField label="Описание логотипа"
       ><UiInput v-model="content.header.logo_alt"
     /></UiField>
-    <h3 class="font-medium text-gray-500">Навигация</h3>
+    <div>
+      <h3 class="font-medium text-gray-500">Меню сайта</h3>
+      <p class="mt-1 text-sm text-gray-500">
+        На компьютере ссылки отображаются в шапке между логотипом и иконками, на
+        узких экранах — в боковом меню. Здесь можно изменить названия, ссылки и
+        порядок пунктов. После сохранения черновика нажмите «Опубликовать
+        оформление», чтобы применить меню на всех страницах.
+      </p>
+    </div>
     <div
       v-for="(link, index) in content.header.navigation"
       :key="index"
