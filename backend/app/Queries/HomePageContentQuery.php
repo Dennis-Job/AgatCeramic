@@ -8,6 +8,7 @@ use App\Models\Media;
 use App\Models\Page;
 use App\Models\Slider;
 use App\Support\PageBlocks;
+use App\Support\SiteCopyright;
 use Illuminate\Support\Facades\Storage;
 
 class HomePageContentQuery
@@ -22,6 +23,9 @@ class HomePageContentQuery
         }
         $page = HomePage::query()->findOrFail(1);
         $content = $page->content;
+        /** @var array<string, mixed> $footer */
+        $footer = $content['footer'];
+        $content['footer'] = [...$footer, 'bottom_left' => SiteCopyright::text()];
         $media = Media::query()->whereIn('id', $page->referencedMediaIds())->get()->keyBy('id');
 
         foreach ($content['categories']['items'] as $index => $item) {
@@ -55,6 +59,7 @@ class HomePageContentQuery
         $result['header'] = $layout['header'];
         $result['header']['logo_url'] ??= null;
         $result['footer'] = $layout['footer'];
+        $result['footer']['bottom_left'] = SiteCopyright::text();
         // Legacy fixed sections remain available to older clients. Missing blocks use
         // static defaults, never values from the editable HomePage draft.
         foreach (PageBlocks::HOME_TYPES as $type) {

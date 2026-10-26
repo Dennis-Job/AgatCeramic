@@ -3,6 +3,7 @@
 namespace App\Queries;
 
 use App\Models\Page;
+use App\Support\SiteCopyright;
 
 class SiteAppearanceQuery
 {
@@ -21,7 +22,10 @@ class SiteAppearanceQuery
         /** @var array<string, mixed> $header */
         $header = $resolved['header'];
         $header['logo_url'] ??= null;
-        $result = ['header' => $header, 'footer' => $resolved['footer']];
+        /** @var array<string, mixed> $footer */
+        $footer = $resolved['footer'];
+        $footer['bottom_left'] = SiteCopyright::text();
+        $result = ['header' => $header, 'footer' => $footer];
 
         return $admin ? [...$result, 'has_unpublished_changes' => $page->site_layout !== $published] : $result;
     }

@@ -27,12 +27,10 @@ export async function saveAppearanceSection<K extends AppearanceSection>(
   value: SiteAppearance[K],
 ): Promise<SiteAppearance> {
   await requestCsrfCookie()
-  const sectionValue =
-    section === 'header'
-      ? Object.fromEntries(
-          Object.entries(value).filter(([key]) => key !== 'logo_url'),
-        )
-      : value
+  const readOnlyKey = section === 'header' ? 'logo_url' : 'bottom_left'
+  const sectionValue = Object.fromEntries(
+    Object.entries(value).filter(([key]) => key !== readOnlyKey),
+  )
   return decode(
     await apiFetch('/admin/site-appearance', {
       method: 'PATCH',

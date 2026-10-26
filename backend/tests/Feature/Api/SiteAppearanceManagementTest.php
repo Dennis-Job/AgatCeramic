@@ -13,13 +13,78 @@ use App\Services\SiteAppearanceManagementService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class SiteAppearanceManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    /** @return array<string, array{string, string, string}> */
+    public static function copyrightYearBoundaries(): array
+    {
+        return [
+            'Moscow before local New Year' => ['Europe/Moscow', '2026-12-31T20:59:59Z', '2026'],
+            'Moscow New Year before UTC' => ['Europe/Moscow', '2026-12-31T21:00:00Z', '2027'],
+            'Honolulu still previous year' => ['Pacific/Honolulu', '2027-01-01T00:15:00Z', '2026'],
+            'UTC New Year' => ['UTC', '2027-01-01T00:00:00Z', '2027'],
+        ];
+    }
+
+    #[DataProvider('copyrightYearBoundaries')]
+    public function test_copyright_uses_configured_site_timezone_without_changing_saved_content(string $timezone, string $instant, string $year): void
+    {
+        $actor = $this->userWithRole('content-manager');
+        $home = Page::query()->where('slug', 'home')->firstOrFail();
+        $legacy = HomePage::query()->findOrFail(1);
+        $before = $home->only(['site_layout', 'published_snapshot']);
+        $legacyBefore = $legacy->content;
+        config(['app.timezone' => $timezone]);
+        $this->travelTo(Carbon::parse($instant));
+
+        foreach (['/api/v1/site-appearance', '/api/v1/home-page'] as $path) {
+            $this->getJson($path)->assertOk()->assertJsonPath('data.footer.bottom_left', '© '.$year.' AgatCeramic');
+        }
+        $this->actingAs($actor);
+        foreach (['/api/v1/admin/site-appearance', '/api/v1/admin/home-page'] as $path) {
+            $this->getJson($path)->assertOk()->assertJsonPath('data.footer.bottom_left', '© '.$year.' AgatCeramic');
+        }
+        $this->getJson('/api/v1/admin/content-preview/home')->assertOk()
+            ->assertJsonPath('data.appearance.footer.bottom_left', '© '.$year.' AgatCeramic');
+        self::assertSame($before, $home->refresh()->only(['site_layout', 'published_snapshot']));
+        self::assertSame($legacyBefore, $legacy->refresh()->content);
+        $this->travelBack();
+    }
+
+    public function test_copyright_is_not_editable_through_either_legacy_or_appearance_updates(): void
+    {
+        $this->actingAs($this->userWithRole('content-manager'));
+        config(['app.timezone' => 'Europe/Moscow']);
+        $this->travelTo(Carbon::parse('2030-12-31T21:00:00Z'));
+        $legacy = HomePage::query()->findOrFail(1);
+        $stored = $legacy->content['footer']['bottom_left'];
+        $footer = $this->getJson('/api/v1/admin/site-appearance')->json('data.footer');
+        $footer['bottom_left'] = 'Попытка заменить copyright';
+        foreach (['/api/v1/admin/site-appearance', '/api/v1/admin/home-page'] as $path) {
+            $this->patchJson($path, ['footer' => $footer])->assertOk()
+                ->assertJsonPath('data.footer.bottom_left', '© 2031 AgatCeramic');
+            self::assertSame($stored, $legacy->refresh()->content['footer']['bottom_left']);
+            self::assertSame($stored, Page::query()->where('slug', 'home')->firstOrFail()->site_layout['footer']['bottom_left']);
+        }
+        unset($footer['bottom_left']);
+        $footer['bottom_right'] = 'Обновлённый текст справа';
+        $this->patchJson('/api/v1/admin/site-appearance', ['footer' => $footer])->assertOk()
+            ->assertJsonPath('data.footer.bottom_right', 'Обновлённый текст справа');
+        $this->postJson('/api/v1/admin/site-appearance/publish')->assertOk();
+        $this->getJson('/api/v1/site-appearance')->assertOk()
+            ->assertJsonPath('data.footer.bottom_left', '© 2031 AgatCeramic')
+            ->assertJsonPath('data.footer.bottom_right', 'Обновлённый текст справа');
+        self::assertSame($stored, $legacy->refresh()->content['footer']['bottom_left']);
+        $this->travelBack();
+    }
 
     public function test_appearance_and_home_content_are_saved_and_published_independently(): void
     {

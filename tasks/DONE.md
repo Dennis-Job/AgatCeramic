@@ -8,6 +8,14 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-26 — Нижняя левая подпись подвала стала нередактируемой:
+`© <текущий год> AgatCeramic` формируется сервером по `APP_TIMEZONE`.
+Legacy raw текст сохранён; оба PATCH alias игнорируют его подмену. Admin исключает
+поле из отправки и не создаёт ложных dirty-состояний при смене года.
+28 API/OpenAPI, 5 PostgreSQL, 248 Admin unit и 16 E2E PASS; PHPStan/Pint/build/lint/format PASS,
+UI Design Guard accepted. Composer audit недоступен из-за тайм-аута Packagist.
+[Файлы, проверки и ограничения](../docs/FOOTER_COPYRIGHT_2026-10-26.md).
+
 2026-10-26 — Редактор «Подвала» оформлен так же, как утверждённая шапка:
 секции «Слоган», «Ссылки «Исследовать»», «Текстовый блок», «Нижняя строка».
 Поля и CRUD сохранены; build/lint/format/diff, 245/245 unit и 16/16 Appearance E2E PASS.

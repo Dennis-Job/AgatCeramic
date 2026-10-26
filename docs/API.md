@@ -181,6 +181,14 @@ Nuxt-рендер использует `blocks`. Опубликованные `h
 существующие ссылки, сообщение и подписи. Черновик и содержимое страниц в ответ не входят.
 Nuxt загружает оформление для общего layout через этот endpoint.
 
+`footer.bottom_left` — поле только для чтения: сервер формирует
+`© <текущий год> AgatCeramic` по `config('app.timezone')` (`APP_TIMEZONE`,
+в текущей конфигурации `Europe/Moscow`). Значение вычисляется при каждом запросе,
+включая legacy `/home-page`, admin и content-preview; публикация для смены года
+не нужна. Часовой пояс браузера не используется. В обоих PATCH alias поле
+необязательно; совместимые строковые значения принимаются, но игнорируются.
+Исторический текст в БД/snapshot сохраняется без миграции и не определяет отображение.
+
 `GET/PATCH /admin/site-appearance` и `POST /admin/site-appearance/publish` требуют
 `content.manage` и возвращают `{data:{header,footer,has_unpublished_changes}}`. PATCH
 принимает только объекты `header` и/или `footer` с той же валидацией, что legacy редактор

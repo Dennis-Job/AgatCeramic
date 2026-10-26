@@ -26,6 +26,13 @@ class HomePageManagementService
                     }
                     $page->hero_slider_id = $value;
                 } else {
+                    // Historical copyright text is retained for compatibility; the
+                    // read projection owns its current, non-editable value.
+                    if ($key === 'footer' && is_array($value)) {
+                        /** @var array<string, mixed> $storedFooter */
+                        $storedFooter = $content['footer'];
+                        $value['bottom_left'] = $storedFooter['bottom_left'];
+                    }
                     $content = array_replace($content, [$key => $value]);
                 }
             }

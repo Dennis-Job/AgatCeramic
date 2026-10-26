@@ -5973,7 +5973,9 @@
                             },
                             "bottom_left": {
                                 "type": "string",
-                                "maxLength": 255
+                                "maxLength": 255,
+                                "description": "Server-generated copyright: © <current year in APP_TIMEZONE> AgatCeramic. Independent of saved appearance text and publication.",
+                                "readOnly": true
                             },
                             "bottom_right": {
                                 "type": "string",
@@ -6467,7 +6469,9 @@
                             },
                             "bottom_left": {
                                 "type": "string",
-                                "maxLength": 255
+                                "maxLength": 255,
+                                "description": "Deprecated compatibility input. Optional; accepted legacy strings are ignored. The server generates copyright using the current year in APP_TIMEZONE.",
+                                "deprecated": true
                             },
                             "bottom_right": {
                                 "type": "string",
@@ -6478,7 +6482,6 @@
                             "tagline",
                             "explore_links",
                             "message",
-                            "bottom_left",
                             "bottom_right"
                         ],
                         "additionalProperties": false
@@ -12478,7 +12481,9 @@
                             },
                             "bottom_left": {
                                 "type": "string",
-                                "maxLength": 255
+                                "maxLength": 255,
+                                "description": "Server-generated copyright: © <current year in APP_TIMEZONE> AgatCeramic. Independent of saved appearance text and publication.",
+                                "readOnly": true
                             },
                             "bottom_right": {
                                 "type": "string",
@@ -13182,7 +13187,9 @@
                             },
                             "bottom_left": {
                                 "type": "string",
-                                "maxLength": 255
+                                "maxLength": 255,
+                                "description": "Server-generated copyright: © <current year in APP_TIMEZONE> AgatCeramic. Independent of saved appearance text and publication.",
+                                "readOnly": true
                             },
                             "bottom_right": {
                                 "type": "string",
@@ -13340,7 +13347,9 @@
                             },
                             "bottom_left": {
                                 "type": "string",
-                                "maxLength": 255
+                                "maxLength": 255,
+                                "description": "Server-generated copyright: © <current year in APP_TIMEZONE> AgatCeramic. Independent of saved appearance text and publication.",
+                                "readOnly": true
                             },
                             "bottom_right": {
                                 "type": "string",
@@ -13489,7 +13498,9 @@
                             },
                             "bottom_left": {
                                 "type": "string",
-                                "maxLength": 255
+                                "maxLength": 255,
+                                "description": "Deprecated compatibility input. Optional; accepted legacy strings are ignored. The server generates copyright using the current year in APP_TIMEZONE.",
+                                "deprecated": true
                             },
                             "bottom_right": {
                                 "type": "string",
@@ -13500,7 +13511,6 @@
                             "tagline",
                             "explore_links",
                             "message",
-                            "bottom_left",
                             "bottom_right"
                         ],
                         "additionalProperties": false

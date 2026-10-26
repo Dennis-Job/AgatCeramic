@@ -62,6 +62,7 @@ export function useAppearance() {
         [section]: editedDuringSave ? content.value[section] : result[section],
         has_unpublished_changes: result.has_unpublished_changes,
       }
+      content.value.footer.bottom_left = result.footer.bottom_left
       saved.value = result
       success.value =
         'Черновик раздела сохранён. Опубликуйте оформление, чтобы обновить сайт.'

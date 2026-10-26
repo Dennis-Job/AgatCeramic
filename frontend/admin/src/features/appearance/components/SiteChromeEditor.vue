@@ -259,9 +259,14 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
         </h3>
       </template>
       <div class="grid gap-4 sm:grid-cols-2">
-        <UiField label="Слева"
-          ><UiInput v-model="content.footer.bottom_left" /></UiField
-        ><UiField label="Справа"
+        <div class="text-sm text-gray-500">
+          <p class="font-medium">Слева · автоматически</p>
+          <p class="mt-2">{{ content.footer.bottom_left }}</p>
+          <p class="mt-2 text-xs">
+            Год обновляется автоматически по часовому поясу сайта.
+          </p>
+        </div>
+        <UiField label="Справа"
           ><UiInput v-model="content.footer.bottom_right"
         /></UiField>
       </div>

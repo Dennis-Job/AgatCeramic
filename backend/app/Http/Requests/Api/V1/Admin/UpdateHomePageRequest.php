@@ -44,7 +44,7 @@ class UpdateHomePageRequest extends FormRequest
             'footer.message.text' => $text,
             'footer.message.link_label' => $short,
             'footer.message.link_url' => $link,
-            'footer.bottom_left' => $short,
+            'footer.bottom_left' => ['sometimes', 'string', 'max:255'],
             'footer.bottom_right' => $short,
             'marquee' => ['sometimes', 'required', 'array:topics'],
             'marquee.topics' => ['required', 'array', 'min:1', 'max:20'],

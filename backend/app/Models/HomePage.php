@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $hero_slider_id
  * @property array{
  *     header: array{logo_media_id: int|null},
+ *     footer: array{bottom_left: string},
  *     categories: array{items: list<array{image_media_id: int|null, image_url: string|null}>},
  *     about: array{image_media_id: int|null, image_url: string|null},
  *     seo: array{og_image_media_id: int|null, og_image_url: string|null}

@@ -94,9 +94,10 @@ async function mockWorkspace(page: Page, permissions = ['content.manage']) {
       return route.fulfill({ json: { data: draft } })
     if (path === appearancePath && method === 'PATCH') {
       const payload = route.request().postDataJSON() as Record<string, unknown>
-      patches.push(payload)
+      patches.push(structuredClone(payload))
       mutations.push(key)
       draft = { ...draft, ...payload, has_unpublished_changes: true }
+      draft.footer.bottom_left = appearanceFixture().footer.bottom_left
       return route.fulfill({ json: { data: draft } })
     }
     if (path === `${appearancePath}/publish` && method === 'POST') {
@@ -192,6 +193,15 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
   await expect(publish).toBeDisabled()
   await page.getByLabel('Верхняя строка слева').fill('Изменённая шапка')
   await page.getByRole('button', { name: /^Подвал/ }).click()
+  await expect(page.getByLabel('Слева', { exact: true })).toHaveCount(0)
+  const bottom = page.getByRole('region', {
+    name: 'Нижняя строка',
+    exact: true,
+  })
+  await expect(bottom).toContainText('© 2026 AgatCeramic')
+  await expect(bottom).toContainText(
+    'Год обновляется автоматически по часовому поясу сайта.',
+  )
   await expect(page).toHaveURL(/panel=footer/)
   await page.getByLabel('Слоган под логотипом').fill('Изменённый подвал')
   await page.getByRole('button', { name: /^Шапка и навигация/ }).click()
@@ -223,9 +233,10 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
   )
   await page.getByRole('button', { name: 'Сохранить черновик раздела' }).click()
   await expect(publish).toBeEnabled()
-  expect(api.patches[1]).toEqual({
-    footer: { ...appearanceFixture().footer, tagline: 'Изменённый подвал' },
+  expect(api.patches[1]).toMatchObject({
+    footer: { tagline: 'Изменённый подвал' },
   })
+  expect(api.patches[1]?.footer).not.toHaveProperty('bottom_left')
   await publish.click()
   await expect(page.getByText('Общее оформление опубликовано.')).toBeVisible()
   expect(api.published().header.topbar_right).toBe('Изменённая шапка')
