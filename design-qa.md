@@ -256,3 +256,49 @@ E2E 16/16 PASS, включая отсутствие редактируемого
 публичный сайт и настоящий Nuxt-preview показывают «© 2026 AgatCeramic».
 Backend и PostgreSQL проверки подтверждают смену года по настроенному часовому поясу
 и сохранность raw данных; отдельная проверка редактора защищает локальные черновики.
+
+## 2026-10-26 — секции вкладки «Страницы»
+
+**final result: passed**
+
+По указанию владельца стиль шапки/подвала применён к вкладкам «Блоки», «Настройки»
+и SEO редактора главной и обычных страниц. Использованы UiCard и существующие tokens;
+шрифты, цвета, трёхзонный layout и закреплённые действия сохранены.
+
+Независимый UI Design Guard просмотрел diff, live captures 1440 px и responsive
+evidence 320/640/768/1024/1280 px: accepted. Первый axe finding — дублирующее имя
+landmark редактора и карточки — исправлен отдельным aria-label внешнего редактора.
+Повторный профильный прогон: 37/37 PASS, 0 unexpected.
+
+Evidence: `.tmp/pages-sections/blocks-live-1440.png`, `settings-live-1440.png`,
+`seo-top-live-1440.png`, `seo-bottom-live-1440.png`, `home-materials-live-1440.png`,
+`e2e-final.json` и responsive screenshots в `e2e-final/`. Настоящий Nuxt показан
+в live captures; tests используют fixture preview.
+
+Состояния файлов и локальных правок сохраняются при переключении вкладок, guards
+и публикация проверены E2E. Меню выбора вынесены в portal, поля не обрезаются.
+Прежние динамические данные и изображения сайта сохранены. Открытые P1/P2 отсутствуют.
+
+## 2026-10-27 — компактные формы вкладки «Страницы»
+
+**final result: passed**
+
+Уточнение владельца исправляет недостаточную глубину предыдущего секционного
+оформления: изображения материалов, блока «О проекте», SEO и баннера в контексте
+страницы используют готовый MediaImageEditor compact. Один preview 80×80,
+штатный UiFileDropzone, увеличение, источник фото и связанные поля. Исходный
+адрес раскрывается отдельно. Короткие описания используют UiTextarea compact;
+default и палитра UI-kit сохранены, образец добавлен на /ui-kit.
+
+Независимый UI Design Guard: accepted после проверки diff, live materials/SEO,
+списка слайдов, banner dialog/viewer, UI-kit и responsive 320/640/768/1024/1280.
+Убраны новые рамки вложенных поверхностей и переключатель без эффекта при
+отсутствии предыдущего media id. Реальные фото /images/... разрешаются с origin
+клиентского сайта; выбранный недоступный файл не заменяется другим изображением.
+
+Build/lint/format, 249 unit — PASS. Полный Admin E2E/visual: 679 PASS,
+один timeout SEO responsive при 4 workers. Этот сценарий отдельно PASS с одним
+worker, теми же assertions и default timeout, за 18,9 s общего прогона.
+Все strict visual baseline прошли без обновления; исходный timeout сохранён.
+Evidence и полный список файлов: [отчёт](docs/PAGES_COMPACT_FORMS_2026-10-27.md),
+`.tmp/pages-compact/full-e2e.json`, `seo-rerun.json`, live screenshots.

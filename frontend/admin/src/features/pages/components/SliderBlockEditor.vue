@@ -11,6 +11,7 @@ import UiSelect from '../../../components/ui/UiSelect.vue'
 import BannerFormDialog from '../../banners/components/BannerFormDialog.vue'
 import SliderFormDialog from '../../sliders/components/SliderFormDialog.vue'
 import { useSliderBlock } from '../composables/useSliderBlock'
+import { contentImageUrl } from '../../media/utils/contentImageUrl'
 
 const props = defineProps<{ modelValue: number | null; disabled?: boolean }>()
 const emit = defineEmits<{
@@ -64,6 +65,7 @@ onMounted(() => state.load())
     >
       <UiSelect
         :model-value="modelValue === null ? '' : String(modelValue)"
+        teleport-menu
         :options="options"
         accessible-name="Слайдер блока"
         searchable
@@ -122,35 +124,38 @@ onMounted(() => state.load())
         <li
           v-for="(banner, index) in state.selected.value.banners"
           :key="banner.id"
-          class="admin-panel--inset min-w-0 space-y-2 p-3"
+          class="admin-panel--inset flex min-w-0 items-start gap-3 p-3"
         >
           <UiImagePreview
-            :url="banner.image_url"
+            compact
+            :url="contentImageUrl(banner.image_url)"
             :alt="banner.image_alt || banner.title"
           />
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="min-w-0 break-words text-sm font-medium">
-              {{ index + 1 }}. {{ banner.title }}
-            </span>
-            <UiBadge :tone="banner.is_published ? 'success' : 'neutral'">
-              {{ banner.is_published ? 'Опубликован' : 'Черновик' }}
-            </UiBadge>
+          <div class="min-w-0 flex-1 space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="min-w-0 break-words text-sm font-medium">
+                {{ index + 1 }}. {{ banner.title }}
+              </span>
+              <UiBadge :tone="banner.is_published ? 'success' : 'neutral'">
+                {{ banner.is_published ? 'Опубликован' : 'Черновик' }}
+              </UiBadge>
+            </div>
+            <p
+              v-if="banner.description"
+              class="break-words text-sm text-gray-500"
+            >
+              {{ banner.description }}
+            </p>
+            <UiButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              :disabled="controlsDisabled"
+              :aria-label="`Редактировать баннер ${banner.title}`"
+              @click="state.openBanner(banner)"
+              >Редактировать баннер</UiButton
+            >
           </div>
-          <p
-            v-if="banner.description"
-            class="break-words text-sm text-gray-500"
-          >
-            {{ banner.description }}
-          </p>
-          <UiButton
-            type="button"
-            variant="secondary"
-            size="sm"
-            :disabled="controlsDisabled"
-            :aria-label="`Редактировать баннер ${banner.title}`"
-            @click="state.openBanner(banner)"
-            >Редактировать баннер</UiButton
-          >
         </li>
       </ol>
       <p v-else role="status" class="text-sm text-gray-500">

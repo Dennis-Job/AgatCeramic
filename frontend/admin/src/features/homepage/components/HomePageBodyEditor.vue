@@ -3,14 +3,14 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
-import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
-import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
+import MediaImageEditor from '../../media/components/MediaImageEditor.vue'
 import type { BodyContent } from '../../pages/types/block.types'
 
 defineProps<{
   content: BodyContent
   section: 'marquee' | 'categories' | 'materials' | 'promo' | 'about' | 'guide'
-  inlineUpload?: boolean
+  hideHeading?: boolean
+  disabled?: boolean
 }>()
 const emit = defineEmits<{
   pending: [value: boolean]
@@ -43,9 +43,11 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
 </script>
 
 <template>
-  <div v-if="section === 'marquee'" class="space-y-4">
+  <div v-if="section === 'marquee'" class="space-y-3">
     <div>
-      <h2 class="text-lg font-semibold text-gray-500">Бегущая строка</h2>
+      <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
+        Бегущая строка
+      </h2>
       <p class="mt-1 text-sm text-gray-500">
         Темы показываются в указанном порядке.
       </p>
@@ -94,14 +96,16 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     >
   </div>
 
-  <div v-else-if="section === 'categories'" class="space-y-5">
+  <div v-else-if="section === 'categories'" class="space-y-3">
     <div>
-      <h2 class="text-lg font-semibold text-gray-500">Карточки материалов</h2>
+      <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
+        Карточки материалов
+      </h2>
       <p class="mt-1 text-sm text-gray-500">
         Эти же материалы используются во вкладках блока фактур.
       </p>
     </div>
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.categories.eyebrow"
       /></UiField>
@@ -110,15 +114,20 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
       /></UiField>
     </div>
     <UiField label="Описание"
-      ><UiTextarea v-model="content.categories.description" rows="2"
+      ><UiTextarea v-model="content.categories.description" compact rows="2"
     /></UiField>
     <div
       v-for="(item, index) in content.categories.items"
       :key="itemKey(item)"
-      class="admin-panel--inset space-y-4 p-4"
+      class="admin-panel--inset space-y-3 p-3"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="font-medium text-gray-500">Материал {{ index + 1 }}</h3>
+        <component
+          :is="hideHeading ? 'h4' : 'h3'"
+          class="min-w-0 break-words font-medium text-gray-500"
+          >Материал {{ index + 1
+          }}{{ item.name ? ` · ${item.name}` : '' }}</component
+        >
         <div class="flex gap-1">
           <UiButton
             variant="surface"
@@ -144,7 +153,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
           >
         </div>
       </div>
-      <div class="grid gap-4 md:grid-cols-2">
+      <div class="grid gap-3 sm:grid-cols-2">
         <UiField
           label="Код для вкладки"
           help="Латинские буквы, цифры и дефис; код должен быть уникальным."
@@ -160,34 +169,39 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         ><UiInput v-model="item.short_description"
       /></UiField>
       <UiField label="Описание в блоке фактур"
-        ><UiTextarea v-model="item.description" rows="3"
+        ><UiTextarea v-model="item.description" compact rows="2"
       /></UiField>
-      <MediaReferenceField
-        kind="image"
-        :inline-upload="inlineUpload"
+      <MediaImageEditor
+        compact
+        :disabled="disabled"
         require-manage-permission
         :label="`Изображение материала ${index + 1}`"
+        :preview-label="`Увеличить изображение материала ${index + 1}: ${item.name}`"
+        :remove-label="`Снять выбранный файл материала ${index + 1}`"
+        :fallback-url="item.image_url"
+        :fallback-alt="item.image_alt || item.name"
         :model-value="item.image_media_id"
         @pending="mediaState(item, $event)"
         @uploading="mediaState(item, $event, true)"
-        @update:model-value="
-          item.image_media_id = Array.isArray($event) ? null : $event
-        "
-      />
-      <UiField
-        label="Локальное изображение"
-        help="Путь /images/... используется, пока файл не выбран в медиатеке."
-        ><UiInput v-model="item.image_url"
-      /></UiField>
-      <UiField label="Описание изображения для доступности"
-        ><UiInput v-model="item.image_alt" required
-      /></UiField>
-      <UiImagePreview
-        v-if="!item.image_media_id"
-        :url="item.image_url || null"
-        :alt="item.image_alt || item.name"
-        class="max-w-sm"
-      />
+        @update:model-value="item.image_media_id = $event"
+      >
+        <template #details>
+          <UiField label="Описание изображения для доступности"
+            ><UiInput v-model="item.image_alt" required :disabled="disabled"
+          /></UiField>
+          <details class="text-sm text-gray-500">
+            <summary class="cursor-pointer rounded admin-focus">
+              Исходный адрес изображения
+            </summary>
+            <UiField
+              class="mt-2"
+              label="Локальное изображение"
+              help="Путь /images/... используется, пока файл не выбран в медиатеке."
+              ><UiInput v-model="item.image_url" :disabled="disabled"
+            /></UiField>
+          </details>
+        </template>
+      </MediaImageEditor>
     </div>
     <UiButton
       variant="secondary"
@@ -207,9 +221,11 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     >
   </div>
 
-  <div v-else-if="section === 'materials'" class="space-y-4">
-    <h2 class="text-lg font-semibold text-gray-500">Блок фактур</h2>
-    <div class="grid gap-4 md:grid-cols-2">
+  <div v-else-if="section === 'materials'" class="space-y-3">
+    <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
+      Блок фактур
+    </h2>
+    <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.materials.eyebrow" /></UiField
       ><UiField label="Заголовок"
@@ -217,16 +233,18 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
       /></UiField>
     </div>
     <UiField label="Описание"
-      ><UiTextarea v-model="content.materials.description" rows="3"
+      ><UiTextarea v-model="content.materials.description" compact rows="2"
     /></UiField>
     <UiField label="Примечание под материалом"
-      ><UiTextarea v-model="content.materials.note" rows="3"
+      ><UiTextarea v-model="content.materials.note" compact rows="2"
     /></UiField>
   </div>
 
-  <div v-else-if="section === 'promo'" class="space-y-4">
-    <h2 class="text-lg font-semibold text-gray-500">Промо блок</h2>
-    <div class="grid gap-4 md:grid-cols-2">
+  <div v-else-if="section === 'promo'" class="space-y-3">
+    <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
+      Промо блок
+    </h2>
+    <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.promo.eyebrow" /></UiField
       ><UiField label="Заголовок"
@@ -234,9 +252,9 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
       /></UiField>
     </div>
     <UiField label="Описание"
-      ><UiTextarea v-model="content.promo.description" rows="3"
+      ><UiTextarea v-model="content.promo.description" compact rows="2"
     /></UiField>
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Текст кнопки"
         ><UiInput v-model="content.promo.link_label" /></UiField
       ><UiField
@@ -247,9 +265,11 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     </div>
   </div>
 
-  <div v-else-if="section === 'about'" class="space-y-4">
-    <h2 class="text-lg font-semibold text-gray-500">О проекте</h2>
-    <div class="grid gap-4 md:grid-cols-2">
+  <div v-else-if="section === 'about'" class="space-y-3">
+    <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
+      О проекте
+    </h2>
+    <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.about.eyebrow" /></UiField
       ><UiField label="Заголовок"
@@ -257,35 +277,40 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
       /></UiField>
     </div>
     <UiField label="Текст"
-      ><UiTextarea v-model="content.about.description" rows="5"
+      ><UiTextarea v-model="content.about.description" compact rows="4"
     /></UiField>
-    <MediaReferenceField
-      kind="image"
-      :inline-upload="inlineUpload"
+    <MediaImageEditor
+      compact
+      :disabled="disabled"
       require-manage-permission
       label="Изображение блока"
+      preview-label="Увеличить изображение блока «О проекте»"
+      remove-label="Снять выбранный файл блока «О проекте»"
+      :fallback-url="content.about.image_url"
+      :fallback-alt="content.about.image_alt || 'О проекте'"
       :model-value="content.about.image_media_id"
       @pending="mediaState(content.about, $event)"
       @uploading="mediaState(content.about, $event, true)"
-      @update:model-value="
-        content.about.image_media_id = Array.isArray($event) ? null : $event
-      "
-    />
-    <UiField
-      label="Локальное изображение"
-      help="Путь /images/... используется, пока файл не выбран в медиатеке."
-      ><UiInput v-model="content.about.image_url"
-    /></UiField>
-    <UiField label="Описание изображения для доступности"
-      ><UiInput v-model="content.about.image_alt"
-    /></UiField>
-    <UiImagePreview
-      v-if="!content.about.image_media_id"
-      :url="content.about.image_url || null"
-      :alt="content.about.image_alt || 'О проекте'"
-      class="max-w-sm"
-    />
-    <div class="grid gap-4 md:grid-cols-2">
+      @update:model-value="content.about.image_media_id = $event"
+    >
+      <template #details>
+        <UiField label="Описание изображения для доступности"
+          ><UiInput v-model="content.about.image_alt" :disabled="disabled"
+        /></UiField>
+        <details class="text-sm text-gray-500">
+          <summary class="cursor-pointer rounded admin-focus">
+            Исходный адрес изображения
+          </summary>
+          <UiField
+            class="mt-2"
+            label="Локальное изображение"
+            help="Путь /images/... используется, пока файл не выбран в медиатеке."
+            ><UiInput v-model="content.about.image_url" :disabled="disabled"
+          /></UiField>
+        </details>
+      </template>
+    </MediaImageEditor>
+    <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Текст ссылки"
         ><UiInput v-model="content.about.link_label" /></UiField
       ><UiField label="Ссылка" help="Внутренний путь /... или HTTPS-адрес."
@@ -294,9 +319,11 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     </div>
   </div>
 
-  <div v-else class="space-y-5">
-    <h2 class="text-lg font-semibold text-gray-500">Советы по выбору</h2>
-    <div class="grid gap-4 md:grid-cols-2">
+  <div v-else class="space-y-3">
+    <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
+      Советы по выбору
+    </h2>
+    <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="content.guide.eyebrow" /></UiField
       ><UiField label="Заголовок"
@@ -306,7 +333,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     <div
       v-for="(item, index) in content.guide.items"
       :key="index"
-      class="admin-panel--inset space-y-3 p-4"
+      class="admin-panel--inset space-y-3 p-3"
     >
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h3 class="font-medium text-gray-500">Совет {{ index + 1 }}</h3>
@@ -339,7 +366,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         ><UiInput v-model="item.title"
       /></UiField>
       <UiField label="Текст совета"
-        ><UiTextarea v-model="item.description" rows="2"
+        ><UiTextarea v-model="item.description" compact rows="2"
       /></UiField>
     </div>
     <UiButton

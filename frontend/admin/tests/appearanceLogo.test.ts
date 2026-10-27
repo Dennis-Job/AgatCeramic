@@ -75,3 +75,48 @@ test('the existing unrestricted image editor keeps content-editor library access
   expect(wrapper.find('input[type="file"]').exists()).toBe(false)
   wrapper.unmount()
 })
+
+test('a page source image has one preview and an explicit source choice; unavailable media never falls back to a different photo', async () => {
+  state.permissions = ['content.manage', 'media.manage']
+  const wrapper = editor()
+  await wrapper.setProps({
+    fallbackUrl: '/images/about.webp',
+    fallbackAlt: 'Образцы материалов',
+    compact: true,
+  })
+  await flushPromises()
+  expect(wrapper.findAll('img')).toHaveLength(1)
+  expect(wrapper.find('img').attributes('src')).toBe(
+    'http://localhost:3000/images/about.webp',
+  )
+  expect(wrapper.find('img').attributes('alt')).toBe('Образцы материалов')
+  expect(wrapper.text()).toContain('Исходное изображение')
+  expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+  expect(wrapper.text()).not.toContain('Без изображения')
+  await wrapper.setProps({ modelValue: 99 })
+  expect(wrapper.text()).toContain('Использовать исходное изображение')
+  expect(wrapper.find('img').exists()).toBe(false)
+  expect(wrapper.text()).toContain('Выбран файл #99. Предпросмотр недоступен.')
+  await wrapper.setProps({ modelValue: null })
+  expect(wrapper.find('img').attributes('src')).toBe(
+    'http://localhost:3000/images/about.webp',
+  )
+  wrapper.unmount()
+})
+
+test('a disabled image editor ignores dropped files without entering a pending state', async () => {
+  state.permissions = ['content.manage', 'media.manage']
+  const wrapper = editor()
+  await wrapper.setProps({ disabled: true })
+  await flushPromises()
+  wrapper
+    .findComponent({ name: 'UiFileDropzone' })
+    .vm.$emit('files', [
+      new File(['photo'], 'photo.webp', { type: 'image/webp' }),
+    ])
+  await flushPromises()
+  expect(wrapper.text()).not.toContain('Название файла')
+  expect(wrapper.emitted('pending')).toBeUndefined()
+  expect(state.uploadMedia).not.toHaveBeenCalled()
+  wrapper.unmount()
+})

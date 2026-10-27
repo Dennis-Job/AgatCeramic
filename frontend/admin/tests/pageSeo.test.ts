@@ -17,7 +17,13 @@ describe('page SEO nullable image reference', () => {
       }
       const wrapper = mount(HomePageSeoEditor, {
         props: { modelValue: seo },
-        global: { stubs: { MediaReferenceField: true } },
+        global: {
+          stubs: {
+            MediaImageEditor: {
+              template: '<div><slot name="details" /></div>',
+            },
+          },
+        },
       })
       const input = wrapper.findAll('input').at(-1)!
       expect(input.element.value).toBe('')

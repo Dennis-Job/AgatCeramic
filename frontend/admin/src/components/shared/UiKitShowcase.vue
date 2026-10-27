@@ -730,6 +730,16 @@ function submitAuthPreview(): void {
               disabled
             />
           </UiField>
+          <UiField
+            label="Короткое описание"
+            help="UiTextarea compact: высота по числу строк, ручное увеличение сохраняется."
+          >
+            <UiTextarea
+              model-value="Компактное поле для короткого описания."
+              compact
+              rows="2"
+            />
+          </UiField>
         </div>
 
         <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">

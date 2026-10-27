@@ -14,6 +14,7 @@ import UiSelect from '../../../components/ui/UiSelect.vue'
 import { useAuthStore } from '../../../stores/auth'
 import { useInlineMediaUpload } from '../composables/useInlineMediaUpload'
 import { useMediaOptions } from '../composables/useMediaOptions'
+import { contentImageUrl } from '../utils/contentImageUrl'
 
 const props = defineProps<{
   label: string
@@ -25,6 +26,8 @@ const props = defineProps<{
   requireManagePermission?: boolean
   uploadLabel?: string
   compact?: boolean
+  fallbackUrl?: string | null
+  fallbackAlt?: string
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: number | null]
@@ -58,6 +61,17 @@ const noImageControl = ref<InstanceType<typeof UiCheckbox> | null>(null)
 const previousImage = ref(props.modelValue)
 const preview = computed(() =>
   options.value.find((item) => item.id === props.modelValue),
+)
+const displayedImage = computed(() =>
+  props.modelValue !== null
+    ? preview.value
+    : props.fallbackUrl
+      ? {
+          url: contentImageUrl(props.fallbackUrl)!,
+          thumbnail_url: null,
+          alt: props.fallbackAlt,
+        }
+      : undefined,
 )
 const upload = useInlineMediaUpload(
   'image',
@@ -151,13 +165,15 @@ async function cancelFile() {
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm font-medium text-gray-500">{{ label }}</p>
       <UiCheckbox
-        v-if="canSelect"
+        v-if="canSelect && (!fallbackUrl || previousImage !== null)"
         ref="noImageControl"
         mode="boolean"
         :checked="noImage"
         :disabled="controlsDisabled"
         @update:checked="toggleNoImage"
-        >Без изображения</UiCheckbox
+        >{{
+          fallbackUrl ? 'Использовать исходное изображение' : 'Без изображения'
+        }}</UiCheckbox
       >
     </div>
     <p v-if="!canSelect" class="text-sm text-gray-500" role="status">
@@ -172,7 +188,7 @@ async function cancelFile() {
       "
     >
       <div class="min-w-0">
-        <div v-if="preview" class="image-editor-photo">
+        <div v-if="displayedImage" class="image-editor-photo">
           <UiButton
             type="button"
             variant="surface"
@@ -181,13 +197,13 @@ async function cancelFile() {
             @click="viewerOpen = true"
           >
             <UiImagePreview
-              :url="preview.thumbnail_url || preview.url"
-              :alt="preview.alt || label"
+              :url="displayedImage.thumbnail_url || displayedImage.url"
+              :alt="displayedImage.alt || label"
               :compact="compact"
             />
           </UiButton>
           <UiButton
-            v-if="canSelect"
+            v-if="canSelect && modelValue !== null"
             type="button"
             variant="danger-ghost"
             size="sm"
@@ -212,6 +228,11 @@ async function cancelFile() {
           role="status"
         >
           Выбран файл #{{ modelValue }}. Предпросмотр недоступен.
+        </p>
+        <p v-if="fallbackUrl" class="mt-2 text-xs text-gray-500">
+          {{
+            modelValue !== null ? 'Файл из медиатеки' : 'Исходное изображение'
+          }}
         </p>
       </div>
       <div class="min-w-0 space-y-3">
@@ -296,7 +317,10 @@ async function cancelFile() {
           v-if="canSelect && libraryOpen"
           :model-value="modelValue === null ? '' : String(modelValue)"
           :options="[
-            { label: 'Без изображения', value: '' },
+            {
+              label: fallbackUrl ? 'Исходное изображение' : 'Без изображения',
+              value: '',
+            },
             ...options.map((item) => ({
               label: `${item.title} (#${item.id})`,
               value: String(item.id),
@@ -335,6 +359,7 @@ async function cancelFile() {
         <UiNotification v-if="upload.success.value" tone="success">{{
           upload.success.value
         }}</UiNotification>
+        <slot name="details" />
       </div>
     </div>
     <Teleport to="body">
@@ -359,9 +384,9 @@ async function cancelFile() {
         </div>
         <div class="mt-4 flex min-h-0 flex-1 items-center justify-center">
           <img
-            v-if="preview && !viewerFailed"
-            :src="preview.url"
-            :alt="preview.alt || label"
+            v-if="displayedImage && !viewerFailed"
+            :src="displayedImage.url"
+            :alt="displayedImage.alt || label"
             class="h-full w-full object-contain"
             @error="viewerFailed = true"
           />

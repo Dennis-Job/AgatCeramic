@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import { X } from '@lucide/vue'
+import { ref } from 'vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
@@ -10,6 +11,7 @@ import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import type { BannerPayload } from '../types/banner.types'
 import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import MediaReferenceField from '../../media/components/MediaReferenceField.vue'
+import MediaImageEditor from '../../media/components/MediaImageEditor.vue'
 
 defineProps<{
   open: boolean
@@ -26,6 +28,7 @@ const emit = defineEmits<{
   mediaPending: [value: boolean]
   mediaUploading: [value: boolean]
 }>()
+const imagePreviewOpen = ref(false)
 </script>
 
 <template>
@@ -33,7 +36,7 @@ const emit = defineEmits<{
     :open="open"
     labelledby="banner-dialog-title"
     :close-disabled="busy"
-    :suspended="suspended"
+    :suspended="suspended || imagePreviewOpen"
     panel-class="w-full max-w-2xl"
     @close="emit('close')"
   >
@@ -58,7 +61,7 @@ const emit = defineEmits<{
       <UiNotification v-if="error">
         {{ error }}
       </UiNotification>
-      <div class="mt-6 grid gap-4">
+      <div class="mt-4 grid gap-3">
         <UiField label="Заголовок" required
           ><UiInput
             v-model="form.title"
@@ -78,11 +81,29 @@ const emit = defineEmits<{
           help="Короткий текст. HTML будет показан как текст."
           ><UiTextarea
             v-model="form.description"
+            compact
             :disabled="busy"
             maxlength="2000"
-            rows="4"
+            rows="2"
         /></UiField>
+        <MediaImageEditor
+          v-if="inlineUpload"
+          compact
+          require-manage-permission
+          label="Изображение баннера"
+          preview-label="Увеличить изображение баннера"
+          remove-label="Снять выбранный файл баннера"
+          :fallback-url="form.image_url"
+          :fallback-alt="form.image_alt || form.title"
+          :model-value="form.image_media_id"
+          :disabled="busy"
+          @preview-open="imagePreviewOpen = $event"
+          @pending="emit('mediaPending', $event)"
+          @uploading="emit('mediaUploading', $event)"
+          @update:model-value="form.image_media_id = $event"
+        />
         <MediaReferenceField
+          v-else
           kind="image"
           require-manage-permission
           label="Изображение баннера"
@@ -96,30 +117,49 @@ const emit = defineEmits<{
           "
         />
         <UiField
-          v-if="form.image_url && !form.image_media_id"
+          v-if="form.image_url && !form.image_media_id && !inlineUpload"
           label="Существующий адрес изображения"
           help="Локальный путь /images/... или HTTPS-адрес доступен до выбора файла в медиатеке."
           ><UiInput v-model="form.image_url" :disabled="busy" maxlength="2048"
         /></UiField>
         <UiImagePreview
-          v-if="!form.image_media_id"
+          v-if="!form.image_media_id && !inlineUpload"
           :url="form.image_url"
           :alt="`Баннер «${form.title || 'Без названия'}»`"
         />
+        <details v-if="inlineUpload" class="text-sm text-gray-500">
+          <summary class="cursor-pointer rounded admin-focus">
+            Исходный адрес изображения
+          </summary>
+          <UiField
+            class="mt-2"
+            label="Существующий адрес изображения"
+            help="Локальный путь /images/... или HTTPS-адрес используется до выбора файла в медиатеке."
+            ><UiInput
+              v-model="form.image_url"
+              :disabled="busy"
+              maxlength="2048"
+          /></UiField>
+        </details>
         <UiField
           label="Альтернативный текст изображения"
           help="Кратко опишите изображение для посетителей, использующих экранный диктор."
         >
           <UiInput v-model="form.image_alt" :disabled="busy" maxlength="255" />
         </UiField>
-        <UiField label="Подпись кнопки"
-          ><UiInput v-model="form.link_label" :disabled="busy" maxlength="255"
-        /></UiField>
-        <UiField
-          label="Ссылка кнопки"
-          help="Укажите вместе с подписью. Внутренний путь /... или HTTPS-адрес."
-          ><UiInput v-model="form.link_url" :disabled="busy" maxlength="2048"
-        /></UiField>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UiField label="Подпись кнопки"
+            ><UiInput
+              v-model="form.link_label"
+              :disabled="busy"
+              maxlength="255"
+          /></UiField>
+          <UiField
+            label="Ссылка кнопки"
+            help="Укажите вместе с подписью. Внутренний путь /... или HTTPS-адрес."
+            ><UiInput v-model="form.link_url" :disabled="busy" maxlength="2048"
+          /></UiField>
+        </div>
         <UiCheckbox
           mode="boolean"
           :checked="form.is_published"

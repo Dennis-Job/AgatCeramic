@@ -31,7 +31,11 @@ const body = computed<BodyContent>(() => ({
         ><UiInput v-model="block.data.title" required maxlength="255"
       /></UiField>
       <UiField label="Текст блока" help="Обычный текст; HTML не исполняется."
-        ><UiTextarea v-model="block.data.body" rows="8" maxlength="100000"
+        ><UiTextarea
+          v-model="block.data.body"
+          compact
+          rows="5"
+          maxlength="100000"
       /></UiField>
     </template>
     <template v-else-if="block.type === 'stores' || block.type === 'catalog'">
@@ -41,6 +45,7 @@ const body = computed<BodyContent>(() => ({
       <UiField v-if="block.type === 'catalog'" label="Описание каталога"
         ><UiTextarea
           v-model="block.data.description"
+          compact
           rows="3"
           maxlength="100000"
       /></UiField>
@@ -56,7 +61,8 @@ const body = computed<BodyContent>(() => ({
       v-else
       :content="body"
       :section="block.type"
-      inline-upload
+      :disabled="disabled"
+      hide-heading
       @pending="emit('dirty', $event)"
       @uploading="emit('busy', $event)"
     />

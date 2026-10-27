@@ -177,6 +177,23 @@ test('page editor reuses and edits sliders and banners in context with guarded d
   await expect(
     dialog.getByText(/Выбор и загрузка доступны сотруднику/),
   ).toBeVisible()
+  const enlarge = dialog.getByRole('button', {
+    name: 'Увеличить изображение баннера',
+    exact: true,
+  })
+  await enlarge.click()
+  const viewer = page.getByRole('dialog', {
+    name: 'Просмотр изображения',
+    exact: true,
+  })
+  await expect(
+    viewer.getByRole('img', { name: 'Керамическая плитка' }),
+  ).toBeVisible()
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(viewer).not.toBeVisible()
+  await expect(dialog).toBeVisible()
+  await expect(enlarge).toBeFocused()
   await dialog.getByLabel(/^Заголовок/).fill('Несохранённый заголовок')
   await dialog.getByRole('button', { name: 'Закрыть окно баннера' }).click()
   const discard = page.getByRole('dialog', {
