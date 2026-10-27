@@ -17,7 +17,7 @@ import {
 defineOptions({ inheritAttrs: false })
 const props = withDefaults(
   defineProps<{
-    modelValue?: string
+    modelValue?: string | null
     type?: string
     searchable?: boolean
     money?: boolean
@@ -27,14 +27,15 @@ const props = withDefaults(
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const attrs = useAttrs()
 const input = ref<HTMLInputElement | null>(null)
+const inputValue = computed(() => props.modelValue ?? '')
 const displayValue = computed(() =>
   props.type === 'tel'
-    ? formatPhoneInput(props.modelValue)
+    ? formatPhoneInput(inputValue.value)
     : props.money
-      ? formatMoneyInput(props.modelValue)
-      : props.modelValue,
+      ? formatMoneyInput(inputValue.value)
+      : inputValue.value,
 )
-const hasValue = computed(() => props.modelValue.length > 0)
+const hasValue = computed(() => inputValue.value.length > 0)
 const isDisabled = computed(
   () => attrs.disabled !== undefined && attrs.disabled !== false,
 )
@@ -209,7 +210,7 @@ function commitMoney(): void {
   const raw = commitMoneyInput(input.value.value)
   if (raw === null) return
   input.value.value = formatMoneyInput(raw)
-  if (raw !== props.modelValue) updateValue(raw)
+  if (raw !== inputValue.value) updateValue(raw)
   validateMoney(raw)
 }
 
@@ -217,8 +218,8 @@ function validate(value: string): void {
   validateMoney(value)
   validatePhone(value)
 }
-onMounted(() => validate(props.modelValue))
-watch(() => props.modelValue, validate)
+onMounted(() => validate(inputValue.value))
+watch(inputValue, validate)
 
 function updateValue(value: string): void {
   if (!isDisabled.value) emit('update:modelValue', value)

@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v6.0",
+        "version": "v7.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -6110,13 +6110,74 @@
                             "note": {
                                 "type": "string",
                                 "maxLength": 2000
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9-]+$"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "short_description": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        },
+                                        "image_url": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "maxLength": 2048,
+                                                    "description": "Root-relative internal path or HTTPS URL without credentials."
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
+                                        },
+                                        "image_media_id": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 1
+                                        },
+                                        "image_alt": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "short_description",
+                                        "description",
+                                        "image_url",
+                                        "image_media_id",
+                                        "image_alt"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Independent banner menu items (0..12). IDs are unique within this list; grid IDs may be reused. Never read from categories.items."
                             }
                         },
                         "required": [
                             "eyebrow",
                             "title",
                             "description",
-                            "note"
+                            "note",
+                            "items"
                         ],
                         "additionalProperties": false
                     },
@@ -6605,13 +6666,74 @@
                             "note": {
                                 "type": "string",
                                 "maxLength": 2000
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9-]+$"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "short_description": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        },
+                                        "image_url": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "maxLength": 2048,
+                                                    "description": "Root-relative internal path or HTTPS URL without credentials."
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
+                                        },
+                                        "image_media_id": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 1
+                                        },
+                                        "image_alt": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "short_description",
+                                        "description",
+                                        "image_url",
+                                        "image_media_id",
+                                        "image_alt"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Independent banner menu items (0..12). IDs are unique within this list; grid IDs may be reused. Never read from categories.items."
                             }
                         },
                         "required": [
                             "eyebrow",
                             "title",
                             "description",
-                            "note"
+                            "note",
+                            "items"
                         ],
                         "additionalProperties": false
                     },
@@ -11576,13 +11698,74 @@
                             "note": {
                                 "type": "string",
                                 "maxLength": 2000
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9-]+$"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "short_description": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        },
+                                        "image_url": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "maxLength": 2048,
+                                                    "description": "Root-relative internal path or HTTPS URL without credentials."
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
+                                        },
+                                        "image_media_id": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 1
+                                        },
+                                        "image_alt": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "short_description",
+                                        "description",
+                                        "image_url",
+                                        "image_media_id",
+                                        "image_alt"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Independent banner menu items (0..12). IDs are unique within this list; grid IDs may be reused. Never read from categories.items."
                             }
                         },
                         "required": [
                             "eyebrow",
                             "title",
                             "description",
-                            "note"
+                            "note",
+                            "items"
                         ],
                         "additionalProperties": false
                     }
@@ -12618,13 +12801,74 @@
                             "note": {
                                 "type": "string",
                                 "maxLength": 2000
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string",
+                                            "pattern": "^[a-z0-9-]+$"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "short_description": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        },
+                                        "description": {
+                                            "type": "string",
+                                            "maxLength": 2000
+                                        },
+                                        "image_url": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "maxLength": 2048,
+                                                    "description": "Root-relative internal path or HTTPS URL without credentials."
+                                                },
+                                                {
+                                                    "type": "null"
+                                                }
+                                            ]
+                                        },
+                                        "image_media_id": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ],
+                                            "minimum": 1
+                                        },
+                                        "image_alt": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "short_description",
+                                        "description",
+                                        "image_url",
+                                        "image_media_id",
+                                        "image_alt"
+                                    ],
+                                    "additionalProperties": false
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Independent banner menu items (0..12). IDs are unique within this list; grid IDs may be reused. Never read from categories.items."
                             }
                         },
                         "required": [
                             "eyebrow",
                             "title",
                             "description",
-                            "note"
+                            "note",
+                            "items"
                         ],
                         "additionalProperties": false
                     },

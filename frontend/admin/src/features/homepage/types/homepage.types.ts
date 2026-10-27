@@ -2,13 +2,19 @@ import type { SiteAppearance } from '../../appearance/types/appearance.types'
 
 export type SiteLink = { label: string; to: string }
 export type HomeImage = {
-  image_url: string
+  image_url: string | null
   image_media_id: number | null
   image_alt: string
 }
 export type HomeHeading = {
   eyebrow: string
   title: string
+  description: string
+}
+export type HomeBannerItem = HomeImage & {
+  id: string
+  name: string
+  short_description: string
   description: string
 }
 export type HomeCta = { link_label: string; link_url: string }
@@ -33,14 +39,9 @@ export type HomePageContent = {
   footer: SiteAppearance['footer']
   marquee: { topics: string[] }
   categories: HomeHeading & {
-    items: ({
-      id: string
-      name: string
-      short_description: string
-      description: string
-    } & HomeImage)[]
+    items: HomeBannerItem[]
   }
-  materials: HomeHeading & { note: string }
+  materials: HomeHeading & { note: string; items: HomeBannerItem[] }
   promo: HomeHeading & HomeCta
   about: HomeHeading & HomeImage & HomeCta
   guide: Pick<HomeHeading, 'eyebrow' | 'title'> & {

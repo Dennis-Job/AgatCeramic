@@ -7,6 +7,44 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v7.0 — independent homepage banner collections
+
+Date: 2026-10-27. Admin labels are «Сетка баннеров» (`categories`) and
+«Меню баннеров» (`materials`); HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+The `materials` block/section now requires its own `items` array (0–12 entries)
+in requests and responses, with the same item fields as `categories.items`.
+An item ID must be unique within its own list; the two lists may reuse an ID.
+Menu items, images and ordering no longer derive from the grid. `categories`
+still requires at least one item. Existing editable headings are preserved.
+
+### Client migration
+
+Admin must edit/save `materials.items` separately. Client must map its image URLs
+and render the menu from this list, including when the grid is absent/disabled.
+An empty menu does not render a section. Remove grid-to-menu selection coupling;
+menu tabs navigate only their own items. No request-time or render-time fallback
+to `categories.items` is supported after migration.
+
+### Rollout and rollback
+
+Deploy compatible backend/Admin/Client together and refresh open editors.
+Before the data migration, create and verify a protected backup using
+[DATABASE_BACKUP_RESTORE.md](DATABASE_BACKUP_RESTORE.md). The additive migration
+copies grid items once into an absent menu list, separately for each draft and
+published snapshot; it never overwrites an existing list, including `[]`, and
+does not publish draft changes. New menus start empty. When a legacy page has no
+grid, its menu starts with an empty list. Media references for both snapshots
+must remain protected.
+
+Rollback must retain the additive field to avoid losing later independent menu
+edits; old clients/validators cannot be assumed compatible with it. Use coordinated
+application rollback or restore the verified backup in an isolated database,
+then follow the project's restore procedure. Do not merge independent lists back
+automatically or remove menu data in a down migration.
+
 ## v6.0 — single Russian phone contract
 
 Date: 2026-10-20. Owner-approved unified telephone input, display and storage.

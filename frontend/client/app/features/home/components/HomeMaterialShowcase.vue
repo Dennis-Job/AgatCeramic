@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import type { HomePageContent, MaterialCategory } from '~/types/homePage'
+import type { HomePageContent } from '~/types/homePage'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
 
 const props = defineProps<{
-  categories: readonly MaterialCategory[]
-  selectedId: string
   content: HomePageContent['materials']
 }>()
 
-const emit = defineEmits<{ select: [id: string] }>()
+const selectedId = ref('')
+watch(
+  () => props.content.items,
+  (items) => {
+    if (!items.some((item) => item.id === selectedId.value))
+      selectedId.value = items[0]?.id ?? ''
+  },
+  { immediate: true },
+)
 
-const selectedCategory = computed(
-  () =>
-    props.categories.find((category) => category.id === props.selectedId) ??
-    props.categories[0],
+const selectedCategory = computed(() =>
+  props.content.items.find((category) => category.id === selectedId.value),
 )
 
 async function selectNext(currentId: string, direction: 1 | -1) {
-  const index = props.categories.findIndex(
-    (category) => category.id === currentId,
-  )
-  const next =
-    props.categories[
-      (index + direction + props.categories.length) % props.categories.length
-    ]
+  const items = props.content.items
+  const index = items.findIndex((category) => category.id === currentId)
+  const next = items[(index + direction + items.length) % items.length]
   if (!next) return
-  emit('select', next.id)
+  selectedId.value = next.id
   await nextTick()
   document.getElementById(`tab-${next.id}`)?.focus()
 }
@@ -51,7 +51,7 @@ async function selectNext(currentId: string, direction: 1 | -1) {
         aria-label="Виды материалов"
       >
         <button
-          v-for="category in categories"
+          v-for="category in content.items"
           :id="`tab-${category.id}`"
           :key="category.id"
           type="button"
@@ -60,7 +60,7 @@ async function selectNext(currentId: string, direction: 1 | -1) {
           aria-controls="materials-panel"
           :tabindex="category.id === selectedId ? 0 : -1"
           :class="{ 'is-active': category.id === selectedId }"
-          @click="$emit('select', category.id)"
+          @click="selectedId = category.id"
           @keydown.right.prevent="selectNext(category.id, 1)"
           @keydown.left.prevent="selectNext(category.id, -1)"
         >
@@ -106,11 +106,15 @@ async function selectNext(currentId: string, direction: 1 | -1) {
 }
 .materials-section__tabs {
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
   gap: clamp(20px, 4vw, 44px);
-  margin: -6px 0 52px;
+  overflow-x: auto;
+  /* Reserve the shared focus outline without shifting the tabs or next panel. */
+  margin: -12px -6px 46px;
+  padding: 6px;
 }
 .materials-section__tabs button {
+  flex: 0 0 auto;
   position: relative;
   border: 0;
   padding: 12px 2px;
@@ -141,7 +145,7 @@ async function selectNext(currentId: string, direction: 1 | -1) {
 .materials-section__panel {
   display: grid;
   min-height: 520px;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   background: var(--color-beige);
 }
 .materials-section__image {
@@ -156,6 +160,8 @@ async function selectNext(currentId: string, direction: 1 | -1) {
   object-fit: cover;
 }
 .materials-section__copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -202,14 +208,11 @@ async function selectNext(currentId: string, direction: 1 | -1) {
     justify-content: flex-start;
     gap: 26px;
     overflow-x: auto;
-    margin-bottom: 32px;
-    padding-bottom: 8px;
-  }
-  .materials-section__tabs button {
-    flex: 0 0 auto;
+    margin-bottom: 26px;
+    padding-bottom: 14px;
   }
   .materials-section__panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .materials-section__image {
     min-height: 0;

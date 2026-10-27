@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *     header: array{logo_media_id: int|null},
  *     footer: array{bottom_left: string},
  *     categories: array{items: list<array{image_media_id: int|null, image_url: string|null}>},
+ *     materials: array{items: list<array{image_media_id: int|null, image_url: string|null}>},
  *     about: array{image_media_id: int|null, image_url: string|null},
  *     seo: array{og_image_media_id: int|null, og_image_url: string|null}
  * } $content
@@ -26,7 +27,7 @@ class HomePage extends Model
     {
         $content = $this->content;
         $ids = [$content['header']['logo_media_id'], $content['about']['image_media_id'], $content['seo']['og_image_media_id']];
-        foreach ($content['categories']['items'] as $item) {
+        foreach ([...$content['categories']['items'], ...$content['materials']['items']] as $item) {
             $ids[] = $item['image_media_id'];
         }
 

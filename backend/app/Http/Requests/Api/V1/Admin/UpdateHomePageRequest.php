@@ -62,11 +62,12 @@ class UpdateHomePageRequest extends FormRequest
             'categories.items.*.image_url' => $image,
             'categories.items.*.image_media_id' => $imageId,
             'categories.items.*.image_alt' => $short,
-            'materials' => ['sometimes', 'required', 'array:eyebrow,title,description,note'],
+            'materials' => ['sometimes', 'required', 'array:eyebrow,title,description,note,items'],
             'materials.eyebrow' => $short,
             'materials.title' => $short,
             'materials.description' => $text,
             'materials.note' => $text,
+            'materials.items' => ['present_with:materials', 'array', 'max:12', 'list'],
             'promo' => ['sometimes', 'required', 'array:eyebrow,title,description,link_label,link_url'],
             'promo.eyebrow' => $short,
             'promo.title' => $short,
@@ -97,6 +98,12 @@ class UpdateHomePageRequest extends FormRequest
             'seo.og_image_url' => $image,
             'seo.og_image_media_id' => $imageId,
         ];
+
+        foreach ($rules as $field => $fieldRules) {
+            if (str_starts_with($field, 'categories.items.')) {
+                $rules[str_replace('categories.', 'materials.', $field)] = $fieldRules;
+            }
+        }
 
         foreach ($rules as $field => &$fieldRules) {
             if (! str_contains($field, '.') || str_contains($field, '*')) {

@@ -37,7 +37,7 @@ export interface HomePageContent {
   heroSlides: HomeSlide[]
   marqueeTopics: string[]
   categories: SectionIntro & { items: MaterialCategory[] }
-  materials: SectionIntro & { note: string }
+  materials: SectionIntro & { note: string; items: MaterialCategory[] }
   promo: SectionIntro & { linkLabel: string; linkUrl: string | null }
   about: SectionIntro & {
     image: string

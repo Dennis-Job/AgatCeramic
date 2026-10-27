@@ -88,7 +88,7 @@ class BrandLogoCleanupTest extends TestCase
             'page' => DB::table('page_media')->insert(['page_id' => Page::query()->where('slug', 'home')->sole()->id, 'media_id' => $logo->id]),
             'home' => HomePage::query()->updateOrCreate(['id' => 1], ['content' => [
                 'header' => ['logo_media_id' => $logo->id], 'about' => ['image_media_id' => null],
-                'seo' => ['og_image_media_id' => null], 'categories' => ['items' => []],
+                'seo' => ['og_image_media_id' => null], 'categories' => ['items' => []], 'materials' => ['items' => []],
             ]]),
             'brand-document' => $brand->documents()->attach($logo->id),
             'category-document' => Category::factory()->create()->documents()->attach($logo->id),

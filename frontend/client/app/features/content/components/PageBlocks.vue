@@ -16,33 +16,6 @@ const props = defineProps<{
   description?: string
 }>()
 const blocks = computed(() => props.blocks.filter((block) => block.enabled))
-const categories = computed(
-  () =>
-    blocks.value.find((block) => block.type === 'categories')?.data.items ?? [],
-)
-const selectedMaterialId = ref('')
-const hasMaterials = computed(() =>
-  blocks.value.some((block) => block.type === 'materials'),
-)
-watch(
-  categories,
-  (items) => {
-    if (!items.some((item) => item.id === selectedMaterialId.value))
-      selectedMaterialId.value = items[0]?.id ?? ''
-  },
-  { immediate: true },
-)
-
-async function showMaterial(id: string) {
-  selectedMaterialId.value = id
-  await nextTick()
-  document.getElementById(`tab-${id}`)?.focus({ preventScroll: true })
-  document.getElementById('materials')?.scrollIntoView({
-    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      ? 'auto'
-      : 'smooth',
-  })
-}
 </script>
 
 <template>
@@ -60,15 +33,10 @@ async function showMaterial(id: string) {
     <HomeCategories
       v-else-if="block.type === 'categories' && block.data.items.length"
       :content="block.data"
-      :interactive="hasMaterials"
-      @select="showMaterial"
     />
     <HomeMaterialShowcase
-      v-else-if="block.type === 'materials' && categories.length"
-      :categories="categories"
+      v-else-if="block.type === 'materials' && block.data.items.length"
       :content="block.data"
-      :selected-id="selectedMaterialId"
-      @select="selectedMaterialId = $event"
     />
     <HomePromo v-else-if="block.type === 'promo'" :content="block.data" />
     <HomeAbout v-else-if="block.type === 'about'" :content="block.data" />

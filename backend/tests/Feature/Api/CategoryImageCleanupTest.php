@@ -85,7 +85,7 @@ class CategoryImageCleanupTest extends TestCase
             'page' => DB::table('page_media')->insert(['page_id' => Page::query()->where('slug', 'home')->sole()->id, 'media_id' => $image->id]),
             'home' => HomePage::query()->updateOrCreate(['id' => 1], ['content' => [
                 'header' => ['logo_media_id' => $image->id], 'about' => ['image_media_id' => null],
-                'seo' => ['og_image_media_id' => null], 'categories' => ['items' => []],
+                'seo' => ['og_image_media_id' => null], 'categories' => ['items' => []], 'materials' => ['items' => []],
             ]]),
             'category-document' => $category->documents()->attach($image->id),
             'brand-document' => Brand::factory()->create()->documents()->attach($image->id),
@@ -116,7 +116,7 @@ class CategoryImageCleanupTest extends TestCase
             'banner' => Banner::query()->create(['title' => 'Shared URL', 'image_url' => $url]),
             'home' => HomePage::query()->updateOrCreate(['id' => 1], ['content' => [
                 'header' => ['logo_media_id' => null], 'about' => ['image_media_id' => null, 'image_url' => $url],
-                'seo' => ['og_image_media_id' => null], 'categories' => ['items' => []],
+                'seo' => ['og_image_media_id' => null], 'categories' => ['items' => []], 'materials' => ['items' => []],
             ]]),
             'blocks' => $page->update(['blocks' => [['id' => 'about', 'type' => 'about', 'enabled' => true, 'data' => ['image_url' => $url]]]]),
             'seo' => $page->update(['seo' => ['og_image_url' => 'https://shop.example.test'.$url.'?version=1#photo']]),

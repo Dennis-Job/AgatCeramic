@@ -81,7 +81,7 @@ trait ValidatesPageContent
                         continue;
                     }
                     $rules[preg_replace('/^'.preg_quote($type, '/').'/', $prefix, $field)] = array_map(
-                        static fn (mixed $rule): mixed => is_string($rule) ? str_replace('required_with:'.$type, 'required_with:'.$prefix, $rule) : $rule,
+                        static fn (mixed $rule): mixed => is_string($rule) ? str_replace(['required_with:'.$type, 'present_with:'.$type], ['required_with:'.$prefix, 'present_with:'.$prefix], $rule) : $rule,
                         $fieldRules,
                     );
                 }

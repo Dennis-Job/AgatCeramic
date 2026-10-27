@@ -149,6 +149,141 @@ async function fixture(
   }
 }
 
+test('home blocks with nullable image URLs remain editable across repeated switches and reloads', async ({
+  page,
+}) => {
+  const state = await fixture(page)
+  const data = blankBlockData()
+  state.stored().slug = 'home'
+  state.stored().title = 'Главная'
+  data.categories.items[0] = {
+    id: 'tile',
+    name: 'Керамическая плитка',
+    short_description: 'Для интерьера',
+    description: 'Материалы для стен и пола',
+    image_url: null,
+    image_media_id: 5,
+    image_alt: 'Образцы плитки',
+  }
+  data.about.image_url = null
+  state.stored().blocks = [
+    { id: 'promo', type: 'promo', enabled: true, data: data.promo },
+    {
+      id: 'categories',
+      type: 'categories',
+      enabled: true,
+      data: data.categories,
+    },
+    { id: 'about', type: 'about', enabled: true, data: data.about },
+    { id: 'materials', type: 'materials', enabled: true, data: data.materials },
+    { id: 'marquee', type: 'marquee', enabled: true, data: data.marquee },
+    { id: 'guide', type: 'guide', enabled: true, data: data.guide },
+  ]
+  await page.route('**/api/v1/admin/home-page', (route) =>
+    route.fulfill({ json: { data: { page_id: 7 } } }),
+  )
+  // This test verifies the Admin editor; Nuxt rendering has its own preview suite.
+  await page.route('http://localhost:3000/preview/home', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: '<html lang="ru"></html>',
+    }),
+  )
+  await page.route('**/images/company.webp', (route) =>
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#c3b79c"/></svg>',
+    }),
+  )
+  await page.goto('/content?page=home&block=promo')
+  const select = async (name: string) =>
+    page.getByRole('button', { name, exact: true }).click()
+  const save = page.getByRole('button', {
+    name: 'Сохранить черновик блоков',
+    exact: true,
+  })
+  const categories = page.getByRole('region', {
+    name: 'Настройки: Сетка баннеров',
+  })
+  const about = page.getByRole('region', { name: 'Настройки: О проекте' })
+  await select('2. Сетка баннеров')
+  await expect(categories).toBeVisible()
+  await expect(save).toBeDisabled()
+  await categories.getByLabel('Название', { exact: true }).fill('Новая плитка')
+  await select('3. О проекте')
+  await about
+    .getByRole('textbox', { name: /^Заголовок/ })
+    .fill('О нашей компании')
+  await about.getByText('Исходный адрес изображения', { exact: true }).click()
+  const url = about.getByRole('textbox', {
+    name: 'Локальное изображение',
+    exact: true,
+  })
+  await expect(url).toHaveValue('')
+  await url.fill('/images/company.webp')
+  for (let pass = 0; pass < 2; pass++) {
+    for (const name of [
+      '4. Меню баннеров',
+      '5. Бегущая строка',
+      '6. Советы',
+      '1. Промо',
+      '2. Сетка баннеров',
+      '3. О проекте',
+    ])
+      await select(name)
+    await expect(
+      about.getByRole('textbox', { name: /^Заголовок/ }),
+    ).toHaveValue('О нашей компании')
+  }
+  await select('2. Сетка баннеров')
+  await expect(categories.getByLabel('Название', { exact: true })).toHaveValue(
+    'Новая плитка',
+  )
+  await save.click()
+  await expect(save).toBeDisabled()
+  expect(state.stored().blocks).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        type: 'categories',
+        data: expect.objectContaining({
+          items: [
+            expect.objectContaining({ name: 'Новая плитка', image_url: null }),
+          ],
+        }),
+      }),
+      expect.objectContaining({
+        type: 'about',
+        data: expect.objectContaining({
+          title: 'О нашей компании',
+          image_url: '/images/company.webp',
+        }),
+      }),
+    ]),
+  )
+  await page.reload()
+  await expect(categories.getByLabel('Название', { exact: true })).toHaveValue(
+    'Новая плитка',
+  )
+  await expect(save).toBeDisabled()
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await expect(categories).toBeVisible()
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true)
+    await page.screenshot({
+      path: test.info().outputPath(`nullable-home-blocks-${width}.png`),
+      fullPage: true,
+      animations: 'disabled',
+    })
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+})
+
 test('typed blocks preserve edits, order, state and publication; upload retries in place', async ({
   page,
   browserIssueGuard,
@@ -366,60 +501,176 @@ test('content-only editor hides media management and preserves selected resource
   expect(state.stored().blocks?.[0]?.data).toMatchObject({ image_media_id: 5 })
 })
 
-test('material code edits and reordering preserve the selected upload file', async ({
+for (const type of ['categories', 'materials'] as const)
+  test(`banner code edits and reordering preserve the selected upload file (${type})`, async ({
+    page,
+  }) => {
+    const state = await fixture(page)
+    const categories = blankBlockData()[type]
+    categories.items = [{ ...blankBlockData().categories.items[0]! }]
+    categories.items[0]!.id = 'tile'
+    categories.items[0]!.name = 'Плитка'
+    categories.items.push({
+      ...categories.items[0]!,
+      id: 'mosaic',
+      name: 'Мозаика',
+    })
+    state.stored().blocks = [
+      { id: type, type, enabled: true, data: categories },
+    ]
+    await page.goto('/content?page=7')
+    await page
+      .getByLabel('Загрузить файл — Изображение баннера 1')
+      .setInputFiles({
+        name: 'selected.webp',
+        mimeType: 'image/webp',
+        buffer: Buffer.from('fixture'),
+      })
+    const code = page.getByRole('textbox', { name: /^Код баннера/ }).first()
+    await code.fill('new-tile')
+    await expect(
+      page.getByRole('textbox', { name: /^Название файла/ }),
+    ).toHaveValue('selected')
+    await page
+      .getByRole('button', { name: 'Опустить баннер 1', exact: true })
+      .click()
+    await expect(
+      page.getByRole('textbox', { name: /^Название файла/ }),
+    ).toHaveValue('selected')
+    expect(
+      await page
+        .getByLabel('Загрузить файл — Изображение баннера 2')
+        .evaluate((element: HTMLInputElement) => element.files?.[0]?.name),
+    ).toBe('selected.webp')
+    await expect(
+      page.getByRole('button', {
+        name: 'Сохранить черновик блоков',
+        exact: true,
+      }),
+    ).toBeDisabled()
+    await page
+      .getByRole('button', { name: 'Отменить выбор файла', exact: true })
+      .click()
+    await expect(
+      page.getByRole('button', {
+        name: 'Сохранить черновик блоков',
+        exact: true,
+      }),
+    ).toBeEnabled()
+  })
+
+test('banner grid and menu save, publish and reload independent content', async ({
   page,
 }) => {
   const state = await fixture(page)
-  const categories = blankBlockData().categories
-  categories.items[0]!.id = 'tile'
-  categories.items[0]!.name = 'Плитка'
-  categories.items.push({
-    ...categories.items[0]!,
-    id: 'mosaic',
-    name: 'Мозаика',
-  })
+  const data = blankBlockData()
+  const item = {
+    id: 'shared-code',
+    name: 'Баннер сетки',
+    short_description: 'Краткое описание',
+    description: 'Подробное описание',
+    image_url: null,
+    image_media_id: null,
+    image_alt: 'Описание изображения',
+  }
+  data.categories.items = [{ ...item }]
+  data.materials.items = [{ ...item, name: 'Баннер меню' }]
+  state.stored().title = 'Главная'
+  state.stored().slug = 'home'
   state.stored().blocks = [
-    { id: 'categories', type: 'categories', enabled: true, data: categories },
+    {
+      id: 'categories',
+      type: 'categories',
+      enabled: true,
+      data: data.categories,
+    },
+    { id: 'materials', type: 'materials', enabled: true, data: data.materials },
   ]
-  await page.goto('/content?page=7')
-  await page
-    .getByLabel('Загрузить файл — Изображение материала 1')
-    .setInputFiles({
-      name: 'selected.webp',
-      mimeType: 'image/webp',
-      buffer: Buffer.from('fixture'),
-    })
-  const code = page.getByRole('textbox', { name: /^Код для вкладки/ }).first()
-  await code.fill('new-tile')
+  await page.route('**/api/v1/admin/home-page', (route) =>
+    route.fulfill({ json: { data: { page_id: 7 } } }),
+  )
+  await page.route('http://localhost:3000/preview/home', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: '<html lang="ru"></html>',
+    }),
+  )
+  await page.goto('/content?page=home&block=categories')
+  const grid = page.getByRole('region', { name: 'Настройки: Сетка баннеров' })
+  const menu = page.getByRole('region', { name: 'Настройки: Меню баннеров' })
+  const selectGrid = () =>
+    page.getByRole('button', { name: '1. Сетка баннеров', exact: true }).click()
+  const selectMenu = () =>
+    page.getByRole('button', { name: '2. Меню баннеров', exact: true }).click()
+  await grid
+    .getByRole('textbox', { name: /^Название(?: |$)/ })
+    .fill('Изменённая сетка')
+  await selectMenu()
   await expect(
-    page.getByRole('textbox', { name: /^Название файла/ }),
-  ).toHaveValue('selected')
+    menu.getByRole('textbox', { name: /^Название(?: |$)/ }),
+  ).toHaveValue('Баннер меню')
+  await menu
+    .getByRole('textbox', { name: /^Название(?: |$)/ })
+    .fill('Независимое меню')
+  await selectGrid()
+  await expect(
+    grid.getByRole('textbox', { name: /^Название(?: |$)/ }),
+  ).toHaveValue('Изменённая сетка')
+  const previousPublished = state.published()
   await page
-    .getByRole('button', { name: 'Опустить материал 1', exact: true })
+    .getByRole('button', { name: 'Сохранить черновик блоков', exact: true })
     .click()
   await expect(
-    page.getByRole('textbox', { name: /^Название файла/ }),
-  ).toHaveValue('selected')
-  expect(
-    await page
-      .getByLabel('Загрузить файл — Изображение материала 2')
-      .evaluate((element: HTMLInputElement) => element.files?.[0]?.name),
-  ).toBe('selected.webp')
+    page.getByText(
+      'Черновик блоков сохранён. Для обновления сайта опубликуйте страницу.',
+    ),
+  ).toBeVisible()
+  expect(state.published()).toBe(previousPublished)
+  await page.reload()
   await expect(
-    page.getByRole('button', {
-      name: 'Сохранить черновик блоков',
-      exact: true,
-    }),
-  ).toBeDisabled()
+    grid.getByRole('textbox', { name: /^Название(?: |$)/ }),
+  ).toHaveValue('Изменённая сетка')
+  await selectMenu()
+  await expect(
+    menu.getByRole('textbox', { name: /^Название(?: |$)/ }),
+  ).toHaveValue('Независимое меню')
   await page
-    .getByRole('button', { name: 'Отменить выбор файла', exact: true })
+    .getByRole('button', { name: 'Опубликовать блоки страницы', exact: true })
     .click()
+  await expect.poll(() => state.published()).toContain('Независимое меню')
+  expect(state.published()).toContain('Изменённая сетка')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    for (const [name, select, region] of [
+      ['grid', selectGrid, grid],
+      ['menu', selectMenu, menu],
+    ] as const) {
+      await select()
+      await expect(region).toBeVisible()
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <=
+            document.documentElement.clientWidth,
+        ),
+      ).toBe(true)
+      await page.screenshot({
+        path: test.info().outputPath(`banner-${name}-${width}.png`),
+        fullPage: true,
+        animations: 'disabled',
+      })
+    }
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  // Unlike the grid, a menu may be intentionally empty and stays independent.
+  await menu
+    .getByRole('button', { name: 'Удалить баннер 1', exact: true })
+    .click()
+  await expect(menu.getByRole('status')).toContainText('Баннеров пока нет')
+  await selectGrid()
   await expect(
-    page.getByRole('button', {
-      name: 'Сохранить черновик блоков',
-      exact: true,
-    }),
-  ).toBeEnabled()
+    grid.getByRole('textbox', { name: /^Название(?: |$)/ }),
+  ).toHaveValue('Изменённая сетка')
 })
 
 test('homepage block URL restores selection and preserves canonical block edits', async ({

@@ -3,8 +3,8 @@ import type { BlockData, BlockType, PageBlock } from '../types/block.types'
 export const blockLabels: Record<BlockType, string> = {
   hero: 'Слайдер',
   marquee: 'Бегущая строка',
-  categories: 'Материалы',
-  materials: 'Блок фактур',
+  categories: 'Сетка баннеров',
+  materials: 'Меню баннеров',
   promo: 'Промо',
   about: 'О проекте',
   guide: 'Советы',
@@ -33,7 +33,7 @@ export function blankBlockData(): BlockData {
         },
       ],
     },
-    materials: { ...heading(), note: '' },
+    materials: { ...heading(), note: '', items: [] },
     promo: { ...heading(), ...cta() },
     about: {
       ...heading(),

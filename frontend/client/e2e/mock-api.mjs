@@ -35,7 +35,7 @@ const home = {
   hero_slides: slides,
   marquee: { topics: ['Керамика', 'Керамогранит'] },
   categories: { ...intro, items: [] },
-  materials: { ...intro, note: '' },
+  materials: { ...intro, note: '', items: [] },
   promo: { ...intro, link_label: 'Контакты', link_url: '/contacts' },
   about: {
     ...intro,
@@ -80,6 +80,73 @@ const home = {
   ],
 }
 let scenario = 'default'
+function bannerBlocks() {
+  const item = (id, name, image_url = null) => ({
+    id,
+    name,
+    short_description: `Кратко: ${name}`,
+    description: `Подробно: ${name}`,
+    image_url,
+    image_media_id: null,
+    image_alt: `Фото: ${name}`,
+  })
+  return [
+    {
+      id: 'banner-grid',
+      type: 'categories',
+      enabled: scenario !== 'banners-grid-disabled',
+      data: {
+        ...intro,
+        title: 'Сетка баннеров',
+        items:
+          scenario === 'banners-grid-empty'
+            ? []
+            : [
+                item(
+                  'grid-tile',
+                  scenario === 'banners-grid-changed'
+                    ? 'Изменённый баннер сетки'
+                    : 'Плитка только в сетке',
+                  '/images/home/category-porcelain.webp',
+                ),
+              ],
+      },
+    },
+    {
+      id: 'banner-menu',
+      type: 'materials',
+      enabled: scenario !== 'banners-menu-disabled',
+      data: {
+        ...intro,
+        title: 'Меню баннеров',
+        note: 'Уточните свойства у консультанта',
+        items:
+          scenario === 'banners-menu-empty'
+            ? []
+            : scenario === 'banners-menu-long'
+              ? Array.from({ length: 12 }, (_, index) =>
+                  item(
+                    `menu-${index}`,
+                    `Очень длинное русское название баннера ${index + 1}`,
+                  ),
+                )
+              : scenario === 'banners-menu-changed'
+                ? [item('menu-new', 'Новый баннер меню')]
+                : [
+                    item(
+                      'menu-stone',
+                      'Камень только в меню',
+                      '/images/home/category-porcelain.webp',
+                    ),
+                    item('menu-mosaic', 'Мозаика только в меню'),
+                  ],
+      },
+    },
+  ].filter(
+    (block) =>
+      scenario !== 'banners-standalone-menu' || block.type === 'materials',
+  )
+}
 createServer(async (request, response) => {
   response.setHeader('Content-Type', 'application/json; charset=utf-8')
   response.setHeader(
@@ -122,23 +189,24 @@ createServer(async (request, response) => {
     const slug = url.pathname.split('/').at(-1)
     const blocks =
       slug === 'home'
-        ? home.blocks.map((block) =>
-            block.type === 'hero'
-              ? {
-                  ...block,
-                  data: {
-                    ...block.data,
-                    slides: [
-                      slides[0],
-                      {
-                        ...slides[0],
-                        id: 2,
-                        title: 'Второй сохранённый слайд',
-                      },
-                    ],
-                  },
-                }
-              : block,
+        ? (scenario.startsWith('banners-') ? bannerBlocks() : home.blocks).map(
+            (block) =>
+              block.type === 'hero'
+                ? {
+                    ...block,
+                    data: {
+                      ...block.data,
+                      slides: [
+                        slides[0],
+                        {
+                          ...slides[0],
+                          id: 2,
+                          title: 'Второй сохранённый слайд',
+                        },
+                      ],
+                    },
+                  }
+                : block,
           )
         : slug === 'catalog'
           ? [
@@ -230,6 +298,8 @@ createServer(async (request, response) => {
     })
   }
   if (url.pathname === '/api/v1/home-page') {
+    if (scenario.startsWith('banners-'))
+      return send({ data: { ...home, blocks: bannerBlocks() } })
     if (scenario === 'missing') return fail(404)
     if (scenario === 'error') return fail(503)
     if (scenario === 'noindex')

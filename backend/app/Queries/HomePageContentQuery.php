@@ -28,8 +28,10 @@ class HomePageContentQuery
         $content['footer'] = [...$footer, 'bottom_left' => SiteCopyright::text()];
         $media = Media::query()->whereIn('id', $page->referencedMediaIds())->get()->keyBy('id');
 
-        foreach ($content['categories']['items'] as $index => $item) {
-            $content['categories']['items'][$index]['image_url'] = $this->imageUrl($item['image_url'], $media->get($item['image_media_id']), $admin);
+        foreach (['categories', 'materials'] as $type) {
+            foreach ($content[$type]['items'] as $index => $item) {
+                $content[$type]['items'][$index]['image_url'] = $this->imageUrl($item['image_url'], $media->get($item['image_media_id']), $admin);
+            }
         }
         $content['about']['image_url'] = $this->imageUrl($content['about']['image_url'], $media->get($content['about']['image_media_id']), $admin);
         $content['seo']['og_image_url'] = $this->imageUrl($content['seo']['og_image_url'], $media->get($content['seo']['og_image_media_id']), $admin);

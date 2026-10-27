@@ -1,17 +1,24 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import UiButton from '../../../components/ui/UiButton.vue'
+import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import MediaImageEditor from '../../media/components/MediaImageEditor.vue'
 import type { BodyContent } from '../../pages/types/block.types'
 
-defineProps<{
+const props = defineProps<{
   content: BodyContent
   section: 'marquee' | 'categories' | 'materials' | 'promo' | 'about' | 'guide'
   hideHeading?: boolean
   disabled?: boolean
 }>()
+const bannerContent = computed(() =>
+  props.section === 'materials'
+    ? props.content.materials
+    : props.content.categories,
+)
 const emit = defineEmits<{
   pending: [value: boolean]
   uploading: [value: boolean]
@@ -96,28 +103,41 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     >
   </div>
 
-  <div v-else-if="section === 'categories'" class="space-y-3">
+  <div
+    v-else-if="section === 'categories' || section === 'materials'"
+    class="space-y-3"
+  >
     <div>
       <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
-        Карточки материалов
+        {{ section === 'categories' ? 'Сетка баннеров' : 'Меню баннеров' }}
       </h2>
       <p class="mt-1 text-sm text-gray-500">
-        Эти же материалы используются во вкладках блока фактур.
+        {{
+          section === 'categories'
+            ? 'Баннеры этой сетки редактируются независимо от меню баннеров.'
+            : 'Баннеры этого меню редактируются независимо от сетки баннеров.'
+        }}
       </p>
     </div>
     <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Подпись над заголовком"
-        ><UiInput v-model="content.categories.eyebrow"
+        ><UiInput v-model="bannerContent.eyebrow"
       /></UiField>
       <UiField label="Заголовок"
-        ><UiInput v-model="content.categories.title"
+        ><UiInput v-model="bannerContent.title"
       /></UiField>
     </div>
     <UiField label="Описание"
-      ><UiTextarea v-model="content.categories.description" compact rows="2"
+      ><UiTextarea v-model="bannerContent.description" compact rows="2"
     /></UiField>
+    <UiField v-if="section === 'materials'" label="Примечание под баннером"
+      ><UiTextarea v-model="content.materials.note" compact rows="2"
+    /></UiField>
+    <UiEmptyState v-if="!bannerContent.items.length" label="Баннеров пока нет">
+      Добавьте первый баннер в меню.
+    </UiEmptyState>
     <div
-      v-for="(item, index) in content.categories.items"
+      v-for="(item, index) in bannerContent.items"
       :key="itemKey(item)"
       class="admin-panel--inset space-y-3 p-3"
     >
@@ -125,7 +145,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
         <component
           :is="hideHeading ? 'h4' : 'h3'"
           class="min-w-0 break-words font-medium text-gray-500"
-          >Материал {{ index + 1
+          >Баннер {{ index + 1
           }}{{ item.name ? ` · ${item.name}` : '' }}</component
         >
         <div class="flex gap-1">
@@ -133,29 +153,31 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
             variant="surface"
             size="sm"
             :disabled="index === 0"
-            :aria-label="`Поднять материал ${index + 1}`"
-            @click="move(content.categories.items, index, -1)"
+            :aria-label="`Поднять баннер ${index + 1}`"
+            @click="move(bannerContent.items, index, -1)"
             >↑</UiButton
           ><UiButton
             variant="surface"
             size="sm"
-            :disabled="index === content.categories.items.length - 1"
-            :aria-label="`Опустить материал ${index + 1}`"
-            @click="move(content.categories.items, index, 1)"
+            :disabled="index === bannerContent.items.length - 1"
+            :aria-label="`Опустить баннер ${index + 1}`"
+            @click="move(bannerContent.items, index, 1)"
             >↓</UiButton
           ><UiButton
             variant="danger-ghost"
             size="sm"
-            :aria-label="`Удалить материал ${index + 1}`"
-            :disabled="content.categories.items.length === 1"
-            @click="content.categories.items.splice(index, 1)"
+            :aria-label="`Удалить баннер ${index + 1}`"
+            :disabled="
+              section === 'categories' && bannerContent.items.length === 1
+            "
+            @click="bannerContent.items.splice(index, 1)"
             >Удалить</UiButton
           >
         </div>
       </div>
       <div class="grid gap-3 sm:grid-cols-2">
         <UiField
-          label="Код для вкладки"
+          label="Код баннера"
           help="Латинские буквы, цифры и дефис; код должен быть уникальным."
           ><UiInput
             v-model="item.id"
@@ -168,16 +190,16 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
       <UiField label="Краткое описание карточки"
         ><UiInput v-model="item.short_description"
       /></UiField>
-      <UiField label="Описание в блоке фактур"
+      <UiField label="Описание баннера"
         ><UiTextarea v-model="item.description" compact rows="2"
       /></UiField>
       <MediaImageEditor
         compact
         :disabled="disabled"
         require-manage-permission
-        :label="`Изображение материала ${index + 1}`"
-        :preview-label="`Увеличить изображение материала ${index + 1}: ${item.name}`"
-        :remove-label="`Снять выбранный файл материала ${index + 1}`"
+        :label="`Изображение баннера ${index + 1}`"
+        :preview-label="`Увеличить изображение баннера ${index + 1}: ${item.name}`"
+        :remove-label="`Снять выбранный файл баннера ${index + 1}`"
         :fallback-url="item.image_url"
         :fallback-alt="item.image_alt || item.name"
         :model-value="item.image_media_id"
@@ -207,7 +229,7 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
       variant="secondary"
       size="sm"
       @click="
-        content.categories.items.push({
+        bannerContent.items.push({
           id: '',
           name: '',
           short_description: '',
@@ -217,27 +239,8 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
           image_alt: '',
         })
       "
-      >Добавить материал</UiButton
+      >Добавить баннер</UiButton
     >
-  </div>
-
-  <div v-else-if="section === 'materials'" class="space-y-3">
-    <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
-      Блок фактур
-    </h2>
-    <div class="grid gap-3 sm:grid-cols-2">
-      <UiField label="Подпись над заголовком"
-        ><UiInput v-model="content.materials.eyebrow" /></UiField
-      ><UiField label="Заголовок"
-        ><UiInput v-model="content.materials.title"
-      /></UiField>
-    </div>
-    <UiField label="Описание"
-      ><UiTextarea v-model="content.materials.description" compact rows="2"
-    /></UiField>
-    <UiField label="Примечание под материалом"
-      ><UiTextarea v-model="content.materials.note" compact rows="2"
-    /></UiField>
   </div>
 
   <div v-else-if="section === 'promo'" class="space-y-3">

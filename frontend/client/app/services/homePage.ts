@@ -38,6 +38,7 @@ export interface HomePageDto {
     title: string
     description: string
     note: string
+    items: HomePageDto['categories']['items']
   }
   promo: {
     eyebrow: string
@@ -155,12 +156,7 @@ function mapHomePage(dto: HomePageDto, apiBase: string): HomePageContent {
     heroSlides: mapSlides(dto.hero_slides, apiBase),
     marqueeTopics: dto.marquee.topics,
     categories: mapCategories(dto.categories, apiBase),
-    materials: {
-      eyebrow: dto.materials.eyebrow,
-      title: dto.materials.title,
-      description: dto.materials.description,
-      note: dto.materials.note,
-    },
+    materials: mapMaterials(dto.materials, apiBase),
     promo: mapPromo(dto.promo),
     about: mapAbout(dto.about, apiBase),
     guide: dto.guide,
@@ -220,6 +216,13 @@ function mapPromo(data: HomePageDto['promo']): HomePageContent['promo'] {
   }
 }
 
+function mapMaterials(
+  data: HomePageDto['materials'],
+  apiBase: string,
+): HomePageContent['materials'] {
+  return { ...mapCategories(data, apiBase), note: data.note }
+}
+
 function mapAbout(
   data: HomePageDto['about'],
   apiBase: string,
@@ -266,7 +269,11 @@ export function mapContentBlock(
     case 'marquee':
       return { ...common, type: 'marquee', data: block.data }
     case 'materials':
-      return { ...common, type: 'materials', data: block.data }
+      return {
+        ...common,
+        type: 'materials',
+        data: mapMaterials(block.data, apiBase),
+      }
     case 'guide':
       return { ...common, type: 'guide', data: block.data }
     case 'text':

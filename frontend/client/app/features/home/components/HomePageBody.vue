@@ -30,6 +30,7 @@ defineProps<{ content: Pick<ContentPage, 'blocks' | 'seo'> }>()
   padding-block: 100px;
 }
 h1 {
+  overflow-wrap: anywhere;
   margin: 0 0 16px;
   font-size: clamp(28px, 4vw, 44px);
   font-weight: 500;
