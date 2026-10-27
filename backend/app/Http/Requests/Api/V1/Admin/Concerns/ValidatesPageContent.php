@@ -22,6 +22,13 @@ trait ValidatesPageContent
             if (in_array($type, ['text', 'catalog'], true)) {
                 $fields[] = 'blocks.'.$index.'.data.'.($type === 'text' ? 'body' : 'description');
             }
+            $data = is_array($block) ? ($block['data'] ?? null) : null;
+            if (in_array($type, ['materials', 'categories'], true) && is_array($data) && is_array($data['items'] ?? null)) {
+                $field = $type === 'materials' ? 'short_description' : 'description';
+                foreach (array_keys($data['items']) as $itemIndex) {
+                    $fields[] = 'blocks.'.$index.'.data.items.'.$itemIndex.'.'.$field;
+                }
+            }
         }
         // Restore optional text converted to null by Laravel's request middleware.
         // Missing fields must stay missing so presence validation still applies.

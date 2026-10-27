@@ -209,10 +209,10 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
           placeholder="/catalog/..."
           @update:model-value="setBannerLink(item, $event)"
       /></UiField>
-      <UiField label="Краткое описание карточки"
+      <UiField v-if="section === 'categories'" label="Краткое описание карточки"
         ><UiInput v-model="item.short_description"
       /></UiField>
-      <UiField label="Описание баннера"
+      <UiField v-if="section === 'materials'" label="Описание баннера"
         ><UiTextarea v-model="item.description" compact rows="2"
       /></UiField>
       <UiField v-if="section === 'materials'" label="Примечание под баннером">

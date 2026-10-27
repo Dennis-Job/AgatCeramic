@@ -8,6 +8,25 @@ use Illuminate\Validation\Rule;
 
 class UpdateHomePageRequest extends FormRequest
 {
+    #[\Override]
+    protected function prepareForValidation(): void
+    {
+        // Retain unused legacy strings; middleware converts empty input to null.
+        foreach (['materials' => 'short_description', 'categories' => 'description'] as $section => $field) {
+            $data = $this->input($section);
+            if (! is_array($data) || ! is_array($data['items'] ?? null)) {
+                continue;
+            }
+            foreach ($data['items'] as &$item) {
+                if (is_array($item) && array_key_exists($field, $item) && $item[$field] === null) {
+                    $item[$field] = '';
+                }
+            }
+            unset($item);
+            $this->merge([$section => $data]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -108,7 +127,9 @@ class UpdateHomePageRequest extends FormRequest
 
         $rules['categories.items.*'] = ['required', 'array:'.$bannerItemKeys.',link_url'];
         $rules['categories.items.*.link_url'] = ['sometimes', 'nullable', 'string', 'max:2048', new SafeSiteUrl];
+        $rules['categories.items.*.description'] = ['present', 'string', 'max:2000'];
         $rules['materials.items.*'] = ['required', 'array:'.$bannerItemKeys.',link_url,note'];
+        $rules['materials.items.*.short_description'] = ['present', 'string', 'max:255'];
         $rules['materials.items.*.link_url'] = ['sometimes', 'nullable', 'string', 'max:2048', new SafeSiteUrl];
         $rules['materials.items.*.note'] = ['sometimes', 'nullable', 'string', 'max:2000'];
 

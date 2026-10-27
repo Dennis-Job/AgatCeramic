@@ -16,6 +16,107 @@ class MenuBannerDetailsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_grid_unused_description_can_be_empty_without_losing_historical_text_or_relaxing_menu_description(): void
+    {
+        $this->actingAs($this->manager());
+        $content = HomePage::query()->findOrFail(1)->content;
+        $grid = $content['categories'];
+        $grid['items'][1]['description'] = 'Историческое подробное описание';
+        $page = Page::query()->where('slug', 'about')->sole();
+        $base = '/api/v1/admin/pages/'.$page->id;
+        foreach (['', null] as $empty) {
+            $grid['items'][0]['description'] = $empty;
+            $this->patchJson('/api/v1/admin/home-page', ['categories' => $grid])->assertOk()
+                ->assertJsonPath('data.categories.items.0.description', '')
+                ->assertJsonPath('data.categories.items.1.description', 'Историческое подробное описание');
+            $this->postJson('/api/v1/admin/home-page/publish')->assertOk();
+            $this->getJson('/api/v1/home-page')->assertJsonPath('data.categories.items.0.description', '');
+            $this->patchJson($base, ['blocks' => [
+                ['id' => 'grid', 'type' => 'categories', 'enabled' => true, 'data' => $grid],
+            ]])->assertOk()->assertJsonPath('data.blocks.0.data.items.0.description', '');
+            $this->postJson($base.'/publish')->assertOk();
+            $this->getJson('/api/v1/pages/about')->assertJsonPath('data.blocks.0.data.items.0.description', '')
+                ->assertJsonPath('data.blocks.0.data.items.1.description', 'Историческое подробное описание');
+        }
+        foreach (['categories', 'materials'] as $type) {
+            $section = $content[$type];
+            $invalid = [false, str_repeat('x', 2001)];
+            if ($type === 'materials') {
+                $invalid = [...$invalid, '', null];
+            }
+            foreach ($invalid as $value) {
+                $section['items'][0]['description'] = $value;
+                $this->patchJson('/api/v1/admin/home-page', [$type => $section])->assertUnprocessable()
+                    ->assertJsonValidationErrors($type.'.items.0.description', 'error.details');
+                $this->patchJson($base, ['blocks' => [
+                    ['id' => 'banners', 'type' => $type, 'enabled' => true, 'data' => $section],
+                ]])->assertUnprocessable()->assertJsonValidationErrors('blocks.0.data.items.0.description', 'error.details');
+            }
+            unset($section['items'][0]['description']);
+            $this->patchJson('/api/v1/admin/home-page', [$type => $section])->assertUnprocessable()
+                ->assertJsonValidationErrors($type.'.items.0.description', 'error.details');
+            $this->patchJson($base, ['blocks' => [
+                ['id' => 'banners', 'type' => $type, 'enabled' => true, 'data' => $section],
+            ]])->assertUnprocessable()->assertJsonValidationErrors('blocks.0.data.items.0.description', 'error.details');
+        }
+    }
+
+    public function test_new_menu_items_keep_empty_short_descriptions_through_both_editors_and_publication(): void
+    {
+        $this->actingAs($this->manager());
+        $menu = HomePage::query()->findOrFail(1)->content['materials'];
+        $menu['items'][0]['id'] = 'new-menu-item';
+        $menu['items'][1]['short_description'] = 'Историческое краткое описание';
+        $page = Page::query()->where('slug', 'about')->sole();
+        $base = '/api/v1/admin/pages/'.$page->id;
+        foreach (['', null] as $empty) {
+            $menu['items'][0]['short_description'] = $empty;
+            $this->patchJson('/api/v1/admin/home-page', ['materials' => $menu])->assertOk()
+                ->assertJsonPath('data.materials.items.0.short_description', '')
+                ->assertJsonPath('data.materials.items.1.short_description', 'Историческое краткое описание');
+            $this->postJson('/api/v1/admin/home-page/publish')->assertOk();
+            $this->getJson('/api/v1/home-page')->assertOk()
+                ->assertJsonPath('data.materials.items.0.short_description', '')
+                ->assertJsonPath('data.materials.items.1.short_description', 'Историческое краткое описание');
+            $this->patchJson($base, ['blocks' => [
+                ['id' => 'menu', 'type' => 'materials', 'enabled' => true, 'data' => $menu],
+            ]])->assertOk()->assertJsonPath('data.blocks.0.data.items.0.short_description', '')
+                ->assertJsonPath('data.blocks.0.data.items.1.short_description', 'Историческое краткое описание');
+            $this->postJson($base.'/publish')->assertOk();
+            $this->getJson('/api/v1/pages/about')->assertOk()
+                ->assertJsonPath('data.blocks.0.data.items.0.short_description', '')
+                ->assertJsonPath('data.blocks.0.data.items.1.short_description', 'Историческое краткое описание');
+        }
+    }
+
+    public function test_menu_short_description_must_be_present_string_and_grid_still_requires_nonempty_text(): void
+    {
+        $this->actingAs($this->manager());
+        $content = HomePage::query()->findOrFail(1)->content;
+        $page = Page::query()->where('slug', 'about')->sole();
+        foreach (['materials', 'categories'] as $type) {
+            $section = $content[$type];
+            $invalid = [false, str_repeat('x', 256)];
+            if ($type === 'categories') {
+                $invalid = [...$invalid, '', null];
+            }
+            foreach ($invalid as $value) {
+                $section['items'][0]['short_description'] = $value;
+                $this->patchJson('/api/v1/admin/home-page', [$type => $section])->assertUnprocessable()
+                    ->assertJsonValidationErrors($type.'.items.0.short_description', 'error.details');
+                $this->patchJson('/api/v1/admin/pages/'.$page->id, ['blocks' => [
+                    ['id' => 'banners', 'type' => $type, 'enabled' => true, 'data' => $section],
+                ]])->assertUnprocessable()->assertJsonValidationErrors('blocks.0.data.items.0.short_description', 'error.details');
+            }
+            unset($section['items'][0]['short_description']);
+            $this->patchJson('/api/v1/admin/home-page', [$type => $section])->assertUnprocessable()
+                ->assertJsonValidationErrors($type.'.items.0.short_description', 'error.details');
+            $this->patchJson('/api/v1/admin/pages/'.$page->id, ['blocks' => [
+                ['id' => 'banners', 'type' => $type, 'enabled' => true, 'data' => $section],
+            ]])->assertUnprocessable()->assertJsonValidationErrors('blocks.0.data.items.0.short_description', 'error.details');
+        }
+    }
+
     public function test_menu_details_save_publish_and_read_independently_of_grid_and_global_note(): void
     {
         $this->actingAs($this->manager());
