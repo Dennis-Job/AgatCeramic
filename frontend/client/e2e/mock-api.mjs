@@ -90,7 +90,7 @@ function bannerBlocks() {
     image_media_id: null,
     image_alt: `Фото: ${name}`,
   })
-  return [
+  const blocks = [
     {
       id: 'banner-grid',
       type: 'categories',
@@ -146,6 +146,75 @@ function bannerBlocks() {
     (block) =>
       scenario !== 'banners-standalone-menu' || block.type === 'materials',
   )
+  const menu = blocks.find((block) => block.type === 'materials')
+  if (menu) {
+    menu.data.items = menu.data.items.map((entry) => ({
+      ...entry,
+      note: 'Уточните свойства у консультанта',
+    }))
+  }
+  if (scenario === 'banners-menu-links' && menu) {
+    menu.data.note = 'Старое общее примечание'
+    menu.data.items = [
+      {
+        ...item(
+          'first',
+          'Первый баннер меню',
+          '/images/home/category-porcelain.webp',
+        ),
+        link_url: '/catalog?from=menu-first',
+        note: 'Примечание первого баннера',
+      },
+      {
+        ...item('second', 'Второй баннер меню'),
+        link_url: 'https://example.test/menu-second',
+        note: 'Примечание второго баннера',
+      },
+      { ...item('empty', 'Баннер без примечания'), link_url: null, note: '' },
+      {
+        ...item('unsafe', 'Небезопасная ссылка меню'),
+        link_url: 'javascript:alert(1)',
+        note: null,
+      },
+      item('legacy', 'Баннер без новых полей'),
+    ]
+  }
+  if (scenario === 'banners-grid-links') {
+    blocks[0].data.items = [
+      {
+        ...item(
+          'grid-internal',
+          'Баннер каталога',
+          '/images/home/category-porcelain.webp',
+        ),
+        link_url: '/catalog?from=banner',
+      },
+      {
+        ...item('grid-external', 'Внешний баннер'),
+        link_url: 'https://example.test/banner',
+      },
+      item('grid-legacy', 'Баннер без ссылки'),
+      { ...item('grid-empty', 'Пустая ссылка'), link_url: '' },
+      { ...item('grid-null', 'Отсутствующая ссылка'), link_url: null },
+      {
+        ...item('grid-script', 'Небезопасная ссылка'),
+        link_url: 'javascript:alert(1)',
+      },
+      {
+        ...item('grid-protocol', 'Ссылка без протокола'),
+        link_url: '//example.test/banner',
+      },
+      {
+        ...item('grid-backslash', 'Обратный слеш'),
+        link_url: '/\\example.test/banner',
+      },
+      {
+        ...item('grid-credentials', 'Ссылка с паролем'),
+        link_url: 'https://user:pass@example.test/banner',
+      },
+    ]
+  }
+  return blocks
 }
 createServer(async (request, response) => {
   response.setHeader('Content-Type', 'application/json; charset=utf-8')

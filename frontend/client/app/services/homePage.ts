@@ -1,9 +1,21 @@
-import type { HomePageContent, SiteLink } from '~/types/homePage'
+import type {
+  HomePageContent,
+  MaterialCategory,
+  SiteLink,
+} from '~/types/homePage'
 import type { ContentBlock, ContentBlockDto } from '~/types/contentPage'
 
 interface LinkDto {
   label: string
   to: string
+}
+interface BannerItemDto {
+  id: string
+  name: string
+  short_description: string
+  description: string
+  image_url: string | null
+  image_alt: string
 }
 
 export interface HomePageDto {
@@ -24,21 +36,17 @@ export interface HomePageDto {
     eyebrow: string
     title: string
     description: string
-    items: {
-      id: string
-      name: string
-      short_description: string
-      description: string
-      image_url: string | null
-      image_alt: string
-    }[]
+    items: (BannerItemDto & { link_url?: string | null })[]
   }
   materials: {
     eyebrow: string
     title: string
     description: string
-    note: string
-    items: HomePageDto['categories']['items']
+    note?: string | null
+    items: (BannerItemDto & {
+      link_url?: string | null
+      note?: string | null
+    })[]
   }
   promo: {
     eyebrow: string
@@ -196,14 +204,29 @@ function mapCategories(
     title: data.title,
     description: data.description,
     items: data.items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      shortDescription: item.short_description,
-      description: item.description,
-      image: imageUrl(item.image_url, apiBase),
-      imageAlt: item.image_alt,
+      ...mapBannerItem(item, apiBase),
+      linkUrl: safeBannerLink(item.link_url),
     })),
   }
+}
+
+function mapBannerItem(item: BannerItemDto, apiBase: string): MaterialCategory {
+  return {
+    id: item.id,
+    name: item.name,
+    shortDescription: item.short_description,
+    description: item.description,
+    image: imageUrl(item.image_url, apiBase),
+    imageAlt: item.image_alt,
+  }
+}
+
+function safeBannerLink(url: string | null | undefined): string | null {
+  const link = safeLink(url)
+  if (!link || /[\u0000-\u0020\u007f\\]/.test(link)) return null
+  if (link.startsWith('/')) return link
+  const parsed = new URL(link)
+  return parsed.username || parsed.password ? null : link
 }
 
 function mapPromo(data: HomePageDto['promo']): HomePageContent['promo'] {
@@ -220,7 +243,16 @@ function mapMaterials(
   data: HomePageDto['materials'],
   apiBase: string,
 ): HomePageContent['materials'] {
-  return { ...mapCategories(data, apiBase), note: data.note }
+  return {
+    eyebrow: data.eyebrow,
+    title: data.title,
+    description: data.description,
+    items: data.items.map((item) => ({
+      ...mapBannerItem(item, apiBase),
+      linkUrl: safeBannerLink(item.link_url),
+      note: item.note ?? '',
+    })),
+  }
 }
 
 function mapAbout(

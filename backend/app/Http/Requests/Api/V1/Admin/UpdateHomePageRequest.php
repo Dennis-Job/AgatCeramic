@@ -21,6 +21,7 @@ class UpdateHomePageRequest extends FormRequest
         $link = ['required', 'string', 'max:2048', new SafeSiteUrl];
         $image = ['nullable', 'string', 'max:2048', new SafeSiteUrl];
         $imageId = ['nullable', 'integer', Rule::exists('media', 'id')->where('kind', 'image')];
+        $bannerItemKeys = 'id,name,short_description,description,image_url,image_media_id,image_alt';
 
         $rules = [
             'hero_slider_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sliders', 'id')],
@@ -54,7 +55,7 @@ class UpdateHomePageRequest extends FormRequest
             'categories.title' => $short,
             'categories.description' => $text,
             'categories.items' => ['required', 'array', 'min:1', 'max:12'],
-            'categories.items.*' => ['required', 'array:id,name,short_description,description,image_url,image_media_id,image_alt'],
+            'categories.items.*' => ['required', 'array:'.$bannerItemKeys],
             'categories.items.*.id' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9-]+$/', 'distinct'],
             'categories.items.*.name' => $short,
             'categories.items.*.short_description' => $short,
@@ -66,7 +67,7 @@ class UpdateHomePageRequest extends FormRequest
             'materials.eyebrow' => $short,
             'materials.title' => $short,
             'materials.description' => $text,
-            'materials.note' => $text,
+            'materials.note' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'materials.items' => ['present_with:materials', 'array', 'max:12', 'list'],
             'promo' => ['sometimes', 'required', 'array:eyebrow,title,description,link_label,link_url'],
             'promo.eyebrow' => $short,
@@ -104,6 +105,12 @@ class UpdateHomePageRequest extends FormRequest
                 $rules[str_replace('categories.', 'materials.', $field)] = $fieldRules;
             }
         }
+
+        $rules['categories.items.*'] = ['required', 'array:'.$bannerItemKeys.',link_url'];
+        $rules['categories.items.*.link_url'] = ['sometimes', 'nullable', 'string', 'max:2048', new SafeSiteUrl];
+        $rules['materials.items.*'] = ['required', 'array:'.$bannerItemKeys.',link_url,note'];
+        $rules['materials.items.*.link_url'] = ['sometimes', 'nullable', 'string', 'max:2048', new SafeSiteUrl];
+        $rules['materials.items.*.note'] = ['sometimes', 'nullable', 'string', 'max:2000'];
 
         foreach ($rules as $field => &$fieldRules) {
             if (! str_contains($field, '.') || str_contains($field, '*')) {

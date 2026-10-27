@@ -24,6 +24,13 @@ export interface MaterialCategory {
   image: string
   imageAlt: string
 }
+export interface GridBanner extends MaterialCategory {
+  linkUrl: string | null
+}
+export interface MenuBanner extends MaterialCategory {
+  linkUrl: string | null
+  note: string
+}
 
 export interface SectionIntro {
   eyebrow: string
@@ -36,8 +43,8 @@ export interface HomePageContent {
   blocks: ContentBlock[]
   heroSlides: HomeSlide[]
   marqueeTopics: string[]
-  categories: SectionIntro & { items: MaterialCategory[] }
-  materials: SectionIntro & { note: string; items: MaterialCategory[] }
+  categories: SectionIntro & { items: GridBanner[] }
+  materials: SectionIntro & { items: MenuBanner[] }
   promo: SectionIntro & { linkLabel: string; linkUrl: string | null }
   about: SectionIntro & {
     image: string

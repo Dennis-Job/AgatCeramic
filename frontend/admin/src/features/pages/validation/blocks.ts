@@ -33,7 +33,7 @@ export function blankBlockData(): BlockData {
         },
       ],
     },
-    materials: { ...heading(), note: '', items: [] },
+    materials: { ...heading(), items: [] },
     promo: { ...heading(), ...cta() },
     about: {
       ...heading(),

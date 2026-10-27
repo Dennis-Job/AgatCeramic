@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v7.0",
+        "version": "v9.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -6067,6 +6067,14 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-banner destination: a root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Omitted/null leaves the banner without navigation; empty request strings normalize to null."
                                         }
                                     },
                                     "required": [
@@ -6108,8 +6116,12 @@
                                 "maxLength": 2000
                             },
                             "note": {
-                                "type": "string",
-                                "maxLength": 2000
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 2000,
+                                "description": "Legacy compatibility only. Optional; not rendered or used as an item-note fallback. Empty request strings normalize to null."
                             },
                             "items": {
                                 "type": "array",
@@ -6154,6 +6166,22 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-item destination. Root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Empty request strings normalize to null; absent/null disables navigation."
+                                        },
+                                        "note": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2000,
+                                            "description": "Optional independent per-item note. Empty request strings normalize to null; absent/null hides the note. No runtime fallback to the legacy section note."
                                         }
                                     },
                                     "required": [
@@ -6176,7 +6204,6 @@
                             "eyebrow",
                             "title",
                             "description",
-                            "note",
                             "items"
                         ],
                         "additionalProperties": false
@@ -6623,6 +6650,14 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-banner destination: a root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Omitted/null leaves the banner without navigation; empty request strings normalize to null."
                                         }
                                     },
                                     "required": [
@@ -6664,8 +6699,12 @@
                                 "maxLength": 2000
                             },
                             "note": {
-                                "type": "string",
-                                "maxLength": 2000
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 2000,
+                                "description": "Legacy compatibility only. Optional; not rendered or used as an item-note fallback. Empty request strings normalize to null."
                             },
                             "items": {
                                 "type": "array",
@@ -6710,6 +6749,22 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-item destination. Root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Empty request strings normalize to null; absent/null disables navigation."
+                                        },
+                                        "note": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2000,
+                                            "description": "Optional independent per-item note. Empty request strings normalize to null; absent/null hides the note. No runtime fallback to the legacy section note."
                                         }
                                     },
                                     "required": [
@@ -6732,7 +6787,6 @@
                             "eyebrow",
                             "title",
                             "description",
-                            "note",
                             "items"
                         ],
                         "additionalProperties": false
@@ -11631,6 +11685,14 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-banner destination: a root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Omitted/null leaves the banner without navigation; empty request strings normalize to null."
                                         }
                                     },
                                     "required": [
@@ -11696,8 +11758,12 @@
                                 "maxLength": 2000
                             },
                             "note": {
-                                "type": "string",
-                                "maxLength": 2000
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 2000,
+                                "description": "Legacy compatibility only. Optional; not rendered or used as an item-note fallback. Empty request strings normalize to null."
                             },
                             "items": {
                                 "type": "array",
@@ -11742,6 +11808,22 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-item destination. Root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Empty request strings normalize to null; absent/null disables navigation."
+                                        },
+                                        "note": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2000,
+                                            "description": "Optional independent per-item note. Empty request strings normalize to null; absent/null hides the note. No runtime fallback to the legacy section note."
                                         }
                                     },
                                     "required": [
@@ -11764,7 +11846,6 @@
                             "eyebrow",
                             "title",
                             "description",
-                            "note",
                             "items"
                         ],
                         "additionalProperties": false
@@ -12758,6 +12839,14 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-banner destination: a root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Omitted/null leaves the banner without navigation; empty request strings normalize to null."
                                         }
                                     },
                                     "required": [
@@ -12799,8 +12888,12 @@
                                 "maxLength": 2000
                             },
                             "note": {
-                                "type": "string",
-                                "maxLength": 2000
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 2000,
+                                "description": "Legacy compatibility only. Optional; not rendered or used as an item-note fallback. Empty request strings normalize to null."
                             },
                             "items": {
                                 "type": "array",
@@ -12845,6 +12938,22 @@
                                         "image_alt": {
                                             "type": "string",
                                             "maxLength": 255
+                                        },
+                                        "link_url": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2048,
+                                            "description": "Optional per-item destination. Root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes. Empty request strings normalize to null; absent/null disables navigation."
+                                        },
+                                        "note": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "maxLength": 2000,
+                                            "description": "Optional independent per-item note. Empty request strings normalize to null; absent/null hides the note. No runtime fallback to the legacy section note."
                                         }
                                     },
                                     "required": [
@@ -12867,7 +12976,6 @@
                             "eyebrow",
                             "title",
                             "description",
-                            "note",
                             "items"
                         ],
                         "additionalProperties": false

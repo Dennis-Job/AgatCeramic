@@ -17,6 +17,11 @@ export type HomeBannerItem = HomeImage & {
   short_description: string
   description: string
 }
+export type HomeGridBannerItem = HomeBannerItem & { link_url?: string | null }
+export type HomeMenuBannerItem = HomeBannerItem & {
+  link_url?: string | null
+  note?: string | null
+}
 export type HomeCta = { link_label: string; link_url: string }
 
 export type HomePageContent = {
@@ -39,9 +44,9 @@ export type HomePageContent = {
   footer: SiteAppearance['footer']
   marquee: { topics: string[] }
   categories: HomeHeading & {
-    items: HomeBannerItem[]
+    items: HomeGridBannerItem[]
   }
-  materials: HomeHeading & { note: string; items: HomeBannerItem[] }
+  materials: HomeHeading & { note?: string | null; items: HomeMenuBannerItem[] }
   promo: HomeHeading & HomeCta
   about: HomeHeading & HomeImage & HomeCta
   guide: Pick<HomeHeading, 'eyebrow' | 'title'> & {

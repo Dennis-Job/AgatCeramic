@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NuxtLink } from '#components'
 import type { HomePageContent } from '~/types/homePage'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
 
@@ -72,29 +73,41 @@ async function selectNext(currentId: string, direction: 1 | -1) {
         v-if="selectedCategory"
         id="materials-panel"
         :key="selectedCategory.id"
-        class="materials-section__panel"
         role="tabpanel"
         :aria-labelledby="`tab-${selectedCategory.id}`"
-        tabindex="0"
+        :tabindex="selectedCategory.linkUrl ? undefined : 0"
       >
-        <div class="materials-section__image">
-          <img
-            v-if="selectedCategory.image"
-            :src="selectedCategory.image"
-            :alt="selectedCategory.imageAlt"
-            width="880"
-            height="1100"
-            loading="lazy"
-          />
-        </div>
-        <div class="materials-section__copy">
-          <span class="eyebrow">{{ content.eyebrow }}</span>
-          <h3>{{ selectedCategory.name }}</h3>
-          <p>{{ selectedCategory.description }}</p>
-          <span v-if="content.note" class="materials-section__note">{{
-            content.note
-          }}</span>
-        </div>
+        <component
+          :is="selectedCategory.linkUrl ? NuxtLink : 'div'"
+          v-bind="
+            selectedCategory.linkUrl ? { to: selectedCategory.linkUrl } : {}
+          "
+          :aria-label="
+            selectedCategory.linkUrl ? selectedCategory.name : undefined
+          "
+          class="materials-section__panel"
+        >
+          <div class="materials-section__image">
+            <img
+              v-if="selectedCategory.image"
+              :src="selectedCategory.image"
+              :alt="selectedCategory.imageAlt"
+              width="880"
+              height="1100"
+              loading="lazy"
+            />
+          </div>
+          <div class="materials-section__copy">
+            <span class="eyebrow">{{ content.eyebrow }}</span>
+            <h3>{{ selectedCategory.name }}</h3>
+            <p>{{ selectedCategory.description }}</p>
+            <span
+              v-if="selectedCategory.note"
+              class="materials-section__note"
+              >{{ selectedCategory.note }}</span
+            >
+          </div>
+        </component>
       </div>
     </div>
   </section>

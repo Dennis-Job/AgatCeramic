@@ -605,7 +605,13 @@ test('banner grid and menu save, publish and reload independent content', async 
   await grid
     .getByRole('textbox', { name: /^Название(?: |$)/ })
     .fill('Изменённая сетка')
+  await grid
+    .getByRole('textbox', { name: /^Ссылка баннера/ })
+    .fill('/catalog?from=grid')
   await selectMenu()
+  await expect(
+    menu.getByRole('textbox', { name: /^Ссылка баннера/ }),
+  ).toHaveCount(1)
   await expect(
     menu.getByRole('textbox', { name: /^Название(?: |$)/ }),
   ).toHaveValue('Баннер меню')
@@ -628,6 +634,9 @@ test('banner grid and menu save, publish and reload independent content', async 
   expect(state.published()).toBe(previousPublished)
   await page.reload()
   await expect(
+    grid.getByRole('textbox', { name: /^Ссылка баннера/ }),
+  ).toHaveValue('/catalog?from=grid')
+  await expect(
     grid.getByRole('textbox', { name: /^Название(?: |$)/ }),
   ).toHaveValue('Изменённая сетка')
   await selectMenu()
@@ -639,6 +648,7 @@ test('banner grid and menu save, publish and reload independent content', async 
     .click()
   await expect.poll(() => state.published()).toContain('Независимое меню')
   expect(state.published()).toContain('Изменённая сетка')
+  expect(state.published()).toContain('/catalog?from=grid')
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     for (const [name, select, region] of [
@@ -671,6 +681,69 @@ test('banner grid and menu save, publish and reload independent content', async 
   await expect(
     grid.getByRole('textbox', { name: /^Название(?: |$)/ }),
   ).toHaveValue('Изменённая сетка')
+})
+
+test('menu notes and links save separately for each banner without editing the legacy shared note', async ({
+  page,
+}) => {
+  const state = await fixture(page)
+  const data = blankBlockData()
+  const menuData = data.materials
+  menuData.note = 'Прежнее общее примечание'
+  menuData.items = [
+    {
+      ...data.categories.items[0]!,
+      id: 'first',
+      name: 'Первый баннер',
+      note: 'Первое примечание',
+      link_url: '/catalog/first',
+    },
+    {
+      ...data.categories.items[0]!,
+      id: 'second',
+      name: 'Второй баннер',
+      note: 'Второе примечание',
+      link_url: '/catalog/second',
+    },
+  ]
+  state.stored().blocks = [
+    { id: 'menu', type: 'materials', enabled: true, data: menuData },
+  ]
+  await page.goto('/content?page=7&block=menu')
+  const menu = page.getByRole('region', { name: 'Настройки: Меню баннеров' })
+  const notes = menu.getByRole('textbox', {
+    name: 'Примечание под баннером',
+    exact: true,
+  })
+  const links = menu.getByRole('textbox', { name: /^Ссылка баннера/ })
+  await expect(notes).toHaveCount(2)
+  await expect(notes.nth(0)).toHaveValue('Первое примечание')
+  await expect(notes.nth(1)).toHaveValue('Второе примечание')
+  await notes.nth(0).fill('Индивидуальное первое примечание')
+  await notes.nth(1).fill('')
+  await links.nth(0).fill('/catalog?from=menu-first')
+  await links.nth(1).fill('https://example.test/menu-second')
+  await page
+    .getByRole('button', { name: 'Сохранить черновик блоков', exact: true })
+    .click()
+  await expect(
+    page.getByText(
+      'Черновик блоков сохранён. Для обновления сайта опубликуйте страницу.',
+    ),
+  ).toBeVisible()
+  await page.reload()
+  await expect(notes.nth(0)).toHaveValue('Индивидуальное первое примечание')
+  await expect(notes.nth(1)).toHaveValue('')
+  await expect(links.nth(0)).toHaveValue('/catalog?from=menu-first')
+  await expect(links.nth(1)).toHaveValue('https://example.test/menu-second')
+  expect(state.stored().blocks?.[0]?.data).toMatchObject({
+    note: 'Прежнее общее примечание',
+  })
+  await page.screenshot({
+    path: test.info().outputPath('menu-individual-fields.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
 })
 
 test('homepage block URL restores selection and preserves canonical block edits', async ({

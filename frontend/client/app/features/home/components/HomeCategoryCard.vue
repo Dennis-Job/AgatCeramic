@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import type { MaterialCategory } from '~/types/homePage'
+import { NuxtLink } from '#components'
+import type { GridBanner } from '~/types/homePage'
 
-defineProps<{ category: MaterialCategory }>()
+defineProps<{ category: GridBanner }>()
 </script>
 
 <template>
-  <article class="category-card">
+  <component
+    :is="category.linkUrl ? NuxtLink : 'article'"
+    v-bind="category.linkUrl ? { to: category.linkUrl } : {}"
+    :aria-label="category.linkUrl ? category.name : undefined"
+    class="category-card"
+  >
     <span class="category-card__image">
       <img
         v-if="category.image"
@@ -15,12 +21,18 @@ defineProps<{ category: MaterialCategory }>()
         height="1100"
         loading="lazy"
       />
+      <span
+        v-if="category.linkUrl"
+        class="category-card__image-label"
+        aria-hidden="true"
+        >Смотреть</span
+      >
     </span>
     <span class="category-card__name">{{ category.name }}</span>
     <span class="category-card__description">{{
       category.shortDescription
     }}</span>
-  </article>
+  </component>
 </template>
 
 <style scoped>
@@ -47,8 +59,29 @@ defineProps<{ category: MaterialCategory }>()
   object-fit: cover;
   transition: transform 1.1s var(--ease-out);
 }
-.category-card:hover .category-card__image img {
+.category-card:hover .category-card__image img,
+.category-card:focus-visible .category-card__image img {
   transform: scale(1.07);
+}
+.category-card__image-label {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  background: var(--color-card-label-surface);
+  padding: 12px 20px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.35s,
+    transform 0.35s var(--ease-out);
+}
+.category-card:hover .category-card__image-label,
+.category-card:focus-visible .category-card__image-label {
+  opacity: 1;
+  transform: none;
 }
 .category-card__name {
   display: block;

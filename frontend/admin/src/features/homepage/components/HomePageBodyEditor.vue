@@ -7,6 +7,7 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import MediaImageEditor from '../../media/components/MediaImageEditor.vue'
 import type { BodyContent } from '../../pages/types/block.types'
+import type { HomeBannerItem } from '../types/homepage.types'
 
 const props = defineProps<{
   content: BodyContent
@@ -25,6 +26,20 @@ const emit = defineEmits<{
 }>()
 const pendingFields = new Map<object, boolean>()
 const uploadingFields = new Map<object, boolean>()
+function bannerLink(item: HomeBannerItem): string {
+  return 'link_url' in item && typeof item.link_url === 'string'
+    ? item.link_url
+    : ''
+}
+function setBannerLink(item: HomeBannerItem, value: string): void {
+  Object.assign(item, { link_url: value })
+}
+function bannerNote(item: HomeBannerItem): string {
+  return 'note' in item && typeof item.note === 'string' ? item.note : ''
+}
+function setBannerNote(item: HomeBannerItem, value: string): void {
+  if (props.section === 'materials') Object.assign(item, { note: value })
+}
 const itemKeys = new WeakMap<object, string>()
 function itemKey(item: object): string {
   let key = itemKeys.get(item)
@@ -130,9 +145,6 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     <UiField label="Описание"
       ><UiTextarea v-model="bannerContent.description" compact rows="2"
     /></UiField>
-    <UiField v-if="section === 'materials'" label="Примечание под баннером"
-      ><UiTextarea v-model="content.materials.note" compact rows="2"
-    /></UiField>
     <UiEmptyState v-if="!bannerContent.items.length" label="Баннеров пока нет">
       Добавьте первый баннер в меню.
     </UiEmptyState>
@@ -187,12 +199,32 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
           ><UiInput v-model="item.name" required
         /></UiField>
       </div>
+      <UiField
+        label="Ссылка баннера"
+        help="Внутренний путь /catalog/... или HTTPS-ссылка. Без ссылки баннер показывается без перехода."
+        ><UiInput
+          :model-value="bannerLink(item)"
+          :disabled="disabled"
+          maxlength="2048"
+          placeholder="/catalog/..."
+          @update:model-value="setBannerLink(item, $event)"
+      /></UiField>
       <UiField label="Краткое описание карточки"
         ><UiInput v-model="item.short_description"
       /></UiField>
       <UiField label="Описание баннера"
         ><UiTextarea v-model="item.description" compact rows="2"
       /></UiField>
+      <UiField v-if="section === 'materials'" label="Примечание под баннером">
+        <UiTextarea
+          :model-value="bannerNote(item)"
+          compact
+          rows="2"
+          maxlength="2000"
+          :disabled="disabled"
+          @update:model-value="setBannerNote(item, $event)"
+        />
+      </UiField>
       <MediaImageEditor
         compact
         :disabled="disabled"

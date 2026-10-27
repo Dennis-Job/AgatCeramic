@@ -7,6 +7,88 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v9.0 — independent menu banner destinations and notes
+
+Date: 2026-10-27. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Menu banner items (`materials.items` and `materials` page-block items) accept and
+expose optional nullable `link_url` (maximum 2048 characters) and `note` (maximum
+2000 characters). Previous closed response schemas reject these properties, so
+strict clients must update to v9.0. Destinations use the same safe root-relative
+path or HTTPS URL rules as grid banners. Missing/null links disable navigation;
+empty request strings normalize to null. Item notes are independent, optional,
+and never fall back to the section-level `materials.note`. The legacy section
+note remains accepted as an optional nullable string, including empty input,
+for compatibility; its stored value is retained by the migration. Its response
+property is now optional and nullable, so consumers must also accept its absence
+or null instead of requiring the former non-null shared note.
+
+### Client migration
+
+Admin edits each menu item's destination and note; the shared note editor is
+removed. Client renders each item's note and makes its whole menu item clickable
+when a safe destination exists, without a separate navigation badge. Neither
+client should edit or render the legacy shared note. Grid data and link behavior
+remain independent. Saving continues to change only the draft; publication
+remains explicit.
+
+### Rollout and rollback
+
+After a protected backup and restore rehearsal following
+[DATABASE_BACKUP_RESTORE.md](DATABASE_BACKUP_RESTORE.md), apply
+`2026_10_27_130000_move_banner_menu_notes_to_items.php` after the existing menu-list
+split migration and release compatible backend/Admin/Client together. This
+additive, transactional, idempotent migration copies each menu section's own
+legacy note only into items without a `note` key. Draft `pages.blocks`, published
+`pages.published_snapshot.blocks`, and legacy `home_pages.content` are processed
+separately. Explicit empty/null/custom item notes, links, all existing fields,
+publication metadata and timestamps remain intact. No items or missing global
+notes are invented; no content is published and clean/dirty state is preserved.
+New defaults own their notes per menu item.
+
+The migration deliberately refuses `down` because deleting independent notes
+would discard edits. Application rollback may retain all additive fields, but
+requires readers/writers that preserve them; strict old schemas are incompatible.
+A data downgrade requires a verified protected pre-migration backup and
+coordinated application rollback. Do not strip item notes/links automatically.
+
+## v8.0 — optional destinations for grid banners
+
+Date: 2026-10-27. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Grid banner items (`categories.items` and `categories` page block items) accept
+and expose an optional nullable `link_url` of at most 2048 characters. Adding a
+response property breaks the previous closed item schemas even though existing
+requests without the field remain valid. Destinations must be root-relative
+internal paths or HTTPS URLs without credentials, whitespace, control characters
+or backslashes. Empty request strings normalize to `null`; omitted/null values
+leave a banner without navigation. The independent `materials` menu and its item
+schema are unchanged and do not accept this field.
+
+### Client migration
+
+Admin must edit/save a destination per grid banner. Client must preserve that
+value through its block mapping and navigate to that banner's configured URL.
+Existing banners without a destination keep their current content and have no
+navigation. Draft saves do not publish links; explicit publication retains each
+banner's destination independently of menu items with the same ID.
+
+### Rollout and rollback
+
+Deploy compatible backend/Admin/Client together and refresh open editors. No
+database migration, data backfill, default destination or automatic publication
+is required. Existing draft and published JSON snapshots remain unchanged until
+an editor saves/publishes them. A rollback must preserve stored destination
+fields; older strict validators/response consumers cannot be assumed compatible.
+Use coordinated application rollback with destination-aware readers/writers,
+or restore a verified protected backup following
+[DATABASE_BACKUP_RESTORE.md](DATABASE_BACKUP_RESTORE.md). Do not strip destinations
+from content or merge grid and menu data automatically.
+
 ## v7.0 — independent homepage banner collections
 
 Date: 2026-10-27. Admin labels are «Сетка баннеров» (`categories`) and
