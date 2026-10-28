@@ -16,14 +16,23 @@ import UiCard from '../../../components/ui/UiCard.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
+import NavigationEditor from './NavigationEditor.vue'
 import MediaImageEditor from '../../media/components/MediaImageEditor.vue'
-import type { SiteAppearance, SiteLink } from '../types/appearance.types'
+import type {
+  NavigationEditorDraft,
+  SiteAppearance,
+  SiteLink,
+} from '../types/appearance.types'
 
-defineProps<{
-  content: SiteAppearance
-  section: 'header' | 'footer'
-  disabled?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    content: SiteAppearance
+    section: 'header' | 'footer'
+    disabled?: boolean
+    navigationDraft?: NavigationEditorDraft
+  }>(),
+  { navigationDraft: () => ({ rows: [] }) },
+)
 const emit = defineEmits<{
   pending: [value: boolean]
   uploading: [value: boolean]
@@ -81,73 +90,15 @@ function move(items: SiteLink[], index: number, offset: -1 | 1): void {
         ><UiInput v-model="content.header.logo_alt"
       /></UiField>
     </UiCard>
-    <UiCard aria-labelledby="appearance-navigation-title">
-      <template #header>
-        <h3
-          id="appearance-navigation-title"
-          class="flex items-center gap-3 font-semibold text-gray-500"
-        >
-          <Menu :size="20" class="shrink-0" aria-hidden="true" />Навигация
-        </h3>
-      </template>
-      <p class="mb-4 text-xs text-gray-500">
-        На компьютере — между логотипом и иконками, на узких экранах — в боковом
-        меню. Измените названия, ссылки и порядок пунктов.
-      </p>
-      <ol class="divide-y divide-gray-100">
-        <li
-          v-for="(link, index) in content.header.navigation"
-          :key="index"
-          class="space-y-2 py-3 first:pt-0"
-          :aria-label="`Пункт меню ${index + 1}`"
-        >
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-xs text-gray-500">Пункт {{ index + 1 }}</span>
-            <div class="flex gap-1">
-              <UiButton
-                variant="surface"
-                size="sm"
-                :disabled="index === 0"
-                :aria-label="`Поднять пункт меню ${index + 1}`"
-                @click="move(content.header.navigation, index, -1)"
-                ><ArrowUp :size="16" aria-hidden="true" /></UiButton
-              ><UiButton
-                variant="surface"
-                size="sm"
-                :disabled="index === content.header.navigation.length - 1"
-                :aria-label="`Опустить пункт меню ${index + 1}`"
-                @click="move(content.header.navigation, index, 1)"
-                ><ArrowDown :size="16" aria-hidden="true" /></UiButton
-              ><UiButton
-                variant="danger-ghost"
-                size="sm"
-                :aria-label="`Удалить пункт меню ${index + 1}`"
-                :disabled="content.header.navigation.length === 1"
-                @click="content.header.navigation.splice(index, 1)"
-                ><Trash2 :size="16" aria-hidden="true"
-              /></UiButton>
-            </div>
-          </div>
-          <div class="grid min-w-0 gap-3 sm:grid-cols-2">
-            <UiField label="Название"><UiInput v-model="link.label" /></UiField
-            ><UiField
-              label="Ссылка"
-              help="Внутренний путь /... или HTTPS-адрес."
-              ><UiInput v-model="link.to"
-            /></UiField>
-          </div>
-        </li>
-      </ol>
-      <UiButton
-        variant="primary-ghost"
-        size="sm"
-        class="mt-3"
-        @click="content.header.navigation.push({ label: '', to: '' })"
-        ><Plus :size="16" aria-hidden="true" />Добавить пункт меню</UiButton
-      >
-    </UiCard>
   </div>
-  <div v-else class="space-y-5">
+  <NavigationEditor
+    v-if="section === 'header'"
+    v-model="content.header.navigation"
+    :draft="navigationDraft"
+    class="mt-5"
+    :disabled="disabled"
+  />
+  <div v-if="section === 'footer'" class="space-y-5">
     <UiCard aria-labelledby="appearance-footer-tagline-title">
       <template #header>
         <h3

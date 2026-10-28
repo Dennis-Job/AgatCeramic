@@ -7,6 +7,50 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v10.0 — optional one-level navigation submenus
+
+Date: 2026-10-28. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Only `header.navigation` gains a union: existing `{label,to}` links remain valid,
+and `{label,children:[{label,to}]}` defines a disclosure-only group without a
+parent URL. The presence of `children` selects group mode. Previous strict
+response schemas require `to` and forbid `children`, so consumers must update
+to v10.0 before groups are used. All six homepage/appearance request and response
+schemas use the same union; saved content preview uses the appearance schema.
+Footer links remain flat `{label,to}` objects.
+
+Navigation is an ordered list of 1–16 parents; groups contain 1–16 flat links.
+Labels are nonempty strings up to 255 characters and destinations up to 2048.
+Destinations retain SafeSiteUrl validation: internal paths starting with `/` or
+HTTPS URLs, without credentials, whitespace, control characters or backslashes.
+Mixed parent URLs/children, empty groups, extra nesting and unknown fields are
+rejected with 422 by both `/admin/site-appearance` and legacy `/admin/home-page`.
+The existing `/admin/pages` API continues to reject direct `site_layout` writes;
+the global appearance workflow owns the JSON stored in the home page layout.
+
+### Client migration
+
+Admin edits only the active link/group shape. Client detects groups by `children`,
+uses the parent as a disclosure button, and renders children as normal links.
+Regenerate strict clients and response validators against v10.0. Old flat menus
+continue to work without any data conversion; the older Client cannot render
+new groups safely. Existing permissions, audit and explicit publication apply.
+Saving updates only the appearance draft, including saved authenticated preview;
+page publication does not publish the appearance draft.
+
+### Rollout and rollback
+
+Release compatible backend, Admin and Client together before saving or publishing
+groups. No schema/data migration, automatic rewrite or publication is required.
+Draft and published snapshots retain their existing content until explicitly
+saved and published through the usual workflow. Before rolling back to a Client
+that supports only flat links, explicitly restore and publish a compatible flat
+menu through the updated editor, retaining a protected copy of the grouped
+content. Then roll back all three application versions together. Do not silently
+discard nested links or rewrite historical snapshots during rollback.
+
 ## v9.0 — independent menu banner destinations and notes
 
 Date: 2026-10-27. HTTP routes remain `/api/v1`.

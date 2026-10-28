@@ -2,6 +2,7 @@ import type {
   HomePageContent,
   MaterialCategory,
   SiteLink,
+  SiteNavigationItem,
 } from '~/types/homePage'
 import type { ContentBlock, ContentBlockDto } from '~/types/contentPage'
 
@@ -9,6 +10,7 @@ interface LinkDto {
   label: string
   to: string
 }
+type NavigationItemDto = LinkDto | { label: string; children: LinkDto[] }
 interface BannerItemDto {
   id: string
   name: string
@@ -72,7 +74,7 @@ export interface HomePageDto {
   header: {
     topbar_left: string
     topbar_right: string
-    navigation: LinkDto[]
+    navigation: NavigationItemDto[]
     logo_url: string | null
     logo_alt: string | null
   }
@@ -98,11 +100,13 @@ export interface HomePageDto {
 }
 
 export function safeLink(url: string | null | undefined): string | null {
-  if (!url) return null
+  if (!url || /[\\\s\u0000-\u001f\u007f]/.test(url)) return null
   if (url.startsWith('/') && !url.startsWith('//')) return url
   try {
     const parsed = new URL(url)
-    return parsed.protocol === 'https:' ? url : null
+    return parsed.protocol === 'https:' && !parsed.username && !parsed.password
+      ? url
+      : null
   } catch {
     return null
   }
@@ -112,6 +116,20 @@ function mapLinks(links: LinkDto[]): SiteLink[] {
   return links.flatMap((link) => {
     const to = safeLink(link.to)
     return to && link.label ? [{ label: link.label, to }] : []
+  })
+}
+
+function mapNavigation(items: NavigationItemDto[]): SiteNavigationItem[] {
+  return items.flatMap<SiteNavigationItem>((item) => {
+    if ('children' in item) {
+      const children = Array.isArray(item.children)
+        ? mapLinks(item.children)
+        : []
+      return item.label && children.length
+        ? [{ label: item.label, children }]
+        : []
+    }
+    return mapLinks([item])
   })
 }
 
@@ -138,7 +156,7 @@ export function mapSiteAppearance(
     header: {
       topbarLeft: dto.header.topbar_left,
       topbarRight: dto.header.topbar_right,
-      navigation: mapLinks(dto.header.navigation),
+      navigation: mapNavigation(dto.header.navigation),
       logoUrl: imageUrl(dto.header.logo_url, apiBase),
       logoAlt: dto.header.logo_alt || 'AgatCeramic',
     },

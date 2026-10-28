@@ -8,6 +8,16 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-28 — Навигация: опциональное подменю с выбранным владельцем поведением
+«Только раскрытие». В Admin переключатель, вложенные ссылки и порядок; на сайте
+desktop dropdown и mobile drawer, поиск по детям, keyboard/focus и сохранённый
+Nuxt preview. Скрытые значения сохраняются в сессии редактора, API отправляет
+только активный режим. OpenAPI v10.0, существующее меню совместимо, миграции не нужны.
+Backend: 617 PASS / 1 ожидаемый SQLite SKIP; Admin: 268 unit и 26 профильных E2E PASS;
+Client: 74/74 E2E PASS; реальный Admin/Nuxt iframe 4/4 и dev iframe 2/2 PASS.
+Build/type/lint/format/API checks PASS; UI Design Guard accepted. Рабочие данные
+не публиковались, коммит не создавался. [Файлы, результаты и ограничения](../docs/NAVIGATION_SUBMENUS_2026-10-28.md).
+
 2026-10-28 — закреплённый блок сохранения/публикации растягивается под прелоадер
 без переноса кнопок при достаточной ширине, оставаясь в пределах окна.
 Build/lint/format, 256 unit и 22 целевых E2E PASS; UI Design Guard accepted.

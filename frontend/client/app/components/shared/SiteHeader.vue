@@ -3,7 +3,9 @@ import { Menu, Search, ShoppingBag, X } from '@lucide/vue'
 import UiCloseButton from '~/components/ui/UiCloseButton.vue'
 import UiIconButton from '~/components/ui/UiIconButton.vue'
 import UiWordmark from '~/components/ui/UiWordmark.vue'
+import SiteNavigation from '~/components/shared/SiteNavigation.vue'
 import type { HomePageContent } from '~/types/homePage'
+import { searchNavigation } from '~/utils/navigation'
 
 type Panel = 'menu' | 'search' | null
 
@@ -16,14 +18,9 @@ const props = defineProps<{
 const navigation = computed(() => props.content?.navigation ?? [])
 
 const route = useRoute()
-function isCurrent(to: string): boolean {
-  const [path, hash] = to.split('#')
-  return (
-    path === (props.currentPath ?? route.path) &&
-    (!hash || `#${hash}` === route.hash || (!route.hash && hash === 'home'))
-  )
-}
 const panel = ref<Panel>(null)
+const desktopNavigation = ref<InstanceType<typeof SiteNavigation> | null>(null)
+const drawerNavigation = ref<InstanceType<typeof SiteNavigation> | null>(null)
 const searchQuery = ref('')
 let panelTrigger: HTMLElement | null = null
 const menuPanel = ref<HTMLElement | null>(null)
@@ -43,14 +40,9 @@ function updateSearchPosition() {
     searchTop.value = header.value.getBoundingClientRect().bottom
 }
 
-const searchResults = computed(() => {
-  const query = searchQuery.value.trim().toLocaleLowerCase('ru')
-  return query
-    ? navigation.value.filter((link) =>
-        link.label.toLocaleLowerCase('ru').includes(query),
-      )
-    : navigation.value
-})
+const searchResults = computed(() =>
+  searchNavigation(navigation.value, searchQuery.value),
+)
 
 function closePanel() {
   panel.value = null
@@ -62,6 +54,7 @@ function clearSearch() {
 }
 
 function openPanel(nextPanel: Exclude<Panel, null>, event: MouseEvent) {
+  desktopNavigation.value?.close()
   if (!panel.value) panelTrigger = event.currentTarget as HTMLElement
   updateSearchPosition()
   backdropPanel.value = nextPanel
@@ -78,7 +71,7 @@ function trapFocus(event: KeyboardEvent) {
     activePanel.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), input:not([disabled])',
     ),
-  )
+  ).filter((element) => element.getClientRects().length > 0)
   if (!focusable.length) return
 
   const first = focusable[0]
@@ -96,6 +89,15 @@ function trapFocus(event: KeyboardEvent) {
 }
 
 function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    if (
+      drawerNavigation.value?.close(true) ||
+      desktopNavigation.value?.close(true)
+    ) {
+      event.preventDefault()
+      return
+    }
+  }
   if (!panel.value) return
   if (event.key === 'Escape') closePanel()
   if (event.key === 'Tab') trapFocus(event)
@@ -177,20 +179,14 @@ onUnmounted(() => {
         <UiWordmark v-else />
       </NuxtLink>
 
-      <nav
+      <SiteNavigation
         v-if="navigation.length"
-        class="site-nav"
-        :aria-label="navigationLabel || 'Основная навигация'"
-      >
-        <NuxtLink
-          v-for="link in navigation"
-          :key="link.to"
-          :to="link.to"
-          :aria-current="isCurrent(link.to) ? 'page' : undefined"
-        >
-          {{ link.label }}
-        </NuxtLink>
-      </nav>
+        ref="desktopNavigation"
+        :items="navigation"
+        variant="desktop"
+        :label="navigationLabel || 'Основная навигация'"
+        :current-path="currentPath"
+      />
 
       <div class="site-header__actions">
         <UiIconButton
@@ -265,18 +261,14 @@ onUnmounted(() => {
         </span>
         <UiCloseButton label="Закрыть меню" @click="closePanel" />
       </div>
-      <nav class="menu-panel__nav" aria-label="Мобильная навигация">
-        <NuxtLink
-          v-for="(link, index) in navigation"
-          :key="link.to"
-          :to="link.to"
-          :aria-current="isCurrent(link.to) ? 'page' : undefined"
-          :style="{ '--menu-link-index': index }"
-          @click="closePanel"
-        >
-          {{ link.label }} <span>{{ String(index + 1).padStart(2, '0') }}</span>
-        </NuxtLink>
-      </nav>
+      <SiteNavigation
+        ref="drawerNavigation"
+        :items="navigation"
+        variant="drawer"
+        label="Мобильная навигация"
+        :current-path="currentPath"
+        @navigate="closePanel"
+      />
       <button
         class="menu-panel__search"
         type="button"
@@ -418,45 +410,6 @@ onUnmounted(() => {
   width: min(200px, 50vw);
   height: 40px;
 }
-.site-nav {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  justify-content: center;
-  min-width: 0;
-  max-height: min(144px, 25dvh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  gap: 4px clamp(18px, 3vw, 44px);
-  padding: 8px 6px;
-  scroll-padding-block: 8px;
-}
-.site-nav a {
-  position: relative;
-  padding-block: 8px;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-.site-nav a::after {
-  position: absolute;
-  right: 0;
-  bottom: 2px;
-  left: 0;
-  height: 1px;
-  background: var(--color-ink);
-  content: '';
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.35s var(--ease-out);
-}
-.site-nav a:hover::after,
-.site-nav a[aria-current]::after {
-  transform: scaleX(1);
-  transform-origin: left;
-}
 .site-header__actions {
   display: flex;
   flex-shrink: 0;
@@ -509,34 +462,6 @@ onUnmounted(() => {
 .menu-panel__top {
   margin-bottom: 56px;
 }
-.menu-panel__nav {
-  display: flex;
-  flex-direction: column;
-}
-.menu-panel__nav a {
-  display: flex;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border-bottom: 1px solid var(--color-line);
-  padding: 14px 0;
-  font-size: clamp(26px, 3vw, 34px);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  animation: menu-link-enter 0.6s var(--ease-out) both;
-  animation-delay: calc(0.15s + var(--menu-link-index) * 0.07s);
-}
-.menu-panel__nav a:hover {
-  color: var(--color-muted);
-}
-.menu-panel__nav span {
-  flex-shrink: 0;
-  color: var(--color-muted);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-}
 .menu-panel__search {
   display: flex;
   align-items: center;
@@ -561,16 +486,6 @@ onUnmounted(() => {
   font-size: 12px;
   line-height: 1.7;
   animation: menu-footer-enter 0.6s var(--ease-out) 0.45s both;
-}
-@keyframes menu-link-enter {
-  from {
-    opacity: 0;
-    transform: translateX(40px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
 }
 @keyframes menu-footer-enter {
   from {
@@ -642,11 +557,6 @@ onUnmounted(() => {
 .search-panel__results p {
   color: var(--color-muted);
   font-size: 14px;
-}
-@media (max-width: 1024px) {
-  .site-nav {
-    display: none;
-  }
 }
 @media (max-width: 760px) {
   .topbar__text {

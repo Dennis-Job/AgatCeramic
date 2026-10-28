@@ -3,7 +3,9 @@ import { expect, test } from '@playwright/test'
 test('development preview authenticates in a cross-origin iframe without DevTools errors', async ({
   page,
   context,
+  request,
 }, testInfo) => {
+  await request.get('http://127.0.0.1:8015/__scenario?name=submenu')
   await context.addCookies([
     {
       name: 'preview_test_session',
@@ -45,6 +47,23 @@ test('development preview authenticates in a cross-origin iframe without DevTool
           .__NUXT_DEVTOOLS_DISABLE__,
     ),
   ).toBe(true)
+  const navigation = frame.getByRole('navigation', {
+    name: 'Навигация предпросмотра',
+  })
+  const parent = navigation.getByRole('button', {
+    name: 'Каталог',
+    exact: true,
+  })
+  await parent.focus()
+  await page.keyboard.press('Enter')
+  await expect(
+    navigation.getByRole('link', { name: 'Весь каталог' }),
+  ).toBeVisible()
+  expect(previewFrame.url()).toContain('/preview/about')
+  await page.keyboard.press('Escape')
+  await expect(parent).toBeFocused()
+  await expect(parent).toHaveAttribute('aria-expanded', 'false')
+  await parent.click()
   await page.screenshot({
     path: testInfo.outputPath('cross-origin-preview.png'),
     fullPage: true,
