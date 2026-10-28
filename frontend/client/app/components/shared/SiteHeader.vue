@@ -28,6 +28,7 @@ const searchPanel = ref<HTMLElement | null>(null)
 const searchInput = ref<HTMLInputElement | null>(null)
 const header = ref<HTMLElement | null>(null)
 const headerBottom = ref(0)
+const scrolled = ref(false)
 const backdropPanel = ref<Exclude<Panel, null>>('menu')
 const searchPosition = computed(() => ({
   '--search-top': `${headerBottom.value}px`,
@@ -36,6 +37,7 @@ let headerObserver: ResizeObserver | undefined
 const leavingPanels = new Set<Element>()
 
 function updateHeaderBottom() {
+  scrolled.value = window.scrollY > 10
   if (header.value)
     headerBottom.value = header.value.getBoundingClientRect().bottom
 }
@@ -177,7 +179,12 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <header ref="header" class="site-header" :inert="panel === 'search'">
+  <header
+    ref="header"
+    class="site-header"
+    :class="{ 'site-header--scrolled': scrolled }"
+    :inert="panel === 'search'"
+  >
     <div class="container site-header__inner">
       <NuxtLink to="/" class="wordmark" aria-label="AgatCeramic — на главную">
         <img
@@ -392,6 +399,10 @@ onUnmounted(() => {
   background: var(--color-header-surface);
   border-bottom: 1px solid var(--color-line);
   backdrop-filter: blur(12px);
+  transition: box-shadow 0.3s;
+}
+.site-header--scrolled {
+  box-shadow: var(--shadow-header-scrolled);
 }
 .site-header__inner {
   display: flex;

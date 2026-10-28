@@ -14,6 +14,7 @@
   --color-header-surface: rgb(242 241 238 / 93%);
   --color-overlay: rgb(20 20 20 / 40%);
   --color-shadow-soft: rgb(0 0 0 / 8%);
+  --shadow-header-scrolled: 0 8px 30px rgb(0 0 0 / 6%);
   --color-hero-control-surface: rgb(255 255 255 / 55%);
   --color-card-label-surface: rgb(255 255 255 / 92%);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
