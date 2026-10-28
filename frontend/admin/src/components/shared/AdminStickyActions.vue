@@ -4,7 +4,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 const anchor = ref<HTMLElement | null>(null)
 const panel = ref<HTMLElement | null>(null)
 const floating = ref(false)
-const position = ref({ top: '0px', left: '0px', width: '0px' })
+const position = ref({ top: '0px', right: '0px', maxWidth: '0px' })
 const placeholder = ref<{ width?: string; height?: string }>({})
 let observer: ResizeObserver | undefined
 let frame = 0
@@ -18,18 +18,29 @@ function update(): void {
   const next = bounds.top < bottom + gap
   if (!floating.value) {
     // Keep the original space while the same controls move to the body portal.
-    const width = Array.from(panel.value.children).reduce(
-      (total, child) => total + child.getBoundingClientRect().width,
-      gap * Math.max(0, panel.value.children.length - 1),
-    )
-    placeholder.value = { width: `${width}px`, height: `${bounds.height}px` }
+    placeholder.value = {
+      width: `${bounds.width}px`,
+      height: `${bounds.height}px`,
+    }
   } else {
     placeholder.value.height = `${panel.value.getBoundingClientRect().height}px`
   }
+  const availableWidth = window.innerWidth - gap * 2
+  const panelWidth = Math.min(
+    panel.value.getBoundingClientRect().width,
+    availableWidth,
+  )
+  const right = Math.max(
+    gap,
+    Math.min(
+      window.innerWidth - bounds.right,
+      window.innerWidth - panelWidth - gap,
+    ),
+  )
   position.value = {
     top: `${bottom + gap}px`,
-    left: `${bounds.left}px`,
-    width: `${bounds.width}px`,
+    right: `${right}px`,
+    maxWidth: `${Math.max(0, availableWidth)}px`,
   }
   if (floating.value !== next) {
     const focused = document.activeElement
@@ -95,6 +106,7 @@ onBeforeUnmount(() => {
 }
 .admin-sticky-actions--floating {
   position: fixed;
+  width: max-content;
   z-index: 25;
   isolation: isolate;
 }
