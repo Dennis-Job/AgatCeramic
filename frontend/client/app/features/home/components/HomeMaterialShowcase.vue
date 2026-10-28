@@ -162,14 +162,19 @@ async function selectNext(currentId: string, direction: 1 | -1) {
   background: var(--color-beige);
 }
 .materials-section__image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
   min-height: 520px;
+  max-height: 620px;
   overflow: hidden;
   background: var(--color-beige);
 }
 .materials-section__image img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  max-height: 620px;
   object-fit: cover;
 }
 .materials-section__copy {
@@ -228,6 +233,7 @@ async function selectNext(currentId: string, direction: 1 | -1) {
     grid-template-columns: minmax(0, 1fr);
   }
   .materials-section__image {
+    aspect-ratio: auto;
     min-height: 0;
     height: min(70vw, 420px);
   }

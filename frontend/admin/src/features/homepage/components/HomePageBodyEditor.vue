@@ -122,18 +122,9 @@ function move<T>(items: T[], index: number, offset: -1 | 1): void {
     v-else-if="section === 'categories' || section === 'materials'"
     class="space-y-3"
   >
-    <div>
-      <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
-        {{ section === 'categories' ? 'Сетка баннеров' : 'Меню баннеров' }}
-      </h2>
-      <p class="mt-1 text-sm text-gray-500">
-        {{
-          section === 'categories'
-            ? 'Баннеры этой сетки редактируются независимо от меню баннеров.'
-            : 'Баннеры этого меню редактируются независимо от сетки баннеров.'
-        }}
-      </p>
-    </div>
+    <h2 v-if="!hideHeading" class="text-lg font-semibold text-gray-500">
+      {{ section === 'categories' ? 'Сетка баннеров' : 'Меню баннеров' }}
+    </h2>
     <div class="grid gap-3 sm:grid-cols-2">
       <UiField label="Подпись над заголовком"
         ><UiInput v-model="bannerContent.eyebrow"

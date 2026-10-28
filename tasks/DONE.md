@@ -8,6 +8,10 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-28 — Из настроек «Сетки баннеров» и «Меню баннеров» удалены
+поясняющие надписи о независимом редактировании. Build/typecheck, ESLint,
+Prettier и E2E обеих форм на пяти ширинах PASS; UI Design Guard accepted.
+
 2026-10-28 — Тень sticky-хедера магазина приведена к референсу: после scrollY > 10 px
 плавно появляется 0 8px 30px / 6%, при возврате наверх исчезает за .3 s.
 Изменены общий SiteHeader.vue, tokens.css и правило UI-016 в CLIENT_UI_KIT.md;
