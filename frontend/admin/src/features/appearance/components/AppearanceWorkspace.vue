@@ -39,6 +39,10 @@ const panel = computed<AppearancePanel>(() =>
 )
 const pending = computed(() => workspace.dirty.value || mediaPending.value)
 const busy = computed(() => workspace.busy.value || uploading.value)
+function dismissError(): void {
+  // An initial load failure must retain its recovery action after the toast closes.
+  if (workspace.content.value) workspace.error.value = ''
+}
 function selectPanel(value: AppearancePanel): void {
   if (busy.value || mediaPending.value) return
   void router.push({ query: { ...route.query, panel: value } })
@@ -136,12 +140,15 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
         </nav>
       </template>
       <template #editor>
-        <UiNotification v-if="workspace.error.value">{{
+        <UiNotification v-if="workspace.error.value" @dismiss="dismissError">{{
           workspace.error.value
         }}</UiNotification>
-        <UiNotification v-if="workspace.success.value" tone="success">{{
-          workspace.success.value
-        }}</UiNotification>
+        <UiNotification
+          v-if="workspace.success.value"
+          tone="success"
+          @dismiss="workspace.success.value = ''"
+          >{{ workspace.success.value }}</UiNotification
+        >
         <UiButton
           v-if="workspace.error.value && !workspace.content.value"
           class="mb-4"
@@ -187,6 +194,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
                 {{ panel === 'header' ? 'Шапка и навигация' : 'Подвал' }}
               </legend>
               <SiteChromeEditor
+                :navigation-draft="workspace.navigationDraft.value"
                 :content="workspace.content.value"
                 :section="panel"
                 :disabled="busy"

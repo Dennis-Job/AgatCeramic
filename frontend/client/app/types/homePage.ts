@@ -5,6 +5,9 @@ export interface SiteLink {
   to: string
 }
 
+export type SiteNavigationItem =
+  SiteLink | { label: string; children: SiteLink[] }
+
 export interface HomeSlide {
   id: string
   eyebrow: string
@@ -58,7 +61,7 @@ export interface HomePageContent {
   header: {
     topbarLeft: string
     topbarRight: string
-    navigation: SiteLink[]
+    navigation: SiteNavigationItem[]
     logoUrl: string
     logoAlt: string
   }

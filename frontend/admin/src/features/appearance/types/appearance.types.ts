@@ -1,4 +1,14 @@
 export type SiteLink = { label: string; to: string }
+export type SiteNavigationItem =
+  SiteLink | { label: string; children: SiteLink[] }
+export type NavigationEditorRow = {
+  id: number
+  label: string
+  hasChildren: boolean
+  to: string
+  children: SiteLink[]
+}
+export type NavigationEditorDraft = { rows: NavigationEditorRow[] }
 export type SiteAppearance = {
   has_unpublished_changes: boolean
   header: {
@@ -7,7 +17,7 @@ export type SiteAppearance = {
     logo_media_id: number | null
     logo_alt: string
     logo_url: string | null
-    navigation: SiteLink[]
+    navigation: SiteNavigationItem[]
   }
   footer: {
     tagline: string

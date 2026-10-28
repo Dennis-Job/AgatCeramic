@@ -6,13 +6,16 @@ import {
 } from '../services/appearance'
 import type {
   AppearanceSection,
+  NavigationEditorDraft,
   SiteAppearance,
 } from '../types/appearance.types'
+import { navigationError } from '../validation/navigation'
 
 const sections: AppearanceSection[] = ['header', 'footer']
 export function useAppearance() {
   const content = ref<SiteAppearance | null>(null)
   const saved = ref<SiteAppearance | null>(null)
+  const navigationDraft = ref<NavigationEditorDraft>({ rows: [] })
   const loading = ref(false)
   const saving = ref(false)
   const publishing = ref(false)
@@ -34,6 +37,7 @@ export function useAppearance() {
     error.value = ''
     try {
       const result = await getAppearance()
+      navigationDraft.value.rows = []
       content.value = structuredClone(result)
       saved.value = result
     } catch (reason) {
@@ -47,6 +51,14 @@ export function useAppearance() {
   }
   async function save(section: AppearanceSection): Promise<void> {
     if (!content.value || busy.value) return
+    if (section === 'header') {
+      const invalid = navigationError(content.value.header.navigation)
+      if (invalid) {
+        error.value = invalid
+        success.value = ''
+        return
+      }
+    }
     saving.value = true
     error.value = ''
     success.value = ''
@@ -59,7 +71,9 @@ export function useAppearance() {
         JSON.stringify(content.value[section]) !== JSON.stringify(submitted)
       content.value = {
         ...content.value,
-        [section]: editedDuringSave ? content.value[section] : result[section],
+        [section]: editedDuringSave
+          ? content.value[section]
+          : structuredClone(result[section]),
         has_unpublished_changes: result.has_unpublished_changes,
       }
       content.value.footer.bottom_left = result.footer.bottom_left
@@ -103,6 +117,7 @@ export function useAppearance() {
   onMounted(load)
   return {
     content,
+    navigationDraft,
     loading,
     saving,
     publishing,

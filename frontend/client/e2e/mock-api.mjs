@@ -80,6 +80,56 @@ const home = {
   ],
 }
 let scenario = 'default'
+function submenuNavigation() {
+  if (!scenario.startsWith('submenu')) return null
+  const children = [
+    { label: 'Весь каталог', to: '/catalog' },
+    { label: 'О материалах', to: '/about' },
+    { label: 'Магазины', to: '/contacts' },
+  ]
+  if (scenario === 'submenu-unsafe')
+    return [
+      {
+        label: 'Безопасный раздел',
+        children: [
+          ...children,
+          { label: 'Опасный подпункт', to: 'javascript:alert(1)' },
+          { label: 'С credentials', to: 'https://user:pass@example.test' },
+          { label: 'С обратным слешем', to: '/\\example.test' },
+        ],
+      },
+      {
+        label: 'Пустая после фильтрации',
+        children: [{ label: 'Опасно', to: '//example.test' }],
+      },
+    ]
+  if (scenario === 'submenu-max')
+    return [
+      ...Array.from({ length: 15 }, (_, index) => ({
+        label: `Раздел ${index + 1}: ${'ДлиннаяРусскаяСтрока'.repeat(10)}`,
+        to: `/about#section-${index}`,
+      })),
+      {
+        label: 'Последняя группа',
+        children: Array.from({ length: 16 }, (_, index) => ({
+          label: `Подраздел ${index + 1}: ${'Описание материала '.repeat(6)}`,
+          to: `/catalog?section=${index + 1}`,
+        })),
+      },
+    ]
+  return [
+    { label: 'Главная', to: '/' },
+    { label: 'Каталог', children },
+    {
+      label: 'Информация',
+      children: [
+        { label: 'Контакты', to: '/contacts' },
+        { label: 'Сотрудничество', to: '/cooperation' },
+      ],
+    },
+    { label: 'Контакты повторно', to: '/contacts' },
+  ]
+}
 function bannerBlocks() {
   const item = (id, name, image_url = null) => ({
     id,
@@ -326,7 +376,11 @@ createServer(async (request, response) => {
           seo: { ...seo, title: 'Сохранённый черновик' },
         },
         appearance: {
-          header: { ...home.header, topbar_right: 'Черновая шапка' },
+          header: {
+            ...home.header,
+            topbar_right: 'Черновая шапка',
+            navigation: submenuNavigation() ?? home.header.navigation,
+          },
           footer: home.footer,
         },
       },
@@ -341,7 +395,8 @@ createServer(async (request, response) => {
       { label: 'Советы по выбору материалов для ремонта', to: '/' },
     ]
     const navigation =
-      scenario === 'long-navigation'
+      submenuNavigation() ??
+      (scenario === 'long-navigation'
         ? longNavigation
         : scenario === 'max-navigation'
           ? [
@@ -353,7 +408,7 @@ createServer(async (request, response) => {
             ]
           : scenario === 'header-navigation'
             ? [...nav, { label: 'Сотрудничество', to: '/cooperation' }]
-            : home.header.navigation
+            : home.header.navigation)
     return send({
       data: {
         header: {

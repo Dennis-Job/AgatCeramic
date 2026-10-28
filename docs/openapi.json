@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v9.0",
+        "version": "v10.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -5879,23 +5879,7 @@
                             "navigation": {
                                 "type": "array",
                                 "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "label": {
-                                            "type": "string",
-                                            "maxLength": 255
-                                        },
-                                        "to": {
-                                            "type": "string",
-                                            "maxLength": 2048,
-                                            "description": "Root-relative internal path or HTTPS URL without credentials."
-                                        }
-                                    },
-                                    "required": [
-                                        "label",
-                                        "to"
-                                    ],
-                                    "additionalProperties": false
+                                    "$ref": "#/components/schemas/SiteNavigationItem"
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
@@ -6464,23 +6448,7 @@
                             "navigation": {
                                 "type": "array",
                                 "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "label": {
-                                            "type": "string",
-                                            "maxLength": 255
-                                        },
-                                        "to": {
-                                            "type": "string",
-                                            "maxLength": 2048,
-                                            "description": "Root-relative internal path or HTTPS URL without credentials."
-                                        }
-                                    },
-                                    "required": [
-                                        "label",
-                                        "to"
-                                    ],
-                                    "additionalProperties": false
+                                    "$ref": "#/components/schemas/SiteNavigationItem"
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
@@ -12651,23 +12619,7 @@
                             "navigation": {
                                 "type": "array",
                                 "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "label": {
-                                            "type": "string",
-                                            "maxLength": 255
-                                        },
-                                        "to": {
-                                            "type": "string",
-                                            "maxLength": 2048,
-                                            "description": "Root-relative internal path or HTTPS URL without credentials."
-                                        }
-                                    },
-                                    "required": [
-                                        "label",
-                                        "to"
-                                    ],
-                                    "additionalProperties": false
+                                    "$ref": "#/components/schemas/SiteNavigationItem"
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
@@ -13445,23 +13397,7 @@
                             "navigation": {
                                 "type": "array",
                                 "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "label": {
-                                            "type": "string",
-                                            "maxLength": 255
-                                        },
-                                        "to": {
-                                            "type": "string",
-                                            "maxLength": 2048,
-                                            "description": "Root-relative internal path or HTTPS URL without credentials."
-                                        }
-                                    },
-                                    "required": [
-                                        "label",
-                                        "to"
-                                    ],
-                                    "additionalProperties": false
+                                    "$ref": "#/components/schemas/SiteNavigationItem"
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
@@ -13605,23 +13541,7 @@
                             "navigation": {
                                 "type": "array",
                                 "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "label": {
-                                            "type": "string",
-                                            "maxLength": 255
-                                        },
-                                        "to": {
-                                            "type": "string",
-                                            "maxLength": 2048,
-                                            "description": "Root-relative internal path or HTTPS URL without credentials."
-                                        }
-                                    },
-                                    "required": [
-                                        "label",
-                                        "to"
-                                    ],
-                                    "additionalProperties": false
+                                    "$ref": "#/components/schemas/SiteNavigationItem"
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
@@ -13757,23 +13677,7 @@
                             "navigation": {
                                 "type": "array",
                                 "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "label": {
-                                            "type": "string",
-                                            "maxLength": 255
-                                        },
-                                        "to": {
-                                            "type": "string",
-                                            "maxLength": 2048,
-                                            "description": "Root-relative internal path or HTTPS URL without credentials."
-                                        }
-                                    },
-                                    "required": [
-                                        "label",
-                                        "to"
-                                    ],
-                                    "additionalProperties": false
+                                    "$ref": "#/components/schemas/SiteNavigationItem"
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
@@ -13894,6 +13798,62 @@
                     "data"
                 ],
                 "additionalProperties": false
+            },
+            "SiteNavigationLink": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "to": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2048,
+                        "pattern": "^(?:/(?!/)|[Hh][Tt][Tt][Pp][Ss]://[^/?#@\\s\\\\]+(?:[/?#]|$))[^\\s\\\\\\x00-\\x1f\\x7f]*$",
+                        "description": "SafeSiteUrl: root-relative internal path or HTTPS URL without credentials, whitespace, control characters or backslashes."
+                    }
+                },
+                "required": [
+                    "label",
+                    "to"
+                ],
+                "additionalProperties": false
+            },
+            "SiteNavigationGroup": {
+                "type": "object",
+                "description": "Disclosure-only parent, identified by the presence of children. No parent URL. Exactly one submenu level.",
+                "properties": {
+                    "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SiteNavigationLink"
+                        },
+                        "minItems": 1,
+                        "maxItems": 16
+                    }
+                },
+                "required": [
+                    "label",
+                    "children"
+                ],
+                "additionalProperties": false
+            },
+            "SiteNavigationItem": {
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/SiteNavigationLink"
+                    },
+                    {
+                        "$ref": "#/components/schemas/SiteNavigationGroup"
+                    }
+                ]
             }
         },
         "parameters": {

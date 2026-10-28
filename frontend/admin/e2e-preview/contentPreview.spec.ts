@@ -39,12 +39,14 @@ for (const [path, slug] of [
         name: 'Область просмотра сайта',
         exact: true,
       })
-      async function capture(path: string) {
+      async function capture(path: string, compact = false) {
         await region.scrollIntoViewIfNeeded()
         await expect(
           frame.getByRole('heading', { name: 'Сохранённый текст черновика' }),
         ).toBeVisible()
-        await expect(frame.getByText('Черновая шапка')).toBeVisible()
+        if (compact)
+          await expect(frame.getByText('Черновая шапка')).toBeHidden()
+        else await expect(frame.getByText('Черновая шапка')).toBeVisible()
         await iframe
           .contentFrame()
           .locator('body')
@@ -104,6 +106,7 @@ for (const [path, slug] of [
       }
       await capture(
         `.tmp/a061-nuxt/${slug}-${path.includes('appearance') ? 'appearance' : 'pages'}-${width}-mobile.png`,
+        true,
       )
       await page.getByRole('button', { name: 'Компьютер', exact: true }).click()
       await expect(iframe).toHaveCSS('width', '1280px')

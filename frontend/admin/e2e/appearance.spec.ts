@@ -180,6 +180,216 @@ test('header menu supports adding, editing, reordering, deleting and publishing 
   await expect(names.nth(1)).toHaveValue('Главная')
 })
 
+test('submenu mode reversal preserves local fields and saves, reloads and publishes only active navigation fields', async ({
+  page,
+}) => {
+  const api = await mockWorkspace(page)
+  await page.goto('/content?section=appearance&panel=header')
+  const first = page.getByRole('listitem', {
+    name: 'Пункт меню 1',
+    exact: true,
+  })
+  const toggle = () =>
+    page.getByRole('switch', { name: 'Есть подменю у пункта 1', exact: true })
+  await first.getByLabel('Ссылка', { exact: true }).fill('/unsaved-catalog')
+  await toggle().focus()
+  await page.keyboard.press('Space')
+  await expect(toggle()).toHaveAttribute('aria-checked', 'true')
+  const child = (index: number, parent = 1) =>
+    page.getByRole('listitem', {
+      name: `Подпункт ${index} пункта меню ${parent}`,
+      exact: true,
+    })
+  await child(1).getByLabel('Название', { exact: true }).fill('Весь каталог')
+  await child(1).getByLabel('Ссылка', { exact: true }).fill('/catalog')
+  await page
+    .getByRole('button', { name: 'Добавить подпункт в пункт меню 1' })
+    .click()
+  await child(2).getByLabel('Название', { exact: true }).fill('Мозаика')
+  await child(2).getByLabel('Ссылка', { exact: true }).fill('/catalog/mosaic')
+  await page
+    .getByRole('button', { name: 'Поднять подпункт 2 пункта меню 1' })
+    .click()
+  await toggle().click()
+  await expect(first.getByLabel('Ссылка', { exact: true })).toHaveValue(
+    '/unsaved-catalog',
+  )
+  await page.getByRole('button', { name: 'Подвал', exact: true }).click()
+  await page.getByRole('button', { name: 'Вид фильтров', exact: true }).click()
+  await page.getByRole('button', { name: /^Шапка и навигация/ }).click()
+  const save = page.getByRole('button', { name: 'Сохранить черновик раздела' })
+  await save.click()
+  await expect(save).toBeDisabled()
+  expect(api.patches[0]).toHaveProperty('header.navigation', [
+    { label: 'Каталог керамической плитки', to: '/unsaved-catalog' },
+    { label: 'Контакты наших магазинов', to: '/contacts' },
+  ])
+  await toggle().click()
+  await expect(child(1).getByLabel('Название', { exact: true })).toHaveValue(
+    'Мозаика',
+  )
+  await expect(child(2).getByLabel('Ссылка', { exact: true })).toHaveValue(
+    '/catalog',
+  )
+  await page
+    .getByRole('button', { name: 'Опустить пункт меню 1', exact: true })
+    .click()
+  await save.click()
+  await expect(save).toBeDisabled()
+  const expected = [
+    { label: 'Контакты наших магазинов', to: '/contacts' },
+    {
+      label: 'Каталог керамической плитки',
+      children: [
+        { label: 'Мозаика', to: '/catalog/mosaic' },
+        { label: 'Весь каталог', to: '/catalog' },
+      ],
+    },
+  ]
+  expect(api.patches[1]).toHaveProperty('header.navigation', expected)
+  expect(api.published().header.navigation).toEqual(
+    appearanceFixture().header.navigation,
+  )
+  await page.reload()
+  await expect(child(1, 2).getByLabel('Название', { exact: true })).toHaveValue(
+    'Мозаика',
+  )
+  await page.getByRole('button', { name: 'Опубликовать оформление' }).click()
+  await expect(page.getByText('Общее оформление опубликовано.')).toBeVisible()
+  expect(api.published().header.navigation).toEqual(expected)
+  expect(api.published().footer.explore_links).toEqual([
+    { label: 'Коллекции керамогранита', to: '/catalog' },
+  ])
+})
+
+test('submenu validation, server errors and pending save preserve input and disable editing', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  const api = await mockWorkspace(page)
+  await page.goto('/content?section=appearance&panel=header')
+  const toggle = page.getByRole('switch', {
+    name: 'Есть подменю у пункта 1',
+    exact: true,
+  })
+  await toggle.click()
+  const save = page.getByRole('button', { name: 'Сохранить черновик раздела' })
+  await save.click()
+  await expect(page.getByRole('alert')).toContainText('подпункт 1')
+  expect(api.patches).toHaveLength(0)
+  await page
+    .getByRole('button', { name: 'Закрыть уведомление' })
+    .press('Escape')
+  const child = page.getByRole('listitem', {
+    name: 'Подпункт 1 пункта меню 1',
+    exact: true,
+  })
+  await expect(
+    child.getByRole('button', { name: 'Удалить подпункт 1 пункта меню 1' }),
+  ).toBeDisabled()
+  await child
+    .getByLabel('Название', { exact: true })
+    .fill('Сохранённый подпункт')
+  await child.getByLabel('Ссылка', { exact: true }).fill('javascript:alert(1)')
+  await save.click()
+  await expect(page.getByRole('alert')).toContainText('HTTPS')
+  expect(api.patches).toHaveLength(0)
+  await page
+    .getByRole('button', { name: 'Закрыть уведомление' })
+    .press('Escape')
+  await child.getByLabel('Ссылка', { exact: true }).fill('/catalog')
+  api.failNext(`PATCH ${appearancePath}`, 422, 'Исправьте вложенную ссылку.')
+  browserIssueGuard.allowApiError(422, '/api/v1/admin/site-appearance')
+  await save.click()
+  await expect(page.getByRole('alert')).toHaveText(
+    'Исправьте вложенную ссылку.',
+  )
+  await page
+    .getByRole('button', { name: 'Закрыть уведомление' })
+    .press('Escape')
+  await expect(child.getByLabel('Название', { exact: true })).toHaveValue(
+    'Сохранённый подпункт',
+  )
+  const saving = api.deferred.defer(`PATCH ${appearancePath}`)
+  await save.click()
+  await saving.requested
+  await expect(toggle).toBeDisabled()
+  await expect(child.getByLabel('Ссылка', { exact: true })).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Добавить подпункт в пункт меню 1' }),
+  ).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Добавить пункт меню', exact: true }),
+  ).toBeDisabled()
+  saving.release()
+  await expect(
+    page.getByRole('button', { name: 'Опубликовать оформление' }),
+  ).toBeEnabled()
+  await expect(toggle).toBeEnabled()
+  expect(api.patches[0]).toHaveProperty('header.navigation.0', {
+    label: 'Каталог керамической плитки',
+    children: [{ label: 'Сохранённый подпункт', to: '/catalog' }],
+  })
+})
+
+for (const width of [320, 640, 768, 1024, 1280]) {
+  test(`submenu editor remains accessible without overflow at ${width}px`, async ({
+    page,
+  }) => {
+    await mockWorkspace(page)
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/content?section=appearance&panel=header')
+    await page
+      .getByRole('switch', { name: 'Есть подменю у пункта 1', exact: true })
+      .click()
+    const first = page.getByRole('listitem', {
+      name: 'Пункт меню 1',
+      exact: true,
+    })
+    await first
+      .getByLabel('Название', { exact: true })
+      .first()
+      .fill(
+        'Коллекции керамической плитки и керамогранита для уютного загородного дома',
+      )
+    const child = page.getByRole('listitem', {
+      name: 'Подпункт 1 пункта меню 1',
+      exact: true,
+    })
+    await child
+      .getByLabel('Название', { exact: true })
+      .fill('Все коллекции керамогранита российского производства')
+    await child
+      .getByLabel('Ссылка', { exact: true })
+      .fill('/catalog/collections')
+    await child.getByLabel('Название', { exact: true }).focus()
+    expect(
+      await child.getByLabel('Название', { exact: true }).evaluate((input) => {
+        const container = input.closest('.admin-control-focus')!
+        return (
+          getComputedStyle(container).boxShadow !== 'none' ||
+          getComputedStyle(container).outlineStyle !== 'none'
+        )
+      }),
+    ).toBe(true)
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(false)
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+    await page.screenshot({
+      path: `../../.tmp/navigation-submenus/admin-${width}.png`,
+      fullPage: true,
+      animations: 'disabled',
+    })
+  })
+}
+
 test('appearance retains panel drafts and publishes only saved appearance sections', async ({
   page,
 }) => {
@@ -338,6 +548,12 @@ test('appearance loading, retry and save errors preserve editable drafts', async
   await expect(page.getByRole('alert')).toHaveText(
     'Оформление временно недоступно.',
   )
+  await page
+    .getByRole('button', { name: 'Закрыть уведомление' })
+    .press('Escape')
+  await expect(
+    page.getByRole('button', { name: 'Повторить загрузку' }),
+  ).toBeVisible()
   await page.getByRole('button', { name: 'Повторить загрузку' }).click()
   await page.getByLabel('Верхняя строка слева').fill('Повторное сохранение')
   api.failNext(
@@ -393,6 +609,28 @@ test('appearance publish failure preserves saved draft and permits retry', async
   await publish.click()
   await expect(page.getByText('Общее оформление опубликовано.')).toBeVisible()
   expect(api.published().footer.tagline).toBe('Сохранённый слоган')
+})
+
+test('appearance load retry remains available after the error notification times out', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  const api = await mockWorkspace(page)
+  await page.clock.install()
+  api.failNext(`GET ${appearancePath}`, 503, 'Оформление временно недоступно.')
+  browserIssueGuard.allowApiError(503, '/api/v1/admin/site-appearance')
+  await page.goto('/content?section=appearance')
+  await expect(page.getByRole('alert')).toHaveText(
+    'Оформление временно недоступно.',
+  )
+  await page.clock.fastForward(5100)
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  const retry = page.getByRole('button', { name: 'Повторить загрузку' })
+  await expect(retry).toBeVisible()
+  await retry.click()
+  await expect(
+    page.getByRole('switch', { name: 'Есть подменю у пункта 1', exact: true }),
+  ).toBeVisible()
 })
 
 test('appearance media controls require media.manage and filters stay informational', async ({
