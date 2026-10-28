@@ -8,6 +8,7 @@ test.beforeEach(async ({ request }) => {
 test('page and header overlays leave controls unselected until keyboard navigation', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 640, height: 900 })
   await page.goto('/about')
   await expect(page.locator('input:focus, button:focus, a:focus')).toHaveCount(
     0,

@@ -55,13 +55,22 @@ test('classic scrollbar removal preserves page geometry for menu, search and nat
       ),
     ).toBe(true)
     await page.screenshot({ path: testInfo.outputPath(`page-${width}.png`) })
-    await page.getByRole('button', { name: 'Открыть меню' }).click()
-    await expect(page.getByRole('dialog', { name: 'Меню сайта' })).toBeFocused()
-    expect(await geometry()).toEqual(before)
-    await page.screenshot({ path: testInfo.outputPath(`menu-${width}.png`) })
-    await page
-      .getByRole('button', { name: 'Поиск по разделам страницы' })
-      .click()
+    if (width <= 1024) {
+      await page.getByRole('button', { name: 'Открыть меню' }).click()
+      await expect(
+        page.getByRole('dialog', { name: 'Меню сайта' }),
+      ).toBeFocused()
+      expect(await geometry()).toEqual(before)
+      await page.screenshot({ path: testInfo.outputPath(`menu-${width}.png`) })
+      await page
+        .getByRole('button', { name: 'Поиск по разделам страницы' })
+        .click()
+    } else {
+      await expect(
+        page.getByRole('button', { name: 'Открыть меню' }),
+      ).toHaveCount(0)
+      await page.getByRole('button', { name: 'Открыть поиск' }).click()
+    }
     await expect(
       page.getByRole('dialog', { name: 'Поиск по разделам страницы' }),
     ).toBeFocused()

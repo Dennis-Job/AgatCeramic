@@ -189,7 +189,7 @@ test('actual Nuxt preview stays accessible inside an editor iframe with keyboard
   await authenticate(context)
   await page.goto('/')
   await page.setContent(
-    '<!doctype html><html lang="ru"><head><title>Редактор</title></head><body><nav aria-label="Основная навигация"><a href="#editor">Контент</a></nav><main id="editor"><h1>Редактор</h1><iframe title="Сохранённый черновик" src="http://127.0.0.1:3015/preview/about" width="1280" height="720"></iframe></main></body></html>',
+    '<!doctype html><html lang="ru"><head><title>Редактор</title></head><body><nav aria-label="Основная навигация"><a href="#editor">Контент</a></nav><main id="editor"><h1>Редактор</h1><iframe title="Сохранённый черновик" src="http://127.0.0.1:3015/preview/about" width="768" height="720"></iframe></main></body></html>',
   )
   const frame = page.frameLocator('iframe')
   await expect(frame.getByText('Черновая шапка')).toBeVisible()

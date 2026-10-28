@@ -27,17 +27,26 @@ const menuPanel = ref<HTMLElement | null>(null)
 const searchPanel = ref<HTMLElement | null>(null)
 const searchInput = ref<HTMLInputElement | null>(null)
 const header = ref<HTMLElement | null>(null)
-const searchTop = ref(0)
+const headerBottom = ref(0)
 const backdropPanel = ref<Exclude<Panel, null>>('menu')
 const searchPosition = computed(() => ({
-  '--search-top': `${searchTop.value}px`,
+  '--search-top': `${headerBottom.value}px`,
 }))
 let headerObserver: ResizeObserver | undefined
 const leavingPanels = new Set<Element>()
 
-function updateSearchPosition() {
+function updateHeaderBottom() {
   if (header.value)
-    searchTop.value = header.value.getBoundingClientRect().bottom
+    headerBottom.value = header.value.getBoundingClientRect().bottom
+}
+
+function onResize() {
+  updateHeaderBottom()
+  if (
+    !window.matchMedia('(max-width: 1024px)').matches &&
+    panel.value === 'menu'
+  )
+    closePanel()
 }
 
 const searchResults = computed(() =>
@@ -56,7 +65,7 @@ function clearSearch() {
 function openPanel(nextPanel: Exclude<Panel, null>, event: MouseEvent) {
   desktopNavigation.value?.close()
   if (!panel.value) panelTrigger = event.currentTarget as HTMLElement
-  updateSearchPosition()
+  updateHeaderBottom()
   backdropPanel.value = nextPanel
   searchQuery.value = ''
   panel.value = nextPanel
@@ -117,7 +126,12 @@ function finishPanelClose(element: Element) {
   leavingPanels.delete(element)
   if (panel.value || leavingPanels.size) return
   document.body.classList.remove('has-overlay')
-  if (panelTrigger?.isConnected) panelTrigger.focus({ preventScroll: true })
+  if (panelTrigger?.isConnected && panelTrigger.getClientRects().length)
+    panelTrigger.focus({ preventScroll: true })
+  else
+    header.value
+      ?.querySelector<HTMLAnchorElement>('.wordmark')
+      ?.focus({ preventScroll: true })
 }
 
 watch(panel, async (next) => {
@@ -131,16 +145,17 @@ watch(panel, async (next) => {
 watch(() => route.fullPath, closePanel)
 
 onMounted(() => {
+  updateHeaderBottom()
   document.addEventListener('keydown', onKeydown)
-  window.addEventListener('resize', updateSearchPosition)
-  window.addEventListener('scroll', updateSearchPosition, { passive: true })
-  headerObserver = new ResizeObserver(updateSearchPosition)
+  window.addEventListener('resize', onResize)
+  window.addEventListener('scroll', updateHeaderBottom, { passive: true })
+  headerObserver = new ResizeObserver(updateHeaderBottom)
   if (header.value) headerObserver.observe(header.value)
 })
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
-  window.removeEventListener('resize', updateSearchPosition)
-  window.removeEventListener('scroll', updateSearchPosition)
+  window.removeEventListener('resize', onResize)
+  window.removeEventListener('scroll', updateHeaderBottom)
   headerObserver?.disconnect()
   document.body.classList.remove('has-overlay')
 })
@@ -164,11 +179,7 @@ onUnmounted(() => {
 
   <header ref="header" class="site-header" :inert="panel === 'search'">
     <div class="container site-header__inner">
-      <NuxtLink
-        to="/#home"
-        class="wordmark"
-        aria-label="AgatCeramic — на главную"
-      >
+      <NuxtLink to="/" class="wordmark" aria-label="AgatCeramic — на главную">
         <img
           v-if="content?.logoUrl"
           :src="content.logoUrl"
@@ -186,6 +197,7 @@ onUnmounted(() => {
         variant="desktop"
         :label="navigationLabel || 'Основная навигация'"
         :current-path="currentPath"
+        :header-bottom="headerBottom"
       />
 
       <div class="site-header__actions">
@@ -208,6 +220,7 @@ onUnmounted(() => {
         </UiIconButton>
         <UiIconButton
           v-if="navigation.length"
+          class="site-header__menu-toggle"
           label="Открыть меню"
           :expanded="panel === 'menu'"
           controls="site-menu"
@@ -415,6 +428,14 @@ onUnmounted(() => {
   flex-shrink: 0;
   align-items: center;
   gap: 8px;
+}
+.site-header__actions .site-header__menu-toggle {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .site-header__actions .site-header__menu-toggle {
+    display: inline-flex;
+  }
 }
 @media (max-width: 480px) {
   .site-header__inner {

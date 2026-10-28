@@ -19,6 +19,7 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-panel-duration: 0.65s;
   --motion-backdrop-duration: 0.5s;
+  --motion-disclosure-duration: 0.35s;
   --content-width: 1280px;
   --page-gutter: 40px;
   --section-space: 110px;

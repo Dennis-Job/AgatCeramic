@@ -7,6 +7,7 @@ const props = defineProps<{
   variant: 'desktop' | 'drawer'
   label: string
   currentPath?: string
+  headerBottom?: number
 }>()
 const emit = defineEmits<{ navigate: [] }>()
 const route = useRoute()
@@ -14,7 +15,7 @@ const router = useRouter()
 const root = ref<HTMLElement | null>(null)
 const openIndex = ref<number | null>(null)
 const id = useId()
-const position = ref<Record<string, string>>({})
+const positions = ref<Record<number, Record<string, string>>>({})
 
 function isCurrent(to: string): boolean {
   if (!to.startsWith('/')) return false
@@ -75,16 +76,12 @@ function updatePosition() {
     return
   }
   const margin = 12
-  const gap = 8
   const width = Math.min(300, document.documentElement.clientWidth - margin * 2)
-  const below = window.innerHeight - anchor.bottom - gap - margin
-  const above = anchor.top - gap - margin
-  const opensAbove = below < 140 && above > below
-  const available = Math.max(0, opensAbove ? above : below)
-  const height = Math.min(element.scrollHeight + 2, available)
-  position.value = {
+  const top = props.headerBottom ?? navigation.bottom
+  const available = Math.max(0, window.innerHeight - top - margin)
+  positions.value[openIndex.value] = {
     left: `${Math.max(margin, Math.min(anchor.left, document.documentElement.clientWidth - width - margin))}px`,
-    top: `${opensAbove ? anchor.top - gap - height : anchor.bottom + gap}px`,
+    top: `${top}px`,
     width: `${width}px`,
     maxHeight: `${available}px`,
   }
@@ -121,6 +118,7 @@ watch(
   () => props.items,
   () => close(),
 )
+watch(() => props.headerBottom, updatePosition)
 
 onMounted(() => {
   document.addEventListener('pointerdown', outside)
@@ -163,25 +161,43 @@ defineExpose({ close })
             @click="toggle(index)"
           >
             <span>{{ item.label }}</span>
-            <ChevronDown :size="16" :stroke-width="1.6" aria-hidden="true" />
+            <ChevronDown
+              v-if="variant === 'drawer'"
+              :size="16"
+              :stroke-width="1.6"
+              aria-hidden="true"
+            />
           </button>
-          <ul
+          <div
             :id="groupId(index)"
             :data-group="index"
             class="navigation-submenu"
+            :class="{
+              'ui-submenu-popover': variant === 'desktop',
+              'ui-submenu-drawer': variant === 'drawer',
+              'is-open': openIndex === index,
+            }"
             :popover="variant === 'desktop' ? 'manual' : undefined"
-            :hidden="variant === 'drawer' && openIndex !== index"
-            :style="variant === 'desktop' ? position : undefined"
+            :inert="openIndex !== index"
+            :aria-hidden="openIndex !== index"
+            :style="variant === 'desktop' ? positions[index] : undefined"
           >
-            <li v-for="(link, childIndex) in item.children" :key="childIndex">
-              <NuxtLink
-                :to="link.to"
-                :aria-current="isCurrent(link.to) ? 'page' : undefined"
-                @click="navigate"
-                >{{ link.label }}</NuxtLink
-              >
-            </li>
-          </ul>
+            <div class="navigation-submenu__content">
+              <ul class="navigation-submenu__list">
+                <li
+                  v-for="(link, childIndex) in item.children"
+                  :key="childIndex"
+                >
+                  <NuxtLink
+                    :to="link.to"
+                    :aria-current="isCurrent(link.to) ? 'page' : undefined"
+                    @click="navigate"
+                    >{{ link.label }}</NuxtLink
+                  >
+                </li>
+              </ul>
+            </div>
+          </div>
         </template>
         <NuxtLink
           v-else
@@ -205,7 +221,7 @@ defineExpose({ close })
 
 <style scoped>
 .navigation-list,
-.navigation-submenu {
+.navigation-submenu__list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -280,7 +296,6 @@ defineExpose({ close })
   color: var(--color-ink);
   background: var(--color-bg-soft);
 }
-.navigation-submenu[hidden],
 .navigation-submenu[popover]:not(:popover-open) {
   display: none;
 }
@@ -338,8 +353,14 @@ defineExpose({ close })
   letter-spacing: 0.2em;
 }
 .menu-panel__nav .navigation-submenu {
-  padding: 0 0 12px 12px;
   background: transparent;
+}
+.menu-panel__nav .navigation-submenu__content {
+  min-height: 0;
+  overflow: hidden;
+}
+.menu-panel__nav .navigation-submenu__list {
+  padding: 0 0 12px 12px;
 }
 .menu-panel__nav .navigation-submenu a {
   padding: 12px;

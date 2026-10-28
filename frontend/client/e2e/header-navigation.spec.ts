@@ -56,6 +56,10 @@ test('five configured links remain visible in the desktop header and available i
       path: testInfo.outputPath(`header-navigation-${width}.png`),
     })
     const trigger = page.getByRole('button', { name: 'Открыть меню' })
+    if (width > 1024) {
+      await expect(trigger).toHaveCount(0)
+      continue
+    }
     await trigger.click()
     const menu = page.getByRole('dialog', { name: 'Меню сайта' })
     await expect(menu.getByRole('link')).toHaveCount(5)

@@ -102,18 +102,19 @@ test('header actions follow the reference order, fit narrow screens and return s
   const actions = page.locator('.site-header__actions')
   const search = actions.getByRole('button', { name: 'Открыть поиск' })
   const cart = actions.getByRole('button', { name: 'Корзина', exact: true })
-  await expect(actions.getByRole('button')).toHaveCount(3)
+  await expect(actions.getByRole('button')).toHaveCount(2)
   expect(
     await actions
       .getByRole('button')
       .evaluateAll((buttons) =>
         buttons.map((button) => button.getAttribute('aria-label')),
       ),
-  ).toEqual(['Открыть поиск', 'Корзина', 'Открыть меню'])
+  ).toEqual(['Открыть поиск', 'Корзина'])
   await expect(cart).toBeDisabled()
   await expect(cart).toHaveAttribute('title', 'Корзина будет доступна позже')
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 707 })
+    await expect(actions.getByRole('button')).toHaveCount(width <= 1024 ? 3 : 2)
     await page.evaluate(
       () =>
         new Promise<void>((resolve) =>
@@ -171,9 +172,18 @@ test('header, menu and footer share a text-only wordmark without decorative symb
     const footer = page.locator('.site-footer .ui-wordmark')
     await expect(header).toHaveText('AGATCERAMIC')
     await expect(footer).toHaveText('AGATCERAMIC')
-    await page.getByRole('button', { name: 'Открыть меню' }).click()
-    const menu = page.getByRole('dialog', { name: 'Меню сайта' })
-    for (const wordmark of [header, footer, menu.locator('.ui-wordmark')]) {
+    const wordmarks = [header, footer]
+    let menu: Locator | null = null
+    if (width <= 1024) {
+      await page.getByRole('button', { name: 'Открыть меню' }).click()
+      menu = page.getByRole('dialog', { name: 'Меню сайта' })
+      wordmarks.push(menu.locator('.ui-wordmark'))
+    } else {
+      await expect(
+        page.getByRole('button', { name: 'Открыть меню' }),
+      ).toHaveCount(0)
+    }
+    for (const wordmark of wordmarks) {
       await expect(wordmark).toHaveText('AGATCERAMIC')
       await expect(wordmark.locator('img, svg, sup')).toHaveCount(0)
       await expect(wordmark).toHaveCSS('font-weight', '600')
@@ -182,11 +192,13 @@ test('header, menu and footer share a text-only wordmark without decorative symb
         '400',
       )
     }
-    await page.screenshot({
-      path: testInfo.outputPath(`wordmark-menu-${width}.png`),
-    })
-    await page.keyboard.press('Escape')
-    await expect(menu).toHaveCount(0)
+    if (menu) {
+      await page.screenshot({
+        path: testInfo.outputPath(`wordmark-menu-${width}.png`),
+      })
+      await page.keyboard.press('Escape')
+      await expect(menu).toHaveCount(0)
+    }
     await page
       .locator('.site-header')
       .screenshot({ path: testInfo.outputPath(`wordmark-header-${width}.png`) })
@@ -237,12 +249,18 @@ test('menu and callback share the approved close control and hover', async ({
   }
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 707 })
-    await page.getByRole('button', { name: 'Открыть меню' }).click()
-    await checkClose(
-      page.getByRole('button', { name: 'Закрыть меню' }),
-      `menu-${width}`,
-    )
-    await page.keyboard.press('Escape')
+    if (width <= 1024) {
+      await page.getByRole('button', { name: 'Открыть меню' }).click()
+      await checkClose(
+        page.getByRole('button', { name: 'Закрыть меню' }),
+        `menu-${width}`,
+      )
+      await page.keyboard.press('Escape')
+    } else {
+      await expect(
+        page.getByRole('button', { name: 'Открыть меню' }),
+      ).toHaveCount(0)
+    }
     await page
       .getByRole('button', { name: 'заказать звонок', exact: true })
       .click()

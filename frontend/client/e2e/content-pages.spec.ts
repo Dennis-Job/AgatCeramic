@@ -124,6 +124,24 @@ test('long Russian navigation and all sixteen links stay usable without page ove
           () => document.documentElement.scrollWidth <= window.innerWidth,
         ),
       ).toBe(true)
+      if (width > 1024) {
+        await expect(
+          page.getByRole('button', { name: 'Открыть меню' }),
+        ).toHaveCount(0)
+        await expect(
+          page
+            .getByRole('navigation', { name: 'Основная навигация' })
+            .getByRole('link'),
+        ).toHaveCount(scenario === 'max-navigation' ? 16 : 4)
+        expect((await new AxeBuilder({ page }).analyze()).violations).toEqual(
+          [],
+        )
+        await page.screenshot({
+          path: testInfo.outputPath(`${scenario}-${width}.png`),
+          fullPage: true,
+        })
+        continue
+      }
       await page.getByRole('button', { name: 'Открыть меню' }).click()
       const menu = page.getByRole('dialog', { name: 'Меню сайта' })
       await expect(menu.getByRole('link')).toHaveCount(

@@ -1,6 +1,9 @@
 import { expect, test, type Locator } from '@playwright/test'
 
-test.use({ reducedMotion: 'no-preference' })
+test.use({
+  reducedMotion: 'no-preference',
+  viewport: { width: 640, height: 720 },
+})
 
 test.beforeEach(async ({ request, page }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
@@ -23,33 +26,39 @@ test('menu and modal animate in and out with the reference timing and retain foc
   await page.goto('/about')
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 707 })
-    const trigger = page.getByRole('button', { name: 'Открыть меню' })
-    await trigger.click()
-    const menu = page.locator('#site-menu')
-    await expect(menu).toBeAttached()
-    await expect
-      .poll(() =>
-        menu.evaluate((node) =>
-          node
-            .getAnimations()
-            .some(
-              (animation) => animation.effect?.getTiming().duration === 650,
-            ),
-        ),
-      )
-      .toBe(true)
-    await expect(menu).toBeFocused()
-    await page.screenshot({
-      path: testInfo.outputPath(`menu-enter-${width}.png`),
-    })
-    await finishMotion(menu)
-    await expect(menu).toHaveCSS('transform', 'none')
-    await page.keyboard.press('Escape')
-    await expect(page.locator('body')).toHaveClass('has-overlay')
-    await expect(menu).toBeAttached()
-    await expect(menu).toHaveCount(0)
-    await expect(trigger).toBeFocused()
-    await expect(page.locator('body')).not.toHaveClass('has-overlay')
+    if (width <= 1024) {
+      const trigger = page.getByRole('button', { name: 'Открыть меню' })
+      await trigger.click()
+      const menu = page.locator('#site-menu')
+      await expect(menu).toBeAttached()
+      await expect
+        .poll(() =>
+          menu.evaluate((node) =>
+            node
+              .getAnimations()
+              .some(
+                (animation) => animation.effect?.getTiming().duration === 650,
+              ),
+          ),
+        )
+        .toBe(true)
+      await expect(menu).toBeFocused()
+      await page.screenshot({
+        path: testInfo.outputPath(`menu-enter-${width}.png`),
+      })
+      await finishMotion(menu)
+      await expect(menu).toHaveCSS('transform', 'none')
+      await page.keyboard.press('Escape')
+      await expect(page.locator('body')).toHaveClass('has-overlay')
+      await expect(menu).toBeAttached()
+      await expect(menu).toHaveCount(0)
+      await expect(trigger).toBeFocused()
+      await expect(page.locator('body')).not.toHaveClass('has-overlay')
+    } else {
+      await expect(
+        page.getByRole('button', { name: 'Открыть меню' }),
+      ).toHaveCount(0)
+    }
 
     const callback = page.getByRole('button', {
       name: 'заказать звонок',

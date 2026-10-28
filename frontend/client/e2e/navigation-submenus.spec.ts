@@ -115,6 +115,10 @@ test('drawer groups work at all widths; Escape closes disclosure before modal an
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     const trigger = page.getByRole('button', { name: 'Открыть меню' })
+    if (width > 1024) {
+      await expect(trigger).toHaveCount(0)
+      continue
+    }
     await trigger.click()
     const dialog = page.getByRole('dialog', { name: 'Меню сайта' })
     const parent = dialog.getByRole('button', { name: 'Каталог', exact: true })
@@ -211,6 +215,7 @@ test('unsafe submenu links and empty filtered groups never render; authenticated
     'aria-current',
     'page',
   )
+  await expect(nav.locator('[popover]:popover-open')).toHaveCSS('opacity', '1')
   await page.screenshot({
     path: testInfo.outputPath('preview-submenu-1280.png'),
   })
