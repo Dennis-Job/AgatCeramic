@@ -4,6 +4,7 @@ namespace App\Queries;
 
 use App\Models\Page;
 use App\Support\SiteCopyright;
+use App\Support\SiteFooter;
 
 class SiteAppearanceQuery
 {
@@ -24,6 +25,7 @@ class SiteAppearanceQuery
         $header['logo_url'] ??= null;
         /** @var array<string, mixed> $footer */
         $footer = $resolved['footer'];
+        $footer = SiteFooter::resolve($footer, $header);
         $footer['bottom_left'] = SiteCopyright::text();
         $result = ['header' => $header, 'footer' => $footer];
 

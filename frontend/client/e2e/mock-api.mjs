@@ -80,6 +80,39 @@ const home = {
   ],
 }
 let scenario = 'default'
+function scenarioFooter() {
+  if (!scenario.startsWith('footer-')) return home.footer
+  const full = scenario === 'footer-links'
+  return {
+    ...home.footer,
+    navigation_links: full
+      ? [{ label: 'Доставка плитки', to: '/about#delivery' }]
+      : [],
+    explore_links: full ? [{ label: 'Коллекции', to: '/catalog' }] : [],
+    social_links: full
+      ? [
+          { label: 'Telegram', to: 'https://t.me/agat_test' },
+          { label: 'ВКонтакте', to: 'https://vk.com/agat_test' },
+        ]
+      : scenario === 'footer-unsafe'
+        ? [{ label: 'Опасно', to: 'javascript:alert(1)' }]
+        : [],
+    message: full
+      ? {
+          eyebrow: 'AgatCeramic',
+          text: 'Поверхности, которые помогают создать пространство с характером.',
+          link_label: 'Каталог',
+          link_url: '/catalog',
+        }
+      : home.footer.message,
+    bottom_right: 'Политика конфиденциальности',
+    bottom_right_url: full
+      ? '/about#privacy'
+      : scenario === 'footer-unsafe'
+        ? 'javascript:alert(1)'
+        : '',
+  }
+}
 function submenuNavigation() {
   if (!scenario.startsWith('submenu')) return null
   const children = [
@@ -381,7 +414,7 @@ createServer(async (request, response) => {
             topbar_right: 'Черновая шапка',
             navigation: submenuNavigation() ?? home.header.navigation,
           },
-          footer: home.footer,
+          footer: scenarioFooter(),
         },
       },
     })
@@ -417,7 +450,7 @@ createServer(async (request, response) => {
           topbar_right: 'Общее оформление сайта',
           navigation,
         },
-        footer: home.footer,
+        footer: scenarioFooter(),
       },
     })
   }

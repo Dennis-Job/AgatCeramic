@@ -21,6 +21,8 @@ export type SiteAppearance = {
   }
   footer: {
     tagline: string
+    navigation_links?: SiteLink[]
+    social_links?: SiteLink[]
     explore_links: SiteLink[]
     message: {
       eyebrow: string
@@ -30,6 +32,7 @@ export type SiteAppearance = {
     }
     bottom_left: string
     bottom_right: string
+    bottom_right_url?: string
   }
 }
 export type AppearanceSection = 'header' | 'footer'

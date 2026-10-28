@@ -32,6 +32,15 @@ class HomePageManagementService
                         /** @var array<string, mixed> $storedFooter */
                         $storedFooter = $content['footer'];
                         $value['bottom_left'] = $storedFooter['bottom_left'];
+                        // New optional fields survive writes from older clients.
+                        foreach (['navigation_links', 'social_links', 'bottom_right_url'] as $field) {
+                            if (! array_key_exists($field, $value) && array_key_exists($field, $storedFooter)) {
+                                $value[$field] = $storedFooter[$field];
+                            }
+                        }
+                        if (array_key_exists('bottom_right_url', $value)) {
+                            $value['bottom_right_url'] ??= '';
+                        }
                     }
                     $content = array_replace($content, [$key => $value]);
                 }

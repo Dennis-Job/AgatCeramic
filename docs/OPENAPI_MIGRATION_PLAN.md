@@ -7,6 +7,43 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v11.0 — independent footer navigation and social links
+
+Date: 2026-10-28. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Footer responses now always expose `navigation_links`, `social_links` and
+`bottom_right_url`. Previous closed response schemas reject these new properties,
+so strict consumers must update to v11.0. Both appearance and legacy home-page
+PATCH accept the fields optionally. Flat link entries retain `{label,to}`;
+navigation contains 0–256 entries and social links 0–12. Existing SafeSiteUrl,
+255-character labels and 2048-character destinations apply. Empty lists hide
+their columns. Empty/null URL input removes the bottom-right text link; output
+uses an empty string. Unknown properties and nested groups remain rejected.
+
+### Client migration
+
+Admin manages the two lists independently and supplies a separate destination
+for bottom-right text. Client renders safe configured links and hides empty
+columns. Missing legacy navigation projects the flattened, deduplicated header
+links in order; social links default to `[]` and the bottom-right URL to `''`.
+Explicit navigation `[]` is preserved. Omitted optional fields from old writers
+preserve already-saved values. Read projections never rewrite storage. Regenerate
+strict response validators for all home-page/appearance and saved-preview APIs.
+Saving remains draft-only and page publication cannot publish appearance edits.
+
+### Rollout and rollback
+
+Release backend, Admin and Client together before configuring these fields.
+No schema migration, automatic content rewrite or publication is required.
+Before rollback, retain a protected copy of new footer configuration. Old Client
+renders its former header-derived navigation and ignores new display fields;
+old backend rejects writes containing them. Roll back the three applications
+together and ensure any older writer omits the new properties. Do not discard
+stored JSON or snapshots merely to satisfy older response validators. Restore
+the compatible release and saved configuration to recover new footer behavior.
+
 ## v10.0 — optional one-level navigation submenus
 
 Date: 2026-10-28. HTTP routes remain `/api/v1`.

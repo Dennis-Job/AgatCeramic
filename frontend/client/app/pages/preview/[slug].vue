@@ -5,15 +5,11 @@ import HomePageBody from '~/features/home/components/HomePageBody.vue'
 import StorefrontHeader from '~/features/callback/components/StorefrontHeader.vue'
 import SiteFooter from '~/components/shared/SiteFooter.vue'
 import PageState from '~/components/shared/PageState.vue'
-import { searchNavigation } from '~/utils/navigation'
 
 definePageMeta({ layout: false })
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 const { data, loading, error, refresh } = useDraftPreview(slug)
-const footerNavigation = computed(() =>
-  searchNavigation(data.value?.appearance.header.navigation ?? [], ''),
-)
 useSeoMeta({
   title: 'Предпросмотр черновика — AgatCeramic',
   robots: 'noindex,nofollow,noarchive',
@@ -35,7 +31,6 @@ useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
     </main>
     <SiteFooter
       :content="data.appearance.footer"
-      :navigation="footerNavigation"
       :logo-url="data.appearance.header.logoUrl"
       :logo-alt="data.appearance.header.logoAlt"
     />

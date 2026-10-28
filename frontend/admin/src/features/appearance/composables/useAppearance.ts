@@ -10,6 +10,7 @@ import type {
   SiteAppearance,
 } from '../types/appearance.types'
 import { navigationError } from '../validation/navigation'
+import { footerError } from '../validation/footer'
 
 const sections: AppearanceSection[] = ['header', 'footer']
 export function useAppearance() {
@@ -51,6 +52,14 @@ export function useAppearance() {
   }
   async function save(section: AppearanceSection): Promise<void> {
     if (!content.value || busy.value) return
+    if (section === 'footer') {
+      const invalid = footerError(content.value.footer)
+      if (invalid) {
+        error.value = invalid
+        success.value = ''
+        return
+      }
+    }
     if (section === 'header') {
       const invalid = navigationError(content.value.header.navigation)
       if (invalid) {
@@ -66,6 +75,8 @@ export function useAppearance() {
       const submitted = JSON.parse(
         JSON.stringify(content.value[section]),
       ) as SiteAppearance[AppearanceSection]
+      const footerBeforeSave = JSON.stringify(content.value.footer)
+      const footerWasDirty = isDirty('footer')
       const result = await saveAppearanceSection(section, submitted)
       const editedDuringSave =
         JSON.stringify(content.value[section]) !== JSON.stringify(submitted)
@@ -75,6 +86,13 @@ export function useAppearance() {
           ? content.value[section]
           : structuredClone(result[section]),
         has_unpublished_changes: result.has_unpublished_changes,
+      }
+      if (
+        section === 'header' &&
+        !footerWasDirty &&
+        JSON.stringify(content.value.footer) === footerBeforeSave
+      ) {
+        content.value.footer = structuredClone(result.footer)
       }
       content.value.footer.bottom_left = result.footer.bottom_left
       saved.value = result

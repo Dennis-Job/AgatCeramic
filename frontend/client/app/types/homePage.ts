@@ -67,6 +67,8 @@ export interface HomePageContent {
   }
   footer: {
     tagline: string
+    navigationLinks?: SiteLink[]
+    socialLinks?: SiteLink[]
     exploreLinks: SiteLink[]
     message: {
       eyebrow: string
@@ -76,6 +78,7 @@ export interface HomePageContent {
     }
     bottomLeft: string
     bottomRight: string
+    bottomRightUrl?: string | null
   }
   seo: {
     title: string

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { HomePageContent, SiteLink } from '~/types/homePage'
+import type { HomePageContent } from '~/types/homePage'
 import UiWordmark from '~/components/ui/UiWordmark.vue'
 
 defineProps<{
   content?: HomePageContent['footer']
-  navigation?: SiteLink[]
   logoUrl?: string
   logoAlt?: string
 }>()
@@ -31,11 +30,14 @@ defineProps<{
           </NuxtLink>
           <p v-if="content?.tagline">{{ content.tagline }}</p>
         </div>
-        <div v-if="navigation?.length" class="site-footer__column">
+        <div
+          v-if="content?.navigationLinks?.length"
+          class="site-footer__column"
+        >
           <h2>Навигация</h2>
           <NuxtLink
-            v-for="link in navigation ?? []"
-            :key="link.to"
+            v-for="(link, index) in content?.navigationLinks ?? []"
+            :key="index"
             :to="link.to"
             >{{ link.label }}</NuxtLink
           >
@@ -43,13 +45,30 @@ defineProps<{
         <div v-if="content?.exploreLinks.length" class="site-footer__column">
           <h2>Исследовать</h2>
           <NuxtLink
-            v-for="link in content?.exploreLinks ?? []"
-            :key="link.to"
+            v-for="(link, index) in content?.exploreLinks ?? []"
+            :key="index"
             :to="link.to"
             >{{ link.label }}</NuxtLink
           >
         </div>
-        <div v-if="content?.message" class="site-footer__message">
+        <div v-if="content?.socialLinks?.length" class="site-footer__column">
+          <h2>Мы в соцсетях</h2>
+          <NuxtLink
+            v-for="(link, index) in content.socialLinks"
+            :key="index"
+            :to="link.to"
+            >{{ link.label }}</NuxtLink
+          >
+        </div>
+        <div
+          v-if="
+            content?.message &&
+            (content.message.eyebrow ||
+              content.message.text ||
+              content.message.linkUrl)
+          "
+          class="site-footer__message"
+        >
           <span v-if="content?.message.eyebrow" class="eyebrow">{{
             content.message.eyebrow
           }}</span>
@@ -67,7 +86,12 @@ defineProps<{
         class="site-footer__bottom"
       >
         <span v-if="content?.bottomLeft">{{ content.bottomLeft }}</span>
-        <span v-if="content?.bottomRight">{{ content.bottomRight }}</span>
+        <NuxtLink
+          v-if="content?.bottomRight && content.bottomRightUrl"
+          :to="content.bottomRightUrl"
+          >{{ content.bottomRight }}</NuxtLink
+        >
+        <span v-else-if="content?.bottomRight">{{ content.bottomRight }}</span>
       </div>
     </div>
   </footer>
@@ -81,7 +105,7 @@ defineProps<{
 }
 .site-footer__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)) minmax(
       0,
       1.2fr
     );
@@ -124,11 +148,15 @@ defineProps<{
   margin-bottom: 12px;
   color: var(--color-muted);
   font-size: 13px;
+}
+.site-footer__column a,
+.site-footer__bottom a {
   transition:
     color 0.25s,
     transform 0.25s;
 }
-.site-footer__column a:hover {
+.site-footer__column a:hover,
+.site-footer__bottom a:hover {
   color: var(--color-ink);
   transform: translateX(4px);
 }
@@ -158,6 +186,10 @@ defineProps<{
   color: var(--color-muted);
   font-size: 11px;
   letter-spacing: 0.05em;
+}
+.site-footer__bottom a {
+  width: fit-content;
+  color: inherit;
 }
 @media (max-width: 900px) {
   .site-footer__grid {

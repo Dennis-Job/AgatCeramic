@@ -3,6 +3,7 @@
 namespace App\Queries;
 
 use App\Models\Page;
+use App\Support\SiteFooter;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PublishedPageQuery
@@ -35,8 +36,11 @@ class PublishedPageQuery
         $contentBlocks = $snapshot['blocks'];
         /** @var array<string, mixed> $seo */
         $seo = $snapshot['seo'];
-        /** @var array<string, mixed> $layout */
+        /** @var array{header?: array<string, mixed>, footer?: array<string, mixed>} $layout */
         $layout = $snapshot['site_layout'] ?? [];
+        if (is_array($layout['footer'] ?? null) && is_array($layout['header'] ?? null)) {
+            $layout['footer'] = SiteFooter::resolve($layout['footer'], $layout['header']);
+        }
 
         return [
             'id' => $page->id, 'slug' => $page->published_slug, 'title' => $snapshot['title'], 'body' => $snapshot['body'],

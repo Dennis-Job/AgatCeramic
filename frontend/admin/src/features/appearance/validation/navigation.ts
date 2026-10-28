@@ -1,6 +1,6 @@
 import type { SiteLink, SiteNavigationItem } from '../types/appearance.types'
 
-function linkError(link: SiteLink, position: string): string {
+export function linkError(link: SiteLink, position: string): string {
   if (!link.label.trim() || link.label.length > 255)
     return `${position}: укажите название до 255 символов.`
   if (

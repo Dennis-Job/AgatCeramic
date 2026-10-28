@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v10.0",
+        "version": "v11.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -5964,6 +5964,30 @@
                             "bottom_right": {
                                 "type": "string",
                                 "maxLength": 255
+                            },
+                            "navigation_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 256,
+                                "description": "Independent ordered footer navigation. Explicit [] hides this column. Legacy missing values project flattened unique header links without changing storage. Optional on input; omission preserves an already-saved value."
+                            },
+                            "social_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Ordered text links for the We are on social networks column. Empty array hides the column. Optional on input; omission preserves an already-saved value. Legacy missing values project as []."
+                            },
+                            "bottom_right_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "pattern": "^(?:$|(?:/(?!/)|[Hh][Tt][Tt][Pp][Ss]://[^/?#@\\s\\\\]+(?:[/?#]|$))[^\\s\\\\\\x00-\\x1f\\x7f]*)$",
+                                "description": "Optional SafeSiteUrl for bottom_right text: root-relative path or HTTPS URL without credentials, whitespace, controls or backslashes. Empty string (or null input) removes the link. Omission preserves the saved value; legacy missing value projects as empty string."
                             }
                         },
                         "required": [
@@ -5971,7 +5995,10 @@
                             "explore_links",
                             "message",
                             "bottom_left",
-                            "bottom_right"
+                            "bottom_right",
+                            "navigation_links",
+                            "social_links",
+                            "bottom_right_url"
                         ],
                         "additionalProperties": false
                     },
@@ -6532,6 +6559,33 @@
                             "bottom_right": {
                                 "type": "string",
                                 "maxLength": 255
+                            },
+                            "navigation_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 256,
+                                "description": "Independent ordered footer navigation. Explicit [] hides this column. Legacy missing values project flattened unique header links without changing storage. Optional on input; omission preserves an already-saved value."
+                            },
+                            "social_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Ordered text links for the We are on social networks column. Empty array hides the column. Optional on input; omission preserves an already-saved value. Legacy missing values project as []."
+                            },
+                            "bottom_right_url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 2048,
+                                "pattern": "^(?:$|(?:/(?!/)|[Hh][Tt][Tt][Pp][Ss]://[^/?#@\\s\\\\]+(?:[/?#]|$))[^\\s\\\\\\x00-\\x1f\\x7f]*)$",
+                                "description": "Optional SafeSiteUrl for bottom_right text: root-relative path or HTTPS URL without credentials, whitespace, controls or backslashes. Empty string (or null input) removes the link. Omission preserves the saved value; legacy missing value projects as empty string."
                             }
                         },
                         "required": [
@@ -12704,6 +12758,30 @@
                             "bottom_right": {
                                 "type": "string",
                                 "maxLength": 255
+                            },
+                            "navigation_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 256,
+                                "description": "Independent ordered footer navigation. Explicit [] hides this column. Legacy missing values project flattened unique header links without changing storage. Optional on input; omission preserves an already-saved value."
+                            },
+                            "social_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Ordered text links for the We are on social networks column. Empty array hides the column. Optional on input; omission preserves an already-saved value. Legacy missing values project as []."
+                            },
+                            "bottom_right_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "pattern": "^(?:$|(?:/(?!/)|[Hh][Tt][Tt][Pp][Ss]://[^/?#@\\s\\\\]+(?:[/?#]|$))[^\\s\\\\\\x00-\\x1f\\x7f]*)$",
+                                "description": "Optional SafeSiteUrl for bottom_right text: root-relative path or HTTPS URL without credentials, whitespace, controls or backslashes. Empty string (or null input) removes the link. Omission preserves the saved value; legacy missing value projects as empty string."
                             }
                         },
                         "required": [
@@ -12711,7 +12789,10 @@
                             "explore_links",
                             "message",
                             "bottom_left",
-                            "bottom_right"
+                            "bottom_right",
+                            "navigation_links",
+                            "social_links",
+                            "bottom_right_url"
                         ],
                         "additionalProperties": false
                     },
@@ -13482,6 +13563,30 @@
                             "bottom_right": {
                                 "type": "string",
                                 "maxLength": 255
+                            },
+                            "navigation_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 256,
+                                "description": "Independent ordered footer navigation. Explicit [] hides this column. Legacy missing values project flattened unique header links without changing storage. Optional on input; omission preserves an already-saved value."
+                            },
+                            "social_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Ordered text links for the We are on social networks column. Empty array hides the column. Optional on input; omission preserves an already-saved value. Legacy missing values project as []."
+                            },
+                            "bottom_right_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "pattern": "^(?:$|(?:/(?!/)|[Hh][Tt][Tt][Pp][Ss]://[^/?#@\\s\\\\]+(?:[/?#]|$))[^\\s\\\\\\x00-\\x1f\\x7f]*)$",
+                                "description": "Optional SafeSiteUrl for bottom_right text: root-relative path or HTTPS URL without credentials, whitespace, controls or backslashes. Empty string (or null input) removes the link. Omission preserves the saved value; legacy missing value projects as empty string."
                             }
                         },
                         "required": [
@@ -13489,7 +13594,10 @@
                             "explore_links",
                             "message",
                             "bottom_left",
-                            "bottom_right"
+                            "bottom_right",
+                            "navigation_links",
+                            "social_links",
+                            "bottom_right_url"
                         ],
                         "additionalProperties": false
                     }
@@ -13626,6 +13734,30 @@
                             "bottom_right": {
                                 "type": "string",
                                 "maxLength": 255
+                            },
+                            "navigation_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 256,
+                                "description": "Independent ordered footer navigation. Explicit [] hides this column. Legacy missing values project flattened unique header links without changing storage. Optional on input; omission preserves an already-saved value."
+                            },
+                            "social_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Ordered text links for the We are on social networks column. Empty array hides the column. Optional on input; omission preserves an already-saved value. Legacy missing values project as []."
+                            },
+                            "bottom_right_url": {
+                                "type": "string",
+                                "maxLength": 2048,
+                                "pattern": "^(?:$|(?:/(?!/)|[Hh][Tt][Tt][Pp][Ss]://[^/?#@\\s\\\\]+(?:[/?#]|$))[^\\s\\\\\\x00-\\x1f\\x7f]*)$",
+                                "description": "Optional SafeSiteUrl for bottom_right text: root-relative path or HTTPS URL without credentials, whitespace, controls or backslashes. Empty string (or null input) removes the link. Omission preserves the saved value; legacy missing value projects as empty string."
                             }
                         },
                         "required": [
@@ -13633,7 +13765,10 @@
                             "explore_links",
                             "message",
                             "bottom_left",
-                            "bottom_right"
+                            "bottom_right",
+                            "navigation_links",
+                            "social_links",
+                            "bottom_right_url"
                         ],
                         "additionalProperties": false
                     },
@@ -13761,6 +13896,33 @@
                             "bottom_right": {
                                 "type": "string",
                                 "maxLength": 255
+                            },
+                            "navigation_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 256,
+                                "description": "Independent ordered footer navigation. Explicit [] hides this column. Legacy missing values project flattened unique header links without changing storage. Optional on input; omission preserves an already-saved value."
+                            },
+                            "social_links": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SiteNavigationLink"
+                                },
+                                "minItems": 0,
+                                "maxItems": 12,
+                                "description": "Ordered text links for the We are on social networks column. Empty array hides the column. Optional on input; omission preserves an already-saved value. Legacy missing values project as []."
+                            },
+                            "bottom_right_url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 2048,
+                                "pattern": "^(?:$|(?:/(?!/)|[Hh][Tt][Tt][Pp][Ss]://[^/?#@\\s\\\\]+(?:[/?#]|$))[^\\s\\\\\\x00-\\x1f\\x7f]*)$",
+                                "description": "Optional SafeSiteUrl for bottom_right text: root-relative path or HTTPS URL without credentials, whitespace, controls or backslashes. Empty string (or null input) removes the link. Omission preserves the saved value; legacy missing value projects as empty string."
                             }
                         },
                         "required": [

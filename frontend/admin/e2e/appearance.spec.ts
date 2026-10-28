@@ -5,6 +5,89 @@ import type { SiteAppearance } from '../src/features/appearance/types/appearance
 
 test.use({ reducedMotion: 'reduce' })
 
+test('footer links are independent, editable and published with social links and bottom URL', async ({
+  page,
+}, testInfo) => {
+  const api = await mockWorkspace(page)
+  await page.goto('/content?section=appearance&panel=footer')
+  const navigation = page.getByRole('region', {
+    name: 'Навигация',
+    exact: true,
+  })
+  const social = page.getByRole('region', {
+    name: 'Мы в соцсетях',
+    exact: true,
+  })
+  await navigation.getByRole('button', { name: 'Добавить ссылку' }).click()
+  const row = navigation.getByRole('listitem').last()
+  await row.getByLabel('Название', { exact: true }).fill('Доставка')
+  await row.getByLabel('Ссылка', { exact: true }).fill('/about#delivery')
+  await navigation.getByRole('button', { name: 'Поднять ссылку 3' }).click()
+  await navigation.getByRole('button', { name: 'Удалить ссылку 1' }).click()
+  await social.getByRole('button', { name: 'Добавить ссылку' }).click()
+  await social.getByLabel('Название', { exact: true }).fill('Telegram')
+  await social.getByLabel('Ссылка', { exact: true }).fill('javascript:alert(1)')
+  await page
+    .getByLabel('Справа — текст', { exact: true })
+    .fill('Политика конфиденциальности')
+  await page
+    .getByLabel('Справа — ссылка', { exact: true })
+    .fill('/about#privacy')
+  await page.getByRole('button', { name: 'Сохранить черновик раздела' }).click()
+  await expect(page.getByRole('alert')).toContainText('Мы в соцсетях')
+  expect(api.patches).toHaveLength(0)
+  await expect(social.getByLabel('Название', { exact: true })).toHaveValue(
+    'Telegram',
+  )
+  await page.getByRole('button', { name: 'Закрыть уведомление' }).click()
+  await page.mouse.move(0, 0)
+  await social
+    .getByLabel('Ссылка', { exact: true })
+    .fill('https://t.me/agat_test')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await social.scrollIntoViewIfNeeded()
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    await page.screenshot({
+      path: testInfo.outputPath(`footer-admin-${width}.png`),
+    })
+  }
+  await page.keyboard.press('Escape')
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.getByRole('button', { name: 'Сохранить черновик раздела' }).click()
+  await expect(
+    page.getByText(
+      'Черновик раздела сохранён. Опубликуйте оформление, чтобы обновить сайт.',
+    ),
+  ).toBeVisible()
+  expect(api.patches[0]).toMatchObject({
+    footer: {
+      navigation_links: [
+        { label: 'Доставка', to: '/about#delivery' },
+        { label: 'Контакты наших магазинов', to: '/contacts' },
+      ],
+      social_links: [{ label: 'Telegram', to: 'https://t.me/agat_test' }],
+      bottom_right: 'Политика конфиденциальности',
+      bottom_right_url: '/about#privacy',
+    },
+  })
+  expect(api.published().footer.social_links).toBeUndefined()
+  await page.reload()
+  await expect(social.getByLabel('Название', { exact: true })).toHaveValue(
+    'Telegram',
+  )
+  await page.getByRole('button', { name: 'Опубликовать оформление' }).click()
+  await expect(page.getByText('Общее оформление опубликовано.')).toBeVisible()
+  expect(api.published().footer.bottom_right_url).toBe('/about#privacy')
+  expect(api.published().header.navigation).toEqual(
+    appearanceFixture().header.navigation,
+  )
+})
+
 const appearancePath = '/admin/site-appearance'
 const emptyMeta = { current_page: 1, last_page: 1, per_page: 25, total: 0 }
 

@@ -5,6 +5,7 @@ import type {
   SiteNavigationItem,
 } from '~/types/homePage'
 import type { ContentBlock, ContentBlockDto } from '~/types/contentPage'
+import { searchNavigation } from '~/utils/navigation'
 
 interface LinkDto {
   label: string
@@ -80,6 +81,8 @@ export interface HomePageDto {
   }
   footer: {
     tagline: string
+    navigation_links?: LinkDto[]
+    social_links?: LinkDto[]
     explore_links: LinkDto[]
     message: {
       eyebrow: string
@@ -89,6 +92,7 @@ export interface HomePageDto {
     }
     bottom_left: string
     bottom_right: string
+    bottom_right_url?: string | null
   }
   seo: {
     title: string
@@ -162,6 +166,11 @@ export function mapSiteAppearance(
     },
     footer: {
       tagline: dto.footer.tagline,
+      navigationLinks:
+        dto.footer.navigation_links === undefined
+          ? searchNavigation(mapNavigation(dto.header.navigation), '')
+          : mapLinks(dto.footer.navigation_links),
+      socialLinks: mapLinks(dto.footer.social_links ?? []),
       exploreLinks: mapLinks(dto.footer.explore_links),
       message: {
         eyebrow: dto.footer.message.eyebrow,
@@ -171,6 +180,7 @@ export function mapSiteAppearance(
       },
       bottomLeft: dto.footer.bottom_left,
       bottomRight: dto.footer.bottom_right,
+      bottomRightUrl: safeLink(dto.footer.bottom_right_url),
     },
   }
 }

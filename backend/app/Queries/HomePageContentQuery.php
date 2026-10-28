@@ -9,6 +9,7 @@ use App\Models\Page;
 use App\Models\Slider;
 use App\Support\PageBlocks;
 use App\Support\SiteCopyright;
+use App\Support\SiteFooter;
 use Illuminate\Support\Facades\Storage;
 
 class HomePageContentQuery
@@ -24,7 +25,7 @@ class HomePageContentQuery
         $page = HomePage::query()->findOrFail(1);
         $content = $page->content;
         /** @var array<string, mixed> $footer */
-        $footer = $content['footer'];
+        $footer = SiteFooter::resolve($content['footer'], $content['header']);
         $content['footer'] = [...$footer, 'bottom_left' => SiteCopyright::text()];
         $media = Media::query()->whereIn('id', $page->referencedMediaIds())->get()->keyBy('id');
 

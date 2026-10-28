@@ -15,7 +15,18 @@ async function decode(response: Response): Promise<SiteAppearance> {
         body.error?.message ??
         'Не удалось загрузить общее оформление.',
     )
-  return body.data
+  const result = body.data
+  const seen = new Set<string>()
+  result.footer.navigation_links ??= result.header.navigation.flatMap((item) =>
+    ('children' in item ? item.children : [item]).filter((link) => {
+      if (seen.has(link.to)) return false
+      seen.add(link.to)
+      return true
+    }),
+  )
+  result.footer.social_links ??= []
+  result.footer.bottom_right_url ??= ''
+  return result
 }
 
 export async function getAppearance(): Promise<SiteAppearance> {
