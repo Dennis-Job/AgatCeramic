@@ -20,11 +20,11 @@ const phoneHref = computed(() => {
     <div class="container">
       <nav class="product-crumbs" aria-label="Хлебные крошки">
         <NuxtLink to="/">Главная</NuxtLink
-        ><span aria-hidden="true" class="product-crumbs__separator">/</span
+        ><span aria-hidden="true" class="product-crumbs__separator">·</span
         ><NuxtLink
           :to="{ path: '/catalog', query: { category: product.category.slug } }"
           >{{ product.category.name }}</NuxtLink
-        ><span aria-hidden="true" class="product-crumbs__separator">/</span
+        ><span aria-hidden="true" class="product-crumbs__separator">·</span
         ><span aria-current="page">{{ product.name }}</span>
       </nav>
       <div class="product-layout">

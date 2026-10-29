@@ -9,7 +9,7 @@
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
 2026-10-29 — По уточнению владельца разделитель хлебных крошек карточек заменён
-на `/`: ProductDetail и правило UI-019 в CLIENT_UI_KIT. Typecheck, Prettier,
+на `·` (окончательный выбор вместо слеша): ProductDetail и правило UI-019 в CLIENT_UI_KIT. Typecheck, Prettier,
 визуальная проверка реальной карточки и независимый UI Design Guard — PASS.
 
 2026-10-29 — TASK-122/123: дизайн HTML-образца перенесён в реальные Nuxt-карточки
