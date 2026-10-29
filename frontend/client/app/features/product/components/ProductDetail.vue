@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ChevronRight } from '@lucide/vue'
 import ProductGallery from './ProductGallery.vue'
 import ProductPurchase from './ProductPurchase.vue'
 import ProductInfoTabs from './ProductInfoTabs.vue'
@@ -21,13 +20,12 @@ const phoneHref = computed(() => {
     <div class="container">
       <nav class="product-crumbs" aria-label="Хлебные крошки">
         <NuxtLink to="/">Главная</NuxtLink
-        ><ChevronRight :size="12" aria-hidden="true" /><NuxtLink
+        ><span aria-hidden="true" class="product-crumbs__separator">/</span
+        ><NuxtLink
           :to="{ path: '/catalog', query: { category: product.category.slug } }"
           >{{ product.category.name }}</NuxtLink
-        ><ChevronRight :size="12" aria-hidden="true" /><span
-          aria-current="page"
-          >{{ product.name }}</span
-        >
+        ><span aria-hidden="true" class="product-crumbs__separator">/</span
+        ><span aria-current="page">{{ product.name }}</span>
       </nav>
       <div class="product-layout">
         <ProductGallery
@@ -63,7 +61,7 @@ const phoneHref = computed(() => {
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
-.product-crumbs svg {
+.product-crumbs__separator {
   flex: none;
 }
 .product-crumbs a:hover,
