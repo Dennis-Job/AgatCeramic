@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import UiCloseButton from './UiCloseButton.vue'
 
-const props = defineProps<{ title: string; busy?: boolean }>()
+const props = defineProps<{
+  title: string
+  busy?: boolean
+  size?: 'default' | 'wide'
+}>()
 const emit = defineEmits<{ close: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
 const titleId = useId()
@@ -84,6 +88,7 @@ function trapFocus(event: KeyboardEvent) {
       v-if="visible"
       ref="dialog"
       class="ui-dialog"
+      :class="{ 'ui-dialog--wide': size === 'wide' }"
       :aria-labelledby="titleId"
       @keydown.tab="trapFocus"
       @cancel.prevent="requestClose"
@@ -113,6 +118,9 @@ function trapFocus(event: KeyboardEvent) {
 .ui-dialog::backdrop {
   background: var(--color-overlay);
   backdrop-filter: blur(3px);
+}
+.ui-dialog--wide {
+  width: min(860px, calc(100% - 40px));
 }
 .ui-dialog__heading {
   display: flex;

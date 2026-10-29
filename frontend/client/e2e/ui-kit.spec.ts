@@ -110,8 +110,11 @@ test('header actions follow the reference order, fit narrow screens and return s
         buttons.map((button) => button.getAttribute('aria-label')),
       ),
   ).toEqual(['Открыть поиск', 'Корзина'])
-  await expect(cart).toBeDisabled()
-  await expect(cart).toHaveAttribute('title', 'Корзина будет доступна позже')
+  await expect(cart).toBeEnabled()
+  await expect(cart).not.toHaveAttribute(
+    'title',
+    'Корзина будет доступна позже',
+  )
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 707 })
     await expect(actions.getByRole('button')).toHaveCount(width <= 1024 ? 3 : 2)

@@ -4,9 +4,34 @@ import { fetchCatalog } from '~/services/contentPages'
 import PageState from '~/components/shared/PageState.vue'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
 import type { CatalogProduct } from '~/types/contentPage'
+import { productUnitLabel } from '~/utils/productUnits'
+import { productPath } from '~/features/product/services/products'
 
 defineProps<{ title: string; description: string }>()
 const route = useRoute()
+const filters = computed(() => {
+  const result: { category?: string; brand?: string; collection?: string } = {}
+  for (const key of ['category', 'brand', 'collection'] as const) {
+    const value = route.query[key]
+    if (typeof value === 'string' && value.trim() && value.length <= 255)
+      result[key] = value
+  }
+  if (!result.brand) delete result.collection
+  return result
+})
+const contextLabel = computed(() =>
+  [
+    filters.value.category
+      ? catalog.value?.categories.find(
+          (category) => category.slug === filters.value.category,
+        )?.name
+      : '',
+    filters.value.brand ? catalog.value?.data[0]?.brand?.name : '',
+    filters.value.collection,
+  ]
+    .filter(Boolean)
+    .join(' · '),
+)
 const page = computed(() => {
   const raw = route.query.page
   return typeof raw === 'string' && /^[1-9]\d{0,5}$/.test(raw) ? Number(raw) : 1
@@ -18,27 +43,18 @@ const {
   error,
   refresh,
 } = await useAsyncData(
-  () => `catalog:${page.value}`,
-  () => fetchCatalog(requestBase, publicBase, page.value),
+  () => `catalog:${page.value}:${JSON.stringify(filters.value)}`,
+  () => fetchCatalog(requestBase, publicBase, page.value, filters.value),
 )
-const units: Record<CatalogProduct['unit'], string> = {
-  piece: 'шт.',
-  square_meter: 'м²',
-  linear_meter: 'пог. м',
-  package: 'уп.',
-  kilogram: 'кг',
-  liter: 'л',
-  set: 'компл.',
-}
 function priceLabel(product: CatalogProduct) {
   return product.price === null
     ? 'Цена по запросу'
-    : `${formatMoney(product.price)} / ${units[product.unit]}`
+    : `${formatMoney(product.price)} / ${productUnitLabel(product.unit)}`
 }
 function pageLink(next: number) {
   return {
     path: route.path,
-    query: next === 1 ? {} : { page: next },
+    query: { ...filters.value, ...(next === 1 ? {} : { page: next }) },
     hash: '#catalog-products',
   }
 }
@@ -52,6 +68,9 @@ function pageLink(next: number) {
         :title="title"
         :description="description"
       />
+      <p v-if="contextLabel" class="catalog-context">
+        {{ contextLabel }} · <NuxtLink to="/catalog">Весь каталог</NuxtLink>
+      </p>
       <PageState
         v-if="error || status === 'pending'"
         title="Товары"
@@ -68,9 +87,12 @@ function pageLink(next: number) {
           class="categories"
           aria-label="Категории каталога"
         >
-          <span v-for="category in catalog.categories" :key="category.id">{{
-            category.name
-          }}</span>
+          <NuxtLink
+            v-for="category in catalog.categories"
+            :key="category.id"
+            :to="{ path: '/catalog', query: { category: category.slug } }"
+            >{{ category.name }}</NuxtLink
+          >
         </div>
         <div v-if="catalog?.data.length" class="products">
           <article
@@ -78,7 +100,11 @@ function pageLink(next: number) {
             :key="product.id"
             class="product"
           >
-            <div class="product__image">
+            <NuxtLink
+              :to="productPath(product.slug)"
+              class="product__image"
+              :aria-label="product.name"
+            >
               <img
                 v-if="product.image_url"
                 :src="product.image_url"
@@ -89,14 +115,18 @@ function pageLink(next: number) {
                 @error="product.image_url = null"
               />
               <span v-else>Изображение пока не добавлено</span>
-            </div>
+            </NuxtLink>
             <p class="product__category">
               {{ product.category.name
               }}<template v-if="product.brand">
                 · {{ product.brand.name }}</template
               >
             </p>
-            <h3>{{ product.name }}</h3>
+            <h3>
+              <NuxtLink :to="productPath(product.slug)">{{
+                product.name
+              }}</NuxtLink>
+            </h3>
             <p v-if="product.description" class="product__description">
               {{ product.description }}
             </p>
@@ -135,6 +165,16 @@ function pageLink(next: number) {
 .catalog-section {
   scroll-margin-top: 90px;
 }
+.catalog-context {
+  margin: -20px 0 40px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.catalog-context a {
+  color: var(--color-muted);
+}
 .categories {
   display: flex;
   flex-wrap: wrap;
@@ -164,7 +204,7 @@ function pageLink(next: number) {
 .product__image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 .product__image span {
   padding: 24px;

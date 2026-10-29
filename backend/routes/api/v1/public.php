@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\LegalDocumentController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\PartnerRequestController;
+use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\SiteAppearanceController;
 use App\Http\Controllers\Api\V1\SiteSettingController;
 use App\Http\Controllers\Api\V1\SliderController;
@@ -31,6 +32,7 @@ Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-
 Route::get('home-page', [HomePageController::class, 'show'])->name('home-page.show');
 Route::get('site-appearance', [SiteAppearanceController::class, 'show'])->name('site-appearance.show');
 Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
+Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
 Route::get('sliders/{slug}', [SliderController::class, 'show'])->name('sliders.show');

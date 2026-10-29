@@ -41,10 +41,10 @@ class PostgresGuestCartLifecycleTest extends TestCase
     {
         $resolved = app(GuestCartService::class)->resolve(null);
         $cart = $resolved->cart;
-        $cart->update(['expires_at' => now()->addSecond()]);
-        $product = Product::factory()->create(['stock_quantity' => 2]);
+        $product = Product::factory()->create(['stock_quantity' => 2, 'is_on_sale' => true]);
         $process = null;
 
+        $cart->update(['expires_at' => now()->addSecond()]);
         DB::beginTransaction();
         try {
             app(CartItemManagementService::class)->add($cart, $product->id, 1);

@@ -4,6 +4,7 @@ import CallbackRequestDialog from './CallbackRequestDialog.vue'
 import { fetchSellerContacts } from '~/services/contentPages'
 import type { HomePageContent, SiteLink } from '~/types/homePage'
 import { formatPhone, normalizePhoneInput } from '~/utils/phone'
+import { useCart } from '~/features/cart/composables/useCart'
 
 defineProps<{
   content?: HomePageContent['header']
@@ -22,6 +23,7 @@ const phoneHref = computed(() =>
     : undefined,
 )
 const callbackOpen = ref(false)
+const { open: cartOpen, itemCount } = useCart()
 const route = useRoute()
 watch(
   () => route.fullPath,
@@ -40,6 +42,10 @@ watch(
     :social-links="socialLinks"
     :current-path="currentPath"
     :navigation-label="navigationLabel"
+    cart-enabled
+    :cart-count="itemCount"
+    :cart-open="cartOpen"
+    @open-cart="cartOpen = true"
   >
     <template #topbar-right>
       <div class="store-contacts">

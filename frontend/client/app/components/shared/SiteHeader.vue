@@ -18,7 +18,11 @@ const props = defineProps<{
   socialLinks?: SiteLink[]
   currentPath?: string
   navigationLabel?: string
+  cartEnabled?: boolean
+  cartCount?: number
+  cartOpen?: boolean
 }>()
+const emit = defineEmits<{ openCart: [event: MouseEvent] }>()
 const navigation = computed(() => props.content?.navigation ?? [])
 
 const route = useRoute()
@@ -27,6 +31,7 @@ const desktopNavigation = ref<InstanceType<typeof SiteNavigation> | null>(null)
 const drawerNavigation = ref<InstanceType<typeof SiteNavigation> | null>(null)
 const searchQuery = ref('')
 let panelTrigger: HTMLElement | null = null
+let pendingCartEvent: MouseEvent | null = null
 const menuPanel = ref<HTMLElement | null>(null)
 const searchPanel = ref<HTMLElement | null>(null)
 const searchInput = ref<HTMLInputElement | null>(null)
@@ -61,6 +66,18 @@ const searchResults = computed(() =>
 
 function closePanel() {
   panel.value = null
+}
+
+function requestCart(event: MouseEvent) {
+  desktopNavigation.value?.close()
+  drawerNavigation.value?.close()
+  if (panel.value || leavingPanels.size) {
+    pendingCartEvent = event
+    panelTrigger = event.currentTarget as HTMLElement
+    closePanel()
+    return
+  }
+  emit('openCart', event)
 }
 
 function clearSearch() {
@@ -138,6 +155,10 @@ function finishPanelClose(element: Element) {
     header.value
       ?.querySelector<HTMLAnchorElement>('.wordmark')
       ?.focus({ preventScroll: true })
+  if (pendingCartEvent) {
+    emit('openCart', pendingCartEvent)
+    pendingCartEvent = null
+  }
 }
 
 watch(panel, async (next) => {
@@ -148,7 +169,13 @@ watch(panel, async (next) => {
   if (next === 'search') searchPanel.value?.focus({ preventScroll: true })
 })
 
-watch(() => route.fullPath, closePanel)
+watch(
+  () => route.fullPath,
+  () => {
+    pendingCartEvent = null
+    closePanel()
+  },
+)
 
 onMounted(() => {
   updateHeaderBottom()
@@ -224,10 +251,22 @@ onUnmounted(() => {
         </UiIconButton>
         <UiIconButton
           label="Корзина"
-          disabled
-          title="Корзина будет доступна позже"
+          class="site-header__cart"
+          :disabled="!cartEnabled"
+          :title="
+            cartEnabled ? 'Открыть корзину' : 'Корзина будет доступна позже'
+          "
+          :expanded="cartEnabled ? !!cartOpen : undefined"
+          :aria-haspopup="cartEnabled ? 'dialog' : undefined"
+          @click="requestCart"
         >
           <ShoppingBag :size="19" :stroke-width="1.6" aria-hidden="true" />
+          <span
+            v-if="cartEnabled && cartCount && cartCount > 0"
+            class="cart-badge"
+            aria-hidden="true"
+            >{{ cartCount }}</span
+          >
         </UiIconButton>
         <UiIconButton
           v-if="navigation.length"
@@ -451,6 +490,24 @@ onUnmounted(() => {
   flex-shrink: 0;
   align-items: center;
   gap: 8px;
+}
+.site-header__cart {
+  position: relative;
+}
+.cart-badge {
+  position: absolute;
+  top: 1px;
+  right: 0;
+  display: grid;
+  min-width: 16px;
+  height: 16px;
+  place-items: center;
+  border-radius: 50%;
+  padding-inline: 3px;
+  background: var(--color-ink);
+  color: var(--color-white);
+  font-size: 9px;
+  line-height: 1;
 }
 .site-header__actions .site-header__menu-toggle {
   display: none;

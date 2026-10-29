@@ -52,17 +52,26 @@ test('home alias redirects and unpublished or failed generic routes fail safely'
   expect(preview.headers()['x-robots-tag']).toContain('noindex')
 })
 
-test('sitemap paginates published content, excludes noindex and uses canonical URLs', async ({
+test('sitemap paginates published content and products, excludes noindex and uses canonical URLs', async ({
   request,
 }) => {
   const response = await request.get('/sitemap.xml')
   expect(response.status()).toBe(200)
   expect(response.headers()['content-type']).toContain('application/xml')
   const xml = await response.text()
-  for (const path of ['/', '/delivery', '/legacy-page', '/published-address']) {
+  for (const path of [
+    '/',
+    '/delivery',
+    '/legacy-page',
+    '/published-address',
+    '/products/test',
+  ]) {
     expect(xml).toContain(`<loc>https://agatceramic.example${path}</loc>`)
   }
   expect(xml).toContain('<lastmod>2026-10-19T10:00:00Z</lastmod>')
+  expect(
+    xml.match(/<loc>https:\/\/agatceramic\.example\/products\/test<\/loc>/g),
+  ).toHaveLength(1)
   for (const hidden of [
     'hidden-page',
     '/home',
@@ -84,6 +93,12 @@ test('sitemap returns 503 without partial XML on any upstream failure and permit
     'sitemap-error',
     'sitemap-page-error',
     'sitemap-malformed',
+    'sitemap-catalog-error',
+    'sitemap-catalog-page-error',
+    'sitemap-catalog-malformed',
+    'sitemap-catalog-loop',
+    'sitemap-catalog-moving-pages',
+    'sitemap-catalog-summary-malformed',
   ]) {
     await request.get(`${api}/__scenario?name=${scenario}`)
     const response = await request.get('/sitemap.xml')
@@ -95,6 +110,32 @@ test('sitemap returns 503 without partial XML on any upstream failure and permit
   const response = await request.get('/sitemap.xml')
   expect(response.status()).toBe(200)
   expect(await response.text()).not.toContain('<loc>')
+})
+
+test('sitemap validates and deduplicates canonical product slugs across every catalog page', async ({
+  request,
+}) => {
+  await request.get(`${api}/__scenario?name=sitemap-products`)
+  const response = await request.get('/sitemap.xml')
+  expect(response.status()).toBe(200)
+  expect(response.headers()['cache-control']).toContain('no-store')
+  const xml = await response.text()
+  for (const slug of ['tile-one', 'tile-two']) {
+    expect(
+      xml.split(`<loc>https://agatceramic.example/products/${slug}</loc>`),
+    ).toHaveLength(2)
+  }
+  for (const invalid of [
+    'unsafe',
+    'evil.example',
+    'UPPER',
+    '?page=',
+    '?brand=',
+    '?collection=',
+  ]) {
+    expect(xml).not.toContain(invalid)
+  }
+  expect(xml).toContain('<loc>https://agatceramic.example/delivery</loc>')
 })
 
 test('generic page reuses responsive accessible content and hydrates without errors', async ({

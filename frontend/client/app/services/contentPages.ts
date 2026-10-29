@@ -73,9 +73,10 @@ export async function fetchCatalog(
   base: string,
   publicBase: string,
   page: number,
+  filters: { category?: string; brand?: string; collection?: string } = {},
 ): Promise<CatalogResult> {
   const response = await $fetch<CatalogResult>(apiUrl('catalog', base), {
-    query: { page },
+    query: { page, ...filters },
   })
   return {
     ...response,

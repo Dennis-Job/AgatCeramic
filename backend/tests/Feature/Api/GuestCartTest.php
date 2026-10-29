@@ -70,7 +70,7 @@ class GuestCartTest extends TestCase
         config(['cart.empty_ttl_hours' => 2, 'cart.abandoned_ttl_days' => 3]);
         $resolved = $this->createGuestCart();
         $cart = $resolved->cart;
-        $product = Product::factory()->create(['price' => '1990.00', 'stock_quantity' => 5]);
+        $product = Product::factory()->create(['price' => '1990.00', 'stock_quantity' => 5, 'is_on_sale' => true]);
 
         $created = $this->withHeader('X-Cart-Token', $resolved->token)
             ->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 2])
@@ -122,7 +122,7 @@ class GuestCartTest extends TestCase
         $resolved = $this->createGuestCart();
         $otherResolved = $this->createGuestCart();
         $cart = $resolved->cart;
-        $product = Product::factory()->create(['stock_quantity' => 2]);
+        $product = Product::factory()->create(['stock_quantity' => 2, 'is_on_sale' => true]);
         $item = CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
         $inactiveProduct = Product::factory()->create(['is_active' => false, 'stock_quantity' => 10]);
 
@@ -134,7 +134,7 @@ class GuestCartTest extends TestCase
             ->postJson('/api/v1/cart/items', ['product_id' => $inactiveProduct->id, 'quantity' => 1])
             ->assertUnprocessable();
 
-        $largeStockProduct = Product::factory()->create(['stock_quantity' => 10000]);
+        $largeStockProduct = Product::factory()->create(['stock_quantity' => 10000, 'is_on_sale' => true]);
         $this->withHeader('X-Cart-Token', $resolved->token)
             ->postJson('/api/v1/cart/items', ['product_id' => $largeStockProduct->id, 'quantity' => 9999])
             ->assertCreated();
@@ -154,6 +154,26 @@ class GuestCartTest extends TestCase
             ->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])
             ->assertNotFound();
         $this->assertDatabaseHas('cart_items', ['id' => $item->id, 'quantity' => 1]);
+    }
+
+    public function test_cart_rechecks_sale_status_and_category_on_add_and_update_and_rejects_fractional_sale_units(): void
+    {
+        $resolved = $this->createGuestCart();
+        $product = Product::factory()->create(['is_on_sale' => true, 'stock_quantity' => 10, 'unit' => 'square_meter']);
+        $this->withHeader('X-Cart-Token', $resolved->token);
+        $itemId = $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertCreated()->json('data.id');
+
+        $product->update(['is_on_sale' => false]);
+        $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();
+        $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])->assertUnprocessable();
+        $product->update(['is_on_sale' => true]);
+        $product->category->update(['is_active' => false]);
+        $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();
+        $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])->assertUnprocessable();
+        $product->category->update(['is_active' => true]);
+        $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1.25])->assertUnprocessable();
+        $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 1.25])->assertUnprocessable();
+        $this->assertDatabaseHas('cart_items', ['id' => $itemId, 'quantity' => 1]);
     }
 
     public function test_cleanup_is_bounded_idempotent_and_visible_to_operations(): void

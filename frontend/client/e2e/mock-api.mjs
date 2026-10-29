@@ -1,4 +1,6 @@
 import { createServer } from 'node:http'
+import { handleCart } from './fixtures/cart-api.mjs'
+import { handleProducts } from './fixtures/product-api.mjs'
 
 // Synthetic data, confined to the test server. No development database is used.
 const intro = {
@@ -335,12 +337,21 @@ createServer(async (request, response) => {
     process.env.CLIENT_TEST_ORIGIN || 'http://127.0.0.1:3015',
   )
   response.setHeader('Access-Control-Allow-Credentials', 'true')
-  response.setHeader('Access-Control-Allow-Headers', 'Accept')
+  response.setHeader(
+    'Access-Control-Allow-Headers',
+    'Accept, Content-Type, X-Cart-Token',
+  )
+  response.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PATCH, DELETE, OPTIONS',
+  )
   if (request.method === 'OPTIONS') {
     response.end()
     return
   }
   const url = new URL(request.url, 'http://127.0.0.1:8015')
+  if (await handleCart(request, response, url)) return
+  if (handleProducts(request, response, url, scenario)) return
   if (url.pathname === '/__editor') {
     const clientOrigin =
       process.env.CLIENT_TEST_ORIGIN || 'http://127.0.0.1:3015'
@@ -709,26 +720,53 @@ createServer(async (request, response) => {
   if (url.pathname === '/api/v1/catalog') {
     if (scenario === 'catalog-error') return fail(503)
     const page = Number(url.searchParams.get('page') || 1)
+    if (
+      scenario === 'sitemap-catalog-error' ||
+      (scenario === 'sitemap-catalog-page-error' && page === 2)
+    )
+      return fail(503)
+    if (scenario === 'sitemap-catalog-malformed')
+      return send({ data: [], meta: { current_page: 1 } })
+    if (scenario === 'sitemap-catalog-loop')
+      return send({ data: [], meta: { current_page: page, last_page: 10001 } })
+    if (scenario === 'sitemap-catalog-moving-pages')
+      return send({
+        data: [],
+        meta: { current_page: page, last_page: page + 1 },
+      })
+    if (scenario === 'sitemap-catalog-summary-malformed')
+      return send({
+        data: [{ slug: 42 }],
+        meta: { current_page: 1, last_page: 1 },
+      })
+    if (scenario === 'sitemap-products')
+      return send({
+        data: (page === 1
+          ? ['tile-one', 'tile-one', '../unsafe', '//evil.example', 'UPPER']
+          : ['tile-two']
+        ).map((slug) => ({ slug })),
+        meta: { current_page: page, last_page: 2 },
+      })
+    const catalogEmpty = scenario === 'empty' || scenario === 'sitemap-empty'
     return send({
-      data:
-        scenario === 'empty'
-          ? []
-          : [
-              {
-                id: page,
-                name: `Керамогранит с длинным русским названием ${page}`,
-                slug: 'test',
-                description: 'Описание материала из товарного модуля',
-                price: '1234.50',
-                old_price: null,
-                unit: 'square_meter',
-                is_on_sale: false,
-                category: { id: 1, name: 'Керамогранит', slug: 'porcelain' },
-                brand: null,
-                image_url: '/images/home/category-porcelain.webp',
-                image_alt: 'Поверхность материала',
-              },
-            ],
+      data: catalogEmpty
+        ? []
+        : [
+            {
+              id: page,
+              name: `Керамогранит с длинным русским названием ${page}`,
+              slug: 'test',
+              description: 'Описание материала из товарного модуля',
+              price: '1234.50',
+              old_price: null,
+              unit: 'square_meter',
+              is_on_sale: false,
+              category: { id: 1, name: 'Керамогранит', slug: 'porcelain' },
+              brand: null,
+              image_url: '/images/home/category-porcelain.webp',
+              image_alt: 'Поверхность материала',
+            },
+          ],
       categories: [
         {
           id: 1,
@@ -740,8 +778,8 @@ createServer(async (request, response) => {
       ],
       meta: {
         current_page: page,
-        last_page: scenario === 'empty' ? 1 : 2,
-        total: scenario === 'empty' ? 0 : 2,
+        last_page: catalogEmpty ? 1 : 2,
+        total: catalogEmpty ? 0 : 2,
       },
     })
   }

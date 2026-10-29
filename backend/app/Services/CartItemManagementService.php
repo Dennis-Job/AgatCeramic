@@ -94,7 +94,8 @@ class CartItemManagementService
 
     private function assertAvailable(Product $product, int $quantity): void
     {
-        if ($quantity > 9999 || ! $product->is_active || $product->price === null || $product->stock_quantity === null || $product->stock_quantity < $quantity) {
+        if ($quantity > 9999 || ! $product->is_active || ! $product->is_on_sale || $product->category?->is_active !== true
+            || $product->price === null || $product->stock_quantity === null || $product->stock_quantity < $quantity) {
             throw ValidationException::withMessages([
                 'product_id' => ['Товар недоступен в запрошенном количестве.'],
             ]);

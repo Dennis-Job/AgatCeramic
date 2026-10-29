@@ -39,7 +39,11 @@ useSeoMeta({
   robots: () =>
     error.value ||
     content.value?.isIndexable === false ||
-    (props.slug === 'catalog' && route.query.page && route.query.page !== '1')
+    (props.slug === 'catalog' &&
+      ((route.query.page && route.query.page !== '1') ||
+        route.query.category ||
+        route.query.brand ||
+        route.query.collection))
       ? 'noindex,follow'
       : 'index,follow',
 })
