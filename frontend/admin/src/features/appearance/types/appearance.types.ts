@@ -14,6 +14,7 @@ export type SiteAppearance = {
   header: {
     topbar_left: string
     topbar_right: string
+    menu_note?: string
     logo_media_id: number | null
     logo_alt: string
     logo_url: string | null

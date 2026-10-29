@@ -21,7 +21,7 @@ useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
   <template v-if="data">
     <StorefrontHeader
       :content="data.appearance.header"
-      :tagline="data.appearance.footer.tagline"
+      :social-links="data.appearance.footer.socialLinks"
       :current-path="data.page.slug === 'home' ? '/' : `/${data.page.slug}`"
       navigation-label="Навигация предпросмотра"
     />

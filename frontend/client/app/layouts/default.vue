@@ -7,7 +7,7 @@ const { data: appearance } = await useSiteAppearance()
 <template>
   <StorefrontHeader
     :content="appearance?.header"
-    :tagline="appearance?.footer.tagline"
+    :social-links="appearance?.footer.socialLinks"
   />
   <main>
     <slot />

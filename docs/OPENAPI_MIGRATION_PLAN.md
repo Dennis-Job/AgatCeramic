@@ -7,6 +7,39 @@ Breaking compatibility policy: a breaking wire-contract change requires a new ma
 and describe client migration, rollout and rollback. A patch/minor bump never authorizes
 operation removal or another incompatible contract change.
 
+## v12.0 — editable side-menu note
+
+Date: 2026-10-28. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Header responses now expose the required `menu_note` string (maximum 1000
+characters). Previous closed response schemas reject the additional property;
+strict consumers must update to v12.0. Both appearance and legacy home-page
+PATCH accept `menu_note` optionally as string/null. Empty or null input stores
+an empty string. Omitted input preserves an existing saved value. Missing
+historical keys project the existing footer tagline without modifying storage;
+an explicitly saved empty string disables the note instead of restoring it.
+
+### Client migration
+
+Admin edits the plain text in global header settings. Client renders the
+side-menu note as text with line breaks, never as HTML, and uses the existing
+site-settings phone/email and footer social links for the adjacent contact
+section. These contact values are not duplicated in header storage. Update
+strict home-page, appearance and saved-preview response validators. Saving
+changes only the appearance draft; page publication retains appearance isolation.
+
+### Rollout and rollback
+
+Release backend, Admin and Client together. No schema migration, automatic
+rewrite or content publication is required. Before rollback, retain a protected
+copy of configured menu notes and the current appearance snapshots. Old Client
+shows its former tagline; old backend rejects new `menu_note` writes. Roll back
+all applications together and omit the property from writes to the old backend.
+Do not discard saved JSON simply to satisfy older response validators. Restore
+the compatible release and saved configuration to recover the editable note.
+
 ## v11.0 — independent footer navigation and social links
 
 Date: 2026-10-28. HTTP routes remain `/api/v1`.

@@ -144,9 +144,11 @@ test('long Russian navigation and all sixteen links stay usable without page ove
       }
       await page.getByRole('button', { name: 'Открыть меню' }).click()
       const menu = page.getByRole('dialog', { name: 'Меню сайта' })
-      await expect(menu.getByRole('link')).toHaveCount(
-        scenario === 'max-navigation' ? 16 : 4,
-      )
+      await expect(
+        menu
+          .getByRole('navigation', { name: 'Мобильная навигация' })
+          .getByRole('link'),
+      ).toHaveCount(scenario === 'max-navigation' ? 16 : 4)
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,

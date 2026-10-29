@@ -81,6 +81,24 @@ const home = {
 }
 let scenario = 'default'
 function scenarioFooter() {
+  if (scenario === 'menu-empty') return { ...home.footer, social_links: [] }
+  if (scenario === 'menu-contacts' || scenario === 'menu-long')
+    return {
+      ...home.footer,
+      social_links:
+        scenario === 'menu-long'
+          ? [
+              ...Array.from({ length: 12 }, (_, index) => ({
+                label: `Соцсеть ${index + 1} ${'ОченьДлинноеНазвание'.repeat(8)}`,
+                to: `https://example.test/social-${index}`,
+              })),
+              { label: 'Опасно', to: 'javascript:alert(1)' },
+            ]
+          : [
+              { label: 'Telegram', to: 'https://t.me/agat_test' },
+              { label: 'ВКонтакте', to: 'https://vk.com/agat_test' },
+            ],
+    }
   if (!scenario.startsWith('footer-')) return home.footer
   const full = scenario === 'footer-links'
   return {
@@ -111,6 +129,17 @@ function scenarioFooter() {
       : scenario === 'footer-unsafe'
         ? 'javascript:alert(1)'
         : '',
+  }
+}
+function menuNote() {
+  if (!scenario.startsWith('menu-')) return {}
+  return {
+    menu_note:
+      scenario === 'menu-empty'
+        ? ''
+        : scenario === 'menu-long'
+          ? 'ДлинныйРусскийТекст'.repeat(50)
+          : 'Ежедневно 10:00–21:00\nПоможем с выбором',
   }
 }
 function submenuNavigation() {
@@ -412,6 +441,7 @@ createServer(async (request, response) => {
           header: {
             ...home.header,
             topbar_right: 'Черновая шапка',
+            ...menuNote(),
             navigation: submenuNavigation() ?? home.header.navigation,
           },
           footer: scenarioFooter(),
@@ -448,6 +478,7 @@ createServer(async (request, response) => {
           ...home.header,
           topbar_left: 'Прежний текст слева',
           topbar_right: 'Общее оформление сайта',
+          ...menuNote(),
           navigation,
         },
         footer: scenarioFooter(),
@@ -626,7 +657,7 @@ createServer(async (request, response) => {
     if (scenario === 'contacts-error') return fail(503)
     return send({
       data:
-        scenario === 'empty'
+        scenario === 'empty' || scenario === 'menu-empty'
           ? { seller_name: null, address: null, phones: [], email: null }
           : {
               seller_name:

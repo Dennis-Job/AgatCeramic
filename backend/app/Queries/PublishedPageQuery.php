@@ -4,6 +4,7 @@ namespace App\Queries;
 
 use App\Models\Page;
 use App\Support\SiteFooter;
+use App\Support\SiteHeader;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PublishedPageQuery
@@ -39,6 +40,7 @@ class PublishedPageQuery
         /** @var array{header?: array<string, mixed>, footer?: array<string, mixed>} $layout */
         $layout = $snapshot['site_layout'] ?? [];
         if (is_array($layout['footer'] ?? null) && is_array($layout['header'] ?? null)) {
+            $layout['header'] = SiteHeader::resolve($layout['header'], $layout['footer']);
             $layout['footer'] = SiteFooter::resolve($layout['footer'], $layout['header']);
         }
 

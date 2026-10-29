@@ -4,14 +4,18 @@ import UiCloseButton from '~/components/ui/UiCloseButton.vue'
 import UiIconButton from '~/components/ui/UiIconButton.vue'
 import UiWordmark from '~/components/ui/UiWordmark.vue'
 import SiteNavigation from '~/components/shared/SiteNavigation.vue'
-import type { HomePageContent } from '~/types/homePage'
+import SiteMenuFooter from '~/components/shared/SiteMenuFooter.vue'
+import type { HomePageContent, SiteLink } from '~/types/homePage'
 import { searchNavigation } from '~/utils/navigation'
 
 type Panel = 'menu' | 'search' | null
 
 const props = defineProps<{
   content?: HomePageContent['header']
-  tagline?: string
+  phone?: string
+  phoneHref?: string
+  email?: string | null
+  socialLinks?: SiteLink[]
   currentPath?: string
   navigationLabel?: string
 }>()
@@ -298,7 +302,15 @@ onUnmounted(() => {
         <Search :size="18" :stroke-width="1.6" aria-hidden="true" />
         Поиск по разделам страницы
       </button>
-      <p v-if="tagline" class="menu-panel__note">{{ tagline }}</p>
+      <SiteMenuFooter
+        class="menu-panel__footer"
+        :phone="phone"
+        :phone-href="phoneHref"
+        :email="email"
+        :note="content?.menuNote"
+        :social-links="socialLinks"
+        @navigate="closePanel"
+      />
     </div>
   </Transition>
 
@@ -511,12 +523,9 @@ onUnmounted(() => {
 .menu-panel__search:hover {
   color: var(--color-muted);
 }
-.menu-panel__note {
+.menu-panel__footer {
   margin-top: auto;
   padding-top: 56px;
-  color: var(--color-muted);
-  font-size: 12px;
-  line-height: 1.7;
   animation: menu-footer-enter 0.6s var(--ease-out) 0.45s both;
 }
 @keyframes menu-footer-enter {

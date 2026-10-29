@@ -26,6 +26,16 @@ class HomePageManagementService
                     }
                     $page->hero_slider_id = $value;
                 } else {
+                    if ($key === 'header' && is_array($value)) {
+                        /** @var array<string, mixed> $storedHeader */
+                        $storedHeader = $content['header'];
+                        if (! array_key_exists('menu_note', $value) && array_key_exists('menu_note', $storedHeader)) {
+                            $value['menu_note'] = $storedHeader['menu_note'];
+                        }
+                        if (array_key_exists('menu_note', $value)) {
+                            $value['menu_note'] ??= '';
+                        }
+                    }
                     // Historical copyright text is retained for compatibility; the
                     // read projection owns its current, non-editable value.
                     if ($key === 'footer' && is_array($value)) {

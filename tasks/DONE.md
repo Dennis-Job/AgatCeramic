@@ -8,6 +8,15 @@
 
 Текущая работа — в [`IN_PROGRESS.md`](IN_PROGRESS.md), открытые задачи — в [`TODO.md`](TODO.md).
 
+2026-10-29 — Нижняя часть бокового меню приведена к референсу: телефон и email
+из настроек сайта, отдельный редактируемый текст и общие с футером соцсети.
+Поле «Текст под контактами» в «Шапка и навигация → Боковое меню» сохраняется и
+публикуется через существующий workflow. Совместимый header.menu_note,
+OpenAPI v12.0, без миграций БД. Backend 665 PASS/1 existing skip; Admin 274 unit
+и 28 E2E PASS; Client 84 production E2E и 2 development iframe tests PASS;
+build/typecheck/lint/format и независимый UI Design Guard PASS.
+Файлы, проверки и ограничения: [отчёт](../docs/MENU_CONTACTS_2026-10-29.md).
+
 2026-10-28 — Уточнение футера: ссылка справа в нижней строке использует тот же
 hover, что ссылки колонок — ink и плавный сдвиг вправо на 4 px за 0.25 s,
 без подчёркивания. Общий CSS SiteFooter, focus/reduced motion сохранены.

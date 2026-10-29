@@ -75,6 +75,7 @@ export interface HomePageDto {
   header: {
     topbar_left: string
     topbar_right: string
+    menu_note?: string | null
     navigation: NavigationItemDto[]
     logo_url: string | null
     logo_alt: string | null
@@ -160,6 +161,10 @@ export function mapSiteAppearance(
     header: {
       topbarLeft: dto.header.topbar_left,
       topbarRight: dto.header.topbar_right,
+      menuNote:
+        dto.header.menu_note === undefined
+          ? dto.footer.tagline
+          : (dto.header.menu_note ?? ''),
       navigation: mapNavigation(dto.header.navigation),
       logoUrl: imageUrl(dto.header.logo_url, apiBase),
       logoAlt: dto.header.logo_alt || 'AgatCeramic',

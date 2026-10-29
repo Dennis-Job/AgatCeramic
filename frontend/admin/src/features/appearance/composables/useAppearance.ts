@@ -61,6 +61,11 @@ export function useAppearance() {
       }
     }
     if (section === 'header') {
+      if ((content.value.header.menu_note?.length ?? 0) > 1000) {
+        error.value = 'Текст под контактами: допустимо до 1000 символов.'
+        success.value = ''
+        return
+      }
       const invalid = navigationError(content.value.header.navigation)
       if (invalid) {
         error.value = invalid
@@ -77,6 +82,8 @@ export function useAppearance() {
       ) as SiteAppearance[AppearanceSection]
       const footerBeforeSave = JSON.stringify(content.value.footer)
       const footerWasDirty = isDirty('footer')
+      const headerBeforeSave = JSON.stringify(content.value.header)
+      const headerWasDirty = isDirty('header')
       const result = await saveAppearanceSection(section, submitted)
       const editedDuringSave =
         JSON.stringify(content.value[section]) !== JSON.stringify(submitted)
@@ -86,6 +93,13 @@ export function useAppearance() {
           ? content.value[section]
           : structuredClone(result[section]),
         has_unpublished_changes: result.has_unpublished_changes,
+      }
+      if (
+        section === 'footer' &&
+        !headerWasDirty &&
+        JSON.stringify(content.value.header) === headerBeforeSave
+      ) {
+        content.value.header = structuredClone(result.header)
       }
       if (
         section === 'header' &&

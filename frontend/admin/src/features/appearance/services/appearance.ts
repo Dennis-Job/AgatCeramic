@@ -16,6 +16,10 @@ async function decode(response: Response): Promise<SiteAppearance> {
         'Не удалось загрузить общее оформление.',
     )
   const result = body.data
+  result.header.menu_note =
+    result.header.menu_note === undefined
+      ? result.footer.tagline
+      : (result.header.menu_note ?? '')
   const seen = new Set<string>()
   result.footer.navigation_links ??= result.header.navigation.flatMap((item) =>
     ('children' in item ? item.children : [item]).filter((link) => {

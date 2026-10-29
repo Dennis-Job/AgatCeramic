@@ -10,6 +10,7 @@ use App\Models\Slider;
 use App\Support\PageBlocks;
 use App\Support\SiteCopyright;
 use App\Support\SiteFooter;
+use App\Support\SiteHeader;
 use Illuminate\Support\Facades\Storage;
 
 class HomePageContentQuery
@@ -37,6 +38,7 @@ class HomePageContentQuery
         $content['about']['image_url'] = $this->imageUrl($content['about']['image_url'], $media->get($content['about']['image_media_id']), $admin);
         $content['seo']['og_image_url'] = $this->imageUrl($content['seo']['og_image_url'], $media->get($content['seo']['og_image_media_id']), $admin);
         $content['header']['logo_url'] = $this->imageUrl(null, $media->get($content['header']['logo_media_id']), false);
+        $content['header'] = SiteHeader::resolve($content['header'], $content['footer']);
 
         $result = [
             'hero_slider_id' => $page->hero_slider_id,

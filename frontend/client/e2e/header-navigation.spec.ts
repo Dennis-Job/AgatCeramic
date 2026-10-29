@@ -62,7 +62,11 @@ test('five configured links remain visible in the desktop header and available i
     }
     await trigger.click()
     const menu = page.getByRole('dialog', { name: 'Меню сайта' })
-    await expect(menu.getByRole('link')).toHaveCount(5)
+    await expect(
+      menu
+        .getByRole('navigation', { name: 'Мобильная навигация' })
+        .getByRole('link'),
+    ).toHaveCount(5)
     await page.keyboard.press('Escape')
     await expect(menu).toHaveCount(0)
     await expect(trigger).toBeFocused()

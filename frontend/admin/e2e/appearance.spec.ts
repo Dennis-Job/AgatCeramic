@@ -5,6 +5,61 @@ import type { SiteAppearance } from '../src/features/appearance/types/appearance
 
 test.use({ reducedMotion: 'reduce' })
 
+test('menu text saves independently, reloads, publishes and can be cleared', async ({
+  page,
+}, testInfo) => {
+  const api = await mockWorkspace(page)
+  await page.goto('/content?section=appearance&panel=header')
+  const card = page.getByRole('region', { name: 'Боковое меню', exact: true })
+  const note = card.getByLabel('Текст под контактами', { exact: true })
+  await expect(note).toHaveValue(appearanceFixture().header.menu_note!)
+  await expect(card).toContainText(
+    'Телефон и email берутся из «Настроек сайта»',
+  )
+  await note.fill('Ежедневно 10:00–21:00\nПоможем с выбором')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await note.scrollIntoViewIfNeeded()
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    await page.screenshot({
+      path: testInfo.outputPath(`menu-editor-${width}.png`),
+    })
+  }
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+  await page.getByRole('button', { name: 'Сохранить черновик раздела' }).click()
+  await expect(
+    page.getByText(
+      'Черновик раздела сохранён. Опубликуйте оформление, чтобы обновить сайт.',
+    ),
+  ).toBeVisible()
+  expect(api.patches[0]).toHaveProperty(
+    'header.menu_note',
+    'Ежедневно 10:00–21:00\nПоможем с выбором',
+  )
+  expect(api.published().header.menu_note).toBe(
+    appearanceFixture().header.menu_note,
+  )
+  await page.reload()
+  await expect(note).toHaveValue('Ежедневно 10:00–21:00\nПоможем с выбором')
+  await page.getByRole('button', { name: 'Опубликовать оформление' }).click()
+  await expect(page.getByText('Общее оформление опубликовано.')).toBeVisible()
+  expect(api.published().header.menu_note).toContain('Поможем с выбором')
+  await page.getByRole('button', { name: 'Закрыть уведомление' }).click()
+  await note.fill('')
+  await page.getByRole('button', { name: 'Сохранить черновик раздела' }).click()
+  await expect(
+    page.getByText(
+      'Черновик раздела сохранён. Опубликуйте оформление, чтобы обновить сайт.',
+    ),
+  ).toBeVisible()
+  await page.reload()
+  await expect(note).toHaveValue('')
+})
+
 test('footer links are independent, editable and published with social links and bottom URL', async ({
   page,
 }, testInfo) => {
@@ -97,6 +152,7 @@ function appearanceFixture(): SiteAppearance {
     header: {
       topbar_left: 'Керамическая плитка и керамогранит для уютного дома',
       topbar_right: 'Помогаем подобрать материалы для ремонта',
+      menu_note: 'Материалы для дома и вдохновение для вашего ремонта',
       logo_media_id: null,
       logo_alt: 'Логотип AgatCeramic',
       logo_url: null,
@@ -509,6 +565,7 @@ test('appearance retains panel drafts and publishes only saved appearance sectio
     {
       header: {
         topbar_left: appearanceFixture().header.topbar_left,
+        menu_note: appearanceFixture().header.menu_note,
         logo_media_id: null,
         logo_alt: appearanceFixture().header.logo_alt,
         navigation: appearanceFixture().header.navigation,

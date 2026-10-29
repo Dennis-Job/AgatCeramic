@@ -22,7 +22,7 @@ test('page and header overlays leave controls unselected until keyboard navigati
   )
   await page.keyboard.press('Shift+Tab')
   await expect(
-    menu.getByRole('button', { name: 'Поиск по разделам страницы' }),
+    menu.getByRole('link', { name: 'shop@example.test' }),
   ).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(menu.getByRole('button', { name: 'Закрыть меню' })).toBeFocused()

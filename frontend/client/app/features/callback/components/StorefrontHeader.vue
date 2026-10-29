@@ -2,12 +2,12 @@
 import SiteHeader from '~/components/shared/SiteHeader.vue'
 import CallbackRequestDialog from './CallbackRequestDialog.vue'
 import { fetchSellerContacts } from '~/services/contentPages'
-import type { HomePageContent } from '~/types/homePage'
+import type { HomePageContent, SiteLink } from '~/types/homePage'
 import { formatPhone, normalizePhoneInput } from '~/utils/phone'
 
 defineProps<{
   content?: HomePageContent['header']
-  tagline?: string
+  socialLinks?: SiteLink[]
   currentPath?: string
   navigationLabel?: string
 }>()
@@ -34,7 +34,10 @@ watch(
 <template>
   <SiteHeader
     :content="content"
-    :tagline="tagline"
+    :phone="formatPhone(phone)"
+    :phone-href="phoneHref"
+    :email="seller?.email"
+    :social-links="socialLinks"
     :current-path="currentPath"
     :navigation-label="navigationLabel"
   >

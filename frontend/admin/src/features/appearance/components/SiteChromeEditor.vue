@@ -80,6 +80,36 @@ const emit = defineEmits<{
     class="mt-5"
     :disabled="disabled"
   />
+  <UiCard
+    v-if="section === 'header'"
+    class="mt-5"
+    aria-labelledby="appearance-menu-title"
+  >
+    <template #header>
+      <h3
+        id="appearance-menu-title"
+        class="flex items-center gap-3 font-semibold text-gray-500"
+      >
+        <FileText :size="20" class="shrink-0" aria-hidden="true" />Боковое меню
+      </h3>
+    </template>
+    <UiField
+      label="Текст под контактами"
+      help="Необязательно. Например, часы работы или короткое сообщение. До 1000 символов."
+    >
+      <UiTextarea
+        v-model="content.header.menu_note"
+        compact
+        rows="3"
+        :maxlength="1000"
+        :disabled="disabled"
+      />
+    </UiField>
+    <p class="mt-3 text-xs text-gray-500">
+      Телефон и email берутся из «Настроек сайта». Ссылки на соцсети — из
+      раздела «Подвал → Мы в соцсетях».
+    </p>
+  </UiCard>
   <div v-if="section === 'footer'" class="space-y-5">
     <UiCard aria-labelledby="appearance-footer-tagline-title">
       <template #header>

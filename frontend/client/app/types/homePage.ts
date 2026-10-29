@@ -61,6 +61,7 @@ export interface HomePageContent {
   header: {
     topbarLeft: string
     topbarRight: string
+    menuNote?: string
     navigation: SiteNavigationItem[]
     logoUrl: string
     logoAlt: string

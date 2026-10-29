@@ -135,3 +135,43 @@ test('editing a navigation item after saving creates a new dirty draft without c
   ])
   wrapper.unmount()
 })
+
+test('menu text starts with the legacy tagline and saves an independent value including an explicit empty string', async () => {
+  const { workspace, wrapper } = await editor()
+  expect(workspace.content.value!.header.menu_note).toBe(server.footer.tagline)
+  workspace.content.value!.header.menu_note =
+    'Ежедневно 10:00–21:00\nПоможем с выбором'
+  await workspace.save('header')
+  expect(writes[0]).toHaveProperty(
+    'header.menu_note',
+    'Ежедневно 10:00–21:00\nПоможем с выбором',
+  )
+  await workspace.load()
+  expect(workspace.content.value!.header.menu_note).toContain(
+    'Поможем с выбором',
+  )
+  workspace.content.value!.header.menu_note = ''
+  await workspace.save('header')
+  expect(workspace.content.value!.header.menu_note).toBe('')
+  expect(workspace.dirty.value).toBe(false)
+  wrapper.unmount()
+})
+
+test('oversized menu text stays in the editor and is not submitted', async () => {
+  const { workspace, wrapper } = await editor()
+  workspace.content.value!.header.menu_note = 'Т'.repeat(1001)
+  await workspace.save('header')
+  expect(writes).toHaveLength(0)
+  expect(workspace.error.value).toContain('1000')
+  expect(workspace.content.value!.header.menu_note).toHaveLength(1001)
+  wrapper.unmount()
+})
+
+test('saving a legacy footer refreshes the derived menu text without a false unsaved header', async () => {
+  const { workspace, wrapper } = await editor()
+  workspace.content.value!.footer.tagline = 'Обновлённый слоган'
+  await workspace.save('footer')
+  expect(workspace.content.value!.header.menu_note).toBe('Обновлённый слоган')
+  expect(workspace.dirty.value).toBe(false)
+  wrapper.unmount()
+})

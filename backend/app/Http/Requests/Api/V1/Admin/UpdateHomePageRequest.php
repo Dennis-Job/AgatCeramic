@@ -44,11 +44,12 @@ class UpdateHomePageRequest extends FormRequest
 
         $rules = [
             'hero_slider_id' => ['sometimes', 'nullable', 'integer', Rule::exists('sliders', 'id')],
-            'header' => ['sometimes', 'required', 'array:topbar_left,topbar_right,navigation,logo_media_id,logo_alt'],
+            'header' => ['sometimes', 'required', 'array:topbar_left,topbar_right,navigation,logo_media_id,logo_alt,menu_note'],
             'header.topbar_left' => $short,
             'header.topbar_right' => $short,
             'header.logo_media_id' => $imageId,
             'header.logo_alt' => $short,
+            'header.menu_note' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'header.navigation' => ['required', 'array', 'list', 'min:1', 'max:16'],
             'header.navigation.*' => ['required', 'array:label,to,children'],
             'header.navigation.*.label' => $short,

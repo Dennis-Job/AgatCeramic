@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v11.0",
+        "version": "v12.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -5883,6 +5883,11 @@
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
+                            },
+                            "menu_note": {
+                                "type": "string",
+                                "maxLength": 1000,
+                                "description": "Plain text below the side-menu navigation. Empty/null input clears the note; output uses an empty string. Omitted input preserves a saved value. Legacy absent keys project footer.tagline without writing storage; an explicitly saved empty string disables the note."
                             }
                         },
                         "required": [
@@ -5891,7 +5896,8 @@
                             "logo_media_id",
                             "logo_alt",
                             "logo_url",
-                            "navigation"
+                            "navigation",
+                            "menu_note"
                         ],
                         "additionalProperties": false
                     },
@@ -6479,6 +6485,14 @@
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
+                            },
+                            "menu_note": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 1000,
+                                "description": "Plain text below the side-menu navigation. Empty/null input clears the note; output uses an empty string. Omitted input preserves a saved value. Legacy absent keys project footer.tagline without writing storage; an explicitly saved empty string disables the note."
                             }
                         },
                         "required": [
@@ -12677,6 +12691,11 @@
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
+                            },
+                            "menu_note": {
+                                "type": "string",
+                                "maxLength": 1000,
+                                "description": "Plain text below the side-menu navigation. Empty/null input clears the note; output uses an empty string. Omitted input preserves a saved value. Legacy absent keys project footer.tagline without writing storage; an explicitly saved empty string disables the note."
                             }
                         },
                         "required": [
@@ -12685,7 +12704,8 @@
                             "logo_media_id",
                             "logo_alt",
                             "logo_url",
-                            "navigation"
+                            "navigation",
+                            "menu_note"
                         ],
                         "additionalProperties": false
                     },
@@ -13482,6 +13502,11 @@
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
+                            },
+                            "menu_note": {
+                                "type": "string",
+                                "maxLength": 1000,
+                                "description": "Plain text below the side-menu navigation. Empty/null input clears the note; output uses an empty string. Omitted input preserves a saved value. Legacy absent keys project footer.tagline without writing storage; an explicitly saved empty string disables the note."
                             }
                         },
                         "required": [
@@ -13490,7 +13515,8 @@
                             "logo_media_id",
                             "logo_alt",
                             "logo_url",
-                            "navigation"
+                            "navigation",
+                            "menu_note"
                         ],
                         "additionalProperties": false
                     },
@@ -13653,6 +13679,11 @@
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
+                            },
+                            "menu_note": {
+                                "type": "string",
+                                "maxLength": 1000,
+                                "description": "Plain text below the side-menu navigation. Empty/null input clears the note; output uses an empty string. Omitted input preserves a saved value. Legacy absent keys project footer.tagline without writing storage; an explicitly saved empty string disables the note."
                             }
                         },
                         "required": [
@@ -13661,7 +13692,8 @@
                             "logo_media_id",
                             "logo_alt",
                             "logo_url",
-                            "navigation"
+                            "navigation",
+                            "menu_note"
                         ],
                         "additionalProperties": false
                     },
@@ -13816,6 +13848,14 @@
                                 },
                                 "minItems": 1,
                                 "maxItems": 16
+                            },
+                            "menu_note": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 1000,
+                                "description": "Plain text below the side-menu navigation. Empty/null input clears the note; output uses an empty string. Omitted input preserves a saved value. Legacy absent keys project footer.tagline without writing storage; an explicitly saved empty string disables the note."
                             }
                         },
                         "required": [

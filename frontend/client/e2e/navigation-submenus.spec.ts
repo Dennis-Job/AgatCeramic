@@ -233,7 +233,7 @@ test('normal motion drawer navigates through children and closed groups stay out
   await close.focus()
   await page.keyboard.press('Shift+Tab')
   await expect(
-    dialog.getByRole('button', { name: 'Поиск по разделам страницы' }),
+    dialog.getByRole('link', { name: 'shop@example.test' }),
   ).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(close).toBeFocused()
