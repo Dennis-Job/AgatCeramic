@@ -83,6 +83,21 @@ button[aria-selected='true'],
 button:hover {
   color: var(--color-ink);
 }
+button::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--color-ink);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.35s var(--ease-out);
+}
+button[aria-selected='true']::after {
+  transform: scaleX(1);
+}
 section[hidden] {
   display: none;
 }

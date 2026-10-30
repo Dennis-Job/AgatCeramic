@@ -9,10 +9,7 @@ import { productPath } from '../services/products'
 import type { ProductDetail } from '../types/product'
 const props = defineProps<{
   product: ProductDetail
-  phone?: string
-  phoneHref?: string
 }>()
-const emit = defineEmits<{ details: [tab: string] }>()
 const quantity = ref(1)
 const message = ref('')
 const { addItem, busy, error } = useCart()
@@ -185,8 +182,7 @@ async function add() {
     </div>
     <form class="purchase-form" :aria-busy="busy" @submit.prevent="add">
       <div class="quantity-head">
-        <span>Количество, {{ unit }}</span
-        ><span>Целые единицы</span>
+        <span>Количество, {{ unit }}</span>
       </div>
       <div class="purchase-row">
         <UiQuantityInput
@@ -205,19 +201,6 @@ async function add() {
         ><output>{{ estimate ? formatMoney(estimate) : '—' }}</output>
       </div>
     </form>
-    <div v-if="phone && phoneHref" class="consultation">
-      <span>Нужна помощь с выбором?</span
-      ><a :href="phoneHref" class="product-text-link"
-        >Связаться с нами <ArrowRight :size="15" aria-hidden="true"
-      /></a>
-    </div>
-    <div class="quick-links">
-      <a href="#product-details" @click="emit('details', 'specs')"
-        >Все характеристики</a
-      ><a href="#product-details" @click="emit('details', 'delivery')"
-        >Доставка и заказ</a
-      >
-    </div>
   </div>
 </template>
 <style scoped>
@@ -380,9 +363,6 @@ h1 {
   margin-bottom: 10px;
   font-size: 12px;
 }
-.quantity-head > span:last-child {
-  color: var(--color-muted);
-}
 .purchase-row {
   display: flex;
   align-items: stretch;
@@ -412,34 +392,6 @@ h1 {
   padding-left: 12px;
   font-size: 13px;
   line-height: 1.7;
-}
-.consultation {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-top: 23px;
-  padding-top: 18px;
-  border-top: 1px solid var(--color-line);
-  font-size: 12px;
-}
-.consultation > span {
-  color: var(--color-muted);
-}
-.quick-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 25px;
-  margin-top: 21px;
-  font-size: 11px;
-}
-.quick-links a {
-  border-bottom: 1px solid var(--color-line);
-  padding-bottom: 3px;
-  color: var(--color-muted);
-}
-.quick-links a:hover {
-  color: var(--color-ink);
 }
 @media (max-width: 1024px) {
   h1 {
@@ -491,10 +443,6 @@ h1 {
   .purchase-row > :last-child {
     width: 100%;
     flex: auto;
-  }
-  .consultation {
-    font-size: 11px;
-    gap: 12px;
   }
   .brand-row {
     gap: 16px;

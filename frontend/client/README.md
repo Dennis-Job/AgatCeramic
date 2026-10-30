@@ -91,7 +91,8 @@ The basket shows authoritative server prices and line totals; totals are summed 
 minor units. The product-page estimate is informational and does not supply cart prices.
 
 The owner chose integer sale quantities from 1 to 9999, with step 1, for every displayed
-unit, including m². Fractional m², package conversion and rounding require a separate task.
+unit, including m². Quantities are always integers; fractional quantities are excluded
+from further development by the owner's decision of 2026-10-30.
 Cart supports loading, empty, unavailable-product, validation and network-error states,
 quantity updates and removal. “Продолжить выбор” closes it; checkout is not implemented here.
 

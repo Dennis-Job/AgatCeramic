@@ -6,6 +6,48 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
 })
 
+test('purchase stays compact and tabs keep the centered active underline from the reference', async ({
+  page,
+}) => {
+  await page.goto(productPath)
+  await expect(
+    page.locator(
+      '.product-purchase .consultation, .product-purchase .quick-links',
+    ),
+  ).toHaveCount(0)
+  await expect(page.getByText('Целые единицы', { exact: true })).toHaveCount(0)
+  const description = page.getByRole('tab', { name: 'Описание', exact: true })
+  await page.mouse.move(0, 0)
+  const underline = () =>
+    description.evaluate((el) => {
+      const style = getComputedStyle(el, '::after')
+      return {
+        transform: style.transform,
+        height: style.height,
+        bottom: style.bottom,
+        originX: parseFloat(style.transformOrigin),
+        width: el.getBoundingClientRect().width,
+      }
+    })
+  expect((await underline()).transform).toBe('matrix(0, 0, 0, 1, 0, 0)')
+  await description.hover()
+  await expect(description).toHaveAttribute('aria-selected', 'false')
+  expect((await underline()).transform).toBe('matrix(0, 0, 0, 1, 0, 0)')
+  await description.click()
+  await expect
+    .poll(async () => (await underline()).transform)
+    .toBe('matrix(1, 0, 0, 1, 0, 0)')
+  const activeLine = await underline()
+  expect(activeLine).toMatchObject({ height: '1px', bottom: '0px' })
+  expect(activeLine.originX).toBeCloseTo(activeLine.width / 2, 1)
+  await page.mouse.move(0, 0)
+  expect((await underline()).transform).toBe('matrix(1, 0, 0, 1, 0, 0)')
+  await description.press('ArrowLeft')
+  await expect
+    .poll(async () => (await underline()).transform)
+    .toBe('matrix(0, 0, 0, 1, 0, 0)')
+})
+
 test('product, related and recommended actions add their own IDs to the shared server cart', async ({
   page,
   request,

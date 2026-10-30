@@ -10,8 +10,8 @@
 
 ## Approved decisions and scope
 
-- User approved the HTML layout and centered information tabs with no underline; hover changes only existing text color.
-- User explicitly chose integer sale units; quantity1..9999 and step1. Fractional m²/package logic is a separate task.
+- User approved the HTML layout and centered information tabs. Final update 2026-10-30: tabs use productExample.html's persistent active underline (1px, bottom0, center-origin scaleX, .35s); inactive hover does not show a line. Consultation, purchase quick links and the integer-only caption are removed.
+- User explicitly chose integer sale units; quantity1..9999 and step1. On 2026-10-30 the owner confirmed quantities are always integers and excluded fractional quantities from further development.
 - One product, one URL: /products/{slug}; category breadcrumb, separate brand and collection links.
 - Public endpoint /api/v1/products/{slug} returns SKU/article, description, prices, unit, is_on_sale, in_stock, category, brand/logo, ordered public images, visible resolved attributes, collection, real group siblings, outgoing related/recommended.
 - No exact inventory in public detail; stock stays authoritative in cart validation.

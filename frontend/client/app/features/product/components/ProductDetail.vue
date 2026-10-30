@@ -7,7 +7,6 @@ import type { ProductDetail } from '../types/product'
 import type { SellerContacts } from '~/types/contentPage'
 import { formatPhone, normalizePhoneInput } from '~/utils/phone'
 defineProps<{ product: ProductDetail }>()
-const tab = ref('specs')
 const { data: contacts } = useNuxtData<SellerContacts>('seller-contacts')
 const phone = computed(() => formatPhone(contacts.value?.phones[0]))
 const phoneHref = computed(() => {
@@ -32,16 +31,10 @@ const phoneHref = computed(() => {
           :key="product.id"
           :name="product.name"
           :images="product.images"
-        /><ProductPurchase
-          :product="product"
-          :phone="phone"
-          :phone-href="phoneHref"
-          @details="tab = $event"
-        />
+        /><ProductPurchase :product="product" />
       </div>
     </div>
     <ProductInfoTabs
-      v-model="tab"
       :product="product"
       :phone="phone"
       :phone-href="phoneHref"

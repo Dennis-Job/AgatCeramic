@@ -153,7 +153,10 @@ defineExpose({ close })
         <template v-if="'children' in item">
           <button
             class="navigation-link navigation-trigger"
-            :class="{ 'is-current': isCurrentGroup(item) }"
+            :class="{
+              'is-current': isCurrentGroup(item),
+              'ui-hover-underline': variant === 'desktop',
+            }"
             type="button"
             :data-trigger="index"
             :aria-expanded="openIndex === index"
@@ -202,6 +205,7 @@ defineExpose({ close })
         <NuxtLink
           v-else
           class="navigation-link"
+          :class="{ 'ui-hover-underline': variant === 'desktop' }"
           :to="item.to"
           :aria-current="isCurrent(item.to) ? 'page' : undefined"
           @click="navigate"
@@ -274,19 +278,6 @@ defineExpose({ close })
   font-size: 13px;
   letter-spacing: 0.04em;
 }
-.site-nav .navigation-link::after {
-  position: absolute;
-  right: 0;
-  bottom: 2px;
-  left: 0;
-  height: 1px;
-  background: var(--color-ink);
-  content: '';
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 0.35s var(--ease-out);
-}
-.site-nav .navigation-link:hover::after,
 .site-nav .navigation-link[aria-current]::after,
 .site-nav .navigation-trigger.is-current::after {
   transform: scaleX(1);
