@@ -63,7 +63,8 @@ class ProductQuery
                     ->orWhereRaw('LOWER(slug) LIKE ?', [$pattern])
                     ->orWhereRaw('LOWER(sku) LIKE ?', [$pattern])
                     ->orWhereRaw('LOWER(article_number) LIKE ?', [$pattern])
-                    ->orWhere('barcode', 'LIKE', $pattern);
+                    ->orWhere('barcode', 'LIKE', $pattern)
+                    ->orWhereHas('collection', fn (Builder $collection) => $collection->whereRaw('LOWER(name) LIKE ?', [$pattern]));
             });
         }
 

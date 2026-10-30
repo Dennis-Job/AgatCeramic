@@ -30,6 +30,18 @@ DB::selectOne("select set_config('application_name', ?, false)", [$applicationNa
 DB::selectOne("select set_config('statement_timeout', '10000', false)");
 
 $work = match ($operation) {
+    'collection-assignment' => (function () use ($payload): Closure {
+        $actor = User::query()->findOrFail($payload['actor_id']);
+        $product = Product::query()->findOrFail($payload['product_id']);
+
+        return fn () => app(ProductManagementService::class)->update($actor, $product, ['collection_id' => $payload['collection_id']]);
+    })(),
+    'collections-disable' => (function () use ($payload): Closure {
+        $actor = User::query()->findOrFail($payload['actor_id']);
+        $category = Category::query()->findOrFail($payload['category_id']);
+
+        return fn () => app(CategoryManagementService::class)->update($actor, $category, ['uses_collections' => false]);
+    })(),
     'banner-create', 'banner-update', 'page-create', 'page-update', 'page-publish' => (function () use ($payload, $operation): Closure {
         $actor = User::query()->findOrFail($payload['actor_id']);
 

@@ -3,16 +3,19 @@
 namespace Tests\Integration;
 
 use App\Models\Banner;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\HomePage;
 use App\Models\Media;
 use App\Models\Page;
 use App\Models\Product;
+use App\Models\ProductCollection;
 use App\Models\ProductImage;
 use App\Models\ProductRelation;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CategoryManagementService;
+use App\Services\ProductCollectionManagementService;
 use App\Services\ProductImageManagementService;
 use App\Services\ProductManagementService;
 use App\Services\ProductRelationManagementService;
@@ -45,6 +48,72 @@ class PostgresCatalogConcurrencyTest extends TestCase
             $this->markTestSkipped('This integration test requires PostgreSQL.');
         }
 
+    }
+
+    public function test_collection_assignment_waiting_for_category_disable_is_rejected(): void
+    {
+        $actor = User::factory()->create();
+        $collection = ProductCollection::factory()->create();
+        $category = Category::factory()->create(['uses_collections' => true]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'brand_id' => $collection->brand_id]);
+        $outcome = $this->runCompetingTransactions(
+            'disable-collections',
+            fn () => app(CategoryManagementService::class)->update($actor, $category, ['uses_collections' => false]),
+            'collection-assignment',
+            ['actor_id' => $actor->id, 'product_id' => $product->id, 'collection_id' => $collection->id],
+        );
+        $this->assertThrowableIs($outcome, ValidationException::class);
+        $this->assertNull($product->refresh()->collection_id);
+    }
+
+    public function test_category_disable_waiting_for_collection_assignment_is_rejected(): void
+    {
+        $actor = User::factory()->create();
+        $collection = ProductCollection::factory()->create();
+        $category = Category::factory()->create(['uses_collections' => true]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'brand_id' => $collection->brand_id]);
+        $outcome = $this->runCompetingTransactions(
+            'assign-collection',
+            fn () => app(ProductManagementService::class)->update($actor, $product, ['collection_id' => $collection->id]),
+            'collections-disable',
+            ['actor_id' => $actor->id, 'category_id' => $category->id],
+        );
+        $this->assertThrowableIs($outcome, ValidationException::class);
+        $this->assertTrue($category->refresh()->uses_collections);
+        $this->assertSame($collection->id, $product->refresh()->collection_id);
+    }
+
+    public function test_collection_assignment_waiting_for_brand_change_is_rejected(): void
+    {
+        $actor = User::factory()->create();
+        $collection = ProductCollection::factory()->create();
+        $category = Category::factory()->create(['uses_collections' => true]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'brand_id' => $collection->brand_id]);
+        $targetBrand = Brand::factory()->create();
+        $outcome = $this->runCompetingTransactions(
+            'collection-brand',
+            fn () => app(ProductCollectionManagementService::class)->update($actor, $collection, ['brand_id' => $targetBrand->id]),
+            'collection-assignment',
+            ['actor_id' => $actor->id, 'product_id' => $product->id, 'collection_id' => $collection->id],
+        );
+        $this->assertThrowableIs($outcome, ValidationException::class);
+        $this->assertNull($product->refresh()->collection_id);
+    }
+
+    public function test_collection_assignment_waiting_for_collection_deactivation_is_rejected(): void
+    {
+        $actor = User::factory()->create();
+        $collection = ProductCollection::factory()->create();
+        $category = Category::factory()->create(['uses_collections' => true]);
+        $product = Product::factory()->create(['category_id' => $category->id, 'brand_id' => $collection->brand_id]);
+        $outcome = $this->runCompetingTransactions(
+            'collection-inactive',
+            fn () => app(ProductCollectionManagementService::class)->update($actor, $collection, ['is_active' => false]),
+            'collection-assignment',
+            ['actor_id' => $actor->id, 'product_id' => $product->id, 'collection_id' => $collection->id],
+        );
+        $this->assertThrowableIs($outcome, ValidationException::class);
+        $this->assertNull($product->refresh()->collection_id);
     }
 
     public function test_competing_primary_image_uploads_preserve_one_primary_image(): void

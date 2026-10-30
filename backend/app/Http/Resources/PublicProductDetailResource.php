@@ -24,8 +24,10 @@ class PublicProductDetailResource extends PublicProductCardResource
             ];
         }
         $attributes = $this->attributeValues->sortBy(fn (ProductAttributeValue $value): array => [$value->attribute->sort_order ?? 0, $value->attribute_id])->values();
-        $collection = $attributes->first(fn (ProductAttributeValue $value): bool => $value->attribute?->slug === 'kollektsiya');
-        $collectionValue = $collection?->getAttribute('value');
+        $attributes = $attributes->reject(fn (ProductAttributeValue $value): bool => $value->attribute?->slug === 'kollektsiya')->values();
+        $collection = $this->collection;
+        $collectionImage = $collection?->image;
+        $publicCollectionImage = $collectionImage?->disk === 'public' && $collectionImage->kind === 'image';
 
         return [...$data,
             'sku' => $this->sku, 'article_number' => $this->article_number, 'description' => $this->description,
@@ -34,8 +36,13 @@ class PublicProductDetailResource extends PublicProductCardResource
                 'alt' => $image->alt ?: $this->name, 'is_primary' => $image->is_primary, 'sort_order' => $image->sort_order,
             ]),
             'attributes' => PublicProductAttributeResource::collection($attributes),
-            'collection' => is_string($collectionValue) && trim($collectionValue) !== '' && $this->brand !== null
-                ? ['name' => $collectionValue, 'brand_slug' => $this->brand->slug] : null,
+            'collection' => $collection?->is_active === true && $this->brand !== null ? [
+                'id' => $collection->id, 'name' => $collection->name, 'slug' => $collection->slug,
+                'brand_slug' => $this->brand->slug, 'headline' => $collection->headline, 'description' => $collection->description,
+                'country_code' => $this->brand->country_code,
+                'image_url' => $publicCollectionImage ? Storage::disk('public')->url($collectionImage->path) : null,
+                'image_alt' => $publicCollectionImage ? ($collectionImage->alt ?: $collection->name) : null,
+            ] : null,
             'group' => $this->groupData($this->groupMembership?->group, $request),
             'related' => $this->relatedCards('related'), 'recommended' => $this->relatedCards('recommended'),
         ];

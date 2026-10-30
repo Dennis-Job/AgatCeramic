@@ -20,7 +20,9 @@ export async function getCategoryAttributes(
 ): Promise<Attribute[]> {
   const response = await apiFetch(`/admin/categories/${categoryId}/attributes`)
   if (!response.ok) return fail(response)
-  return ((await response.json()) as { data: Attribute[] }).data
+  return ((await response.json()) as { data: Attribute[] }).data.filter(
+    (attribute) => attribute.slug !== 'kollektsiya',
+  )
 }
 export async function getProductAttributeValues(
   productId: number,

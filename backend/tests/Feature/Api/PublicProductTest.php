@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Media;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
+use App\Models\ProductCollection;
 use App\Models\ProductGroup;
 use App\Models\ProductImage;
 use App\Models\ProductRelation;
@@ -33,7 +34,8 @@ class PublicProductTest extends TestCase
         $color->options()->create(['value' => '#808080', 'label' => 'Серый', 'sort_order' => 0]);
         $this->value($product, $color, '#808080');
         $collection = $this->attribute('Коллекция', 'kollektsiya', 'string', 1);
-        $this->value($product, $collection, 'Аллея');
+        $this->value($product, $collection, 'Historical collection');
+        $product->update(['collection_id' => ProductCollection::factory()->create(['brand_id' => $brand->id, 'name' => 'Аллея'])->id]);
         $hidden = $this->attribute('Внутреннее', 'hidden', 'string', 2, false);
         $this->value($product, $hidden, 'Не публиковать');
 
@@ -46,7 +48,7 @@ class PublicProductTest extends TestCase
             ->assertJsonPath('data.images.0.id', $first->id)
             ->assertJsonPath('data.images.1.id', $last->id)
             ->assertJsonCount(2, 'data.images')
-            ->assertJsonCount(2, 'data.attributes')
+            ->assertJsonCount(1, 'data.attributes')
             ->assertJsonPath('data.attributes.0.value', '#808080')
             ->assertJsonPath('data.attributes.0.display_value', 'Серый')
             ->assertJsonPath('data.collection.name', 'Аллея')
@@ -152,13 +154,18 @@ class PublicProductTest extends TestCase
         $category = Category::factory()->create(['is_active' => true]);
         $collection = $this->attribute('Коллекция', 'kollektsiya', 'string');
         $wanted = $this->product(['brand_id' => $brand->id, 'category_id' => $category->id]);
-        $this->value($wanted, $collection, 'Аллея');
+        $this->value($wanted, $collection, 'Stale history');
+        $canonical = ProductCollection::factory()->create(['brand_id' => $brand->id, 'name' => 'Аллея']);
+        $wanted->update(['collection_id' => $canonical->id]);
         $sameName = $this->product(['brand_id' => $otherBrand->id, 'category_id' => $category->id]);
         $this->value($sameName, $collection, 'Аллея');
+        $sameName->update(['collection_id' => ProductCollection::factory()->create(['brand_id' => $otherBrand->id, 'name' => 'Аллея'])->id]);
         $differentCollection = $this->product(['brand_id' => $brand->id, 'category_id' => $category->id]);
         $this->value($differentCollection, $collection, 'Аллея 2');
+        $differentCollection->update(['collection_id' => ProductCollection::factory()->create(['brand_id' => $brand->id, 'name' => 'Аллея 2'])->id]);
         $anotherCategory = $this->product(['brand_id' => $brand->id]);
         $this->value($anotherCategory, $collection, 'Аллея');
+        $anotherCategory->update(['collection_id' => $canonical->id]);
         $query = http_build_query(['category' => $category->slug, 'brand' => $brand->slug, 'collection' => 'Аллея']);
         $this->getJson('/api/v1/catalog?'.$query)->assertOk()->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $wanted->id)->assertJsonPath('meta.total', 1)

@@ -45,6 +45,7 @@ class ProductExportService
             $imageHeaders[] = 'Изображение '.$number;
         }
         $attributes = Attribute::query()
+            ->where('attributes.slug', '!=', 'kollektsiya')
             ->leftJoin('attribute_groups as export_groups', 'export_groups.id', '=', 'attributes.attribute_group_id')
             ->select('attributes.*')
             ->with('options')
@@ -76,8 +77,8 @@ class ProductExportService
             $managerSheet = $writer->getCurrentSheet();
             $this->prepareSheet($writer, $managerSheet, 'Товары', $headers);
             $managerSheet->setColumnWidth(48, 4, 5);
-            $managerSheet->setColumnWidth(26, 6, 7, 15);
-            $managerSheet->setColumnWidth(22, 16, 17);
+            $managerSheet->setColumnWidth(26, 6, 7, 8, 16);
+            $managerSheet->setColumnWidth(22, 17, 18);
             if ($imageCount > 0) {
                 $managerSheet->setColumnWidthForRange(48, max(1, $imageStart + 1), max(1, count($headers)));
             }
@@ -99,7 +100,7 @@ class ProductExportService
 
             /** @var LazyCollection<int, Product> $products */
             $products = $this->productQuery->filtered($filters)
-                ->with(['category', 'brand', 'images' => fn (Relation $query): Relation => $query->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id'), 'groupMembership.group', 'attributeValues'])
+                ->with(['category', 'brand', 'collection', 'images' => fn (Relation $query): Relation => $query->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('id'), 'groupMembership.group', 'attributeValues'])
                 ->lazy(500);
 
             foreach ($products as $product) {
@@ -113,6 +114,7 @@ class ProductExportService
                     $product->description,
                     $product->category?->name,
                     $product->brand?->name,
+                    $product->collection?->name,
                     ProductWorkbookSchema::UNIT_LABELS[$product->unit] ?? $product->unit,
                     (float) $product->price,
                     $product->old_price === null ? null : (float) $product->old_price,
@@ -129,8 +131,8 @@ class ProductExportService
                     ))->all(),
                     ...array_pad($product->images->map(fn (ProductImage $image): string => url(Storage::disk($image->disk)->url($image->path)))->all(), $imageCount, null),
                 ], (new Style)->setShouldWrapText()->setBackgroundColor($rowNumber % 2 === 1 ? 'F2F6FC' : 'FFFFFF'), [
-                    8 => $moneyStyle, 9 => $moneyStyle, 15 => $dateStyle, 16 => $dateStyle,
-                ], [3 => 48, 4 => 48, 5 => 26, 6 => 26, 14 => 26, 15 => 22, 16 => 22] + $imageWidths));
+                    9 => $moneyStyle, 10 => $moneyStyle, 16 => $dateStyle, 17 => $dateStyle,
+                ], [3 => 48, 4 => 48, 5 => 26, 6 => 26, 7 => 26, 15 => 26, 16 => 22, 17 => 22] + $imageWidths));
                 $writer->setCurrentSheet($seoSheet);
                 $writer->addRow($this->row([
                     (string) $product->sku, $product->name, $product->slug,

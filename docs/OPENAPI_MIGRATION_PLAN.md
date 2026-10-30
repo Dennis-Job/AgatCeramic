@@ -1,5 +1,43 @@
 # OpenAPI migration plan — version history
 
+## v13.0 — brand-owned product collections
+
+Date: 2026-10-30. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Admin Product adds nullable `collection_id` and conditional `collection`; Category
+adds `uses_collections`. Public product `collection` keeps `name`/`brand_slug` and
+adds ID, slug, headline, description, brand country and public image URL/alt.
+Previously closed response schemas reject these additions; regenerate strict
+validators. `kollektsiya` becomes an archived attribute: public attributes omit it,
+direct attribute writes reject it, completeness/category/group checks exclude it.
+New assignments use `collection_id`, same brand and an enabled category. Occupied
+collections and brands with collections cannot be deleted; these return 422.
+
+### Client migration
+
+Deploy Backend, Admin and Client together. Use `/admin/collections` with
+`catalog.manage`. New workbooks use `collection_name`; the old
+`attribute.kollektsiya` column resolves an existing collection scoped to brand.
+Blank cells clear, missing columns preserve, conflicting aliases reject. Collection
+names are not created implicitly by workbook import. Export/search/clone use the
+new relation. Public name-scoped catalog URLs keep their existing shape.
+The story block renders only with a public collection, nonempty description and
+public image; a null collection produces no wrapper or spacing.
+
+### Rollout and rollback
+
+See `PRODUCT_COLLECTIONS_2026-10-30.md` for the guarded preflight/apply commands.
+Run preflight on a protected PostgreSQL copy; resolve all blockers and explicitly
+review enabled categories. Verify backup/restore, stop catalog writes/workers,
+enter maintenance, migrate schema, run preflight/apply and verify full coverage
+before reopening. An unresolved source/axis blocks cutover; never guess or erase
+historical values. Original attributes remain unchanged. After new data is entered,
+rolling back schema would lose new collection metadata: restore the verified
+pre-cutover DB/application pair, retaining a protected new-state backup for
+recovery. Do not claim schema rollback alone restores post-cutover edits.
+
 Date: 2026-09-09.
 
 Breaking compatibility policy: a breaking wire-contract change requires a new major

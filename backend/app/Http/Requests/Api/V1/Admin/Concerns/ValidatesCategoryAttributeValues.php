@@ -24,12 +24,18 @@ trait ValidatesCategoryAttributeValues
             return;
         }
 
-        $assigned = $category->attributes()->with('options')->get()->keyBy('id');
+        $assigned = $category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->with('options')->get()->keyBy('id');
+        $legacyIds = Attribute::query()->where('slug', 'kollektsiya')->pluck('id');
         $submittedIds = [];
 
         foreach ($values as $index => $item) {
             $attributeId = $this->attributeId($item['attribute_id']);
             if ($attributeId === null) {
+                continue;
+            }
+            if ($legacyIds->contains($attributeId)) {
+                $validator->errors()->add($field, 'The legacy kollektsiya attribute is archived. Use collection_id instead.');
+
                 continue;
             }
             $submittedIds[] = $attributeId;

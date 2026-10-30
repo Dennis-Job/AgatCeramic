@@ -21,7 +21,10 @@ use Illuminate\Validation\ValidationException;
  */
 final class ProductImportRowMapper
 {
-    public function __construct(private readonly ProductImportValueParser $values) {}
+    public function __construct(
+        private readonly ProductImportValueParser $values,
+        private readonly ProductCollectionImportResolver $collections,
+    ) {}
 
     /** @param list<string> $headers
      * @return array<string, Attribute>
@@ -179,6 +182,7 @@ final class ProductImportRowMapper
             'stock_quantity' => $this->values->requiredInteger($values['stock_quantity'] ?? null, $row, $labels['stock_quantity']),
             'is_active' => $this->values->boolean($values['is_active'] ?? null, $row, $labels['is_active']),
             'is_on_sale' => $this->values->boolean($values['is_on_sale'] ?? null, $row, $labels['is_on_sale']),
+            ...$this->collections->resolve($values, $category, $brand, $product, $row),
         ];
 
         $uniqueSlug = Rule::unique('products', 'slug')->whereNotIn('id', $previousProductIds);
@@ -219,6 +223,9 @@ final class ProductImportRowMapper
     {
         $payload = [];
         foreach ($attributes as $slug => $attribute) {
+            if ($slug === 'kollektsiya') {
+                continue;
+            }
             $label = '«'.$attribute->name.($attribute->unit ? ' ('.$attribute->unit.')' : '').'»';
             $cell = $values['attribute.'.$slug] ?? null;
             if ($cell === null || (is_string($cell) && trim($cell) === '')) {

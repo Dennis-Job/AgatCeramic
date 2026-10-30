@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Stable product-import facade. Workbook I/O, planning and mutation are delegated to focused services.
  *
- * @phpstan-type ProductPayload array{category_id: int, brand_id: ?int, name: string, slug: string, description: ?string, article_number: ?string, barcode: ?string, unit: string, price: string, old_price: ?string, stock_quantity: int, is_active: bool, is_on_sale: bool}
+ * @phpstan-type ProductPayload array{category_id: int, brand_id: ?int, collection_id?: ?int, name: string, slug: string, description: ?string, article_number: ?string, barcode: ?string, unit: string, price: string, old_price: ?string, stock_quantity: int, is_active: bool, is_on_sale: bool}
  * @phpstan-type AttributePayload list<array{attribute_id: int, value: mixed}>
  * @phpstan-type InspectionError array{row: int, name: ?string, messages: list<string>, values: array<string, mixed>}
  */

@@ -3,6 +3,7 @@ import ProductGallery from './ProductGallery.vue'
 import ProductPurchase from './ProductPurchase.vue'
 import ProductInfoTabs from './ProductInfoTabs.vue'
 import ProductCollections from './ProductCollections.vue'
+import ProductCollectionStory from './ProductCollectionStory.vue'
 import type { ProductDetail } from '../types/product'
 import type { SellerContacts } from '~/types/contentPage'
 import { formatPhone, normalizePhoneInput } from '~/utils/phone'
@@ -39,6 +40,7 @@ const phoneHref = computed(() => {
       :phone="phone"
       :phone-href="phoneHref"
     />
+    <ProductCollectionStory :key="product.id" :product="product" />
     <ProductCollections :product="product" />
   </div>
 </template>

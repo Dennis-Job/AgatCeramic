@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'slug', 'description', 'country_code', 'logo_id', 'is_active'])]
 class Brand extends Model
@@ -26,6 +27,12 @@ class Brand extends Model
     {
         return $this->belongsToMany(Media::class, 'brand_media_documents')->withPivot('sort_order')
             ->orderByPivot('sort_order')->orderBy('media.id');
+    }
+
+    /** @return HasMany<ProductCollection, $this> */
+    public function collections(): HasMany
+    {
+        return $this->hasMany(ProductCollection::class);
     }
 
     /** @return array<string, string> */

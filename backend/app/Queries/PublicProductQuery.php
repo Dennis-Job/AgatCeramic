@@ -13,7 +13,7 @@ class PublicProductQuery
         return Product::query()->where('slug', $slug)->where('is_active', true)
             ->whereHas('category', fn ($query) => $query->where('is_active', true))
             ->with([
-                'category', 'brand.logo', 'primaryImage',
+                'category', 'brand.logo', 'collection.image', 'primaryImage',
                 'images' => fn (Relation $query) => $query->getQuery()->where('disk', 'public')->orderBy('sort_order')->orderBy('id'),
                 'attributeValues' => fn (Relation $query) => $query->getQuery()->whereHas('attribute', fn ($attribute) => $attribute->where('is_visible_on_product_page', true)),
                 'attributeValues.attribute.options',

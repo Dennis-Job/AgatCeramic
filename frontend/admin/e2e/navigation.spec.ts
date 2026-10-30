@@ -27,6 +27,7 @@ const destinations: Record<string, string> = {
   'Цены и статусы': '/products/price-status',
   'Объединить товары': '/products/combine',
   Категории: '/categories',
+  Коллекции: '/collections',
   Бренды: '/brands',
   Характеристики: '/attributes',
   Страницы: '/content',
@@ -140,6 +141,7 @@ for (const width of [320, 640, 768, 1023, 1024, 1280, 1440, 1920, 2560]) {
           'Цены и статусы',
           'Объединить товары',
           'Категории',
+          'Коллекции',
           'Бренды',
           'Характеристики',
         ],
@@ -193,6 +195,7 @@ for (const width of [320, 640, 768, 1023, 1024, 1280, 1440, 1920, 2560]) {
           })
         await expect(catalogGroup.getByRole('link')).toHaveText([
           'Категории',
+          'Коллекции',
           'Бренды',
           'Характеристики',
         ])

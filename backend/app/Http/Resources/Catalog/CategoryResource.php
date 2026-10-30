@@ -26,6 +26,7 @@ class CategoryResource extends ApiResource
             'sku_prefix' => $this->sku_prefix,
             'is_parent' => $this->is_parent,
             'is_active' => $this->is_active,
+            'uses_collections' => $this->uses_collections,
             'sort_order' => $this->sort_order,
             'children' => self::collection($this->whenLoaded('children')),
             'created_at' => $this->created_at?->toAtomString(),

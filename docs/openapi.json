@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v12.0",
+        "version": "v13.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -3826,6 +3826,9 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
                     }
                 }
             },
@@ -5591,7 +5594,7 @@
                     {
                         "name": "collection",
                         "in": "query",
-                        "description": "Exact collection name; requires brand.",
+                        "description": "Exact active product collection name scoped to the required brand filter; canonical collection_id relation is used.",
                         "schema": {
                             "type": "string",
                             "maxLength": 255
@@ -5763,6 +5766,284 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
+                    }
+                }
+            }
+        },
+        "/admin/collections": {
+            "get": {
+                "operationId": "listProductCollections",
+                "summary": "List collections",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "description": "Case-insensitive substring of name or slug. Whitespace is trimmed; an empty value returns all collections. Wildcard characters are treated literally.",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "description": "Page number; each page contains up to 25 collections ordered by name.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "brand_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": [
+                                "boolean",
+                                "null"
+                            ]
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated resources",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CatalogCollectionCollection"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "createProductCollection",
+                "summary": "Create a collection",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreProductCollectionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CatalogCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            }
+        },
+        "/admin/collections/{collection}": {
+            "parameters": [
+                {
+                    "name": "collection",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getProductCollection",
+                "summary": "Get a collection",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CatalogCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "updateProductCollection",
+                "summary": "Update a collection",
+                "description": "Collections assigned to products cannot change brand or be deleted. Public image replacements use the existing media lifecycle. Requires catalog.manage.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProductCollectionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CatalogCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "deleteProductCollection",
+                "summary": "Delete a collection",
+                "description": "Collections assigned to products cannot change brand or be deleted. Public image replacements use the existing media lifecycle. Requires catalog.manage.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "ProductCollection deleted"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "replaceProductCollection",
+                "summary": "Replace: Update a collection",
+                "description": "Collections assigned to products cannot change brand or be deleted. Public image replacements use the existing media lifecycle. Requires catalog.manage.",
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProductCollectionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Resource",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CatalogCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
                     }
                 }
             }
@@ -8924,6 +9205,10 @@
                             "minimum": 1
                         },
                         "uniqueItems": true
+                    },
+                    "uses_collections": {
+                        "type": "boolean",
+                        "default": false
                     }
                 },
                 "additionalProperties": false
@@ -8977,6 +9262,9 @@
                             "minimum": 1
                         },
                         "uniqueItems": true
+                    },
+                    "uses_collections": {
+                        "type": "boolean"
                     }
                 },
                 "additionalProperties": false
@@ -9187,6 +9475,13 @@
                     "is_on_sale": {
                         "type": "boolean",
                         "default": false
+                    },
+                    "collection_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
                     }
                 },
                 "additionalProperties": false
@@ -9253,6 +9548,13 @@
                     },
                     "is_on_sale": {
                         "type": "boolean"
+                    },
+                    "collection_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
                     }
                 },
                 "additionalProperties": false
@@ -10480,7 +10782,8 @@
                     "updated_at",
                     "image_id",
                     "image",
-                    "documents"
+                    "documents",
+                    "uses_collections"
                 ],
                 "properties": {
                     "id": {
@@ -10563,6 +10866,9 @@
                         "items": {
                             "$ref": "#/components/schemas/Media"
                         }
+                    },
+                    "uses_collections": {
+                        "type": "boolean"
                     }
                 },
                 "additionalProperties": false
@@ -10622,7 +10928,8 @@
                     "is_on_sale",
                     "primary_image",
                     "created_at",
-                    "updated_at"
+                    "updated_at",
+                    "collection_id"
                 ],
                 "properties": {
                     "id": {
@@ -10717,6 +11024,23 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "collection_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "collection": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CatalogCollection"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     }
                 },
                 "additionalProperties": false
@@ -11302,7 +11626,8 @@
                     "image",
                     "documents",
                     "attributes",
-                    "attribute_groups"
+                    "attribute_groups",
+                    "uses_collections"
                 ],
                 "properties": {
                     "id": {
@@ -11397,6 +11722,9 @@
                         "items": {
                             "$ref": "#/components/schemas/AttributeGroup"
                         }
+                    },
+                    "uses_collections": {
+                        "type": "boolean"
                     }
                 },
                 "additionalProperties": false,
@@ -13882,11 +14210,55 @@
                                     },
                                     "brand_slug": {
                                         "type": "string"
+                                    },
+                                    "id": {
+                                        "type": "integer"
+                                    },
+                                    "slug": {
+                                        "type": "string"
+                                    },
+                                    "headline": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "description": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "country_code": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "pattern": "^[A-Z]{2}$"
+                                    },
+                                    "image_url": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "image_alt": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
                                     }
                                 },
                                 "required": [
                                     "name",
-                                    "brand_slug"
+                                    "brand_slug",
+                                    "id",
+                                    "slug",
+                                    "headline",
+                                    "description",
+                                    "country_code",
+                                    "image_url",
+                                    "image_alt"
                                 ],
                                 "additionalProperties": false
                             },
@@ -14737,6 +15109,216 @@
                         "$ref": "#/components/schemas/SiteNavigationGroup"
                     }
                 ]
+            },
+            "StoreProductCollectionRequest": {
+                "type": "object",
+                "required": [
+                    "brand_id",
+                    "name",
+                    "slug"
+                ],
+                "properties": {
+                    "brand_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "headline": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 10000
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "default": true
+                    }
+                },
+                "additionalProperties": false
+            },
+            "UpdateProductCollectionRequest": {
+                "type": "object",
+                "properties": {
+                    "brand_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "slug": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "headline": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 10000
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CatalogCollection": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "brand_id",
+                    "name",
+                    "slug",
+                    "headline",
+                    "description",
+                    "image_id",
+                    "is_active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "brand_id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "headline": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "image_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "brand": {
+                        "$ref": "#/components/schemas/Brand"
+                    },
+                    "image": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Media"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "products_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CatalogCollectionResponse": {
+                "type": "object",
+                "required": [
+                    "data"
+                ],
+                "properties": {
+                    "data": {
+                        "$ref": "#/components/schemas/CatalogCollection"
+                    }
+                },
+                "additionalProperties": false
+            },
+            "CatalogCollectionCollection": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "links",
+                    "meta"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CatalogCollection"
+                        }
+                    },
+                    "links": {
+                        "type": "object"
+                    },
+                    "meta": {
+                        "type": "object"
+                    }
+                },
+                "additionalProperties": false
             }
         },
         "parameters": {

@@ -12,6 +12,7 @@ final class ProductGroupAxisChoices
     public function forAttributes(iterable $attributes): array
     {
         $items = is_array($attributes) ? $attributes : iterator_to_array($attributes);
+        $items = array_filter($items, static fn (Attribute $attribute): bool => $attribute->slug !== 'kollektsiya');
         $counts = [];
         foreach ($items as $attribute) {
             $key = mb_strtolower(trim((string) $attribute->name));

@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['parent_id', 'name', 'slug', 'description', 'image_id', 'is_parent', 'is_active', 'sort_order'])]
+/** @property bool $uses_collections */
+#[Fillable(['parent_id', 'name', 'slug', 'description', 'image_id', 'is_parent', 'is_active', 'uses_collections', 'sort_order'])]
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
@@ -71,6 +72,7 @@ class Category extends Model
         return [
             'is_parent' => 'boolean',
             'is_active' => 'boolean',
+            'uses_collections' => 'boolean',
         ];
     }
 }

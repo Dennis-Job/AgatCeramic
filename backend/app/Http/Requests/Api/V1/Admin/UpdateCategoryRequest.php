@@ -24,6 +24,7 @@ class UpdateCategoryRequest extends FormRequest
             'document_ids' => ['sometimes', 'array', 'max:50'],
             'document_ids.*' => ['integer', 'distinct', Rule::exists('media', 'id')->where('kind', 'document')],
             'is_parent' => ['sometimes', 'boolean'],
+            'uses_collections' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0', 'max:2147483647'],
         ];

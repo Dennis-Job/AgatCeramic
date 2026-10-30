@@ -21,6 +21,18 @@ export interface ProductCard extends Omit<CatalogProduct, 'description'> {
 export interface GroupProduct extends ProductCard {
   axis_values: Pick<ProductAttribute, 'slug' | 'value' | 'display_value'>[]
 }
+export interface ProductCollection {
+  name: string
+  brand_slug: string
+  // Optional metadata keeps older, minimal public projections compatible.
+  id?: number
+  slug?: string
+  headline?: string | null
+  description?: string | null
+  country_code?: string | null
+  image_url?: string | null
+  image_alt?: string | null
+}
 export interface ProductDetail extends ProductCard {
   sku: string
   article_number: string | null
@@ -33,7 +45,7 @@ export interface ProductDetail extends ProductCard {
     | null
   images: ProductImage[]
   attributes: ProductAttribute[]
-  collection: { name: string; brand_slug: string } | null
+  collection: ProductCollection | null
   group: {
     axes: Pick<ProductAttribute, 'id' | 'slug' | 'name' | 'type'>[]
     products: GroupProduct[]

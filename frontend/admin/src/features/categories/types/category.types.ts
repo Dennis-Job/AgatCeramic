@@ -19,6 +19,7 @@ export type Category = {
   image: Media | null
   documents: Media[]
   sku_prefix: string | null
+  uses_collections: boolean
   is_parent: boolean
   is_active: boolean
   sort_order: number
