@@ -75,6 +75,12 @@ export const adminNavigation: NavigationSection[] = [
             requiredPermission: 'catalog.manage',
           },
           {
+            label: 'Коллекции',
+            to: '/collections',
+            path: '/collections',
+            requiredPermission: 'catalog.manage',
+          },
+          {
             label: 'Бренды',
             to: '/brands',
             path: '/brands',

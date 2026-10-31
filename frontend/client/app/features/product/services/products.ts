@@ -29,6 +29,12 @@ export async function fetchProduct(
     images: data.images
       .map((image) => ({ ...image, url: imageUrl(image.url, publicBase) }))
       .filter((image) => image.url),
+    collection: data.collection
+      ? {
+          ...data.collection,
+          image_url: imageUrl(data.collection.image_url, publicBase) || null,
+        }
+      : null,
     group: data.group
       ? {
           ...data.group,

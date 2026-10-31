@@ -47,7 +47,7 @@ class ProductImportGroupValidationService
                 ]);
             }
             $axisIds = $group->axes()->pluck('attributes.id')->filter(static fn (mixed $id): bool => is_int($id))->all();
-            $categoryAttributes = $product->category->attributes()->get();
+            $categoryAttributes = $product->category->attributes()->where('slug', '!=', 'kollektsiya')->get();
             $members = [];
             foreach ($group->products()->with('attributeValues')->get() as $member) {
                 $members[$member->id] = [

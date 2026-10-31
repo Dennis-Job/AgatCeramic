@@ -25,6 +25,8 @@ class OpenApiCatalogContractTest extends TestCase
             '/admin/attributes/{attribute}' => ['get', 'put', 'patch', 'delete'],
             '/admin/brands' => ['get', 'post'],
             '/admin/brands/{brand}' => ['get', 'put', 'patch', 'delete'],
+            '/admin/collections' => ['get', 'post'],
+            '/admin/collections/{collection}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products' => ['get', 'post'],
             '/admin/products/filter-counts' => ['get'],
             '/admin/products/export' => ['get', 'post'],
@@ -50,7 +52,7 @@ class OpenApiCatalogContractTest extends TestCase
             }
         }
 
-        foreach (['Category', 'AttributeGroup', 'Attribute', 'AttributeOption', 'Brand', 'Product', 'ProductGroup', 'ProductAttributeValue', 'ProductImage', 'ProductRelation'] as $schema) {
+        foreach (['Category', 'AttributeGroup', 'Attribute', 'AttributeOption', 'Brand', 'CatalogCollection', 'Product', 'ProductGroup', 'ProductAttributeValue', 'ProductImage', 'ProductRelation'] as $schema) {
             self::assertArrayHasKey($schema, $spec['components']['schemas']);
             self::assertArrayHasKey($schema.'Response', $spec['components']['schemas']);
             self::assertArrayHasKey($schema.'Collection', $spec['components']['schemas']);

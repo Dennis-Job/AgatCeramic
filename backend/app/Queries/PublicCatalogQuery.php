@@ -22,9 +22,7 @@ class PublicCatalogQuery
             }
         }
         if (is_string($filters['collection'] ?? null) && $filters['collection'] !== '') {
-            $query->whereHas('attributeValues', fn ($values) => $values
-                ->whereHas('attribute', fn ($attribute) => $attribute->where('slug', 'kollektsiya')->where('is_visible_on_product_page', true))
-                ->whereJsonContains('product_attribute_values.value', $filters['collection']));
+            $query->whereHas('collection', fn ($collection) => $collection->where('is_active', true)->where('name', $filters['collection']));
         }
 
         return $query->with(['category', 'brand', 'primaryImage'])->orderBy('name')->orderBy('id')->paginate(24)->withQueryString();

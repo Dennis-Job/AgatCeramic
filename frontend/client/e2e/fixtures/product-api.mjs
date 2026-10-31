@@ -55,6 +55,45 @@ export function handleProducts(request, response, url, scenario) {
   )
   if (!product) return send({ message: 'Not found' }, 404)
   const empty = scenario === 'product-empty'
+  let collection = { name: 'Тестовая коллекция', brand_slug: brand.slug }
+  if (scenario.startsWith('product-collection')) {
+    collection =
+      product.id === 2 || scenario === 'product-collection-null'
+        ? null
+        : {
+            id: 1,
+            slug: 'test-collection',
+            name: 'Тестовая коллекция',
+            brand_slug: brand.slug,
+            headline: 'Спокойный камень для светлых пространств',
+            description:
+              'Настоящее описание коллекции из API.\nМатериал для спокойных и светлых интерьеров.',
+            country_code: 'RU',
+            image_url: '/images/home/materials.webp',
+            image_alt: 'Коллекция в интерьере светлой ванной',
+          }
+    if (collection && scenario === 'product-collection-no-description')
+      collection.description = '  \n '
+    if (collection && scenario === 'product-collection-no-image')
+      collection.image_url = null
+    if (collection && scenario === 'product-collection-private-image')
+      collection.image_url = 'javascript:alert(1)'
+    if (collection && scenario === 'product-collection-broken-image')
+      collection.image_url = '/images/home/missing-collection.webp'
+    if (collection && scenario === 'product-collection-fallback') {
+      collection.headline = ' '
+      collection.image_alt = null
+      collection.country_code = null
+    }
+    if (collection && scenario === 'product-collection-long') {
+      collection.headline =
+        'Коллекция натурального камня с выразительной фактурой для просторных светлых интерьеров и современных пространств'
+      collection.description =
+        'Описание коллекции с длинными русскими предложениями и сохранёнными переносами.\n'.repeat(
+          8,
+        )
+    }
+  }
   configureCartProducts(
     products.map((item) => ({ ...item, stock_quantity: 10 })),
   )
@@ -97,23 +136,21 @@ export function handleProducts(request, response, url, scenario) {
           display_value: '300×300',
         },
       ],
-      collection: { name: 'Тестовая коллекция', brand_slug: brand.slug },
+      collection,
       group: empty
         ? null
         : {
             axes,
-            products: products
-              .slice(0, 2)
-              .map((item, index) => ({
-                ...item,
-                axis_values: [
-                  {
-                    slug: 'tsvet',
-                    value: index ? 'light' : 'gray',
-                    display_value: index ? 'Светлый' : 'Серый',
-                  },
-                ],
-              })),
+            products: products.slice(0, 2).map((item, index) => ({
+              ...item,
+              axis_values: [
+                {
+                  slug: 'tsvet',
+                  value: index ? 'light' : 'gray',
+                  display_value: index ? 'Светлый' : 'Серый',
+                },
+              ],
+            })),
           },
       related: empty ? [] : [products[2]],
       recommended: empty ? [] : [products[3]],

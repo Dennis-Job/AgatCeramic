@@ -18,6 +18,7 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'collection_id' => ['sometimes', 'nullable', 'integer', 'exists:product_collections,id'],
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:products,slug'],

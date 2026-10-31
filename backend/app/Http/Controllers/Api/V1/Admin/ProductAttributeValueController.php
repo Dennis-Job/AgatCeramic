@@ -17,7 +17,7 @@ class ProductAttributeValueController extends Controller
     {
         Gate::authorize('view', $product);
 
-        return ProductAttributeValueResource::collection($product->attributeValues()->with('attribute.options')->get());
+        return ProductAttributeValueResource::collection($product->attributeValues()->whereHas('attribute', fn ($query) => $query->where('slug', '!=', 'kollektsiya'))->with('attribute.options')->get());
     }
 
     public function replace(ReplaceProductAttributeValuesRequest $request, Product $product): mixed

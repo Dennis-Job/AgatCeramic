@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ProductCollectionField from '../../collections/components/ProductCollectionField.vue'
+import { computed } from 'vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
@@ -6,7 +8,9 @@ import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import { useProductEditorContext } from '../composables/useProductEditorContext'
 const {
+  categories,
   copiedFromName,
+  copiedFromProduct,
   copiedNameError,
   form,
   manuallyEditedSlug,
@@ -19,6 +23,18 @@ const {
   units,
   saveMain,
 } = useProductEditorContext()
+function categoryAllowsCollections(nodes: typeof categories.value): boolean {
+  for (const category of nodes) {
+    if (category.id === form.value.category_id)
+      return category.uses_collections ?? false
+    if (category.children && categoryAllowsCollections(category.children))
+      return true
+  }
+  return false
+}
+const allowsCollections = computed(() =>
+  categoryAllowsCollections(categories.value),
+)
 </script>
 
 <template>
@@ -76,6 +92,12 @@ const {
         accessible-name="Бренд"
         searchable
     /></UiField>
+    <ProductCollectionField
+      v-model="form.collection_id"
+      :brand-id="form.brand_id"
+      :category-allowed="allowsCollections"
+      :current="(editing ?? copiedFromProduct)?.collection ?? null"
+    />
     <div class="text-sm font-medium">
       <span id="product-sku-label">SKU</span>
       <p

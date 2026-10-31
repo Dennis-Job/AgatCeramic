@@ -61,6 +61,9 @@ class CategoryManagementService
                 throw ValidationException::withMessages(['is_parent' => ['A category with children must remain a parent category.']]);
             }
 
+            if (in_array($attributes['uses_collections'] ?? true, [false, 0, '0'], true) && $category->products()->whereNotNull('collection_id')->exists()) {
+                throw ValidationException::withMessages(['uses_collections' => ['Collections cannot be disabled while products in this category are assigned to a collection.']]);
+            }
             $category->fill($attributes)->save();
             if ($documentIds !== null) {
                 $category->documents()->sync($this->documentOrder($documentIds));

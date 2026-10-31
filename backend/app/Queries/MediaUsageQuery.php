@@ -16,6 +16,7 @@ class MediaUsageQuery
 
         return DB::table('categories')->where('image_id', $mediaId)->exists()
             || DB::table('brands')->where('logo_id', $mediaId)->exists()
+            || DB::table('product_collections')->where('image_id', $mediaId)->exists()
             || DB::table('banners')->where('image_media_id', $mediaId)->exists()
             || DB::table('brand_media_documents')->where('media_id', $mediaId)->exists()
             || DB::table('category_media_documents')->where('media_id', $mediaId)->exists()

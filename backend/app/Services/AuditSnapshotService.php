@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Permission;
 use App\Models\Product;
+use App\Models\ProductCollection;
 use App\Models\ProductGroup;
 use App\Models\ProductImage;
 use App\Models\ProductImageImport;
@@ -31,7 +32,7 @@ class AuditSnapshotService
             $entity instanceof Order => ['name' => 'Заказ №'.$entity->order_number, 'order_number' => $entity->order_number],
             $entity instanceof Role => ['name' => $entity->name, 'slug' => $entity->slug],
             $entity instanceof Permission => ['name' => $entity->name, 'code' => $entity->code],
-            $entity instanceof ProductGroup, $entity instanceof Brand, $entity instanceof Category,
+            $entity instanceof ProductCollection, $entity instanceof ProductGroup, $entity instanceof Brand, $entity instanceof Category,
             $entity instanceof Attribute, $entity instanceof AttributeGroup => ['name' => $entity->getAttribute('name')],
             $entity instanceof ProductImport => ['name' => 'Импорт #'.$entity->id, 'import_id' => $entity->id],
             $entity instanceof ProductImageImport => ['name' => 'Импорт фотографий #'.$entity->id, 'import_id' => $entity->id],
@@ -43,13 +44,14 @@ class AuditSnapshotService
     public function capture(Model $entity): array
     {
         $fields = match (true) {
-            $entity instanceof Product => ['name', 'sku', 'slug', 'article_number', 'barcode', 'category_id', 'brand_id', 'description', 'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale'],
+            $entity instanceof Product => ['name', 'sku', 'slug', 'article_number', 'barcode', 'category_id', 'brand_id', 'collection_id', 'description', 'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale'],
             $entity instanceof ProductImage => ['path', 'is_primary', 'sort_order', 'alt'],
             $entity instanceof ProductGroup => ['name', 'code'],
             $entity instanceof User => ['status'],
             $entity instanceof Role => ['name', 'slug', 'description'],
+            $entity instanceof ProductCollection => ['brand_id', 'name', 'slug', 'headline', 'description', 'image_id', 'is_active'],
             $entity instanceof Brand => ['name', 'slug', 'description', 'country_code', 'logo_id', 'is_active'],
-            $entity instanceof Category => ['name', 'slug', 'description', 'parent_id', 'image_id', 'is_parent', 'is_active', 'sort_order'],
+            $entity instanceof Category => ['name', 'slug', 'description', 'parent_id', 'image_id', 'is_parent', 'is_active', 'uses_collections', 'sort_order'],
             $entity instanceof AttributeGroup => ['name', 'slug', 'description', 'sort_order'],
             $entity instanceof Attribute => ['name', 'slug', 'attribute_group_id', 'type', 'unit', 'is_filterable', 'is_visible_on_product_page', 'sort_order'],
             default => [],

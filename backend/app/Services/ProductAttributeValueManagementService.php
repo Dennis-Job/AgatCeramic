@@ -8,6 +8,7 @@ use App\Models\ProductGroup;
 use App\Models\ProductGroupMember;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -36,7 +37,7 @@ class ProductAttributeValueManagementService
 
             $attributeIds = collect(array_column($attributes, 'attribute_id'));
             $this->integrityService->assertValuesMatchCategory($product, $attributes, 'attributes', $product->is_active);
-            $product->attributeValues()->whereNotIn('attribute_id', $attributeIds)->delete();
+            $product->attributeValues()->whereHas('attribute', fn ($query) => $query->where('slug', '!=', 'kollektsiya'))->whereNotIn('attribute_id', $attributeIds)->delete();
 
             foreach ($attributes as $attribute) {
                 $product->attributeValues()->updateOrCreate(
@@ -47,12 +48,12 @@ class ProductAttributeValueManagementService
 
             if ($group !== null) {
                 $axisIds = collect($this->integerIds($group->axes()->pluck('attributes.id')->all()));
-                $sharedAttributeIds = collect($this->integerIds($category->attributes()->pluck('attributes.id')->all()))
+                $sharedAttributeIds = collect($this->integerIds($category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->pluck('attributes.id')->all()))
                     ->diff($axisIds);
                 $sharedValues = collect($attributes)
                     ->filter(fn (array $attribute): bool => $sharedAttributeIds->contains($attribute['attribute_id']));
                 $submittedSharedIds = collect($this->integerIds($sharedValues->pluck('attribute_id')->all()));
-                $requiredSharedIds = collect($this->integerIds($category->attributes()->wherePivot('is_required', true)->pluck('attributes.id')->all()))
+                $requiredSharedIds = collect($this->integerIds($category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->wherePivot('is_required', true)->pluck('attributes.id')->all()))
                     ->diff($axisIds);
 
                 if ($groupProducts->contains(fn (Product $member): bool => $member->is_active)
@@ -89,7 +90,7 @@ class ProductAttributeValueManagementService
                 ]);
             }
 
-            return $product->load(['attributeValues.attribute.options']);
+            return $product->load(['attributeValues' => fn (Relation $query) => $query->getQuery()->whereHas('attribute', fn ($attribute) => $attribute->where('slug', '!=', 'kollektsiya')), 'attributeValues.attribute.options']);
         });
     }
 

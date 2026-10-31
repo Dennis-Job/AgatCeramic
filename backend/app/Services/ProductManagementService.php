@@ -16,6 +16,7 @@ class ProductManagementService
         private readonly StorageCleanupService $storageCleanupService,
         private readonly ProductCompletenessService $completenessService,
         private readonly CatalogSkuService $skuService,
+        private readonly ProductCollectionAssignmentValidator $collectionValidator,
     ) {}
 
     /**
@@ -26,6 +27,7 @@ class ProductManagementService
     {
         return DB::transaction(function () use ($actor, $attributes, $auditContext, $deferAudit): Product {
             $category = Category::query()->whereKey($attributes['category_id'])->lockForUpdate()->firstOrFail();
+            $this->collectionValidator->validate($category, null, $attributes);
             $attributes['sku'] = $this->skuService->generate($category);
             $product = Product::query()->create($attributes);
             if ($product->is_active) {
@@ -36,7 +38,7 @@ class ProductManagementService
             }
 
             return $product;
-        });
+        }, 3);
     }
 
     /**
@@ -46,6 +48,17 @@ class ProductManagementService
     public function update(User $actor, Product $product, array $attributes, array $auditContext = [], bool $deferAudit = false): Product
     {
         return DB::transaction(function () use ($actor, $product, $attributes, $auditContext, $deferAudit): Product {
+            $lockedCategoryIds = collect([$product->category_id, $attributes['category_id'] ?? $product->category_id])->unique()->sort()->values();
+            $categories = Category::query()->whereKey($lockedCategoryIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            if (! $lockedCategoryIds->contains($product->category_id)) {
+                throw ValidationException::withMessages(['category_id' => ['The product category changed concurrently. Retry the request.']]);
+            }
+            $categoryId = $attributes['category_id'] ?? $product->category_id;
+            $targetCategory = $categories->get($this->categoryId($categoryId));
+            if ($targetCategory === null) {
+                throw ValidationException::withMessages(['category_id' => ['The selected category is no longer available.']]);
+            }
             $membership = $product->groupMembership()->first();
             if ($membership !== null) {
                 foreach (['category_id', 'brand_id'] as $field) {
@@ -54,30 +67,10 @@ class ProductManagementService
                     }
                 }
             }
-            if (array_key_exists('category_id', $attributes)) {
-                $lockedCategoryIds = collect([$product->category_id, $attributes['category_id']])->unique()->sort()->values();
-                $categories = Category::query()->whereIn('id', $lockedCategoryIds->all())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
-                $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
-
-                if (! $lockedCategoryIds->contains($product->category_id)) {
-                    throw ValidationException::withMessages([
-                        'category_id' => ['The product category changed concurrently. Retry the request.'],
-                    ]);
-                }
-
-                $targetCategory = $categories->get($this->categoryId($attributes['category_id']));
-                if ($targetCategory === null) {
-                    throw ValidationException::withMessages([
-                        'category_id' => ['The selected category is no longer available.'],
-                    ]);
-                }
-
-                if ($targetCategory->id !== $product->category_id) {
-                    $this->integrityService->assertProductCanUseCategory($product, $targetCategory);
-                }
-            } else {
-                $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            if ($targetCategory->id !== $product->category_id) {
+                $this->integrityService->assertProductCanUseCategory($product, $targetCategory);
             }
+            $this->collectionValidator->validate($targetCategory, $product, $attributes);
 
             $before = $deferAudit ? [] : $this->auditLogService->capture($product);
             $product->fill($attributes)->save();
@@ -89,7 +82,7 @@ class ProductManagementService
             }
 
             return $product;
-        });
+        }, 3);
     }
 
     public function delete(User $actor, Product $product): void

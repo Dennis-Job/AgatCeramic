@@ -9,6 +9,7 @@ import RolesView from '../views/RolesView.vue'
 import PermissionsView from '../views/PermissionsView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import CategoriesView from '../views/CategoriesView.vue'
+import CollectionsView from '../views/CollectionsView.vue'
 import BrandsView from '../views/BrandsView.vue'
 import AttributeGroupsView from '../views/AttributeGroupsView.vue'
 import AttributesView from '../views/AttributesView.vue'
@@ -28,6 +29,16 @@ import ProductGroupImportView from '../views/ProductGroupImportView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {
+      path: '/collections',
+      name: 'collections',
+      component: CollectionsView,
+      meta: {
+        requiresAuth: true,
+        requiredPermission: 'catalog.manage',
+        title: 'Коллекции',
+      },
+    },
     {
       path: '/notifications',
       name: 'notifications',

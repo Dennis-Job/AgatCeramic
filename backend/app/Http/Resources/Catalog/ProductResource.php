@@ -17,6 +17,7 @@ class ProductResource extends ApiResource
             'id' => $this->id,
             'category_id' => $this->category_id,
             'brand_id' => $this->brand_id,
+            'collection_id' => $this->collection_id,
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
@@ -31,6 +32,7 @@ class ProductResource extends ApiResource
             'is_on_sale' => $this->is_on_sale,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'brand' => new BrandResource($this->whenLoaded('brand')),
+            'collection' => new ProductCollectionResource($this->whenLoaded('collection')),
             'primary_image' => new ProductImageResource($this->whenLoaded('primaryImage')),
             'group' => $this->whenLoaded('groupMembership', fn () => $this->groupMembership?->group === null ? null : [
                 'id' => $this->groupMembership->group->id,

@@ -28,7 +28,7 @@ class ProductController extends Controller
         Gate::authorize('viewAny', Product::class);
 
         $query = $this->productQuery->filtered($request->validated())
-            ->with(['category', 'brand', 'primaryImage', 'groupMembership.group']);
+            ->with(['category', 'brand', 'collection.brand', 'collection.image', 'primaryImage', 'groupMembership.group']);
 
         return ProductResource::collection(
             $query->paginate($request->integer('per_page', 25))->withQueryString()
@@ -50,21 +50,21 @@ class ProductController extends Controller
 
         $product = $this->managementService->create($this->authenticatedAdmin($request), $request->validated());
 
-        return (new ProductResource($product->load(['category', 'brand', 'primaryImage', 'groupMembership.group'])))->response()->setStatusCode(Response::HTTP_CREATED);
+        return (new ProductResource($product->load(['category', 'brand', 'collection.brand', 'collection.image', 'primaryImage', 'groupMembership.group'])))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
     public function show(Product $product): ProductResource
     {
         Gate::authorize('view', $product);
 
-        return new ProductResource($product->load(['category', 'brand', 'primaryImage', 'groupMembership.group']));
+        return new ProductResource($product->load(['category', 'brand', 'collection.brand', 'collection.image', 'primaryImage', 'groupMembership.group']));
     }
 
     public function update(UpdateProductRequest $request, Product $product): ProductResource
     {
         Gate::authorize('update', $product);
 
-        return new ProductResource($this->managementService->update($this->authenticatedAdmin($request), $product, $request->validated())->load(['category', 'brand', 'primaryImage', 'groupMembership.group']));
+        return new ProductResource($this->managementService->update($this->authenticatedAdmin($request), $product, $request->validated())->load(['category', 'brand', 'collection.brand', 'collection.image', 'primaryImage', 'groupMembership.group']));
     }
 
     public function destroy(Request $request, Product $product): Response

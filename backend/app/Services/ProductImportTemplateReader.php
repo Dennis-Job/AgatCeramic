@@ -24,7 +24,6 @@ final class ProductImportTemplateReader
     {
         $this->categoryValidator->validate($category, $path);
         $headers = $this->schema->headers($category);
-        $editingHeaders = $this->schema->headers($category, true);
         $editing = false;
         $readerOptions = new ReaderOptions;
         $readerOptions->SHOULD_PRESERVE_EMPTY_ROWS = true;
@@ -43,10 +42,19 @@ final class ProductImportTemplateReader
                 foreach ($rows as $index => $row) {
                     $values = array_map(fn ($value) => $value instanceof DateTimeInterface ? $value->format('Y-m-d') : $value, $row->toArray());
                     if ($index === 1) {
-                        if ($values === array_values($editingHeaders)) {
-                            $headers = $editingHeaders;
-                            $editing = true;
-                        } elseif ($values !== array_values($headers)) {
+                        $matched = false;
+                        foreach ([false, true] as $legacy) {
+                            foreach ([false, true] as $editMode) {
+                                $candidate = $this->schema->headers($category, $editMode, $legacy);
+                                if ($values === array_values($candidate)) {
+                                    $headers = $candidate;
+                                    $editing = $editMode;
+                                    $matched = true;
+                                    break 2;
+                                }
+                            }
+                        }
+                        if (! $matched) {
                             throw ValidationException::withMessages(['file' => ['Столбцы не соответствуют выбранной категории. Скачайте актуальный шаблон; не изменяйте заголовки.']]);
                         }
 

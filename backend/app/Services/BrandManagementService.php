@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Brand;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class BrandManagementService
 {
@@ -53,6 +54,9 @@ class BrandManagementService
     {
         DB::transaction(function () use ($actor, $brand): void {
             $brand = Brand::query()->whereKey($brand->id)->lockForUpdate()->firstOrFail();
+            if ($brand->collections()->exists()) {
+                throw ValidationException::withMessages(['brand' => ['A brand with collections cannot be deleted.']]);
+            }
             $logoId = $brand->logo_id;
             $this->auditLogService->record($actor, 'brand.deleted', $brand);
             $brand->delete();

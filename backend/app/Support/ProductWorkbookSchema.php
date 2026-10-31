@@ -9,7 +9,7 @@ final class ProductWorkbookSchema
     public const MANAGER_HEADERS = [
         'sku' => 'SKU', 'article_number' => 'Артикул', 'barcode' => 'Штрихкод',
         'name' => 'Название', 'description' => 'Описание', 'category_name' => 'Категория',
-        'brand_name' => 'Бренд', 'unit' => 'Единица продажи', 'price' => 'Цена',
+        'brand_name' => 'Бренд', 'collection_name' => 'Коллекция', 'unit' => 'Единица продажи', 'price' => 'Цена',
         'old_price' => 'Старая цена', 'stock_quantity' => 'Остаток', 'is_active' => 'Активность',
         'is_on_sale' => 'Распродажа',
         'product_group_code' => 'Код группы', 'product_group_name' => 'Группа вариантов',
@@ -23,7 +23,7 @@ final class ProductWorkbookSchema
 
     public const BASE_HEADERS = [
         'id', 'sku', 'article_number', 'barcode', 'name', 'slug', 'description',
-        'category_id', 'category_slug', 'category_name', 'brand_id', 'brand_slug', 'brand_name',
+        'category_id', 'category_slug', 'category_name', 'brand_id', 'brand_slug', 'brand_name', 'collection_name',
         'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale',
         'primary_image_url', 'product_group_id', 'product_group_code', 'product_group_name',
         'created_at', 'updated_at',

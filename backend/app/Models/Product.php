@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['category_id', 'brand_id', 'name', 'slug', 'description', 'sku', 'article_number', 'barcode', 'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale'])]
+#[Fillable(['category_id', 'brand_id', 'collection_id', 'name', 'slug', 'description', 'sku', 'article_number', 'barcode', 'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale'])]
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
@@ -26,6 +26,12 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    /** @return BelongsTo<ProductCollection, $this> */
+    public function collection(): BelongsTo
+    {
+        return $this->belongsTo(ProductCollection::class, 'collection_id');
     }
 
     /** @return HasMany<ProductVariant, $this> Legacy conversion-only relationship. */

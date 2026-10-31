@@ -21,11 +21,17 @@ final class ProductImportTemplateSchema
     public const EDIT_HEADERS = ['sku' => 'SKU'];
 
     /** @return array<string, string> */
-    public function headers(Category $category, bool $editing = false): array
+    public function headers(Category $category, bool $editing = false, bool $legacy = false): array
     {
         $headers = $editing ? self::EDIT_HEADERS + self::BASE_HEADERS : self::BASE_HEADERS;
+        if (! $legacy && $category->uses_collections) {
+            $headers['collection_name'] = 'Коллекция';
+        }
         $attributes = $category->attributes()->with('options')->get();
         foreach ($attributes as $attribute) {
+            if (! $legacy && $attribute->slug === 'kollektsiya') {
+                continue;
+            }
             $label = $attribute->name.($attribute->unit ? ' ('.$attribute->unit.')' : '');
             if ($attributes->where('name', $attribute->name)->count() > 1 || in_array($label, self::BASE_HEADERS, true)) {
                 $label .= ' [#'.$attribute->id.']';
@@ -51,12 +57,13 @@ final class ProductImportTemplateSchema
     {
         $attributes = $category->attributes()->with('options')->get()->keyBy('id');
 
-        return array_values(Product::query()->where('category_id', $category->id)->with(['brand', 'attributeValues'])->orderBy('sku')->get()
+        return array_values(Product::query()->where('category_id', $category->id)->with(['brand', 'collection', 'attributeValues'])->orderBy('sku')->get()
             ->map(function (Product $product) use ($attributes): array {
                 $row = [
                     'sku' => $product->sku, 'name' => $product->name, 'slug' => $product->slug,
                     'article_number' => $product->article_number, 'barcode' => $product->barcode,
                     'description' => $product->description, 'brand_name' => $product->brand?->name,
+                    'collection_name' => $product->collection?->name,
                     'unit' => ProductWorkbookSchema::UNIT_LABELS[(string) $product->unit] ?? (string) $product->unit,
                     'price' => $product->price, 'old_price' => $product->old_price,
                     'stock_quantity' => $product->stock_quantity, 'is_active' => $product->is_active ? 'Да' : 'Нет',
@@ -64,7 +71,7 @@ final class ProductImportTemplateSchema
                 ];
                 foreach ($product->attributeValues as $value) {
                     $attribute = $attributes->get($value->attribute_id);
-                    if ($attribute === null) {
+                    if ($attribute === null || $attribute->slug === 'kollektsiya') {
                         continue;
                     }
                     $key = 'attribute.'.$attribute->slug;

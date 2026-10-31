@@ -1,5 +1,21 @@
 # DONE
 
+2026-10-30 — Список коллекций приведён к компоновке страницы брендов: сведения
+и статусы в средней колонке, описание под строкой, адаптивное перестроение.
+Admin lint/format/build, 281 unit и focused E2E/axe прошли; UI Design Guard
+принят. [Отчёт](../docs/PRODUCT_COLLECTIONS_2026-10-30.md).
+
+2026-10-30 — Отдельный справочник коллекций брендов: Admin CRUD, media/страна,
+настройка категории и необязательное назначение товару. Условный интерьерный блок
+Client по productExample; без коллекции/описания/фото нет секции и пустого отступа.
+Excel alias/new column, поиск/экспорт/clone используют новую связь; старые значения
+сохранены. После защищённого backup и полного restore на разрешённой локальной
+копии перенесены 6 товаров в 2 коллекции; повторный запуск — 0 изменений.
+Backend SQLite 699 tests/4 expected skips, PostgreSQL feature 603 tests,
+concurrency 15 tests; Admin 281 unit/28 E2E; Client focused/SSR/responsive и
+независимый UI Design Guard приняты. Общий Composer audit выявляет существующий
+symfony/mime advisory вне изменения зависимостей. [Файлы и проверки](../docs/PRODUCT_COLLECTIONS_2026-10-30.md).
+
 Компактный индекс завершённых работ. Детальные implementation logs воспроизводятся из Git;
 долгосрочные решения находятся в [`docs/DECISIONS.md`](../docs/DECISIONS.md), актуальное состояние —
 в [`docs/CURRENT_STATE.md`](../docs/CURRENT_STATE.md), operational/recovery rules — в

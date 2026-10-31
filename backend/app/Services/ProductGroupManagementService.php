@@ -150,14 +150,14 @@ class ProductGroupManagementService
         }
 
         $axes = Attribute::query()->whereKey($axisIds)->orderBy('id')->lockForUpdate()->get();
-        if ($axes->count() !== count($axisIds) || $axes->contains(fn (Attribute $attribute): bool => in_array($attribute->type, ['text', 'multiselect'], true))) {
+        if ($axes->count() !== count($axisIds) || $axes->contains(fn (Attribute $attribute): bool => $attribute->slug === 'kollektsiya' || in_array($attribute->type, ['text', 'multiselect'], true))) {
             throw ValidationException::withMessages(['axis_attribute_ids' => ['Осями могут быть только существующие скалярные характеристики; текст и множественный выбор не поддерживаются.']]);
         }
         $category = $first->category;
         if ($category === null) {
             throw ValidationException::withMessages(['product_ids' => ['Не удалось определить категорию товаров группы.']]);
         }
-        $categoryAttributes = $category->attributes()->get(['attributes.id', 'attributes.name']);
+        $categoryAttributes = $category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->get(['attributes.id', 'attributes.name']);
         $categoryAttributeIds = $this->integerIds($categoryAttributes->pluck('id')->all());
         if (array_diff($axisIds, $categoryAttributeIds) !== []) {
             throw ValidationException::withMessages(['axis_attribute_ids' => ['Каждая ось должна быть назначена категории товаров.']]);

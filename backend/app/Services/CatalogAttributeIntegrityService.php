@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -15,7 +16,7 @@ class CatalogAttributeIntegrityService
     /** @param array<int, int> $attributeIds */
     public function assertCategoryAssignmentsCanBeReplaced(Category $category, array $attributeIds, string $field = 'attributes'): void
     {
-        $assignedIds = collect($this->integerIds($category->attributes()->pluck('attributes.id')->all()));
+        $assignedIds = collect($this->integerIds($category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->pluck('attributes.id')->all()));
         $replacementIds = collect($attributeIds)->unique();
         $removedIds = $assignedIds->diff($replacementIds);
 
@@ -28,8 +29,8 @@ class CatalogAttributeIntegrityService
 
     public function assertProductCanUseCategory(Product $product, Category $category): void
     {
-        $assignedIds = collect($this->integerIds($category->attributes()->pluck('attributes.id')->all()));
-        $usedIds = $product->attributeValues()->pluck('attribute_id');
+        $assignedIds = collect($this->integerIds($category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->pluck('attributes.id')->all()));
+        $usedIds = $product->attributeValues()->whereHas('attribute', fn ($query) => $query->where('slug', '!=', 'kollektsiya'))->pluck('attribute_id');
         if (Schema::hasTable('product_variant_attribute_values')) {
             $usedIds = $usedIds->merge($product->variants()->join(
                 'product_variant_attribute_values',
@@ -38,7 +39,8 @@ class CatalogAttributeIntegrityService
                 'product_variant_attribute_values.product_variant_id',
             )->pluck('product_variant_attribute_values.attribute_id'));
         }
-        $usedIds = collect($this->integerIds($usedIds->all()))->unique();
+        $legacyIds = Attribute::query()->where('slug', 'kollektsiya')->pluck('id');
+        $usedIds = collect($this->integerIds($usedIds->all()))->diff($this->integerIds($legacyIds))->unique();
 
         if ($usedIds->diff($assignedIds)->isNotEmpty()) {
             throw ValidationException::withMessages([
@@ -46,8 +48,8 @@ class CatalogAttributeIntegrityService
             ]);
         }
 
-        $requiredIds = collect($this->integerIds($category->attributes()->wherePivot('is_required', true)->pluck('attributes.id')->all()));
-        $productValueIds = collect($this->integerIds($product->attributeValues()->pluck('attribute_id')->all()));
+        $requiredIds = collect($this->integerIds($category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->wherePivot('is_required', true)->pluck('attributes.id')->all()));
+        $productValueIds = collect($this->integerIds($product->attributeValues()->whereHas('attribute', fn ($query) => $query->where('slug', '!=', 'kollektsiya'))->pluck('attribute_id')->all()));
 
         if ($product->is_active && $requiredIds->diff($productValueIds)->isNotEmpty()) {
             throw ValidationException::withMessages([
@@ -63,7 +65,11 @@ class CatalogAttributeIntegrityService
         if ($category === null) {
             throw ValidationException::withMessages([$field => ['The product category no longer exists.']]);
         }
-        $assigned = $category->attributes()->with('options')->get()->keyBy('id');
+        $legacyIds = Attribute::query()->where('slug', 'kollektsiya')->pluck('id');
+        if (collect($values)->pluck('attribute_id')->intersect($legacyIds)->isNotEmpty()) {
+            throw ValidationException::withMessages([$field => ['The legacy kollektsiya attribute is archived. Use collection_id instead.']]);
+        }
+        $assigned = $category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->with('options')->get()->keyBy('id');
         $submittedIds = collect($values)->pluck('attribute_id')->unique();
 
         if ($submittedIds->diff($assigned->pluck('id'))->isNotEmpty()) {

@@ -36,6 +36,7 @@ export function useCategoryForm(
           description: category.description ?? '',
           image_id: category.image_id,
           document_ids: category.documents.map((item) => item.id),
+          uses_collections: category.uses_collections ?? false,
           is_parent: category.is_parent,
           is_active: category.is_active,
           sort_order: category.sort_order,

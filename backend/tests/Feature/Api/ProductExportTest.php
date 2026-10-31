@@ -95,7 +95,7 @@ class ProductExportTest extends TestCase
         $zip->open($response->baseResponse->getFile()->getPathname());
         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
         $this->assertStringContainsString('state="frozen"', $xml);
-        $this->assertStringContainsString('<autoFilter ref="A1:U3"', $xml);
+        $this->assertStringContainsString('<autoFilter ref="A1:V3"', $xml);
         $this->assertStringNotContainsString('<f>', $xml);
         $zip->close();
     }

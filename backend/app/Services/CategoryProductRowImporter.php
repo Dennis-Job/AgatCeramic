@@ -72,6 +72,9 @@ final class CategoryProductRowImporter
         $attributes = $category->attributes()->with('options')->get()
             ->mapWithKeys(static fn (Attribute $attribute): array => [$attribute->slug => $attribute])->all();
         foreach ($attributes as $slug => $attribute) {
+            if ($slug === 'kollektsiya') {
+                continue;
+            }
             if (! in_array($attribute->type, ['select', 'multiselect'], true)) {
                 continue;
             }
@@ -95,7 +98,7 @@ final class CategoryProductRowImporter
         $payload = $this->mapper->productPayload($rowValues, $category, $brand, $product, $row);
         $attributePayload = $this->mapper->attributePayload($rowValues, $attributes, $row);
         $requiredAttributeIds = $category->attributes()->wherePivot('is_required', true)->pluck('attributes.id')->all();
-        $missingAttributes = collect($attributes)->whereIn('id', $requiredAttributeIds)
+        $missingAttributes = collect($attributes)->where('slug', '!=', 'kollektsiya')->whereIn('id', $requiredAttributeIds)
             ->whereNotIn('id', collect($attributePayload)->pluck('attribute_id'));
         if ($missingAttributes->isNotEmpty()) {
             $this->values->rowError($row, 'обязательные характеристики не заполнены: '.$missingAttributes

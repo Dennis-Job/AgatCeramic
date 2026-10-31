@@ -1,3 +1,4 @@
+import type { ProductCollection } from '../../collections/types/collection.types'
 import type { PageRequest } from '../../../services/pagination'
 import type { Attribute } from '../../attributes/types/attribute.types'
 import type { Brand } from '../../brands/types/brand.types'
@@ -51,6 +52,8 @@ export type Product = {
   id: number
   category_id: number
   brand_id: number | null
+  collection_id: number | null
+  collection?: ProductCollection | null
   name: string
   slug: string
   description: string | null
@@ -77,6 +80,7 @@ export type ProductPayload = Omit<
   | 'sku'
   | 'category'
   | 'brand'
+  | 'collection'
   | 'attribute_values'
   | 'primary_image'
   | 'created_at'

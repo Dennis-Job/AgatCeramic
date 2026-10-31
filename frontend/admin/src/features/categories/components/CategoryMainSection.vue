@@ -76,6 +76,18 @@ const emit = defineEmits<{
           @update:model-value="form.sort_order = Number($event)"
       /></label>
     </div>
+    <div class="space-y-2">
+      <UiCheckbox
+        mode="boolean"
+        :checked="form.uses_collections"
+        @update:checked="form.uses_collections = $event"
+        >Использовать коллекции</UiCheckbox
+      >
+      <p class="text-sm text-gray-500">
+        Только для этой категории, без наследования. Отключение недоступно, пока
+        её товары связаны с коллекциями.
+      </p>
+    </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <UiCheckbox
         mode="boolean"

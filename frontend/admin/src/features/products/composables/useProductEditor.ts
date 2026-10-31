@@ -320,6 +320,7 @@ export function useProductEditor() {
     return {
       category_id: 0,
       brand_id: null,
+      collection_id: null,
       name: '',
       slug: '',
       description: '',
@@ -337,6 +338,7 @@ export function useProductEditor() {
     return {
       category_id: p.category_id,
       brand_id: p.brand_id,
+      collection_id: p.collection_id ?? null,
       name: p.name,
       slug: p.slug,
       description: p.description ?? '',
@@ -682,6 +684,12 @@ export function useProductEditor() {
     copiedFromProduct.value = product
     form.value = {
       ...toPayload(product),
+      collection_id:
+        product.category.uses_collections &&
+        product.collection?.brand_id === product.brand_id &&
+        product.collection?.is_active
+          ? product.collection_id
+          : null,
       name: '',
       slug: '',
       article_number: null,
