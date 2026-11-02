@@ -30,6 +30,8 @@ class PublicProductQuery
                     ->orderBy('sort_order')->orderBy('id'),
                 'outgoingRelations.relatedProduct.category', 'outgoingRelations.relatedProduct.brand',
                 'outgoingRelations.relatedProduct.primaryImage',
+                'outgoingRelations.relatedProduct.attributeValues' => fn (Relation $query) => $query->getQuery()->whereHas('attribute', fn ($attribute) => $attribute->where('slug', 'razmer')->where('is_visible_on_product_page', true)),
+                'outgoingRelations.relatedProduct.attributeValues.attribute.options',
             ])->firstOrFail();
     }
 }

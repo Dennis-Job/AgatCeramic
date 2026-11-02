@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { formatMoney } from '~/utils/formatMoney'
 import { fetchCatalog } from '~/services/contentPages'
 import PageState from '~/components/shared/PageState.vue'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
-import type { CatalogProduct } from '~/types/contentPage'
-import { productUnitLabel } from '~/utils/productUnits'
-import { productPath } from '~/features/product/services/products'
+import ProductCardList from '~/features/product/components/ProductCardList.vue'
 
 defineProps<{ title: string; description: string }>()
 const route = useRoute()
@@ -46,11 +43,6 @@ const {
   () => `catalog:${page.value}:${JSON.stringify(filters.value)}`,
   () => fetchCatalog(requestBase, publicBase, page.value, filters.value),
 )
-function priceLabel(product: CatalogProduct) {
-  return product.price === null
-    ? 'Цена по запросу'
-    : `${formatMoney(product.price)} / ${productUnitLabel(product.unit)}`
-}
 function pageLink(next: number) {
   return {
     path: route.path,
@@ -94,45 +86,11 @@ function pageLink(next: number) {
             >{{ category.name }}</NuxtLink
           >
         </div>
-        <div v-if="catalog?.data.length" class="products">
-          <article
-            v-for="product in catalog.data"
-            :key="product.id"
-            class="product"
-          >
-            <NuxtLink
-              :to="productPath(product.slug)"
-              class="product__image"
-              :aria-label="product.name"
-            >
-              <img
-                v-if="product.image_url"
-                :src="product.image_url"
-                :alt="product.image_alt || product.name"
-                width="600"
-                height="600"
-                loading="lazy"
-                @error="product.image_url = null"
-              />
-              <span v-else>Изображение пока не добавлено</span>
-            </NuxtLink>
-            <p class="product__category">
-              {{ product.category.name
-              }}<template v-if="product.brand">
-                · {{ product.brand.name }}</template
-              >
-            </p>
-            <h3>
-              <NuxtLink :to="productPath(product.slug)">{{
-                product.name
-              }}</NuxtLink>
-            </h3>
-            <p v-if="product.description" class="product__description">
-              {{ product.description }}
-            </p>
-            <p class="product__price">{{ priceLabel(product) }}</p>
-          </article>
-        </div>
+        <ProductCardList
+          v-if="catalog?.data.length"
+          :products="catalog.data"
+          class="products"
+        />
         <PageState
           v-else
           title="Товары пока не опубликованы"
@@ -185,55 +143,6 @@ function pageLink(next: number) {
   font-size: 13px;
   overflow-wrap: anywhere;
 }
-.products {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 48px 28px;
-}
-.product {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.product__image {
-  display: grid;
-  aspect-ratio: 1;
-  place-items: center;
-  background: var(--color-beige);
-  overflow: hidden;
-}
-.product__image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.product__image span {
-  padding: 24px;
-  color: var(--color-muted);
-  font-size: 13px;
-  text-align: center;
-}
-.product__category {
-  margin: 22px 0 10px;
-  color: var(--color-muted);
-  font-size: 12px;
-  line-height: 1.6;
-}
-h3 {
-  margin: 0 0 14px;
-  font-size: 19px;
-  font-weight: 500;
-  line-height: 1.4;
-}
-.product__description {
-  color: var(--color-muted);
-  font-size: 13px;
-  line-height: 1.7;
-  white-space: pre-line;
-}
-.product__price {
-  margin: 20px 0 0;
-  font-size: 15px;
-}
 .pagination {
   display: flex;
   flex-wrap: wrap;
@@ -246,15 +155,5 @@ h3 {
 .pagination a {
   padding-block: 14px;
   border-bottom: 1px solid var(--color-line);
-}
-@media (max-width: 1024px) {
-  .products {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 640px) {
-  .products {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

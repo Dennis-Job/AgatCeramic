@@ -18,6 +18,7 @@ const card = (id, name, unit = 'square_meter') => ({
   unit,
   is_on_sale: true,
   in_stock: true,
+  size: null,
   category,
   brand,
   image_url: '/images/home/hero-porcelain.webp',
@@ -27,7 +28,7 @@ const products = [
   card(1, 'Керамогранит с длинным русским названием 1'),
   card(2, 'Керамогранит Светлый'),
   card(3, 'Тестовая затирка', 'kilogram'),
-  card(4, 'Рекомендуемый керамогранит'),
+  { ...card(4, 'Рекомендуемый керамогранит'), size: '300×300 мм' },
 ]
 export function handleProducts(request, response, url, scenario) {
   const send = (data, status = 200) => {
@@ -37,12 +38,20 @@ export function handleProducts(request, response, url, scenario) {
   }
   if (
     url.pathname === '/api/v1/catalog' &&
-    ['category', 'brand', 'collection'].some((key) => url.searchParams.has(key))
+    (scenario === 'catalog-card-standard' ||
+      ['category', 'brand', 'collection'].some((key) =>
+        url.searchParams.has(key),
+      ))
   ) {
     return send({
-      data: products
-        .slice(0, 2)
-        .map((product) => ({ ...product, description: 'Описание из API' })),
+      data: (scenario === 'catalog-card-standard'
+        ? [
+            { ...products[0], size: '600×600 мм' },
+            { ...products[1], price: null, brand: null, image_url: null },
+            { ...products[2], in_stock: false },
+          ]
+        : products.slice(0, 2)
+      ).map((product) => ({ ...product, description: 'Описание из API' })),
       categories: [category],
       meta: { current_page: 1, last_page: 1, total: 2 },
     })
@@ -153,7 +162,11 @@ export function handleProducts(request, response, url, scenario) {
             })),
           },
       related: empty ? [] : [products[2]],
-      recommended: empty ? [] : [products[3]],
+      recommended: empty
+        ? []
+        : scenario === 'product-recommendations'
+          ? [products[3], { ...products[1], brand: null }, products[2]]
+          : [products[3]],
     },
   })
 }

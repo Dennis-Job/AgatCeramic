@@ -15,9 +15,7 @@ export interface ProductAttribute {
   value: string | number | boolean | string[] | null
   display_value: string
 }
-export interface ProductCard extends Omit<CatalogProduct, 'description'> {
-  in_stock: boolean
-}
+export type ProductCard = Omit<CatalogProduct, 'description'>
 export interface GroupProduct extends ProductCard {
   axis_values: Pick<ProductAttribute, 'slug' | 'value' | 'display_value'>[]
 }

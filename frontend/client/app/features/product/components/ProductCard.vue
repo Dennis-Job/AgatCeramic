@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ShoppingBag } from '@lucide/vue'
 import UiButton from '~/components/ui/UiButton.vue'
 import { productUnitLabel } from '~/utils/productUnits'
 import { formatMoney } from '~/utils/formatMoney'
@@ -11,9 +10,8 @@ const props = withDefaults(
     row?: boolean
     action?: boolean
     busy?: boolean
-    current?: boolean
   }>(),
-  { row: false, action: false, busy: false, current: false },
+  { row: false, action: false, busy: false },
 )
 defineEmits<{ add: [id: number] }>()
 const failed = ref(false)
@@ -29,40 +27,58 @@ const canBuy = computed(
     props.product.in_stock &&
     props.product.price !== null,
 )
+const recommendationMeta = computed(() =>
+  [props.product.category.name, props.product.size?.trim()]
+    .filter(Boolean)
+    .join(' · '),
+)
 </script>
 <template>
   <article class="product-card" :class="{ 'product-card--row': row }">
-    <NuxtLink
-      :to="productPath(product.slug)"
-      class="card-image"
-      :aria-label="'Открыть ' + product.name"
-    >
-      <img
-        v-if="product.image_url && !failed"
-        :src="product.image_url"
-        :alt="product.image_alt || product.name"
-        width="600"
-        height="600"
-        loading="lazy"
-        @error="failed = true"
-      /><span v-else class="image-empty">Изображение пока не добавлено</span>
-      <span v-if="current" class="current-label">Вы смотрите</span>
-    </NuxtLink>
+    <div class="card-media">
+      <NuxtLink
+        :to="productPath(product.slug)"
+        class="card-image"
+        :aria-label="'Открыть ' + product.name"
+      >
+        <img
+          v-if="product.image_url && !failed"
+          :src="product.image_url"
+          :alt="product.image_alt || product.name"
+          width="600"
+          height="600"
+          loading="lazy"
+          @error="failed = true"
+        /><span v-else class="image-empty">Изображение пока не добавлено</span>
+      </NuxtLink>
+      <UiButton
+        v-if="action && !row"
+        variant="image-overlay"
+        :disabled="busy || !canBuy"
+        @click="$emit('add', product.id)"
+        >{{ busy ? 'Добавляем…' : 'В корзину +' }}</UiButton
+      >
+    </div>
     <div class="card-info">
-      <p v-if="!row" class="eyebrow">
-        {{ product.brand?.name || product.category.name }}
+      <p v-if="!row && product.brand" class="eyebrow card-brand">
+        {{ product.brand.name }}
       </p>
       <h3>
         <NuxtLink :to="productPath(product.slug)">{{ product.name }}</NuxtLink>
       </h3>
-      <p class="availability">
-        <template v-if="row">
-          {{ product.brand?.name || product.category.name }} ·
-        </template>
+      <p v-if="row" class="availability">
+        {{ product.brand?.name || product.category.name }} ·
         {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
       </p>
+      <p v-else class="card-meta">{{ recommendationMeta }}</p>
     </div>
     <div class="card-price">
+      <span>{{
+        product.price === null ? 'Цена по запросу' : formatMoney(product.price)
+      }}</span
+      ><small v-if="product.price !== null">
+        / {{ productUnitLabel(product.unit) }}</small
+      >
       <del
         v-if="
           product.old_price &&
@@ -70,26 +86,16 @@ const canBuy = computed(
           Number(product.old_price) > Number(product.price)
         "
         >{{ formatMoney(product.old_price) }}</del
-      ><span>{{
-        product.price === null ? 'Цена по запросу' : formatMoney(product.price)
-      }}</span
-      ><small v-if="product.price !== null">
-        / {{ productUnitLabel(product.unit) }}</small
       >
     </div>
     <UiButton
-      v-if="action"
-      :variant="row ? 'outline' : 'dark'"
-      :size="row ? 'compact' : 'normal'"
+      v-if="action && row"
+      variant="outline"
+      size="compact"
       :disabled="busy || !canBuy"
       @click="$emit('add', product.id)"
-      >{{ busy ? 'Добавляем…' : 'Добавить'
-      }}<ShoppingBag
-        v-if="!row"
-        :size="16"
-        :stroke-width="1.6"
-        aria-hidden="true"
-    /></UiButton>
+      >{{ busy ? 'Добавляем…' : 'Добавить' }}</UiButton
+    >
   </article>
 </template>
 <style scoped>
@@ -97,11 +103,19 @@ const canBuy = computed(
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.card-media {
+  position: relative;
+  overflow: hidden;
+}
+.product-card:hover,
+.card-media:focus-within {
+  --image-action-offset: 0%;
+}
 .card-image {
   display: grid;
   place-items: center;
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 1.06;
   overflow: hidden;
   background: var(--color-beige);
 }
@@ -109,11 +123,14 @@ const canBuy = computed(
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  transition: transform 0.7s var(--ease-out);
+  object-fit: cover;
+  transition: transform 1s var(--ease-out);
 }
-.card-image:hover img {
-  transform: scale(1.025);
+.card-image:focus-visible {
+  outline-offset: -4px;
+}
+.product-card:hover .card-image img {
+  transform: scale(1.06);
 }
 .image-empty {
   padding: 20px;
@@ -121,51 +138,45 @@ const canBuy = computed(
   text-align: center;
   font-size: 12px;
 }
-.current-label {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
-  padding: 7px 10px;
-  background: var(--color-card-label-surface);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 .card-info {
-  margin-top: 16px;
+  margin-top: 18px;
 }
-.eyebrow {
+.card-brand {
+  margin: 0 0 4px;
   font-size: 10px;
   letter-spacing: 0.17em;
 }
 h3 {
-  margin: 4px 0 8px;
+  margin: 0 0 4px;
   font-size: 15px;
   font-weight: 500;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 h3 a:hover {
   color: var(--color-muted);
 }
-.availability {
+.availability,
+.card-meta {
   margin: 0;
   color: var(--color-muted);
-  font-size: 11px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
 }
 .card-price {
-  padding-top: 12px;
-  font-size: 15px;
+  padding-top: 8px;
+  font-size: 14px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .card-price small {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-muted);
 }
 .card-price del {
-  display: block;
-  margin-bottom: 3px;
+  margin-left: 10px;
   color: var(--color-muted);
   font-size: 12px;
+  font-weight: 400;
 }
 .product-card > :last-child:not(.card-price):not(.card-info) {
   margin-top: 17px;
@@ -185,6 +196,14 @@ h3 a:hover {
 .product-card--row .card-image {
   width: 64px;
   height: 64px;
+  aspect-ratio: 1;
+}
+.product-card--row .card-image img {
+  object-fit: contain;
+  transition-duration: 0.7s;
+}
+.product-card--row:hover .card-image img {
+  transform: scale(1.025);
 }
 .product-card--row .image-empty {
   padding: 4px;
@@ -237,9 +256,6 @@ h3 a:hover {
 @media (max-width: 520px) {
   h3 {
     font-size: 13px;
-  }
-  .card-info .eyebrow {
-    font-size: 9px;
   }
   .product-card--row {
     grid-template-columns: 56px minmax(0, 1fr);

@@ -72,10 +72,9 @@ for (const scenario of [
     expect(html).not.toContain('class="product-collection-story"')
     await page.goto(path)
     await expect(page.locator('.product-collection-story')).toHaveCount(0)
-    // The existing independent variants section remains available.
     await expect(
       page.getByRole('heading', { name: 'Варианты товара' }),
-    ).toBeVisible()
+    ).toHaveCount(0)
   })
 }
 

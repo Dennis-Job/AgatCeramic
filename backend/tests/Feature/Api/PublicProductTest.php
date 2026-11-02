@@ -198,6 +198,11 @@ class PublicProductTest extends TestCase
         $group->axes()->attach($color->id, ['sort_order' => 0]);
         $group->products()->attach([$product->id, $sibling->id]);
         $related = $this->product();
+        $size = $this->attribute('Размер', 'razmer', 'string');
+        $size->update(['unit' => 'мм']);
+        $this->value($product, $size, '600х600');
+        $this->value($sibling, $size, '400х400');
+        $this->value($related, $size, '300х300');
         ProductRelation::query()->create(['product_id' => $product->id, 'related_product_id' => $related->id, 'type' => 'related', 'sort_order' => 0]);
         $loaded = app(PublicProductQuery::class)->find($product->slug);
         DB::enableQueryLog();
@@ -206,10 +211,45 @@ class PublicProductTest extends TestCase
             $payload = (new PublicProductDetailResource($loaded))->response()->getData(true);
             $this->assertCount(2, $payload['data']['group']['products']);
             $this->assertCount(1, $payload['data']['related']);
+            $this->assertSame('600х600 мм', $payload['data']['size']);
+            $this->assertSame('400х400 мм', $payload['data']['group']['products'][1]['size']);
+            $this->assertSame('300х300 мм', $payload['data']['related'][0]['size']);
             $this->assertSame([], DB::getQueryLog());
         } finally {
             DB::disableQueryLog();
         }
+    }
+
+    public function test_recommended_size_resolves_its_own_visible_attribute_and_omits_missing_or_blank_values(): void
+    {
+        $product = $this->product(['name' => 'Размер в названии 100x100']);
+        $sized = $this->product(['name' => 'Размер в названии 200x200']);
+        $blank = $this->product();
+        $missing = $this->product(['name' => 'Только название 300x300']);
+        $size = $this->attribute('Размер', 'razmer', 'select');
+        $size->update(['unit' => 'мм']);
+        $size->options()->create(['value' => 'format-a', 'label' => '300х300']);
+        $this->value($product, $size, '600х600');
+        $this->value($sized, $size, 'format-a');
+        $this->value($blank, $size, '   ');
+        foreach ([$sized, $blank, $missing] as $index => $target) {
+            ProductRelation::query()->create(['product_id' => $product->id, 'related_product_id' => $target->id, 'type' => 'recommended', 'sort_order' => $index]);
+        }
+
+        $this->getJson('/api/v1/products/'.$product->slug)->assertOk()
+            ->assertJsonPath('data.size', '600х600 мм')
+            ->assertJsonPath('data.recommended.0.size', '300х300 мм')
+            ->assertJsonPath('data.recommended.1.size', null)
+            ->assertJsonPath('data.recommended.2.size', null);
+
+        $size->update(['unit' => null]);
+        $this->getJson('/api/v1/products/'.$product->slug)->assertOk()
+            ->assertJsonPath('data.recommended.0.size', '300х300');
+
+        $size->update(['is_visible_on_product_page' => false]);
+        $this->getJson('/api/v1/products/'.$product->slug)->assertOk()
+            ->assertJsonPath('data.size', null)
+            ->assertJsonPath('data.recommended.0.size', null);
     }
 
     /** @param array<string, mixed> $values */

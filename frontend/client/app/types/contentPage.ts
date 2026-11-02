@@ -87,6 +87,8 @@ export interface CatalogProduct {
     | 'liter'
     | 'set'
   is_on_sale: boolean
+  in_stock: boolean
+  size?: string | null
   category: Pick<CatalogCategory, 'id' | 'name' | 'slug'>
   brand: { id: number; name: string; slug: string } | null
   image_url: string | null

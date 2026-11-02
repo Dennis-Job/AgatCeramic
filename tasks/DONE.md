@@ -1,5 +1,58 @@
 # DONE
 
+2026-11-02 — Карточка рекомендаций закреплена как единый эталон товарных
+плиток Client (UI-022). CatalogListing, каталоговые контентные блоки/preview
+и рекомендации используют ProductCardList/ProductCard: единая сетка 3/2/1,
+фото, производитель, категория/размер, цена и «В корзину +», keyboard/touch,
+cart busy/error/toast. По прямому ответу владельца row сопутствующих сохранён.
+PublicCatalogProductResource переиспользует PublicProductCardResource;
+каталог получил in_stock/size с пакетной загрузкой, без запросов из Resource.
+Обновлены типы, API/OpenAPI, Client AGENTS/UI-kit и профильные тесты.
+PASS: typecheck/build/Prettier, 44 E2E, 15 SQLite/OpenAPI и 14 PostgreSQL tests
+в изолированной временной БД, Pint/PHPStan/architecture/Composer validate/audit.
+UI Design Guard принял пять ширин, preview, рекомендации и touch с известным
+замечанием контраста заглушки фото 4.25:1 (утверждённые цвета сохранены).
+Локальный Client обновлён: все 11 товаров живого каталога используют эталон,
+старой дублированной разметки нет. Миграции и товарные данные не менялись.
+
+2026-11-02 — Разделитель между рекомендациями и футером Client уменьшен
+с суммарных 2 px до 1 px: удалена нижняя граница ProductCollections,
+сохранена верхняя граница общего SiteFooter. Палитра и отступы не менялись.
+Обновлены Client UI-kit и existing responsive E2E (сумма границ == 1 на
+320/640/768/1024/1280 px). Typecheck/build/Prettier и 9 product E2E — PASS;
+локальный Client обновлён.
+
+2026-11-02 — Текст overlay-кнопки рекомендаций заменён на «В корзину +»
+точно по SIMILAR в `productExample.html`. Busy «Добавляем…» и row «Добавить»
+сохранены. Изменены ProductCard, ожидаемые labels в product-pages E2E и
+Client UI-kit. Typecheck/build/Prettier и 9 product E2E с пятью ширинами,
+keyboard/touch, корзиной и axe — PASS. Локальный Client обновлён.
+
+2026-11-02 — Уточнены подписи рекомендованных товаров: производитель над
+названием заглавными буквами; под названием категория и размер из видимой
+характеристики `razmer`, с единицей измерения. Без размера — только категория,
+без производителя — без пустой строки. Row сопутствующих не менялся.
+Добавлен nullable `size` в публичный API detail/group/relations с eager-loading
+и без запросов из Resource; OpenAPI/API и Client UI-kit обновлены.
+PASS: 13 backend SQLite/OpenAPI tests, 12 PostgreSQL tests в изолированном
+временном контейнере, PHPStan, Pint, architecture, Composer validate/audit;
+Client typecheck/build/Prettier, 9 финальных product E2E и 17 регрессий
+корзины/коллекций/UI-kit, пять ширин, keyboard/touch и axe. Независимый UI
+Design Guard принял screenshots. Dev-контейнер Client перезапущен, проверен
+реальный SSR: «Ступени · 300х300 мм» для рекомендованной ступени Аллея.
+Миграции и сохранённые товарные данные не менялись.
+
+2026-11-02 — Нижняя секция «Варианты товара» удалена из Client, выбор в блоке
+покупки сохранён. «Рекомендуем посмотреть» оформлен по SIMILAR из
+`productExample.html`: «Обратите внимание», центрированный заголовок без
+описания, светлый band, grid 3/2/1 и кнопка поверх фото с hover/focus;
+на touch кнопка постоянно видна. Обновлены ProductCollections, ProductCard,
+UiButton image-overlay, цветовые токены и Client UI-kit (UI-021).
+Typecheck, production build, scoped Prettier, 35 E2E (товар/коллекции/корзина/
+UI-kit/контент), пять ширин, keyboard/touch и axe — PASS. Независимый
+UI Design Guard принял screenshots, замечание фокуса фото исправлено.
+API и миграции не менялись.
+
 2026-11-02 — Блок сопутствующих товаров Client оформлен по ACCESSORIES из
 `productExample.html`: «Сопутствующие товары» / «Что ещё понадобится» /
 «К этому товару», список 900 px, компактные строки и контурные кнопки.

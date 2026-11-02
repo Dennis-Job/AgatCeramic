@@ -761,6 +761,8 @@ createServer(async (request, response) => {
               old_price: null,
               unit: 'square_meter',
               is_on_sale: false,
+              in_stock: false,
+              size: null,
               category: { id: 1, name: 'Керамогранит', slug: 'porcelain' },
               brand: null,
               image_url: '/images/home/category-porcelain.webp',

@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class PublicCatalogQuery
 {
@@ -25,7 +26,11 @@ class PublicCatalogQuery
             $query->whereHas('collection', fn ($collection) => $collection->where('is_active', true)->where('name', $filters['collection']));
         }
 
-        return $query->with(['category', 'brand', 'primaryImage'])->orderBy('name')->orderBy('id')->paginate(24)->withQueryString();
+        return $query->with([
+            'category', 'brand', 'primaryImage',
+            'attributeValues' => fn (Relation $query) => $query->getQuery()->whereHas('attribute', fn ($attribute) => $attribute->where('slug', 'razmer')->where('is_visible_on_product_page', true)),
+            'attributeValues.attribute.options',
+        ])->orderBy('name')->orderBy('id')->paginate(24)->withQueryString();
     }
 
     /** @return Collection<int, Category> */

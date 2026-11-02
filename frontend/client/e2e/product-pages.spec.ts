@@ -68,9 +68,10 @@ test('product, related and recommended actions add their own IDs to the shared s
   await expect(
     page.getByRole('button', { name: 'Добавить', exact: true }).first(),
   ).toBeEnabled()
+  await page.locator('.recommended-section .product-card').hover()
   await page
     .locator('.recommended-section')
-    .getByRole('button', { name: 'Добавить', exact: true })
+    .getByRole('button', { name: 'В корзину +', exact: true })
     .click()
   await page.getByRole('button', { name: 'Корзина', exact: true }).click()
   const cart = page.getByRole('dialog', { name: 'Корзина', exact: true })
@@ -237,15 +238,56 @@ test('missing and failed product requests return correct SSR status and noindex'
 
 test('real product composition is responsive and accessible at five widths', async ({
   page,
+  request,
 }, testInfo) => {
+  await request.get(
+    'http://127.0.0.1:8015/__scenario?name=product-recommendations',
+  )
   await page.goto(productPath)
   const related = page.getByRole('region', { name: 'Что ещё понадобится' })
+  const recommended = page.getByRole('region', {
+    name: 'Рекомендуем посмотреть',
+  })
+  await expect(
+    page.getByRole('heading', { name: 'Варианты товара' }),
+  ).toHaveCount(0)
+  await expect(recommended.locator('.section-heading .eyebrow')).toHaveText(
+    'Обратите внимание',
+  )
+  await expect(recommended.locator('.section-heading p')).toHaveCount(0)
+  const cards = recommended.locator('.product-card')
+  await expect(cards.first().locator('.card-brand')).toHaveText(
+    'Тестовый бренд',
+  )
+  await expect(cards.first().locator('.card-brand')).toHaveCSS(
+    'text-transform',
+    'uppercase',
+  )
+  await expect(cards.first().locator('.card-info > :first-child')).toHaveClass(
+    /card-brand/,
+  )
+  await expect(cards.first().locator('h3 + .card-meta')).toHaveText(
+    'Керамогранит · 300×300 мм',
+  )
+  await expect(cards.nth(1).locator('.card-meta')).toHaveText('Керамогранит')
+  await expect(cards.nth(1).locator('.card-brand')).toHaveCount(0)
+  await expect(cards.first().locator('.card-info')).not.toContainText(
+    'В наличии',
+  )
   await expect(related.locator('.eyebrow')).toHaveText('Сопутствующие товары')
   await expect(related.locator('.section-heading p')).toHaveText(
     'К этому товару',
   )
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
+    const dividerWidth = await recommended.evaluate(
+      (section) =>
+        parseFloat(getComputedStyle(section).borderBottomWidth) +
+        parseFloat(
+          getComputedStyle(document.querySelector('footer')!).borderTopWidth,
+        ),
+    )
+    expect(dividerWidth).toBe(1)
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -261,7 +303,24 @@ test('real product composition is responsive and accessible at five widths', asy
     await related.screenshot({
       path: testInfo.outputPath('related-' + width + '.png'),
     })
+    await recommended.screenshot({
+      path: testInfo.outputPath('recommended-' + width + '.png'),
+    })
   }
+  const imageLink = recommended.getByRole('link', { name: /^Открыть / }).first()
+  await imageLink.focus()
+  await page.keyboard.press('Tab')
+  const recommendedAdd = recommended
+    .getByRole('button', {
+      name: 'В корзину +',
+      exact: true,
+    })
+    .first()
+  await expect(recommendedAdd).toBeFocused()
+  await expect(recommendedAdd).toHaveCSS('transform', 'none')
+  await recommended.screenshot({
+    path: testInfo.outputPath('recommended-focus.png'),
+  })
   const add = related.getByRole('button', { name: 'Добавить', exact: true })
   await expect(add).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   await add.hover()
@@ -271,4 +330,34 @@ test('real product composition is responsive and accessible at five widths', asy
   await expect(add).toBeFocused()
   const violations = (await new AxeBuilder({ page }).analyze()).violations
   expect(violations).toEqual([])
+})
+
+test.describe('touch recommendations', () => {
+  test.use({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 320, height: 800 },
+  })
+
+  test('add action stays visible below the image without hover', async ({
+    page,
+  }, testInfo) => {
+    await page.goto(productPath)
+    const recommended = page.getByRole('region', {
+      name: 'Рекомендуем посмотреть',
+    })
+    const add = recommended.getByRole('button', {
+      name: 'В корзину +',
+      exact: true,
+    })
+    await expect(add).toHaveCSS('position', 'static')
+    await expect(add).toHaveCSS('transform', 'none')
+    await recommended.screenshot({
+      path: testInfo.outputPath('recommended-touch-320.png'),
+    })
+    await add.click()
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Товар добавлен в корзину.' }),
+    ).toBeVisible()
+  })
 })

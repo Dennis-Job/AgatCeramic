@@ -13669,6 +13669,13 @@
             "PublicProductCard": {
                 "type": "object",
                 "properties": {
+                    "size": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Display value of the visible razmer attribute with its optional unit; null when missing, hidden or empty."
+                    },
                     "id": {
                         "type": "integer"
                     },
@@ -13779,7 +13786,8 @@
                     "image_url",
                     "image_alt",
                     "category",
-                    "brand"
+                    "brand",
+                    "size"
                 ],
                 "additionalProperties": false
             },
@@ -13904,6 +13912,13 @@
                         "items": {
                             "type": "object",
                             "properties": {
+                                "size": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "description": "Display value of the visible razmer attribute with its optional unit; null when missing, hidden or empty."
+                                },
                                 "id": {
                                     "type": "integer"
                                 },
@@ -14047,7 +14062,8 @@
                                 "image_alt",
                                 "category",
                                 "brand",
-                                "axis_values"
+                                "axis_values",
+                                "size"
                             ],
                             "additionalProperties": false
                         }
@@ -14062,6 +14078,13 @@
             "PublicProductDetail": {
                 "type": "object",
                 "properties": {
+                    "size": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Display value of the visible razmer attribute with its optional unit; null when missing, hidden or empty."
+                    },
                     "id": {
                         "type": "integer"
                     },
@@ -14303,6 +14326,7 @@
                     "image_alt",
                     "category",
                     "brand",
+                    "size",
                     "sku",
                     "article_number",
                     "description",
@@ -14366,6 +14390,16 @@
             "PublicCatalogProduct": {
                 "type": "object",
                 "properties": {
+                    "in_stock": {
+                        "type": "boolean"
+                    },
+                    "size": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Display value of the visible razmer attribute with its optional unit; null when missing, hidden or empty."
+                    },
                     "id": {
                         "type": "integer"
                     },
@@ -14473,6 +14507,8 @@
                     "old_price",
                     "unit",
                     "is_on_sale",
+                    "in_stock",
+                    "size",
                     "category",
                     "brand",
                     "image_url",

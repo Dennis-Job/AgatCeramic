@@ -2,7 +2,7 @@
 withDefaults(
   defineProps<{
     to?: string
-    variant?: 'dark' | 'light' | 'outline'
+    variant?: 'dark' | 'light' | 'outline' | 'image-overlay'
     size?: 'normal' | 'compact'
     type?: 'button' | 'submit'
   }>(),
@@ -105,5 +105,50 @@ defineEmits<{ click: [event: MouseEvent] }>()
   font-size: 10px;
   letter-spacing: 0.2em;
   white-space: nowrap;
+}
+
+.ui-button--image-overlay {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  padding: 16px;
+  background: var(--color-image-action-surface);
+  color: var(--color-white);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  backdrop-filter: blur(4px);
+  transform: translateY(var(--image-action-offset, 101%));
+  transition:
+    transform 0.45s var(--ease-out),
+    background 0.3s;
+}
+
+.ui-button--image-overlay:hover {
+  transform: translateY(var(--image-action-offset, 101%));
+}
+
+.ui-button--image-overlay:not(:disabled):hover {
+  background: var(--color-image-action-hover);
+}
+
+.ui-button--image-overlay:focus-visible {
+  transform: none;
+  outline-offset: -4px;
+  outline-color: var(--color-white);
+}
+
+@media (hover: none) {
+  .ui-button--image-overlay {
+    position: static;
+    margin-top: 14px;
+    background: var(--color-ink);
+    transform: none;
+  }
+
+  .ui-button--image-overlay:hover {
+    transform: none;
+  }
 }
 </style>

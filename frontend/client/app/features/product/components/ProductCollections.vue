@@ -1,41 +1,11 @@
 <script setup lang="ts">
-import { ArrowRight } from '@lucide/vue'
-import ProductCard from './ProductCard.vue'
+import ProductCardList from './ProductCardList.vue'
 import SectionHeading from '~/components/shared/SectionHeading.vue'
 import type { ProductDetail } from '../types/product'
-import { useCart } from '~/features/cart/composables/useCart'
-const props = defineProps<{ product: ProductDetail }>()
-const { addItem, busy, error } = useCart()
-const { showSuccess } = useSuccessNotification()
-const localError = ref('')
-watch(
-  () => props.product.id,
-  () => {
-    localError.value = ''
-  },
-)
-async function add(id: number) {
-  localError.value = ''
-  if (await addItem(id, 1)) showSuccess('Товар добавлен в корзину.')
-  else localError.value = error.value || 'Не удалось добавить товар.'
-}
-const collectionLink = computed(() =>
-  props.product.collection
-    ? {
-        path: '/catalog',
-        query: {
-          brand: props.product.collection.brand_slug,
-          collection: props.product.collection.name,
-        },
-      }
-    : '/catalog',
-)
+defineProps<{ product: ProductDetail }>()
 </script>
 <template>
   <div>
-    <p v-if="localError" class="container collection-error" role="alert">
-      {{ localError }}
-    </p>
     <section
       v-if="product.related.length"
       class="related-section"
@@ -48,150 +18,45 @@ const collectionLink = computed(() =>
           description="К этому товару"
           title-id="related-products-title"
         />
-        <div class="related-products">
-          <ProductCard
-            v-for="item in product.related"
-            :key="item.id"
-            :product="item"
-            row
-            action
-            :busy="busy"
-            @add="add"
-          />
-        </div>
-      </div>
-    </section>
-    <section
-      v-if="product.group?.products.length"
-      class="container collection-section"
-    >
-      <div class="collection-heading">
-        <div>
-          <p v-if="product.brand" class="eyebrow">{{ product.brand.name }}</p>
-          <h2>Варианты товара</h2>
-        </div>
-        <NuxtLink
-          v-if="product.collection"
-          :to="collectionLink"
-          class="collection-link"
-          >Товары коллекции <ArrowRight :size="15" aria-hidden="true"
-        /></NuxtLink>
-      </div>
-      <div v-if="product.group?.products.length" class="collection-grid">
-        <ProductCard
-          v-for="item in product.group.products"
-          :key="item.id"
-          :product="item"
-          :current="item.id === product.id"
+        <ProductCardList
+          :products="product.related"
+          row
+          class="related-products"
         />
       </div>
     </section>
     <section
       v-if="product.recommended.length"
-      class="container recommended-section"
+      class="recommended-section"
+      aria-labelledby="recommended-products-title"
     >
-      <p class="eyebrow">Обратите внимание</p>
-      <h2>Рекомендуем посмотреть</h2>
-      <div class="recommended-grid">
-        <ProductCard
-          v-for="item in product.recommended"
-          :key="item.id"
-          :product="item"
-          action
-          :busy="busy"
-          @add="add"
+      <div class="container">
+        <SectionHeading
+          eyebrow="Обратите внимание"
+          title="Рекомендуем посмотреть"
+          title-id="recommended-products-title"
+        />
+        <ProductCardList
+          :products="product.recommended"
+          class="recommended-grid"
         />
       </div>
     </section>
   </div>
 </template>
 <style scoped>
-.related-section {
+.related-section,
+.recommended-section {
   padding-block: 110px;
 }
-.related-products {
-  max-width: 900px;
-  margin-inline: auto;
-}
-h2 {
-  margin: 8px 0 24px;
-  font-size: 30px;
-  font-weight: 500;
-  line-height: 1.3;
-  letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-}
-.collection-section {
-  padding-block: 76px 82px;
-}
-.collection-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: 30px;
-  margin-bottom: 32px;
-}
-.collection-heading h2 {
-  margin-bottom: 0;
-}
-.collection-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  max-width: 100%;
-  padding-bottom: 3px;
-  border-bottom: 1px solid currentColor;
-  font-size: 12px;
-  line-height: 1.5;
-}
-.collection-grid,
-.recommended-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
-}
 .recommended-section {
-  padding-block: 0 70px;
-}
-.collection-error {
-  padding-block: 20px;
-  font-size: 13px;
+  background: var(--color-bg-soft);
+  border-top: 1px solid var(--color-line);
 }
 @media (max-width: 900px) {
-  .related-section {
-    padding-block: 80px;
-  }
-}
-@media (max-width: 760px) {
-  .collection-section {
-    padding-block: 48px;
-  }
-  .collection-heading {
-    flex-direction: column;
-    align-items: start;
-    gap: 20px;
-  }
-  h2 {
-    font-size: 28px;
-  }
-  .collection-grid,
-  .recommended-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-  }
+  .related-section,
   .recommended-section {
-    padding-bottom: 48px;
-  }
-}
-@media (max-width: 520px) {
-  h2 {
-    font-size: 25px;
-  }
-  .recommended-grid {
-    grid-template-columns: 1fr;
-  }
-  .collection-grid {
-    gap: 18px;
+    padding-block: 80px;
   }
 }
 </style>
