@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import UiButton from '~/components/ui/UiButton.vue'
+import ProductSaleBadge from './ProductSaleBadge.vue'
 import { productUnitLabel } from '~/utils/productUnits'
 import { formatMoney } from '~/utils/formatMoney'
 import { productPath } from '../services/products'
@@ -51,6 +52,7 @@ const recommendationMeta = computed(() =>
           @error="failed = true"
         /><span v-else class="image-empty">Изображение пока не добавлено</span>
       </NuxtLink>
+      <ProductSaleBadge v-if="!row && product.is_on_sale" />
       <UiButton
         v-if="action && !row"
         variant="image-overlay"

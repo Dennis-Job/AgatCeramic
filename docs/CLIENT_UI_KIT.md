@@ -172,6 +172,26 @@ reduced motion управляется base.css. Row-карточки сопут�
 Проверки: `product-pages.spec.ts`, `product-collections.spec.ts`, корзина,
 пять ширин, клавиатура, touch, axe и независимый UI Design Guard.
 
+## Плашка «Распродажа» — 2026-11-02
+
+Вместо SALE используется русский текст «Распродажа». Единственный источник
+видимости — существующий админский флаг `is_on_sale` («Распродажа»),
+независимо от old_price, наличия, текущей цены и изображения.
+Общий доменный `ProductSaleBadge` применяется в `ProductCard` для всех
+товарных плиток каталога/рекомендаций/preview и в основной `ProductGallery`
+через prop от `ProductDetail`. При false плашки нет. Компактный row-вариант
+сопутствующих сохранён без плашки на миниатюре.
+
+Стиль по `.prod-badge.sale` из `productExample.html`: ink-фон, белый текст,
+9 px/500, разрядка .2em, uppercase, padding 7×12 px. Положение поверх фото
+слева сверху: 16 px в плитке, 18 px в галерее. Плашка не занимает место
+в потоке, имеет max-width и перенос, не перехватывает pointer events и не
+мешает увеличению фото/клавиатурному фокусу/кнопке корзины. Она остаётся
+на месте при смене фото и в fallback без изображения. Не добавлять
+отдельные стили SALE в потребителей. API и данные не меняются.
+Проверки — `product-pages.spec.ts`, `catalog-card-standard.spec.ts`,
+пять ширин, SSR/hydration, toggle флага, zoom, touch и независимый UI Guard.
+
 ## Сопутствующие товары — 2026-11-02
 
 Блок `ProductCollections` следует ACCESSORIES из `productExample.html`:
@@ -246,6 +266,7 @@ uppercase, letter-spacing .18em, тонкая нижняя граница, gap20
 | UI-020 / 2026-11-02 | Сопутствующие товары как ACCESSORIES в productExample.html: надзаголовок «Сопутствующие товары», заголовок «Что ещё понадобится», подпись «К этому товару»; список 900 px, миниатюры 64/56 px, контурная компактная кнопка. Подробности в разделе «Сопутствующие товары». | ProductCollections + SectionHeading, ProductCard row, UiButton outline/compact; product-pages.spec.ts, пять ширин/axe, независимый UI Design Guard. |
 | UI-021 / 2026-11-02 | Нижнего блока «Варианты товара» нет. «Рекомендуем посмотреть» по SIMILAR productExample: надзаголовок «Обратите внимание», без описания, светлый band и карточки с фото 1/1.06, кнопкой поверх фото по hover/focus и постоянной кнопкой на touch. Производитель над названием uppercase; под названием категория и необязательный размер из характеристики. | ProductCollections, ProductCard, SectionHeading, UiButton image-overlay; подробности в разделе «Рекомендуем посмотреть», product-pages/product-collections E2E и UI Design Guard. |
 | UI-022 / 2026-11-02 | Карточка рекомендаций — эталон всех товарных плиток: каталог, фильтры, контентные каталоги, preview и рекомендации используют один ProductCardList/ProductCard; фото, uppercase производитель, название, категория/размер, цена, «В корзину +». По уточнению владельца компактные сопутствующие row сохраняются. | ProductCardList + ProductCard в features/product; CatalogListing и ProductCollections; catalog-card-standard/content-pages/product-pages/preview E2E. |
+| UI-023 / 2026-11-02 | SALE переводится как «Распродажа», видимость строго по is_on_sale. Тёмная плашка сверху слева фото в каталоге/рекомендациях и основной галерее товара; без изменения row сопутствующих. | ProductSaleBadge — общий стиль; ProductCard и ProductGallery — потребители; product-pages/catalog-card-standard E2E, пять ширин и UI Design Guard. |
 
 UI-011 / 2026-10-21 — По указанию владельца подтверждение успеха повторяет toast
 из `exampleSite.html`: ink-фон, белый текст 12 px с разрядкой .1em,

@@ -109,6 +109,35 @@ test('product data and one canonical URL are rendered by SSR', async ({
   expect(html).toContain('"@type":"Product"')
   expect(html).not.toContain('stock_quantity')
   expect(html).not.toContain('data:image/')
+  expect(html).toContain('product-sale-badge')
+  expect(html).toContain('Распродажа')
+})
+
+test('sale badge follows the product flag, not old price, and does not block gallery actions', async ({
+  page,
+  request,
+}) => {
+  await page.goto(productPath)
+  const gallery = page.locator('.product-gallery')
+  await expect(gallery.locator('.product-sale-badge')).toHaveText('Распродажа')
+  await expect(
+    page.locator('.recommended-section .product-sale-badge'),
+  ).toHaveText('Распродажа')
+  await expect(
+    page.locator('.related-section .product-sale-badge'),
+  ).toHaveCount(0)
+  await gallery.getByRole('button', { name: 'Увеличить фото товара' }).click()
+  await expect(
+    page.getByRole('dialog', { name: 'Просмотр фото' }),
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await request.get('http://127.0.0.1:8015/__scenario?name=product-not-sale')
+  await page.goto(productPath)
+  await expect(gallery.locator('.product-sale-badge')).toHaveCount(0)
+  await expect(page.locator('.product-purchase del')).toBeVisible()
+  await request.get('http://127.0.0.1:8015/__scenario?name=product-empty')
+  await page.goto(productPath)
+  await expect(gallery.locator('.product-sale-badge')).toHaveText('Распродажа')
 })
 
 test('gallery, centered tabs and independent color variants use actual API data', async ({

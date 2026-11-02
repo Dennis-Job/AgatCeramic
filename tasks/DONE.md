@@ -1,5 +1,16 @@
 # DONE
 
+2026-11-02 — Добавлена русская плашка «Распродажа» по SALE референса.
+Один ProductSaleBadge используется в ProductCard (каталог/рекомендации/preview)
+и ProductGallery через флаг из ProductDetail. Видимость строго по is_on_sale,
+независимо от old_price/остатка/фото; компактные row сопутствующих сохранены.
+Стиль ink/white, 9 px/.2em, 7×12 px, inset16/18; клики и zoom не перекрывает.
+Обновлены четыре компонента, fixtures, product-pages/catalog-card-standard
+E2E и Client UI-kit (UI-023). PASS: typecheck/build/Prettier, 45 E2E,
+пять ширин, touch, SSR/hydration, flag true/false и gallery zoom;
+независимый UI Design Guard принят. Локальный Client обновлён: live каталог
+показывает 7 плашек для 7 отмеченных товаров. API, миграции и данные не менялись.
+
 2026-11-02 — Карточка рекомендаций закреплена как единый эталон товарных
 плиток Client (UI-022). CatalogListing, каталоговые контентные блоки/preview
 и рекомендации используют ProductCardList/ProductCard: единая сетка 3/2/1,

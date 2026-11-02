@@ -47,7 +47,13 @@ export function handleProducts(request, response, url, scenario) {
       data: (scenario === 'catalog-card-standard'
         ? [
             { ...products[0], size: '600×600 мм' },
-            { ...products[1], price: null, brand: null, image_url: null },
+            {
+              ...products[1],
+              is_on_sale: false,
+              price: null,
+              brand: null,
+              image_url: null,
+            },
             { ...products[2], in_stock: false },
           ]
         : products.slice(0, 2)
@@ -110,6 +116,9 @@ export function handleProducts(request, response, url, scenario) {
   return send({
     data: {
       ...product,
+      ...(scenario === 'product-not-sale'
+        ? { is_on_sale: false, old_price: '2345.00' }
+        : {}),
       ...(empty ? { price: null, in_stock: false, image_url: null } : {}),
       sku: `TEST-${product.id}`,
       article_number: `TEST-ARTICLE-${product.id}`,

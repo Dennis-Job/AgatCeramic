@@ -32,6 +32,7 @@ const phoneHref = computed(() => {
           :key="product.id"
           :name="product.name"
           :images="product.images"
+          :on-sale="product.is_on_sale"
         /><ProductPurchase :product="product" />
       </div>
     </div>

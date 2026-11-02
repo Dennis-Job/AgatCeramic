@@ -2,8 +2,12 @@
 import { ArrowLeft, ArrowRight, Expand } from '@lucide/vue'
 import UiDialog from '~/components/ui/UiDialog.vue'
 import UiIconButton from '~/components/ui/UiIconButton.vue'
+import ProductSaleBadge from './ProductSaleBadge.vue'
 import type { ProductImage } from '../types/product'
-const props = defineProps<{ name: string; images: ProductImage[] }>()
+const props = withDefaults(
+  defineProps<{ name: string; images: ProductImage[]; onSale?: boolean }>(),
+  { onSale: false },
+)
 const index = ref(0)
 const zoom = ref(false)
 const failed = ref(new Set<number>())
@@ -91,6 +95,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', keydown))
             /></span>
           </button>
           <span v-else class="image-empty">Изображение пока не добавлено</span>
+          <ProductSaleBadge v-if="onSale" />
         </div>
         <figcaption v-if="images.length">
           <span>Фото {{ index + 1 }}</span>
@@ -190,6 +195,7 @@ figure {
   margin: 0;
 }
 .stage {
+  --product-badge-inset: 18px;
   display: grid;
   place-items: center;
   position: relative;

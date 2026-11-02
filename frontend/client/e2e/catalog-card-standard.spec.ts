@@ -24,6 +24,17 @@ test('catalog uses the approved cards in SSR, at five widths and with actual pur
   await page.goto('/catalog')
   const cards = page.locator('#catalog-products .product-card')
   await expect(cards).toHaveCount(3)
+  await expect(cards.first().locator('.product-sale-badge')).toHaveText(
+    'Распродажа',
+  )
+  await expect(cards.first().locator('.product-sale-badge')).toHaveCSS(
+    'text-transform',
+    'uppercase',
+  )
+  await expect(cards.nth(1).locator('.product-sale-badge')).toHaveCount(0)
+  await expect(cards.nth(2).locator('.product-sale-badge')).toHaveText(
+    'Распродажа',
+  )
   await expect(cards.first().locator('.card-brand')).toHaveCSS(
     'text-transform',
     'uppercase',
