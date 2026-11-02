@@ -6,6 +6,7 @@ use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
@@ -108,6 +109,12 @@ class CatalogAttributeIntegrityService
     /** @param array<int, int> $attributeIds */
     private function categoryUsesAnyAttribute(Category $category, array $attributeIds): bool
     {
+        $groupIds = $category->products()->join('product_group_members', 'products.id', '=', 'product_group_members.product_id')
+            ->select('product_group_members.product_group_id');
+        if (DB::table('product_group_individual_attributes')->whereIn('product_group_id', $groupIds)
+            ->whereIn('attribute_id', $attributeIds)->exists()) {
+            return true;
+        }
         $productsUseAttribute = $category->products()->whereHas(
             'attributeValues',
             fn ($query) => $query->whereIn('attribute_id', $attributeIds),

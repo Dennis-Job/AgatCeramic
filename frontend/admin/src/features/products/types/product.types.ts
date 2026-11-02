@@ -160,6 +160,7 @@ export type ProductGroup = {
   name: string
   code: string
   axes: Attribute[]
+  individual_attributes?: Attribute[]
   products: Array<
     Product & {
       axis_values?: Array<{
@@ -176,6 +177,7 @@ export type ProductGroupPayload = {
   name: string
   code: string
   axis_attribute_ids: number[]
+  individual_attribute_ids: number[]
   product_ids: number[]
 }
 

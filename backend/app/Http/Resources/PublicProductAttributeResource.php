@@ -17,11 +17,13 @@ class PublicProductAttributeResource extends ApiResource
         if ($attribute === null) {
             throw new \LogicException('Public product value must have an attribute.');
         }
+        $group = $attribute->relationLoaded('group') ? $attribute->group : null;
 
         return [
             'id' => $attribute->id, 'slug' => $attribute->slug, 'name' => $attribute->name,
             'type' => $attribute->type, 'unit' => $attribute->unit, 'value' => $this->value,
             'display_value' => $this->displayValue($attribute, $this->value),
+            'group' => $group === null ? null : ['id' => $group->id, 'name' => $group->name, 'sort_order' => (int) $group->sort_order],
         ];
     }
 

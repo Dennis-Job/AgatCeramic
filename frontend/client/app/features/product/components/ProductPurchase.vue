@@ -7,6 +7,7 @@ import { formatMoney } from '~/utils/formatMoney'
 import { estimateProductTotal, productUnitLabel } from '~/utils/productUnits'
 import { productPath } from '../services/products'
 import type { ProductDetail } from '../types/product'
+import { groupVariantLabels } from '../utils/variantLabels'
 const props = defineProps<{
   product: ProductDetail
 }>()
@@ -29,6 +30,7 @@ const groupLabel = computed(
     props.product.group?.axes.map((axis) => axis.name).join(' / ') ||
     'Варианты товара',
 )
+const variantLabels = computed(() => groupVariantLabels(props.product.group))
 const brandLink = computed(() =>
   props.product.brand
     ? { path: '/catalog', query: { brand: props.product.brand.slug } }
@@ -54,17 +56,6 @@ watch(
     logoFailed.value = false
   },
 )
-function optionLabel(values: { slug: string; display_value: string }[]) {
-  return (
-    props.product.group?.axes
-      .map(
-        (axis) =>
-          values.find((value) => value.slug === axis.slug)?.display_value ||
-          '—',
-      )
-      .join(' · ') || ''
-  )
-}
 async function add() {
   message.value = ''
   if (!canBuy.value || busy.value) return
@@ -160,7 +151,7 @@ async function add() {
           v-for="option in product.group.products"
           :key="option.id"
           :to="productPath(option.slug)"
-          :aria-label="groupLabel + ': ' + optionLabel(option.axis_values)"
+          :aria-label="groupLabel + ': ' + variantLabels.get(option.id)"
           :aria-current="option.id === product.id ? 'page' : undefined"
           class="variant"
         >
@@ -171,7 +162,7 @@ async function add() {
             width="30"
             height="30"
             loading="lazy"
-          /><span>{{ optionLabel(option.axis_values) || option.name }}</span
+          /><span>{{ variantLabels.get(option.id) }}</span
           ><Check
             v-if="option.id === product.id"
             :size="13"

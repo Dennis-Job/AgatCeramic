@@ -1,5 +1,69 @@
 # OpenAPI migration plan — version history
 
+## v15.0 — three product-group characteristic roles
+
+Date: 2026-11-02. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Admin ProductGroup adds required `individual_attributes` (id/name/slug/type).
+The previous closed response schema rejects the extra field. Create/update accept
+optional `individual_attribute_ids` (0–20 assigned characteristics), disjoint from
+axes. Omission preserves roles on update; an explicit empty list clears them.
+Only characteristics outside both lists are shared and synchronized. Duplicate
+axis tuples are accepted for distinct SKU/products. Public group members add
+required `sku` for disambiguating identical visible axes and product names; update
+strict public validators too. Only selected axes remain variant parameters.
+
+### Client migration
+
+Update strict Admin response validators and send the new array from role-aware
+editors. Deploy Backend and Admin together to avoid an old editor presenting
+individual fields as shared. New group XLSX exports append 20 individual columns;
+old files without these columns preserve current roles on update, new blank
+columns explicitly clear them. Product XLSX preflight uses the saved roles.
+
+### Rollout and rollback
+
+Apply the additive `2026_11_02_000001_create_product_group_individual_attributes`
+migration before releasing Backend/Admin. Existing groups and product values are
+unchanged. Verify PostgreSQL and import/export roundtrips before catalog writes.
+After individual values diverge, rolling back only application code would resume
+the old shared-value synchronization and can overwrite data. Stop catalog writes
+and workers, retain a protected current-state backup, and either deploy a fix or
+restore the verified pre-release application/database pair. The migration's down
+method removes role assignments, so it is not a safe data-preserving rollback
+after role edits. Do not automatically collapse distinct SKU with equal axes.
+
+## v14.0 — public attribute groups
+
+Date: 2026-11-02. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+Public product `attributes` adds required nullable `group`: `{id,name,sort_order}`.
+The previous closed response schema rejects this additional property, so strict
+response validators must update. Group data comes from the attribute's own group;
+ungrouped attributes return null. Attribute value order, display formatting and
+visibility remain unchanged. Empty and hidden-only groups are not published.
+Product variation groups and their axis-value payloads keep their existing shape.
+
+### Client migration
+
+Update strict `PublicProductAttribute` response validators. Client specifications
+may group rows by group ID, use its name as the section heading and sort sections
+by group `sort_order` with a stable tie-breaker. Keep ungrouped rows visible and
+support omitted group metadata while Backend and Client releases overlap.
+No Admin input contract changes are required.
+
+### Rollout and rollback
+
+Release Backend and Client together, updating strict API consumers first. No
+schema migration, data rewrite or publication is required. Roll back Backend and
+Client together; old Client continues to display flat rows. A newer Client receiving
+an older response displays those attributes without headings. Existing group
+assignments remain stored and need no data restoration.
+
 ## v13.0 — brand-owned product collections
 
 Date: 2026-10-30. HTTP routes remain `/api/v1`.

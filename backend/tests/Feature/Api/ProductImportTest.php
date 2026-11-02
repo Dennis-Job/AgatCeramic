@@ -55,7 +55,7 @@ class ProductImportTest extends TestCase
         });
         $headers = [...ProductWorkbookSchema::BASE_HEADERS, 'attribute.size', 'attribute.color'];
         $base = ['name' => 'Tile', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false, 'attribute.color' => 'white'];
-        foreach ([['attribute.size' => 2], ['attribute.size' => null], ['attribute.size' => 1, 'attribute.color' => null]] as $invalid) {
+        foreach ([['attribute.size' => null], ['attribute.size' => 1, 'attribute.color' => null]] as $invalid) {
             $path = $this->workbook([$headers], [
                 $this->row($headers, $base + ['slug' => 'new-tile']),
                 $this->row($headers, array_replace($base, ['id' => $products[0]->id, 'sku' => $products[0]->sku, 'slug' => $products[0]->slug], $invalid)),
@@ -68,6 +68,50 @@ class ProductImportTest extends TestCase
             } finally {
                 unlink($path);
             }
+        }
+    }
+
+    public function test_product_workbook_roundtrip_preserves_individual_packaging_with_duplicate_axes(): void
+    {
+        $actor = $this->userWithPermission('imports.manage');
+        $category = Category::factory()->create(['slug' => 'tile']);
+        $axis = Attribute::factory()->create(['name' => 'Размер плитки', 'slug' => 'tile-size', 'type' => 'string']);
+        $area = Attribute::factory()->create(['name' => 'м² в упаковке', 'slug' => 'package-area', 'type' => 'decimal']);
+        $material = Attribute::factory()->create(['name' => 'Материал', 'slug' => 'material', 'type' => 'string']);
+        $category->attributes()->attach([$axis->id => ['is_required' => false], $area->id => ['is_required' => true], $material->id => ['is_required' => false]]);
+        $group = ProductGroup::factory()->create();
+        $group->axes()->attach($axis);
+        $group->individualAttributes()->attach($area);
+        $products = Product::factory()->count(2)->create(['category_id' => $category->id, 'brand_id' => null, 'unit' => 'package']);
+        foreach ($products as $index => $product) {
+            $group->products()->attach($product);
+            $product->attributeValues()->create(['attribute_id' => $axis->id, 'value' => '30x30']);
+            $product->attributeValues()->create(['attribute_id' => $area->id, 'value' => $index === 0 ? 0.72 : 1.44]);
+            $product->attributeValues()->create(['attribute_id' => $material->id, 'value' => 'Керамогранит']);
+        }
+        $export = app(ProductExportService::class)->create([], $actor);
+        try {
+            $this->assertSame(['created' => 0, 'updated' => 2, 'processed' => 2], app(ProductImportService::class)->import($actor, $export['path']));
+            $this->assertSame(0.72, $products[0]->fresh()->attributeValues->firstWhere('attribute_id', $area->id)->value);
+            $this->assertSame(1.44, $products[1]->fresh()->attributeValues->firstWhere('attribute_id', $area->id)->value);
+            $this->assertSame([$area->id], $group->fresh()->individualAttributes->modelKeys());
+        } finally {
+            @unlink($export['path']);
+        }
+
+        $headers = [...ProductWorkbookSchema::BASE_HEADERS, 'attribute.tile-size', 'attribute.package-area', 'attribute.material'];
+        $path = $this->workbook([$headers], [$this->row($headers, [
+            'id' => $products[0]->id, 'sku' => $products[0]->sku, 'name' => $products[0]->name, 'slug' => $products[0]->slug,
+            'category_slug' => 'tile', 'unit' => 'package', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false,
+            'attribute.tile-size' => '30x30', 'attribute.package-area' => null, 'attribute.material' => 'Керамика',
+        ])]);
+        try {
+            $this->assertSame(['created' => 0, 'updated' => 1, 'processed' => 1], app(ProductImportService::class)->import($actor, $path));
+            $this->assertNull($products[0]->fresh()->attributeValues->firstWhere('attribute_id', $area->id));
+            $this->assertSame(1.44, $products[1]->fresh()->attributeValues->firstWhere('attribute_id', $area->id)->value);
+            $this->assertSame('Керамика', $products[1]->fresh()->attributeValues->firstWhere('attribute_id', $material->id)->value);
+        } finally {
+            @unlink($path);
         }
     }
 

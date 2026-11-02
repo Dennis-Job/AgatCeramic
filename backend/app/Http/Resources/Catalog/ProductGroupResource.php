@@ -20,6 +20,9 @@ class ProductGroupResource extends ApiResource
             'axes' => $this->whenLoaded('axes', fn () => $this->axes->map(fn ($axis) => [
                 'id' => $axis->id, 'name' => $axis->name, 'slug' => $axis->slug, 'type' => $axis->type,
             ])),
+            'individual_attributes' => $this->whenLoaded('individualAttributes', fn () => $this->individualAttributes->map(fn ($attribute) => [
+                'id' => $attribute->id, 'name' => $attribute->name, 'slug' => $attribute->slug, 'type' => $attribute->type,
+            ])),
             'products' => $this->whenLoaded('products', function () use ($request) {
                 $axisIds = $this->axes->pluck('id');
 

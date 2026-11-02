@@ -7,6 +7,7 @@ import UiCard from '../../../components/ui/UiCard.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
+import ProductGroupAttributeRoles from './ProductGroupAttributeRoles.vue'
 import { useProductEditorContext } from '../composables/useProductEditorContext'
 const groupHelpId = useId()
 const groupHelp =
@@ -44,8 +45,8 @@ const {
       <template v-if="selectedGroupId"
         >Новый товар подготовлен для добавления в существующую группу.</template
       ><template v-else
-        >Заполните параметры новой группы и выберите различающуюся
-        характеристику.</template
+        >Заполните параметры новой группы и назначьте роли
+        характеристик.</template
       ></UiAlert
     >
     <UiCard>
@@ -85,31 +86,15 @@ const {
     </UiCard>
     <UiCard>
       <template #header>
-        <h3 class="font-semibold text-gray-500">
-          Различающиеся характеристики
-        </h3>
+        <h3 class="font-semibold text-gray-500">Роли характеристик</h3>
       </template>
-      <fieldset>
-        <legend class="sr-only">Различающиеся характеристики</legend>
-        <div class="grid gap-2 sm:grid-cols-2">
-          <UiCheckbox
-            v-for="a in attributes.filter(
-              (item) => !['text', 'multiselect'].includes(item.type),
-            )"
-            :key="a.id"
-            v-model="groupForm.axis_attribute_ids"
-            :value="a.id"
-            >{{ a.name }}</UiCheckbox
-          >
-        </div>
-        <p
-          v-if="groupErrors.axis_attribute_ids"
-          role="alert"
-          class="mt-2 text-sm text-error-500"
-        >
-          {{ groupErrors.axis_attribute_ids[0] }}
-        </p>
-      </fieldset>
+      <ProductGroupAttributeRoles
+        v-model:axis-attribute-ids="groupForm.axis_attribute_ids"
+        v-model:individual-attribute-ids="groupForm.individual_attribute_ids"
+        :attributes="attributes"
+        :errors="groupErrors"
+        :disabled="saving"
+      />
     </UiCard>
     <UiCard>
       <template #header>

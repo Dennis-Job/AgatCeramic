@@ -12,7 +12,7 @@ use RuntimeException;
  * @phpstan-import-type MemberRow from ProductGroupWorkbookReader
  * @phpstan-import-type ImportError from ProductGroupWorkbookReader
  *
- * @phpstan-type GroupChange array{action: 'disband', group_id: int}|array{action: 'create'|'update', group_id: int|null, code: string, name: string, axis_attribute_ids: list<int>, product_ids: list<int>}
+ * @phpstan-type GroupChange array{action: 'disband', group_id: int}|array{action: 'create'|'update', group_id: int|null, code: string, name: string, axis_attribute_ids: list<int>, individual_attribute_ids?: list<int>, product_ids: list<int>}
  */
 final class ProductGroupChangePlanner
 {
@@ -36,6 +36,8 @@ final class ProductGroupChangePlanner
         $targetCodes = [];
         $axisChoices = $this->axisChoices->forAttributes(Attribute::query()->whereNotIn('type', ['text', 'multiselect'])->orderBy('name')->orderBy('id')->get());
         $axisIdsByLabel = array_flip($axisChoices);
+        $individualChoices = $this->axisChoices->forAttributes(Attribute::query()->orderBy('name')->orderBy('id')->get());
+        $individualIdsByLabel = array_flip($individualChoices);
         foreach ($groups as $row) {
             $action = self::ACTIONS[mb_strtolower($row['action'])] ?? null;
             if ($action === null) {
@@ -104,6 +106,22 @@ final class ProductGroupChangePlanner
 
                 continue;
             }
+            $individualIds = [];
+            foreach ($row['individuals'] ?? [] as $individual) {
+                if (isset($individualIdsByLabel[$individual])) {
+                    $individualIds[] = (int) $individualIdsByLabel[$individual];
+
+                    continue;
+                }
+                $errors[] = $this->error($row, 'Выберите индивидуальную характеристику из выпадающего списка шаблона.');
+
+                continue 2;
+            }
+            if (count($individualIds) !== count(array_unique($individualIds)) || array_intersect($axisIds, $individualIds) !== []) {
+                $errors[] = $this->error($row, 'Индивидуальные характеристики не должны повторяться или совпадать с осями выбора.');
+
+                continue;
+            }
             $memberRows = $members[$row['key']] ?? [];
             if (count($memberRows) < 2 || count($memberRows) > 500) {
                 $errors[] = $this->error($row, 'Для создания или изменения укажите полный состав из 2–500 SKU на листе «Состав».');
@@ -122,7 +140,7 @@ final class ProductGroupChangePlanner
 
                 continue;
             }
-            $changes[] = [
+            $change = [
                 'action' => $action, 'group_id' => $group?->id, 'code' => $row['code'], 'name' => $row['name'],
                 'axis_attribute_ids' => $axisIds,
                 'product_ids' => array_values(collect($skus)->map(function (string $sku) use ($products): int {
@@ -134,6 +152,10 @@ final class ProductGroupChangePlanner
                     return $product->id;
                 })->all()),
             ];
+            if (array_key_exists('individuals', $row)) {
+                $change['individual_attribute_ids'] = $individualIds;
+            }
+            $changes[] = $change;
         }
         $seenProducts = [];
         foreach ($changes as $change) {

@@ -14,9 +14,11 @@ export interface ProductAttribute {
   unit: string | null
   value: string | number | boolean | string[] | null
   display_value: string
+  group?: { id: number; name: string; sort_order: number } | null
 }
 export type ProductCard = Omit<CatalogProduct, 'description'>
 export interface GroupProduct extends ProductCard {
+  sku?: string
   axis_values: Pick<ProductAttribute, 'slug' | 'value' | 'display_value'>[]
 }
 export interface ProductCollection {

@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v13.0",
+        "version": "v15.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -4805,7 +4805,7 @@
             "post": {
                 "operationId": "createProductGroup",
                 "summary": "Create a product variation group",
-                "description": "Requires at least two same-category and same-brand standalone products, scalar category-assigned axes, unique axis tuples, and equal non-axis attributes.",
+                "description": "Requires at least two same-category and same-brand standalone products and filled scalar category-assigned axes. Optional individual_attribute_ids identifies local product characteristics, including text and multiselect, disjoint from axes. Remaining category characteristics must have equal values. Duplicate axis tuples are allowed for distinct sellable products such as different packaging.",
                 "security": [{"sanctumSession": []}],
                 "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StoreProductGroupRequest"}}}},
                 "responses": {
@@ -4913,7 +4913,7 @@
             "put": {
                 "operationId": "replaceProductAttributeValues",
                 "summary": "Replace product attribute values",
-                "description": "Fully replaces the requested product values. For grouped products, axis values affect only the requested product, while supplied or omitted non-axis values are atomically synchronized across all group members.",
+                "description": "Fully replaces the requested product values. For grouped products, axis and individual values affect only the requested product. Only shared category values (excluding axes, individual characteristics and the archived collection attribute) are atomically synchronized across members, including omitted values being cleared.",
                 "security": [
                     {
                         "sanctumSession": []
@@ -11163,12 +11163,13 @@
             },
             "ProductGroup": {
                 "type": "object",
-                "required": ["id", "name", "code", "axes", "products", "created_at", "updated_at"],
+                "required": ["id", "name", "code", "axes", "individual_attributes", "products", "created_at", "updated_at"],
                 "properties": {
                     "id": {"type": "integer"},
                     "name": {"type": "string"},
                     "code": {"type": "string"},
                     "axes": {"type": "array", "minItems": 1, "items": {"$ref": "#/components/schemas/ProductGroupAxis"}},
+                    "individual_attributes": {"type": "array", "maxItems": 20, "items": {"$ref": "#/components/schemas/ProductGroupIndividualAttribute"}},
                     "products": {"type": "array", "minItems": 2, "items": {"$ref": "#/components/schemas/ProductGroupMember"}},
                     "created_at": {"type": ["string", "null"], "format": "date-time"},
                     "updated_at": {"type": ["string", "null"], "format": "date-time"}
@@ -11183,6 +11184,17 @@
                     "name": {"type": "string"},
                     "slug": {"type": "string"},
                     "type": {"type": "string", "enum": ["string", "integer", "decimal", "boolean", "select", "date"]}
+                },
+                "additionalProperties": false
+            },
+            "ProductGroupIndividualAttribute": {
+                "type": "object",
+                "required": ["id", "name", "slug", "type"],
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "slug": {"type": "string"},
+                    "type": {"type": "string", "enum": ["string", "text", "integer", "decimal", "boolean", "select", "multiselect", "date"]}
                 },
                 "additionalProperties": false
             },
@@ -11210,22 +11222,26 @@
                 "additionalProperties": false
             },
             "StoreProductGroupRequest": {
+                "description": "Individual characteristics default to an empty list when omitted. Axes and individual IDs must be assigned to the common category, disjoint, and cannot include the archived collection attribute.",
                 "type": "object",
                 "required": ["name", "code", "axis_attribute_ids", "product_ids"],
                 "properties": {
                     "name": {"type": "string", "maxLength": 255},
                     "code": {"type": "string", "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
                     "axis_attribute_ids": {"type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+                    "individual_attribute_ids": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
                     "product_ids": {"type": "array", "minItems": 2, "maxItems": 500, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}}
                 },
                 "additionalProperties": false
             },
             "UpdateProductGroupRequest": {
+                "description": "Omitting individual_attribute_ids preserves the group's current individual roles; an explicit empty list clears them. Promoting an individual characteristic to shared requires equal values across all members and never overwrites conflicts.",
                 "type": "object",
                 "properties": {
                     "name": {"type": "string", "maxLength": 255},
                     "code": {"type": "string", "maxLength": 100, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
                     "axis_attribute_ids": {"type": "array", "minItems": 1, "maxItems": 20, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+                    "individual_attribute_ids": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
                     "product_ids": {"type": "array", "minItems": 2, "maxItems": 500, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}}
                 },
                 "additionalProperties": false
@@ -13864,6 +13880,30 @@
                     },
                     "display_value": {
                         "type": "string"
+                    },
+                    "group": {
+                        "description": "The attribute's own group, identified by ID, or null when ungrouped. sort_order comes from the group reference. Attribute visibility and value ordering are unchanged.",
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "sort_order": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "sort_order"
+                        ],
+                        "additionalProperties": false
                     }
                 },
                 "required": [
@@ -13873,7 +13913,8 @@
                     "type",
                     "unit",
                     "value",
-                    "display_value"
+                    "display_value",
+                    "group"
                 ],
                 "additionalProperties": false
             },
@@ -14016,6 +14057,7 @@
                                         }
                                     ]
                                 },
+                                "sku": {"type": "string", "description": "Sellable product SKU for disambiguating variants with identical visible axes and product names."},
                                 "axis_values": {
                                     "type": "array",
                                     "items": {
@@ -14063,6 +14105,7 @@
                                 "category",
                                 "brand",
                                 "axis_values",
+                                "sku",
                                 "size"
                             ],
                             "additionalProperties": false

@@ -3,12 +3,13 @@ import AttributeValueField from './AttributeValueField.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiField from '../../../components/ui/UiField.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import { useProductEditorContext } from '../composables/useProductEditorContext'
 const {
-  selectedGroupId,
+  groupRolesPending,
+  attributeScope,
   attributeSections,
   requiredIds,
-  groupForm,
   attributeValues,
   attributeLabel,
   form,
@@ -20,6 +21,10 @@ const {
 <template>
   <form id="product-attributes-form" @submit.prevent="saveAttributes">
     <h3 class="font-bold text-gray-500">Характеристики этой позиции</h3>
+    <UiAlert v-if="groupRolesPending" tone="warning" class="mt-4">
+      Сначала сохраните роли характеристик на шаге «Варианты модели». До
+      сохранения действуют прежние роли группы.
+    </UiAlert>
     <div class="mt-5 space-y-4">
       <UiCard
         v-for="section in attributeSections"
@@ -38,7 +43,7 @@ const {
           <UiField
             v-for="attribute in section.attributes"
             :key="attribute.id"
-            :label="`${attributeLabel(attribute)}${selectedGroupId ? ` · ${groupForm.axis_attribute_ids.includes(attribute.id) ? 'только для этой позиции' : 'общая для группы'}` : ''}`"
+            :label="`${attributeLabel(attribute)}${attributeScope(attribute.id) ? ` · ${attributeScope(attribute.id)}` : ''}`"
             :required="requiredIds.includes(attribute.id)"
           >
             <AttributeValueField
@@ -46,8 +51,8 @@ const {
               class="mt-1.5"
               :attribute="attribute"
               :accessible-name="
-                selectedGroupId
-                  ? `${attributeLabel(attribute)}, ${groupForm.axis_attribute_ids.includes(attribute.id) ? 'только для этой позиции' : 'общая для группы'}`
+                attributeScope(attribute.id)
+                  ? `${attributeLabel(attribute)}, ${attributeScope(attribute.id)}`
                   : attributeLabel(attribute)
               "
               :required="form.is_active && requiredIds.includes(attribute.id)"

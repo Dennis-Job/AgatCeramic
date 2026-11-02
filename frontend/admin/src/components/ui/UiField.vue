@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { CircleAlert } from '@lucide/vue'
-import { vTooltip } from './tooltip'
+import UiHelpTooltip from './UiHelpTooltip.vue'
 
 defineProps<{
   label: string
@@ -26,15 +25,12 @@ defineProps<{
         >{{ error }}</span
       >
     </label>
-    <button
+    <UiHelpTooltip
       v-if="help"
-      v-tooltip.help="help"
-      type="button"
       class="ui-field-help admin-focus"
-      :aria-label="`Подсказка: ${label}`"
-    >
-      <CircleAlert class="h-4 w-4" aria-hidden="true" />
-    </button>
+      :label="label"
+      :help="help"
+    />
   </div>
 </template>
 
@@ -72,21 +68,10 @@ defineProps<{
   grid-row: 3;
 }
 .ui-field-help {
-  display: inline-flex;
   grid-column: 2;
   grid-row: 1;
-  align-items: center;
-  justify-content: center;
   justify-self: start;
   align-self: center;
-  width: var(--admin-spacing-6);
-  height: var(--admin-spacing-6);
   margin-inline-start: var(--admin-spacing-1);
-  border-radius: var(--admin-radius-md);
-  color: var(--admin-color-gray-500);
-  cursor: help;
-}
-.ui-field-help:hover {
-  background: var(--admin-color-gray-100);
 }
 </style>

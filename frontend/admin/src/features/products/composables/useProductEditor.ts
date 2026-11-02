@@ -133,6 +133,7 @@ export function useProductEditor() {
     name: '',
     code: '',
     axis_attribute_ids: [],
+    individual_attribute_ids: [],
     product_ids: [],
   })
   const groupSearch = ref('')
@@ -272,6 +273,30 @@ export function useProductEditor() {
         group.products.some((product) => product.id === editing.value?.id),
       ) ?? null,
   )
+  const groupRolesPending = computed(() => {
+    const group = currentGroup.value
+    if (!group || selectedGroupId.value !== String(group.id)) return false
+    const sameIds = (draft: number[], saved: number[]) =>
+      draft.length === saved.length && draft.every((id) => saved.includes(id))
+    return (
+      !sameIds(
+        groupForm.value.axis_attribute_ids,
+        group.axes.map((a) => a.id),
+      ) ||
+      !sameIds(
+        groupForm.value.individual_attribute_ids,
+        (group.individual_attributes ?? []).map((a) => a.id),
+      )
+    )
+  })
+  function attributeScope(id: number): string {
+    const group = currentGroup.value
+    if (!group) return ''
+    if (group.axes.some((a) => a.id === id)) return 'для выбора варианта'
+    if (group.individual_attributes?.some((a) => a.id === id))
+      return 'индивидуальная'
+    return 'общая для группы'
+  }
   const selectableCandidates = computed(() =>
     sortByLabel(
       candidates.value
@@ -505,9 +530,18 @@ export function useProductEditor() {
           name: group.name,
           code: group.code,
           axis_attribute_ids: group.axes.map((a) => a.id),
+          individual_attribute_ids: (group.individual_attributes ?? []).map(
+            (a) => a.id,
+          ),
           product_ids: group.products.map((p) => p.id),
         }
-      : { name: '', code: '', axis_attribute_ids: [], product_ids: [id] }
+      : {
+          name: '',
+          code: '',
+          axis_attribute_ids: [],
+          individual_attribute_ids: [],
+          product_ids: [id],
+        }
   }
   function prepareGroupDraft(product: Product, groupList: ProductGroup[]) {
     const ownGroup =
@@ -629,6 +663,7 @@ export function useProductEditor() {
       name: '',
       code: '',
       axis_attribute_ids: [],
+      individual_attribute_ids: [],
       product_ids: [],
     }
     groupErrors.value = {}
@@ -777,7 +812,13 @@ export function useProductEditor() {
     }
   }
   async function saveAttributes() {
-    if (!editing.value) return
+    if (!editing.value || saving.value) return
+    if (groupRolesPending.value) {
+      error.value =
+        'Сначала сохраните роли характеристик на шаге «Варианты модели».'
+      return
+    }
+    error.value = ''
     saving.value = true
     try {
       await saveProductAttributeValues(editing.value.id, {
@@ -1226,6 +1267,8 @@ export function useProductEditor() {
     selectedBrand,
     groupOptions,
     currentGroup,
+    groupRolesPending,
+    attributeScope,
     selectableCandidates,
     hasActiveFilters,
     productCountLabel,

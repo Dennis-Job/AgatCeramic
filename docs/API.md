@@ -18,6 +18,22 @@ Breaking change допускается только с повышением majo
 не является разрешением несовместимости.
 `info.version` относится к редакции OpenAPI-контракта; базовый URL `/api/v1` версионируется отдельно.
 
+Редакция v15.0 добавляет три роли характеристик товарной группы: оси выбора,
+индивидуальные и общие. Admin ProductGroup содержит `individual_attributes`;
+запросы принимают `individual_attribute_ids`. Синхронизируются только общие
+значения. Одинаковые сочетания осей разрешены для разных продаваемых SKU.
+Публичные участники группы содержат `sku`, чтобы различать товары при совпадении
+как осей, так и названий; параметры упаковки не становятся осями автоматически.
+Порядок выпуска и rollback описаны в `OPENAPI_MIGRATION_PLAN.md`.
+
+Редакция v14.0 добавляет в публичные характеристики товара nullable `group`:
+`{id,name,sort_order}` из группы самой характеристики. ID сохраняет идентичность
+группы; значение null означает отсутствие группы. Порядок характеристик и правила
+их видимости не меняются; пустые группы отдельно не публикуются. Предыдущая
+закрытая response-schema запрещала дополнительные поля, поэтому строгие
+валидаторы необходимо обновить вместе с контрактом; порядок выпуска и rollback
+описаны в [`OPENAPI_MIGRATION_PLAN.md`](OPENAPI_MIGRATION_PLAN.md).
+
 Редакция v10.0 расширяет `header.navigation`: обычный пункт `{label,to}` либо
 группа `{label,children:[{label,to}]}` с одним уровнем вложенности. У группы нет
 адреса родителя: название только раскрывает список. В меню 1–16 родителей,
@@ -219,7 +235,11 @@ slug дают `404`. Активный товар, снятый с продажи
 - `images`: все публичные изображения, по `sort_order`, затем ID;
   `{id,url,alt,is_primary,sort_order}`. Private disk/path не раскрываются.
 - `attributes`: только видимые характеристики, по порядку характеристики и ID;
-  `{id,slug,name,type,unit,value,display_value}`. `id` — ID характеристики.
+  `{id,slug,name,type,unit,value,display_value,group}`. `id` — ID характеристики.
+  `group` — `{id,name,sort_order}` из справочника групп характеристик либо null;
+  это группа самой характеристики, а не вариативная группа товара или назначение
+  группы категории. `sort_order` — порядок из справочника группы. Связь загружается
+  заранее; поле не добавляет запросов при сериализации.
   `value` сохраняет тип, `display_value` разрешает select/multiselect в подписи,
   boolean в «Да»/«Нет», десятичный разделитель в запятую. Исторический неизвестный
   option остаётся своим значением, не подменяется другим вариантом.
@@ -230,7 +250,7 @@ slug дают `404`. Активный товар, снятый с продажи
 - `group`: `{axes:[{id,slug,name,type}],products:[...]}` либо null. Оси только
   видимые; участники — самостоятельные активные продаваемые товары активных
   категорий с собственными ID/slug, упорядочены по ID. Каждый содержит поля
-  публичной карточки и `axis_values:[{slug,value,display_value}]`.
+  публичной карточки, `sku` и `axis_values:[{slug,value,display_value}]`.
 - `related`, `recommended`: исходящие связи соответствующего типа, по
   `sort_order`, затем ID связи. Неактивные, снятые с продажи и товары неактивных
   категорий исключены. Ответы не придумывают обратные связи или совместимость.
@@ -756,7 +776,9 @@ terminal operation with errors provides `GET /admin/product-price-status-imports
 `GET /admin/products/group-import-template` exports the current variation groups to a dedicated XLSX
 workbook. Its `Группы` sheet has an explicit action (`Не изменять`, `Создать`, `Изменить`, or
 `Расформировать`), a workbook key, original and target group codes, a name, and up to 20 scalar
-attribute axes represented as human-readable names. Its `Состав` sheet maps that key to SKU rows, and
+attribute axes represented as human-readable names. Appended `Индивидуальная 1`–`Индивидуальная 20`
+columns select per-product characteristics (including text and multiselect), with a separate hidden
+dictionary; all remaining category characteristics are shared. Its `Состав` sheet maps that key to SKU rows, and
 the `Инструкция` sheet explains the supported actions and every required field for managers. The
 The axis columns expose names through an Excel dropdown backed by a hidden technical column, while
 the importer resolves each selected name to its current attribute ID.
@@ -764,7 +786,9 @@ Empty cells appended to the end of a header row by Excel are ignored, including 
 header above the hidden axis helper column. Required header names and their order remain strict.
 `POST /admin/products/group-import` accepts the edited workbook as multipart `file` (up to 10 MiB),
 requires both `imports.manage` and `catalog.manage`, and runs in the queue. `Изменить` replaces the
-complete membership and axes; a product can move between groups in one workbook. Groups are never
+complete membership and axes; explicit individual columns replace that role list too. Legacy books
+without individual columns preserve existing roles on update (default empty on create); new blank
+individual cells explicitly clear the list. A product can move between groups in one workbook. Groups are never
 removed by omission: `Расформировать` is required. The entire workbook is validated and applied
 atomically, so a conflict leaves no partial group changes. The initiating user polls
 `GET /admin/product-group-imports/{productImport}` and may download terminal row errors from
@@ -850,9 +874,14 @@ valid. The update is atomic and never silently removes values.
 
 Groups require `catalog.manage`. Create requires unique `code`, `name`, `axis_attribute_ids`, and
 `product_ids`; updates use the same fields as a full desired group definition. A group contains at
-least two standalone products. Members must share category and brand, provide a unique tuple for the
-selected axes, and have equal values for every non-axis characteristic. Each axis must be assigned
-to the common category and be scalar; `text` and `multiselect` are rejected. Group changes are
+least two standalone products. Members must share category and brand and fill all selected axes;
+different SKU may have the same axis tuple (for example, different packaging). Optional
+`individual_attribute_ids` contains up to 20 category-assigned characteristics and must not overlap
+axes. These fields may include text/multiselect and vary independently. Create omission defaults to
+`[]`; update omission preserves current roles, explicit `[]` clears them. Responses include
+`individual_attributes` with id/name/slug/type. All remaining category characteristics are shared and
+must have equal values. Role changes never overwrite conflicting shared values. Each axis must be assigned
+to the common category and be scalar; `text` and `multiselect` are rejected as axes. Group changes are
 atomic, lock affected products consistently, and are audited. Groups do not copy product fields or
 images and are independent of related/recommended product relations.
 
@@ -876,7 +905,7 @@ same partial-update validation and response. Product-image metadata remains `PAT
 - `PUT /admin/products/{product}/attributes`
 
 `PUT` fully replaces the requested product's attribute values. For a product in a variation group,
-axis values belong only to that product, while every non-axis value is shared by the group: supplied
+axis and individual values belong only to that product; all remaining values are shared by the group: supplied
 shared values are copied atomically to every member and omitted shared values are removed from every
 member. A shared required value cannot be removed while any member is active. Axis uniqueness and all
 group invariants are checked before commit; a conflict rolls back the complete update. The response

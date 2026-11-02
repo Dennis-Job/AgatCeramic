@@ -1,5 +1,59 @@
 # DONE
 
+2026-11-02 — Футер шага «Варианты модели»: пояснение скрыто за значком «!»;
+«Удалить группу», «Не объединять» и «Сохранить группу» помещаются в один ряд
+от 640 px, на 320 px сохраняется безопасный перенос. Общий UiHelpTooltip
+переиспользует прежнее поведение UiField: hover/focus/tap, Escape и доступное имя.
+Изменены ProductEditor.vue, UiField.vue, добавлен UiHelpTooltip.vue;
+обновлены UiKitShowcase.vue, его inventory test и shared/UI_KIT.md.
+Lint/format/build и 285 unit tests PASS; реальный товар проверен на пяти ширинах,
+открытие подсказки и Escape — PASS. Независимый UI Design Guard accepted.
+API, миграции и данные не менялись; commit не создавался.
+
+2026-11-02 — Три роли характеристик товарной группы: выбор варианта,
+индивидуальные и общие. Форма создания/копирования/редактирования сохраняет роли;
+индивидуальные параметры упаковки не синхронизируются соседям, общие значения и
+очистка синхронизируются. Несохранённые роли блокируют опасное сохранение значений.
+Excel групп содержит 20 индивидуальных колонок; старые файлы сохраняют настройки,
+новые пустые колонки очищают явно. Обычный товарный/категорийный Excel учитывает роли.
+Одинаковые оси допустимы; Client различает повторные подписи названием, затем SKU.
+API v15.0 и добавочная миграция применены локально, очередь graceful restarted.
+
+Проверки: backend 717 tests / 7876 assertions (4 SQLite skips), PostgreSQL 55 / 501,
+API/contract 43 PASS; Admin unit 285 / E2E 85, Client Node 2 / E2E 14 PASS.
+Pint/PHPStan/architecture/Composer validate+audit, Admin lint/format/build,
+Client typecheck/format/build PASS. Независимый code review и UI Design Guard
+accepted; исправлен случай одинаковых названий и осей. Список файлов и порядок
+работы: [отчёт](../docs/PRODUCT_GROUP_ROLES_2026-11-02.md). Commit не создавался.
+
+2026-11-02 — Названия групп характеристик показаны во вкладке товара (UI-024).
+ProductInfoTabs группирует по id, сортирует по sort_order, сохраняет порядок
+значений внутри группы; компактный eyebrow-заголовок и тонкие разделители
+продолжают стиль сайта. Две колонки, до 520 px одна, перенос длинных строк.
+Значения без группы видны в «Прочие характеристики», старые ответы сохраняют
+плоский список, пустые группы не выводятся. API v14.0 передаёт nullable group
+с id/name/sort_order; eager loading без запросов при сериализации. Маршруты
+/api/v1 прежние; версия повышена из-за закрытой прежней response-schema.
+
+Изменённые файлы: backend/app/Http/Resources/PublicProductAttributeResource.php,
+backend/app/Queries/PublicProductQuery.php,
+backend/tests/Feature/Api/PublicProductTest.php;
+frontend/client/app/features/product/components/ProductInfoTabs.vue,
+frontend/client/app/features/product/types/product.ts,
+frontend/client/e2e/fixtures/product-api.mjs,
+frontend/client/e2e/product-pages.spec.ts;
+docs/API.md, docs/openapi.json, docs/OPENAPI_MIGRATION_PLAN.md,
+docs/CLIENT_UI_KIT.md и tasks/DONE.md.
+
+PASS: Client typecheck/build/scoped Prettier; product-pages и product-collections
+21 E2E (пять ширин, SSR/hydration, axe, длинные/пустые/старые данные).
+Backend composer test: 700 passed, 4 skipped, 7777 assertions; scoped
+SQLite/PostgreSQL по 16 tests/154 assertions. Pint/PHPStan/architecture,
+Composer validate/audit, OpenAPI lint/compatibility и git diff --check — PASS.
+Независимый UI Design Guard принял скриншоты пяти ширин и живую карточку
+«Керамогранит Аллея Серый 30x30» на 1280/320 px: верные группы, нет overflow
+и page errors. Локальный Client обновлён. Миграции и товарные данные не менялись.
+
 2026-11-02 — Добавлена русская плашка «Распродажа» по SALE референса.
 Один ProductSaleBadge используется в ProductCard (каталог/рекомендации/preview)
 и ProductGallery через флаг из ProductDetail. Видимость строго по is_on_sale,

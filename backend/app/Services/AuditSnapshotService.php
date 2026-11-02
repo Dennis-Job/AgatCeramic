@@ -79,6 +79,7 @@ class AuditSnapshotService
             $entity instanceof ProductGroup => [
                 'product_skus' => $entity->products()->orderBy('products.id')->pluck('sku')->all(),
                 'axis_ids' => $entity->axes()->orderByPivot('sort_order')->orderBy('attributes.id')->pluck('attributes.id')->all(),
+                'individual_attribute_ids' => $entity->individualAttributes()->orderByPivot('sort_order')->orderBy('attributes.id')->pluck('attributes.id')->all(),
             ],
             $entity instanceof User => ['roles' => $entity->roles()->orderBy('roles.id')->get()->map(fn (Role $role): string => $role->slug.' · '.$role->name)->all()],
             $entity instanceof Role => ['permissions' => $entity->permissions()->orderBy('permissions.id')->get()->map(fn (Permission $permission): string => $permission->code.' · '.$permission->name)->all()],

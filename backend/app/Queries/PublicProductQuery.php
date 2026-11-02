@@ -17,6 +17,7 @@ class PublicProductQuery
                 'images' => fn (Relation $query) => $query->getQuery()->where('disk', 'public')->orderBy('sort_order')->orderBy('id'),
                 'attributeValues' => fn (Relation $query) => $query->getQuery()->whereHas('attribute', fn ($attribute) => $attribute->where('is_visible_on_product_page', true)),
                 'attributeValues.attribute.options',
+                'attributeValues.attribute.group',
                 'groupMembership.group.axes' => fn (Relation $query) => $query->getQuery()->where('is_visible_on_product_page', true),
                 'groupMembership.group.products' => fn (Relation $query) => $query->getQuery()->where('is_active', true)->where('is_on_sale', true)
                     ->whereHas('category', fn ($category) => $category->where('is_active', true))->orderBy('products.id'),

@@ -188,11 +188,15 @@ relations.
 ### product_groups
 Variation-family metadata with a unique stable `code` and display `name`. A group has at least two
 standalone products through `product_group_members` and one or more ordered axis attributes through
-`product_group_axes`. Each product may belong to at most one group. Members must share category and brand, have equal non-axis values,
-and have a unique tuple of axis values. Axis attributes must be assigned to the category and must be
-scalar; `text` and `multiselect` are prohibited. Membership/group writes validate and lock all
-affected products atomically. Updating one member's product-owned attribute rows changes its axis
-values only, while non-axis rows are atomically synchronized across all members. Product groups are
+`product_group_axes`. Ordered local-only roles are stored in
+`product_group_individual_attributes` (group/attribute composite primary key, restrictive attribute
+FK, cascading group FK, reverse attribute index). Each product may belong to at most one group.
+Members must share category and brand and fill all axes; duplicate axis tuples are allowed for
+different SKU. Axis attributes must be assigned to the category and must be scalar; `text` and
+`multiselect` can be individual roles but not axes. The two role lists are disjoint. Remaining category
+attributes are shared and equal across members. Membership/group writes validate and lock all
+affected products atomically. Updating one member changes axis and individual values only for that
+member, while shared rows (including clear operations) synchronize across all members. Product groups are
 independent of `product_relations`.
 
 ## Orders

@@ -21,6 +21,12 @@ class ProductGroup extends Model
         return $this->belongsToMany(Attribute::class, 'product_group_axes')->withPivot('sort_order')->orderByPivot('sort_order');
     }
 
+    /** @return BelongsToMany<Attribute, $this> */
+    public function individualAttributes(): BelongsToMany
+    {
+        return $this->belongsToMany(Attribute::class, 'product_group_individual_attributes')->withPivot('sort_order')->orderByPivot('sort_order');
+    }
+
     /** @return HasMany<ProductGroupMember, $this> */
     public function memberships(): HasMany
     {

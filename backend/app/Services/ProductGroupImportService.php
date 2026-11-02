@@ -10,8 +10,8 @@ use RuntimeException;
 use Throwable;
 
 /**
- * @phpstan-type GroupChange array{action: 'disband', group_id: int}|array{action: 'create'|'update', group_id: int|null, code: string, name: string, axis_attribute_ids: list<int>, product_ids: list<int>}
- * Dedicated workbook importer; it only changes variation-group membership and axes.
+ * @phpstan-type GroupChange array{action: 'disband', group_id: int}|array{action: 'create'|'update', group_id: int|null, code: string, name: string, axis_attribute_ids: list<int>, individual_attribute_ids?: list<int>, product_ids: list<int>}
+ * Dedicated workbook importer; it changes variation-group membership and attribute roles.
  */
 class ProductGroupImportService
 {
@@ -151,8 +151,16 @@ class ProductGroupImportService
             $name = $change['name'] ?? null;
             $axisIds = $this->integerList($change['axis_attribute_ids'] ?? null);
             $productIds = $this->integerList($change['product_ids'] ?? null);
+            $individualIds = $this->integerList($change['individual_attribute_ids'] ?? null);
+            if (array_key_exists('individual_attribute_ids', $change) && $individualIds === null) {
+                continue;
+            }
             if (($change['action'] === 'create' || $change['action'] === 'update') && (is_int($groupId) || $groupId === null) && is_string($code) && is_string($name) && $axisIds !== null && $productIds !== null) {
-                $changes[] = ['action' => $change['action'], 'group_id' => $groupId, 'code' => $code, 'name' => $name, 'axis_attribute_ids' => $axisIds, 'product_ids' => $productIds];
+                $planned = ['action' => $change['action'], 'group_id' => $groupId, 'code' => $code, 'name' => $name, 'axis_attribute_ids' => $axisIds, 'product_ids' => $productIds];
+                if ($individualIds !== null) {
+                    $planned['individual_attribute_ids'] = $individualIds;
+                }
+                $changes[] = $planned;
             }
         }
 

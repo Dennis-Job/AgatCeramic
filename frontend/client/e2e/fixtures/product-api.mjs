@@ -113,6 +113,64 @@ export function handleProducts(request, response, url, scenario) {
     products.map((item) => ({ ...item, stock_quantity: 10 })),
   )
   const axes = [{ slug: 'tsvet', name: 'Цвет' }]
+  const specs = [
+    {
+      id: 11,
+      slug: 'weight',
+      name: 'Вес',
+      type: 'decimal',
+      unit: 'кг',
+      value: 26.16,
+      display_value: '26,16',
+      group: { id: 2, name: 'Размеры и вес', sort_order: 2 },
+    },
+    {
+      id: 12,
+      slug: 'texture',
+      name: 'Текстура',
+      type: 'text',
+      unit: null,
+      value: 'Матовая',
+      display_value: 'Матовая',
+      group: { id: 1, name: 'Поверхность', sort_order: 1 },
+    },
+    {
+      id: 13,
+      slug: 'size',
+      name: 'Размер',
+      type: 'text',
+      unit: 'мм',
+      value: '300×300',
+      display_value: '300×300',
+      group: { id: 2, name: 'Размеры и вес', sort_order: 2 },
+    },
+    {
+      id: 14,
+      slug: 'extra',
+      name: 'Особенность',
+      type: 'text',
+      unit: null,
+      value: 'Камень',
+      display_value: 'Камень',
+      group: null,
+    },
+    {
+      id: 15,
+      slug: 'finish',
+      name: 'Фактура',
+      type: 'text',
+      unit: null,
+      value: 'Текстурированная',
+      display_value: 'Текстурированная',
+      group: { id: 3, name: 'Поверхность', sort_order: 3 },
+    },
+  ]
+  if (scenario === 'product-specs-long') {
+    specs[1].group.name =
+      'Дополнительные характеристики поверхности и декоративного оформления материала'
+    specs[1].name = 'Особенностиобработкиповерхностибезпробелов'
+    specs[1].display_value = 'Оченьдлинноезначениехарактеристикибезпробелов'
+  }
   return send({
     data: {
       ...product,
@@ -134,26 +192,37 @@ export function handleProducts(request, response, url, scenario) {
               sort_order: index,
             }),
           ),
-      attributes: [
-        {
-          id: 1,
-          slug: 'kollektsiya',
-          name: 'Коллекция',
-          type: 'text',
-          unit: null,
-          value: 'Тестовая коллекция',
-          display_value: 'Тестовая коллекция',
-        },
-        {
-          id: 2,
-          slug: 'size',
-          name: 'Размер',
-          type: 'text',
-          unit: 'мм',
-          value: '300×300',
-          display_value: '300×300',
-        },
-      ],
+      attributes:
+        scenario === 'product-specs-empty'
+          ? []
+          : scenario.startsWith('product-specs')
+            ? specs.map((attribute) => {
+                if (scenario !== 'product-specs-legacy') return attribute
+                const { group, ...legacy } = attribute
+                return legacy
+              })
+            : [
+                {
+                  id: 1,
+                  slug: 'kollektsiya',
+                  name: 'Коллекция',
+                  type: 'text',
+                  unit: null,
+                  value: 'Тестовая коллекция',
+                  display_value: 'Тестовая коллекция',
+                  group: { id: 1, name: 'Общие характеристики', sort_order: 0 },
+                },
+                {
+                  id: 2,
+                  slug: 'size',
+                  name: 'Размер',
+                  type: 'text',
+                  unit: 'мм',
+                  value: '300×300',
+                  display_value: '300×300',
+                  group: { id: 2, name: 'Размеры', sort_order: 1 },
+                },
+              ],
       collection,
       group: empty
         ? null
@@ -161,11 +230,23 @@ export function handleProducts(request, response, url, scenario) {
             axes,
             products: products.slice(0, 2).map((item, index) => ({
               ...item,
+              sku: `TEST-${item.id}`,
+              ...(scenario === 'product-duplicate-names'
+                ? { name: products[0].name }
+                : {}),
               axis_values: [
                 {
                   slug: 'tsvet',
-                  value: index ? 'light' : 'gray',
-                  display_value: index ? 'Светлый' : 'Серый',
+                  value: scenario.startsWith('product-duplicate-')
+                    ? 'gray'
+                    : index
+                      ? 'light'
+                      : 'gray',
+                  display_value: scenario.startsWith('product-duplicate-')
+                    ? 'Серый'
+                    : index
+                      ? 'Светлый'
+                      : 'Серый',
                 },
               ],
             })),

@@ -22,7 +22,7 @@ class ProductGroupController extends Controller
     {
         Gate::authorize('viewAny', ProductGroup::class);
 
-        return ProductGroupResource::collection(ProductGroup::query()->with(['axes', 'products.category', 'products.brand', 'products.primaryImage', 'products.attributeValues.attribute.options'])->orderBy('name')->paginate(25));
+        return ProductGroupResource::collection(ProductGroup::query()->with(['axes', 'individualAttributes', 'products.category', 'products.brand', 'products.primaryImage', 'products.attributeValues.attribute.options'])->orderBy('name')->paginate(25));
     }
 
     public function store(StoreProductGroupRequest $request): JsonResponse

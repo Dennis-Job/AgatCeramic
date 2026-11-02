@@ -60,6 +60,7 @@ class PublicProductDetailResource extends PublicProductCardResource
             'axes' => $group->axes->map(fn ($axis): array => ['id' => $axis->id, 'slug' => $axis->slug, 'name' => $axis->name, 'type' => $axis->type]),
             'products' => $group->products->map(function (Product $product) use ($axisIds, $request): array {
                 return [...(new PublicProductCardResource($product))->resolve($request),
+                    'sku' => $product->sku,
                     'axis_values' => $product->attributeValues->whereIn('attribute_id', $axisIds)->values()->map(function (ProductAttributeValue $value) use ($request): array {
                         $data = (new PublicProductAttributeResource($value))->resolve($request);
 

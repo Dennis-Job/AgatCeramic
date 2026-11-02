@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
+use App\Models\ProductGroup;
 use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\User;
@@ -30,6 +31,40 @@ use ZipArchive;
 class CategoryProductImportTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_category_edit_workbook_changes_individual_packaging_and_multiselect_only_for_its_sku(): void
+    {
+        Storage::fake('local');
+        [$category, $color, $features, $boolean] = $this->catalog();
+        $area = Attribute::factory()->create(['slug' => 'package-area', 'name' => 'м² в упаковке', 'type' => 'decimal']);
+        $category->attributes()->attach($area);
+        $group = ProductGroup::factory()->create();
+        $group->axes()->attach($color);
+        $group->individualAttributes()->attach([$features->id, $area->id]);
+        $products = Product::factory()->count(2)->create(['category_id' => $category->id, 'brand_id' => null]);
+        foreach ($products as $index => $product) {
+            $group->products()->attach($product);
+            $product->attributeValues()->create(['attribute_id' => $color->id, 'value' => 'gray']);
+            $product->attributeValues()->create(['attribute_id' => $features->id, 'value' => $index === 0 ? ['matte'] : ['stone']]);
+            $product->attributeValues()->create(['attribute_id' => $boolean->id, 'value' => false]);
+            $product->attributeValues()->create(['attribute_id' => $area->id, 'value' => $index === 0 ? 0.72 : 1.44]);
+        }
+        $import = $this->storedImport($this->actor(), $category, [[
+            ...$this->values($products[0]->name), 'sku' => $products[0]->sku,
+            'attribute.color' => 'Серый', 'attribute.features.1' => 'Матовая',
+            'attribute.features.2' => 'Фактура; "камень"', 'attribute.rectified' => 'Да', 'attribute.package-area' => 2.16,
+        ]], true);
+
+        app(CategoryProductImportService::class)->process($import, Storage::disk('local')->path($import->path));
+
+        $this->assertSame(1, $import->fresh()->updated_rows);
+        $this->assertSame(0, $import->fresh()->failed_rows);
+        $this->assertSame(2.16, $products[0]->fresh()->attributeValues->firstWhere('attribute_id', $area->id)->value);
+        $this->assertSame(1.44, $products[1]->fresh()->attributeValues->firstWhere('attribute_id', $area->id)->value);
+        $this->assertSame(['matte', 'stone'], $products[0]->fresh()->attributeValues->firstWhere('attribute_id', $features->id)->value);
+        $this->assertSame(['stone'], $products[1]->fresh()->attributeValues->firstWhere('attribute_id', $features->id)->value);
+        $this->assertTrue($products[1]->fresh()->attributeValues->firstWhere('attribute_id', $boolean->id)->value);
+    }
 
     #[DataProvider('workbookCleanupCases')]
     public function test_readers_release_workbook_immediately_without_garbage_collection(string $reader, bool $invalid): void

@@ -47,6 +47,8 @@ class ProductImportGroupValidationService
                 ]);
             }
             $axisIds = $group->axes()->pluck('attributes.id')->filter(static fn (mixed $id): bool => is_int($id))->all();
+            $individualIds = $group->individualAttributes()->pluck('attributes.id')->filter(static fn (mixed $id): bool => is_int($id))->all();
+            $localIds = [...$axisIds, ...$individualIds];
             $categoryAttributes = $product->category->attributes()->where('slug', '!=', 'kollektsiya')->get();
             $members = [];
             foreach ($group->products()->with('attributeValues')->get() as $member) {
@@ -57,14 +59,14 @@ class ProductImportGroupValidationService
             }
             $this->groups[$groupId] = [
                 'axes' => $axisIds,
-                'shared' => array_values(array_diff($categoryAttributes->pluck('id')->filter(static fn (mixed $id): bool => is_int($id))->all(), $axisIds)),
+                'shared' => array_values(array_diff($categoryAttributes->pluck('id')->filter(static fn (mixed $id): bool => is_int($id))->all(), $localIds)),
                 'required_shared' => array_values(array_diff(
                     $categoryAttributes->filter(static function ($attribute): bool {
                         $pivot = $attribute->getRelation('pivot');
 
                         return $pivot instanceof Pivot && (bool) $pivot->getAttribute('is_required');
                     })->pluck('id')->filter(static fn (mixed $id): bool => is_int($id))->all(),
-                    $axisIds,
+                    $localIds,
                 )),
                 'members' => $members,
             ];
@@ -81,7 +83,6 @@ class ProductImportGroupValidationService
             ]);
         }
 
-        $tuples = [];
         foreach ($state['members'] as $memberId => &$member) {
             // Shared values are synchronized to all members by the real replacement service.
             foreach ($state['shared'] as $attributeId) {
@@ -95,13 +96,6 @@ class ProductImportGroupValidationService
                     'attributes' => ["У товара {$memberId} не заполнено значение одной или нескольких осей группы."],
                 ]);
             }
-            $tuple = json_encode(array_map(static fn (int $id): mixed => $member['values'][$id], $state['axes']), JSON_THROW_ON_ERROR);
-            if (isset($tuples[$tuple])) {
-                throw ValidationException::withMessages([
-                    'attributes' => ['Каждый товар должен иметь уникальное сочетание значений осей группы.'],
-                ]);
-            }
-            $tuples[$tuple] = true;
         }
         unset($member);
 

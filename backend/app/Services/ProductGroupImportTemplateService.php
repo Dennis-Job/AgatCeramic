@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Attribute;
 use App\Models\ProductGroup;
+use App\Support\ProductGroupWorkbookSchema;
 use DateTimeInterface;
 use DOMDocument;
 use DOMElement;
@@ -22,9 +23,6 @@ use ZipArchive;
 final class ProductGroupImportTemplateService
 {
     /** @var list<string> */
-    private const GROUP_HEADERS = ['Действие', 'Ключ группы', 'Исходный код', 'Код группы', 'Название', 'Ось 1', 'Ось 2', 'Ось 3', 'Ось 4', 'Ось 5', 'Ось 6', 'Ось 7', 'Ось 8', 'Ось 9', 'Ось 10', 'Ось 11', 'Ось 12', 'Ось 13', 'Ось 14', 'Ось 15', 'Ось 16', 'Ось 17', 'Ось 18', 'Ось 19', 'Ось 20'];
-
-    /** @var list<string> */
     private const MEMBERS_HEADERS = ['Ключ группы', 'SKU'];
 
     public function __construct(private readonly ProductGroupAxisChoices $axes) {}
@@ -38,18 +36,20 @@ final class ProductGroupImportTemplateService
         }
         $writer = new Writer;
         try {
-            $availableAxisValues = Attribute::query()->whereNotIn('type', ['text', 'multiselect'])->orderBy('name')->orderBy('id')->get();
-            $axisChoices = $this->axes->forAttributes($availableAxisValues);
+            $availableAttributes = Attribute::query()->where('slug', '!=', 'kollektsiya')->orderBy('name')->orderBy('id')->get();
+            $axisChoices = $this->axes->forAttributes($availableAttributes->reject(fn (Attribute $attribute): bool => in_array($attribute->type, ['text', 'multiselect'], true)));
+            $individualChoices = $this->axes->forAttributes($availableAttributes);
             $writer->openToFile($path);
             $groupsSheet = $writer->getCurrentSheet();
             $groupsSheet->setName('Группы')->setSheetView((new SheetView)->setFreezeRow(2));
-            $writer->addRow($this->row(self::GROUP_HEADERS, $this->headerStyle())->setHeight(36));
-            foreach (range(1, count(self::GROUP_HEADERS)) as $column) {
-                $groupsSheet->setColumnWidth($column <= 5 ? 24 : 18, $column);
+            $writer->addRow($this->row(ProductGroupWorkbookSchema::headers(), $this->headerStyle())->setHeight(36));
+            foreach (range(1, count(ProductGroupWorkbookSchema::headers())) as $column) {
+                $groupsSheet->setColumnWidth($column <= 5 ? 24 : 18, max(1, $column));
             }
-            ProductGroup::query()->with(['axes', 'products'])->orderBy('code')->get()->each(function (ProductGroup $group) use ($writer, $axisChoices): void {
+            ProductGroup::query()->with(['axes', 'individualAttributes'])->orderBy('code')->get()->each(function (ProductGroup $group) use ($writer, $axisChoices, $individualChoices): void {
                 $axes = $group->axes->map(fn (Attribute $attribute): string => $axisChoices[(int) $attribute->id] ?? (string) $attribute->name)->all();
-                $writer->addRow($this->row(['Не изменять', $group->code, $group->code, $group->code, $group->name, ...$axes]));
+                $individuals = $group->individualAttributes->map(fn (Attribute $attribute): string => $individualChoices[(int) $attribute->id] ?? (string) $attribute->name)->all();
+                $writer->addRow($this->row(['Не изменять', $group->code, $group->code, $group->code, $group->name, ...array_pad($axes, ProductGroupWorkbookSchema::ROLE_SLOTS, null), ...$individuals]));
             });
             $members = $writer->addNewSheetAndMakeItCurrent();
             $members->setName('Состав')->setSheetView((new SheetView)->setFreezeRow(2));
@@ -69,7 +69,7 @@ final class ProductGroupImportTemplateService
                 $writer->addRow($this->row([$section, $text], $this->instructionStyle())->setHeight(54));
             }
             $writer->close();
-            $this->addValidations($path, array_values($axisChoices));
+            $this->addValidations($path, array_values($axisChoices), array_values($individualChoices));
         } catch (Throwable $exception) {
             try {
                 $writer->close();
@@ -106,6 +106,10 @@ final class ProductGroupImportTemplateService
             ['Ключ группы', 'Это техническая связь между листами. Для выгруженной группы не изменяйте ключ. Для новой группы придумайте уникальный ключ и используйте его точно так же в столбце «Ключ группы» на листе «Состав».'],
             ['Код и название', 'Код группы должен содержать только латинские буквы, цифры, точку, дефис или подчёркивание. Название обязательно и может содержать до 255 символов. Итоговые коды не должны повторяться.'],
             ['Оси вариантов', 'В «Ось 1»–«Ось 20» выбирайте названия из выпадающего списка. ID характеристик и технический справочник скрыты и определяются системой автоматически. Нужна хотя бы одна ось; одна и та же ось не должна повторяться.'],
+            ['Индивидуальные характеристики', 'В «Индивидуальная 1»–«Индивидуальная 20» выбирайте свойства, которые могут различаться без переключателя на сайте: м² и штук в упаковке, вес, габариты. Значения заполняются у каждого SKU в товарной таблице. Ось нельзя одновременно назначить индивидуальной.'],
+            ['Общие характеристики', 'Все характеристики категории, не выбранные осями или индивидуальными, общие: при объединении значения должны совпадать. Изменение или очистка общего значения в товарном импорте применяется ко всей группе.'],
+            ['Одинаковые цвет и размер', 'Несколько SKU могут иметь одинаковые значения осей, например при разной фасовке. Каждый SKU остаётся самостоятельным товаром со своими ценой, остатком и индивидуальными параметрами упаковки.'],
+            ['Старые файлы', 'Файл без столбцов «Индивидуальная 1»–«Индивидуальная 20» сохраняет индивидуальные роли существующей группы. В новом шаблоне пустые индивидуальные столбцы очищают эти роли; новые общие значения при этом должны совпадать.'],
             ['Лист «Состав»', 'Для каждой создаваемой или изменяемой группы перечислите полный итоговый набор SKU: один SKU в строке. В группе должно быть от 2 до 500 SKU. Один SKU может входить только в одну итоговую группу.'],
             ['Перенос товара', 'Чтобы перенести товар между группами, укажите его SKU в итоговом составе новой группы и не указывайте в итоговом составе прежней. Оба изменения можно выполнить в одном файле.'],
             ['Проверка перед загрузкой', 'Проверьте, что все SKU существуют, действие выбрано из списка, а для «Создать» и «Изменить» заполнены код, название, оси и состав. Сохраните файл в формате XLSX и загрузите его через раздел «Товары» → «Группы вариантов».'],
@@ -117,8 +121,10 @@ final class ProductGroupImportTemplateService
         return (new Style)->setCellVerticalAlignment(CellVerticalAlignment::TOP)->setShouldWrapText();
     }
 
-    /** @param list<string> $availableAxes */
-    private function addValidations(string $path, array $availableAxes): void
+    /** @param list<string> $availableAxes
+     * @param  list<string>  $availableIndividuals
+     */
+    private function addValidations(string $path, array $availableAxes, array $availableIndividuals): void
     {
         $zip = new ZipArchive;
         if ($zip->open($path) !== true) {
@@ -131,7 +137,7 @@ final class ProductGroupImportTemplateService
                 throw new RuntimeException('Не удалось подготовить шаблон Excel.');
             }
             $validations = $xml->createElement('dataValidations');
-            $validations->setAttribute('count', '2');
+            $validations->setAttribute('count', '3');
             $validation = $xml->createElement('dataValidation');
             foreach (['type' => 'list', 'allowBlank' => '1', 'showErrorMessage' => '1', 'showInputMessage' => '1', 'sqref' => 'A2:A5001'] as $key => $value) {
                 $validation->setAttribute($key, $value);
@@ -142,8 +148,14 @@ final class ProductGroupImportTemplateService
             foreach (['type' => 'list', 'allowBlank' => '1', 'showErrorMessage' => '1', 'showInputMessage' => '1', 'sqref' => 'F2:Y5001'] as $key => $value) {
                 $axisValidation->setAttribute($key, $value);
             }
-            $axisValidation->appendChild($xml->createElement('formula1', '$Z$2:$Z$'.max(2, count($availableAxes) + 1)));
+            $axisValidation->appendChild($xml->createElement('formula1', '$AT$2:$AT$'.max(2, count($availableAxes) + 1)));
             $validations->appendChild($axisValidation);
+            $individualValidation = $xml->createElement('dataValidation');
+            foreach (['type' => 'list', 'allowBlank' => '1', 'showErrorMessage' => '1', 'showInputMessage' => '1', 'sqref' => 'Z2:AS5001'] as $key => $value) {
+                $individualValidation->setAttribute($key, $value);
+            }
+            $individualValidation->appendChild($xml->createElement('formula1', '$AU$2:$AU$'.max(2, count($availableIndividuals) + 1)));
+            $validations->appendChild($individualValidation);
             $root = $xml->documentElement;
             if ($root === null) {
                 throw new RuntimeException('Не удалось подготовить шаблон Excel.');
@@ -156,7 +168,7 @@ final class ProductGroupImportTemplateService
                 }
             }
             $root->insertBefore($validations, $before);
-            $this->addAxisHelperCells($xml, $availableAxes);
+            $this->addRoleHelperCells($xml, ['AT' => $availableAxes, 'AU' => $availableIndividuals]);
             $serialized = $xml->saveXML();
             if ($serialized === false) {
                 throw new RuntimeException('Не удалось подготовить шаблон Excel.');
@@ -168,8 +180,8 @@ final class ProductGroupImportTemplateService
         }
     }
 
-    /** @param list<string> $availableAxes */
-    private function addAxisHelperCells(DOMDocument $xml, array $availableAxes): void
+    /** @param array<string, list<string>> $choicesByColumn */
+    private function addRoleHelperCells(DOMDocument $xml, array $choicesByColumn): void
     {
         $sheetData = $xml->getElementsByTagName('sheetData')->item(0);
         if ($sheetData === null) {
@@ -184,35 +196,38 @@ final class ProductGroupImportTemplateService
                 }
             }
         }
-        foreach ($availableAxes as $index => $axis) {
-            $rowNumber = $index + 2;
-            $row = $rows[$rowNumber] ?? $xml->createElement('row');
-            if (! isset($rows[$rowNumber])) {
-                $row->setAttribute('r', (string) $rowNumber);
-                $sheetData->appendChild($row);
-                $rows[$rowNumber] = $row;
+        foreach ($choicesByColumn as $columnName => $choices) {
+            foreach ($choices as $index => $choice) {
+                $rowNumber = $index + 2;
+                $row = $rows[$rowNumber] ?? $xml->createElement('row');
+                $row->setAttribute('spans', '1:47');
+                if (! isset($rows[$rowNumber])) {
+                    $row->setAttribute('r', (string) $rowNumber);
+                    $sheetData->appendChild($row);
+                    $rows[$rowNumber] = $row;
+                }
+                $cell = $xml->createElement('c');
+                $cell->setAttribute('r', $columnName.$rowNumber);
+                $cell->setAttribute('t', 'inlineStr');
+                $inlineString = $xml->createElement('is');
+                $text = $xml->createElement('t');
+                $text->appendChild($xml->createTextNode($choice));
+                $inlineString->appendChild($text);
+                $cell->appendChild($inlineString);
+                $row->appendChild($cell);
             }
-            $cell = $xml->createElement('c');
-            $cell->setAttribute('r', 'Z'.$rowNumber);
-            $cell->setAttribute('t', 'inlineStr');
-            $inlineString = $xml->createElement('is');
-            $text = $xml->createElement('t');
-            $text->appendChild($xml->createTextNode($axis));
-            $inlineString->appendChild($text);
-            $cell->appendChild($inlineString);
-            $row->appendChild($cell);
         }
         $cols = $xml->getElementsByTagName('cols')->item(0);
         if ($cols !== null) {
             $column = $xml->createElement('col');
-            foreach (['min' => '26', 'max' => '26', 'width' => '2', 'hidden' => '1', 'customWidth' => '1'] as $attribute => $value) {
+            foreach (['min' => '46', 'max' => '47', 'width' => '2', 'hidden' => '1', 'customWidth' => '1'] as $attribute => $value) {
                 $column->setAttribute($attribute, $value);
             }
             $cols->appendChild($column);
         }
         $dimension = $xml->getElementsByTagName('dimension')->item(0);
         if ($dimension !== null) {
-            $dimension->setAttribute('ref', 'A1:Z'.max(array_keys($rows) ?: [1]));
+            $dimension->setAttribute('ref', 'A1:AU'.max(array_keys($rows) ?: [1]));
         }
     }
 

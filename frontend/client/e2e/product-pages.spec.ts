@@ -6,6 +6,94 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
 })
 
+test('specification groups retain their own values, order and SSR headings', async ({
+  page,
+  request,
+}, testInfo) => {
+  await request.get('http://127.0.0.1:8015/__scenario?name=product-specs')
+  const html = await (await request.get(productPath)).text()
+  expect(html).toContain('class="spec-group-title eyebrow"')
+  await page.goto(productPath)
+  const panel = page.getByRole('tabpanel', {
+    name: 'Характеристики',
+    exact: true,
+  })
+  const groups = panel.locator('.spec-group')
+  await expect(groups.locator('h2')).toHaveText([
+    'Поверхность',
+    'Размеры и вес',
+    'Поверхность',
+    'Прочие характеристики',
+  ])
+  await expect(groups.nth(0).locator('dt')).toHaveText(['Текстура'])
+  await expect(groups.nth(1).locator('dt')).toHaveText(['Вес', 'Размер'])
+  await expect(groups.nth(1).locator('dd')).toHaveText([
+    '26,16 кг',
+    '300×300 мм',
+  ])
+  await expect(groups.nth(2).locator('dt')).toHaveText(['Фактура'])
+  await expect(groups.nth(3).locator('dt')).toHaveText(['Особенность'])
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    await page.locator('#product-details').screenshot({
+      path: testInfo.outputPath('spec-groups-' + width + '.png'),
+    })
+  }
+  expect(
+    (await new AxeBuilder({ page }).include('#product-details').analyze())
+      .violations,
+  ).toEqual([])
+})
+
+test('specifications handle legacy, empty and long content without losing values or overflowing', async ({
+  page,
+  request,
+}, testInfo) => {
+  for (const scenario of ['legacy', 'empty', 'long']) {
+    await request.get(
+      'http://127.0.0.1:8015/__scenario?name=product-specs-' + scenario,
+    )
+    await page.goto(productPath)
+    const panel = page.getByRole('tabpanel', {
+      name: 'Характеристики',
+      exact: true,
+    })
+    if (scenario === 'empty') {
+      await expect(panel).toHaveText('Характеристики пока не добавлены.')
+      await expect(panel.locator('h2, dl')).toHaveCount(0)
+    } else if (scenario === 'legacy') {
+      await expect(panel.locator('h2')).toHaveCount(0)
+      await expect(panel.locator('dt')).toHaveCount(5)
+    } else {
+      for (const width of [320, 640, 768, 1024, 1280]) {
+        await page.setViewportSize({ width, height: 900 })
+        expect(
+          await panel
+            .locator('h2, dt, dd')
+            .evaluateAll((elements) =>
+              elements.every(
+                (element) => element.scrollWidth <= element.clientWidth + 1,
+              ),
+            ),
+        ).toBe(true)
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true)
+        await page.locator('#product-details').screenshot({
+          path: testInfo.outputPath('spec-long-' + width + '.png'),
+        })
+      }
+    }
+  }
+})
+
 test('purchase stays compact and tabs keep the centered active underline from the reference', async ({
   page,
 }) => {

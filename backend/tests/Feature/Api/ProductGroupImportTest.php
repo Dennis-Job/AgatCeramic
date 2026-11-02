@@ -16,6 +16,8 @@ use App\Services\ProductGroupImportService;
 use App\Services\ProductGroupWorkbookReader;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
+use DOMDocument;
+use DOMXPath;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -47,7 +49,9 @@ class ProductGroupImportTest extends TestCase
         $zip = new ZipArchive;
         $zip->open($file['path']);
         $this->assertStringContainsString('<dataValidations', $zip->getFromName('xl/worksheets/sheet1.xml'));
-        $this->assertStringContainsString('$Z$2:$Z$2', $zip->getFromName('xl/worksheets/sheet1.xml'));
+        $this->assertStringContainsString('$AT$2:$AT$2', $zip->getFromName('xl/worksheets/sheet1.xml'));
+        $this->assertStringContainsString('$AU$2:$AU$2', $zip->getFromName('xl/worksheets/sheet1.xml'));
+        $this->assertStringContainsString('Индивидуальная 1', $zip->getFromName('xl/worksheets/sheet1.xml'));
         $this->assertStringContainsString('hidden="1"', $zip->getFromName('xl/worksheets/sheet1.xml'));
         $this->assertStringContainsString('Цвет', $zip->getFromName('xl/worksheets/sheet1.xml'));
         $this->assertStringNotContainsString('definedNames', $zip->getFromName('xl/workbook.xml'));
@@ -151,8 +155,8 @@ class ProductGroupImportTest extends TestCase
                 [...$headers, null],
                 ['Не изменять', '1465', '1465', '1465', 'Существующая группа 1', $axis->name],
                 ['Не изменять', '4578', '4578', '4578', 'Существующая группа 2', $axis->name],
-                [...array_pad(['Создать', 1234567, '', 1234567, 'Раковины цвета', $axis->name], 25, null), $axis->name],
-                [...array_fill(0, 25, null), 'Скрытый справочник'],
+                [...array_pad(['Создать', 1234567, '', 1234567, 'Раковины цвета', $axis->name], 45, null), $axis->name],
+                [...array_fill(0, 45, null), 'Скрытый справочник'],
             ],
             'Состав' => [
                 ['Ключ группы', 'SKU', null],
@@ -205,6 +209,201 @@ class ProductGroupImportTest extends TestCase
         }
     }
 
+    public function test_reader_distinguishes_missing_individual_roles_from_explicit_empty_roles(): void
+    {
+        foreach ([false, true] as $withIndividuals) {
+            $headers = $this->groupHeaders($withIndividuals);
+            $path = $this->workbook([
+                'Группы' => [$headers, ['Изменить', 'PACKS', 'PACKS', 'PACKS', 'Плитка', 'Цвет']],
+                'Состав' => [['Ключ группы', 'SKU']],
+            ]);
+            try {
+                $row = app(ProductGroupWorkbookReader::class)->read($path)['groups'][0];
+                if ($withIndividuals) {
+                    $this->assertSame([], $row['individuals']);
+                } else {
+                    $this->assertArrayNotHasKey('individuals', $row);
+                }
+            } finally {
+                @unlink($path);
+            }
+        }
+    }
+
+    public function test_reader_reads_individual_roles_and_ignores_new_hidden_helpers(): void
+    {
+        $path = $this->workbook([
+            'Группы' => [
+                [...$this->groupHeaders(), null, null],
+                [...array_pad(['Создать', 'PACKS', '', 'PACKS', 'Плитка', 'Цвет'], 25, null), 'м² в упаковке', 'Описание упаковки'],
+                [...array_fill(0, 45, null), 'Цвет', 'Описание упаковки'],
+            ],
+            'Состав' => [['Ключ группы', 'SKU']],
+        ]);
+        try {
+            $zip = new ZipArchive;
+            $zip->open($path);
+            $xml = new DOMDocument;
+            $xml->loadXML($zip->getFromName('xl/worksheets/sheet1.xml'));
+            $xpath = new DOMXPath($xml);
+            $row = $xpath->query('//*[local-name()="row" and @r="2"]')->item(0);
+            // Excel can retain the short visible span while storing hidden helper cells farther right.
+            $cell = $xml->createElement('c');
+            $cell->setAttribute('r', 'AT2');
+            $cell->setAttribute('t', 'inlineStr');
+            $text = $xml->createElement('is');
+            $text->appendChild($xml->createElement('t', 'Скрытый справочник'));
+            $cell->appendChild($text);
+            $row->appendChild($cell);
+            $zip->addFromString('xl/worksheets/sheet1.xml', $xml->saveXML());
+            $zip->close();
+            $rows = app(ProductGroupWorkbookReader::class)->read($path)['groups'];
+            $this->assertCount(1, $rows);
+            $this->assertSame(['Цвет'], $rows[0]['axes']);
+            $this->assertSame(['м² в упаковке', 'Описание упаковки'], $rows[0]['individuals']);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_new_workbook_creates_packaging_roles_and_keeps_them_after_resume_and_export(): void
+    {
+        Storage::fake('local');
+        $actor = $this->actor(['imports.manage', 'catalog.manage']);
+        [$category, $axis, $products] = $this->products(2);
+        $area = Attribute::factory()->create(['name' => 'м² в упаковке', 'type' => 'decimal']);
+        $packing = Attribute::factory()->create(['name' => 'Описание упаковки', 'type' => 'text']);
+        $category->attributes()->attach([$area->id, $packing->id]);
+        foreach ($products as $index => $product) {
+            $product->attributeValues()->where('attribute_id', $axis->id)->update(['value' => json_encode('same-color')]);
+            $product->attributeValues()->create(['attribute_id' => $area->id, 'value' => $index === 0 ? 0.72 : 1.44]);
+            $product->attributeValues()->create(['attribute_id' => $packing->id, 'value' => $index === 0 ? '8 плиток' : '16 плиток']);
+        }
+        $path = $this->workbook([
+            'Группы' => [
+                $this->groupHeaders(),
+                [...array_pad(['Создать', 'PACKS', '', 'PACKS', 'Разные упаковки', $axis->name], 25, null), $area->name, $packing->name],
+            ],
+            'Состав' => [['Ключ группы', 'SKU'], ['PACKS', $products[0]->sku], ['PACKS', $products[1]->sku]],
+        ]);
+        try {
+            $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'roles.xlsx', 'disk' => 'local', 'path' => 'unused', 'status' => 'pending', 'operation' => 'group']);
+            $service = app(ProductGroupImportService::class);
+            $service->initialize($import, $path);
+            $this->assertSame(0, $import->fresh()->failed_rows);
+            $this->assertSame([$area->id, $packing->id], $import->items()->sole()->payload['changes'][0]['individual_attribute_ids']);
+            $service->process($import);
+            $service->process($import);
+            $group = ProductGroup::query()->where('code', 'PACKS')->sole();
+            $this->assertSame([$area->id, $packing->id], $group->individualAttributes->modelKeys());
+            $this->assertSame(0.72, $products[0]->fresh()->attributeValues->firstWhere('attribute_id', $area->id)->value);
+            $this->assertSame(1.44, $products[1]->fresh()->attributeValues->firstWhere('attribute_id', $area->id)->value);
+            $export = $service->createTemplate();
+            try {
+                $row = app(ProductGroupWorkbookReader::class)->read($export['path'])['groups'][0];
+                $this->assertSame([$axis->name], $row['axes']);
+                $this->assertSame([$area->name, $packing->name], $row['individuals']);
+            } finally {
+                @unlink($export['path']);
+            }
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_legacy_updates_preserve_roles_and_new_blank_roles_require_equal_shared_values(): void
+    {
+        $actor = $this->actor(['imports.manage', 'catalog.manage']);
+        [$category, $axis, $products] = $this->products(2);
+        $area = Attribute::factory()->create(['name' => 'Площадь упаковки', 'type' => 'decimal']);
+        $category->attributes()->attach($area);
+        $group = ProductGroup::factory()->create(['code' => 'PACKS']);
+        $group->axes()->attach($axis);
+        $group->individualAttributes()->attach($area);
+        $group->products()->attach(array_map(fn (Product $product): int => $product->id, $products));
+        foreach ($products as $index => $product) {
+            $product->attributeValues()->create(['attribute_id' => $area->id, 'value' => $index + 1]);
+        }
+
+        foreach ([false, true] as $withIndividuals) {
+            $path = $this->workbook([
+                'Группы' => [$this->groupHeaders($withIndividuals), ['Изменить', 'PACKS', 'PACKS', 'PACKS', 'Новое название', $axis->name]],
+                'Состав' => [['Ключ группы', 'SKU'], ['PACKS', $products[0]->sku], ['PACKS', $products[1]->sku]],
+            ]);
+            try {
+                $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'roles.xlsx', 'disk' => 'local', 'path' => 'unused', 'status' => 'pending', 'operation' => 'group']);
+                $service = app(ProductGroupImportService::class);
+                $service->initialize($import, $path);
+                $this->assertSame($withIndividuals ? 1 : 0, $import->fresh()->failed_rows);
+                if (! $withIndividuals) {
+                    $this->assertArrayNotHasKey('individual_attribute_ids', $import->items()->sole()->payload['changes'][0]);
+                    $service->process($import);
+                    $this->assertSame('Новое название', $group->fresh()->name);
+                } else {
+                    $this->assertSame(0, $import->items()->count());
+                    $this->assertStringContainsString('Площадь упаковки', implode(' ', $import->rowErrors()->sole()->messages));
+                }
+                $this->assertSame([$area->id], $group->fresh()->individualAttributes->modelKeys());
+            } finally {
+                @unlink($path);
+            }
+        }
+
+        $products[1]->attributeValues()->where('attribute_id', $area->id)->update(['value' => json_encode(1)]);
+        $path = $this->workbook([
+            'Группы' => [$this->groupHeaders(), ['Изменить', 'PACKS', 'PACKS', 'PACKS', 'Общая упаковка', $axis->name]],
+            'Состав' => [['Ключ группы', 'SKU'], ['PACKS', $products[0]->sku], ['PACKS', $products[1]->sku]],
+        ]);
+        try {
+            $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'clear.xlsx', 'disk' => 'local', 'path' => 'unused', 'status' => 'pending', 'operation' => 'group']);
+            $service->initialize($import, $path);
+            $this->assertSame([], $import->items()->sole()->payload['changes'][0]['individual_attribute_ids']);
+            $service->process($import);
+            $this->assertSame([], $group->fresh()->individualAttributes->modelKeys());
+            $this->assertSame('Общая упаковка', $group->fresh()->name);
+        } finally {
+            @unlink($path);
+        }
+    }
+
+    public function test_workbook_rejects_overlapping_roles_before_changing_group_and_reports_role_error(): void
+    {
+        $actor = $this->actor(['imports.manage', 'catalog.manage']);
+        [, $axis, $products] = $this->products(2);
+        $path = $this->workbook([
+            'Группы' => [
+                $this->groupHeaders(),
+                [...array_pad(['Создать', 'BAD', '', 'BAD', 'Конфликт ролей', $axis->name], 25, null), $axis->name],
+            ],
+            'Состав' => [['Ключ группы', 'SKU'], ['BAD', $products[0]->sku], ['BAD', $products[1]->sku]],
+        ]);
+        try {
+            $import = ProductImport::query()->create(['user_id' => $actor->id, 'original_filename' => 'bad-roles.xlsx', 'disk' => 'local', 'path' => 'unused', 'status' => 'pending', 'operation' => 'group']);
+            $service = app(ProductGroupImportService::class);
+            $service->initialize($import, $path);
+            $this->assertSame(1, $import->fresh()->failed_rows);
+            $this->assertDatabaseMissing('product_groups', ['code' => 'BAD']);
+            $this->assertSame(0, $import->items()->count());
+            $report = $service->createErrorReport($import);
+            try {
+                $reader = new Reader;
+                $reader->open($report['path']);
+                $messages = [];
+                foreach ($reader->getSheetIterator() as $sheet) {
+                    foreach ($sheet->getRowIterator() as $row) {
+                        $messages[] = implode(' ', $row->toArray());
+                    }
+                }
+                $reader->close();
+                $this->assertStringContainsString('Индивидуальные характеристики не должны повторяться или совпадать с осями выбора', implode(' ', $messages));
+            } finally {
+                @unlink($report['path']);
+            }
+        } finally {
+            @unlink($path);
+        }
+    }
+
     public function test_invalid_composition_is_reported_without_changing_any_group(): void
     {
         Storage::fake('local');
@@ -244,6 +443,16 @@ class ProductGroupImportTest extends TestCase
         }
 
         return [$category, $axis, $products];
+    }
+
+    /** @return list<string> */
+    private function groupHeaders(bool $withIndividuals = true): array
+    {
+        return [
+            'Действие', 'Ключ группы', 'Исходный код', 'Код группы', 'Название',
+            ...array_map(fn (int $number): string => 'Ось '.$number, range(1, 20)),
+            ...($withIndividuals ? array_map(fn (int $number): string => 'Индивидуальная '.$number, range(1, 20)) : []),
+        ];
     }
 
     /** @param array<string, list<list<mixed>>> $sheets */

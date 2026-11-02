@@ -123,6 +123,7 @@ const uiComponents = [
   'UiEmptyState',
   'UiField',
   'UiFileDropzone',
+  'UiHelpTooltip',
   'UiImagePreview',
   'UiInput',
   'UiLoadingState',

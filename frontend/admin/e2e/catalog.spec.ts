@@ -812,6 +812,20 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
 
   for (const [tab, expectedText] of expectations) {
     await dialog.getByRole('button', { name: tab, exact: false }).click()
+    if (tab === 'Варианты модели') {
+      const hint = dialog.getByRole('button', {
+        name: 'Подсказка: Варианты модели',
+        exact: true,
+      })
+      await expect(dialog.getByRole('tooltip')).toHaveCount(0)
+      await hint.focus()
+      await expect(dialog.getByRole('tooltip')).toContainText(expectedText)
+      await page.keyboard.press('Escape')
+      await expect(dialog.getByRole('tooltip')).toHaveCount(0)
+      await expect(dialog).toBeVisible()
+      await expect(hint).toBeFocused()
+      continue
+    }
     await expect(
       dialog.getByText(expectedText, { exact: false }).first(),
     ).toBeVisible()
@@ -839,6 +853,16 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     await dialog
       .getByRole('button', { name: 'Варианты модели', exact: false })
       .click()
+    if (width >= 640) {
+      const actions = dialog
+        .getByTestId('product-editor-footer')
+        .getByRole('button')
+        .filter({ hasNotText: /^$/ })
+      const tops = await actions.evaluateAll((buttons) =>
+        buttons.map((button) => button.getBoundingClientRect().top),
+      )
+      expect(new Set(tops).size).toBe(1)
+    }
     expect(
       await dialog
         .locator('header')
@@ -937,11 +961,11 @@ for (const width of [320, 640, 768, 1024, 1280]) {
 
     await expect(
       dialog.getByText(
-        'Общие характеристики автоматически применяются ко всем товарам группы.',
+        'Общие характеристики автоматически применяются ко всем товарам группы',
       ),
     ).toBeVisible()
     await expect(
-      dialog.getByLabel('Ширина (см), только для этой позиции', {
+      dialog.getByLabel('Ширина (см), для выбора варианта', {
         exact: true,
       }),
     ).toHaveValue('60.00')

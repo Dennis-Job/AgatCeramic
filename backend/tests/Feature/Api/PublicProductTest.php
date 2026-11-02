@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Api;
 
+use App\Http\Resources\PublicProductAttributeResource;
 use App\Http\Resources\PublicProductDetailResource;
 use App\Models\Attribute;
+use App\Models\AttributeGroup;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Media;
@@ -21,6 +23,63 @@ use Tests\TestCase;
 class PublicProductTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_detail_exposes_owned_attribute_groups_without_reordering_values_or_exposing_hidden_groups(): void
+    {
+        $product = $this->product();
+        $firstGroup = AttributeGroup::factory()->create(['name' => 'Основные', 'sort_order' => 20]);
+        $secondGroup = AttributeGroup::factory()->create(['name' => 'Технические', 'sort_order' => 10]);
+        $hiddenGroup = AttributeGroup::factory()->create(['name' => 'Внутренние']);
+        $first = $this->attribute('Первое', 'first', 'string', 0);
+        $first->update(['attribute_group_id' => $firstGroup->id]);
+        $ungrouped = $this->attribute('Без группы', 'ungrouped', 'string', 1);
+        $second = $this->attribute('Второе', 'second', 'integer', 2);
+        $second->update(['attribute_group_id' => $secondGroup->id]);
+        $hidden = $this->attribute('Скрытое', 'hidden', 'string', 3, false);
+        $hidden->update(['attribute_group_id' => $hiddenGroup->id]);
+        foreach ([[$first, 'А'], [$ungrouped, 'Б'], [$second, 12], [$hidden, 'Секрет']] as [$attribute, $value]) {
+            $this->value($product, $attribute, $value);
+        }
+
+        $this->getJson('/api/v1/products/'.$product->slug)->assertOk()
+            ->assertJsonCount(3, 'data.attributes')
+            ->assertJsonPath('data.attributes.0.id', $first->id)
+            ->assertJsonPath('data.attributes.0.group', ['id' => $firstGroup->id, 'name' => 'Основные', 'sort_order' => 20])
+            ->assertJsonPath('data.attributes.1.id', $ungrouped->id)
+            ->assertJsonPath('data.attributes.1.group', null)
+            ->assertJsonPath('data.attributes.2.id', $second->id)
+            ->assertJsonPath('data.attributes.2.group', ['id' => $secondGroup->id, 'name' => 'Технические', 'sort_order' => 10])
+            ->assertJsonPath('data.attributes.2.value', 12)
+            ->assertJsonPath('data.attributes.2.display_value', '12')
+            ->assertJsonMissing(['name' => 'Внутренние'])
+            ->assertJsonMissing(['name' => 'Скрытое']);
+    }
+
+    public function test_attribute_group_projection_preserves_distinct_ids_when_names_match_without_queries(): void
+    {
+        // Persisted group names are unique; the projection still identifies groups by ID.
+        $groups = [
+            new AttributeGroup(['name' => 'Свойства', 'sort_order' => 10]),
+            new AttributeGroup(['name' => 'Свойства', 'sort_order' => 20]),
+        ];
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        try {
+            foreach ($groups as $index => $group) {
+                $group->id = $index + 101;
+                $attribute = new Attribute(['name' => 'Характеристика', 'slug' => 'property', 'type' => 'string']);
+                $attribute->id = $index + 1;
+                $attribute->setRelation('group', $group);
+                $value = (new ProductAttributeValue(['value' => 'Значение']))->setRelation('attribute', $attribute);
+                $data = (new PublicProductAttributeResource($value))->resolve();
+
+                $this->assertSame(['id' => $index + 101, 'name' => 'Свойства', 'sort_order' => ($index + 1) * 10], $data['group']);
+            }
+            $this->assertSame([], DB::getQueryLog());
+        } finally {
+            DB::disableQueryLog();
+        }
+    }
 
     public function test_detail_has_ordered_public_images_resolved_visible_attributes_and_no_inventory_or_admin_fields(): void
     {
@@ -189,6 +248,8 @@ class PublicProductTest extends TestCase
         $product = $this->product();
         $sibling = $this->product();
         $color = $this->attribute('Цвет', 'tsvet', 'select');
+        $attributeGroup = AttributeGroup::factory()->create(['name' => 'Характеристики', 'sort_order' => 5]);
+        $color->update(['attribute_group_id' => $attributeGroup->id]);
         $color->options()->create(['value' => 'gray', 'label' => 'Серый']);
         $this->value($product, $color, 'gray');
         $this->value($sibling, $color, 'gray');
@@ -199,7 +260,7 @@ class PublicProductTest extends TestCase
         $group->products()->attach([$product->id, $sibling->id]);
         $related = $this->product();
         $size = $this->attribute('Размер', 'razmer', 'string');
-        $size->update(['unit' => 'мм']);
+        $size->update(['unit' => 'мм', 'attribute_group_id' => $attributeGroup->id]);
         $this->value($product, $size, '600х600');
         $this->value($sibling, $size, '400х400');
         $this->value($related, $size, '300х300');
@@ -211,6 +272,7 @@ class PublicProductTest extends TestCase
             $payload = (new PublicProductDetailResource($loaded))->response()->getData(true);
             $this->assertCount(2, $payload['data']['group']['products']);
             $this->assertCount(1, $payload['data']['related']);
+            $this->assertSame(['id' => $attributeGroup->id, 'name' => 'Характеристики', 'sort_order' => 5], $payload['data']['attributes'][0]['group']);
             $this->assertSame('600х600 мм', $payload['data']['size']);
             $this->assertSame('400х400 мм', $payload['data']['group']['products'][1]['size']);
             $this->assertSame('300х300 мм', $payload['data']['related'][0]['size']);

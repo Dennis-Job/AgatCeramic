@@ -95,6 +95,12 @@ class AttributeManagementService
     {
         DB::transaction(function () use ($actor, $attribute): void {
             $attribute = $this->lockForDefinitionMutation($attribute);
+            if (DB::table('product_group_axes')->where('attribute_id', $attribute->id)->exists()
+                || DB::table('product_group_individual_attributes')->where('attribute_id', $attribute->id)->exists()) {
+                throw ValidationException::withMessages([
+                    'attribute' => ['An attribute used by a product group cannot be deleted.'],
+                ]);
+            }
             if ($this->attributeHasValues($attribute)) {
                 throw ValidationException::withMessages([
                     'attribute' => ['An attribute with existing product or variant values cannot be deleted.'],

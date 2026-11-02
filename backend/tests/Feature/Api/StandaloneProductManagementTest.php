@@ -138,13 +138,12 @@ class StandaloneProductManagementTest extends TestCase
                 ['attribute_id' => $color->id, 'value' => 'blue'],
                 ['attribute_id' => $material->id, 'value' => 'stoneware'],
             ],
-        ])->assertUnprocessable()->assertJsonPath(
-            'error.details.product_ids.0',
-            'Каждый товар должен иметь уникальное сочетание значений осей группы.',
-        );
-        $this->assertProductAttributeValue($red->id, $color->id, 'red');
-        $this->assertProductAttributeValue($blue->id, $material->id, 'ceramic');
-        $this->assertProductAttributeValue($blue->id, $texture->id, 'matte');
+        ])->assertOk();
+        $this->assertProductAttributeValue($red->id, $color->id, 'blue');
+        $this->assertProductAttributeValue($blue->id, $material->id, 'stoneware');
+        $this->assertDatabaseMissing('product_attribute_values', [
+            'product_id' => $blue->id, 'attribute_id' => $texture->id,
+        ]);
 
         $category->attributes()->updateExistingPivot($material->id, ['is_required' => true]);
         $red->update(['is_active' => false]);
@@ -157,7 +156,7 @@ class StandaloneProductManagementTest extends TestCase
             'error.details.attributes.0',
             'Общие обязательные характеристики нельзя очистить, пока в группе есть опубликованные товары.',
         );
-        $this->assertProductAttributeValue($blue->id, $material->id, 'ceramic');
+        $this->assertProductAttributeValue($blue->id, $material->id, 'stoneware');
 
         $this->actingAs($actor)->putJson("/api/v1/admin/products/{$red->id}/attributes", [
             'attributes' => [

@@ -48,13 +48,14 @@ class ProductAttributeValueManagementService
 
             if ($group !== null) {
                 $axisIds = collect($this->integerIds($group->axes()->pluck('attributes.id')->all()));
+                $individualIds = collect($this->integerIds($group->individualAttributes()->pluck('attributes.id')->all()));
                 $sharedAttributeIds = collect($this->integerIds($category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->pluck('attributes.id')->all()))
-                    ->diff($axisIds);
+                    ->diff($axisIds)->diff($individualIds);
                 $sharedValues = collect($attributes)
                     ->filter(fn (array $attribute): bool => $sharedAttributeIds->contains($attribute['attribute_id']));
                 $submittedSharedIds = collect($this->integerIds($sharedValues->pluck('attribute_id')->all()));
                 $requiredSharedIds = collect($this->integerIds($category->attributes()->where('attributes.slug', '!=', 'kollektsiya')->wherePivot('is_required', true)->pluck('attributes.id')->all()))
-                    ->diff($axisIds);
+                    ->diff($axisIds)->diff($individualIds);
 
                 if ($groupProducts->contains(fn (Product $member): bool => $member->is_active)
                     && $requiredSharedIds->diff($submittedSharedIds)->isNotEmpty()) {

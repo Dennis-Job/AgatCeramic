@@ -19,6 +19,7 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
+import UiHelpTooltip from '../../../components/ui/UiHelpTooltip.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
@@ -60,6 +61,8 @@ const {
   direction,
   form,
   selectedGroupId,
+  currentGroup,
+  groupRolesPending,
   groupDeleting,
   imageDeleting,
   canManage,
@@ -93,15 +96,15 @@ const footerNotes = computed(() => {
         ]
   if (activeStep.value === 'attributes')
     return [
-      selectedGroupId.value
-        ? 'Различающиеся характеристики изменяются только у этой позиции. Общие характеристики автоматически применяются ко всем товарам группы.'
+      currentGroup.value
+        ? 'Параметры выбора и индивидуальные характеристики изменяются только у этой позиции. Общие характеристики автоматически применяются ко всем товарам группы, включая очистку значений.'
         : 'Характеристики принадлежат только этой позиции. Черновик можно сохранить незаполненным.',
     ]
   if (activeStep.value === 'images')
     return ['Загрузка, удаление и порядок фото сохраняются сразу.']
   if (activeStep.value === 'group')
     return [
-      'Объедините самостоятельные товары и выберите различающиеся характеристики.',
+      'Объедините самостоятельные товары и назначьте характеристики для выбора варианта, индивидуальные и общие.',
       'Первые 25 совпадений той же категории и бренда. Уточните поиск, если товара нет.',
     ]
   if (activeStep.value === 'review')
@@ -419,7 +422,7 @@ function closeGroupDeletion(): void {
         </div>
       </div>
       <UiDialogFooter flush data-testid="product-editor-footer">
-        <template v-if="footerNotes.length" #note>
+        <template v-if="footerNotes.length && activeStep !== 'group'" #note>
           <span v-for="note in footerNotes" :key="note" class="block">{{
             note
           }}</span>
@@ -444,7 +447,7 @@ function closeGroupDeletion(): void {
           type="submit"
           form="product-attributes-form"
           :loading="saving"
-          :disabled="saving"
+          :disabled="saving || groupRolesPending"
           >{{ saving ? 'Сохранение…' : 'Сохранить и продолжить' }}</UiButton
         >
         <UiButton
@@ -454,12 +457,16 @@ function closeGroupDeletion(): void {
           @click="activeStep = 'group'"
           >Продолжить</UiButton
         >
-        <template v-else-if="activeStep === 'group'"
-          ><UiButton
+        <template v-else-if="activeStep === 'group'">
+          <UiHelpTooltip
+            label="Варианты модели"
+            :help="footerNotes.join(' ')"
+            class="mr-auto self-center"
+          />
+          <UiButton
             v-if="selectedGroupId"
             type="button"
             variant="danger-ghost"
-            class="sm:mr-auto"
             :disabled="saving"
             @click="requestGroupDeletion"
             >Удалить группу</UiButton
