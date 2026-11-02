@@ -1,5 +1,14 @@
 # DONE
 
+2026-11-02 — Блок сопутствующих товаров Client оформлен по ACCESSORIES из
+`productExample.html`: «Сопутствующие товары» / «Что ещё понадобится» /
+«К этому товару», список 900 px, компактные строки и контурные кнопки.
+Переиспользованы SectionHeading, ProductCard row и UiButton outline/compact;
+данные и добавление в корзину сохранены. Typecheck, production build,
+scoped Prettier и 25 E2E (товар/коллекции/корзина/UI-kit), пять ширин и axe — PASS.
+Независимый UI Design Guard принял пять screenshots; API и миграции не менялись.
+Правило закреплено в [Client UI-kit](../docs/CLIENT_UI_KIT.md).
+
 2026-10-30 — Список коллекций приведён к компоновке страницы брендов: сведения
 и статусы в средней колонке, описание под строкой, адаптивное перестроение.
 Admin lint/format/build, 281 unit и focused E2E/axe прошли; UI Design Guard

@@ -239,6 +239,11 @@ test('real product composition is responsive and accessible at five widths', asy
   page,
 }, testInfo) => {
   await page.goto(productPath)
+  const related = page.getByRole('region', { name: 'Что ещё понадобится' })
+  await expect(related.locator('.eyebrow')).toHaveText('Сопутствующие товары')
+  await expect(related.locator('.section-heading p')).toHaveText(
+    'К этому товару',
+  )
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     expect(
@@ -253,7 +258,17 @@ test('real product composition is responsive and accessible at five widths', asy
       path: testInfo.outputPath('product-' + width + '.png'),
       fullPage: true,
     })
+    await related.screenshot({
+      path: testInfo.outputPath('related-' + width + '.png'),
+    })
   }
+  const add = related.getByRole('button', { name: 'Добавить', exact: true })
+  await expect(add).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await add.hover()
+  await expect(add).toHaveCSS('background-color', 'rgb(20, 20, 20)')
+  await expect(add).toHaveCSS('color', 'rgb(255, 255, 255)')
+  await add.focus()
+  await expect(add).toBeFocused()
   const violations = (await new AxeBuilder({ page }).analyze()).violations
   expect(violations).toEqual([])
 })

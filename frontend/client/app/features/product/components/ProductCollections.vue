@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowRight } from '@lucide/vue'
 import ProductCard from './ProductCard.vue'
+import SectionHeading from '~/components/shared/SectionHeading.vue'
 import type { ProductDetail } from '../types/product'
 import { useCart } from '~/features/cart/composables/useCart'
 const props = defineProps<{ product: ProductDetail }>()
@@ -35,26 +36,36 @@ const collectionLink = computed(() =>
     <p v-if="localError" class="container collection-error" role="alert">
       {{ localError }}
     </p>
-    <section v-if="product.related.length" class="related-section">
+    <section
+      v-if="product.related.length"
+      class="related-section"
+      aria-labelledby="related-products-title"
+    >
       <div class="container">
-        <p class="eyebrow">К этому товару</p>
-        <h2>Сопутствующие товары</h2>
-        <ProductCard
-          v-for="item in product.related"
-          :key="item.id"
-          :product="item"
-          row
-          action
-          :busy="busy"
-          @add="add"
+        <SectionHeading
+          eyebrow="Сопутствующие товары"
+          title="Что ещё понадобится"
+          description="К этому товару"
+          title-id="related-products-title"
         />
+        <div class="related-products">
+          <ProductCard
+            v-for="item in product.related"
+            :key="item.id"
+            :product="item"
+            row
+            action
+            :busy="busy"
+            @add="add"
+          />
+        </div>
       </div>
     </section>
     <section
       v-if="product.group?.products.length"
       class="container collection-section"
     >
-      <div class="section-heading">
+      <div class="collection-heading">
         <div>
           <p v-if="product.brand" class="eyebrow">{{ product.brand.name }}</p>
           <h2>Варианты товара</h2>
@@ -96,9 +107,11 @@ const collectionLink = computed(() =>
 </template>
 <style scoped>
 .related-section {
-  padding-block: 60px;
-  border-block: 1px solid var(--color-line);
-  background: var(--color-bg-soft);
+  padding-block: 110px;
+}
+.related-products {
+  max-width: 900px;
+  margin-inline: auto;
 }
 h2 {
   margin: 8px 0 24px;
@@ -111,14 +124,14 @@ h2 {
 .collection-section {
   padding-block: 76px 82px;
 }
-.section-heading {
+.collection-heading {
   display: flex;
   justify-content: space-between;
   align-items: end;
   gap: 30px;
   margin-bottom: 32px;
 }
-.section-heading h2 {
+.collection-heading h2 {
   margin-bottom: 0;
 }
 .collection-link {
@@ -144,14 +157,16 @@ h2 {
   padding-block: 20px;
   font-size: 13px;
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .related-section {
-    padding-block: 42px;
+    padding-block: 80px;
   }
+}
+@media (max-width: 760px) {
   .collection-section {
     padding-block: 48px;
   }
-  .section-heading {
+  .collection-heading {
     flex-direction: column;
     align-items: start;
     gap: 20px;

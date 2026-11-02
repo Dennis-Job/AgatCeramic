@@ -49,11 +49,16 @@ const canBuy = computed(
       <span v-if="current" class="current-label">Вы смотрите</span>
     </NuxtLink>
     <div class="card-info">
-      <p class="eyebrow">{{ product.brand?.name || product.category.name }}</p>
+      <p v-if="!row" class="eyebrow">
+        {{ product.brand?.name || product.category.name }}
+      </p>
       <h3>
         <NuxtLink :to="productPath(product.slug)">{{ product.name }}</NuxtLink>
       </h3>
       <p class="availability">
+        <template v-if="row">
+          {{ product.brand?.name || product.category.name }} ·
+        </template>
         {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
       </p>
     </div>
@@ -74,10 +79,16 @@ const canBuy = computed(
     </div>
     <UiButton
       v-if="action"
+      :variant="row ? 'outline' : 'dark'"
+      :size="row ? 'compact' : 'normal'"
       :disabled="busy || !canBuy"
       @click="$emit('add', product.id)"
       >{{ busy ? 'Добавляем…' : 'Добавить'
-      }}<ShoppingBag :size="16" :stroke-width="1.6" aria-hidden="true"
+      }}<ShoppingBag
+        v-if="!row"
+        :size="16"
+        :stroke-width="1.6"
+        aria-hidden="true"
     /></UiButton>
   </article>
 </template>
@@ -162,42 +173,65 @@ h3 a:hover {
 }
 .product-card--row {
   display: grid;
-  grid-template-columns: 106px minmax(0, 1fr) auto auto;
+  grid-template-columns: 64px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 26px;
+  gap: 24px;
   padding: 24px 0;
-  border-block: 1px solid var(--color-line);
+  border-top: 1px solid var(--color-line);
+}
+.product-card--row:last-child {
+  border-bottom: 1px solid var(--color-line);
 }
 .product-card--row .card-image {
-  width: 106px;
-  height: 106px;
-  padding: 8px;
-  background: var(--color-white);
+  width: 64px;
+  height: 64px;
+}
+.product-card--row .image-empty {
+  padding: 4px;
+  font-size: 9px;
+  line-height: 1.3;
 }
 .product-card--row .card-info {
   margin: 0;
 }
 .product-card--row .card-price {
   padding: 0;
-  white-space: nowrap;
-  font-size: 17px;
+  text-align: right;
+  font-size: 14px;
+}
+.product-card--row h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.product-card--row .availability {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+.product-card--row .card-price small {
+  font-size: 12px;
 }
 .product-card--row > :last-child:not(.card-price):not(.card-info) {
   margin: 0;
   width: auto;
 }
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   .product-card--row {
-    grid-template-columns: 90px minmax(0, 1fr) auto;
-    gap: 20px;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    gap: 16px;
   }
   .product-card--row .card-image {
-    width: 90px;
-    height: 90px;
+    width: 56px;
+    height: 56px;
+  }
+  .product-card--row .card-price {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: left;
   }
   .product-card--row > :last-child:not(.card-price):not(.card-info) {
-    grid-column: 2/-1;
-    justify-self: start;
+    grid-column: 3;
+    grid-row: 1 / 3;
   }
 }
 @media (max-width: 520px) {
@@ -208,19 +242,14 @@ h3 a:hover {
     font-size: 9px;
   }
   .product-card--row {
-    grid-template-columns: 76px minmax(0, 1fr);
-    gap: 15px;
-  }
-  .product-card--row .card-image {
-    width: 76px;
-    height: 76px;
+    grid-template-columns: 56px minmax(0, 1fr);
   }
   .product-card--row .card-price {
     grid-column: 2;
-    font-size: 15px;
   }
   .product-card--row > :last-child:not(.card-price):not(.card-info) {
     grid-column: 2;
+    grid-row: 3;
     justify-self: stretch;
   }
 }

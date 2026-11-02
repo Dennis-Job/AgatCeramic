@@ -48,6 +48,7 @@ test('complete collection renders in SSR between details and accessories with a 
     await link.evaluate((el) => getComputedStyle(el).outlineStyle),
   ).not.toBe('none')
   await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/catalog\?/)
   const url = new URL(page.url())
   expect(url.pathname).toBe('/catalog')
   expect(url.searchParams.get('brand')).toBe('test-brand')

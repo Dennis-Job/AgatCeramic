@@ -2,11 +2,13 @@
 withDefaults(
   defineProps<{
     to?: string
-    variant?: 'dark' | 'light'
+    variant?: 'dark' | 'light' | 'outline'
+    size?: 'normal' | 'compact'
     type?: 'button' | 'submit'
   }>(),
   {
     variant: 'dark',
+    size: 'normal',
     type: 'button',
   },
 )
@@ -19,7 +21,7 @@ defineEmits<{ click: [event: MouseEvent] }>()
     v-if="to"
     :to="to"
     class="ui-button"
-    :class="`ui-button--${variant}`"
+    :class="[`ui-button--${variant}`, `ui-button--${size}`]"
   >
     <slot />
   </NuxtLink>
@@ -27,7 +29,7 @@ defineEmits<{ click: [event: MouseEvent] }>()
     v-else
     :type="type"
     class="ui-button"
-    :class="`ui-button--${variant}`"
+    :class="[`ui-button--${variant}`, `ui-button--${size}`]"
     @click="$emit('click', $event)"
   >
     <slot />
@@ -80,5 +82,28 @@ defineEmits<{ click: [event: MouseEvent] }>()
 .ui-button:disabled {
   opacity: 0.55;
   transform: none;
+}
+
+.ui-button--outline {
+  border-color: var(--color-ink);
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.ui-button--outline:hover {
+  transform: none;
+}
+
+.ui-button--outline:not(:disabled):hover {
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+.ui-button--compact {
+  min-height: 44px;
+  padding: 14px 22px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
 }
 </style>
