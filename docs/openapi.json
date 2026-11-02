@@ -5135,7 +5135,7 @@
             "get": {
                 "operationId": "listProductRelationCandidates",
                 "summary": "List valid related-product candidates",
-                "description": "Returns an unpaginated product collection excluding the source product and products with an existing outgoing or incoming relation. Search matches name, slug, or SKU.",
+                "description": "Returns an unpaginated product collection excluding the source product and products with an existing outgoing or incoming relation. Search trims surrounding whitespace and matches name, slug, or SKU case-insensitively. Exact SKU matches come first, followed by name ordering, before applying the limit.",
                 "security": [{"sanctumSession": []}],
                 "responses": {
                     "200": {"description": "Candidate products", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductArrayResponse"}}}},

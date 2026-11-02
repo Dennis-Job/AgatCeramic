@@ -20,11 +20,15 @@ class ProductRelationCandidateQuery
             ->with(['category', 'brand', 'primaryImage'])
             ->whereNotIn('id', $excludedIds);
 
-        if (is_string($search) && $search !== '') {
-            $pattern = '%'.mb_strtolower($search).'%';
+        $search = trim($search ?? '');
+
+        if ($search !== '') {
+            $normalizedSearch = mb_strtolower($search);
+            $pattern = '%'.$normalizedSearch.'%';
             $query->where(fn ($query) => $query->whereRaw('LOWER(name) LIKE ?', [$pattern])
                 ->orWhereRaw('LOWER(slug) LIKE ?', [$pattern])
-                ->orWhereRaw('LOWER(sku) LIKE ?', [$pattern]));
+                ->orWhereRaw('LOWER(sku) LIKE ?', [$pattern]))
+                ->orderByRaw('CASE WHEN LOWER(sku) = ? THEN 0 ELSE 1 END', [$normalizedSearch]);
         }
 
         return $query->orderBy('name')->limit($limit)->get();

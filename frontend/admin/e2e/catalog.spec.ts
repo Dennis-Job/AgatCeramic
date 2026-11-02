@@ -806,7 +806,7 @@ test('product card integrates all tabs and its selectors', async ({ page }) => {
     ['Характеристики', 'Ширина'],
     ['Фото', 'Фото этой позиции'],
     ['Варианты модели', 'Объедините самостоятельные товары'],
-    ['Проверка', 'Сопутствующие товары'],
+    ['Проверка', 'Сопутствующие и рекомендуемые товары'],
     ['Основное и продажа', 'Сохранить и продолжить'],
   ] as const
 
@@ -1527,7 +1527,10 @@ for (const width of [320, 640, 768, 1024, 1280]) {
           dialog.getByRole('heading', { name: 'Информация о товаре' }),
         ).toBeVisible()
         await expect(
-          dialog.getByRole('button', { name: 'Добавить' }),
+          dialog.getByRole('textbox', {
+            name: 'SKU товара для добавления',
+            exact: true,
+          }),
         ).toBeVisible()
         expect(
           await dialog.locator('#product-review').evaluate((element) => {
@@ -1544,7 +1547,9 @@ for (const width of [320, 640, 768, 1024, 1280]) {
     }
 
     await expect(
-      dialog.getByRole('heading', { name: 'Сопутствующие товары' }),
+      dialog.getByRole('heading', {
+        name: 'Сопутствующие и рекомендуемые товары',
+      }),
     ).toBeVisible()
   })
 }

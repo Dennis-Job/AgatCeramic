@@ -120,6 +120,47 @@ class ProductRelationManagementTest extends TestCase
         $this->assertContains($candidateId, [$matching->id, $secondMatching->id]);
     }
 
+    public function test_relation_candidates_prioritize_exact_sku_before_partial_matches_and_limit(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create();
+        Product::factory()->count(25)->create(['name' => 'AAA partial TILE-123 match']);
+        $matching = Product::factory()->create(['name' => 'ZZZ exact match', 'sku' => 'TILE-123']);
+
+        foreach ([1, 20] as $limit) {
+            $this->actingAs($actor)
+                ->getJson("/api/v1/admin/products/{$product->id}/relation-candidates?search=%20tile-123%20&limit={$limit}")
+                ->assertOk()
+                ->assertJsonCount($limit, 'data')
+                ->assertJsonPath('data.0.id', $matching->id);
+        }
+    }
+
+    public function test_exact_sku_search_does_not_bypass_relation_candidate_exclusions(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create(['sku' => 'SELF-SKU']);
+        $existing = Product::factory()->create(['sku' => 'OUTGOING-SKU']);
+        $reverse = Product::factory()->create(['sku' => 'INCOMING-SKU']);
+        ProductRelation::query()->create([
+            'product_id' => $product->id,
+            'related_product_id' => $existing->id,
+            'type' => 'related',
+        ]);
+        ProductRelation::query()->create([
+            'product_id' => $reverse->id,
+            'related_product_id' => $product->id,
+            'type' => 'recommended',
+        ]);
+
+        foreach (['SELF-SKU', 'OUTGOING-SKU', 'INCOMING-SKU'] as $sku) {
+            $this->actingAs($actor)
+                ->getJson("/api/v1/admin/products/{$product->id}/relation-candidates?search={$sku}&limit=1")
+                ->assertOk()
+                ->assertJsonCount(0, 'data');
+        }
+    }
+
     private function userWithRole(string $slug): User
     {
         $this->seed(RoleSeeder::class);

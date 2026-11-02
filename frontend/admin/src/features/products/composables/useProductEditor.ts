@@ -51,6 +51,7 @@ import type {
   ProductImage,
   ProductPayload,
   ProductRelationDraft,
+  ProductRelationType,
   ProductSort,
   ProductListFilters,
   ProductUnit,
@@ -141,6 +142,16 @@ export function useProductEditor() {
   const relations = ref<ProductRelationDraft[]>([])
   const relationErrors = ref<Record<number, string>>({})
   const relationSearch = ref('')
+  const relationSearchLoading = ref(false)
+  const relationDetailsLoading = ref(false)
+  const relationSearchError = ref('')
+  const relationLookupResult = ref<Product | null>(null)
+  const relationSearchCompleted = ref(false)
+  const relationActionStatus = ref('')
+  const relationKnownProductIds = new Set<number>()
+  let relationSearchRequest = 0
+  let relationEditorSession = 0
+  let relationSearchTimer: ReturnType<typeof setTimeout> | null = null
   const canManage = computed(() => auth.hasPermission('catalog.manage'))
   const canManageImports = computed(() => auth.hasPermission('imports.manage'))
   const sortLabels: Record<ProductSort, string> = {
@@ -297,20 +308,40 @@ export function useProductEditor() {
       return 'индивидуальная'
     return 'общая для группы'
   }
-  const selectableCandidates = computed(() =>
-    sortByLabel(
-      candidates.value
-        .filter(
-          (product) =>
-            !relations.value.some(
-              (row) => Number(row.related_product_id) === product.id,
-            ),
-        )
-        .map((product) => ({
-          value: String(product.id),
-          label: `${product.name} · ${product.sku}`,
-        })),
-    ),
+  const normalizeSku = (sku: string) => sku.trim().toLocaleLowerCase('ru')
+  const relationSkuExclusion = computed(() => {
+    const sku = normalizeSku(relationSearch.value)
+    if (!sku) return ''
+    if (sku === normalizeSku(editing.value?.sku ?? ''))
+      return 'Это SKU редактируемого товара. Выберите другой товар.'
+    if (
+      candidates.value.some(
+        (product) =>
+          normalizeSku(product.sku) === sku &&
+          relations.value.some(
+            (row) => Number(row.related_product_id) === product.id,
+          ),
+      )
+    )
+      return 'Этот товар уже добавлен. Тип связи можно изменить в списке ниже.'
+    return ''
+  })
+  const relationSearchResult = computed(() =>
+    relationSearchLoading.value ||
+    relationDetailsLoading.value ||
+    relationSearchError.value ||
+    relationSkuExclusion.value
+      ? null
+      : relationLookupResult.value,
+  )
+  const relationSearchMessage = computed(
+    () =>
+      relationSkuExclusion.value ||
+      (relationSearchCompleted.value &&
+      !relationLookupResult.value &&
+      relationSearch.value.trim()
+        ? 'Товар с таким SKU не найден среди доступных для добавления.'
+        : ''),
   )
   const hasActiveFilters = computed(() =>
     Object.values(filters.value).some(Boolean),
@@ -330,16 +361,8 @@ export function useProductEditor() {
       ? `Найдено товаров: ${total}`
       : `Всего товаров в каталоге: ${total}`
   })
-  function relationOptions(selectedId: string) {
-    return sortByLabel([
-      ...selectableCandidates.value,
-      ...candidates.value
-        .filter((product) => String(product.id) === selectedId)
-        .map((product) => ({
-          value: String(product.id),
-          label: `${product.name} · ${product.sku}`,
-        })),
-    ])
+  function relationProduct(id: string) {
+    return candidates.value.find((product) => String(product.id) === id)
   }
   function emptyProduct(): ProductPayload {
     return {
@@ -589,52 +612,63 @@ export function useProductEditor() {
     product: Product,
     copiedAttributes: Record<number, AttributeDraftValue> | null = null,
   ) {
-    const [
-      categoryAttrs,
-      categoryAttributeGroups,
-      savedAttrs,
-      photoList,
-      relationList,
-      groupList,
-      candidateList,
-    ] = await Promise.all([
-      getCategoryAttributes(product.category_id),
-      getCategoryAttributeGroups(product.category_id),
-      getProductAttributeValues(product.id),
-      getAllProductImages(product.id),
-      getProductRelations(product.id),
-      getAllProductGroups(),
-      getRelationCandidates(product.id),
-    ])
-    attributes.value = categoryAttrs
-    attributeGroups.value = categoryAttributeGroups
-    requiredIds.value = categoryAttrs
-      .filter((a) => a.is_required)
-      .map((a) => a.id)
-    const saved = new Map(savedAttrs.map((v) => [v.attribute_id, v.value]))
-    attributeValues.value = Object.fromEntries(
-      categoryAttrs.map((a) => [
-        a.id,
-        copiedAttributes && a.id in copiedAttributes
-          ? copiedAttributes[a.id]
-          : inputValue(saved.get(a.id)),
-      ]),
-    )
-    images.value = photoList
-    relations.value = relationList.map((r) => ({
-      related_product_id: String(r.related_product_id),
-      type: r.type,
-      sort_order: String(r.sort_order),
-    }))
-    groups.value = groupList
-    prepareGroupDraft(product, groupList)
-    const related = relationList.map((relation) => relation.related_product)
-    candidates.value = [
-      ...related,
-      ...candidateList.filter(
-        (item) => !related.some((savedProduct) => savedProduct.id === item.id),
-      ),
-    ]
+    const session = relationEditorSession
+    relationDetailsLoading.value = true
+    try {
+      const [
+        categoryAttrs,
+        categoryAttributeGroups,
+        savedAttrs,
+        photoList,
+        relationList,
+        groupList,
+      ] = await Promise.all([
+        getCategoryAttributes(product.category_id),
+        getCategoryAttributeGroups(product.category_id),
+        getProductAttributeValues(product.id),
+        getAllProductImages(product.id),
+        getProductRelations(product.id),
+        getAllProductGroups(),
+      ])
+      if (
+        session !== relationEditorSession ||
+        !opened.value ||
+        editing.value?.id !== product.id ||
+        photosOnly.value
+      )
+        return
+      attributes.value = categoryAttrs
+      attributeGroups.value = categoryAttributeGroups
+      requiredIds.value = categoryAttrs
+        .filter((a) => a.is_required)
+        .map((a) => a.id)
+      const saved = new Map(savedAttrs.map((v) => [v.attribute_id, v.value]))
+      attributeValues.value = Object.fromEntries(
+        categoryAttrs.map((a) => [
+          a.id,
+          copiedAttributes && a.id in copiedAttributes
+            ? copiedAttributes[a.id]
+            : inputValue(saved.get(a.id)),
+        ]),
+      )
+      images.value = photoList
+      relations.value = relationList.map((r) => ({
+        related_product_id: String(r.related_product_id),
+        type: r.type,
+        sort_order: String(r.sort_order),
+      }))
+      groups.value = groupList
+      prepareGroupDraft(product, groupList)
+      candidates.value = relationList.map(
+        (relation) => relation.related_product,
+      )
+      candidates.value.forEach((product) =>
+        relationKnownProductIds.add(product.id),
+      )
+    } finally {
+      if (session === relationEditorSession)
+        relationDetailsLoading.value = false
+    }
   }
   async function open(product: Product | null = null) {
     photoRequest++
@@ -1033,46 +1067,151 @@ export function useProductEditor() {
       saving.value = false
     }
   }
-  function addRelation() {
-    const id = selectableCandidates.value[0]?.value
-    if (id)
+  function addRelation(type: ProductRelationType): boolean {
+    const product = relationSearchResult.value
+    if (
+      product &&
+      editing.value &&
+      opened.value &&
+      product.id !== editing.value.id &&
+      !saving.value &&
+      !relationDetailsLoading.value &&
+      !relationSearchLoading.value &&
+      !relations.value.some(
+        (row) => Number(row.related_product_id) === product.id,
+      )
+    ) {
       relations.value.push({
-        related_product_id: id,
-        type: 'related',
-        sort_order: String(relations.value.length),
+        related_product_id: String(product.id),
+        type,
+        sort_order: String(
+          Math.max(
+            -1,
+            ...relations.value.map((row) => Number(row.sort_order) || 0),
+          ) + 1,
+        ),
       })
+      relationKnownProductIds.add(product.id)
+      relationErrors.value = {}
+      relationSearch.value = ''
+      success.value = ''
+      relationActionStatus.value =
+        type === 'related'
+          ? 'Товар добавлен в сопутствующие.'
+          : 'Товар добавлен в рекомендуемые.'
+      return true
+    }
+    return false
+  }
+  function removeRelation(index: number) {
+    if (saving.value || relationDetailsLoading.value) return
+    relations.value.splice(index, 1)
+    relationErrors.value = {}
+    success.value = ''
+    relationActionStatus.value = 'Товар удалён из списка.'
+    if (relationSearch.value.trim()) void searchRelations()
   }
   async function searchRelations() {
-    if (!editing.value || saving.value) return
-    saving.value = true
-    error.value = ''
+    if (relationSearchTimer) clearTimeout(relationSearchTimer)
+    relationSearchTimer = null
+    if (
+      !editing.value ||
+      !opened.value ||
+      photosOnly.value ||
+      relationDetailsLoading.value
+    )
+      return
+    const productId = editing.value.id
+    const query = relationSearch.value.trim()
+    const request = ++relationSearchRequest
+    relationLookupResult.value = null
+    relationSearchCompleted.value = false
+    relationSearchError.value = ''
+    relationSearchLoading.value = false
+    if (!query || relationSkuExclusion.value) return
+    relationSearchLoading.value = true
     try {
-      const found = await getRelationCandidates(
-        editing.value.id,
-        relationSearch.value,
-        20,
+      const found = await getRelationCandidates(productId, query, 20)
+      if (request !== relationSearchRequest) return
+      const exact =
+        found.find(
+          (product) => normalizeSku(product.sku) === normalizeSku(query),
+        ) ??
+        candidates.value.find(
+          (product) =>
+            relationKnownProductIds.has(product.id) &&
+            normalizeSku(product.sku) === normalizeSku(query),
+        )
+      const available =
+        exact &&
+        exact.id !== productId &&
+        !relations.value.some(
+          (row) => Number(row.related_product_id) === exact.id,
+        )
+      relationLookupResult.value = available ? exact : null
+      candidates.value = candidates.value.filter((product) =>
+        relationKnownProductIds.has(product.id),
       )
-      const selected = candidates.value.filter((product) =>
-        relations.value.some(
-          (row) => Number(row.related_product_id) === product.id,
-        ),
+      if (
+        available &&
+        !candidates.value.some((product) => product.id === exact.id)
       )
-      candidates.value = [
-        ...selected,
-        ...found.filter(
-          (product) => !selected.some((item) => item.id === product.id),
-        ),
-      ]
+        candidates.value.push(exact)
+      relationSearchCompleted.value = true
     } catch (reason) {
-      error.value =
+      if (request !== relationSearchRequest) return
+      relationSearchError.value =
         reason instanceof Error ? reason.message : 'Не удалось найти товары.'
     } finally {
-      saving.value = false
+      if (request === relationSearchRequest) relationSearchLoading.value = false
     }
   }
+  function resetRelationSearch() {
+    relationSearch.value = ''
+    if (relationSearchTimer) clearTimeout(relationSearchTimer)
+    relationSearchTimer = null
+    relationSearchRequest++
+    relationEditorSession++
+    relationDetailsLoading.value = false
+    relationSearchLoading.value = false
+    relationSearchError.value = ''
+    relationLookupResult.value = null
+    relationSearchCompleted.value = false
+    relationActionStatus.value = ''
+    relationKnownProductIds.clear()
+    candidates.value = []
+  }
+  watch([opened, () => editing.value?.id, photosOnly], resetRelationSearch, {
+    flush: 'sync',
+  })
+  watch(
+    relationSearch,
+    () => {
+      if (relationSearchTimer) clearTimeout(relationSearchTimer)
+      relationSearchRequest++
+      relationLookupResult.value = null
+      relationSearchCompleted.value = false
+      relationActionStatus.value = ''
+      relationSearchError.value = ''
+      relationSearchLoading.value = false
+      if (
+        !editing.value ||
+        !opened.value ||
+        photosOnly.value ||
+        relationDetailsLoading.value
+      )
+        return
+      if (!relationSearch.value.trim() || relationSkuExclusion.value) return
+      relationSearchLoading.value = true
+      relationSearchTimer = setTimeout(() => void searchRelations(), 350)
+    },
+    { flush: 'sync' },
+  )
   async function saveRelations() {
-    if (!editing.value || saving.value) return
+    if (!editing.value || saving.value || relationDetailsLoading.value) return
     relationErrors.value = {}
+    error.value = ''
+    success.value = ''
     saving.value = true
     try {
       const saved = await saveProductRelations(editing.value.id, {
@@ -1087,7 +1226,7 @@ export function useProductEditor() {
         type: r.type,
         sort_order: String(r.sort_order),
       }))
-      success.value = 'Рекомендации сохранены.'
+      success.value = 'Связи товаров сохранены.'
     } catch (reason) {
       if (reason instanceof ProductRelationRequestError)
         Object.entries(reason.details).forEach(([key, messages]) => {
@@ -1196,6 +1335,9 @@ export function useProductEditor() {
   )
   onBeforeUnmount(() => {
     if (filterTimer) clearTimeout(filterTimer)
+    if (relationSearchTimer) clearTimeout(relationSearchTimer)
+    relationSearchRequest++
+    relationEditorSession++
   })
   onMounted(load)
   return {
@@ -1249,6 +1391,12 @@ export function useProductEditor() {
     relations,
     relationErrors,
     relationSearch,
+    relationSearchLoading,
+    relationDetailsLoading,
+    relationSearchError,
+    relationSearchResult,
+    relationSearchMessage,
+    relationActionStatus,
     canManage,
     canManageImports,
     sortLabels,
@@ -1269,10 +1417,9 @@ export function useProductEditor() {
     currentGroup,
     groupRolesPending,
     attributeScope,
-    selectableCandidates,
     hasActiveFilters,
     productCountLabel,
-    relationOptions,
+    relationProduct,
     ariaSort,
     formatDate,
     slugify,
@@ -1315,6 +1462,7 @@ export function useProductEditor() {
     searchGroupProducts,
     saveGroup,
     addRelation,
+    removeRelation,
     searchRelations,
     saveRelations,
     removeProduct,

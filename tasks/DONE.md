@@ -1,13 +1,47 @@
 # DONE
 
+2026-11-02 — Переработано добавление связанных товаров: одно поле полного SKU,
+статический результат с названием/SKU и действиями «В сопутствующие» /
+«В рекомендуемые». После добавления поле очищается и получает фокус.
+Добавленные строки показывают название/SKU без выбора другого товара;
+тип, порядок и удаление доступны, весь список сохраняется через «Сохранить связи».
+Точный SKU приоритетен перед limit; текущий товар и дубли исключены.
+PASS: 293 Admin unit, 69 production E2E (пять ширин/axe), backend 715 tests
+(4 existing PostgreSQL-specific skips), Pint/PHPStan, lint/format/build.
+UI Design Guard accepted. API URL/schema и БД сохранены, commit не создавался.
+Файлы и проверки: [отчёт](../docs/PRODUCT_RELATION_SEARCH_2026-11-02.md).
+
+2026-11-02 — Устранено обрезание меню строк рекомендаций родительским блоком.
+ProductRelationsSection использует UiSelect teleport-menu для выбора товара
+и типа связи; общий primitive не менялся. ProductRelations E2E расширен
+пятью регрессиями с hit-testing/viewport/Escape/focus/axe. PASS: 11 E2E,
+291 unit, lint/format/build; независимый UI Design Guard accepted.
+Проверено на реальном третьем списке в Admin. Подробности и файлы:
+[отчёт](../docs/PRODUCT_RELATION_SEARCH_2026-11-02.md). API/данные не менялись.
+
+2026-11-02 — Исправлен поиск сопутствующих товаров на шаге «Проверка»:
+debounce по названию/SKU, Enter и «Найти», видимый выбор результата перед
+«Добавить», несколько добавлений до одного сохранения. Подписи выбранных товаров
+сохраняются при новом поиске; stale responses, дубли и гонка начальной загрузки
+закрыты. Локальные loading/error/empty/retry состояния используют общий UI-kit.
+PASS: Admin lint/format/build, 291 unit, 68 production E2E (пять ширин/axe),
+backend 5 tests / 27 assertions. UI Design Guard accepted; реальный SKU 6000034
+найден в локальном Admin. API/БД и данные не менялись, commit не создавался.
+Изменённые файлы и подробности: [отчёт](../docs/PRODUCT_RELATION_SEARCH_2026-11-02.md).
+
 2026-11-02 — Футер шага «Варианты модели»: пояснение скрыто за значком «!»;
 «Удалить группу», «Не объединять» и «Сохранить группу» помещаются в один ряд
 от 640 px, на 320 px сохраняется безопасный перенос. Общий UiHelpTooltip
 переиспользует прежнее поведение UiField: hover/focus/tap, Escape и доступное имя.
 Изменены ProductEditor.vue, UiField.vue, добавлен UiHelpTooltip.vue;
-обновлены UiKitShowcase.vue, его inventory test и shared/UI_KIT.md.
+обновлены UiKitShowcase.vue, его inventory test, catalog.spec.ts и shared/UI_KIT.md.
 Lint/format/build и 285 unit tests PASS; реальный товар проверен на пяти ширинах,
 открытие подсказки и Escape — PASS. Независимый UI Design Guard accepted.
+Целевые E2E: 6 PASS. Полный Docker E2E: 707 PASS / 2 FAIL — старое ожидание
+постоянно видимого пояснения и таймаут скриншота page-seo. Ожидание обновлено;
+оба сценария повторены последовательно через --last-failed: 2 PASS.
+Windows E2E не стартовал из-за отсутствия Chromium в sandbox; проверка выполнена
+в штатном Docker-окружении. Сборка предупреждает о размере JS chunk >500 kB.
 API, миграции и данные не менялись; commit не создавался.
 
 2026-11-02 — Три роли характеристик товарной группы: выбор варианта,

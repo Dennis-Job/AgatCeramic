@@ -943,6 +943,8 @@ product in a consistent order, then revalidate reverse relations within the tran
 database index on the unordered product pair is a final guard. Changes require `catalog.manage`
 and are audited as `product.relations-updated`. The candidates endpoint returns up to 50 products,
 excludes the source and both outgoing and incoming existing relations, and searches name, slug, or SKU.
+Search trims surrounding whitespace and ignores case. An exact SKU match is returned before partial
+matches, then candidates are ordered by name; the limit applies after this ordering.
 
 ### Catalog response contract
 
