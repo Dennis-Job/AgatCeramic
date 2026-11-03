@@ -1,0 +1,818 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PIETRA Оформление заказа</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+<style>
+/* Layout: корзина и оформление в две колонки (форма слева, липкая сводка справа), «Заказ принят» одной колонкой */
+:root{
+  color-scheme:light;
+  --bg:#F2F1EE; --bg2:#FAFAF8; --ink:#141414; --muted:#7A7772;
+  --line:#E3E1DB; --beige:#E9E6E0; --white:#FFFFFF; --ok:#5B7F63; --bad:#A6432F;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --gut:40px;
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+@media(max-width:760px){:root{--gut:16px}}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:95}
+[v-cloak]{display:none}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;background:none;border:none;color:inherit}
+input,select,textarea{font-family:inherit;color:var(--ink)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.container{max-width:1280px;margin:0 auto;padding-left:max(var(--gut),env(safe-area-inset-left,0px));padding-right:max(var(--gut),env(safe-area-inset-right,0px))}
+.label{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:12px;background:var(--ink);color:#fff;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;padding:18px 34px;transition:background .3s,transform .3s,color .3s;border:1px solid var(--ink);text-align:center}
+.btn:hover{background:#2e2e2e;transform:translateY(-2px)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:#fff}
+.btn.light{background:#fff;color:var(--ink);border-color:#fff}
+.btn.block{width:100%}
+.btn .ar{transition:transform .3s}
+.btn:hover .ar{transform:translateX(4px)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.tlink{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;display:inline-flex;gap:10px;align-items:center;border-bottom:1px solid var(--ink);padding-bottom:6px;transition:gap .3s}
+.tlink:hover{gap:16px}
+
+/* topbar + header */
+.topbar{border-bottom:1px solid var(--line);background:var(--bg);font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.topbar .container{display:flex;justify-content:space-between;align-items:center;height:40px}
+.topbar a:hover{color:var(--ink)}
+.topbar .tb-r{display:flex;gap:28px}
+@media(max-width:760px){.topbar .tb-l{display:none}.topbar .container{justify-content:flex-end}}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:90;background:rgba(242,241,238,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);transition:box-shadow .3s}
+header.scrolled{box-shadow:0 8px 30px rgba(0,0,0,.06)}
+.header-in{display:flex;align-items:center;justify-content:space-between;height:78px;transition:height .3s}
+header.scrolled .header-in{height:64px}
+.logo{font-size:20px;letter-spacing:.42em;font-weight:600}
+.logo span{font-weight:400;color:var(--muted)}
+.nav{display:flex;gap:44px}
+.nav a{font-size:13px;letter-spacing:.06em;position:relative;padding:6px 0}
+.nav a::after{content:"";position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--ink);transform:scaleX(0);transform-origin:right;transition:transform .35s var(--ease)}
+.nav a:hover::after{transform:scaleX(1);transform-origin:left}
+.h-icons{display:flex;align-items:center;gap:8px}
+.h-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;position:relative;transition:background .3s}
+.h-icon:hover,.h-icon.on{background:var(--beige)}
+.h-icon svg{width:19px;height:19px;stroke:var(--ink);fill:none;stroke-width:1.6}
+.badge{position:absolute;top:4px;right:2px;min-width:16px;height:16px;border-radius:8px;background:var(--ink);color:#fff;font-size:9px;display:grid;place-items:center;padding:0 4px}
+.h-secure{display:none;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);align-items:center;gap:8px}
+.h-secure svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.6}
+@media(max-width:1024px){.nav{display:none}}
+@media(min-width:561px){.h-secure.on{display:flex}}
+
+/* page head + flow */
+.head{padding-top:44px;padding-bottom:44px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px 40px;flex-wrap:wrap}
+.head h1{font-size:clamp(34px,4vw,56px);line-height:1.04;font-weight:500;letter-spacing:-.02em;margin-top:14px}
+.flow{display:flex;align-items:center;gap:14px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);flex-wrap:wrap}
+.flow span{display:flex;align-items:center;gap:10px;font-weight:500}
+.flow span.on{color:var(--ink)}
+.flow span.ok{color:var(--ink)}
+.flow span i{font-style:normal;width:22px;height:22px;border:1px solid currentColor;border-radius:50%;display:grid;place-items:center;font-size:10px;letter-spacing:0}
+.flow span.on i{background:var(--ink);color:#fff;border-color:var(--ink)}
+.flow s{width:28px;height:1px;background:var(--line);text-decoration:none}
+
+/* shop grid */
+.shop{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(40px,5vw,80px);align-items:start;padding-bottom:110px}
+.col{min-width:0}
+
+/* free-design progress */
+.free{border:1px solid var(--line);background:var(--bg2);padding:22px 26px;margin-bottom:34px}
+.free p{font-size:13px;line-height:1.6;color:var(--muted);margin-bottom:14px}
+.free p b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.bar{height:2px;background:var(--line);position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink);transition:width .7s var(--ease)}
+
+/* cart rows */
+.cart-head{display:grid;grid-template-columns:minmax(0,1fr) 150px 120px 40px;gap:20px;padding-bottom:14px;border-bottom:1px solid var(--ink)}
+.cart-head span:nth-child(3){text-align:right}
+.cart-row{display:grid;grid-template-columns:104px minmax(0,1fr) 150px 120px 40px;gap:20px;align-items:center;padding:26px 0;border-bottom:1px solid var(--line)}
+.ci{width:104px;height:104px;background:var(--beige);overflow:hidden;display:grid;place-items:center}
+.ci img{width:100%;height:100%;object-fit:cover}
+.ci svg{width:30px;height:30px;stroke:var(--ink);fill:none;stroke-width:1.4}
+.cr-info{min-width:0}
+.cr-info .k{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.cr-info h3{font-size:16px;font-weight:500;margin:8px 0 6px}
+.cr-info p{font-size:12px;color:var(--muted);line-height:1.6;font-variant-numeric:tabular-nums}
+.qty{display:flex;align-items:center;border:1px solid var(--line);background:#fff;width:max-content}
+.qty button{width:38px;height:42px;display:grid;place-items:center;font-size:16px;transition:background .25s,color .25s}
+.qty button:hover{background:var(--ink);color:#fff}
+.qty b{min-width:38px;text-align:center;font-weight:500;font-size:13px;font-variant-numeric:tabular-nums}
+.cr-q small{display:block;font-size:11px;color:var(--muted);margin-top:8px;font-variant-numeric:tabular-nums}
+.cr-sum{text-align:right;font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+.cr-sum small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:6px}
+.rm{width:36px;height:36px;display:grid;place-items:center;border-radius:50%;transition:background .3s}
+.rm:hover{background:var(--beige)}
+.rm svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.6}
+.cart-foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-top:28px}
+
+/* upsell */
+.up{margin-top:64px}
+.up h2{font-size:22px;font-weight:500;letter-spacing:-.01em;margin:12px 0 22px}
+.up-row{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:18px;align-items:center;padding:18px 0;border-top:1px solid var(--line)}
+.up-row:last-child{border-bottom:1px solid var(--line)}
+.up-row .ci{width:56px;height:56px}
+.up-row h4{font-size:14px;font-weight:500;margin-bottom:4px}
+.up-row p{font-size:12px;color:var(--muted)}
+.mini{font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;border:1px solid var(--ink);padding:13px 18px;white-space:nowrap;transition:background .3s,color .3s}
+.mini:hover{background:var(--ink);color:#fff}
+
+/* summary */
+.sum{position:sticky;top:calc(env(safe-area-inset-top,0px) + 100px);background:var(--bg2);border:1px solid var(--line);padding:32px;min-width:0}
+.sum h2{font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.sum-toggle{display:none}
+.sum-items{display:flex;flex-direction:column;gap:16px;padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.si{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;font-size:13px}
+.si .ci{width:52px;height:52px}
+.si .ci svg{width:20px;height:20px}
+.si b{font-weight:500;display:block;margin-bottom:3px}
+.si span{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.si em{font-style:normal;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sl{display:flex;justify-content:space-between;gap:16px;padding:12px 0;font-size:13px;font-variant-numeric:tabular-nums}
+.sl span:first-child{color:var(--muted)}
+.sl span:last-child{text-align:right}
+.sl.disc span:last-child{color:var(--ok)}
+.sl.total{border-top:1px solid var(--ink);margin-top:10px;padding-top:20px;font-size:18px;font-weight:500}
+.sl.total span:first-child{color:var(--ink)}
+.promo{display:flex;gap:10px;margin:22px 0 4px}
+.promo input{flex:1;min-width:0}
+.promo .mini{padding:0 18px}
+.msg{font-size:12px;margin-top:8px;line-height:1.5}
+.msg.bad{color:var(--bad)}
+.msg.ok{color:var(--ok)}
+.sum .btn{margin-top:22px}
+.sum .note{font-size:12px;line-height:1.6;color:var(--muted);margin-top:16px}
+.sum .back{display:block;text-align:center;margin-top:18px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);transition:color .3s}
+.sum .back:hover{color:var(--ink)}
+
+/* inputs */
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.field>span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.inp{width:100%;border:1px solid var(--line);background:#fff;padding:15px 16px;font-size:14px;outline:none;transition:border-color .3s;border-radius:0;appearance:none;-webkit-appearance:none}
+.inp:focus{border-color:var(--ink)}
+.inp.bad{border-color:var(--bad)}
+textarea.inp{resize:vertical;min-height:96px;line-height:1.6}
+select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:36px}
+.err{font-size:12px;color:var(--bad);line-height:1.4}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:18px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.stack{display:flex;flex-direction:column;gap:18px}
+
+/* segmented + choice cards */
+.seg{display:inline-flex;border:1px solid var(--line);background:var(--bg2);margin-bottom:26px;max-width:100%}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg span{display:block;padding:13px 24px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;color:var(--muted);transition:background .3s,color .3s}
+.seg input:checked+span{background:var(--ink);color:#fff}
+.seg label:focus-within{outline:2px solid var(--ink);outline-offset:2px}
+.choices{display:flex;flex-direction:column;gap:12px}
+.choice{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:16px;align-items:start;border:1px solid var(--line);background:#fff;padding:20px 22px;cursor:pointer;transition:border-color .3s}
+.choice:hover{border-color:#bdb9b0}
+.choice.on{border-color:var(--ink)}
+.choice input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.choice:focus-within{outline:2px solid var(--ink);outline-offset:2px}
+.choice .dot{width:18px;height:18px;border:1px solid var(--muted);border-radius:50%;margin-top:2px;display:grid;place-items:center;transition:border-color .3s}
+.choice.on .dot{border-color:var(--ink)}
+.choice .dot::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--ink);transform:scale(0);transition:transform .3s var(--ease)}
+.choice.on .dot::after{transform:scale(1)}
+.choice b{display:block;font-size:14px;font-weight:500;margin-bottom:5px}
+.choice p{font-size:12px;line-height:1.6;color:var(--muted)}
+.choice em{font-style:normal;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.choice em small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:4px}
+.check{display:flex;gap:14px;align-items:flex-start;font-size:13px;line-height:1.6;color:var(--muted);cursor:pointer;position:relative}
+.check input{position:absolute;opacity:0;width:20px;height:20px;margin:0;cursor:pointer}
+.check .box{width:20px;height:20px;border:1px solid var(--muted);background:#fff;flex:none;display:grid;place-items:center;transition:background .3s,border-color .3s;margin-top:1px}
+.check .box svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2;opacity:0;transition:opacity .2s}
+.check input:checked+.box{background:var(--ink);border-color:var(--ink)}
+.check input:checked+.box svg{opacity:1}
+.check input:focus-visible+.box{outline:2px solid var(--ink);outline-offset:3px}
+.check.bad .box{border-color:var(--bad)}
+.check a{border-bottom:1px solid var(--line);color:var(--ink)}
+
+/* accordion steps */
+.step{border-top:1px solid var(--line);padding:34px 0}
+.step:last-of-type{border-bottom:1px solid var(--line)}
+.step-head{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:baseline}
+.step-head .n{font-size:11px;letter-spacing:.2em;color:var(--muted)}
+.step-head h2{font-size:22px;font-weight:500;letter-spacing:-.01em}
+.step.lock h2,.step.lock .n{color:#a9a69f}
+.step-head .edit{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;border-bottom:1px solid var(--ink);padding-bottom:4px}
+.step-sum{margin:12px 0 0 56px;font-size:13px;line-height:1.7;color:var(--muted)}
+.step-body{margin:30px 0 0 56px;animation:fadeUp .6s var(--ease)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.step-act{display:flex;align-items:center;gap:24px;margin-top:34px;flex-wrap:wrap}
+.sub-h{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;color:var(--muted);margin:34px 0 14px}
+
+/* empty + done */
+.empty{text-align:center;padding:70px 0 130px;max-width:520px;margin:0 auto}
+.empty h2{font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.01em;margin:16px 0 14px}
+.empty p{color:var(--muted);line-height:1.8;margin-bottom:34px}
+.done{max-width:920px;margin:0 auto;padding-top:56px;padding-bottom:110px}
+.done .tick{width:64px;height:64px;border:1px solid var(--ink);border-radius:50%;display:grid;place-items:center;margin-bottom:30px}
+.done .tick svg{width:26px;height:26px;stroke:var(--ink);fill:none;stroke-width:1.6;stroke-dasharray:30;stroke-dashoffset:30;animation:draw .9s .2s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.done h1{font-size:clamp(34px,4.4vw,58px);line-height:1.04;font-weight:500;letter-spacing:-.02em;margin:16px 0 18px;text-wrap:balance}
+.done .lead{font-size:15px;line-height:1.8;color:var(--muted);max-width:560px}
+.done-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin:56px 0}
+.dg{border-top:1px solid var(--line);padding-top:22px;min-width:0}
+.dg p{font-size:13px;line-height:1.8;margin-top:12px;overflow-wrap:anywhere}
+.next{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin:0 0 56px}
+.next div{border-top:1px solid var(--line);padding-top:24px}
+.next h4{font-size:16px;font-weight:500;margin:14px 0 10px}
+.next p{font-size:13px;line-height:1.7;color:var(--muted)}
+.next .num{font-size:11px;letter-spacing:.2em;color:var(--muted)}
+.receipt{background:var(--bg2);border:1px solid var(--line);padding:32px;margin-bottom:44px}
+
+/* footer */
+footer{background:var(--bg2);border-top:1px solid var(--line);padding:80px 0 40px}
+.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:40px;margin-bottom:70px}
+.f-logo{font-size:20px;letter-spacing:.42em;font-weight:600;margin-bottom:18px}
+.f-copy{font-size:12px;color:var(--muted);line-height:1.8}
+.f-col h5{font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:22px;font-weight:500}
+.f-col a{display:block;font-size:13px;color:var(--muted);margin-bottom:12px;transition:color .3s,transform .3s}
+.f-col a:hover{color:var(--ink);transform:translateX(4px)}
+.f-bottom{border-top:1px solid var(--line);padding-top:28px;display:flex;justify-content:space-between;gap:20px;font-size:11px;color:var(--muted);letter-spacing:.06em;flex-wrap:wrap}
+footer.slim{padding:30px 0}
+footer.slim .f-bottom{border:none;padding:0}
+
+.toast{position:fixed;left:50%;bottom:calc(32px + env(safe-area-inset-bottom,0px));transform:translate(-50%,140px);background:var(--ink);color:#fff;font-size:12px;letter-spacing:.1em;padding:15px 28px;z-index:200;transition:transform .5s var(--ease);pointer-events:none;max-width:calc(100vw - 32px);text-align:center}
+.toast.show{transform:translate(-50%,0)}
+
+/* responsive */
+@media(max-width:1100px){
+  .shop{grid-template-columns:minmax(0,1fr);gap:40px}
+  .sum{position:static}
+  .shop.co .sum{order:-1;padding:22px 24px}
+  .shop.co .sum-toggle{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;border-bottom:1px solid var(--ink);padding-bottom:3px}
+  .shop.co .sum:not(.open) .sum-body{display:none}
+  .shop.co .sum:not(.open) h2{margin-bottom:0}
+  .f-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:860px){
+  .cart-head{display:none}
+  .cart-row{grid-template-columns:84px minmax(0,1fr) 40px;grid-template-areas:"img info rm" "img q sum";gap:14px 16px;align-items:start}
+  .cart-row .ci{grid-area:img;width:84px;height:84px}
+  .cart-row .cr-info{grid-area:info}
+  .cart-row .cr-q{grid-area:q}
+  .cart-row .cr-sum{grid-area:sum;align-self:end}
+  .cart-row .rm{grid-area:rm}
+  .done-grid,.next{grid-template-columns:1fr;gap:28px}
+  .grid4{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .sum{padding:24px 20px}
+  .step-head{grid-template-columns:34px minmax(0,1fr) auto}
+  .step-sum,.step-body{margin-left:0}
+  .step-head h2{font-size:19px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .grid3 .field:nth-child(n+2){display:block}
+  .choice{grid-template-columns:20px minmax(0,1fr);padding:18px}
+  .choice em{grid-column:2;text-align:left}
+  .seg{display:flex;width:100%}
+  .seg label{flex:1}
+  .seg span{padding:13px 8px;text-align:center}
+  .f-grid{grid-template-columns:1fr}
+  .flow s{width:14px}
+  .head{padding-top:32px;padding-bottom:30px}
+  .receipt{padding:22px 18px}
+  .free{padding:18px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .done .tick svg{stroke-dashoffset:0}
+}
+</style>
+
+<div id="app" v-cloak>
+
+  <div class="topbar">
+    <div class="container">
+      <div class="tb-l">Москва, ул. Никольская, 12 — шоурум образцов</div>
+      <div class="tb-r">
+        <a href="tel:+74951204567">+7 495 120-45-67</a>
+        <a href="mailto:hello@pietra.ru">hello@pietra.ru</a>
+      </div>
+    </div>
+  </div>
+
+  <header :class="{scrolled: scrolled}">
+    <div class="container header-in">
+      <a href="#" class="logo" @click.prevent="soon('Главная')">PIETRA<span>°</span></a>
+      <nav class="nav">
+        <a v-for="l in navLinks" :key="l" href="#" @click.prevent="soon(l)">{{l}}</a>
+      </nav>
+      <div class="h-icons">
+        <span class="h-secure" :class="{on: route==='checkout'}"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Защищённое оформление</span>
+        <a class="h-icon" :class="{on: route==='cart'}" href="#cart" aria-label="Корзина">
+          <svg viewBox="0 0 24 24"><path d="M6 7h12l1 14H5L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+          <span class="badge" v-if="cartCount>0">{{cartCount}}</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ================= CART ================= -->
+    <template v-if="route==='cart'">
+      <div class="head">
+        <div>
+          <div class="label">Ваш заказ</div>
+          <h1>Корзина</h1>
+        </div>
+        <div class="flow"><span class="on"><i>1</i>Корзина</span><s></s><span><i>2</i>Оформление</span><s></s><span><i>3</i>Заказ принят</span></div>
+      </div>
+
+      <div class="empty" v-if="!cart.length">
+        <div class="label">Пока ничего нет</div>
+        <h2>Корзина пуста</h2>
+        <p>Выберите коллекции в каталоге. Образцы можно взять в шоуруме на Никольской, 12.</p>
+        <a class="btn" href="#" @click.prevent="soon('Каталог')">Перейти в каталог <span class="ar">→</span></a>
+      </div>
+
+      <div class="shop" v-else>
+        <div class="col">
+          <div class="free">
+            <p v-if="goods<freeFrom">До бесплатного дизайн-проекта и раскладки осталось <b>{{fmt(freeFrom-goods)}} ₽</b>. Он включён в заказ от {{fmt(freeFrom)}} ₽.</p>
+            <p v-else><b>Дизайн-проект включён в заказ.</b> Дизайнер подготовит раскладку и визуализацию после подтверждения.</p>
+            <div class="bar" role="progressbar" aria-label="До бесплатного дизайн-проекта" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(progress)"><i :style="{width:progress+'%'}"></i></div>
+          </div>
+
+          <div class="cart-head label"><span>Товар</span><span>Количество</span><span>Сумма</span><span></span></div>
+          <div class="cart-row" v-for="it in cart" :key="it.key">
+            <div class="ci"><img v-if="it.img" :src="it.img" :alt="it.name"><ic v-else :n="it.icon"></ic></div>
+            <div class="cr-info">
+              <div class="k">{{it.kind}}</div>
+              <h3>{{it.name}}</h3>
+              <p>{{it.meta}}<br>{{fmt(it.price)}} ₽{{it.packArea ? ' за м²' : ' за шт'}}</p>
+            </div>
+            <div class="cr-q">
+              <div class="qty">
+                <button :aria-label="'Меньше: '+it.name" @click="dec(it)">−</button>
+                <b>{{it.qty}}</b>
+                <button :aria-label="'Больше: '+it.name" @click="inc(it)">+</button>
+              </div>
+              <small>{{it.packArea ? 'уп. · ' + m2(it.qty*it.packArea) + ' м²' : 'шт'}}</small>
+            </div>
+            <div class="cr-sum">{{fmt(lineSum(it))}} ₽<small v-if="it.packArea">{{fmt(Math.round(it.packArea*it.price))}} ₽ за уп.</small></div>
+            <button class="rm" :aria-label="'Удалить: '+it.name" @click="remove(it)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          </div>
+          <div class="cart-foot">
+            <a class="tlink" href="#" @click.prevent="soon('Каталог')">← Продолжить покупки</a>
+            <button class="tlink" style="border-color:var(--line);color:var(--muted)" @click="clearCart">Очистить корзину</button>
+          </div>
+
+          <div class="up" v-if="upsell.length">
+            <div class="label">Для укладки</div>
+            <h2>Дополните заказ</h2>
+            <div class="up-row" v-for="a in upsell" :key="a.key">
+              <div class="ci"><ic :n="a.icon"></ic></div>
+              <div><h4>{{a.name}}</h4><p>{{a.meta}} · {{fmt(a.price)}} ₽</p></div>
+              <button class="mini" @click="addUp(a)">Добавить</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="sum" aria-label="Итого">
+          <h2>Итого</h2>
+          <div class="sl"><span>Товары ({{cartCount}})</span><span>{{fmt(subtotal)}} ₽</span></div>
+          <div class="sl disc" v-if="discount"><span>Промокод {{promo.code}}</span><span>−{{fmt(discount)}} ₽</span></div>
+          <div class="sl"><span>Доставка</span><span>рассчитаем на следующем шаге</span></div>
+          <div class="sl"><span>Общий вес</span><span>≈ {{fmt(Math.round(weight))}} кг</span></div>
+          <div class="sl total"><span>К оплате</span><span>{{fmt(goods)}} ₽</span></div>
+
+          <form class="promo" @submit.prevent="applyPromo">
+            <input id="promo-in" class="inp" v-model="promoInput" placeholder="Промокод, например PIETRA5" aria-label="Промокод" autocomplete="off">
+            <button class="mini" type="submit">Применить</button>
+          </form>
+          <p class="msg bad" v-if="promoErr">{{promoErr}}</p>
+          <p class="msg ok" v-else-if="promo">Скидка {{promo.pct}}% применена к товарам.</p>
+
+          <a class="btn block" href="#checkout">Оформить заказ <span class="ar">→</span></a>
+          <p class="note">Цены указаны за м² и за упаковку. Раскладку и точный расчёт количества мы проверим перед отгрузкой.</p>
+        </aside>
+      </div>
+    </template>
+
+    <!-- ================= CHECKOUT ================= -->
+    <template v-else-if="route==='checkout'">
+      <div class="head">
+        <div>
+          <div class="label">Почти готово</div>
+          <h1>Оформление заказа</h1>
+        </div>
+        <div class="flow"><span class="ok"><i>✓</i>Корзина</span><s></s><span class="on"><i>2</i>Оформление</span><s></s><span><i>3</i>Заказ принят</span></div>
+      </div>
+
+      <div class="shop co">
+        <div class="col">
+
+          <!-- step 1 -->
+          <section class="step" :class="{lock: step<1}">
+            <div class="step-head">
+              <span class="n">01</span><h2>Контакты</h2>
+              <button class="edit" v-if="step>1" @click="step=1">Изменить</button>
+            </div>
+            <p class="step-sum" v-if="step>1">{{f.name}}{{f.type==='org' ? ', ' + f.company : ''}}<br>{{f.phone}} · {{f.email}}</p>
+            <div class="step-body" v-if="step===1">
+              <div class="seg" role="radiogroup" aria-label="Тип покупателя">
+                <label><input type="radio" id="t-person" name="ctype" value="person" v-model="f.type"><span>Частное лицо</span></label>
+                <label><input type="radio" id="t-org" name="ctype" value="org" v-model="f.type"><span>Юридическое лицо</span></label>
+              </div>
+              <div class="stack">
+                <div class="grid2" v-if="f.type==='org'">
+                  <label class="field" for="company"><span>Компания</span>
+                    <input id="company" class="inp" :class="{bad:errors.company}" v-model.trim="f.company" autocomplete="organization" placeholder="ООО «Форма»">
+                    <span class="err" v-if="errors.company">{{errors.company}}</span>
+                  </label>
+                  <label class="field" for="inn"><span>ИНН</span>
+                    <input id="inn" class="inp" :class="{bad:errors.inn}" v-model.trim="f.inn" inputmode="numeric" maxlength="12" placeholder="10 или 12 цифр">
+                    <span class="err" v-if="errors.inn">{{errors.inn}}</span>
+                  </label>
+                </div>
+                <label class="field" for="name"><span>{{f.type==='org' ? 'Контактное лицо' : 'Имя и фамилия'}}</span>
+                  <input id="name" class="inp" :class="{bad:errors.name}" v-model.trim="f.name" autocomplete="name" placeholder="Анна Соколова">
+                  <span class="err" v-if="errors.name">{{errors.name}}</span>
+                </label>
+                <div class="grid2">
+                  <label class="field" for="phone"><span>Телефон</span>
+                    <input id="phone" class="inp" :class="{bad:errors.phone}" :value="f.phone" @input="onPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (999) 123-45-67">
+                    <span class="err" v-if="errors.phone">{{errors.phone}}</span>
+                  </label>
+                  <label class="field" for="email"><span>E-mail</span>
+                    <input id="email" class="inp" :class="{bad:errors.email}" v-model.trim="f.email" type="email" autocomplete="email" placeholder="anna@example.ru">
+                    <span class="err" v-if="errors.email">{{errors.email}}</span>
+                  </label>
+                </div>
+              </div>
+              <div class="step-act"><button class="btn" @click="next(1)">Продолжить <span class="ar">→</span></button></div>
+            </div>
+          </section>
+
+          <!-- step 2 -->
+          <section class="step" :class="{lock: step<2}">
+            <div class="step-head">
+              <span class="n">02</span><h2>Доставка</h2>
+              <button class="edit" v-if="step>2" @click="step=2">Изменить</button>
+            </div>
+            <p class="step-sum" v-if="step>2">{{deliveryTitle}}<br><template v-if="f.delivery!=='pickup'">{{addressLine}}</template><template v-else>Никольская, 12 · ежедневно 10:00–21:00</template></p>
+            <div class="step-body" v-if="step===2">
+              <div class="choices" role="radiogroup" aria-label="Способ получения">
+                <label class="choice" :class="{on:f.delivery==='moscow'}"><input type="radio" id="d-msk" name="delivery" value="moscow" v-model="f.delivery"><span class="dot"></span>
+                  <span><b>Курьером по Москве и области</b><p>Бережная доставка на объект, обычно на следующий день после подтверждения.</p></span>
+                  <em>{{mskFree ? 'Бесплатно' : fmt(3500) + ' ₽'}}<small v-if="mskFree">от {{fmt(150000)}} ₽</small></em></label>
+                <label class="choice" :class="{on:f.delivery==='russia'}"><input type="radio" id="d-rus" name="delivery" value="russia" v-model="f.delivery"><span class="dot"></span>
+                  <span><b>Транспортной компанией по России</b><p>Доставка до терминала или до двери за 2–7 дней. Точную стоимость подтвердит менеджер.</p></span>
+                  <em>≈ {{fmt(russiaBase)}} ₽<small>по весу {{fmt(Math.round(weight))}} кг</small></em></label>
+                <label class="choice" :class="{on:f.delivery==='pickup'}"><input type="radio" id="d-pick" name="delivery" value="pickup" v-model="f.delivery"><span class="dot"></span>
+                  <span><b>Самовывоз из шоурума</b><p>Москва, Никольская, 12. Ежедневно с 10:00 до 21:00. Заказ собираем в течение дня.</p></span>
+                  <em>Бесплатно</em></label>
+              </div>
+
+              <template v-if="f.delivery!=='pickup'">
+                <div class="sub-h">Адрес</div>
+                <div class="stack">
+                  <div class="grid2">
+                    <label class="field" for="city"><span>Город</span>
+                      <input id="city" class="inp" :class="{bad:errors.city}" v-model.trim="f.city" autocomplete="address-level2">
+                      <span class="err" v-if="errors.city">{{errors.city}}</span>
+                    </label>
+                    <label class="field" for="street"><span>Улица</span>
+                      <input id="street" class="inp" :class="{bad:errors.street}" v-model.trim="f.street" autocomplete="address-line1" placeholder="Например, Большая Никитская">
+                      <span class="err" v-if="errors.street">{{errors.street}}</span>
+                    </label>
+                  </div>
+                  <div class="grid4">
+                    <label class="field" for="house"><span>Дом</span>
+                      <input id="house" class="inp" :class="{bad:errors.house}" v-model.trim="f.house" placeholder="12к1">
+                      <span class="err" v-if="errors.house">{{errors.house}}</span>
+                    </label>
+                    <label class="field" for="apt"><span>Квартира / офис</span><input id="apt" class="inp" v-model.trim="f.apt"></label>
+                    <label class="field" for="porch"><span>Подъезд</span><input id="porch" class="inp" v-model.trim="f.porch"></label>
+                    <label class="field" for="floor"><span>Этаж</span>
+                      <input id="floor" class="inp" :class="{bad:errors.floor}" v-model.trim="f.floor" inputmode="numeric" maxlength="3">
+                      <span class="err" v-if="errors.floor">{{errors.floor}}</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="sub-h">Подъём на этаж</div>
+                <div class="choices" role="radiogroup" aria-label="Подъём на этаж">
+                  <label class="choice" :class="{on:f.lift==='none'}"><input type="radio" id="l-none" name="lift" value="none" v-model="f.lift"><span class="dot"></span><span><b>Разгрузка у подъезда</b><p>Водитель выгружает коробки у входа.</p></span><em>0 ₽</em></label>
+                  <label class="choice" :class="{on:f.lift==='elevator'}"><input type="radio" id="l-el" name="lift" value="elevator" v-model="f.lift"><span class="dot"></span><span><b>Подъём на лифте</b><p>Грузчики занесут упаковки на ваш этаж.</p></span><em>{{fmt(1500)}} ₽</em></label>
+                  <label class="choice" :class="{on:f.lift==='walk'}"><input type="radio" id="l-walk" name="lift" value="walk" v-model="f.lift"><span class="dot"></span><span><b>Подъём пешком</b><p>Если лифта нет или он не грузовой. Считаем за каждый этаж выше первого.</p></span><em>{{fmt(150)}} ₽<small>за этаж</small></em></label>
+                </div>
+              </template>
+
+              <label class="field" for="comment" style="margin-top:30px"><span>Комментарий к заказу</span>
+                <textarea id="comment" class="inp" v-model="f.comment" placeholder="Удобное время, код домофона, пожелания по раскладке"></textarea>
+              </label>
+              <div class="step-act">
+                <button class="btn" @click="next(2)">Продолжить <span class="ar">→</span></button>
+                <button class="tlink" style="border-color:var(--line);color:var(--muted)" @click="step=1">Назад</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- step 3 -->
+          <section class="step" :class="{lock: step<3}">
+            <div class="step-head"><span class="n">03</span><h2>Оплата</h2></div>
+            <div class="step-body" v-if="step===3">
+              <div class="choices" role="radiogroup" aria-label="Способ оплаты">
+                <label class="choice" v-for="p in payOptions" :key="p.id" :class="{on:f.payment===p.id}"><input type="radio" :id="'p-'+p.id" name="payment" :value="p.id" v-model="f.payment"><span class="dot"></span>
+                  <span><b>{{p.t}}</b><p>{{p.d}}</p></span><em v-if="p.r">{{p.r}}</em></label>
+              </div>
+              <div class="stack" style="margin-top:30px">
+                <label class="check" :class="{bad:errors.agree}" for="agree">
+                  <input type="checkbox" id="agree" v-model="f.agree"><span class="box"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>
+                  <span>Я согласен с условиями продажи и <a href="#" @click.prevent="soon('Политика конфиденциальности')">политикой конфиденциальности</a></span>
+                </label>
+                <span class="err" v-if="errors.agree" style="margin-top:-8px">{{errors.agree}}</span>
+                <label class="check" for="call">
+                  <input type="checkbox" id="call" v-model="f.call"><span class="box"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></span>
+                  <span>Позвоните мне, чтобы подтвердить заказ и уточнить раскладку</span>
+                </label>
+              </div>
+              <div class="step-act">
+                <button class="btn" @click="placeOrder">Подтвердить заказ · {{fmt(total)}} ₽ <span class="ar">→</span></button>
+                <button class="tlink" style="border-color:var(--line);color:var(--muted)" @click="step=2">Назад</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="sum" :class="{open:sumOpen}" aria-label="Состав заказа">
+          <h2><span>Ваш заказ · {{fmt(total)}} ₽</span><button class="sum-toggle" @click="sumOpen=!sumOpen" :aria-expanded="sumOpen">{{sumOpen ? 'Скрыть' : 'Показать'}}</button></h2>
+          <div class="sum-body">
+            <div class="sum-items">
+              <div class="si" v-for="it in cart" :key="it.key">
+                <div class="ci"><img v-if="it.img" :src="it.img" :alt="it.name"><ic v-else :n="it.icon"></ic></div>
+                <div><b>{{it.name}}</b><span>{{it.qty}} {{it.packArea ? 'уп.' : 'шт'}}<template v-if="it.packArea"> · {{m2(it.qty*it.packArea)}} м²</template></span></div>
+                <em>{{fmt(lineSum(it))}} ₽</em>
+              </div>
+            </div>
+            <div class="sl"><span>Товары</span><span>{{fmt(subtotal)}} ₽</span></div>
+            <div class="sl disc" v-if="discount"><span>Промокод {{promo.code}}</span><span>−{{fmt(discount)}} ₽</span></div>
+            <div class="sl"><span>Доставка</span><span>{{f.delivery==='pickup' ? 'Самовывоз, 0 ₽' : (shipping.total ? (f.delivery==='russia' ? '≈ ' : '') + fmt(shipping.total) + ' ₽' : 'Бесплатно')}}</span></div>
+            <div class="sl" v-if="shipping.lift"><span>Подъём на этаж</span><span>{{fmt(shipping.lift)}} ₽</span></div>
+            <div class="sl total"><span>К оплате</span><span>{{fmt(total)}} ₽</span></div>
+            <p class="note">Дизайн-проект и раскладка {{goods>=freeFrom ? 'входят в заказ.' : 'бесплатны от ' + fmt(freeFrom) + ' ₽.'}}</p>
+            <a class="back" href="#cart">← Изменить корзину</a>
+          </div>
+        </aside>
+      </div>
+    </template>
+
+    <!-- ================= DONE ================= -->
+    <template v-else>
+      <div class="done" v-if="order">
+        <div class="tick"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></div>
+        <div class="label">Заказ № {{order.no}}</div>
+        <h1>Спасибо, {{order.firstName}}. Заказ принят.</h1>
+        <p class="lead">Менеджер подтвердит наличие и сроки. {{order.call ? 'Мы позвоним вам по номеру ' + order.f.phone + ' в рабочее время.' : 'Подтверждение придёт на ' + order.f.email + '.'}}</p>
+
+        <div class="done-grid">
+          <div class="dg"><div class="label">Контакты</div><p>{{order.f.name}}<template v-if="order.f.type==='org'"><br>{{order.f.company}}, ИНН {{order.f.inn}}</template><br>{{order.f.phone}}<br>{{order.f.email}}</p></div>
+          <div class="dg"><div class="label">Получение</div><p>{{order.deliveryTitle}}<br><template v-if="order.f.delivery!=='pickup'">{{order.address}}<template v-if="order.liftTitle"><br>{{order.liftTitle}}</template></template><template v-else>Москва, Никольская, 12</template></p></div>
+          <div class="dg"><div class="label">Оплата</div><p>{{order.payTitle}}<br>{{fmt(order.total)}} ₽</p></div>
+        </div>
+
+        <div class="receipt">
+          <div class="sum-items">
+            <div class="si" v-for="it in order.items" :key="it.key">
+              <div class="ci"><img v-if="it.img" :src="it.img" :alt="it.name"><ic v-else :n="it.icon"></ic></div>
+              <div><b>{{it.name}}</b><span>{{it.qty}} {{it.packArea ? 'уп.' : 'шт'}}<template v-if="it.packArea"> · {{m2(it.qty*it.packArea)}} м²</template></span></div>
+              <em>{{fmt(lineSum(it))}} ₽</em>
+            </div>
+          </div>
+          <div class="sl"><span>Товары</span><span>{{fmt(order.subtotal)}} ₽</span></div>
+          <div class="sl disc" v-if="order.discount"><span>Промокод {{order.promo}}</span><span>−{{fmt(order.discount)}} ₽</span></div>
+          <div class="sl"><span>Доставка и подъём</span><span>{{order.shipTotal ? fmt(order.shipTotal) + ' ₽' : '0 ₽'}}</span></div>
+          <div class="sl total"><span>Итого</span><span>{{fmt(order.total)}} ₽</span></div>
+        </div>
+
+        <div class="label" style="margin-bottom:22px">Что дальше</div>
+        <div class="next">
+          <div><div class="num">Сегодня</div><h4>Подтверждение</h4><p>Проверим остатки и партию, уточним детали по телефону.</p></div>
+          <div><div class="num">В течение 24 часов</div><h4>Раскладка</h4><p>{{order.goods>=freeFrom ? 'Дизайнер пришлёт проект раскладки и точный расчёт количества.' : 'Пришлём точный расчёт количества по вашим размерам.'}}</p></div>
+          <div><div class="num">{{order.f.delivery==='pickup' ? 'Завтра' : '2–7 дней'}}</div><h4>{{order.f.delivery==='pickup' ? 'Выдача в шоуруме' : 'Доставка'}}</h4><p>{{order.f.delivery==='pickup' ? 'Заказ будет собран и ждёт вас на Никольской, 12.' : 'Согласуем удобное время и привезём заказ на адрес.'}}</p></div>
+        </div>
+        <a class="btn" href="#" @click.prevent="soon('Каталог')">Вернуться в каталог <span class="ar">→</span></a>
+      </div>
+    </template>
+  </main>
+
+  <!-- FOOTER -->
+  <footer v-if="route==='cart'">
+    <div class="container">
+      <div class="f-grid">
+        <div><div class="f-logo">PIETRA°</div><p class="f-copy">© 2026 PIETRA. Все права защищены.<br>Керамогранит · Плитка · Мозаика</p></div>
+        <div class="f-col"><h5>Каталог</h5><a href="#" @click.prevent="soon('Керамогранит')">Керамогранит</a><a href="#" @click.prevent="soon('Плитка')">Плитка</a><a href="#" @click.prevent="soon('Мозаика')">Мозаика</a></div>
+        <div class="f-col"><h5>Покупателям</h5><a href="#" @click.prevent="soon('Доставка и оплата')">Доставка и оплата</a><a href="#" @click.prevent="soon('Возврат')">Возврат</a><a href="#" @click.prevent="soon('Контакты')">Контакты</a></div>
+        <div class="f-col"><h5>Мы в соцсетях</h5><a href="#" @click.prevent="soon('Instagram')">Instagram</a><a href="#" @click.prevent="soon('Telegram')">Telegram</a><a href="#" @click.prevent="soon('Pinterest')">Pinterest</a></div>
+      </div>
+      <div class="f-bottom"><span>Политика конфиденциальности</span><span>+7 495 120-45-67 · hello@pietra.ru · Москва, Никольская 12</span></div>
+    </div>
+  </footer>
+  <footer class="slim" v-else>
+    <div class="container"><div class="f-bottom"><span>© 2026 PIETRA</span><span>Нужна помощь? +7 495 120-45-67 · hello@pietra.ru</span></div></div>
+  </footer>
+
+  <div class="toast" :class="{show:toastShow}" role="status">{{toastText}}</div>
+</div>
+
+<script>
+/* мраморная текстура для демо-позиции (SVG-фильтры, без внешних картинок) */
+const enc = s => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+function veinFilter(id, seed, fx, fy, col, spread) {
+  const t = []; for (let i = 0; i < 61; i++) { const d = Math.abs(i - 30); t.push(d > spread ? 0 : (1 - d / (spread + 1)).toFixed(2)); }
+  return `<filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="${fx.toFixed(4)} ${fy.toFixed(4)}" numOctaves="5" seed="${seed}"/><feColorMatrix type="matrix" values="0 0 0 0 ${col[0]/255} 0 0 0 0 ${col[1]/255} 0 0 0 0 ${col[2]/255} 1 0 0 0 0"/><feComponentTransfer><feFuncA type="table" tableValues="${t.join(' ')}"/></feComponentTransfer></filter>`;
+}
+function marbleSvg(seed, zoom) {
+  const fx = .006 * zoom, fy = .013 * zoom, r = 'width="400" height="400"';
+  const defs = `<filter id="mc" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="${(fx*.45).toFixed(4)} ${(fy*.45).toFixed(4)}" numOctaves="3" seed="${seed+3}"/><feColorMatrix type="matrix" values="0 0 0 0 .56 0 0 0 0 .55 0 0 0 0 .53 0 0 0 1.3 -.5"/></filter>` + veinFilter('ma', seed, fx, fy, [104,102,98], 1) + veinFilter('mb', seed + 11, fx * 2.1, fy * 2.1, [150,148,143], 2) + veinFilter('mg', seed + 5, fx * .85, fy * .85, [190,160,104], 1);
+  return `<svg xmlns="http://www.w3.org/2000/svg" ${r} viewBox="0 0 400 400"><defs>${defs}</defs><rect ${r} fill="#F1EFEA"/><rect ${r} filter="url(#mc)"/><rect ${r} filter="url(#ma)" opacity=".62"/><rect ${r} filter="url(#mb)" opacity=".35"/><rect ${r} filter="url(#mg)" opacity=".85"/></svg>`;
+}
+const MARBLE = enc(marbleSvg(7, 1.4));
+
+const { createApp } = Vue;
+const KEY = 'pietra-cart-v1';
+const FREE_FROM = 100000;
+
+const SEED = () => ([
+  { key: 'cl-60120-pol', kind: 'Керамогранит · Marmo', name: 'Calacatta Lux', meta: '60×120 см · Полированная · арт. PT-CL-60120P', price: 4590, packArea: 1.44, kg: 30.2, qty: 10, img: MARBLE, icon: 'tile' },
+  { key: 'a-glue', kind: 'Для укладки', name: 'Клей для крупного формата Ultra Flex', meta: 'Мешок 25 кг', price: 1290, packArea: null, kg: 25, qty: 3, img: null, icon: 'bag' },
+  { key: 'a-grout', kind: 'Для укладки', name: 'Эпоксидная затирка Bianco', meta: 'Ведро 2,5 кг', price: 2450, packArea: null, kg: 2.5, qty: 2, img: null, icon: 'drop' },
+  { key: 'a-clips', kind: 'Для укладки', name: 'Система выравнивания, 100 шт', meta: 'Зажимы и клинья', price: 790, packArea: null, kg: 1, qty: 1, img: null, icon: 'grid' }
+]);
+const UPSELL = [
+  { key: 'a-glue', kind: 'Для укладки', name: 'Клей для крупного формата Ultra Flex', meta: 'Мешок 25 кг', price: 1290, packArea: null, kg: 25, qty: 1, img: null, icon: 'bag' },
+  { key: 'a-grout', kind: 'Для укладки', name: 'Эпоксидная затирка Bianco', meta: 'Ведро 2,5 кг', price: 2450, packArea: null, kg: 2.5, qty: 1, img: null, icon: 'drop' },
+  { key: 'a-clips', kind: 'Для укладки', name: 'Система выравнивания, 100 шт', meta: 'Зажимы и клинья', price: 790, packArea: null, kg: 1, qty: 1, img: null, icon: 'grid' },
+  { key: 'a-cross', kind: 'Для укладки', name: 'Крестики для швов 2 мм, 200 шт', meta: 'Пластик', price: 290, packArea: null, kg: .3, qty: 1, img: null, icon: 'grid' }
+];
+const PROMOS = { PIETRA5: 5 };
+
+function loadCart() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a)) return a.map(i => ({ ...i, img: i.key === 'cl-60120-pol' ? MARBLE : (i.img || null) })); }
+  } catch (e) {}
+  return SEED();
+}
+
+const app = createApp({
+  data() {
+    return {
+      route: 'cart', scrolled: false, navLinks: ['Каталог', 'О нас', 'Доставка', 'Контакты'],
+      cart: loadCart(), freeFrom: FREE_FROM,
+      promoInput: '', promo: null, promoErr: '',
+      step: 1, errors: {}, sumOpen: false, order: null,
+      f: { type: 'person', company: '', inn: '', name: '', phone: '', email: '', delivery: 'moscow', city: 'Москва', street: '', house: '', apt: '', porch: '', floor: '', lift: 'none', comment: '', payment: 'card', agree: false, call: true },
+      toastShow: false, toastText: '', toastTimer: null
+    };
+  },
+  computed: {
+    cartCount() { return this.cart.reduce((s, i) => s + i.qty, 0); },
+    subtotal() { return this.cart.reduce((s, i) => s + this.lineSum(i), 0); },
+    discount() { return this.promo ? Math.round(this.subtotal * this.promo.pct / 100) : 0; },
+    goods() { return this.subtotal - this.discount; },
+    progress() { return Math.min(100, this.goods / this.freeFrom * 100); },
+    weight() { return this.cart.reduce((s, i) => s + i.qty * (i.kg || 0), 0); },
+    upsell() { const have = this.cart.map(i => i.key); return UPSELL.filter(u => !have.includes(u.key)); },
+    mskFree() { return this.goods >= 150000; },
+    russiaBase() { return Math.max(6000, Math.round(this.weight * 18)); },
+    shipping() {
+      if (this.f.delivery === 'pickup') return { base: 0, lift: 0, total: 0 };
+      const base = this.f.delivery === 'moscow' ? (this.mskFree ? 0 : 3500) : this.russiaBase;
+      let lift = 0;
+      if (this.f.lift === 'elevator') lift = 1500;
+      if (this.f.lift === 'walk') lift = 150 * Math.max(0, (parseInt(this.f.floor, 10) || 1) - 1);
+      return { base, lift, total: base };
+    },
+    total() { return this.goods + this.shipping.total + this.shipping.lift; },
+    deliveryTitle() { return { moscow: 'Курьером по Москве и области', russia: 'Транспортной компанией по России', pickup: 'Самовывоз из шоурума' }[this.f.delivery]; },
+    addressLine() {
+      const f = this.f, p = [f.city, f.street && 'ул. ' + f.street, f.house && 'д. ' + f.house, f.apt && 'кв./офис ' + f.apt, f.porch && 'подъезд ' + f.porch, f.floor && 'этаж ' + f.floor];
+      return p.filter(Boolean).join(', ');
+    },
+    liftTitle() { return this.f.delivery === 'pickup' ? '' : { none: 'Разгрузка у подъезда', elevator: 'Подъём на лифте', walk: 'Подъём пешком' }[this.f.lift]; },
+    payOptions() {
+      const o = [{ id: 'card', t: 'Банковской картой онлайн', d: 'После подтверждения заказа мы пришлём ссылку на защищённую страницу банка.', r: '' }];
+      if (this.f.type === 'org') o.push({ id: 'invoice', t: 'Счёт для юридических лиц', d: 'Выставим счёт с НДС и закрывающие документы. Оплата в течение 3 рабочих дней.', r: '' });
+      else {
+        o.push({ id: 'installment', t: 'Рассрочка на 12 месяцев', d: 'Пример условий: оформление в течение дня после подтверждения заказа.', r: '≈ ' + this.fmt(Math.ceil(this.total / 12)) + ' ₽ / мес' });
+        if (this.f.delivery !== 'russia') o.push({ id: 'receipt', t: 'При получении', d: 'Картой или наличными курьеру либо в шоуруме.', r: '' });
+      }
+      return o;
+    }
+  },
+  watch: {
+    cart: { deep: true, handler(v) { try { localStorage.setItem(KEY, JSON.stringify(v.map(i => ({ ...i, img: i.key === 'cl-60120-pol' ? null : i.img })))); } catch (e) {} } },
+    'f.type'() { this.fixPay(); },
+    'f.delivery'() { this.fixPay(); },
+    route() { window.scrollTo(0, 0); this.sumOpen = false; }
+  },
+  methods: {
+    fmt(n) { return Number(n).toLocaleString('ru-RU'); },
+    m2(n) { return Number(n).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+    lineSum(i) { return Math.round(i.qty * (i.packArea || 1) * i.price); },
+    soon(t) { this.toast('Демо-страница: раздел «' + t + '» не входит в этот макет'); },
+    inc(i) { i.qty++; },
+    dec(i) { if (i.qty > 1) i.qty--; else this.remove(i); },
+    remove(i) { this.cart = this.cart.filter(x => x.key !== i.key); this.toast('Удалено: ' + i.name); },
+    clearCart() { this.cart = []; this.promo = null; this.toast('Корзина очищена'); },
+    addUp(a) { this.cart.push({ ...a }); this.toast('Добавлено: ' + a.name); },
+    applyPromo() {
+      const c = this.promoInput.trim().toUpperCase();
+      if (!c) { this.promoErr = 'Введите промокод.'; return; }
+      if (PROMOS[c]) { this.promo = { code: c, pct: PROMOS[c] }; this.promoErr = ''; this.promoInput = ''; this.toast('Промокод применён'); }
+      else { this.promo = null; this.promoErr = 'Такого промокода нет. Проверьте написание.'; }
+    },
+    fixPay() { if (!this.payOptions.some(p => p.id === this.f.payment)) this.f.payment = 'card'; },
+    onPhone(e) {
+      let d = e.target.value.replace(/\D/g, '');
+      if (d.startsWith('8')) d = '7' + d.slice(1);
+      if (d && !d.startsWith('7')) d = '7' + d;
+      d = d.slice(0, 11);
+      let s = d ? '+7' : '';
+      if (d.length > 1) s += ' (' + d.slice(1, 4);
+      if (d.length >= 5) s += ') ' + d.slice(4, 7);
+      if (d.length >= 8) s += '-' + d.slice(7, 9);
+      if (d.length >= 10) s += '-' + d.slice(9, 11);
+      this.f.phone = s; e.target.value = s;
+    },
+    validate(n) {
+      const f = this.f, e = {};
+      if (n === 1) {
+        if (f.type === 'org') {
+          if (f.company.length < 2) e.company = 'Укажите название компании.';
+          if (!/^(\d{10}|\d{12})$/.test(f.inn)) e.inn = 'ИНН состоит из 10 или 12 цифр.';
+        }
+        if (f.name.length < 2) e.name = 'Укажите имя.';
+        if (f.phone.replace(/\D/g, '').length !== 11) e.phone = 'Введите номер полностью, например +7 (999) 123-45-67.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) e.email = 'Проверьте адрес почты.';
+      }
+      if (n === 2 && f.delivery !== 'pickup') {
+        if (!f.city) e.city = 'Укажите город.';
+        if (!f.street) e.street = 'Укажите улицу.';
+        if (!f.house) e.house = 'Укажите дом.';
+        if (f.lift === 'walk' && !(parseInt(f.floor, 10) > 0)) e.floor = 'Нужен этаж для расчёта.';
+      }
+      if (n === 3 && !f.agree) e.agree = 'Подтвердите согласие, чтобы оформить заказ.';
+      return e;
+    },
+    next(n) {
+      this.errors = this.validate(n);
+      if (Object.keys(this.errors).length) { this.$nextTick(() => { const el = document.querySelector('.inp.bad'); if (el) el.focus(); }); return; }
+      this.step = n + 1;
+      this.$nextTick(() => { const el = document.querySelector('.step-body'); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); });
+    },
+    placeOrder() {
+      this.errors = this.validate(3);
+      if (Object.keys(this.errors).length) return;
+      const d = new Date(), p = n => String(n).padStart(2, '0');
+      const pay = this.payOptions.find(x => x.id === this.f.payment);
+      this.order = {
+        no: 'PT-' + String(d.getFullYear()).slice(2) + p(d.getMonth() + 1) + p(d.getDate()) + '-' + String(Math.floor(1000 + Math.random() * 9000)),
+        firstName: this.f.name.split(' ')[0], f: { ...this.f }, call: this.f.call,
+        items: this.cart.map(i => ({ ...i })), subtotal: this.subtotal, discount: this.discount, promo: this.promo && this.promo.code,
+        goods: this.goods, shipTotal: this.shipping.total + this.shipping.lift, total: this.total,
+        deliveryTitle: this.deliveryTitle, address: this.addressLine, liftTitle: this.liftTitle, payTitle: pay ? pay.t : ''
+      };
+      this.cart = []; this.promo = null; this.step = 1;
+      location.hash = '#done';
+    },
+    readHash() {
+      const h = location.hash.replace('#', '');
+      let r = ['cart', 'checkout', 'done'].includes(h) ? h : 'cart';
+      if (r === 'checkout' && !this.cart.length) r = 'cart';
+      if (r === 'done' && !this.order) r = 'cart';
+      if (r === 'cart' && h === 'done' && !this.order) { try { history.replaceState(null, '', '#cart'); } catch (e) {} }
+      this.route = r;
+    },
+    toast(m) { this.toastText = m; this.toastShow = true; clearTimeout(this.toastTimer); this.toastTimer = setTimeout(() => { this.toastShow = false; }, 2800); }
+  },
+  mounted() {
+    this.readHash();
+    window.addEventListener('hashchange', this.readHash);
+    window.addEventListener('scroll', () => { this.scrolled = window.scrollY > 10; }, { passive: true });
+  }
+});
+
+const ICONS = {
+  bag: '<path d="M7 4h10l2 4v12H5V8l2-4zM5 8h14"/>',
+  drop: '<path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"/>',
+  grid: '<path d="M4 4h16v16H4zM4 12h16M12 4v16"/>',
+  tile: '<path d="M4 4h16v16H4z"/><path d="M4 20L20 4"/>'
+};
+app.component('ic', { props: ['n'], computed: { d() { return ICONS[this.n] || ICONS.grid; } }, template: '<svg viewBox="0 0 24 24" aria-hidden="true" v-html="d"></svg>' });
+app.mount('#app');
+</script>
+
+</body></html>
