@@ -9,6 +9,7 @@ use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class OrderPaymentManagementTest extends TestCase
@@ -83,6 +84,48 @@ class OrderPaymentManagementTest extends TestCase
             ->assertJsonPath('data.payment_status', 'pending')
             ->assertJsonPath('data.payment_amount', null)
             ->assertJsonPath('data.paid_at', null);
+    }
+
+    public function test_postgres_payment_and_refund_preserve_cents_at_the_numeric_limit(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('Requires PostgreSQL exact numeric storage.');
+        }
+
+        $order = Order::factory()->create(['total_amount' => '999999999999999999.99']);
+        $this->actingAs($this->userWithRole('order-manager'));
+        $path = "/api/v1/admin/orders/{$order->id}/payment";
+        $this->patchJson($path, $this->paymentPayload(['payment_amount' => '999999999999999999.98']))
+            ->assertUnprocessable()
+            ->assertJsonStructure(['error' => ['details' => ['payment_amount']]]);
+        $this->patchJson($path, $this->paymentPayload([
+            'payment_status' => 'partially_paid',
+            'payment_amount' => '999999999999999999.98',
+        ]))->assertOk()->assertJsonPath('data.payment_amount', '999999999999999999.98');
+        $this->patchJson($path, $this->paymentPayload(['payment_amount' => '999999999999999999.99']))
+            ->assertOk()->assertJsonPath('data.payment_amount', '999999999999999999.99');
+        $this->patchJson($path, $this->paymentPayload([
+            'payment_status' => 'refunded',
+            'payment_amount' => '999999999999999999.99',
+        ]))->assertOk()->assertJsonPath('data.payment_amount', '999999999999999999.99');
+        $this->assertSame(PaymentStatus::Refunded, $order->fresh()->payment_status);
+    }
+
+    public function test_zero_total_can_be_marked_paid_but_zero_is_not_a_partial_payment_or_refund(): void
+    {
+        $order = Order::factory()->create(['total_amount' => '0.00']);
+        $this->actingAs($this->userWithRole('order-manager'));
+        $path = "/api/v1/admin/orders/{$order->id}/payment";
+
+        $this->patchJson($path, $this->paymentPayload(['payment_amount' => '0']))
+            ->assertOk()
+            ->assertJsonPath('data.payment_amount', '0.00');
+
+        foreach (['partially_paid', 'refunded'] as $status) {
+            $this->patchJson($path, $this->paymentPayload(['payment_status' => $status, 'payment_amount' => '0']))
+                ->assertUnprocessable()
+                ->assertJsonStructure(['error' => ['details' => ['payment_amount']]]);
+        }
     }
 
     public function test_payment_management_requires_its_own_permission_and_rejects_order_field_mutations(): void

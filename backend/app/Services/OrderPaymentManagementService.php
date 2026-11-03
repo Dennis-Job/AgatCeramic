@@ -13,6 +13,7 @@ class OrderPaymentManagementService
 {
     public function __construct(
         private readonly AuditLogService $auditLogService,
+        private readonly MoneyCalculator $amountCalculator,
     ) {}
 
     /** @param array<string, mixed> $attributes */
@@ -55,10 +56,9 @@ class OrderPaymentManagementService
             ];
         }
 
-        $amount = $this->normaliseAmount($this->requiredString($attributes, 'payment_amount'));
-        $total = $this->normaliseAmount($this->requiredString(['total_amount' => $order->total_amount], 'total_amount'));
-        $comparison = $this->compareAmounts($amount, $total);
-        $isPositive = $this->compareAmounts($amount, '0.00') > 0;
+        $amount = $this->amountCalculator->normalize($this->requiredString($attributes, 'payment_amount'));
+        $comparison = $this->amountCalculator->compare($amount, $order->total_amount);
+        $isPositive = $this->amountCalculator->compare($amount, '0.00') > 0;
 
         $isValidAmount = match ($paymentStatus) {
             PaymentStatus::Paid => $comparison === 0,
@@ -83,23 +83,6 @@ class OrderPaymentManagementService
             'payment_reference' => $this->nullableString($attributes['payment_reference'] ?? null),
             'paid_at' => $attributes['paid_at'],
         ];
-    }
-
-    private function normaliseAmount(string $amount): string
-    {
-        [$whole, $fraction] = array_pad(explode('.', $amount, 2), 2, '');
-
-        return ltrim($whole, '0') === '' ? '0.'.str_pad($fraction, 2, '0') : ltrim($whole, '0').'.'.str_pad($fraction, 2, '0');
-    }
-
-    private function compareAmounts(string $left, string $right): int
-    {
-        [$leftWhole, $leftFraction] = explode('.', $left, 2);
-        [$rightWhole, $rightFraction] = explode('.', $right, 2);
-
-        return strlen($leftWhole) <=> strlen($rightWhole)
-            ?: strcmp($leftWhole, $rightWhole)
-            ?: strcmp($leftFraction, $rightFraction);
     }
 
     /** @param array<string, mixed> $attributes */

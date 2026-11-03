@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Data\PricedCartItem;
 use App\Models\CartItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -9,6 +10,11 @@ use Illuminate\Support\Facades\Storage;
 /** @extends ApiResource<CartItem> */
 class CartItemResource extends ApiResource
 {
+    public function __construct(private readonly PricedCartItem $pricedItem)
+    {
+        parent::__construct($pricedItem->item);
+    }
+
     /** @return array<string, mixed> */
     #[\Override]
     public function toArray(Request $request): array
@@ -32,8 +38,8 @@ class CartItemResource extends ApiResource
             'id' => $this->id,
             'product_id' => $this->product_id,
             'quantity' => $this->quantity,
-            'unit_price' => $product->price,
-            'line_total' => $product->price === null ? null : $this->lineTotal($product->price, $this->quantity),
+            'unit_price' => $this->pricedItem->unitPrice,
+            'line_total' => $this->pricedItem->lineTotal,
             'product' => [
                 'name' => $product->name,
                 'slug' => $product->slug,
@@ -44,17 +50,5 @@ class CartItemResource extends ApiResource
             'created_at' => $this->created_at?->toAtomString(),
             'updated_at' => $this->updated_at?->toAtomString(),
         ];
-    }
-
-    private function lineTotal(string|float $price, int $quantity): string
-    {
-        if (is_float($price)) {
-            $price = number_format($price, 2, '.', '');
-        }
-        [$whole, $fraction] = array_pad(explode('.', $price, 2), 2, '00');
-        $minorUnits = ((int) $whole * 100) + (int) str_pad($fraction, 2, '0');
-        $total = $minorUnits * $quantity;
-
-        return sprintf('%d.%02d', intdiv($total, 100), $total % 100);
     }
 }

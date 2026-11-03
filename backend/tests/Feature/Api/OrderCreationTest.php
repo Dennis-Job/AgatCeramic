@@ -7,6 +7,9 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use Tests\Concerns\CreatesGuestCarts;
 use Tests\TestCase;
 
@@ -21,23 +24,34 @@ class OrderCreationTest extends TestCase
         $resolved = $this->createGuestCart();
         $cart = $resolved->cart;
         $firstProduct = Product::factory()->create(['name' => 'Белый мрамор', 'sku' => '11000001', 'price' => '1200.00', 'stock_quantity' => 10]);
-        $secondProduct = Product::factory()->create(['name' => 'Клей для плитки', 'sku' => '12000001', 'price' => '500.00', 'stock_quantity' => 4]);
+        $secondProduct = Product::factory()->create(['name' => 'Клей для плитки', 'sku' => '12000001', 'price' => '0.01', 'stock_quantity' => 4]);
+        $freeProduct = Product::factory()->create(['price' => '0.00', 'stock_quantity' => 1]);
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $firstProduct->id, 'quantity' => 2]);
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $secondProduct->id, 'quantity' => 3]);
+        CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $freeProduct->id, 'quantity' => 1]);
 
-        $firstProduct->update(['price' => '1250.00']);
+        $firstProduct->update(['price' => '1250.09']);
+        $cartItems = $this->withHeader('X-Cart-Token', $resolved->token)->getJson('/api/v1/cart')
+            ->assertOk()
+            ->json('data.items');
+        $this->assertEquals([
+            $firstProduct->id => '2500.18',
+            $secondProduct->id => '0.03',
+            $freeProduct->id => '0.00',
+        ], array_column($cartItems, 'line_total', 'product_id'));
         $response = $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', 'order-create-immutable-0001')
             ->postJson('/api/v1/orders', $this->checkoutPayload())
             ->assertCreated()
             ->assertJsonPath('data.status', 'new')
             ->assertJsonPath('data.payment_status', 'not_paid')
-            ->assertJsonPath('data.total_amount', '4000.00')
+            ->assertJsonPath('data.total_amount', '2500.21')
             ->assertJsonPath('data.items.0.product_name', 'Белый мрамор')
-            ->assertJsonPath('data.items.0.unit_price', '1250.00')
-            ->assertJsonPath('data.items.0.line_total', '2500.00')
+            ->assertJsonPath('data.items.0.unit_price', '1250.09')
+            ->assertJsonPath('data.items.0.line_total', '2500.18')
             ->assertJsonPath('data.items.1.product_name', 'Клей для плитки')
-            ->assertJsonPath('data.items.1.line_total', '1500.00')
+            ->assertJsonPath('data.items.1.line_total', '0.03')
+            ->assertJsonPath('data.items.2.line_total', '0.00')
             ->assertJsonMissingPath('data.customer_phone')
             ->assertJsonMissingPath('data.customer_email')
             ->assertJsonMissingPath('data.delivery_address');
@@ -48,15 +62,15 @@ class OrderCreationTest extends TestCase
             'order_number' => $number,
             'customer_name' => 'Иван Петров',
             'customer_phone' => '+79991234567',
-            'total_amount' => '4000.00',
+            'total_amount' => '2500.21',
         ]);
         $this->assertDatabaseHas('order_items', [
             'product_id' => $firstProduct->id,
             'product_name' => 'Белый мрамор',
             'product_sku' => '11000001',
-            'unit_price' => '1250.00',
+            'unit_price' => '1250.09',
             'quantity' => 2,
-            'line_total' => '2500.00',
+            'line_total' => '2500.18',
         ]);
         $this->assertDatabaseCount('cart_items', 0);
         $checkedOutCart = $cart->fresh();
@@ -73,7 +87,68 @@ class OrderCreationTest extends TestCase
         $order = Order::query()->where('order_number', $number)->with('items')->sole();
         $this->assertSame(PaymentStatus::NotPaid, $order->payment_status);
         $this->assertSame('Белый мрамор', $order->items->firstWhere('product_id', $firstProduct->id)->product_name);
-        $this->assertSame('1250.00', $order->items->firstWhere('product_id', $firstProduct->id)->unit_price);
+        $this->assertSame('1250.09', $order->items->firstWhere('product_id', $firstProduct->id)->unit_price);
+    }
+
+    public function test_postgres_preserves_the_last_cent_of_the_maximum_cart_line_in_checkout(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('Requires PostgreSQL exact numeric storage.');
+        }
+
+        $resolved = $this->createGuestCart();
+        $product = Product::factory()->create([
+            'price' => '9999999999.99',
+            'stock_quantity' => 9999,
+            'is_on_sale' => true,
+        ]);
+        $this->withHeader('X-Cart-Token', $resolved->token)
+            ->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 9999])
+            ->assertCreated()
+            ->assertJsonPath('data.line_total', '99989999999900.01');
+
+        $this->getJson('/api/v1/cart')->assertOk()->assertJsonPath('data.items.0.line_total', '99989999999900.01');
+        $this->withHeader('Idempotency-Key', 'order-create-maximum-line-0001')
+            ->postJson('/api/v1/orders', $this->checkoutPayload())
+            ->assertCreated()
+            ->assertJsonPath('data.items.0.unit_price', '9999999999.99')
+            ->assertJsonPath('data.items.0.line_total', '99989999999900.01')
+            ->assertJsonPath('data.total_amount', '99989999999900.01');
+        $this->assertSame('99989999999900.01', Order::query()->sole()->total_amount);
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function test_postgres_rejects_an_order_total_outside_numeric_range_without_consuming_the_cart(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            $this->markTestSkipped('Uses PostgreSQL to generate an oversized cart.');
+        }
+
+        $resolved = $this->createGuestCart();
+        $categoryId = Product::factory()->create()->category_id;
+        DB::insert(<<<'SQL'
+            INSERT INTO products (category_id, name, slug, sku, unit, price, stock_quantity, is_active, is_on_sale)
+            SELECT ?, 'Overflow test', 'overflow-test-' || n, 'overflow-test-' || n, 'piece',
+                9999999999.99, 9999, true, true
+            FROM generate_series(1, 10002) AS n
+            SQL, [$categoryId]);
+        DB::insert(<<<'SQL'
+            INSERT INTO cart_items (cart_id, product_id, quantity)
+            SELECT ?, id, 9999 FROM products WHERE slug LIKE 'overflow-test-%'
+            SQL, [$resolved->cart->id]);
+
+        $this->withHeaders([
+            'X-Cart-Token' => $resolved->token,
+            'Idempotency-Key' => 'order-create-overflow-0001',
+        ])->postJson('/api/v1/orders', $this->checkoutPayload())
+            ->assertUnprocessable()
+            ->assertJsonPath('error.details.cart.0', 'Сумма заказа превышает допустимый предел.');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('checkout_idempotency_keys', 0);
+        $this->assertSame(10002, $resolved->cart->items()->count());
+        $this->assertNull($resolved->cart->fresh()->checked_out_at);
     }
 
     public function test_checkout_rejects_empty_or_unavailable_carts_without_creating_an_order(): void

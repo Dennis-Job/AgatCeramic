@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/** @property-read numeric-string $total_amount */
 #[Fillable(['order_number', 'customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment', 'status', 'payment_status', 'payment_amount', 'payment_method', 'payment_reference', 'total_amount', 'paid_at', 'completed_at', 'anonymized_at', 'commercial_retention_until'])]
 class Order extends Model
 {

@@ -15,11 +15,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
-/** @phpstan-type OrderItemSnapshot array<string, mixed>&array{product_id: int, product_name: string, product_sku: ?string, unit_price: float, quantity: int, line_total: string} */
+/** @phpstan-type OrderItemSnapshot array<string, mixed>&array{product_id: int, product_name: string, product_sku: ?string, unit_price: string, quantity: int, line_total: string} */
 class OrderCreationService
 {
+    private const string MAX_TOTAL = '999999999999999999.99';
+
     public function __construct(
-        private readonly OrderAmountCalculator $amountCalculator,
+        private readonly MoneyCalculator $amountCalculator,
         private readonly OrderConfirmationService $confirmationService,
         private readonly OrderNumberService $orderNumberService,
         private readonly GuestCartLifetime $cartLifetime,
@@ -91,12 +93,19 @@ class OrderCreationService
             ->get()
             ->keyBy('id');
         $snapshots = $this->snapshots($items, $products);
+        $total = $this->amountCalculator->sum($this->lineTotals($snapshots));
+        if ($this->amountCalculator->compare($total, self::MAX_TOTAL) > 0) {
+            throw ValidationException::withMessages([
+                'cart' => ['Сумма заказа превышает допустимый предел.'],
+            ]);
+        }
+
         $order = Order::query()->create([
             ...$attributes,
             'order_number' => $this->orderNumberService->generate(),
             'status' => 'new',
             'payment_status' => PaymentStatus::NotPaid,
-            'total_amount' => $this->amountCalculator->sum($this->lineTotals($snapshots)),
+            'total_amount' => $total,
         ]);
         $order->items()->createMany($snapshots);
         $cart->items()->delete();
@@ -129,7 +138,7 @@ class OrderCreationService
                 'product_sku' => $product->sku,
                 'unit_price' => $product->price,
                 'quantity' => $item->quantity,
-                'line_total' => $this->amountCalculator->multiply(number_format($product->price, 2, '.', ''), $item->quantity),
+                'line_total' => $this->amountCalculator->multiply($product->price, $item->quantity),
             ];
         })->all());
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\PricedCartItem;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -10,9 +11,18 @@ use Illuminate\Validation\ValidationException;
 
 class CartItemManagementService
 {
-    public function __construct(private readonly GuestCartLifetime $lifetime) {}
+    public function __construct(
+        private readonly GuestCartLifetime $lifetime,
+        private readonly MoneyCalculator $amountCalculator,
+    ) {}
 
-    /** @return array{item: CartItem, created: bool} */
+    /** @return list<PricedCartItem> */
+    public function items(Cart $cart): array
+    {
+        return array_values($cart->items()->with('product.primaryImage')->get()->map($this->priceItem(...))->all());
+    }
+
+    /** @return array{item: PricedCartItem, created: bool} */
     public function add(Cart $cart, int $productId, int $quantity): array
     {
         return DB::transaction(function () use ($cart, $productId, $quantity): array {
@@ -33,7 +43,7 @@ class CartItemManagementService
                 ]);
                 $this->lifetime->markActive($cart);
 
-                return ['item' => $this->withProduct($item), 'created' => true];
+                return ['item' => $this->loadPricedItem($item), 'created' => true];
             }
 
             $newQuantity = $item->quantity + $quantity;
@@ -41,13 +51,13 @@ class CartItemManagementService
             $item->update(['quantity' => $newQuantity]);
             $this->lifetime->markActive($cart);
 
-            return ['item' => $this->withProduct($item), 'created' => false];
+            return ['item' => $this->loadPricedItem($item), 'created' => false];
         });
     }
 
-    public function update(Cart $cart, CartItem $item, int $quantity): CartItem
+    public function update(Cart $cart, CartItem $item, int $quantity): PricedCartItem
     {
-        return DB::transaction(function () use ($cart, $item, $quantity): CartItem {
+        return DB::transaction(function () use ($cart, $item, $quantity): PricedCartItem {
             $cart = $this->lockUsableCart($cart);
             $item = CartItem::query()
                 ->where('cart_id', $cart->id)
@@ -59,7 +69,7 @@ class CartItemManagementService
             $item->update(['quantity' => $quantity]);
             $this->lifetime->markActive($cart);
 
-            return $this->withProduct($item);
+            return $this->loadPricedItem($item);
         });
     }
 
@@ -110,8 +120,19 @@ class CartItemManagementService
         throw ValidationException::withMessages($details);
     }
 
-    private function withProduct(CartItem $item): CartItem
+    private function loadPricedItem(CartItem $item): PricedCartItem
     {
-        return $item->load('product.primaryImage');
+        return $this->priceItem($item->load('product.primaryImage'));
+    }
+
+    private function priceItem(CartItem $item): PricedCartItem
+    {
+        $price = $item->product?->price;
+
+        return new PricedCartItem(
+            $item,
+            $price,
+            $price === null ? null : $this->amountCalculator->multiply($price, $item->quantity),
+        );
     }
 }

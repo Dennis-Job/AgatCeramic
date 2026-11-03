@@ -1,5 +1,10 @@
 # OpenAPI migration plan — version history
 
+## v15.2 — order total range validation
+
+Checkout returns the existing 422 validation envelope for totals beyond
+PostgreSQL `numeric(20,2)`. Monetary fields retain their decimal string format.
+
 ## v15.1 — quantity available for a cart item
 
 The cart item update response may include `error.details.available_quantity`

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/** @property-read numeric-string|null $price */
 #[Fillable(['category_id', 'brand_id', 'collection_id', 'name', 'slug', 'description', 'sku', 'article_number', 'barcode', 'unit', 'price', 'old_price', 'stock_quantity', 'is_active', 'is_on_sale'])]
 class Product extends Model
 {

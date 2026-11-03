@@ -94,16 +94,6 @@ OpenAPI и канонической документации. Изменения
   - Готовность: build и navigation E2E проходят; cold/direct navigation работает; import workspaces
     сохраняют состояние при SPA-переходах, ошибки загрузки chunk обработаны.
 
-- [ ] TASK-A073 **P2** Унифицировать денежные вычисления корзины, checkout и платежей
-  - Цель: единый decimal/minor-unit контракт вместо дублирования арифметики в OrderAmountCalculator,
-    [CartItemResource](../backend/app/Http/Resources/CartItemResource.php) и payment service;
-    подтверждённой потери копеек в текущем checkout нет.
-  - План: выделить небольшой чистый Money/Decimal primitive, убрать вычисления из Resource,
-    согласовать snapshot PHPDoc и decimal casts, исключить промежуточный float в точных расчётах.
-    API сохраняет decimal strings; представление цены во frontend не меняется.
-  - Готовность: cart/order totals совпадают для дробных, нулевых и предельных сумм; partial/full
-    payment и refund проверены; feature tests на PostgreSQL и OpenAPI contract checks проходят.
-
 - [ ] TASK-A074 **P2** Согласовать stock_quantity validation с диапазоном PostgreSQL
   - Цель: значения, принятые
     [StoreProductRequest](../backend/app/Http/Requests/Api/V1/Admin/StoreProductRequest.php) и
