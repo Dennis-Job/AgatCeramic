@@ -13,11 +13,11 @@ test('each variant link changes one characteristic and keeps the others', async 
   const sizes = page.getByRole('group', { name: 'Размер', exact: true })
   const light = colors.getByRole('link', { name: 'Цвет: Светлый', exact: true })
   const size300 = sizes.getByRole('link', {
-    name: 'Размер: 300×300',
+    name: 'Размер: 300×300 мм',
     exact: true,
   })
   const size600 = sizes.getByRole('link', {
-    name: 'Размер: 600×300',
+    name: 'Размер: 600×300 мм',
     exact: true,
   })
   await expect(colors.locator('a img')).toHaveCount(2)

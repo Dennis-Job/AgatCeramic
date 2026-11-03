@@ -1,8 +1,18 @@
-import type { GroupProduct, ProductDetail } from '../types/product'
+import type {
+  GroupProduct,
+  ProductAttribute,
+  ProductDetail,
+} from '../types/product'
+
+function formatAxisLabel(value?: string, unit?: string | null) {
+  return value && unit && !value.endsWith(unit) ? `${value} ${unit}` : value
+}
 
 export function groupVariantChoices(
   group: ProductDetail['group'],
-  currentProduct: GroupProduct,
+  currentProduct: Omit<GroupProduct, 'axis_values'> & {
+    axis_values: ProductAttribute[]
+  },
 ) {
   if (!group) return { axes: [], alternateOptions: [] }
   const currentId = currentProduct.id
@@ -10,7 +20,10 @@ export function groupVariantChoices(
   const products = current
     ? group.products
     : [...group.products, currentProduct]
-  const labels = groupVariantLabels({ ...group, products })
+  const units = new Map(
+    currentProduct.axis_values.map(({ slug, unit }) => [slug, unit]),
+  )
+  const labels = groupVariantLabels({ ...group, products }, units)
   const optionForProduct = (product: GroupProduct) => ({
     product,
     label: labels.get(product.id) ?? product.name,
@@ -42,8 +55,11 @@ export function groupVariantChoices(
       .map((choice) => ({
         product: choice.product,
         label:
-          choice.product.axis_values.find((value) => value.slug === axis.slug)
-            ?.display_value || 'Не указано',
+          formatAxisLabel(
+            choice.product.axis_values.find((value) => value.slug === axis.slug)
+              ?.display_value,
+            units.get(axis.slug),
+          ) || 'Не указано',
       }))
     const counts = new Map<string, number>()
     for (const { label } of compatible)
@@ -79,6 +95,7 @@ interface VariantGroup {
 
 export function groupVariantLabels(
   group: VariantGroup | null,
+  units?: ReadonlyMap<string, string | null>,
 ): Map<number, string> {
   if (!group) return new Map()
   const choices = group.products.map((product) => ({
@@ -86,8 +103,11 @@ export function groupVariantLabels(
     label: group.axes
       .map(
         (axis) =>
-          product.axis_values.find((value) => value.slug === axis.slug)
-            ?.display_value || '—',
+          formatAxisLabel(
+            product.axis_values.find((value) => value.slug === axis.slug)
+              ?.display_value,
+            units?.get(axis.slug),
+          ) || '—',
       )
       .join(' · '),
   }))

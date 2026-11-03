@@ -44,6 +44,29 @@ test('each axis preserves every other raw attribute value', () => {
   )
 })
 
+test('axis labels use the configured unit from the product attributes', () => {
+  const current = {
+    ...group.products[0],
+    axis_values: group.products[0].axis_values.map((value) => ({
+      ...value,
+      unit: value.slug === 'size' ? 'мм' : null,
+    })),
+  }
+  const { axes } = variants.groupVariantChoices(group, current)
+  assert.deepEqual(
+    axes[0].options.map(({ label }) => label),
+    ['Серый', 'Песочный'],
+  )
+  assert.deepEqual(
+    axes[1].options.map(({ label }) => label),
+    [
+      '300×300 мм',
+      'Серый · 600×300 мм · Матовый · Аллея · Артикул TEST-3',
+      'Серый · 600×300 мм · Матовый · Аллея · Артикул TEST-5',
+    ],
+  )
+})
+
 test('switching to a combination with multiple SKUs leaves the product choice explicit', () => {
   const { axes } = variants.groupVariantChoices(group, group.products[0])
   assert.deepEqual(

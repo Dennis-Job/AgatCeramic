@@ -136,6 +136,46 @@ test('purchase stays compact and tabs keep the centered active underline from th
     .toBe('matrix(0, 0, 0, 1, 0, 0)')
 })
 
+test('empty optional product sections leave one divider at each boundary', async ({
+  page,
+  request,
+}) => {
+  await request.get('http://127.0.0.1:8015/__scenario?name=product-empty')
+  await page.goto(productPath)
+
+  const purchase = page.locator('.product-purchase')
+  const information = page.locator('.product-information')
+  await expect(purchase.locator('.variants')).toHaveCount(0)
+  await expect(purchase.locator('.price-box')).toHaveCSS(
+    'border-bottom-width',
+    '1px',
+  )
+  await expect(purchase.locator('.purchase-form')).toHaveCSS(
+    'border-top-width',
+    '0px',
+  )
+  await expect(
+    page.locator(
+      '.product-collection-story, .related-section, .recommended-section',
+    ),
+  ).toHaveCount(0)
+  await expect(information).toHaveCSS('border-bottom-width', '0px')
+  await expect(page.locator('.site-footer')).toHaveCSS(
+    'border-top-width',
+    '1px',
+  )
+
+  await request.get('http://127.0.0.1:8015/__scenario?name=default')
+  await page.reload()
+  await expect(purchase.locator('.variants')).toBeVisible()
+  await expect(purchase.locator('.purchase-form')).toHaveCSS(
+    'border-top-width',
+    '1px',
+  )
+  await expect(page.locator('.related-section')).toBeVisible()
+  await expect(information).toHaveCSS('border-bottom-width', '1px')
+})
+
 test('product, related and recommended actions add their own IDs to the shared server cart', async ({
   page,
   request,

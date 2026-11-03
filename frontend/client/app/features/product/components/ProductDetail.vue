@@ -42,7 +42,10 @@ const phoneHref = computed(() => {
       :phone-href="phoneHref"
     />
     <ProductCollectionStory :key="product.id" :product="product" />
-    <ProductCollections :product="product" />
+    <ProductCollections
+      :product="product"
+      :class="{ 'product-collections--with-related': product.related.length }"
+    />
   </div>
 </template>
 <style scoped>
@@ -70,6 +73,12 @@ const phoneHref = computed(() => {
   gap: 64px;
   align-items: start;
   padding-block: 32px 76px;
+}
+.product-information:has(
+  + .product-collection-story,
+  + .product-collections--with-related
+) {
+  border-bottom: 1px solid var(--color-line);
 }
 @media (max-width: 1180px) {
   .product-layout {

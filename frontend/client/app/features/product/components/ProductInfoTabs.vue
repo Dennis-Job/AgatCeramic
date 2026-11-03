@@ -122,7 +122,7 @@ const tabs = [
 <style scoped>
 .product-information {
   background: var(--color-bg-soft);
-  border-block: 1px solid var(--color-line);
+  border-top: 1px solid var(--color-line);
   padding-block: 54px 64px;
   scroll-margin-top: 105px;
 }

@@ -392,6 +392,8 @@ h1 {
 }
 .purchase-form {
   margin-top: 24px;
+}
+.variants + .purchase-form {
   padding-top: 23px;
   border-top: 1px solid var(--color-line);
 }
