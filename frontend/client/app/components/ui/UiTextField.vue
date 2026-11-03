@@ -9,6 +9,7 @@ import {
 const props = defineProps<{
   label: string
   type?: 'text' | 'tel' | 'email'
+  surface?: 'white'
   autocomplete?: string
   required?: boolean
   maxlength?: number
@@ -106,7 +107,10 @@ watch([model, () => props.required], validatePhone)
 </script>
 
 <template>
-  <div class="ui-text-field">
+  <div
+    class="ui-text-field"
+    :class="{ 'ui-field--white': surface === 'white' }"
+  >
     <label :for="id">{{ label }}</label>
     <input
       :id="id"
@@ -144,7 +148,7 @@ input {
   border: 1px solid var(--field-border-color, var(--color-line));
   border-radius: 0;
   padding: 12px;
-  background: var(--color-bg);
+  background: var(--field-background, var(--color-bg));
   color: var(--color-ink);
   font-size: 16px;
 }

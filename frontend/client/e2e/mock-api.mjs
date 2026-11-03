@@ -371,6 +371,21 @@ createServer(async (request, response) => {
     response.end(JSON.stringify({ message: 'Test response' }))
   }
   const send = (payload) => response.end(JSON.stringify(payload))
+  const legalType = url.pathname.match(
+    /^\/api\/v1\/legal-documents\/(privacy_policy|consent)$/,
+  )?.[1]
+  if (legalType) {
+    return send({
+      data: {
+        type: legalType,
+        body:
+          legalType === 'consent'
+            ? 'Тестовый текст согласия.'
+            : 'Тестовый текст политики.',
+        published_at: '2026-11-03T09:00:00+00:00',
+      },
+    })
+  }
   if (url.pathname.startsWith('/api/v1/admin/content-preview/')) {
     response.setHeader('Cache-Control', 'private, no-store')
     if (!request.headers.cookie?.includes('preview_test_session=employee'))

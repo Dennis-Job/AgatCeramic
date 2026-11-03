@@ -20,12 +20,13 @@ async function prepare(
   request: APIRequestContext,
   page: Page,
   mode = 'default',
+  items = [{ product_id: 1, quantity: 2 }],
 ) {
   await request.get(mock + '/__scenario?name=default')
   await request.get(mock + '/__cart/reset?mode=' + mode)
   const { token } = await (
     await request.post(mock + '/__cart/seed', {
-      data: { items: [{ product_id: 1, quantity: 2 }] },
+      data: { items },
     })
   ).json()
   await page.addInitScript(
@@ -35,7 +36,7 @@ async function prepare(
   return token
 }
 
-async function fillCheckout(page: Page) {
+async function fillCheckout(page: Page, acceptConsent = true) {
   await expect(page.getByRole('heading', { name: 'Контакты' })).toBeVisible()
   await page.getByLabel('ФИО', { exact: true }).fill(details.customer_name)
   await page.getByLabel('Телефон', { exact: true }).fill(details.customer_phone)
@@ -54,12 +55,114 @@ async function fillCheckout(page: Page) {
   await expect(
     page.getByRole('heading', { name: 'Подтверждение' }),
   ).toBeVisible()
+  if (acceptConsent)
+    await page.getByRole('checkbox', { name: /даю согласие/i }).check()
 }
 
 async function orderWrites(request: APIRequestContext) {
   const { requests } = await (await request.get(mock + '/__cart/stats')).json()
   return requests.filter((entry) => entry.pathname === '/api/v1/orders')
 }
+
+test('checkout requires explicit consent and displays both published documents', async ({
+  page,
+  request,
+}) => {
+  await prepare(request, page)
+  await page.goto('/checkout')
+  await fillCheckout(page, false)
+  const consent = page.getByRole('checkbox', { name: /даю согласие/i })
+  const submit = page.getByRole('button', { name: /Подтвердить заказ/ })
+  await expect(consent).toBeEnabled()
+  await expect(consent).not.toBeChecked()
+  await expect(submit).toBeDisabled()
+  await page.getByText('Политика конфиденциальности', { exact: true }).click()
+  await expect(page.getByText('Тестовый текст политики.')).toBeVisible()
+  await page.getByText('Текст согласия', { exact: true }).click()
+  await expect(page.getByText('Тестовый текст согласия.')).toBeVisible()
+  expect(await orderWrites(request)).toEqual([])
+
+  await consent.check()
+  await expect(submit).toBeEnabled()
+  await page.getByRole('button', { name: 'Назад', exact: true }).click()
+  await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
+  await expect(consent).toBeEnabled()
+  await expect(consent).not.toBeChecked()
+  await consent.check()
+  await submit.click()
+  await expect(
+    page.getByRole('heading', { name: 'Заказ принят' }),
+  ).toBeVisible()
+  expect(await orderWrites(request)).toHaveLength(1)
+})
+
+test('checkout cannot confirm until unavailable legal documents can be loaded', async ({
+  page,
+  request,
+}) => {
+  await prepare(request, page)
+  await page.route(
+    '**/api/v1/legal-documents/consent',
+    (route) => route.fulfill({ status: 404 }),
+    { times: 1 },
+  )
+  await page.goto('/checkout')
+  await fillCheckout(page, false)
+  const consent = page.getByRole('checkbox', { name: /даю согласие/i })
+  await expect(page.getByRole('alert')).toContainText('Документы недоступны')
+  await expect(consent).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: /Подтвердить заказ/ }),
+  ).toBeDisabled()
+  expect(await orderWrites(request)).toEqual([])
+  await page
+    .getByRole('button', { name: 'Повторить', exact: true })
+    .press('Enter')
+  await expect(consent).toBeEnabled()
+  await expect(consent).not.toBeChecked()
+  await expect(consent).toBeFocused()
+})
+
+test('checkout fields have white surfaces and missing thumbnails show text', async ({
+  page,
+  request,
+}) => {
+  await prepare(request, page, 'default', [
+    { product_id: 1, quantity: 1 },
+    { product_id: 2, quantity: 1 },
+  ])
+  await page.route('**/images/home/category-porcelain.webp', (route) =>
+    route.abort(),
+  )
+  await page.goto('/checkout')
+
+  const white = 'rgb(255, 255, 255)'
+  const name = page.getByLabel('ФИО', { exact: true })
+  const phone = page.getByLabel('Телефон', { exact: true })
+  const email = page.getByLabel('Email (необязательно)', { exact: true })
+  for (const field of [name, phone, email])
+    await expect(field).toHaveCSS('background-color', white)
+
+  const summary = page.getByRole('complementary', { name: /Ваш заказ/ })
+  for (const product of ['Тестовый керамогранит', 'Тестовая затирка'])
+    await expect(
+      summary
+        .getByRole('listitem')
+        .filter({ hasText: product })
+        .getByText('Нет фото', { exact: true }),
+    ).toBeVisible()
+
+  await name.fill(details.customer_name)
+  await phone.fill(details.customer_phone)
+  await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
+  const address = page.getByLabel('Адрес доставки', { exact: true })
+  const comment = page.getByLabel('Комментарий (необязательно)', {
+    exact: true,
+  })
+  await expect(address).toHaveCSS('background-color', white)
+  await comment.focus()
+  await expect(comment).toHaveCSS('background-color', white)
+})
 
 test('drawer opens the real cart page, then checkout creates a server order', async ({
   page,
@@ -69,6 +172,9 @@ test('drawer opens the real cart page, then checkout creates a server order', as
   await page.goto('/about')
   await page.getByRole('button', { name: 'Корзина', exact: true }).click()
   const drawer = page.getByRole('dialog', { name: 'Корзина', exact: true })
+  const drawerQuantity = drawer.locator('.ui-quantity')
+  await expect(drawerQuantity).toBeVisible()
+  const drawerSize = (await drawerQuantity.boundingBox())!
   const drawerCheckout = drawer.getByRole('button', { name: 'Оформить заказ' })
   const drawerArrow = drawerCheckout.locator('.ui-button__arrow')
   await page.emulateMedia({ reducedMotion: 'no-preference' })
@@ -86,6 +192,12 @@ test('drawer opens the real cart page, then checkout creates a server order', as
     page.getByText('Тестовый керамогранит', { exact: true }),
   ).toBeVisible()
   await expect(page.getByRole('spinbutton')).toHaveValue('2')
+  const cartQuantity = page.getByRole('main').locator('.cart-item__quantity')
+  const cartSize = (await cartQuantity.boundingBox())!
+  expect({ width: cartSize.width, height: cartSize.height }).toEqual({
+    width: drawerSize.width,
+    height: drawerSize.height,
+  })
   await page.getByRole('button', { name: /Увеличить количество/ }).click()
   await expect(page.getByRole('spinbutton')).toHaveValue('3')
 

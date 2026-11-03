@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   label: string
+  surface?: 'white'
   required?: boolean
   maxlength?: number
   disabled?: boolean
@@ -11,7 +12,7 @@ const id = useId()
 </script>
 
 <template>
-  <div class="ui-textarea">
+  <div class="ui-textarea" :class="{ 'ui-field--white': surface === 'white' }">
     <label :for="id">{{ label }}</label>
     <textarea
       :id="id"
@@ -41,7 +42,7 @@ textarea {
   border: 1px solid var(--field-border-color, var(--color-line));
   border-radius: 0;
   padding: 12px;
-  background: var(--color-bg);
+  background: var(--field-background, var(--color-bg));
   color: var(--color-ink);
   font: inherit;
   font-size: 16px;

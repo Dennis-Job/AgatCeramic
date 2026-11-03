@@ -50,6 +50,10 @@ img {
   outline-offset: 4px;
 }
 
+.ui-field--white {
+  --field-background: var(--color-white);
+}
+
 :where(
   input[type='text'],
   input[type='tel'],

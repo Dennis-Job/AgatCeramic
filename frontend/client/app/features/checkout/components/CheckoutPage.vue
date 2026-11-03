@@ -7,6 +7,7 @@ import { useCart } from '~/features/cart/composables/useCart'
 import { formatMoney } from '~/utils/formatMoney'
 import { formatPhone } from '~/utils/phone'
 import CheckoutConfirmation from './CheckoutConfirmation.vue'
+import CheckoutConsent from './CheckoutConsent.vue'
 import CheckoutHeading from './CheckoutHeading.vue'
 import CheckoutLayout from './CheckoutLayout.vue'
 import CheckoutSection from './CheckoutSection.vue'
@@ -40,6 +41,7 @@ const phone = ref('')
 const email = ref('')
 const address = ref('')
 const comment = ref('')
+const consentAccepted = ref(false)
 let attempt: { key: string; body: string } | undefined
 
 async function readCart() {
@@ -54,6 +56,7 @@ function confirmLeaving(event: BeforeUnloadEvent) {
 }
 
 async function goToStep(next: 1 | 2 | 3) {
+  consentAccepted.value = false
   step.value = next
   await nextTick()
   form.value?.querySelector<HTMLElement>('[data-checkout-active]')?.focus()
@@ -64,6 +67,7 @@ async function advance() {
   error.value = ''
   if (step.value === 1) return goToStep(2)
   if (step.value === 2) return goToStep(3)
+  if (!consentAccepted.value) return
   const details: OrderDetails = {
     customer_name: name.value.trim(),
     customer_phone: phone.value,
@@ -177,6 +181,7 @@ async function advance() {
               <UiTextField
                 v-model="name"
                 label="ФИО"
+                surface="white"
                 autocomplete="name"
                 pattern=".*\S.*"
                 :maxlength="255"
@@ -186,6 +191,7 @@ async function advance() {
                 <UiTextField
                   v-model="phone"
                   label="Телефон"
+                  surface="white"
                   type="tel"
                   autocomplete="tel"
                   required
@@ -193,6 +199,7 @@ async function advance() {
                 <UiTextField
                   v-model="email"
                   label="Email (необязательно)"
+                  surface="white"
                   type="email"
                   autocomplete="email"
                   :maxlength="255"
@@ -218,6 +225,7 @@ async function advance() {
               <UiTextField
                 v-model="address"
                 label="Адрес доставки"
+                surface="white"
                 autocomplete="street-address"
                 pattern=".*\S.*"
                 :maxlength="1000"
@@ -226,6 +234,7 @@ async function advance() {
               <UiTextarea
                 v-model="comment"
                 label="Комментарий (необязательно)"
+                surface="white"
                 :maxlength="2000"
               />
             </div>
@@ -252,10 +261,13 @@ async function advance() {
             <p v-if="total === null" class="checkout-note">
               У некоторых товаров нужно уточнить цену. Проверьте корзину.
             </p>
+            <CheckoutConsent v-model="consentAccepted" :disabled="sending" />
             <div class="checkout-actions">
               <UiButton
                 type="submit"
-                :disabled="busy || sending || total === null"
+                :disabled="
+                  busy || sending || total === null || !consentAccepted
+                "
                 arrow
               >
                 {{ sending ? 'Отправляем…' : 'Подтвердить заказ' }}

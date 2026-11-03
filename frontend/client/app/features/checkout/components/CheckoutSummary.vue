@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Image } from '@lucide/vue'
 import type { CartItem } from '~/features/cart/types/cart'
 import { formatMoney } from '~/utils/formatMoney'
 import { productUnitLabel } from '~/utils/productUnits'
@@ -62,7 +61,7 @@ const failed = ref(new Set<number>())
               alt=""
               @error="failed.add(item.id)"
             />
-            <Image v-else :size="20" aria-hidden="true" />
+            <span v-else>Нет фото</span>
           </div>
           <div>
             <strong>{{
@@ -176,6 +175,11 @@ li {
   height: 52px;
   place-items: center;
   background: var(--color-beige);
+}
+.checkout-summary__photo span {
+  color: var(--color-ink-soft);
+  font-size: 10px;
+  text-align: center;
 }
 img {
   width: 100%;

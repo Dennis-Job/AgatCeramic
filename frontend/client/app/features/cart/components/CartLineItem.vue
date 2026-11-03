@@ -83,8 +83,7 @@ const imageSize = computed(() => (isPage.value ? 104 : 72))
       <div class="cart-item__quantity">
         <UiQuantityInput
           v-model="quantity"
-          class="cart-item__quantity-control"
-          :compact="!isPage"
+          compact
           :min="1"
           :max="9999"
           :disabled="busy || !item.product"
@@ -93,9 +92,6 @@ const imageSize = computed(() => (isPage.value ? 104 : 72))
           @commit="commitQuantity"
           @invalid="invalidQuantity"
         />
-        <small v-if="isPage && item.product">
-          {{ productUnitLabel(item.product.unit) }}
-        </small>
       </div>
     </div>
     <div class="cart-item__summary">
@@ -211,15 +207,6 @@ h3 a:hover {
 .cart-item--page .cart-item__quantity {
   min-width: 0;
   margin-top: 0;
-}
-.cart-item--page .cart-item__quantity-control {
-  max-width: 100%;
-}
-.cart-item--page small {
-  display: block;
-  margin-top: 8px;
-  color: var(--color-muted);
-  font-size: 11px;
 }
 .cart-item--page .cart-item__total {
   justify-self: end;

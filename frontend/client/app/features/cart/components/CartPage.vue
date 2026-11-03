@@ -115,7 +115,7 @@ async function commitQuantity(itemId: number, quantity: number) {
 
 <style scoped>
 .cart-lines {
-  --cart-page-columns: 104px minmax(0, 1fr) 150px 120px 44px;
+  --cart-page-columns: 104px minmax(0, 1fr) 100px 120px 44px;
   --cart-page-column-gap: 20px;
   min-width: 0;
 }
@@ -195,7 +195,7 @@ async function commitQuantity(itemId: number, quantity: number) {
 }
 @media (1100px < width <= 1200px) {
   .cart-lines {
-    --cart-page-columns: 84px minmax(0, 1fr) 124px 100px 44px;
+    --cart-page-columns: 84px minmax(0, 1fr) 100px 100px 44px;
     --cart-page-column-gap: 14px;
   }
 }
