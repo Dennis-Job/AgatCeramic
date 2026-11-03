@@ -37,6 +37,26 @@ const groups = computed(() => {
   }
   return [...grouped.values()].sort((a, b) => a.order - b.order)
 })
+const columns = computed(() => {
+  const ordered = groups.value
+  if (ordered.length < 2) return [ordered]
+
+  // Count the heading alongside its rows to balance the columns in reading order.
+  const sizes = ordered.map((group) => group.attributes.length + 1)
+  const half = sizes.reduce((sum, size) => sum + size, 0) / 2
+  let leftSize = 0
+  let split = 1
+  let smallestDifference = Infinity
+  for (const [index, size] of sizes.slice(0, -1).entries()) {
+    leftSize += size
+    const difference = Math.abs(half - leftSize)
+    if (difference < smallestDifference) {
+      smallestDifference = difference
+      split = index + 1
+    }
+  }
+  return [ordered.slice(0, split), ordered.slice(split)]
+})
 const specsId = useId()
 const tabs = [
   { id: 'specs', label: 'Характеристики' },
@@ -57,32 +77,41 @@ const tabs = [
             }"
           >
             <div
-              v-for="group in groups"
-              :key="group.id ?? 'ungrouped'"
-              class="spec-group"
-              :role="group.name ? 'group' : undefined"
-              :aria-labelledby="
-                group.name
-                  ? `${specsId}-group-${group.id ?? 'other'}`
-                  : undefined
-              "
+              v-for="(column, index) in columns"
+              :key="index"
+              class="spec-column"
             >
-              <h2
-                v-if="group.name"
-                :id="`${specsId}-group-${group.id ?? 'other'}`"
-                class="spec-group-title eyebrow"
+              <div
+                v-for="group in column"
+                :key="group.id ?? 'ungrouped'"
+                class="spec-group"
+                :role="group.name ? 'group' : undefined"
+                :aria-labelledby="
+                  group.name
+                    ? `${specsId}-group-${group.id ?? 'other'}`
+                    : undefined
+                "
               >
-                {{ group.name }}
-              </h2>
-              <dl class="product-specs">
-                <div v-for="attribute in group.attributes" :key="attribute.id">
-                  <dt>{{ attribute.name }}</dt>
-                  <dd>
-                    {{ attribute.display_value
-                    }}{{ attribute.unit ? ` ${attribute.unit}` : '' }}
-                  </dd>
-                </div>
-              </dl>
+                <h2
+                  v-if="group.name"
+                  :id="`${specsId}-group-${group.id ?? 'other'}`"
+                  class="spec-group-title eyebrow"
+                >
+                  {{ group.name }}
+                </h2>
+                <dl class="product-specs">
+                  <div
+                    v-for="attribute in group.attributes"
+                    :key="attribute.id"
+                  >
+                    <dt>{{ attribute.name }}</dt>
+                    <dd>
+                      {{ attribute.display_value
+                      }}{{ attribute.unit ? ` ${attribute.unit}` : '' }}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
             </div>
           </div>
           <p v-else class="empty-text">Характеристики пока не добавлены.</p>
@@ -129,26 +158,28 @@ const tabs = [
 .spec-groups {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 36px 70px;
   align-items: start;
+  gap: 26px clamp(26px, 6vw, 70px);
 }
-.spec-group {
+.spec-column {
+  display: grid;
   min-width: 0;
+  gap: 26px;
+}
+.spec-column:only-child {
+  grid-column: 1 / -1;
 }
 .spec-group-title {
-  margin: 0 0 14px;
-  padding-bottom: 14px;
+  margin: 0;
+  padding-bottom: 9px;
   border-bottom: 1px solid var(--color-line-strong);
   font-size: 11px;
   font-weight: 500;
   line-height: 1.5;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
 }
 .product-specs {
   margin: 0;
-}
-.spec-groups--plain {
-  display: block;
 }
 .spec-groups--plain .product-specs {
   display: grid;
@@ -162,6 +193,10 @@ const tabs = [
   padding: 13px 0;
   border-bottom: 1px solid var(--color-line);
   font-size: 13px;
+}
+.spec-group-title + .product-specs > div {
+  gap: 14px;
+  padding-block: 10px;
 }
 dt {
   min-width: 0;
@@ -208,7 +243,6 @@ p {
   .product-information {
     padding-block: 36px 42px;
   }
-  .spec-groups,
   .spec-groups--plain .product-specs {
     column-gap: 30px;
   }
@@ -220,7 +254,9 @@ p {
   }
 }
 @media (max-width: 520px) {
-  .spec-groups,
+  .spec-groups {
+    grid-template-columns: 1fr;
+  }
   .spec-groups--plain .product-specs,
   .delivery {
     grid-template-columns: 1fr;

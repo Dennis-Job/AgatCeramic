@@ -35,6 +35,25 @@ test('specification groups retain their own values, order and SSR headings', asy
   await expect(groups.nth(3).locator('dt')).toHaveText(['Особенность'])
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
+    const boxes = await groups.evaluateAll((items) =>
+      items.map((item) => {
+        const { left, top, bottom } = item.getBoundingClientRect()
+        return { left, top, bottom, fragments: item.getClientRects().length }
+      }),
+    )
+    expect(boxes.map(({ fragments }) => fragments)).toEqual([1, 1, 1, 1])
+    expect(new Set(boxes.map(({ left }) => left)).size).toBe(
+      width > 520 ? 2 : 1,
+    )
+    for (const [index, box] of boxes.slice(1).entries()) {
+      const previous = boxes[index]
+      if (box.left === previous.left) {
+        expect(box.top - previous.bottom).toBeCloseTo(26)
+      } else {
+        expect(box.left).toBeGreaterThan(previous.left)
+        expect(box.top).toBeCloseTo(boxes[0].top)
+      }
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
