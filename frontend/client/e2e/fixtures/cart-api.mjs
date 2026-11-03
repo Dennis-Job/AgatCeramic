@@ -124,7 +124,6 @@ function createOrder(req, res, token, payload) {
     },
   }
   items = []
-  if (mode === 'order-disconnect') return res.destroy()
   res.setHeader('Idempotent-Replayed', 'false')
   return json(res, 201, { data: order.data })
 }

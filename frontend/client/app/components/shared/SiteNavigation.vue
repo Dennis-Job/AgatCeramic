@@ -16,6 +16,7 @@ const root = ref<HTMLElement | null>(null)
 const openIndex = ref<number | null>(null)
 const id = useId()
 const positions = ref<Record<number, Record<string, string>>>({})
+let resizeObserver: ResizeObserver | undefined
 
 function isCurrent(to: string): boolean {
   if (!to.startsWith('/')) return false
@@ -110,6 +111,21 @@ function outside(event: Event) {
     close()
 }
 
+function revealFocusedLink() {
+  const focused = document.activeElement
+  if (
+    focused instanceof HTMLElement &&
+    focused.classList.contains('navigation-link') &&
+    root.value?.contains(focused)
+  ) {
+    focused.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'instant',
+    })
+  }
+}
+
 watch(
   () => route.fullPath,
   () => close(),
@@ -125,8 +141,13 @@ onMounted(() => {
   document.addEventListener('focusin', outside)
   window.addEventListener('resize', updatePosition)
   window.addEventListener('scroll', updatePosition, true)
+  if (props.variant === 'desktop' && root.value) {
+    resizeObserver = new ResizeObserver(revealFocusedLink)
+    resizeObserver.observe(root.value)
+  }
 })
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
   close()
   document.removeEventListener('pointerdown', outside)
   document.removeEventListener('focusin', outside)
@@ -317,6 +338,10 @@ defineExpose({ close })
 }
 .navigation-submenu a:focus-visible {
   outline-offset: -3px;
+}
+.menu-panel__nav {
+  overflow-x: clip;
+  overflow-clip-margin: 6px;
 }
 .menu-panel__nav > .navigation-list {
   display: flex;

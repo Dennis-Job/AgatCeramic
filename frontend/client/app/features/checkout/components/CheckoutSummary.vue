@@ -171,6 +171,7 @@ li {
 }
 .checkout-summary__photo {
   display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   width: 52px;
   height: 52px;
   place-items: center;
@@ -207,13 +208,19 @@ li > span {
   text-align: right;
 }
 .checkout-summary__total {
+  flex-wrap: wrap;
   margin-top: 10px;
   border-top: 1px solid var(--color-ink);
   padding: 20px 0 0;
   font-size: 18px;
 }
 .checkout-summary__total span:first-child {
+  flex: 1 1 min-content;
   color: var(--color-ink);
+}
+.checkout-summary__total strong {
+  max-width: 100%;
+  margin-inline-start: auto;
 }
 .checkout-summary__action {
   margin-top: 22px;

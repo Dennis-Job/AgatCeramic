@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onBeforeRouteLeave } from 'vue-router'
 import UiButton from '~/components/ui/UiButton.vue'
 import UiTextField from '~/components/ui/UiTextField.vue'
 import UiTextarea from '~/components/ui/UiTextarea.vue'
@@ -46,6 +47,11 @@ async function readCart() {
   ready.value = true
 }
 onMounted(readCart)
+onBeforeRouteLeave(() => !sending.value)
+
+function confirmLeaving(event: BeforeUnloadEvent) {
+  event.preventDefault()
+}
 
 async function goToStep(next: 1 | 2 | 3) {
   step.value = next
@@ -67,6 +73,7 @@ async function advance() {
   }
   if (!items.value.length || total.value === null) return
   sending.value = true
+  window.addEventListener('beforeunload', confirmLeaving)
   try {
     const body = JSON.stringify(details)
     if (attempt?.body !== body) attempt = { body, key: crypto.randomUUID() }
@@ -91,6 +98,7 @@ async function advance() {
     await nextTick()
     notice.value?.focus()
   } finally {
+    window.removeEventListener('beforeunload', confirmLeaving)
     sending.value = false
   }
 }
@@ -133,7 +141,7 @@ async function advance() {
             :count="itemCount"
             :total="total"
           >
-            <NuxtLink class="checkout-back" to="/cart"
+            <NuxtLink v-if="!sending" class="checkout-back" to="/cart"
               >← Изменить корзину</NuxtLink
             >
           </CheckoutSummary>

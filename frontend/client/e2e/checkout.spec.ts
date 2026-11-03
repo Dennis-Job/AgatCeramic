@@ -146,7 +146,16 @@ test('an ambiguous order response keeps the form and reuses its idempotency key'
   page,
   request,
 }) => {
-  const token = await prepare(request, page, 'order-disconnect')
+  const token = await prepare(request, page)
+  await page.route(
+    '**/api/v1/orders',
+    async (route) => {
+      const response = await route.fetch({ maxRetries: 0 })
+      expect(response.status()).toBe(201)
+      await route.abort('failed')
+    },
+    { times: 1 },
+  )
   await page.goto('/checkout')
   await fillCheckout(page)
   const submit = page.getByRole('button', { name: /Подтвердить заказ/ })
@@ -163,6 +172,104 @@ test('an ambiguous order response keeps the form and reuses its idempotency key'
   const replayed = await orderWrites(request)
   expect(replayed).toHaveLength(2)
   expect(replayed[1]).toEqual(first[0])
+})
+
+test('pending checkout keeps the buyer on the page until the order number is available', async ({
+  page,
+  request,
+}) => {
+  await prepare(request, page)
+  await page.goto('/checkout')
+  await fillCheckout(page)
+  const { promise: resume, resolve: release } = Promise.withResolvers<void>()
+  await page.route('**/api/v1/orders', async (route) => {
+    const response = await route.fetch()
+    await resume
+    await route.fulfill({ response })
+  })
+
+  try {
+    await page.getByRole('button', { name: /Подтвердить заказ/ }).click()
+    await expect(
+      page.getByRole('button', { name: 'Отправляем…' }),
+    ).toBeDisabled()
+    await expect(
+      page.getByRole('link', { name: /Изменить корзину/ }),
+    ).toHaveCount(0)
+    await page
+      .getByRole('banner')
+      .getByRole('link', { name: 'Каталог', exact: true })
+      .click()
+  } finally {
+    release()
+  }
+
+  await expect(
+    page.getByRole('heading', { name: 'Заказ принят' }),
+  ).toBeFocused()
+  await expect(page).toHaveURL(/\/checkout$/)
+  await expect(page.getByText(`Заказ № ${orderNumber}`)).toBeVisible()
+  await page.getByRole('link', { name: 'Вернуться в каталог' }).click()
+  await expect(page).toHaveURL(/\/catalog$/)
+  expect(await orderWrites(request)).toHaveLength(1)
+})
+
+test('checkout follows the visual keyboard order and keeps mobile summary items inside their boxes', async ({
+  page,
+  request,
+}) => {
+  await prepare(request, page)
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/checkout')
+  const name = page.getByLabel('ФИО', { exact: true })
+  const edit = page.getByRole('link', { name: /Изменить корзину/ })
+  await edit.focus()
+  await page.keyboard.press('Shift+Tab')
+  await expect(page.getByRole('button', { name: 'Продолжить' })).toBeFocused()
+
+  await name.fill(details.customer_name)
+  await page.setViewportSize({ width: 320, height: 760 })
+  const toggle = page.getByRole('button', { name: 'Показать' })
+  await expect
+    .poll(async () => {
+      const [summary, field] = await Promise.all([
+        toggle.boundingBox(),
+        name.boundingBox(),
+      ])
+      return summary !== null && field !== null && summary.y < field.y
+    })
+    .toBe(true)
+  await toggle.focus()
+  await page.keyboard.press('Tab')
+  await expect(name).toBeFocused()
+  await expect(name).toHaveValue(details.customer_name)
+  await toggle.click()
+  const summary = page.getByRole('complementary', { name: /Ваш заказ/ })
+  const photo = summary.locator('li img')
+  await expect(photo).toBeVisible()
+  await expect
+    .poll(() => photo.evaluate((image) => image.clientHeight))
+    .toBe(52)
+  const total = summary.locator('.checkout-summary__total strong')
+  await expect
+    .poll(() =>
+      total.evaluate((node) => {
+        const text = node.firstChild!
+        const range = document.createRange()
+        range.selectNodeContents(text)
+        return range.getClientRects().length
+      }),
+    )
+    .toBe(1)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    320,
+  )
+  await name.focus()
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await expect(page.locator('.checkout-layout > div').first()).toHaveClass(
+    'checkout-layout__main',
+  )
+  await expect(name).toBeFocused()
 })
 
 test('checkout rejects unavailable items without claiming an order was placed', async ({

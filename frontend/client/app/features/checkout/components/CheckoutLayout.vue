@@ -1,15 +1,47 @@
 <script setup lang="ts">
-defineProps<{ summaryFirst?: boolean }>()
+const props = defineProps<{ summaryFirst?: boolean }>()
+const layout = useTemplateRef('layout')
+const stacked = ref(false)
+const columns = computed(() =>
+  props.summaryFirst && stacked.value
+    ? ['summary', 'main']
+    : ['main', 'summary'],
+)
+
+let narrowLayout: MediaQueryList | undefined
+
+async function syncLayout() {
+  const narrow = narrowLayout?.matches ?? false
+  if (stacked.value === narrow) return
+
+  const focused = document.activeElement
+  stacked.value = narrow
+  if (!(focused instanceof HTMLElement) || !layout.value?.contains(focused))
+    return
+
+  await nextTick()
+  if (document.activeElement === document.body)
+    focused.focus({ preventScroll: true })
+}
+
+onMounted(() => {
+  if (!props.summaryFirst) return
+  narrowLayout = window.matchMedia('(max-width: 1100px)')
+  syncLayout()
+  narrowLayout.addEventListener('change', syncLayout)
+})
+onBeforeUnmount(() => narrowLayout?.removeEventListener('change', syncLayout))
 </script>
 
 <template>
-  <div class="checkout-layout">
-    <div v-if="summaryFirst" class="checkout-layout__summary">
-      <slot name="summary" />
-    </div>
-    <div class="checkout-layout__main"><slot /></div>
-    <div v-if="!summaryFirst" class="checkout-layout__summary">
-      <slot name="summary" />
+  <div ref="layout" class="checkout-layout">
+    <div
+      v-for="column in columns"
+      :key="column"
+      :class="'checkout-layout__' + column"
+    >
+      <slot v-if="column === 'summary'" name="summary" />
+      <slot v-else />
     </div>
   </div>
 </template>

@@ -11,11 +11,21 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
 })
 
-test('classic scrollbar removal preserves page geometry for menu, search and native modal', async ({
+test('scroll locking preserves page geometry for menu, search and native modal', async ({
   page,
 }, testInfo) => {
   await page.goto('/about')
   await page.evaluate(() => document.fonts.ready)
+  // Chromium can keep overlay scrollbars on macOS despite the launch flags.
+  const scrollbarWidth = await page.evaluate(() => {
+    const probe = document.createElement('div')
+    probe.style.cssText =
+      'position: absolute; visibility: hidden; width: 100px; height: 100px; overflow-y: scroll'
+    document.body.append(probe)
+    const width = probe.offsetWidth - probe.clientWidth
+    probe.remove()
+    return width
+  })
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 707 })
     await page.evaluate(
@@ -28,7 +38,7 @@ test('classic scrollbar removal preserves page geometry for menu, search and nat
       await page.evaluate(
         () => innerWidth - document.documentElement.clientWidth,
       ),
-    ).toBeGreaterThan(0)
+    ).toBe(scrollbarWidth)
     const geometry = () =>
       page.evaluate(() => {
         const header = document
@@ -91,7 +101,7 @@ test('classic scrollbar removal preserves page geometry for menu, search and nat
   }
 })
 
-test('classic scrollbar gutter fits a narrow and short page without horizontal overflow', async ({
+test('scrollbar gutter fits a narrow and short page without horizontal overflow', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 5000 })

@@ -193,6 +193,12 @@ async function commitQuantity(itemId: number, quantity: number) {
   color: var(--color-muted);
   font-size: 14px;
 }
+@media (1100px < width <= 1200px) {
+  .cart-lines {
+    --cart-page-columns: 84px minmax(0, 1fr) 124px 100px 44px;
+    --cart-page-column-gap: 14px;
+  }
+}
 @media (max-width: 860px) {
   .cart-lines__head {
     display: none;
