@@ -4,7 +4,7 @@ import UiCloseButton from './UiCloseButton.vue'
 const props = defineProps<{
   title: string
   busy?: boolean
-  size?: 'default' | 'wide'
+  size?: 'default' | 'wide' | 'drawer'
 }>()
 const emit = defineEmits<{ close: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
@@ -79,7 +79,7 @@ function trapFocus(event: KeyboardEvent) {
 
 <template>
   <Transition
-    name="ui-modal"
+    :name="size === 'drawer' ? 'ui-drawer' : 'ui-modal'"
     @enter="showDialog"
     @before-leave="deactivateDialog"
     @after-leave="finishClose"
@@ -88,14 +88,20 @@ function trapFocus(event: KeyboardEvent) {
       v-if="visible"
       ref="dialog"
       class="ui-dialog"
-      :class="{ 'ui-dialog--wide': size === 'wide' }"
+      :class="{
+        'ui-dialog--wide': size === 'wide',
+        'ui-dialog--drawer': size === 'drawer',
+      }"
       :aria-labelledby="titleId"
       @keydown.tab="trapFocus"
       @cancel.prevent="requestClose"
       @click="isBackdrop($event) && requestClose()"
     >
       <div class="ui-dialog__heading">
-        <h2 :id="titleId">{{ title }}</h2>
+        <h2>
+          <span :id="titleId">{{ title }}</span
+          ><slot name="title-extra" />
+        </h2>
         <UiCloseButton :disabled="busy" @click="requestClose" />
       </div>
       <slot :close="requestClose" />
@@ -138,6 +144,39 @@ h2 {
 @media (max-width: 640px) {
   .ui-dialog {
     padding: 24px 20px;
+  }
+}
+.ui-dialog--drawer {
+  --ui-drawer-gutter: 32px;
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(460px, 100%);
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+}
+.ui-dialog--drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.ui-dialog--drawer .ui-dialog__heading {
+  flex-shrink: 0;
+  margin: 0;
+  border-bottom: 1px solid var(--color-line);
+  padding: 28px var(--ui-drawer-gutter);
+}
+.ui-dialog--drawer h2 {
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+@media (max-width: 460px) {
+  .ui-dialog--drawer {
+    --ui-drawer-gutter: 20px;
   }
 }
 </style>

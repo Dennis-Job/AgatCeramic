@@ -1,3 +1,4 @@
+import type { NuxtApp } from '#app'
 import {
   CartApiError,
   changeCartItem,
@@ -6,20 +7,28 @@ import {
   fetchCart,
 } from '../services/cart'
 import { cartTotal } from '../utils/totals'
-import type { CartItem } from '../types/cart'
+import { productUnitLabel } from '~/utils/productUnits'
+import type { CartItem, CartProduct } from '../types/cart'
 
 const storageKey = 'agatceramic.cart.token'
+const pendingRestores = new WeakMap<NuxtApp, Promise<void>>()
 const validToken = (value: string | null): value is string =>
   value !== null && /^[a-f0-9]{64}$/.test(value)
 
 export function useCart() {
+  const nuxtApp = useNuxtApp()
   const { publicBase } = usePublicApiConfig()
   const items = useState<CartItem[]>('cart-items', () => [])
   const open = useState('cart-open', () => false)
   const busy = useState('cart-busy', () => false)
-  const error = useState('cart-error', () => '')
+  const problem = useState<{ message: string; canRetry: boolean } | null>(
+    'cart-problem',
+    () => null,
+  )
+  const error = computed(() => problem.value?.message ?? '')
+  const canRetry = computed(() => problem.value?.canRetry ?? false)
   const initialized = useState('cart-initialized', () => false)
-  // Token stays null during SSR. Storage is read only after a client interaction.
+  // Token stays null during SSR. Storage is read on the client.
   const token = useState<string | null>('cart-token', () => null)
   const restored = useState('cart-token-restored', () => false)
   const itemCount = computed(() => items.value.length)
@@ -48,14 +57,11 @@ export function useCart() {
     }
   }
 
-  async function readCart() {
+  async function readCart(savedOnly = false) {
     restoreToken()
+    let cart
     try {
-      const cart = await fetchCart(publicBase, token.value)
-      if (!validToken(cart.identifier)) throw new Error('Invalid cart response')
-      persistToken(cart.identifier)
-      items.value = cart.items
-      initialized.value = true
+      cart = await fetchCart(publicBase, token.value)
     } catch (failure) {
       if (
         !token.value ||
@@ -67,28 +73,54 @@ export function useCart() {
       persistToken(null)
       items.value = []
       initialized.value = false
-      const cart = await fetchCart(publicBase, null)
-      if (!validToken(cart.identifier)) throw new Error('Invalid cart response')
-      persistToken(cart.identifier)
-      items.value = cart.items
-      initialized.value = true
+      if (savedOnly) return
+      cart = await fetchCart(publicBase, null)
     }
+    if (!validToken(cart.identifier)) throw new Error('Invalid cart response')
+    persistToken(cart.identifier)
+    items.value = cart.items
+    initialized.value = true
   }
 
-  function reportFailure(failure: unknown) {
-    error.value =
-      failure instanceof CartApiError
-        ? failure.message
-        : 'Не удалось обновить корзину. Попробуйте ещё раз.'
-    if (failure instanceof CartApiError && failure.status === 404)
-      initialized.value = false
+  function reportFailure(failure: unknown, product?: CartProduct | null) {
+    const apiError = failure instanceof CartApiError ? failure : null
+    const available = apiError?.availableQuantity
+    let message =
+      apiError?.message ?? 'Не удалось обновить корзину. Попробуйте ещё раз.'
+    if (available === 0)
+      message = product
+        ? `Товара «${product.name}» больше нет в наличии.`
+        : 'Товара больше нет в наличии.'
+    else if (available != null && product)
+      message = `В наличии ${available} ${productUnitLabel(product.unit)} товара «${product.name}».`
+
+    problem.value = { message, canRetry: apiError?.status !== 422 }
+    if (apiError?.status === 404) initialized.value = false
+  }
+
+  function restoreSavedCart() {
+    if (!import.meta.client || busy.value || initialized.value) return
+    restoreToken()
+    if (!token.value || pendingRestores.has(nuxtApp)) return
+
+    const restoration = readCart(true)
+      .catch(() => {
+        // Opening the cart or adding a product can retry the background read.
+      })
+      .finally(() => pendingRestores.delete(nuxtApp))
+    pendingRestores.set(nuxtApp, restoration)
   }
 
   async function loadCart(): Promise<void> {
     if (!import.meta.client || busy.value) return
     busy.value = true
-    error.value = ''
+    problem.value = null
     try {
+      const restoration = pendingRestores.get(nuxtApp)
+      if (restoration) {
+        await restoration
+        if (initialized.value) return
+      }
       await readCart()
     } catch (failure) {
       reportFailure(failure)
@@ -111,12 +143,16 @@ export function useCart() {
       !Number.isInteger(productId) ||
       productId < 1
     ) {
-      error.value = 'Укажите целое количество от 1 до 9999.'
+      problem.value = {
+        message: 'Укажите целое количество от 1 до 9999.',
+        canRetry: false,
+      }
       return false
     }
     busy.value = true
-    error.value = ''
+    problem.value = null
     try {
+      await pendingRestores.get(nuxtApp)
       if (!initialized.value) await readCart()
       if (!token.value) throw new Error('Cart unavailable')
       const added = await createCartItem(
@@ -143,11 +179,14 @@ export function useCart() {
   ): Promise<boolean> {
     if (!import.meta.client || busy.value || !token.value) return false
     if (!validQuantity(quantity)) {
-      error.value = 'Укажите целое количество от 1 до 9999.'
+      problem.value = {
+        message: 'Укажите целое количество от 1 до 9999.',
+        canRetry: false,
+      }
       return false
     }
     busy.value = true
-    error.value = ''
+    problem.value = null
     try {
       const updated = await changeCartItem(
         publicBase,
@@ -160,7 +199,10 @@ export function useCart() {
       )
       return true
     } catch (failure) {
-      reportFailure(failure)
+      reportFailure(
+        failure,
+        items.value.find((item) => item.id === itemId)?.product,
+      )
       return false
     } finally {
       busy.value = false
@@ -170,7 +212,7 @@ export function useCart() {
   async function removeItem(itemId: number): Promise<boolean> {
     if (!import.meta.client || busy.value || !token.value) return false
     busy.value = true
-    error.value = ''
+    problem.value = null
     try {
       await deleteCartItem(publicBase, token.value, itemId)
       items.value = items.value.filter((item) => item.id !== itemId)
@@ -188,8 +230,10 @@ export function useCart() {
     open,
     busy,
     error,
+    canRetry,
     itemCount,
     total,
+    restoreSavedCart,
     loadCart,
     addItem,
     updateItem,

@@ -133,7 +133,15 @@ class GuestCartTest extends TestCase
         $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();
         $this->withHeader('X-Cart-Token', $resolved->token)
             ->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 2])
-            ->assertUnprocessable();
+            ->assertUnprocessable()
+            ->assertJsonMissingPath('error.details.available_quantity');
+        $this->patchJson("/api/v1/cart/items/{$item->id}", ['quantity' => 3])
+            ->assertUnprocessable()
+            ->assertJsonPath('error.details.available_quantity.0', '2');
+        $product->update(['stock_quantity' => 0]);
+        $this->patchJson("/api/v1/cart/items/{$item->id}", ['quantity' => 2])
+            ->assertUnprocessable()
+            ->assertJsonPath('error.details.available_quantity.0', '0');
         $this->withHeader('X-Cart-Token', $resolved->token)
             ->postJson('/api/v1/cart/items', ['product_id' => $inactiveProduct->id, 'quantity' => 1])
             ->assertUnprocessable();
@@ -169,7 +177,9 @@ class GuestCartTest extends TestCase
 
         $product->update(['is_on_sale' => false]);
         $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();
-        $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])->assertUnprocessable();
+        $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])
+            ->assertUnprocessable()
+            ->assertJsonMissingPath('error.details.available_quantity');
         $product->update(['is_on_sale' => true]);
         $product->category->update(['is_active' => false]);
         $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();

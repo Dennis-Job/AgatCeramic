@@ -52,8 +52,8 @@ const productPath = computed(() =>
         v-if="item.product?.primary_image_url && !failedImage"
         :src="item.product.primary_image_url"
         :alt="name"
-        width="80"
-        height="80"
+        width="72"
+        height="72"
         @error="failedImage = true"
       />
       <span v-else>Нет фото</span>
@@ -70,17 +70,10 @@ const productPath = computed(() =>
         </template>
         <template v-else>Стоимость уточняется</template>
       </p>
-    </div>
-    <UiIconButton
-      :label="'Удалить ' + name"
-      :disabled="busy"
-      @click="$emit('remove', item.id)"
-    >
-      <Trash2 :size="17" :stroke-width="1.6" aria-hidden="true" />
-    </UiIconButton>
-    <div class="cart-item__purchase">
       <UiQuantityInput
         v-model="quantity"
+        class="cart-item__quantity"
+        compact
         :min="1"
         :max="9999"
         :disabled="busy || !item.product"
@@ -89,6 +82,8 @@ const productPath = computed(() =>
         @commit="commitQuantity"
         @invalid="invalidQuantity"
       />
+    </div>
+    <div class="cart-item__summary">
       <p class="cart-item__total">
         {{
           item.line_total === null
@@ -96,24 +91,27 @@ const productPath = computed(() =>
             : formatMoney(item.line_total)
         }}
       </p>
-      <p v-if="quantityError" class="cart-item__error" role="alert">
-        {{ quantityError }}
-      </p>
+      <UiIconButton
+        plain
+        :label="'Удалить ' + name"
+        :disabled="busy"
+        @click="$emit('remove', item.id)"
+      >
+        <Trash2 :size="16" :stroke-width="1.6" aria-hidden="true" />
+      </UiIconButton>
     </div>
+    <p v-if="quantityError" class="cart-item__error" role="alert">
+      {{ quantityError }}
+    </p>
   </article>
 </template>
 
 <style scoped>
 .cart-item {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr) 44px;
-  align-items: start;
+  grid-template-columns: 72px minmax(0, 1fr) minmax(44px, max-content);
+  align-items: center;
   gap: 16px;
-  padding: 24px 0;
-  border-bottom: 1px solid var(--color-line);
-}
-.cart-item:first-child {
-  padding-top: 0;
 }
 .cart-item__image {
   display: grid;
@@ -125,7 +123,7 @@ const productPath = computed(() =>
 .cart-item__image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 .cart-item__image span {
   padding: 8px;
@@ -137,8 +135,8 @@ const productPath = computed(() =>
   min-width: 0;
 }
 h3 {
-  margin: 0 0 7px;
-  font-size: 14px;
+  margin: 0 0 4px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.5;
 }
@@ -151,31 +149,33 @@ h3 a:hover {
   font-size: 12px;
   line-height: 1.6;
 }
-.cart-item__purchase {
-  grid-column: 2 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
+.cart-item__quantity {
+  margin-top: 10px;
+}
+.cart-item__summary {
+  display: grid;
+  justify-items: end;
+  max-width: 108px;
+  text-align: right;
 }
 .cart-item__total {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
 }
 .cart-item__error {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
   margin: 0;
   font-size: 12px;
   line-height: 1.6;
 }
-@media (max-width: 480px) {
+@media (max-width: 400px) {
   .cart-item {
-    grid-template-columns: 52px minmax(0, 1fr) 44px;
-    gap: 10px;
+    grid-template-columns: 52px minmax(0, 1fr) minmax(44px, max-content);
+    gap: 12px;
   }
-  h3 {
-    font-size: 13px;
+  .cart-item__summary {
+    max-width: 82px;
   }
 }
 </style>

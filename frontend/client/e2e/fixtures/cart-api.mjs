@@ -178,8 +178,12 @@ export async function handleCart(req, res, url) {
       failure(res, 422, 'validation_failed', { quantity: ['invalid'] })
       return true
     }
-    if (payload.quantity > productDefinitions.get(item.product_id).stock) {
-      failure(res, 422, 'validation_failed', { product_id: ['unavailable'] })
+    const stock = productDefinitions.get(item.product_id).stock
+    if (payload.quantity > stock) {
+      failure(res, 422, 'validation_failed', {
+        product_id: ['unavailable'],
+        available_quantity: [String(stock)],
+      })
       return true
     }
     item.quantity = payload.quantity

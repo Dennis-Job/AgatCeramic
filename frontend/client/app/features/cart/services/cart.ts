@@ -5,6 +5,7 @@ export class CartApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    readonly availableQuantity: number | null = null,
   ) {
     super(message)
   }
@@ -44,8 +45,26 @@ async function request<T>(
             ? 'Слишком много запросов. Попробуйте чуть позже.'
             : 'Не удалось обновить корзину. Попробуйте ещё раз.'
     // Do not retain a FetchError: it can contain the bearer request headers.
-    throw new CartApiError(status, message)
+    throw new CartApiError(
+      status,
+      message,
+      status === 422 && options.method === 'PATCH'
+        ? readAvailableQuantity(failure)
+        : null,
+    )
   }
+}
+
+function readAvailableQuantity(failure: unknown): number | null {
+  const detail = (
+    failure as {
+      data?: { error?: { details?: { available_quantity?: unknown } } }
+    }
+  )?.data?.error?.details?.available_quantity
+  const value = Array.isArray(detail) ? detail[0] : null
+  return typeof value === 'string' && /^\d{1,4}$/.test(value)
+    ? Number(value)
+    : null
 }
 
 function mapItem(item: CartItem, base: string): CartItem {

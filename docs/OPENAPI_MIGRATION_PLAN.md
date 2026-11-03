@@ -1,5 +1,12 @@
 # OpenAPI migration plan — version history
 
+## v15.1 — quantity available for a cart item
+
+The cart item update response may include `error.details.available_quantity`
+when a sellable product has less stock than requested. The optional detail
+uses the existing validation error schema and carries one integer string.
+Clients can fall back to the existing message if the detail is absent.
+
 ## v15.0 — three product-group characteristic roles
 
 Date: 2026-11-02. HTTP routes remain `/api/v1`.

@@ -1,3 +1,12 @@
+/* Keep the page gutter while letting the top-layer drawer reach the window edge. */
+html:has(.ui-dialog--drawer[open]) {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+html:has(.ui-dialog--drawer[open]) body {
+  scrollbar-gutter: stable;
+}
+
 .ui-drawer-enter-active,
 .ui-drawer-leave-active {
   transition: transform var(--motion-panel-duration) var(--ease-out);
@@ -20,12 +29,16 @@
 }
 .ui-backdrop-enter-active,
 .ui-backdrop-leave-active,
+.ui-drawer-enter-active::backdrop,
+.ui-drawer-leave-active::backdrop,
 .ui-modal-enter-active::backdrop,
 .ui-modal-leave-active::backdrop {
   transition: opacity var(--motion-backdrop-duration) ease;
 }
 .ui-backdrop-enter-from,
 .ui-backdrop-leave-to,
+.ui-drawer-enter-from::backdrop,
+.ui-drawer-leave-to::backdrop,
 .ui-modal-enter-from::backdrop,
 .ui-modal-leave-to::backdrop {
   opacity: 0;
@@ -77,6 +90,10 @@
   opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
+  .ui-drawer-enter-active::backdrop,
+  .ui-drawer-leave-active::backdrop {
+    transition: none;
+  }
   .ui-drawer-enter-from,
   .ui-drawer-leave-to,
   .ui-search-enter-from,

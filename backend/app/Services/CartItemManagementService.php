@@ -55,7 +55,7 @@ class CartItemManagementService
                 ->lockForUpdate()
                 ->firstOrFail();
             $product = Product::query()->whereKey($item->product_id)->lockForUpdate()->firstOrFail();
-            $this->assertAvailable($product, $quantity);
+            $this->assertAvailable($product, $quantity, reportAvailableQuantity: true);
             $item->update(['quantity' => $quantity]);
             $this->lifetime->markActive($cart);
 
@@ -92,14 +92,22 @@ class CartItemManagementService
             ->firstOrFail();
     }
 
-    private function assertAvailable(Product $product, int $quantity): void
+    private function assertAvailable(Product $product, int $quantity, bool $reportAvailableQuantity = false): void
     {
-        if ($quantity > 9999 || ! $product->is_active || ! $product->is_on_sale || $product->category?->is_active !== true
-            || $product->price === null || $product->stock_quantity === null || $product->stock_quantity < $quantity) {
-            throw ValidationException::withMessages([
-                'product_id' => ['Товар недоступен в запрошенном количестве.'],
-            ]);
+        $canSell = $product->is_active && $product->is_on_sale
+            && $product->category?->is_active === true && $product->price !== null;
+        $availableQuantity = $canSell ? $product->stock_quantity : null;
+
+        if ($availableQuantity !== null && $quantity <= min(9999, $availableQuantity)) {
+            return;
         }
+
+        $details = ['product_id' => ['Товар недоступен в запрошенном количестве.']];
+        if ($reportAvailableQuantity && $availableQuantity !== null && $availableQuantity < $quantity) {
+            $details['available_quantity'] = [(string) $availableQuantity];
+        }
+
+        throw ValidationException::withMessages($details);
     }
 
     private function withProduct(CartItem $item): CartItem

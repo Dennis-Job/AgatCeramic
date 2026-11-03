@@ -2,7 +2,8 @@
 import CartDialog from './CartDialog.vue'
 import { useCart } from '../composables/useCart'
 
-const { open } = useCart()
+const { open, restoreSavedCart } = useCart()
+onMounted(restoreSavedCart)
 const route = useRoute()
 watch(
   () => route.fullPath,

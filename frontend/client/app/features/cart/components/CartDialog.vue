@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ArrowRight } from '@lucide/vue'
 import UiDialog from '~/components/ui/UiDialog.vue'
 import UiButton from '~/components/ui/UiButton.vue'
 import CartLineItem from './CartLineItem.vue'
@@ -6,8 +7,16 @@ import { useCart } from '../composables/useCart'
 import { formatMoney } from '~/utils/formatMoney'
 
 const emit = defineEmits<{ close: [] }>()
-const { items, busy, error, total, loadCart, updateItem, removeItem } =
-  useCart()
+const {
+  items,
+  busy,
+  error,
+  canRetry,
+  total,
+  loadCart,
+  updateItem,
+  removeItem,
+} = useCart()
 const revision = ref(0)
 onMounted(loadCart)
 async function commitQuantity(itemId: number, quantity: number) {
@@ -16,48 +25,63 @@ async function commitQuantity(itemId: number, quantity: number) {
 </script>
 
 <template>
-  <UiDialog
-    v-slot="{ close }"
-    title="Корзина"
-    :busy="busy"
-    @close="emit('close')"
-  >
-    <div class="cart-content" :aria-busy="busy">
-      <p v-if="busy" class="cart-loading" role="status">Обновляем корзину…</p>
-      <div v-if="error" class="cart-error" role="alert">
-        <p>{{ error }}</p>
-        <UiButton :disabled="busy" @click="loadCart">Повторить</UiButton>
+  <UiDialog title="Корзина" size="drawer" :busy="busy" @close="emit('close')">
+    <template #title-extra>{{ ' (' + items.length + ')' }}</template>
+    <template #default="{ close }">
+      <div class="cart-content" :aria-busy="busy">
+        <p
+          v-if="busy"
+          class="cart-loading"
+          :class="{ 'visually-hidden': items.length }"
+          role="status"
+        >
+          Обновляем корзину…
+        </p>
+        <div v-if="error" class="cart-error" role="alert">
+          <p>{{ error }}</p>
+          <UiButton v-if="canRetry" :disabled="busy" @click="loadCart">
+            Повторить
+          </UiButton>
+        </div>
+        <div v-if="items.length" class="cart-items">
+          <CartLineItem
+            v-for="item in items"
+            :key="item.id + '-' + revision"
+            :item="item"
+            :busy="busy"
+            @quantity="commitQuantity"
+            @remove="removeItem"
+          />
+        </div>
+        <p v-else-if="!busy && !error" class="cart-empty">
+          Корзина пока пуста<br />Добавьте нужные товары из каталога.
+        </p>
       </div>
-      <div v-if="items.length" class="cart-items">
-        <CartLineItem
-          v-for="item in items"
-          :key="item.id + '-' + revision"
-          :item="item"
-          :busy="busy"
-          @quantity="commitQuantity"
-          @remove="removeItem"
-        />
+      <div v-if="items.length" class="cart-footer">
         <div class="cart-total">
           <span>Итого</span>
           <strong>{{
             total === null ? 'Уточняется' : formatMoney(total)
           }}</strong>
         </div>
+        <UiButton class="cart-continue" :disabled="busy" @click="close">
+          Продолжить выбор <ArrowRight :size="16" aria-hidden="true" />
+        </UiButton>
       </div>
-      <div v-else-if="!busy && !error" class="cart-empty">
-        <h3>Корзина пока пуста</h3>
-        <p>Добавьте нужные товары из каталога.</p>
-      </div>
-      <UiButton class="cart-continue" :disabled="busy" @click="close"
-        >Продолжить выбор</UiButton
-      >
-    </div>
+    </template>
   </UiDialog>
 </template>
 
 <style scoped>
 .cart-content {
-  min-width: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px var(--ui-drawer-gutter);
+}
+.cart-items {
+  display: grid;
+  gap: 24px;
 }
 .cart-loading {
   margin: 0 0 20px;
@@ -76,32 +100,30 @@ async function commitQuantity(itemId: number, quantity: number) {
   font-size: 13px;
   line-height: 1.7;
 }
+.cart-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-line);
+  padding: 24px var(--ui-drawer-gutter);
+}
 .cart-total {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px 24px;
-  margin: 28px 0;
-  font-size: 18px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 .cart-total strong {
   font-weight: 500;
 }
 .cart-empty {
-  padding: 25px 0 35px;
-  text-align: center;
-}
-.cart-empty h3 {
-  margin: 0 0 12px;
-  font-size: 20px;
-  font-weight: 500;
-}
-.cart-empty p {
-  margin: 0;
+  margin: 60px 0 0;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.7;
+  text-align: center;
 }
 .cart-continue {
   width: 100%;

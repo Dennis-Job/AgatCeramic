@@ -7,6 +7,7 @@ const props = withDefaults(
     min?: number
     max?: number
     disabled?: boolean
+    compact?: boolean
   }>(),
   { min: 1, max: 9999 },
 )
@@ -53,7 +54,10 @@ function step(delta: number) {
 }
 </script>
 <template>
-  <div class="ui-quantity" :class="{ 'is-disabled': disabled }">
+  <div
+    class="ui-quantity"
+    :class="{ 'is-disabled': disabled, 'ui-quantity--compact': compact }"
+  >
     <label :for="id" class="visually-hidden">{{ label }}</label>
     <button
       type="button"
@@ -140,5 +144,43 @@ input::-webkit-inner-spin-button,
 input::-webkit-outer-spin-button {
   appearance: none;
   margin: 0;
+}
+.ui-quantity--compact {
+  width: max-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+}
+.ui-quantity--compact button {
+  width: 24px;
+  min-height: 24px;
+  border: 1px solid var(--color-line);
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+.ui-quantity--compact button:hover:not(:disabled) {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+.ui-quantity--compact input {
+  width: 36px;
+  min-height: 24px;
+  padding: 0;
+  font-size: 13px;
+}
+.ui-quantity--compact input:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 1px;
+}
+@media (pointer: coarse) {
+  .ui-quantity--compact button,
+  .ui-quantity--compact input {
+    min-height: 32px;
+  }
 }
 </style>
