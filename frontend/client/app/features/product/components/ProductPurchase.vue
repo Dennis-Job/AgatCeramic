@@ -7,7 +7,7 @@ import { formatMoney } from '~/utils/formatMoney'
 import { estimateProductTotal, productUnitLabel } from '~/utils/productUnits'
 import { productPath } from '../services/products'
 import type { ProductDetail } from '../types/product'
-import { groupVariantLabels } from '../utils/variantLabels'
+import { groupVariantChoices } from '../utils/variantLabels'
 const props = defineProps<{
   product: ProductDetail
 }>()
@@ -25,12 +25,31 @@ const unit = computed(() => productUnitLabel(props.product.unit))
 const estimate = computed(() =>
   estimateProductTotal(props.product.price, quantity.value),
 )
-const groupLabel = computed(
-  () =>
-    props.product.group?.axes.map((axis) => axis.name).join(' / ') ||
-    'Варианты товара',
-)
-const variantLabels = computed(() => groupVariantLabels(props.product.group))
+const variantSections = computed(() => {
+  const { product } = props
+  const { group } = product
+  if (!group?.products.some(({ id }) => id !== product.id)) return []
+
+  const { axes, alternateOptions } = groupVariantChoices(group, {
+    ...product,
+    axis_values: product.attributes,
+  })
+  const sections = axes.map((axis) => ({
+    key: 'axis:' + axis.slug,
+    name: axis.name,
+    showThumbnail: axis.slug === 'tsvet' || axis.slug === 'color',
+    options: axis.options,
+  }))
+  if (alternateOptions.length) {
+    sections.push({
+      key: 'alternate-products',
+      name: 'Варианты товара',
+      showThumbnail: false,
+      options: alternateOptions,
+    })
+  }
+  return sections
+})
 const brandLink = computed(() =>
   props.product.brand
     ? { path: '/catalog', query: { brand: props.product.brand.slug } }
@@ -139,36 +158,45 @@ async function add() {
         }}</span
       >
     </div>
-    <div
-      v-if="product.group && product.group.products.length > 1"
-      class="variants"
-    >
-      <p class="option-head">
-        <span class="eyebrow">{{ groupLabel }}</span>
-      </p>
-      <div class="variant-options" :aria-label="groupLabel">
-        <NuxtLink
-          v-for="option in product.group.products"
-          :key="option.id"
-          :to="productPath(option.slug)"
-          :aria-label="groupLabel + ': ' + variantLabels.get(option.id)"
-          :aria-current="option.id === product.id ? 'page' : undefined"
-          class="variant"
+    <div v-if="variantSections.length" class="variants">
+      <div
+        v-for="section in variantSections"
+        :key="section.key"
+        role="group"
+        :aria-label="section.name"
+      >
+        <p class="option-head">
+          <span class="eyebrow">{{ section.name }}</span>
+        </p>
+        <div
+          class="variant-options"
+          :class="{ 'variant-options--text': !section.showThumbnail }"
         >
-          <img
-            v-if="option.image_url"
-            :src="option.image_url"
-            alt=""
-            width="30"
-            height="30"
-            loading="lazy"
-          /><span>{{ variantLabels.get(option.id) }}</span
-          ><Check
-            v-if="option.id === product.id"
-            :size="13"
-            aria-hidden="true"
-          />
-        </NuxtLink>
+          <NuxtLink
+            v-for="option in section.options"
+            :key="option.product.id"
+            :to="productPath(option.product.slug)"
+            :aria-label="section.name + ': ' + option.label"
+            :aria-current="
+              option.product.id === product.id ? 'page' : undefined
+            "
+            class="variant"
+          >
+            <img
+              v-if="section.showThumbnail && option.product.image_url"
+              :src="option.product.image_url"
+              alt=""
+              width="30"
+              height="30"
+              loading="lazy"
+            /><span>{{ option.label }}</span
+            ><Check
+              v-if="section.showThumbnail && option.product.id === product.id"
+              :size="13"
+              aria-hidden="true"
+            />
+          </NuxtLink>
+        </div>
       </div>
     </div>
     <form class="purchase-form" :aria-busy="busy" @submit.prevent="add">
@@ -305,6 +333,9 @@ h1 {
   color: var(--color-muted);
 }
 .variants {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
   padding-top: 23px;
 }
 .option-head {
@@ -320,6 +351,7 @@ h1 {
   align-items: center;
   gap: 10px;
   min-height: 48px;
+  max-width: 100%;
   border: 1px solid var(--color-line);
   padding: 7px 13px 7px 7px;
   background: var(--color-bg-soft);
@@ -341,6 +373,22 @@ h1 {
 }
 .variant svg {
   flex: none;
+}
+.variant-options--text {
+  gap: 10px;
+}
+.variant-options--text .variant {
+  justify-content: center;
+  padding: 13px 20px;
+  letter-spacing: 0.06em;
+  transition:
+    border-color 0.3s,
+    background-color 0.3s,
+    color 0.3s;
+}
+.variant-options--text .variant[aria-current='page'] {
+  background-color: var(--color-ink);
+  color: var(--color-white);
 }
 .purchase-form {
   margin-top: 24px;

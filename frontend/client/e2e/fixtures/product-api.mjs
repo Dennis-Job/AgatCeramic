@@ -113,6 +113,8 @@ export function handleProducts(request, response, url, scenario) {
     products.map((item) => ({ ...item, stock_quantity: 10 })),
   )
   const axes = [{ slug: 'tsvet', name: 'Цвет' }]
+  const sizedVariants = scenario === 'product-sized-variants'
+  if (sizedVariants) axes.push({ slug: 'size', name: 'Размер' })
   const specs = [
     {
       id: 11,
@@ -228,7 +230,10 @@ export function handleProducts(request, response, url, scenario) {
         ? null
         : {
             axes,
-            products: products.slice(0, 2).map((item, index) => ({
+            products: (sizedVariants
+              ? [products[0], products[1], products[3]]
+              : products.slice(0, 2)
+            ).map((item, index) => ({
               ...item,
               sku: `TEST-${item.id}`,
               ...(scenario === 'product-duplicate-names'
@@ -239,15 +244,24 @@ export function handleProducts(request, response, url, scenario) {
                   slug: 'tsvet',
                   value: scenario.startsWith('product-duplicate-')
                     ? 'gray'
-                    : index
+                    : index === 1
                       ? 'light'
                       : 'gray',
                   display_value: scenario.startsWith('product-duplicate-')
                     ? 'Серый'
-                    : index
+                    : index === 1
                       ? 'Светлый'
                       : 'Серый',
                 },
+                ...(sizedVariants
+                  ? [
+                      {
+                        slug: 'size',
+                        value: index === 2 ? '600×300' : '300×300',
+                        display_value: index === 2 ? '600×300' : '300×300',
+                      },
+                    ]
+                  : []),
               ],
             })),
           },
