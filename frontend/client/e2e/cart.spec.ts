@@ -128,7 +128,7 @@ test('the cart opens against the right edge with a scrolling list and pinned tot
     width: 460,
     height: 440,
   })
-  const footer = dialog.getByRole('button', { name: 'Продолжить выбор' })
+  const footer = dialog.getByRole('button', { name: 'Оформить заказ' })
   await expect(footer).toBeInViewport()
   const lastItem = dialog.getByRole('article').last()
   await expect(lastItem).not.toBeInViewport()

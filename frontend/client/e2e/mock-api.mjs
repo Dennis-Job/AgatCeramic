@@ -339,7 +339,7 @@ createServer(async (request, response) => {
   response.setHeader('Access-Control-Allow-Credentials', 'true')
   response.setHeader(
     'Access-Control-Allow-Headers',
-    'Accept, Content-Type, X-Cart-Token',
+    'Accept, Content-Type, X-Cart-Token, Idempotency-Key',
   )
   response.setHeader(
     'Access-Control-Allow-Methods',

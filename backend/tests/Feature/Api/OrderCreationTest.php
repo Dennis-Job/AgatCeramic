@@ -198,13 +198,21 @@ class OrderCreationTest extends TestCase
         $this->assertDatabaseCount('cart_items', 1);
     }
 
-    public function test_checkout_replays_the_original_order_for_the_same_idempotency_key(): void
+    public function test_storefront_checkout_creates_and_replays_an_order_without_a_session_csrf_token(): void
     {
+        $this->app['env'] = 'local'; // Exercise the CSRF middleware normally bypassed in tests.
+        config(['sanctum.stateful' => ['localhost:3000']]);
+        $this->withHeaders(['Origin' => 'http://localhost:3000', 'Referer' => 'http://localhost:3000/checkout']);
+
         $resolved = $this->createGuestCart();
         $cart = $resolved->cart;
         $product = Product::factory()->create(['price' => '100.00', 'stock_quantity' => 2]);
         CartItem::query()->create(['cart_id' => $cart->id, 'product_id' => $product->id, 'quantity' => 1]);
         $key = 'order-create-replay-test-0001';
+
+        $this->postJson('/api/v1/orders', $this->checkoutPayload())
+            ->assertUnprocessable()
+            ->assertJsonStructure(['error' => ['details' => ['cart_token', 'idempotency_key']]]);
 
         $first = $this->withHeader('X-Cart-Token', $resolved->token)
             ->withHeader('Idempotency-Key', $key)

@@ -9,6 +9,10 @@ import {
 import { cartTotal } from '../utils/totals'
 import { productUnitLabel } from '~/utils/productUnits'
 import type { CartItem, CartProduct } from '../types/cart'
+import {
+  createGuestOrder,
+  type OrderDetails,
+} from '~/features/checkout/services/orders'
 
 const storageKey = 'agatceramic.cart.token'
 const pendingRestores = new WeakMap<NuxtApp, Promise<void>>()
@@ -225,6 +229,33 @@ export function useCart() {
     }
   }
 
+  async function placeOrder(details: OrderDetails, key: string) {
+    if (
+      !import.meta.client ||
+      busy.value ||
+      !token.value ||
+      !items.value.length
+    )
+      return null
+    busy.value = true
+    try {
+      const order = await createGuestOrder(
+        publicBase,
+        token.value,
+        key,
+        details,
+      )
+      persistToken(null)
+      items.value = []
+      initialized.value = false
+      open.value = false
+      problem.value = null
+      return order
+    } finally {
+      busy.value = false
+    }
+  }
+
   return {
     items,
     open,
@@ -238,5 +269,6 @@ export function useCart() {
     addItem,
     updateItem,
     removeItem,
+    placeOrder,
   }
 }

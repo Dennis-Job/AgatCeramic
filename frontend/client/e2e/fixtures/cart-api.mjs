@@ -33,6 +33,7 @@ let items = []
 let requests = []
 let nextId = 1
 let mode = 'default'
+let order = null
 
 export function configureCartProducts(products) {
   for (const product of products)
@@ -76,6 +77,58 @@ function line(item) {
   }
 }
 
+function createOrder(req, res, token, payload) {
+  const key = req.headers['idempotency-key']
+  if (req.method !== 'POST') return failure(res, 405, 'method_not_allowed')
+  if (token !== TOKEN) return failure(res, 404, 'not_found')
+  if (typeof key !== 'string' || key.length < 16)
+    return failure(res, 422, 'validation_failed', {
+      idempotency_key: ['invalid'],
+    })
+  const fingerprint = JSON.stringify(payload)
+  if (order) {
+    if (order.key !== key) return failure(res, 404, 'not_found')
+    if (order.fingerprint !== fingerprint) return failure(res, 409, 'conflict')
+    res.setHeader('Idempotent-Replayed', 'true')
+    return json(res, 200, { data: order.data })
+  }
+  if (mode === 'order-unavailable' || !items.length) {
+    return failure(res, 422, 'validation_failed', {
+      cart: [
+        'Корзина содержит недоступный товар или недостаточное количество.',
+      ],
+    })
+  }
+  const orderItems = items.map(line).map((item) => ({
+    product_id: item.product_id,
+    product_name: item.product.name,
+    product_sku: item.product.sku,
+    unit_price: item.unit_price,
+    quantity: item.quantity,
+    line_total: item.line_total,
+  }))
+  const totalCents = orderItems.reduce(
+    (sum, item) => sum + Math.round(Number(item.line_total) * 100),
+    0,
+  )
+  order = {
+    key,
+    fingerprint,
+    data: {
+      order_number: 'AC-20261103-A1B2C3D4E5',
+      status: 'new',
+      payment_status: 'not_paid',
+      total_amount: (totalCents / 100).toFixed(2),
+      items: orderItems,
+      created_at: '2026-11-03T09:00:00+00:00',
+    },
+  }
+  items = []
+  if (mode === 'order-disconnect') return res.destroy()
+  res.setHeader('Idempotent-Replayed', 'false')
+  return json(res, 201, { data: order.data })
+}
+
 export async function handleCart(req, res, url) {
   if (url.pathname === '/__cart/reset') {
     productDefinitions = new Map(defaultProductDefinitions)
@@ -83,6 +136,7 @@ export async function handleCart(req, res, url) {
     requests = []
     nextId = 1
     mode = url.searchParams.get('mode') || 'default'
+    order = null
     json(res, 200, { token: TOKEN })
     return true
   }
@@ -99,7 +153,8 @@ export async function handleCart(req, res, url) {
     json(res, 200, { token: TOKEN })
     return true
   }
-  if (!url.pathname.startsWith('/api/v1/cart')) return false
+  const isOrder = url.pathname === '/api/v1/orders'
+  if (!isOrder && !url.pathname.startsWith('/api/v1/cart')) return false
   const token = req.headers['x-cart-token']
   const payload = ['POST', 'PATCH'].includes(req.method)
     ? await body(req)
@@ -109,7 +164,12 @@ export async function handleCart(req, res, url) {
     pathname: url.pathname,
     token: token || null,
     payload,
+    ...(isOrder ? { key: req.headers['idempotency-key'] ?? null } : {}),
   })
+  if (isOrder) {
+    createOrder(req, res, token, payload)
+    return true
+  }
   if (mode === 'error') {
     failure(res, 503, 'unavailable')
     return true

@@ -28,12 +28,13 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 |
 */
 
-// The guest cart uses X-Cart-Token and does not use session cookies.
+// Guest cart and checkout use X-Cart-Token instead of session cookies.
 Route::withoutMiddleware([EnsureFrontendRequestsAreStateful::class])->group(function (): void {
     Route::get('cart', [CartController::class, 'show'])->name('cart.show');
     Route::post('cart/items', [CartItemController::class, 'store'])->name('cart.items.store');
     Route::patch('cart/items/{item}', [CartItemController::class, 'update'])->name('cart.items.update');
     Route::delete('cart/items/{item}', [CartItemController::class, 'destroy'])->name('cart.items.destroy');
+    Route::post('orders', [OrderController::class, 'store'])->middleware('throttle:order-create')->name('orders.store');
 });
 
 Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-settings.show');
@@ -47,7 +48,6 @@ Route::get('sliders/{slug}', [SliderController::class, 'show'])->name('sliders.s
 Route::get('stores', [StoreController::class, 'index'])->name('stores.index');
 Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 Route::get('legal-documents/{type}', [LegalDocumentController::class, 'show'])->name('legal-documents.show');
-Route::post('orders', [OrderController::class, 'store'])->middleware('throttle:order-create')->name('orders.store');
 Route::post('callback-requests', [CallbackRequestController::class, 'store'])
     ->middleware('throttle:callback-request')
     ->name('callback-requests.store');

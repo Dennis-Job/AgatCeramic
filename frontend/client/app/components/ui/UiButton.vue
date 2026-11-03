@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { ArrowRight } from '@lucide/vue'
+
 withDefaults(
   defineProps<{
     to?: string
     variant?: 'dark' | 'light' | 'outline' | 'image-overlay'
     size?: 'normal' | 'compact'
     type?: 'button' | 'submit'
+    arrow?: boolean
   }>(),
   {
     variant: 'dark',
@@ -24,6 +27,12 @@ defineEmits<{ click: [event: MouseEvent] }>()
     :class="[`ui-button--${variant}`, `ui-button--${size}`]"
   >
     <slot />
+    <ArrowRight
+      v-if="arrow"
+      class="ui-button__arrow"
+      :size="16"
+      aria-hidden="true"
+    />
   </NuxtLink>
   <button
     v-else
@@ -33,6 +42,12 @@ defineEmits<{ click: [event: MouseEvent] }>()
     @click="$emit('click', $event)"
   >
     <slot />
+    <ArrowRight
+      v-if="arrow"
+      class="ui-button__arrow"
+      :size="16"
+      aria-hidden="true"
+    />
   </button>
 </template>
 
@@ -59,6 +74,18 @@ defineEmits<{ click: [event: MouseEvent] }>()
 
 .ui-button:hover {
   transform: translateY(-2px);
+}
+.ui-button__arrow {
+  flex: none;
+  transition: transform 0.3s;
+}
+.ui-button:not(:disabled):is(:hover, :focus-visible) .ui-button__arrow {
+  transform: translateX(4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-button:not(:disabled):is(:hover, :focus-visible) .ui-button__arrow {
+    transform: none;
+  }
 }
 
 .ui-button--dark {

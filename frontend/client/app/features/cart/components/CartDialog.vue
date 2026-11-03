@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ArrowRight } from '@lucide/vue'
 import UiDialog from '~/components/ui/UiDialog.vue'
 import UiButton from '~/components/ui/UiButton.vue'
 import CartLineItem from './CartLineItem.vue'
@@ -21,6 +20,11 @@ const revision = ref(0)
 onMounted(loadCart)
 async function commitQuantity(itemId: number, quantity: number) {
   if (!(await updateItem(itemId, quantity))) revision.value++
+}
+
+function openCartPage(close: () => void) {
+  close()
+  return navigateTo('/cart')
 }
 </script>
 
@@ -64,8 +68,13 @@ async function commitQuantity(itemId: number, quantity: number) {
             total === null ? 'Уточняется' : formatMoney(total)
           }}</strong>
         </div>
-        <UiButton class="cart-continue" :disabled="busy" @click="close">
-          Продолжить выбор <ArrowRight :size="16" aria-hidden="true" />
+        <UiButton
+          class="cart-continue"
+          :disabled="busy"
+          arrow
+          @click="openCartPage(close)"
+        >
+          Оформить заказ
         </UiButton>
       </div>
     </template>

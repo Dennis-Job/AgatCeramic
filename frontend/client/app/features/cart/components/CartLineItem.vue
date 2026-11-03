@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { Trash2 } from '@lucide/vue'
+import { Trash2, X } from '@lucide/vue'
 import UiIconButton from '~/components/ui/UiIconButton.vue'
 import UiQuantityInput from '~/components/ui/UiQuantityInput.vue'
 import { formatMoney } from '~/utils/formatMoney'
 import { productUnitLabel } from '~/utils/productUnits'
 import type { CartItem } from '../types/cart'
 
-const props = defineProps<{ item: CartItem; busy: boolean }>()
+const props = withDefaults(
+  defineProps<{ item: CartItem; busy: boolean; variant?: 'drawer' | 'page' }>(),
+  { variant: 'drawer' },
+)
 const emit = defineEmits<{
   quantity: [itemId: number, quantity: number]
   remove: [itemId: number]
@@ -43,45 +46,57 @@ const productPath = computed(() =>
     ? '/products/' + encodeURIComponent(props.item.product.slug)
     : null,
 )
+const isPage = computed(() => props.variant === 'page')
+const imageSize = computed(() => (isPage.value ? 104 : 72))
 </script>
 
 <template>
-  <article class="cart-item">
+  <article class="cart-item" :class="{ 'cart-item--page': isPage }">
     <div class="cart-item__image">
       <img
         v-if="item.product?.primary_image_url && !failedImage"
         :src="item.product.primary_image_url"
         :alt="name"
-        width="72"
-        height="72"
+        :width="imageSize"
+        :height="imageSize"
         @error="failedImage = true"
       />
       <span v-else>Нет фото</span>
     </div>
     <div class="cart-item__details">
-      <h3>
-        <NuxtLink v-if="productPath" :to="productPath">{{ name }}</NuxtLink>
-        <template v-else>{{ name }}</template>
-      </h3>
-      <p class="cart-item__price">
-        <template v-if="item.unit_price !== null && item.product">
-          {{ formatMoney(item.unit_price) }} /
+      <div class="cart-item__product">
+        <p v-if="isPage && item.product?.sku" class="cart-item__code eyebrow">
+          Код товара {{ item.product.sku }}
+        </p>
+        <h3>
+          <NuxtLink v-if="productPath" :to="productPath">{{ name }}</NuxtLink>
+          <template v-else>{{ name }}</template>
+        </h3>
+        <p class="cart-item__price">
+          <template v-if="item.unit_price !== null && item.product">
+            {{ formatMoney(item.unit_price) }} /
+            {{ productUnitLabel(item.product.unit) }}
+          </template>
+          <template v-else>Стоимость уточняется</template>
+        </p>
+      </div>
+      <div class="cart-item__quantity">
+        <UiQuantityInput
+          v-model="quantity"
+          class="cart-item__quantity-control"
+          :compact="!isPage"
+          :min="1"
+          :max="9999"
+          :disabled="busy || !item.product"
+          :label="'Количество ' + name"
+          @update:model-value="quantityError = ''"
+          @commit="commitQuantity"
+          @invalid="invalidQuantity"
+        />
+        <small v-if="isPage && item.product">
           {{ productUnitLabel(item.product.unit) }}
-        </template>
-        <template v-else>Стоимость уточняется</template>
-      </p>
-      <UiQuantityInput
-        v-model="quantity"
-        class="cart-item__quantity"
-        compact
-        :min="1"
-        :max="9999"
-        :disabled="busy || !item.product"
-        :label="'Количество ' + name"
-        @update:model-value="quantityError = ''"
-        @commit="commitQuantity"
-        @invalid="invalidQuantity"
-      />
+        </small>
+      </div>
     </div>
     <div class="cart-item__summary">
       <p class="cart-item__total">
@@ -92,12 +107,14 @@ const productPath = computed(() =>
         }}
       </p>
       <UiIconButton
-        plain
+        class="cart-item__remove"
+        :plain="!isPage"
         :label="'Удалить ' + name"
         :disabled="busy"
         @click="$emit('remove', item.id)"
       >
-        <Trash2 :size="16" :stroke-width="1.6" aria-hidden="true" />
+        <X v-if="isPage" :size="16" :stroke-width="1.6" aria-hidden="true" />
+        <Trash2 v-else :size="16" :stroke-width="1.6" aria-hidden="true" />
       </UiIconButton>
     </div>
     <p v-if="quantityError" class="cart-item__error" role="alert">
@@ -169,12 +186,99 @@ h3 a:hover {
   font-size: 12px;
   line-height: 1.6;
 }
+.cart-item--page {
+  grid-template-columns: var(--cart-page-columns);
+  gap: var(--cart-page-column-gap);
+  padding: 26px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.cart-item--page .cart-item__details,
+.cart-item--page .cart-item__summary {
+  display: contents;
+}
+.cart-item--page .cart-item__product {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cart-item__code {
+  margin: 0 0 8px;
+  font-size: 10px;
+}
+.cart-item--page h3 {
+  margin-bottom: 6px;
+  font-size: 16px;
+}
+.cart-item--page .cart-item__quantity {
+  min-width: 0;
+  margin-top: 0;
+}
+.cart-item--page .cart-item__quantity-control {
+  max-width: 100%;
+}
+.cart-item--page small {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+.cart-item--page .cart-item__total {
+  justify-self: end;
+  text-align: right;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.cart-item--page .cart-item__image span {
+  color: var(--color-ink-soft);
+}
+@media (max-width: 860px) {
+  .cart-item--page {
+    grid-template-columns: 84px minmax(0, 1fr) minmax(72px, max-content);
+    grid-template-areas:
+      'image product remove'
+      'image quantity total';
+    align-items: start;
+    gap: 14px 16px;
+  }
+  .cart-item--page .cart-item__image {
+    grid-area: image;
+  }
+  .cart-item--page .cart-item__product {
+    grid-area: product;
+  }
+  .cart-item--page .cart-item__quantity {
+    grid-area: quantity;
+  }
+  .cart-item--page .cart-item__total {
+    grid-area: total;
+    align-self: start;
+  }
+  .cart-item--page .cart-item__remove {
+    grid-area: remove;
+    justify-self: end;
+  }
+  .cart-item--page .cart-item__error {
+    grid-row: 3;
+  }
+}
+@media (max-width: 480px) {
+  .cart-item--page {
+    grid-template-columns: 64px minmax(0, 1fr) minmax(80px, 30%);
+    grid-template-areas:
+      'image product remove'
+      'quantity quantity total';
+    gap: 12px;
+  }
+  .cart-item--page .cart-item__total {
+    align-self: center;
+  }
+}
 @media (max-width: 400px) {
-  .cart-item {
+  .cart-item:not(.cart-item--page) {
     grid-template-columns: 52px minmax(0, 1fr) minmax(44px, max-content);
     gap: 12px;
   }
-  .cart-item__summary {
+  .cart-item:not(.cart-item--page) .cart-item__summary {
     max-width: 82px;
   }
 }
