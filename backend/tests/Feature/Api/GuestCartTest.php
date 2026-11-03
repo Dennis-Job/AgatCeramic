@@ -66,6 +66,10 @@ class GuestCartTest extends TestCase
 
     public function test_guest_can_add_update_and_remove_cart_items_with_ttl_transitions(): void
     {
+        $this->app['env'] = 'local'; // Exercise the CSRF middleware normally bypassed in tests.
+        config(['sanctum.stateful' => ['localhost:3000']]);
+        $this->withHeaders(['Origin' => 'http://localhost:3000', 'Referer' => 'http://localhost:3000/']);
+
         $this->freezeTime();
         config(['cart.empty_ttl_hours' => 2, 'cart.abandoned_ttl_days' => 3]);
         $resolved = $this->createGuestCart();

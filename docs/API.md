@@ -429,6 +429,9 @@ Admin API: `GET/PATCH /admin/site-settings`, `GET/POST /admin/legal-documents`,
 
 ### Корзина
 
+Маршруты корзины работают без сессионных cookies и CSRF-токена,
+в том числе для источников из списка `SANCTUM_STATEFUL_DOMAINS`.
+
 `GET /cart`
 
 Возвращает текущую анонимную корзину вместе с её позициями. Если заголовок `X-Cart-Token` отсутствует,
