@@ -180,7 +180,7 @@ async function advance() {
             <div class="checkout-fields">
               <UiTextField
                 v-model="name"
-                label="ФИО"
+                label="Фамилия, имя, отчество"
                 surface="white"
                 autocomplete="name"
                 pattern=".*\S.*"

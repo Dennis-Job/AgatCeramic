@@ -111,7 +111,7 @@ watch([model, () => props.required], validatePhone)
     class="ui-text-field"
     :class="{ 'ui-field--white': surface === 'white' }"
   >
-    <label :for="id">{{ label }}</label>
+    <label :for="id" class="ui-field-label">{{ label }}</label>
     <input
       :id="id"
       ref="input"
@@ -135,11 +135,8 @@ watch([model, () => props.required], validatePhone)
 <style scoped>
 .ui-text-field {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-}
-label {
-  font-size: 13px;
 }
 input {
   width: 100%;

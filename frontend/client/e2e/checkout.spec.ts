@@ -38,7 +38,9 @@ async function prepare(
 
 async function fillCheckout(page: Page, acceptConsent = true) {
   await expect(page.getByRole('heading', { name: 'Контакты' })).toBeVisible()
-  await page.getByLabel('ФИО', { exact: true }).fill(details.customer_name)
+  await page
+    .getByLabel('Фамилия, имя, отчество', { exact: true })
+    .fill(details.customer_name)
   await page.getByLabel('Телефон', { exact: true }).fill(details.customer_phone)
   await page.getByLabel('Email', { exact: true }).fill(details.customer_email)
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
@@ -68,7 +70,9 @@ test('checkout requires a valid customer email before advancing and fits all wid
 }) => {
   await prepare(request, page)
   await page.goto('/checkout')
-  await page.getByLabel('ФИО', { exact: true }).fill(details.customer_name)
+  await page
+    .getByLabel('Фамилия, имя, отчество', { exact: true })
+    .fill(details.customer_name)
   await page.getByLabel('Телефон', { exact: true }).fill(details.customer_phone)
   const email = page.getByLabel('Email', { exact: true })
   await expect(email).toHaveAttribute('required', '')
@@ -119,7 +123,11 @@ test('checkout requires explicit consent and displays both published documents',
   )
   for (const [name, path, body] of [
     ['согласие', '/personal-data/', 'Тестовый текст согласия.'],
-    ['политикой', '/privacy-policy/', 'Тестовый текст политики.'],
+    [
+      'политикой конфиденциальности',
+      '/privacy-policy/',
+      'Тестовый текст политики.',
+    ],
   ]) {
     const link = page.getByRole('link', { name, exact: true })
     await expect(link).toHaveAttribute('href', path)
@@ -209,7 +217,7 @@ test('checkout fields have white surfaces and missing thumbnails show text', asy
   await page.goto('/checkout')
 
   const white = 'rgb(255, 255, 255)'
-  const name = page.getByLabel('ФИО', { exact: true })
+  const name = page.getByLabel('Фамилия, имя, отчество', { exact: true })
   const phone = page.getByLabel('Телефон', { exact: true })
   const email = page.getByLabel('Email', { exact: true })
   for (const field of [name, phone, email])
@@ -409,7 +417,7 @@ test('checkout follows the visual keyboard order and keeps mobile summary items 
   await prepare(request, page)
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto('/checkout')
-  const name = page.getByLabel('ФИО', { exact: true })
+  const name = page.getByLabel('Фамилия, имя, отчество', { exact: true })
   const edit = page.getByRole('link', { name: /Изменить корзину/ })
   await edit.focus()
   await page.keyboard.press('Shift+Tab')

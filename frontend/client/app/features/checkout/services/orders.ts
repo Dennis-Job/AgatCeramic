@@ -52,7 +52,8 @@ export async function createGuestOrder(
     }
     const details = error?.data?.error?.details
     if (error?.statusCode === 422) {
-      if (details?.customer_name) throw new CheckoutError('Проверьте ФИО.', 1)
+      if (details?.customer_name)
+        throw new CheckoutError('Проверьте фамилию, имя и отчество.', 1)
       if (details?.customer_phone)
         throw new CheckoutError('Проверьте номер телефона.', 1)
       if (details?.customer_email)

@@ -13,7 +13,7 @@ const id = useId()
 
 <template>
   <div class="ui-textarea" :class="{ 'ui-field--white': surface === 'white' }">
-    <label :for="id">{{ label }}</label>
+    <label :for="id" class="ui-field-label">{{ label }}</label>
     <textarea
       :id="id"
       v-model="model"
@@ -29,11 +29,8 @@ const id = useId()
 <style scoped>
 .ui-textarea {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-}
-label {
-  font-size: 13px;
 }
 textarea {
   width: 100%;

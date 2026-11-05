@@ -49,9 +49,8 @@ async function retryDocuments() {
         >
         на обработку персональных данных, в соответствии с
         <NuxtLink to="/privacy-policy/" target="_blank" rel="noopener"
-          >политикой</NuxtLink
+          >политикой конфиденциальности</NuxtLink
         >
-        конфиденциальности
       </span>
     </label>
     <p v-if="loading" role="status">Загружаем документы…</p>

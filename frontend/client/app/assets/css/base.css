@@ -54,6 +54,15 @@ img {
   --field-background: var(--color-white);
 }
 
+.ui-field-label {
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
 :where(
   input[type='text'],
   input[type='tel'],
