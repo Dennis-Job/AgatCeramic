@@ -1,6 +1,9 @@
-type LegalDocumentType = 'privacy_policy' | 'consent'
+export type LegalDocumentType = 'privacy_policy' | 'consent'
 
-async function fetchPublishedDocument(base: string, type: LegalDocumentType) {
+export async function fetchPublishedDocument(
+  base: string,
+  type: LegalDocumentType,
+) {
   const { data } = await $fetch<{
     data: { type: LegalDocumentType; body: string; published_at: string }
   }>(`${base}/legal-documents/${type}`, {

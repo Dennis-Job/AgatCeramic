@@ -375,6 +375,7 @@ createServer(async (request, response) => {
     /^\/api\/v1\/legal-documents\/(privacy_policy|consent)$/,
   )?.[1]
   if (legalType) {
+    if (scenario === 'legal-unavailable') return fail(404)
     return send({
       data: {
         type: legalType,

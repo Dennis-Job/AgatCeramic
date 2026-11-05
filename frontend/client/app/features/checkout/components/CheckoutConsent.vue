@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiButton from '~/components/ui/UiButton.vue'
-import { fetchCheckoutLegalDocuments } from '../services/legalDocuments'
+import { fetchCheckoutLegalDocuments } from '~/features/legal/services/legalDocuments'
 
 defineProps<{ disabled?: boolean }>()
 const accepted = defineModel<boolean>({ required: true })
@@ -40,21 +40,22 @@ async function retryDocuments() {
         type="checkbox"
         :disabled="disabled || !documents"
         required
+        aria-labelledby="checkout-consent-text"
       />
-      <span>Я даю согласие на обработку персональных данных</span>
+      <span id="checkout-consent-text">
+        Я даю
+        <NuxtLink to="/personal-data/" target="_blank" rel="noopener"
+          >согласие</NuxtLink
+        >
+        на обработку персональных данных, в соответствии с
+        <NuxtLink to="/privacy-policy/" target="_blank" rel="noopener"
+          >политикой</NuxtLink
+        >
+        конфиденциальности
+      </span>
     </label>
     <p v-if="loading" role="status">Загружаем документы…</p>
-    <template v-else-if="documents">
-      <details>
-        <summary>Текст согласия</summary>
-        <p class="checkout-consent__document">{{ documents[1] }}</p>
-      </details>
-      <details>
-        <summary>Политика конфиденциальности</summary>
-        <p class="checkout-consent__document">{{ documents[0] }}</p>
-      </details>
-    </template>
-    <template v-else>
+    <template v-else-if="!documents">
       <p role="alert">Документы недоступны. Попробуйте загрузить их ещё раз.</p>
       <UiButton
         type="button"
@@ -90,19 +91,11 @@ input {
   margin: 0;
   accent-color: var(--color-ink);
 }
-summary {
-  width: fit-content;
-  padding-block: 7px;
-  cursor: pointer;
+a {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 p {
   margin: 0;
-}
-.checkout-consent__document {
-  margin: 8px 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 </style>

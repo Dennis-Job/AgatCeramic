@@ -76,13 +76,47 @@ test('checkout requires explicit consent and displays both published documents',
   await expect(consent).toBeEnabled()
   await expect(consent).not.toBeChecked()
   await expect(submit).toBeDisabled()
-  await page.getByText('Политика конфиденциальности', { exact: true }).click()
-  await expect(page.getByText('Тестовый текст политики.')).toBeVisible()
-  await page.getByText('Текст согласия', { exact: true }).click()
-  await expect(page.getByText('Тестовый текст согласия.')).toBeVisible()
+  await expect(page.locator('#checkout-consent-text')).toHaveText(
+    'Я даю согласие на обработку персональных данных, в соответствии с политикой конфиденциальности',
+  )
+  for (const [name, path, body] of [
+    ['согласие', '/personal-data/', 'Тестовый текст согласия.'],
+    ['политикой', '/privacy-policy/', 'Тестовый текст политики.'],
+  ]) {
+    const link = page.getByRole('link', { name, exact: true })
+    await expect(link).toHaveAttribute('href', path)
+    const opened = page.waitForEvent('popup')
+    await link.click()
+    const document = await opened
+    await expect(document.getByText(body, { exact: true })).toBeVisible()
+    await document.close()
+    await expect(consent).not.toBeChecked()
+    await expect(submit).toBeDisabled()
+  }
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true)
+    await page.screenshot({
+      path: `../../.tmp/checkout-consent-${width}.png`,
+      fullPage: true,
+    })
+  }
   expect(await orderWrites(request)).toEqual([])
 
-  await consent.check()
+  await page
+    .locator('#checkout-consent-text')
+    .click({ position: { x: 5, y: 5 } })
+  await expect(consent).toBeChecked()
+  await consent.focus()
+  await consent.press('Space')
+  await expect(consent).not.toBeChecked()
+  await consent.press('Space')
   await expect(submit).toBeEnabled()
   await page.getByRole('button', { name: 'Назад', exact: true }).click()
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
@@ -207,9 +241,12 @@ test('drawer opens the real cart page, then checkout creates a server order', as
     page.getByRole('heading', { name: 'Оформление заказа', level: 1 }),
   ).toBeVisible()
   await page.setViewportSize({ width: 320, height: 760 })
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
-    320,
-  )
+  expect(
+    await page.evaluate(() => {
+      const root = document.documentElement
+      return root.scrollWidth <= root.clientWidth
+    }),
+  ).toBe(true)
   await fillCheckout(page)
   expect(await orderWrites(request)).toEqual([])
   await page.getByRole('button', { name: /Подтвердить заказ/ }).click()
@@ -373,9 +410,12 @@ test('checkout follows the visual keyboard order and keeps mobile summary items 
       }),
     )
     .toBe(1)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
-    320,
-  )
+  expect(
+    await page.evaluate(() => {
+      const root = document.documentElement
+      return root.scrollWidth <= root.clientWidth
+    }),
+  ).toBe(true)
   await name.focus()
   await page.setViewportSize({ width: 1280, height: 900 })
   await expect(page.locator('.checkout-layout > div').first()).toHaveClass(
