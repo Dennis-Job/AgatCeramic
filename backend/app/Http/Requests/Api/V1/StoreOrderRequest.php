@@ -14,7 +14,7 @@ class StoreOrderRequest extends CartTokenRequest
             ...parent::rules(),
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'regex:'.RussianPhoneNumber::PATTERN],
-            'customer_email' => ['nullable', 'email:rfc', 'max:255'],
+            'customer_email' => ['required', 'string', 'email:rfc', 'max:255'],
             'delivery_address' => ['required', 'string', 'max:1000'],
             'customer_comment' => ['nullable', 'string', 'max:2000'],
             'website' => ['prohibited'],
@@ -57,7 +57,7 @@ class StoreOrderRequest extends CartTokenRequest
         return [
             'customer_name' => $this->string('customer_name')->toString(),
             'customer_phone' => $this->string('customer_phone')->toString(),
-            'customer_email' => $this->string('customer_email')->toString() ?: null,
+            'customer_email' => $this->string('customer_email')->toString(),
             'delivery_address' => $this->string('delivery_address')->toString(),
             'customer_comment' => $this->string('customer_comment')->toString() ?: null,
         ];

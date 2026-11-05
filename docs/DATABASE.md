@@ -233,8 +233,9 @@ pre-migration backup, потому что исходный bearer-токен и�
 Для подтверждённой, частичной или возвращённой оплаты эти значения фиксируют единый текущий платёжный
 снимок; для `not_paid` и `pending` они очищаются. Полная сумма совпадает с `total_amount`, частичная
 меньше него; это не меняет самостоятельный workflow `status` заказа.
-Подтверждение заказа не создаёт отдельную запись в БД: queued job читает уже сохранённые immutable
-`order_items` snapshots после commit и не меняет заказ.
+Почтовые доставки фиксируются в `order_mail_deliveries` в той же транзакции.
+Queued job читает уже сохранённые immutable `order_items` snapshots после commit
+и не меняет заказ.
 
 Lifecycle direct PII, order number, payment reference, comments, history и коммерческого остатка
 определён в [`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md). `TASK-A044` добавляет
@@ -243,6 +244,16 @@ Lifecycle direct PII, order number, payment reference, comments, history и ко
 payment reference или прежний публичный номер. `order_items` остаются только при утверждённом
 `retain_commercial`; при `delete_all` aggregate удаляется целиком. Production apply всё ещё
 запрещён, пока не заполнен operational approval block ADR-014 и disposition не выбран явно.
+
+### order_mail_deliveries
+
+Одна запись на `(order_id, recipient)`; `recipient` ограничен `admin`/`customer`.
+FK `order_id` удаляется каскадно. Статус ограничен `pending`/`sent`/`skipped`;
+хранятся attempts, last_dispatched_at, last_attempted_at, sent_at и timestamps.
+Индекс `(status, last_dispatched_at)` обслуживает bounded recovery. Таблица
+не содержит email, контактных данных или копий письма. Блокировки при отправке
+берутся в порядке order → delivery, согласованном с retention. Обезличенный
+заказ пропускается; старые заказы миграция не ставит в очередь.
 
 ### order_statuses
 Управляемый каталог статусов заказа: стабильный уникальный `code`, русское `name`, уникальный

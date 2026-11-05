@@ -71,7 +71,7 @@ async function advance() {
   const details: OrderDetails = {
     customer_name: name.value.trim(),
     customer_phone: phone.value,
-    customer_email: email.value.trim() || null,
+    customer_email: email.value.trim(),
     delivery_address: address.value.trim(),
     customer_comment: comment.value.trim() || null,
   }
@@ -198,11 +198,12 @@ async function advance() {
                 />
                 <UiTextField
                   v-model="email"
-                  label="Email (необязательно)"
+                  label="Email"
                   surface="white"
                   type="email"
                   autocomplete="email"
                   :maxlength="255"
+                  required
                 />
               </div>
             </div>

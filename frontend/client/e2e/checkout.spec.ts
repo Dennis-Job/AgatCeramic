@@ -40,9 +40,7 @@ async function fillCheckout(page: Page, acceptConsent = true) {
   await expect(page.getByRole('heading', { name: 'Контакты' })).toBeVisible()
   await page.getByLabel('ФИО', { exact: true }).fill(details.customer_name)
   await page.getByLabel('Телефон', { exact: true }).fill(details.customer_phone)
-  await page
-    .getByLabel('Email (необязательно)', { exact: true })
-    .fill(details.customer_email)
+  await page.getByLabel('Email', { exact: true }).fill(details.customer_email)
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Доставка' })).toBeVisible()
   await page
@@ -63,6 +61,46 @@ async function orderWrites(request: APIRequestContext) {
   const { requests } = await (await request.get(mock + '/__cart/stats')).json()
   return requests.filter((entry) => entry.pathname === '/api/v1/orders')
 }
+
+test('checkout requires a valid customer email before advancing and fits all widths', async ({
+  page,
+  request,
+}) => {
+  await prepare(request, page)
+  await page.goto('/checkout')
+  await page.getByLabel('ФИО', { exact: true }).fill(details.customer_name)
+  await page.getByLabel('Телефон', { exact: true }).fill(details.customer_phone)
+  const email = page.getByLabel('Email', { exact: true })
+  await expect(email).toHaveAttribute('required', '')
+  await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
+  await expect(email).toBeFocused()
+  await expect(page.getByLabel('Адрес доставки', { exact: true })).toHaveCount(
+    0,
+  )
+  await email.fill('invalid-email')
+  await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
+  await expect(page.getByLabel('Адрес доставки', { exact: true })).toHaveCount(
+    0,
+  )
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true)
+    await page.screenshot({
+      path: `../../.tmp/required-email-${width}.png`,
+      fullPage: true,
+    })
+  }
+  await email.fill(details.customer_email)
+  await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
+  await expect(page.getByLabel('Адрес доставки', { exact: true })).toBeVisible()
+  expect(await orderWrites(request)).toEqual([])
+})
 
 test('checkout requires explicit consent and displays both published documents', async ({
   page,
@@ -173,7 +211,7 @@ test('checkout fields have white surfaces and missing thumbnails show text', asy
   const white = 'rgb(255, 255, 255)'
   const name = page.getByLabel('ФИО', { exact: true })
   const phone = page.getByLabel('Телефон', { exact: true })
-  const email = page.getByLabel('Email (необязательно)', { exact: true })
+  const email = page.getByLabel('Email', { exact: true })
   for (const field of [name, phone, email])
     await expect(field).toHaveCSS('background-color', white)
 
@@ -188,6 +226,7 @@ test('checkout fields have white surfaces and missing thumbnails show text', asy
 
   await name.fill(details.customer_name)
   await phone.fill(details.customer_phone)
+  await email.fill(details.customer_email)
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click()
   const address = page.getByLabel('Адрес доставки', { exact: true })
   const comment = page.getByLabel('Комментарий (необязательно)', {

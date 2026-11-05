@@ -5,12 +5,13 @@ namespace Tests\Integration;
 use App\Jobs\DeleteStoredFile;
 use App\Jobs\ProcessProductImport;
 use App\Jobs\SendCallbackMail;
-use App\Jobs\SendOrderConfirmation;
+use App\Jobs\SendOrderMail;
 use App\Models\CallbackMailDelivery;
 use App\Models\Category;
 use App\Models\ContactRequest;
 use App\Models\ImportDispatchTask;
 use App\Models\Order;
+use App\Models\OrderMailDelivery;
 use App\Models\ProductImport;
 use App\Models\Role;
 use App\Models\SiteSetting;
@@ -133,6 +134,7 @@ class RedisQueueDeliveryTest extends TestCase
 
     private function runOrderConfirmationFlow(): void
     {
+        SiteSetting::query()->whereKey(1)->update(['notification_email' => 'queue-orders@example.test']);
         $order = Order::factory()->create([
             'customer_name' => 'Queue Recipient',
             'customer_phone' => '+70000000000',
@@ -152,19 +154,31 @@ class RedisQueueDeliveryTest extends TestCase
             $this->assertSame(0, $this->queueSize(), 'Confirmation must not be visible before commit.');
         });
 
-        $this->assertSame(1, $this->queueSize());
-        $this->assertIdentifierOnlyPayload(
-            $this->soleReadyPayload(),
-            SendOrderConfirmation::class,
-            'orderId',
-            $order->id,
-            [$order->customer_name, $order->customer_phone, $order->customer_email, $order->delivery_address],
-        );
+        $deliveries = OrderMailDelivery::query()->where('order_id', $order->id)->orderBy('id')->get();
+        $this->assertSame(['admin', 'customer'], $deliveries->pluck('recipient')->all());
+        $this->assertSame(2, $this->queueSize());
+        foreach ($this->readyPayloads() as $payload) {
+            $job = unserialize($payload['data']['command'], ['allowed_classes' => [SendOrderMail::class]]);
+            $this->assertInstanceOf(SendOrderMail::class, $job);
+            $this->assertIdentifierOnlyPayload(
+                $payload, SendOrderMail::class, 'deliveryId', $job->deliveryId,
+                [$order->customer_name, $order->customer_phone, $order->customer_email, $order->delivery_address],
+            );
+        }
 
         $worker = $this->runWorker(stopWhenEmpty: true, maxTime: 15);
 
-        $this->assertStringContainsString(SendOrderConfirmation::class, $worker);
+        $this->assertStringContainsString(SendOrderMail::class, $worker);
         $this->assertSame(0, $this->queueSize());
+        foreach ($deliveries as $delivery) {
+            $this->assertSame('sent', $delivery->refresh()->status);
+            $this->assertSame(1, $delivery->attempts);
+            SendOrderMail::dispatch($delivery->id);
+        }
+        $this->runWorker(stopWhenEmpty: true, maxTime: 15);
+        foreach ($deliveries as $delivery) {
+            $this->assertSame(1, $delivery->refresh()->attempts);
+        }
         $this->assertDatabaseCount('failed_jobs', 0);
     }
 

@@ -1,7 +1,7 @@
 export interface OrderDetails {
   customer_name: string
   customer_phone: string
-  customer_email: string | null
+  customer_email: string
   delivery_address: string
   customer_comment: string | null
 }

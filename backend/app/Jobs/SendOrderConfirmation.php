@@ -2,11 +2,9 @@
 
 namespace App\Jobs;
 
-use App\Mail\OrderConfirmationMail;
-use App\Models\Order;
+use App\Services\OrderConfirmationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Mail;
 
 class SendOrderConfirmation implements ShouldQueue
 {
@@ -21,14 +19,8 @@ class SendOrderConfirmation implements ShouldQueue
 
     public function __construct(public readonly int $orderId) {}
 
-    public function handle(): void
+    public function handle(OrderConfirmationService $mail): void
     {
-        $order = Order::query()->with('items')->find($this->orderId);
-
-        if ($order === null || $order->customer_email === null) {
-            return;
-        }
-
-        Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+        $mail->sendLegacyConfirmation($this->orderId);
     }
 }

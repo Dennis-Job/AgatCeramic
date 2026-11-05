@@ -1,5 +1,25 @@
 # OpenAPI migration plan — version history
 
+## v16.0 — required checkout email
+
+Date: 2026-11-05. HTTP routes remain `/api/v1`.
+
+### Breaking change
+
+POST /orders now requires a non-null, non-empty, valid `customer_email`
+(string, RFC email, max 255). Missing, null, empty, whitespace-only and invalid
+values return the existing 422 validation envelope before cart mutation.
+This implements the owner's explicit request to require customer email.
+
+Clients must collect email before advancing checkout and always send it as a
+string. The Nuxt storefront and its OrderDetails type are updated together
+with the backend. Update any external caller that previously omitted email.
+Existing orders and anonymization keep nullable database storage; no data
+backfill, deletion or migration is required. Request/response fields and routes
+otherwise keep their current behavior. Both new-order mail deliveries are
+scheduled after commit. Rollback requires reverting validation and storefront
+together; existing rows need no conversion.
+
 ## v15.2 — order total range validation
 
 Checkout returns the existing 422 validation envelope for totals beyond

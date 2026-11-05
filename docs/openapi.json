@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v15.2",
+        "version": "v16.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -3114,7 +3114,7 @@
             "post": {
                 "operationId": "createGuestOrder",
                 "summary": "Create a guest order from the current cart",
-                "description": "Order totals above 999999999999999999.99 return 422 with a validation error on cart. In this case, the cart contents are preserved.",
+                "description": "A valid customer_email is required; missing, null, empty or invalid values return 422 before mutating the cart or creating an order. Order totals above 999999999999999999.99 return 422 with a validation error on cart. In this case, the cart contents are preserved. After checkout commits, independent queued notifications are sent to the current site notification_email and the customer email. Customer confirmation includes all submitted checkout details, immutable item snapshots, totals and public store contacts. Delivery failures do not cancel the order; retrying the same Idempotency-Key does not create duplicate mail deliveries.",
                 "parameters": [
                     {
                         "name": "X-Cart-Token",
@@ -9688,7 +9688,7 @@
             },
             "StoreOrderRequest": {
                 "type": "object",
-                "required": ["customer_name", "customer_phone", "delivery_address"],
+                "required": ["customer_name", "customer_phone", "customer_email", "delivery_address"],
                 "properties": {
                     "customer_name": {"type": "string", "maxLength": 255},
                     "customer_phone": {
@@ -9696,7 +9696,7 @@
                         "description": "Russian phone: canonical +7 and 10 digits, formatted +7 (xxx) xxx-xx-xx, ten national digits, or legacy 8 and 10 digits. Normalized before validation and stored as +7xxxxxxxxxx. Foreign prefixes, incomplete numbers, letters and extensions are rejected.",
                         "pattern": "^\\s*(?:\\+[()\\s-]*7(?:[()\\s-]*[0-9]){10}|[()\\s-]*8(?:[()\\s-]*[0-9]){10}|(?:[()\\s-]*[0-9]){10})[()\\s-]*$"
                     },
-                    "customer_email": {"type": ["string", "null"], "format": "email", "maxLength": 255},
+                    "customer_email": {"type": "string", "format": "email", "maxLength": 255},
                     "delivery_address": {"type": "string", "maxLength": 1000},
                     "customer_comment": {"type": ["string", "null"], "maxLength": 2000},
                     "website": {"not": {}}

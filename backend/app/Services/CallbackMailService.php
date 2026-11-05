@@ -9,6 +9,7 @@ use App\Mail\ContactRequestMail;
 use App\Models\CallbackMailDelivery;
 use App\Models\ContactRequest;
 use App\Models\SiteSetting;
+use App\Support\MailTransportSafety;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +19,8 @@ use Throwable;
 
 class CallbackMailService
 {
+    public function __construct(private readonly MailTransportSafety $transportSafety) {}
+
     public function schedule(ContactRequest $contact): void
     {
         $recipients = in_array($contact->type, ['partner', 'email'], true) ? ['admin', 'customer'] : ['admin'];
@@ -44,7 +47,7 @@ class CallbackMailService
     {
         // Log transport neither delivers email nor keeps its personal data out of application logs.
         $mailer = config('mail.default');
-        if (is_string($mailer) && $this->usesLogTransport($mailer)) {
+        if (is_string($mailer) && $this->transportSafety->usesLogTransport($mailer)) {
             return;
         }
         $success = DB::transaction(function () use ($deliveryId): bool {
@@ -98,31 +101,6 @@ class CallbackMailService
         }
 
         return $contact->type === 'callback' ? new CallbackRequestMail($contact) : new ContactRequestMail($contact);
-    }
-
-    /** @param list<string> $visited */
-    private function usesLogTransport(string $name, array $visited = []): bool
-    {
-        if (in_array($name, $visited, true)) {
-            return true;
-        }
-        $transport = config("mail.mailers.{$name}.transport");
-        if ($transport === 'log') {
-            return true;
-        }
-        if (! in_array($transport, ['failover', 'roundrobin'], true)) {
-            return false;
-        }
-        $children = config("mail.mailers.{$name}.mailers", []);
-        if (is_array($children)) {
-            foreach ($children as $child) {
-                if (is_string($child) && $this->usesLogTransport($child, [...$visited, $name])) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     public function resetExhausted(CallbackMailDelivery $delivery): void

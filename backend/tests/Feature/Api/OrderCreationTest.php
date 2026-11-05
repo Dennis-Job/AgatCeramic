@@ -176,6 +176,29 @@ class OrderCreationTest extends TestCase
         $this->assertDatabaseHas('cart_items', ['id' => $item->id, 'quantity' => 2]);
     }
 
+    public function test_checkout_rejects_missing_empty_null_whitespace_or_invalid_customer_email_without_mutating_cart(): void
+    {
+        $resolved = $this->createGuestCart();
+        $product = Product::factory()->create();
+        CartItem::query()->create(['cart_id' => $resolved->cart->id, 'product_id' => $product->id, 'quantity' => 1]);
+        foreach (['missing', null, '', '   ', 'invalid-email'] as $index => $email) {
+            $payload = $this->checkoutPayload(['customer_email' => $email]);
+            if ($email === 'missing') {
+                unset($payload['customer_email']);
+            }
+            $this->withHeader('X-Cart-Token', $resolved->token)
+                ->withHeader('Idempotency-Key', 'order-email-required-'.$index)
+                ->postJson('/api/v1/orders', $payload)
+                ->assertUnprocessable()
+                ->assertJsonStructure(['error' => ['details' => ['customer_email']]]);
+        }
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('order_mail_deliveries', 0);
+        $this->assertDatabaseCount('checkout_idempotency_keys', 0);
+        $this->assertDatabaseCount('cart_items', 1);
+        $this->assertNull($resolved->cart->fresh()->checked_out_at);
+    }
+
     public function test_checkout_validates_contact_data_and_honeypot_before_using_the_cart(): void
     {
         $resolved = $this->createGuestCart();

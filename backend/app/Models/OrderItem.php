@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read numeric-string $unit_price
+ * @property-read numeric-string $line_total
+ */
 #[Fillable(['order_id', 'product_id', 'product_name', 'product_sku', 'unit_price', 'quantity', 'line_total'])]
 class OrderItem extends Model
 {
