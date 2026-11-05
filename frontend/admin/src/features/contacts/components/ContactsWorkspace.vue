@@ -6,13 +6,12 @@ import {
   useRoute,
   useRouter,
 } from 'vue-router'
-import { X } from '@lucide/vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiDialog from '../../../components/ui/UiDialog.vue'
+import AdminSidePanel from '../../../components/shared/AdminSidePanel.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -42,8 +41,6 @@ const contactId = ref<number | null>(null)
 const discardOpen = ref(false)
 let discardResolve: ((accepted: boolean) => void) | null = null
 let opener: HTMLElement | null = null
-let previousOverflow: string | null = null
-let previousPaddingRight: string | null = null
 const tabs = computed(() => [
   { value: '', label: 'Все', disabled: !workspace.statusReady.value },
   ...workspace.statuses.value.map((item) => ({
@@ -109,22 +106,6 @@ onBeforeRouteUpdate(async (to, from) => {
   if (to.query.contact === from.query.contact) return true
   return !workspace.saving.value && (await allowDiscard())
 })
-watch(drawerOpen, (open) => {
-  if (open && previousOverflow === null) {
-    previousOverflow = document.body.style.overflow
-    previousPaddingRight = document.body.style.paddingRight
-    const scrollbarWidth =
-      window.innerWidth - document.documentElement.clientWidth
-    if (scrollbarWidth > 0)
-      document.body.style.paddingRight = `${parseFloat(getComputedStyle(document.body).paddingRight) + scrollbarWidth}px`
-    document.body.style.overflow = 'hidden'
-  } else if (!open && previousOverflow !== null) {
-    document.body.style.overflow = previousOverflow
-    document.body.style.paddingRight = previousPaddingRight ?? ''
-    previousOverflow = null
-    previousPaddingRight = null
-  }
-})
 watch([workspace.detailLoading, workspace.saving], async () => {
   await nextTick()
   if (drawerOpen.value && document.activeElement === document.body)
@@ -134,9 +115,6 @@ watch([workspace.detailLoading, workspace.saving], async () => {
 })
 onBeforeUnmount(() => {
   compactStatusQuery?.removeEventListener('change', updateStatusLayout)
-  if (previousOverflow !== null) document.body.style.overflow = previousOverflow
-  if (previousPaddingRight !== null)
-    document.body.style.paddingRight = previousPaddingRight
   discardResolve?.(false)
 })
 onMounted(async () => {
@@ -292,63 +270,45 @@ watch([initialized, () => route.query.contact], ([ready, value]) => {
       </div>
     </div>
   </AdminWorkspace>
-  <UiDialog
+  <AdminSidePanel
     :open="drawerOpen"
-    labelledby="contact-details-title"
-    :close-disabled="workspace.saving.value"
+    :title="`Обращение #${contactId}`"
+    title-id="contact-details-title"
+    close-label="Закрыть обращение"
+    :busy="workspace.saving.value"
     :suspended="discardOpen"
-    overlay-class="contacts-panel-overlay z-40 flex items-stretch justify-end"
+    overlay-class="contacts-panel-overlay"
     panel-class="contacts-panel"
     transition-name="contacts-panel"
     @close="closeDetails"
   >
-    <div class="contacts-panel-heading">
-      <h2
-        id="contact-details-title"
-        class="text-xl font-bold text-gray-500"
-        tabindex="-1"
-        data-autofocus
-      >
-        Обращение #{{ contactId }}
-      </h2>
-      <UiButton
-        variant="neutral-ghost"
-        size="sm"
-        aria-label="Закрыть обращение"
-        :disabled="workspace.saving.value"
-        @click="closeDetails"
-        ><X :size="20" aria-hidden="true"
-      /></UiButton>
-    </div>
-    <div class="contacts-panel-body">
-      <ContactDetails
-        v-model:comment-body="workspace.commentBody.value"
-        :selected="workspace.selected.value"
-        :statuses="workspace.statuses.value"
-        :current-status="workspace.currentStatus.value"
-        :allowed-statuses="workspace.allowedStatuses.value"
-        :transition-ready="workspace.transitionReady.value"
-        :assignees="workspace.assignees.value"
-        :history="workspace.history.value"
-        :comments="workspace.comments.value"
-        :detail-loading="workspace.detailLoading.value"
-        :saving="workspace.saving.value"
-        :action-error="workspace.actionError.value"
-        :can-manage="workspace.canManage.value"
-        :can-manage-status="workspace.canManageStatus.value"
-        :can-assign="workspace.canAssign.value"
-        :date="workspace.date"
-        :status-name="workspace.statusName"
-        :type-name="workspace.typeName"
-        :assignee-options="workspace.assigneeOptions.value"
-        @change-status="workspace.changeStatus"
-        @change-assignee="workspace.changeAssignee"
-        @submit-comment="workspace.submitComment"
-        @retry="workspace.initialize"
-        @retry-detail="contactId && openDetails(contactId)"
-      />
-    </div>
-  </UiDialog>
+    <ContactDetails
+      v-model:comment-body="workspace.commentBody.value"
+      :selected="workspace.selected.value"
+      :statuses="workspace.statuses.value"
+      :current-status="workspace.currentStatus.value"
+      :allowed-statuses="workspace.allowedStatuses.value"
+      :transition-ready="workspace.transitionReady.value"
+      :assignees="workspace.assignees.value"
+      :history="workspace.history.value"
+      :comments="workspace.comments.value"
+      :detail-loading="workspace.detailLoading.value"
+      :saving="workspace.saving.value"
+      :action-error="workspace.actionError.value"
+      :can-manage="workspace.canManage.value"
+      :can-manage-status="workspace.canManageStatus.value"
+      :can-assign="workspace.canAssign.value"
+      :date="workspace.date"
+      :status-name="workspace.statusName"
+      :type-name="workspace.typeName"
+      :assignee-options="workspace.assigneeOptions.value"
+      @change-status="workspace.changeStatus"
+      @change-assignee="workspace.changeAssignee"
+      @submit-comment="workspace.submitComment"
+      @retry="workspace.initialize"
+      @retry-detail="contactId && openDetails(contactId)"
+    />
+  </AdminSidePanel>
   <ConfirmDialog
     :open="discardOpen"
     title="Закрыть без сохранения комментария?"
@@ -369,42 +329,6 @@ watch([initialized, () => route.query.contact], ([ready, value]) => {
   align-items: center;
   padding-block: var(--admin-spacing-6);
 }
-:global(.contacts-panel-overlay) {
-  --admin-dialog-backdrop-filter: none;
-  padding-top: var(--admin-shell-height);
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-:global(.contacts-panel-overlay .contacts-panel) {
-  width: min(544px, 100%);
-  height: 100%;
-  max-height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  border-left: var(--admin-border-width) solid var(--admin-color-gray-200);
-  border-radius: 0;
-  box-shadow: var(--admin-shadow-dropdown);
-}
-.contacts-panel-heading {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--admin-spacing-3);
-  padding: var(--admin-spacing-6);
-  background: var(--admin-color-white);
-}
-.contacts-panel-heading h2 {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  outline: none;
-}
-.contacts-panel-body {
-  padding: 0 var(--admin-spacing-6) var(--admin-spacing-6);
-}
 @media (max-width: 767px) {
   .contacts-filters {
     grid-template-columns: minmax(0, 1fr);
@@ -414,35 +338,6 @@ watch([initialized, () => route.query.contact], ([ready, value]) => {
 @media (min-width: 768px) and (max-width: 1023px) {
   .contacts-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-:global(.contacts-panel-enter-active),
-:global(.contacts-panel-leave-active) {
-  transition: opacity var(--admin-transition-duration)
-    var(--admin-transition-timing);
-}
-:global(.contacts-panel-enter-from),
-:global(.contacts-panel-leave-to) {
-  opacity: 0;
-}
-:global(.contacts-panel-enter-active .contacts-panel),
-:global(.contacts-panel-leave-active .contacts-panel) {
-  transition: transform var(--admin-transition-duration)
-    var(--admin-transition-timing);
-}
-:global(.contacts-panel-enter-from .contacts-panel),
-:global(.contacts-panel-leave-to .contacts-panel) {
-  transform: translateX(100%);
-}
-:global(.contacts-panel-leave-active) {
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  :global(.contacts-panel-enter-active),
-  :global(.contacts-panel-leave-active),
-  :global(.contacts-panel-enter-active .contacts-panel),
-  :global(.contacts-panel-leave-active .contacts-panel) {
-    transition: none;
   }
 }
 </style>

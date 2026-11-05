@@ -1,3 +1,4 @@
+import { orderStatistics } from './orderStatisticsFixtures'
 import type { Page } from './fixtures'
 import type { DeferredApiRequests } from './deferredApi'
 import { contactStatuses } from './contactStatusFixtures'
@@ -195,6 +196,15 @@ export async function mockAdminBaseline(
       completed_at: null,
       created_at: timestamp,
     }
+    if (path === '/admin/order-statistics')
+      return route.fulfill({
+        json: {
+          data: orderStatistics(
+            new URL(route.request().url()).searchParams.get('month') ??
+              '2026-10',
+          ),
+        },
+      })
     if (path === '/admin/auth/me')
       return guest
         ? route.fulfill({

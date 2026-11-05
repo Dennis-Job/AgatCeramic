@@ -39,16 +39,22 @@ for (const path of stateRoutes) {
     const deferredRequests = createDeferredApiRequests()
     const request = deferredRequests.defer(stateApiPaths[path])
     await mockAdminBaseline(page, false, 'loading', deferredRequests)
-    if (path === '/contacts')
+    if (path === '/contacts' || path === '/orders')
       await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
     await page.goto(path, { waitUntil: 'commit' })
     await request.requested
     await expect(
       page.getByRole('status').filter({ hasText: 'Загрузка' }).first(),
     ).toBeVisible()
-    if (path === '/contacts')
+    if (path === '/contacts' || path === '/orders')
       await expect(
-        page.getByRole('region', { name: 'Статистика обращений', exact: true }),
+        page.getByRole('region', {
+          name:
+            path === '/contacts'
+              ? 'Статистика обращений'
+              : 'Статистика заказов',
+          exact: true,
+        }),
       ).toHaveAttribute('aria-busy', 'false')
     await expect(page).toHaveScreenshot(`route-${path.slice(1)}-loading.png`, {
       fullPage: true,
@@ -95,7 +101,7 @@ for (const path of stateRoutes) {
       if (state === 'error')
         browserIssueGuard.allowApiError(500, /^\/api\/v1\/admin\//)
       await mockAdminBaseline(page, false, state)
-      if (path === '/contacts')
+      if (path === '/contacts' || path === '/orders')
         await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
       await page.goto(path, { waitUntil: 'networkidle' })
       if (state === 'error') {
@@ -145,7 +151,7 @@ const authenticatedRoutes = [
 for (const [path, heading] of authenticatedRoutes) {
   test(`Admin baseline: ${path}`, async ({ page }) => {
     await mockAdminBaseline(page)
-    if (path === '/contacts')
+    if (path === '/contacts' || path === '/orders')
       await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
     await page.goto(path)
     await expect(
@@ -420,7 +426,7 @@ for (const path of [
         path.startsWith('/reset')
       if (guest) browserIssueGuard.allowApiError(401, '/api/v1/admin/auth/me')
       await mockAdminBaseline(page, guest)
-      if (path === '/contacts')
+      if (path === '/contacts' || path === '/orders')
         await page.clock.setFixedTime(new Date('2026-10-22T09:00:00Z'))
 
       await page.setViewportSize({ width, height: 800 })

@@ -1,3 +1,4 @@
+import { orderStatistics } from './orderStatisticsFixtures'
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { contactStatuses } from './contactStatusFixtures'
@@ -113,6 +114,15 @@ async function mockApi(page: Page, options: MockOptions = {}): Promise<void> {
       return route.fulfill({
         status: 500,
         json: { error: { message: `Недоступен ресурс ${path}` } },
+      })
+    if (path === '/admin/order-statistics')
+      return route.fulfill({
+        json: {
+          data: orderStatistics(
+            new URL(route.request().url()).searchParams.get('month') ??
+              '2026-10',
+          ),
+        },
       })
     if (path === '/admin/auth/me')
       return route.fulfill({
@@ -387,7 +397,7 @@ test('dependent controls wait for their reference data', async ({ page }) => {
   const orderStatuses = deferredRequests.defer('/admin/order-statuses')
   await page.goto('/orders')
   await orderStatuses.requested
-  const orderStatusFilter = page.getByLabel('Статус заказа', { exact: true })
+  const orderStatusFilter = page.locator('[role="tab"][data-value=""]')
   await expect(orderStatusFilter).toBeDisabled()
   await page.getByRole('button', { name: 'Найти' }).click()
   await page

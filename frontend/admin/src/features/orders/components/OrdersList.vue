@@ -4,6 +4,7 @@ import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
 import type { Order } from '../types/order.types'
+import { orderStatusTone } from '../utils/orderStatusTone'
 import { formatPhone } from '../../../utils/phone'
 
 defineProps<{
@@ -60,7 +61,10 @@ defineEmits<{ select: [order: Order] }>()
             }}</strong>
           </div>
           <div class="mt-3 flex flex-wrap gap-2">
-            <UiBadge tone="primary">{{ statusName(order.status) }}</UiBadge
+            <UiBadge
+              :tone="orderStatusTone(order.status)"
+              class="whitespace-nowrap"
+              >{{ statusName(order.status) }}</UiBadge
             ><UiBadge tone="neutral">{{
               paymentName(order.payment_status)
             }}</UiBadge>
@@ -74,28 +78,30 @@ defineEmits<{ select: [order: Order] }>()
         </button>
       </article>
     </div>
-    <div class="min-w-0">
+    <div class="admin-container min-w-0">
       <UiTable
-        full-bleed
         class="hidden md:block"
-        min-width="min-w-[760px]"
+        min-width="min-w-[960px]"
         table-class="seller-table"
-        sticky-header
+        sticky-header="page"
         label="Список заказов"
         ><thead class="bg-gray-25 text-xs font-medium text-gray-500">
           <tr>
             <th scope="col" class="w-56 px-5 py-3">Заказ</th>
             <th scope="col" class="px-5 py-3">Клиент</th>
             <th scope="col" class="w-40 px-5 py-3">Статус</th>
-            <th scope="col" class="w-44 text-right px-5 py-3">Сумма</th>
+            <th scope="col" class="w-36 px-5 py-3">Оплата</th>
+            <th scope="col" class="w-36 text-right px-5 py-3">Сумма</th>
+            <th scope="col" class="w-44 px-5 py-3">Получено</th>
           </tr>
         </thead>
         <tbody>
           <tr
             v-for="order in orders"
             :key="order.id"
-            class="border-t border-gray-100 text-gray-500"
+            class="cursor-pointer border-t border-gray-100 text-gray-500 hover:bg-primary-50"
             :class="selectedId === order.id ? 'bg-primary-50' : ''"
+            @click="$emit('select', order)"
           >
             <td class="px-5 py-4">
               <button
@@ -103,16 +109,11 @@ defineEmits<{ select: [order: Order] }>()
                 class="-m-2 rounded-lg p-2 text-left admin-focus"
                 :aria-label="`Открыть заказ ${order.order_number}`"
                 :aria-current="selectedId === order.id ? 'true' : undefined"
-                @click="$emit('select', order)"
+                @click.stop="$emit('select', order)"
               >
                 <span class="block font-semibold text-gray-500">{{
                   order.order_number
-                }}</span
-                ><time
-                  class="mt-1 block text-xs text-gray-500"
-                  :datetime="order.created_at"
-                  >{{ date(order.created_at) }}</time
-                >
+                }}</span>
               </button>
             </td>
             <td class="px-5 py-4">
@@ -122,13 +123,22 @@ defineEmits<{ select: [order: Order] }>()
               </p>
             </td>
             <td class="px-5 py-4">
-              <UiBadge tone="primary">{{ statusName(order.status) }}</UiBadge>
-              <p class="mt-2 text-xs text-gray-500">
-                {{ paymentName(order.payment_status) }}
-              </p>
+              <UiBadge
+                :tone="orderStatusTone(order.status)"
+                class="whitespace-nowrap"
+                >{{ statusName(order.status) }}</UiBadge
+              >
+            </td>
+            <td class="px-5 py-4 text-sm text-gray-500">
+              {{ paymentName(order.payment_status) }}
             </td>
             <td class="px-5 py-4 text-right font-semibold text-gray-500">
               {{ amount(order.total_amount) }}
+            </td>
+            <td class="px-5 py-4 text-sm text-gray-500">
+              <time :datetime="order.created_at">{{
+                date(order.created_at)
+              }}</time>
             </td>
           </tr>
         </tbody></UiTable

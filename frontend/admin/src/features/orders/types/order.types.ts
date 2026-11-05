@@ -53,3 +53,18 @@ export type PaymentForm = {
   payment_method: string
   payment_reference: string
 }
+
+export type OrderStatisticMetric = {
+  count: number
+  previous_count: number
+  change_percent: number | null
+}
+export type OrderStatistics = {
+  month: string
+  previous_month: string
+  timezone: string
+  metrics: Record<
+    'total' | 'new' | 'completed' | 'cancelled',
+    OrderStatisticMetric
+  >
+}

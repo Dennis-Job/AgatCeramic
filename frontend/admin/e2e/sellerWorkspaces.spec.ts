@@ -199,12 +199,12 @@ for (const [path, label, cardsBelow] of [
           ).filter((cell) => cell.scrollWidth > cell.clientWidth).length,
         }))
         expect(dimensions.cellsOverflow, `${path} cells at ${width}`).toBe(0)
-        if (path === '/contacts') {
+        if (path === '/contacts' || path === '/orders') {
           expect(dimensions.containerWidth).toBeDefined()
           expect(dimensions.width).toBe(dimensions.containerWidth)
           expect(dimensions.width).toBeLessThanOrEqual(1280)
         } else expect(dimensions.width).toBe(dimensions.viewportWidth)
-        if (path === '/contacts') {
+        if (path === '/contacts' || path === '/orders') {
           expect(
             await region.evaluate(
               (element) => element.scrollHeight > element.clientHeight,
@@ -315,21 +315,35 @@ for (const [path, label, cardsBelow] of [
     const region = page.getByRole('region', { name: label, exact: true })
     await region.focus()
     await expect(region).toBeFocused()
-    if (path === '/contacts') {
-      const opener = region.getByRole('button', {
-        name: 'Открыть обращение 1',
-        exact: true,
-      })
+    if (path === '/contacts' || path === '/orders') {
+      const opener = region
+        .getByRole('button', {
+          name:
+            path === '/contacts'
+              ? 'Открыть обращение 1'
+              : `Открыть заказ ${order.order_number}`,
+          exact: true,
+        })
+        .first()
       await opener.focus()
       await page.keyboard.press('Enter')
       const dialog = page.getByRole('dialog', {
-        name: 'Обращение #1',
+        name: path === '/contacts' ? 'Обращение #1' : order.order_number,
         exact: true,
       })
       await expect(dialog).toBeVisible()
-      await expect(page.locator('.contacts-panel-enter-active')).toHaveCount(0)
       await expect(
-        dialog.getByRole('heading', { name: 'Обращение #1', exact: true }),
+        page.locator(
+          path === '/contacts'
+            ? '.contacts-panel-enter-active'
+            : '.admin-side-panel-enter-active',
+        ),
+      ).toHaveCount(0)
+      await expect(
+        dialog.getByRole('heading', {
+          name: path === '/contacts' ? 'Обращение #1' : order.order_number,
+          exact: true,
+        }),
       ).toBeFocused()
       await expect(region).toBeVisible()
       await expect(page.locator('.admin-list-detail')).toHaveCount(0)
@@ -347,89 +361,19 @@ for (const [path, label, cardsBelow] of [
           `selected ${path} at ${width}`,
         ).toBe(true)
         await dialog.screenshot({
-          path: `.tmp/a060-visual/contacts-selected-${width}.png`,
+          path: `.tmp/a060-visual/${path.slice(1)}-selected-${width}.png`,
         })
       }
       await page.setViewportSize({ width: 1280, height: 900 })
-      await dialog.getByRole('button', { name: 'Закрыть обращение' }).click()
-      await expect(dialog).toHaveCount(0)
-      await expect(page).toHaveURL(/\/contacts$/)
-      await expect(opener).toBeFocused()
-      await expect(opener).toBeInViewport()
-    } else if (path === '/orders') {
-      const opener = region.getByRole('button').first()
-      await opener.focus()
-      await page.keyboard.press('Enter')
-      const detailPanel = page.getByRole('region', {
-        name: 'Детали выбранной записи',
-      })
-      await expect(detailPanel).toBeFocused()
-      await expect(detailPanel.getByRole('heading').first()).toBeInViewport()
-      await detailPanel
-        .getByRole('button', { name: 'Вернуться к списку' })
+      await dialog
+        .getByRole('button', {
+          name: path === '/contacts' ? 'Закрыть обращение' : 'Закрыть заказ',
+        })
         .click()
+      await expect(dialog).toHaveCount(0)
+      await expect(page).toHaveURL(new RegExp(`${path}$`))
       await expect(opener).toBeFocused()
       await expect(opener).toBeInViewport()
-      for (const width of widths) {
-        await page.setViewportSize({ width, height: 900 })
-        await page.evaluate(
-          () =>
-            new Promise<void>((resolve) =>
-              requestAnimationFrame(() =>
-                requestAnimationFrame(() => resolve()),
-              ),
-            ),
-        )
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-          `selected ${path} at ${width}: ${JSON.stringify(
-            await page.evaluate(() =>
-              Array.from(document.querySelectorAll('*'))
-                .filter((el) => el.getBoundingClientRect().right > innerWidth)
-                .slice(0, 8)
-                .map((el) => ({
-                  tag: el.tagName,
-                  cls: el.className,
-                  right: el.getBoundingClientRect().right,
-                  text: el.textContent?.slice(0, 80),
-                })),
-            ),
-          )}`,
-        ).toBe(true)
-        const zones = await page
-          .locator('.admin-list-detail')
-          .evaluate((element) => {
-            const [list, detail] = Array.from(element.children).map((child) =>
-              child.getBoundingClientRect(),
-            )
-            return {
-              list: {
-                top: list!.top,
-                right: list!.right,
-                bottom: list!.bottom,
-              },
-              detail: {
-                top: detail!.top,
-                left: detail!.left,
-                width: detail!.width,
-              },
-            }
-          })
-        expect(zones.detail.top).toBeGreaterThanOrEqual(zones.list.bottom)
-        expect(zones.detail.width).toBe(
-          Math.min(1280, width - (width < 640 ? 32 : 48)),
-        )
-        expect(zones.detail.left).toBe((width - zones.detail.width) / 2)
-        await page
-          .getByRole('region', { name: 'Детали выбранной записи', exact: true })
-          .screenshot({
-            path: `.tmp/a060-visual/${path.slice(1)}-selected-${width}.png`,
-            // Exclude the global sticky shell from a tall detail-only crop.
-            style: '.admin-header { visibility: hidden !important; }',
-          })
-      }
     }
     await page.setViewportSize({ width: 1280, height: 900 })
     const accessibility = await new AxeBuilder({ page }).analyze()

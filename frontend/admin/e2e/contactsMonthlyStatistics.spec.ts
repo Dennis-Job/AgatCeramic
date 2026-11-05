@@ -120,7 +120,8 @@ test('monthly statistics use the selected cohort, compare the previous month and
   await expect(
     statistics.locator('[data-contact-metric="rejected"]'),
   ).toContainText('0%')
-  await expect(statistics).toContainText(/неполн|не заверш|текущ|по состоянию/i)
+  await expect(statistics).not.toContainText('По дате поступления.')
+  await expect(statistics).not.toContainText('Предыдущий месяц:')
   expect(state.requests).toEqual(['2026-10'])
 
   for (const width of [320, 640, 768, 1024, 1280, 1920]) {
@@ -158,7 +159,10 @@ test('monthly statistics use the selected cohort, compare the previous month and
   await expect(
     statistics.getByRole('button', { name: 'Месяц статистики', exact: true }),
   ).toContainText(/январь.*2025/i)
-  await expect(statistics).toContainText(/Предыдущий месяц: декабрь.*2024/i)
+  await expect(statistics).not.toContainText('Предыдущий месяц:')
+  await expect(
+    statistics.locator('[data-contact-metric=partner] [title]'),
+  ).toHaveAttribute('title', /декабрь.*2024/)
   expect(
     state.listRequests.every(
       (query) => !new URLSearchParams(query).has('month'),

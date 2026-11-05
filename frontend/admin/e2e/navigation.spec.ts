@@ -1,3 +1,4 @@
+import { orderStatistics } from './orderStatisticsFixtures'
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { mockCatalogApi } from './catalogApi'
@@ -77,6 +78,15 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
         json: {
           data: [],
           meta: { current_page: 1, last_page: 1, per_page: 5, total: 0 },
+        },
+      })
+    if (path === '/admin/order-statistics')
+      return route.fulfill({
+        json: {
+          data: orderStatistics(
+            new URL(route.request().url()).searchParams.get('month') ??
+              '2026-10',
+          ),
         },
       })
     if (path === '/admin/auth/me')

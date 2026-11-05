@@ -1,3 +1,4 @@
+import { orderStatistics } from './orderStatisticsFixtures'
 import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { contactStatuses } from './contactStatusFixtures'
@@ -56,6 +57,15 @@ async function mockApi(page: Page, permissions = ['contacts.view']) {
     const url = new URL(route.request().url())
     const path = url.pathname.replace('/api/v1', '')
     if (!['GET', 'HEAD'].includes(route.request().method())) state.mutations++
+    if (path === '/admin/order-statistics')
+      return route.fulfill({
+        json: {
+          data: orderStatistics(
+            new URL(route.request().url()).searchParams.get('month') ??
+              '2026-10',
+          ),
+        },
+      })
     if (path === '/admin/auth/me')
       return route.fulfill({
         json: {

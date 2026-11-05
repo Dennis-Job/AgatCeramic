@@ -10,6 +10,7 @@ import type {
   OrderFilters,
   OrderHistory,
   OrderStatus,
+  OrderStatistics,
 } from '../types/order.types'
 
 async function responseOrThrow<T>(
@@ -115,3 +116,11 @@ export async function addOrderComment(
     'Не удалось добавить комментарий.',
   )
 }
+
+export const getOrderStatistics = async (
+  month: string,
+): Promise<OrderStatistics> =>
+  responseOrThrow(
+    await apiFetch(`/admin/order-statistics?${new URLSearchParams({ month })}`),
+    'Не удалось загрузить статистику заказов.',
+  )

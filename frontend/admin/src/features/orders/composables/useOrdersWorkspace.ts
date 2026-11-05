@@ -44,8 +44,10 @@ export function useOrdersWorkspace() {
   const loading = ref(true)
   const detailLoading = ref(false)
   let detailRequest = 0
+  let listRequest = 0
   onScopeDispose(() => {
     detailRequest++
+    listRequest++
   })
   const error = ref('')
   const statusLoading = ref(false)
@@ -54,6 +56,7 @@ export function useOrdersWorkspace() {
   const actionError = ref('')
   const saving = ref(false)
   const commentBody = ref('')
+  const persistedStatus = ref('')
   const paymentForm = ref<PaymentForm>({
     payment_status: 'not_paid',
     payment_amount: '',
@@ -74,6 +77,21 @@ export function useOrdersWorkspace() {
     ...statuses.value.map((item) => ({ label: item.name, value: item.code })),
   ])
   const paymentEditOptions = orderPaymentOptions.slice(1)
+  const hasUnsavedChanges = computed(
+    () =>
+      Boolean(commentBody.value.trim()) ||
+      Boolean(
+        selected.value &&
+        (selected.value.status !== persistedStatus.value ||
+          paymentForm.value.payment_status !== selected.value.payment_status ||
+          paymentForm.value.payment_amount !==
+            (selected.value.payment_amount ?? '') ||
+          paymentForm.value.payment_method !==
+            (selected.value.payment_method ?? '') ||
+          paymentForm.value.payment_reference !==
+            (selected.value.payment_reference ?? '')),
+      ),
+  )
 
   const date = (value: string | null): string =>
     value ? new Date(value).toLocaleString('ru-RU') : '—'
@@ -84,6 +102,7 @@ export function useOrdersWorkspace() {
     orderPaymentOptions.find((item) => item.value === code)?.label ?? code
 
   async function load(nextPage = 1): Promise<void> {
+    const request = ++listRequest
     loading.value = true
     error.value = ''
     try {
@@ -95,17 +114,30 @@ export function useOrdersWorkspace() {
         },
         { page: nextPage },
       )
+      if (request !== listRequest) return
       orders.value = response.data
       meta.value = response.meta
       page.value = response.meta.current_page
     } catch (reason) {
+      if (request !== listRequest) return
       error.value =
         reason instanceof Error
           ? reason.message
           : 'Не удалось загрузить заказы.'
     } finally {
-      loading.value = false
+      if (request === listRequest) loading.value = false
     }
+  }
+
+  function clearSelection(): void {
+    detailRequest++
+    selected.value = null
+    histories.value = []
+    comments.value = []
+    commentBody.value = ''
+    persistedStatus.value = ''
+    actionError.value = ''
+    detailLoading.value = false
   }
 
   function syncPaymentForm(): void {
@@ -129,6 +161,8 @@ export function useOrdersWorkspace() {
       const item = await getOrder(order.id)
       if (request !== detailRequest) return
       selected.value = item
+      persistedStatus.value = item.status
+      syncPaymentForm()
       const [history, activity] = await Promise.all([
         getOrderHistory(order.id),
         getOrderComments(order.id),
@@ -136,7 +170,6 @@ export function useOrdersWorkspace() {
       if (request !== detailRequest) return
       histories.value = history
       comments.value = activity
-      syncPaymentForm()
     } catch (reason) {
       if (request !== detailRequest) return
       actionError.value =
@@ -149,13 +182,15 @@ export function useOrdersWorkspace() {
   }
 
   async function changeStatus(): Promise<void> {
-    if (!selected.value || !canManageStatus.value) return
+    if (!selected.value || !canManageStatus.value || saving.value) return
+    const paymentDraft = { ...paymentForm.value }
     saving.value = true
     actionError.value = ''
     try {
       await updateOrderStatus(selected.value.id, selected.value.status)
       notifyAdminNotificationsChanged()
       await selectOrder(selected.value)
+      paymentForm.value = paymentDraft
       await load(page.value)
     } catch (reason) {
       actionError.value =
@@ -166,7 +201,8 @@ export function useOrdersWorkspace() {
   }
 
   async function savePayment(): Promise<void> {
-    if (!selected.value) return
+    if (!selected.value || !canManagePayment.value || saving.value) return
+    const statusDraft = selected.value.status
     saving.value = true
     actionError.value = ''
     try {
@@ -177,6 +213,7 @@ export function useOrdersWorkspace() {
         : { ...paymentForm.value, paid_at: new Date().toISOString() }
       await updateOrderPayment(selected.value.id, payload)
       await selectOrder(selected.value)
+      if (selected.value) selected.value.status = statusDraft
       await load(page.value)
     } catch (reason) {
       actionError.value =
@@ -189,7 +226,13 @@ export function useOrdersWorkspace() {
   }
 
   async function submitComment(): Promise<void> {
-    if (!selected.value || !commentBody.value.trim()) return
+    if (
+      !selected.value ||
+      !canManage.value ||
+      saving.value ||
+      !commentBody.value.trim()
+    )
+      return
     saving.value = true
     actionError.value = ''
     try {
@@ -245,6 +288,7 @@ export function useOrdersWorkspace() {
     actionError,
     saving,
     commentBody,
+    hasUnsavedChanges,
     paymentForm,
     canManage,
     canManageStatus,
@@ -257,6 +301,7 @@ export function useOrdersWorkspace() {
     paymentName,
     load,
     selectOrder,
+    clearSelection,
     changeStatus,
     savePayment,
     submitComment,

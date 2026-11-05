@@ -2,7 +2,8 @@
 import { MessageSquare } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
-import UiCard from '../../../components/ui/UiCard.vue'
+import UiBadge from '../../../components/ui/UiBadge.vue'
+import { orderStatusTone } from '../utils/orderStatusTone'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -30,55 +31,73 @@ defineProps<{
   date: (value: string | null) => string
   amount: (value: string | null) => string
   statusName: (code: string) => string
+  paymentName: (code: string) => string
   paymentOptions: { label: string; value: string }[]
 }>()
 const paymentForm = defineModel<PaymentForm>('paymentForm', { required: true })
 const commentBody = defineModel<string>('commentBody', { required: true })
-defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
+defineEmits<{
+  changeStatus: []
+  savePayment: []
+  submitComment: []
+  retry: []
+}>()
 </script>
 
 <template>
-  <UiCard
-    class="min-w-0"
-    role="complementary"
-    aria-labelledby="order-details-title"
-  >
-    <template #header>
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p class="text-xs font-medium text-gray-500">Заказ</p>
-          <h2
-            id="order-details-title"
-            class="mt-1 break-all font-bold text-gray-500"
-          >
-            {{ selected?.order_number ?? 'Детали заказа' }}
-          </h2>
-        </div>
-        <strong v-if="selected" class="text-lg text-gray-500">
-          {{ amount(selected.total_amount) }}
-        </strong>
-      </div>
-    </template>
+  <div class="min-w-0" role="region" aria-label="Детали выбранной записи">
     <UiNotification v-if="actionError && !selected">{{
       actionError
     }}</UiNotification>
     <UiLoadingState v-if="detailLoading" label="Загрузка деталей заказа…" />
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
-      Выберите заказ в списке, чтобы открыть рабочее место менеджера.
+      <template v-if="actionError"
+        ><p>Не удалось открыть заказ.</p>
+        <UiButton class="mt-3" variant="secondary" @click="$emit('retry')"
+          >Повторить загрузку заказа</UiButton
+        ></template
+      >
+      <template v-else>Выберите заказ в списке.</template>
     </div>
     <div v-else class="space-y-6">
       <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
+      <div
+        class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500"
+      >
+        <div class="flex flex-wrap items-center gap-2">
+          <UiBadge
+            :tone="orderStatusTone(selected.status)"
+            class="whitespace-nowrap"
+            >{{ statusName(selected.status) }}</UiBadge
+          ><UiBadge tone="neutral">{{
+            paymentName(selected.payment_status)
+          }}</UiBadge>
+        </div>
+        <strong class="text-lg">{{ amount(selected.total_amount) }}</strong>
+        <time class="w-full text-xs" :datetime="selected.created_at">{{
+          date(selected.created_at)
+        }}</time>
+      </div>
       <section>
         <h3 class="text-sm font-semibold text-gray-500">Клиент и доставка</h3>
         <dl class="mt-3 space-y-2 text-sm text-gray-500">
           <div>
             <dt class="text-xs text-gray-500">Клиент</dt>
             <dd class="break-words">
-              {{ selected.customer.name }} ·
-              {{ formatPhone(selected.customer.phone) }}
+              {{ selected.customer.name }}
+              <a
+                v-if="selected.customer.phone"
+                class="mt-1 block rounded admin-focus"
+                :href="`tel:${selected.customer.phone}`"
+                >{{ formatPhone(selected.customer.phone) }}</a
+              >
             </dd>
             <dd v-if="selected.customer.email" class="break-all">
-              {{ selected.customer.email }}
+              <a
+                class="rounded admin-focus"
+                :href="`mailto:${selected.customer.email}`"
+                >{{ selected.customer.email }}</a
+              >
             </dd>
           </div>
           <div>
@@ -230,5 +249,5 @@ defineEmits<{ changeStatus: []; savePayment: []; submitComment: [] }>()
         </form>
       </section>
     </div>
-  </UiCard>
+  </div>
 </template>

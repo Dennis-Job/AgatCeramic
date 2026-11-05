@@ -1,5 +1,14 @@
 # OpenAPI migration plan — version history
 
+## v16.1 — monthly order statistics
+
+Date: 2026-11-05. Additive read-only `GET /admin/order-statistics?month=YYYY-MM`
+requires `orders.view`. Returns total/new/completed/cancelled counts for the
+selected Europe/Moscow creation month and previous calendar month, with rounded
+percentage changes and null when growth has a zero baseline. Current statuses
+determine the status counts; list filters and status-change dates do not affect
+the cohort. No existing routes or schemas change; no database migration required.
+
 ## v16.0 — required checkout email
 
 Date: 2026-11-05. HTTP routes remain `/api/v1`.
