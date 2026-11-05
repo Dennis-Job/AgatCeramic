@@ -11,6 +11,7 @@ import type {
   OrderHistory,
   OrderStatus,
   OrderStatistics,
+  OrderAssignee,
 } from '../types/order.types'
 
 async function responseOrThrow<T>(
@@ -36,7 +37,9 @@ export async function getOrders(
 ): Promise<PaginatedResponse<Order>> {
   const query = new URLSearchParams()
   Object.entries(filters).forEach(([key, value]) => {
-    if (value) query.set(key, value)
+    if (Array.isArray(value))
+      value.forEach((code) => query.append(`${key}[]`, code))
+    else if (value) query.set(key, value === true ? '1' : value)
   })
   withPage(query, { ...page, perPage: page.perPage ?? 25 })
   const response = await apiFetch(`/admin/orders?${query}`)
@@ -50,6 +53,27 @@ export const getOrder = async (id: number): Promise<Order> =>
     await apiFetch(`/admin/orders/${id}`),
     'Не удалось загрузить заказ.',
   )
+
+export const getOrderAssignees = async (): Promise<OrderAssignee[]> =>
+  responseOrThrow(
+    await apiFetch('/admin/order-assignees'),
+    'Не удалось загрузить список ответственных.',
+  )
+
+export async function assignOrder(
+  id: number,
+  assigneeId: number | null,
+): Promise<void> {
+  await requestCsrfCookie()
+  await responseOrThrow<void>(
+    await apiFetch(`/admin/orders/${id}/assignee`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignee_id: assigneeId }),
+    }),
+    'Не удалось изменить ответственного.',
+  )
+}
 export const getOrderStatuses = async (): Promise<OrderStatus[]> =>
   responseOrThrow(
     await apiFetch('/admin/order-statuses'),

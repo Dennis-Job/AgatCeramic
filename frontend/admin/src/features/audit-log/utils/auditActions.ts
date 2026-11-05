@@ -49,6 +49,7 @@ export const auditActionLabels: Record<string, string> = {
   'order.status-changed': 'Изменён статус заказа',
   'order.comment-added': 'Добавлен комментарий к заказу',
   'order.payment-registered': 'Зарегистрирована оплата заказа',
+  'order.assignee-changed': 'Изменён ответственный за заказ',
   'contact.assignee-changed': 'Изменён ответственный за обращение',
   'contact.status-changed': 'Изменён статус обращения',
   'contact.comment-added': 'Добавлен комментарий к обращению',

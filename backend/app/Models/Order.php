@@ -11,11 +11,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** @property-read numeric-string $total_amount */
-#[Fillable(['order_number', 'customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment', 'status', 'payment_status', 'payment_amount', 'payment_method', 'payment_reference', 'total_amount', 'paid_at', 'completed_at', 'anonymized_at', 'commercial_retention_until'])]
+#[Fillable(['order_number', 'customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment', 'status', 'payment_status', 'payment_amount', 'payment_method', 'payment_reference', 'total_amount', 'paid_at', 'completed_at', 'anonymized_at', 'commercial_retention_until', 'assignee_id', 'assigned_at'])]
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
     use HasFactory;
+
+    /** @return BelongsTo<User, $this> */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assignee_id');
+    }
 
     /** @return HasMany<OrderItem, $this> */
     public function items(): HasMany
@@ -50,6 +56,8 @@ class Order extends Model
             'payment_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'paid_at' => 'datetime',
+            'assignee_id' => 'integer',
+            'assigned_at' => 'datetime',
             'completed_at' => 'datetime',
             'anonymized_at' => 'datetime',
             'commercial_retention_until' => 'datetime',

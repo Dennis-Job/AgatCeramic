@@ -75,13 +75,16 @@ defineEmits<{ select: [order: Order] }>()
           <p class="break-all text-xs text-gray-500">
             {{ formatPhone(order.customer.phone) }}
           </p>
+          <p class="mt-3 break-words text-xs text-gray-500">
+            Ответственный: {{ order.assignee?.name ?? 'Не назначен' }}
+          </p>
         </button>
       </article>
     </div>
     <div class="admin-container min-w-0">
       <UiTable
         class="hidden md:block"
-        min-width="min-w-[960px]"
+        min-width="min-w-[1200px]"
         table-class="seller-table"
         sticky-header="page"
         label="Список заказов"
@@ -92,6 +95,7 @@ defineEmits<{ select: [order: Order] }>()
             <th scope="col" class="w-40 px-5 py-3">Статус</th>
             <th scope="col" class="w-36 px-5 py-3">Оплата</th>
             <th scope="col" class="w-36 text-right px-5 py-3">Сумма</th>
+            <th scope="col" class="w-44 px-5 py-3">Ответственный</th>
             <th scope="col" class="w-44 px-5 py-3">Получено</th>
           </tr>
         </thead>
@@ -134,6 +138,9 @@ defineEmits<{ select: [order: Order] }>()
             </td>
             <td class="px-5 py-4 text-right font-semibold text-gray-500">
               {{ amount(order.total_amount) }}
+            </td>
+            <td class="px-5 py-4 text-sm text-gray-500">
+              {{ order.assignee?.name ?? 'Не назначен' }}
             </td>
             <td class="px-5 py-4 text-sm text-gray-500">
               <time :datetime="order.created_at">{{

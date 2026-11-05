@@ -290,6 +290,10 @@ export async function mockAdminBaseline(
           },
         ]),
       })
+    if (path === '/admin/order-assignees')
+      return route.fulfill({
+        json: { data: [{ id: 2, name: 'Менеджер заказов' }] },
+      })
     if (path === '/admin/order-statuses')
       return route.fulfill({
         json: data([

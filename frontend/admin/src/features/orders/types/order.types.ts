@@ -6,12 +6,15 @@ export type OrderItem = {
   quantity: number
   line_total: string
 }
+export type OrderAssignee = { id: number; name: string }
 export type Order = {
   id: number
   order_number: string
   customer: { name: string; phone: string | null; email: string | null }
   delivery_address: string
   customer_comment: string | null
+  assignee: OrderAssignee | null
+  assigned_at: string | null
   status: string
   payment_status: string
   payment_amount: string | null
@@ -45,7 +48,10 @@ export type OrderComment = {
 export type OrderFilters = {
   search?: string
   status?: string
+  statuses?: string[]
   payment_status?: string
+  assignee_id?: string
+  unassigned?: boolean
 }
 export type PaymentForm = {
   payment_status: string

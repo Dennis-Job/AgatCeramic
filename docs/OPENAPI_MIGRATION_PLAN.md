@@ -1,5 +1,46 @@
 # OpenAPI migration plan — version history
 
+## v17.0 — responsible order manager
+
+Date: 2026-11-05. Additive `GET /admin/order-assignees` and
+`PATCH /admin/orders/{order}/assignee` require `orders.manage`. Candidates expose
+only id/name for active employees with orders.manage. PATCH requires present
+nullable integer assignee_id and returns 204, with server eligibility recheck,
+transaction/order lock, and idempotent no-op. Audit order.assignee-changed metadata
+contains previous/next IDs only. Public Order is unchanged.
+
+### Breaking change
+
+HTTP routes remain `/api/v1`. The previous AdminOrder schema disallowed additional
+properties, so emitting the new fields breaks strict existing response validators.
+Before: `{id, order_number, customer, ..., status, payment_status, ...}`.
+After: `{id, order_number, customer, ..., status, assignee: {id, name} | null,
+assigned_at: ISO8601 | null, payment_status, ...}`. Both new fields are required
+in the admin list/detail response and are null for existing unassigned orders.
+Update external strict AdminOrder validators and admin types to accept both fields
+before deploying the backend and admin together. Assignment mutation itself returns
+204; refresh the order snapshot to read the current identity and timestamp. Public
+checkout callers need no response changes. No new permission is introduced.
+
+### Data migration and rollback
+
+List gains assignee_id/unassigned (query 1/0), combined with existing filters before
+pagination. No permissions change. Migration
+`2026_11_05_000001_add_assignment_to_orders.php` adds nullable FK with nullOnDelete,
+assigned_at and assignee index, with no backfill. Employee deletion clears the FK
+and preserves the order; explicit unassignment also clears assigned_at. Rollback
+removes the new columns and assignment data; do not roll back the working database
+without the owner's explicit instruction.
+
+## v16.2 — compact order queues
+
+Date: 2026-11-05. Additive `statuses[]` query parameter on `GET /admin/orders`:
+1–100 distinct existing status codes, max 50 characters each, matched with OR
+before pagination. It cannot be combined with non-empty `status`; malformed
+values return the existing 422 envelope. Existing single-status/payment/search
+filters remain compatible. Admin groups intermediate non-terminal stages into
+«В работе» and keeps payment filtering separate. No data/schema migration.
+
 ## v16.1 — monthly order statistics
 
 Date: 2026-11-05. Additive read-only `GET /admin/order-statistics?month=YYYY-MM`

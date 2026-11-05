@@ -23,7 +23,7 @@ class AuditLabels
         'product.exported' => 'Подготовлен экспорт товаров',
         'import.submitted' => 'Загружен файл импорта', 'import.completed' => 'Завершён импорт', 'import.failed' => 'Импорт завершился ошибкой',
         'image-import.submitted' => 'Загружен архив фотографий', 'image-import.completed' => 'Завершён импорт фотографий', 'image-import.failed' => 'Импорт фотографий завершился ошибкой',
-        'order.status-changed' => 'Изменён статус заказа', 'order.comment-added' => 'Добавлен комментарий к заказу', 'order.payment-registered' => 'Зарегистрирована оплата заказа',
+        'order.status-changed' => 'Изменён статус заказа', 'order.comment-added' => 'Добавлен комментарий к заказу', 'order.payment-registered' => 'Зарегистрирована оплата заказа', 'order.assignee-changed' => 'Изменён ответственный за заказ',
         'contact.assignee-changed' => 'Изменён ответственный за обращение', 'contact.status-changed' => 'Изменён статус обращения', 'contact.comment-added' => 'Добавлен комментарий к обращению',
         'page.created' => 'Создана страница', 'page.updated' => 'Изменена страница', 'page.deleted' => 'Удалена страница', 'page.published' => 'Опубликована страница',
         'home-page.updated' => 'Изменена главная страница', 'home-page.published' => 'Опубликована главная страница',

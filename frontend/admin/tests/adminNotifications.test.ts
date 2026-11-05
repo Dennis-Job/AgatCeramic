@@ -29,6 +29,8 @@ const contacts: Contact[] = ['callback', 'email', 'partner'].map((type, i) => ({
   created_at: '2026-10-21T10:00:00Z',
 }))
 const order: Order = {
+  assignee: null,
+  assigned_at: null,
   id: 42,
   order_number: 'AG-42',
   customer: { name: 'Покупатель', phone: '+79991234567', email: null },

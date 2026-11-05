@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Admin\ContentPreviewController;
 use App\Http\Controllers\Api\V1\Admin\HomePageController;
 use App\Http\Controllers\Api\V1\Admin\LegalDocumentController;
 use App\Http\Controllers\Api\V1\Admin\MediaController;
+use App\Http\Controllers\Api\V1\Admin\OrderAssignmentController;
 use App\Http\Controllers\Api\V1\Admin\OrderController;
 use App\Http\Controllers\Api\V1\Admin\OrderStatisticsController;
 use App\Http\Controllers\Api\V1\Admin\PageController;
@@ -97,6 +98,8 @@ Route::post('contact-requests/{contactRequest}/comments', [ContactRequestControl
 Route::get('order-statuses', [OrderController::class, 'statuses'])->name('order-statuses.index');
 Route::get('order-statistics', OrderStatisticsController::class)->name('order-statistics.index');
 Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+Route::get('order-assignees', [OrderAssignmentController::class, 'candidates'])->name('order-assignees.index');
+Route::patch('orders/{order}/assignee', [OrderAssignmentController::class, 'update'])->name('orders.assignee.update');
 Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status.update');
 Route::get('orders/{order}/status-history', [OrderController::class, 'statusHistory'])->name('orders.status-history.index');

@@ -57,6 +57,10 @@ async function mockApi(page: Page, permissions = ['contacts.view']) {
     const url = new URL(route.request().url())
     const path = url.pathname.replace('/api/v1', '')
     if (!['GET', 'HEAD'].includes(route.request().method())) state.mutations++
+    if (path === '/admin/order-assignees')
+      return route.fulfill({
+        json: { data: [{ id: 2, name: 'Менеджер заказов' }] },
+      })
     if (path === '/admin/order-statistics')
       return route.fulfill({
         json: {

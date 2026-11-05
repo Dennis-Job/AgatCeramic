@@ -32,14 +32,13 @@ const compactStatuses = ref(compactStatusQuery?.matches ?? false)
 function updateStatusLayout(event: MediaQueryListEvent) {
   compactStatuses.value = event.matches
 }
-const tabs = computed(() => [
-  { value: '', label: 'Все', disabled: !workspace.statusReady.value },
-  ...workspace.statuses.value.map(({ code, name }) => ({
-    value: code,
-    label: name,
+const tabs = computed(() =>
+  workspace.statusOptions.value.map(({ value, label }) => ({
+    value,
+    label,
     disabled: !workspace.statusReady.value,
   })),
-])
+)
 const list = ref<HTMLElement | null>(null)
 const drawerOpen = ref(false)
 const orderId = ref<number | null>(null)
@@ -157,6 +156,18 @@ onBeforeUnmount(() => {
         >Повторить загрузку статусов</UiButton
       ></UiNotification
     >
+    <UiNotification v-if="workspace.assigneeError.value">
+      {{ workspace.assigneeError.value }} Назначение ответственного временно
+      недоступно.
+      <UiButton
+        variant="secondary"
+        size="sm"
+        class="ml-3"
+        :disabled="workspace.saving.value"
+        @click="workspace.loadAssignees"
+        >Повторить загрузку сотрудников</UiButton
+      >
+    </UiNotification>
     <div
       ref="list"
       class="admin-focus min-w-0"
@@ -208,6 +219,14 @@ onBeforeUnmount(() => {
             :options="orderPaymentOptions"
             accessible-name="Статус оплаты"
           />
+          <UiSelect
+            v-model="workspace.assigneeFilter.value"
+            :options="workspace.assigneeFilterOptions.value"
+            accessible-name="Ответственный в списке заказов"
+            :disabled="
+              workspace.canManage.value && !workspace.assigneeReady.value
+            "
+          />
           <UiButton type="submit" variant="secondary">Найти</UiButton>
         </form>
         <OrdersList
@@ -253,6 +272,8 @@ onBeforeUnmount(() => {
       :can-manage="workspace.canManage.value"
       :can-manage-status="workspace.canManageStatus.value"
       :can-manage-payment="workspace.canManagePayment.value"
+      :can-assign="workspace.canAssign.value"
+      :assignee-options="workspace.assigneeOptions.value"
       :date="workspace.date"
       :amount="workspace.amount"
       :status-name="workspace.statusName"
@@ -261,6 +282,7 @@ onBeforeUnmount(() => {
       @change-status="workspace.changeStatus"
       @save-payment="workspace.savePayment"
       @submit-comment="workspace.submitComment"
+      @change-assignee="workspace.changeAssignee"
       @retry="orderId && workspace.selectOrder({ id: orderId })"
     />
   </AdminSidePanel>
@@ -277,7 +299,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .orders-filters {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(180px, 0.4fr) auto;
+  grid-template-columns:
+    minmax(200px, 1fr) minmax(160px, 0.4fr) minmax(160px, 0.4fr)
+    auto;
   gap: var(--admin-spacing-4);
   align-items: center;
   padding-block: var(--admin-spacing-6);
@@ -290,7 +314,7 @@ onBeforeUnmount(() => {
 }
 @media (min-width: 768px) and (max-width: 1023px) {
   .orders-filters {
-    grid-template-columns: minmax(0, 1fr) minmax(180px, 0.6fr) auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

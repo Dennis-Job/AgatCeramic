@@ -86,6 +86,29 @@ class AdminOrderWorkspaceTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.per_page', 1);
     }
 
+    public function test_multiple_statuses_are_filtered_before_payment_and_pagination(): void
+    {
+        $this->actingAs($this->orderViewer());
+        foreach (['new', 'processing', 'awaiting_clarification', 'confirmed', 'awaiting_payment', 'paid', 'picking', 'shipped', 'completed', 'cancelled'] as $status) {
+            Order::factory()->create(['status' => $status, 'payment_status' => PaymentStatus::NotPaid]);
+        }
+        $paid = Order::factory()->create(['status' => 'picking', 'payment_status' => PaymentStatus::Paid]);
+        $filter = http_build_query(['statuses' => ['processing', 'awaiting_clarification', 'confirmed', 'awaiting_payment', 'paid', 'picking']]);
+
+        $this->getJson('/api/v1/admin/orders?'.$filter.'&per_page=2')->assertOk()
+            ->assertJsonPath('meta.total', 7)->assertJsonCount(2, 'data');
+        $this->getJson('/api/v1/admin/orders?'.$filter.'&payment_status=paid')->assertOk()
+            ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $paid->id);
+    }
+
+    public function test_multiple_statuses_require_valid_distinct_codes_and_cannot_mix_with_single_status(): void
+    {
+        $this->actingAs($this->orderViewer());
+        foreach ([['statuses' => 'processing'], ['statuses' => ['unknown']], ['statuses' => ['new', 'new']], ['statuses' => [['new']]], ['statuses' => ['new'], 'status' => 'new']] as $filters) {
+            $this->getJson('/api/v1/admin/orders?'.http_build_query($filters))->assertUnprocessable();
+        }
+    }
+
     private function orderViewer(): User
     {
         $this->seed([RoleSeeder::class, PermissionSeeder::class]);

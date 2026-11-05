@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { expect, test, vi } from 'vitest'
-import { effectScope } from 'vue'
+import { effectScope, nextTick } from 'vue'
 import { useOrdersWorkspace } from '../src/features/orders/composables/useOrdersWorkspace'
 import type { Order } from '../src/features/orders/types/order.types'
 import { useAuthStore } from '../src/stores/auth'
@@ -14,6 +14,63 @@ const api = vi.hoisted(() => ({
   updateOrderPayment: vi.fn(),
 }))
 vi.mock('../src/features/orders/services/orders', () => api)
+
+test('queue groups intermediate statuses while payment stays an independent filter', async () => {
+  setActivePinia(createPinia())
+  api.getOrders.mockResolvedValue({
+    data: [],
+    meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 },
+  })
+  const scope = effectScope()
+  const state = scope.run(useOrdersWorkspace)!
+  state.statuses.value = [
+    'new',
+    'processing',
+    'awaiting_clarification',
+    'confirmed',
+    'awaiting_payment',
+    'paid',
+    'picking',
+    'shipped',
+    'completed',
+    'cancelled',
+    'custom_stage',
+  ].map((code, index) => ({
+    code,
+    name: code,
+    sort_order: index,
+    is_terminal: ['completed', 'cancelled'].includes(code),
+  }))
+  expect(state.statusOptions.value.map((item) => item.label)).toEqual([
+    'Все',
+    'Новые',
+    'В работе',
+    'В доставке',
+    'Завершённые',
+    'Отменённые',
+  ])
+  state.status.value = 'working'
+  state.paymentStatus.value = 'paid'
+  await nextTick()
+  expect(api.getOrders).toHaveBeenLastCalledWith(
+    {
+      search: '',
+      status: '',
+      statuses: [
+        'processing',
+        'awaiting_clarification',
+        'confirmed',
+        'awaiting_payment',
+        'paid',
+        'picking',
+        'custom_stage',
+      ],
+      payment_status: 'paid',
+    },
+    { page: 1 },
+  )
+  scope.stop()
+})
 
 test('changing the linked order cannot restore details from a slower previous request', async () => {
   setActivePinia(createPinia())

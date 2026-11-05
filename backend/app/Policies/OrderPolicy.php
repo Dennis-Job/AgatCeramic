@@ -22,6 +22,16 @@ class OrderPolicy extends AuthorizesPermissions
         return $this->allows($user, 'orders.manage');
     }
 
+    public function assign(User $user, Order $order): bool
+    {
+        return $this->allows($user, 'orders.manage');
+    }
+
+    public function viewAssignees(User $user): bool
+    {
+        return $this->allows($user, 'orders.manage');
+    }
+
     public function managePayment(User $user, Order $order): bool
     {
         return $this->allows($user, 'payments.manage');

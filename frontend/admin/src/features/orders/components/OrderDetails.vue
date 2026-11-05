@@ -28,6 +28,8 @@ defineProps<{
   canManage: boolean
   canManageStatus: boolean
   canManagePayment: boolean
+  canAssign: boolean
+  assigneeOptions: { label: string; value: string }[]
   date: (value: string | null) => string
   amount: (value: string | null) => string
   statusName: (code: string) => string
@@ -41,6 +43,7 @@ defineEmits<{
   savePayment: []
   submitComment: []
   retry: []
+  changeAssignee: [value: string]
 }>()
 </script>
 
@@ -134,6 +137,22 @@ defineEmits<{
           </li>
         </ul>
       </section>
+      <section class="admin-panel--inset p-4">
+        <h3 class="text-sm font-semibold text-gray-500">Ответственный</h3>
+        <UiSelect
+          v-if="canManage"
+          class="mt-3"
+          :model-value="selected.assignee ? String(selected.assignee.id) : ''"
+          :options="assigneeOptions"
+          accessible-name="Ответственный за заказ"
+          teleport-menu
+          :disabled="saving || !canAssign"
+          @update:model-value="$emit('changeAssignee', $event)"
+        />
+        <p v-else class="mt-3 break-words text-sm text-gray-500">
+          {{ selected.assignee?.name ?? 'Не назначен' }}
+        </p>
+      </section>
       <section v-if="canManageStatus" class="admin-panel--inset p-4">
         <h3 class="text-sm font-semibold text-gray-500">Статус заказа</h3>
         <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -154,36 +173,46 @@ defineEmits<{
       </section>
       <section v-if="canManagePayment" class="admin-panel--inset p-4">
         <h3 class="text-sm font-semibold text-gray-500">Оплата</h3>
-        <div class="mt-3 grid gap-3">
-          <UiSelect
-            v-model="paymentForm.payment_status"
-            :options="paymentOptions"
-            accessible-name="Статус оплаты"
-            :disabled="saving"
-          /><template
+        <div class="mt-3 space-y-3">
+          <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <UiSelect
+              v-model="paymentForm.payment_status"
+              :options="paymentOptions"
+              accessible-name="Статус оплаты"
+              :disabled="saving"
+            />
+            <UiButton
+              aria-label="Сохранить оплату"
+              :loading="saving"
+              :disabled="saving"
+              @click="$emit('savePayment')"
+              >Сохранить</UiButton
+            >
+          </div>
+          <div
             v-if="!['not_paid', 'pending'].includes(paymentForm.payment_status)"
-            ><UiInput
+            class="grid gap-3"
+          >
+            <UiInput
               v-model="paymentForm.payment_amount"
               money
               min="0.01"
               step="0.01"
               placeholder="Сумма"
               aria-label="Сумма оплаты"
-              :disabled="saving" /><UiInput
+              :disabled="saving"
+            /><UiInput
               v-model="paymentForm.payment_method"
               placeholder="Способ оплаты"
               aria-label="Способ оплаты"
-              :disabled="saving" /><UiInput
+              :disabled="saving"
+            /><UiInput
               v-model="paymentForm.payment_reference"
               placeholder="Номер документа (необязательно)"
               aria-label="Номер документа"
-              :disabled="saving" /></template
-          ><UiButton
-            :loading="saving"
-            :disabled="saving"
-            @click="$emit('savePayment')"
-            >Сохранить оплату</UiButton
-          >
+              :disabled="saving"
+            />
+          </div>
         </div>
       </section>
       <section>

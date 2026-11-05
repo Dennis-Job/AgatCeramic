@@ -13,6 +13,8 @@ const order = {
   },
   delivery_address: 'Москва, ул. Пример, 1',
   customer_comment: 'Позвонить за час',
+  assignee: null as { id: number; name: string } | null,
+  assigned_at: null as string | null,
   status: 'new',
   payment_status: 'not_paid',
   payment_amount: null,
@@ -48,8 +50,19 @@ const responsePage = {
 async function mockOrdersApi(
   page: Page,
   permissions = ['orders.view', 'orders.manage', 'payments.manage'],
-): Promise<void> {
+) {
   const record = structuredClone(order)
+  const state = {
+    record,
+    failCandidates: false,
+    failAssignment: false,
+    holdAssignment: null as Promise<void> | null,
+    candidates: [
+      { id: 2, name: 'Анна Менеджер' },
+      { id: 3, name: 'Иван Менеджер' },
+    ],
+    assignments: [] as (number | null)[],
+  }
   const comments: {
     id: number
     body: string
@@ -61,6 +74,13 @@ async function mockOrdersApi(
   )
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    if (path === '/admin/order-assignees')
+      return state.failCandidates
+        ? route.fulfill({
+            status: 503,
+            json: { error: { message: 'Список сотрудников недоступен' } },
+          })
+        : route.fulfill({ json: { data: state.candidates } })
     if (path === '/admin/order-statistics')
       return route.fulfill({
         json: {
@@ -94,11 +114,51 @@ async function mockOrdersApi(
               sort_order: 1,
               is_terminal: false,
             },
+            ...[
+              ['awaiting_clarification', 'Ожидает уточнения'],
+              ['confirmed', 'Подтверждён'],
+              ['awaiting_payment', 'Ожидает оплаты'],
+              ['paid', 'Оплачен'],
+              ['picking', 'Комплектация'],
+              ['shipped', 'Передан в доставку'],
+              ['completed', 'Завершён'],
+              ['cancelled', 'Отменён'],
+            ].map(([code, name], index) => ({
+              code,
+              name,
+              sort_order: index + 2,
+              is_terminal: ['completed', 'cancelled'].includes(code!),
+            })),
           ],
         },
       })
-    if (path === '/admin/orders')
-      return route.fulfill({ json: { ...responsePage, data: [record] } })
+    if (path === '/admin/orders') {
+      const query = new URL(route.request().url()).searchParams
+      const matches =
+        (!query.get('assignee_id') ||
+          String(record.assignee?.id) === query.get('assignee_id')) &&
+        (query.get('unassigned') !== '1' || !record.assignee)
+      return route.fulfill({
+        json: {
+          ...responsePage,
+          data: matches ? [record] : [],
+          meta: { ...responsePage.meta, total: matches ? 1 : 0 },
+        },
+      })
+    }
+    if (path === '/admin/orders/1/assignee') {
+      await state.holdAssignment
+      if (state.failAssignment)
+        return route.fulfill({
+          status: 422,
+          json: { error: { message: 'Назначение отклонено' } },
+        })
+      const id = route.request().postDataJSON().assignee_id as number | null
+      state.assignments.push(id)
+      record.assignee = state.candidates.find((item) => item.id === id) ?? null
+      record.assigned_at = id === null ? null : timestamp
+      return route.fulfill({ status: 204 })
+    }
     if (path === '/admin/orders/1/status') {
       record.status = route.request().postDataJSON().status
       return route.fulfill({ json: { data: record } })
@@ -142,6 +202,7 @@ async function mockOrdersApi(
       json: { error: { message: `Unhandled ${path}` } },
     })
   })
+  return state
 }
 
 test('orders workspace exposes protected snapshot, keyboard selection, and manager controls', async ({
@@ -354,10 +415,42 @@ test('order filters use tabs and a compact select while month statistics stay in
   const filterRequest = page.waitForRequest(
     (req) =>
       req.url().includes('/admin/orders?') &&
-      new URL(req.url()).searchParams.get('status') === 'processing',
+      new URL(req.url()).searchParams
+        .getAll('statuses[]')
+        .includes('processing'),
   )
-  await page.getByRole('tab', { name: 'В обработке', exact: true }).click()
-  await filterRequest
+  await page.getByRole('tab', { name: 'В работе', exact: true }).click()
+  const grouped = new URL((await filterRequest).url()).searchParams
+  expect(grouped.get('status')).toBeNull()
+  expect(grouped.getAll('statuses[]')).toEqual([
+    'processing',
+    'awaiting_clarification',
+    'confirmed',
+    'awaiting_payment',
+    'paid',
+    'picking',
+  ])
+  for (const width of [1024, 1102, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    const tabs = page
+      .getByRole('tablist', { name: 'Статус заказа' })
+      .getByRole('tab')
+    await expect(tabs).toHaveText([
+      'Все',
+      'Новые',
+      'В работе',
+      'В доставке',
+      'Завершённые',
+      'Отменённые',
+    ])
+    const tops = await tabs.evaluateAll((items) =>
+      items.map((item) => item.getBoundingClientRect().top),
+    )
+    expect(new Set(tops).size).toBe(1)
+    await page.screenshot({
+      path: testInfo.outputPath(`orders-tabs-${width}.png`),
+    })
+  }
   await expect(
     statistics.locator('[data-statistic-metric=total]'),
   ).toContainText('12')
@@ -367,9 +460,9 @@ test('order filters use tabs and a compact select while month statistics stay in
   ).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: 'Статус заказа', exact: true }),
-  ).toContainText('В обработке')
+  ).toContainText('В работе')
   await page.getByRole('button', { name: 'Статус заказа', exact: true }).click()
-  await page.getByRole('button', { name: 'Все статусы', exact: true }).click()
+  await page.getByRole('button', { name: 'Все', exact: true }).click()
   await page
     .getByRole('button', { name: 'Месяц статистики', exact: true })
     .click()
@@ -411,4 +504,169 @@ test('order filters use tabs and a compact select while month statistics stay in
       path: testInfo.outputPath(`orders-drawer-${width}.png`),
     })
   }
+  await page.getByRole('button', { name: 'Новый статус заказа' }).click()
+  await expect(
+    page.getByRole('button', { name: 'Ожидает оплаты', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Оплачен', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Комплектация', exact: true }),
+  ).toBeVisible()
+})
+
+test('manager assignment, reassignment and removal preserve drafts and update the list filters', async ({
+  page,
+}, testInfo) => {
+  const state = await mockOrdersApi(page)
+  await page.goto('/orders?order=1')
+  const drawer = page.getByRole('dialog', {
+    name: order.order_number,
+    exact: true,
+  })
+  const assignee = drawer.getByRole('button', {
+    name: 'Ответственный за заказ',
+    exact: true,
+  })
+  await expect(assignee).toBeEnabled()
+  await assignee.click()
+  await expect(
+    page.getByRole('group', {
+      name: 'Ответственный за заказ: варианты',
+      exact: true,
+    }),
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(drawer).toBeVisible()
+  await expect(assignee).toBeFocused()
+  await expect(
+    page.getByRole('group', {
+      name: 'Ответственный за заказ: варианты',
+      exact: true,
+    }),
+  ).toHaveCount(0)
+  await drawer.getByRole('button', { name: 'Новый статус заказа' }).click()
+  await page.getByRole('button', { name: 'В обработке', exact: true }).click()
+  await drawer
+    .getByRole('button', { name: 'Статус оплаты', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Частично оплачено', exact: true })
+    .click()
+  await drawer.getByRole('textbox', { name: 'Сумма оплаты' }).fill('100')
+  await drawer.getByRole('textbox', { name: 'Способ оплаты' }).fill('Наличные')
+  await drawer
+    .getByLabel('Новый внутренний комментарий')
+    .fill('Черновик менеджера')
+  let release!: () => void
+  state.holdAssignment = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await assignee.click()
+  await page.getByRole('button', { name: 'Анна Менеджер', exact: true }).click()
+  await expect(
+    drawer.getByRole('button', { name: 'Закрыть заказ' }),
+  ).toBeDisabled()
+  await page.keyboard.press('Escape')
+  await expect(drawer).toBeVisible()
+  release()
+  await expect(assignee).toContainText('Анна Менеджер')
+  await expect(
+    drawer.getByRole('button', { name: 'Новый статус заказа' }),
+  ).toContainText('В обработке')
+  await expect(
+    drawer.getByRole('textbox', { name: 'Способ оплаты' }),
+  ).toHaveValue('Наличные')
+  await expect(drawer.getByLabel('Новый внутренний комментарий')).toHaveValue(
+    'Черновик менеджера',
+  )
+  await assignee.click()
+  await page.getByRole('button', { name: 'Иван Менеджер', exact: true }).click()
+  await expect(assignee).toContainText('Иван Менеджер')
+  await page.screenshot({ path: testInfo.outputPath('assigned-drafts.png') })
+  await drawer.getByRole('button', { name: 'Закрыть заказ' }).click()
+  await page
+    .getByRole('dialog', { name: 'Закрыть без сохранения изменений?' })
+    .getByRole('button', { name: 'Закрыть без сохранения', exact: true })
+    .click()
+  await expect(
+    page.getByRole('cell', { name: 'Иван Менеджер', exact: true }),
+  ).toBeVisible()
+  const filter = page.getByRole('button', {
+    name: 'Ответственный в списке заказов',
+    exact: true,
+  })
+  await filter.click()
+  await page.getByRole('button', { name: 'Анна Менеджер', exact: true }).click()
+  await expect(
+    page.getByText('Заказы не найдены.', { exact: true }),
+  ).toBeVisible()
+  await filter.click()
+  await page.getByRole('button', { name: 'Иван Менеджер', exact: true }).click()
+  await page
+    .getByRole('button', { name: `Открыть заказ ${order.order_number}` })
+    .click()
+  await assignee.click()
+  await page.getByRole('button', { name: 'Не назначен', exact: true }).click()
+  await expect(assignee).toContainText('Не назначен')
+  await drawer.getByRole('button', { name: 'Закрыть заказ' }).click()
+  await expect(
+    page.getByText('Заказы не найдены.', { exact: true }),
+  ).toBeVisible()
+  const request = page.waitForRequest(
+    (req) =>
+      req.url().includes('/admin/orders?') &&
+      new URL(req.url()).searchParams.get('unassigned') === '1',
+  )
+  await filter.click()
+  await page.getByRole('button', { name: 'Не назначен', exact: true }).click()
+  await request
+  await expect(
+    page.getByRole('button', { name: `Открыть заказ ${order.order_number}` }),
+  ).toBeVisible()
+  expect(state.assignments).toEqual([2, 3, null])
+})
+
+test('candidate and mutation errors are recoverable without granting view-only assignment access', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  const state = await mockOrdersApi(page)
+  state.failCandidates = true
+  browserIssueGuard.allowApiError(503, '/api/v1/admin/order-assignees')
+  browserIssueGuard.allowApiError(422, '/api/v1/admin/orders/1/assignee')
+  await page.goto('/orders?order=1')
+  const assignee = page.getByRole('button', {
+    name: 'Ответственный за заказ',
+    exact: true,
+  })
+  await expect(assignee).toBeDisabled()
+  state.failCandidates = false
+  await page
+    .getByRole('button', { name: 'Повторить загрузку сотрудников' })
+    .click()
+  await expect(assignee).toBeEnabled()
+  state.failAssignment = true
+  await assignee.click()
+  await page.getByRole('button', { name: 'Анна Менеджер', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('Назначение отклонено')
+  await expect(assignee).toContainText('Не назначен')
+  await expect(assignee).toBeEnabled()
+  await page.getByRole('button', { name: 'Закрыть заказ' }).click()
+  await mockOrdersApi(page, ['orders.view']).then((viewer) => {
+    viewer.record.assignee = { id: 2, name: 'Анна Менеджер' }
+  })
+  await page.reload()
+  await page
+    .getByRole('button', { name: `Открыть заказ ${order.order_number}` })
+    .click()
+  await expect(
+    page.getByRole('button', { name: 'Ответственный за заказ', exact: true }),
+  ).toHaveCount(0)
+  await expect(
+    page
+      .getByRole('dialog', { name: order.order_number })
+      .getByText('Анна Менеджер', { exact: true }),
+  ).toBeVisible()
 })

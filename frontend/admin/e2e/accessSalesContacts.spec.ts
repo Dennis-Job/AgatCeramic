@@ -115,6 +115,10 @@ async function mockApi(page: Page, options: MockOptions = {}): Promise<void> {
         status: 500,
         json: { error: { message: `Недоступен ресурс ${path}` } },
       })
+    if (path === '/admin/order-assignees')
+      return route.fulfill({
+        json: { data: [{ id: 2, name: 'Менеджер заказов' }] },
+      })
     if (path === '/admin/order-statistics')
       return route.fulfill({
         json: {

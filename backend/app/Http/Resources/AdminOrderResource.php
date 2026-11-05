@@ -20,6 +20,11 @@ class AdminOrderResource extends ApiResource
             'delivery_address' => $this->delivery_address,
             'customer_comment' => $this->customer_comment,
             'status' => $this->status,
+            'assignee' => $this->whenLoaded('assignee', fn (): ?array => $this->assignee === null ? null : [
+                'id' => $this->assignee->id,
+                'name' => $this->assignee->name,
+            ]),
+            'assigned_at' => $this->dateValue($this->assigned_at),
             'payment_status' => $this->enumValue($this->payment_status),
             'payment_amount' => $this->payment_amount,
             'payment_method' => $this->payment_method,

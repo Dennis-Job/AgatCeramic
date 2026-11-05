@@ -14,7 +14,7 @@ class OrderQuery
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        $query = Order::query()->with('items');
+        $query = Order::query()->with(['items', 'assignee:id,name']);
 
         $search = $filters['search'] ?? null;
         $search = is_string($search) ? trim($search) : '';
@@ -31,6 +31,10 @@ class OrderQuery
             });
         }
 
+        if (isset($filters['statuses']) && is_array($filters['statuses'])) {
+            $query->whereIn('status', $filters['statuses']);
+        }
+
         foreach (['status', 'payment_status'] as $filter) {
             $value = $filters[$filter] ?? null;
             $value = is_string($value) ? trim($value) : '';
@@ -39,11 +43,20 @@ class OrderQuery
             }
         }
 
+        $assigneeId = $filters['assignee_id'] ?? null;
+        if (is_int($assigneeId) || (is_string($assigneeId) && ctype_digit($assigneeId))) {
+            $query->where('assignee_id', (int) $assigneeId);
+        }
+
+        if (filter_var($filters['unassigned'] ?? false, FILTER_VALIDATE_BOOL)) {
+            $query->whereNull('assignee_id');
+        }
+
         return $query->latest()->paginate($perPage)->withQueryString();
     }
 
     public function prepare(Order $order): Order
     {
-        return $order->load('items');
+        return $order->load(['items', 'assignee:id,name']);
     }
 }

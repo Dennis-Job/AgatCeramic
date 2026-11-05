@@ -80,6 +80,10 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
           meta: { current_page: 1, last_page: 1, per_page: 5, total: 0 },
         },
       })
+    if (path === '/admin/order-assignees')
+      return route.fulfill({
+        json: { data: [{ id: 2, name: 'Менеджер заказов' }] },
+      })
     if (path === '/admin/order-statistics')
       return route.fulfill({
         json: {

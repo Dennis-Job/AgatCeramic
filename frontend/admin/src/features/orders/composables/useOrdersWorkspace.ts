@@ -2,8 +2,10 @@ import { computed, onScopeDispose, ref, watch } from 'vue'
 import { formatMoney } from '../../../utils/formatMoney'
 import { useAuthStore } from '../../../stores/auth'
 import { notifyAdminNotificationsChanged } from '../../notifications/services/notificationChanges'
+import { useOrderAssignees } from './useOrderAssignees'
 import {
   addOrderComment,
+  assignOrder,
   getOrder,
   getOrderComments,
   getOrderHistory,
@@ -39,6 +41,7 @@ export function useOrdersWorkspace() {
   const search = ref('')
   const status = ref('')
   const paymentStatus = ref('')
+  const assigneeFilter = ref('')
   const page = ref(1)
   const meta = ref({ current_page: 1, last_page: 1, per_page: 25, total: 0 })
   const loading = ref(true)
@@ -64,6 +67,7 @@ export function useOrdersWorkspace() {
     payment_reference: '',
   })
   const canManage = computed(() => auth.hasPermission('orders.manage'))
+  const assignment = useOrderAssignees(canManage, selected)
   const canManageStatus = computed(
     () =>
       canManage.value &&
@@ -72,10 +76,29 @@ export function useOrdersWorkspace() {
       !statusError.value,
   )
   const canManagePayment = computed(() => auth.hasPermission('payments.manage'))
-  const statusOptions = computed(() => [
-    { label: 'Все статусы', value: '' },
-    ...statuses.value.map((item) => ({ label: item.name, value: item.code })),
-  ])
+  const workingStatuses = computed(() =>
+    statuses.value
+      .filter(
+        (item) => !item.is_terminal && !['new', 'shipped'].includes(item.code),
+      )
+      .map((item) => item.code),
+  )
+  const statusOptions = computed(() =>
+    [
+      { label: 'Все', value: '' },
+      { label: 'Новые', value: 'new' },
+      { label: 'В работе', value: 'working' },
+      { label: 'В доставке', value: 'shipped' },
+      { label: 'Завершённые', value: 'completed' },
+      { label: 'Отменённые', value: 'cancelled' },
+    ].filter(
+      (item) =>
+        item.value === '' ||
+        (item.value === 'working'
+          ? workingStatuses.value.length > 0
+          : statuses.value.some((status) => status.code === item.value)),
+    ),
+  )
   const paymentEditOptions = orderPaymentOptions.slice(1)
   const hasUnsavedChanges = computed(
     () =>
@@ -109,8 +132,20 @@ export function useOrdersWorkspace() {
       const response = await getOrders(
         {
           search: search.value,
-          status: status.value,
+          status: status.value === 'working' ? '' : status.value,
+          ...(status.value === 'working'
+            ? { statuses: workingStatuses.value }
+            : {}),
           payment_status: paymentStatus.value,
+          ...(assigneeFilter.value
+            ? {
+                assignee_id:
+                  assigneeFilter.value === 'unassigned'
+                    ? ''
+                    : assigneeFilter.value,
+                unassigned: assigneeFilter.value === 'unassigned',
+              }
+            : {}),
         },
         { page: nextPage },
       )
@@ -249,7 +284,40 @@ export function useOrdersWorkspace() {
     }
   }
 
+  async function changeAssignee(value: string): Promise<void> {
+    if (saving.value || !selected.value || !assignment.canAssign.value) return
+    const assigneeId = value ? Number(value) : null
+    if (
+      assigneeId !== null &&
+      (!Number.isSafeInteger(assigneeId) || assigneeId <= 0)
+    )
+      return
+    if ((selected.value.assignee?.id ?? null) === assigneeId) return
+    const id = selected.value.id
+    const request = detailRequest
+    saving.value = true
+    actionError.value = ''
+    try {
+      await assignOrder(id, assigneeId)
+      if (request !== detailRequest || selected.value?.id !== id) return
+      const current = await getOrder(id)
+      if (request !== detailRequest || selected.value?.id !== id) return
+      selected.value.assignee = current.assignee
+      selected.value.assigned_at = current.assigned_at
+      await load(page.value)
+    } catch (reason) {
+      if (request === detailRequest)
+        actionError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось обновить ответственного.'
+    } finally {
+      saving.value = false
+    }
+  }
+
   async function initialize(): Promise<void> {
+    const candidates = assignment.load()
     loading.value = true
     statusError.value = ''
     statusReady.value = false
@@ -265,10 +333,10 @@ export function useOrdersWorkspace() {
     } finally {
       statusLoading.value = false
     }
-    await load()
+    await Promise.all([load(), candidates])
   }
 
-  watch([status, paymentStatus], () => void load())
+  watch([status, paymentStatus, assigneeFilter], () => void load())
   return {
     orders,
     selected,
@@ -278,6 +346,13 @@ export function useOrdersWorkspace() {
     search,
     status,
     paymentStatus,
+    assigneeFilter,
+    assigneeReady: assignment.ready,
+    assigneeError: assignment.error,
+    assigneeOptions: assignment.options,
+    assigneeFilterOptions: assignment.filterOptions,
+    loadAssignees: assignment.load,
+    canAssign: assignment.canAssign,
     meta,
     loading,
     detailLoading,
@@ -305,6 +380,7 @@ export function useOrdersWorkspace() {
     changeStatus,
     savePayment,
     submitComment,
+    changeAssignee,
     initialize,
   }
 }
