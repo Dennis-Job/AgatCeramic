@@ -1,5 +1,17 @@
 # OpenAPI migration plan — version history
 
+## v17.1 — active order queue counts
+
+Date: 2026-11-05. Additive read-only `GET /admin/order-status-counts` requires
+`orders.view` and returns `{data:{new:integer,working:integer,shipped:integer}}`
+with nonnegative values and explicit zeroes. Counts cover the entire current
+queue, independently of list search/payment/assignee/status filters, pagination
+and statistics month. `new` and `shipped` count their direct codes; `working`
+combines all active non-terminal catalog stages except those two, including
+custom intermediate stages. Inactive/terminal stages are excluded from working.
+Current persisted statuses are read without caching or personal data. No schema,
+permission or existing response changes; no database migration required.
+
 ## v17.0 — responsible order manager
 
 Date: 2026-11-05. Additive `GET /admin/order-assignees` and

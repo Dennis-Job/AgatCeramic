@@ -52,6 +52,13 @@ class OrderController extends Controller
         return new AdminOrderResource($this->orders->prepare($order));
     }
 
+    public function counts(): JsonResponse
+    {
+        Gate::authorize('viewAny', Order::class);
+
+        return response()->json(['data' => $this->orders->statusCounts()]);
+    }
+
     public function statuses(): AnonymousResourceCollection
     {
         Gate::authorize('viewAny', Order::class);

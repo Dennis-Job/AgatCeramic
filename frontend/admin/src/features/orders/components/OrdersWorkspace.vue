@@ -16,6 +16,9 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiPagination from '../../../components/ui/UiPagination.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTabs from '../../../components/ui/UiTabs.vue'
+import UiBadge from '../../../components/ui/UiBadge.vue'
+import { orderStatusTone } from '../utils/orderStatusTone'
+import type { OrderStatusCounts } from '../types/order.types'
 import {
   orderPaymentOptions,
   useOrdersWorkspace,
@@ -37,6 +40,18 @@ const tabs = computed(() =>
     value,
     label,
     disabled: !workspace.statusReady.value,
+  })),
+)
+function queueCount(value: string) {
+  return workspace.statusCounts.value?.[value as keyof OrderStatusCounts]
+}
+const statusSelectOptions = computed(() =>
+  workspace.statusOptions.value.map((item) => ({
+    ...item,
+    label:
+      queueCount(item.value) === undefined
+        ? item.label
+        : `${item.label} (${queueCount(item.value)})`,
   })),
 )
 const list = ref<HTMLElement | null>(null)
@@ -168,6 +183,17 @@ onBeforeUnmount(() => {
         >Повторить загрузку сотрудников</UiButton
       >
     </UiNotification>
+    <UiNotification v-if="workspace.countsError.value">
+      {{ workspace.countsError.value }}
+      <UiButton
+        variant="secondary"
+        size="sm"
+        class="ml-3"
+        :disabled="workspace.countsLoading.value"
+        @click="workspace.refreshStatusCounts"
+        >Повторить загрузку счётчиков заказов</UiButton
+      >
+    </UiNotification>
     <div
       ref="list"
       class="admin-focus min-w-0"
@@ -179,7 +205,7 @@ onBeforeUnmount(() => {
         <UiSelect
           v-if="compactStatuses"
           v-model="workspace.status.value"
-          :options="workspace.statusOptions.value"
+          :options="statusSelectOptions"
           accessible-name="Статус заказа"
           :disabled="!workspace.statusReady.value"
         />
@@ -189,7 +215,20 @@ onBeforeUnmount(() => {
           v-model="workspace.status.value"
           label="Статус заказа"
           :items="tabs"
-        />
+        >
+          <template #item="{ item }">
+            <span class="inline-flex items-center gap-2 whitespace-nowrap">
+              {{ item.label }}
+              <UiBadge
+                v-if="queueCount(item.value) !== undefined"
+                class="shrink-0 whitespace-nowrap"
+                :tone="orderStatusTone(item.value)"
+                :data-order-count="item.value"
+                >{{ queueCount(item.value) }}</UiBadge
+              >
+            </span>
+          </template>
+        </UiTabs>
       </div>
       <div
         :id="`order-status-tabs-${workspace.status.value}-panel`"

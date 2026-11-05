@@ -119,6 +119,10 @@ async function mockApi(page: Page, options: MockOptions = {}): Promise<void> {
       return route.fulfill({
         json: { data: [{ id: 2, name: 'Менеджер заказов' }] },
       })
+    if (path === '/admin/order-status-counts')
+      return route.fulfill({
+        json: { data: { new: 3, working: 0, shipped: 0 } },
+      })
     if (path === '/admin/order-statistics')
       return route.fulfill({
         json: {

@@ -12,6 +12,7 @@ import type {
   OrderStatus,
   OrderStatistics,
   OrderAssignee,
+  OrderStatusCounts,
 } from '../types/order.types'
 
 async function responseOrThrow<T>(
@@ -58,6 +59,12 @@ export const getOrderAssignees = async (): Promise<OrderAssignee[]> =>
   responseOrThrow(
     await apiFetch('/admin/order-assignees'),
     'Не удалось загрузить список ответственных.',
+  )
+
+export const getOrderStatusCounts = async (): Promise<OrderStatusCounts> =>
+  responseOrThrow(
+    await apiFetch('/admin/order-status-counts'),
+    'Не удалось загрузить счётчики заказов.',
   )
 
 export async function assignOrder(

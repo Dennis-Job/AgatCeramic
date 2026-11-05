@@ -56,6 +56,14 @@ for (const path of stateRoutes) {
           exact: true,
         }),
       ).toHaveAttribute('aria-busy', 'false')
+    if (path === '/orders') {
+      await expect(page.locator('[data-order-count=new]')).toHaveText('3')
+      await page.screenshot({
+        path: test.info().outputPath('route-orders-current.png'),
+        fullPage: true,
+        animations: 'disabled',
+      })
+    }
     await expect(page).toHaveScreenshot(`route-${path.slice(1)}-loading.png`, {
       fullPage: true,
       animations: 'disabled',
@@ -125,6 +133,12 @@ for (const path of stateRoutes) {
           ).toContainText('Baseline API error')
         }
       }
+      if (path === '/orders')
+        await page.screenshot({
+          path: test.info().outputPath('route-orders-current.png'),
+          fullPage: true,
+          animations: 'disabled',
+        })
       await expect(page).toHaveScreenshot(
         `route-${path.slice(1)}-${state}.png`,
         { fullPage: true, animations: 'disabled' },
@@ -168,6 +182,14 @@ for (const [path, heading] of authenticatedRoutes) {
       ['serious', 'critical'].includes(item.impact ?? ''),
     )
     expect(serious).toEqual([])
+    if (path === '/orders') {
+      await expect(page.locator('[data-order-count=new]')).toHaveText('3')
+      await page.screenshot({
+        path: test.info().outputPath('route-orders-current.png'),
+        fullPage: true,
+        animations: 'disabled',
+      })
+    }
     await expect(page).toHaveScreenshot(
       `route-${path === '/' ? 'dashboard' : path.slice(1)}.png`,
       { fullPage: true, animations: 'disabled' },

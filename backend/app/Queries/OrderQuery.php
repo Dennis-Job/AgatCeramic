@@ -3,11 +3,40 @@
 namespace App\Queries;
 
 use App\Models\Order;
+use App\Models\OrderStatus;
 use App\Support\RussianPhoneNumber;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class OrderQuery
 {
+    /** @return array{new: int, working: int, shipped: int} */
+    public function statusCounts(): array
+    {
+        /** @var Collection<string, int|numeric-string> $counts */
+        $counts = Order::query()
+            ->selectRaw('status, COUNT(*) as total')
+            ->where(function ($query): void {
+                $query->whereIn('status', ['new', 'shipped'])
+                    ->orWhereIn('status', OrderStatus::query()->select('code')
+                        ->where('is_active', true)
+                        ->where('is_terminal', false)
+                        ->whereNotIn('code', ['new', 'shipped']));
+            })
+            ->groupBy('status')->toBase()->pluck('total', 'status');
+
+        $working = 0;
+        foreach ($counts->except(['new', 'shipped']) as $count) {
+            $working += (int) $count;
+        }
+
+        return [
+            'new' => (int) ($counts['new'] ?? 0),
+            'working' => $working,
+            'shipped' => (int) ($counts['shipped'] ?? 0),
+        ];
+    }
+
     /**
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, Order>

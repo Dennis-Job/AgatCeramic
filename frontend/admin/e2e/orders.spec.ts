@@ -81,6 +81,10 @@ async function mockOrdersApi(
             json: { error: { message: 'Список сотрудников недоступен' } },
           })
         : route.fulfill({ json: { data: state.candidates } })
+    if (path === '/admin/order-status-counts')
+      return route.fulfill({
+        json: { data: { new: 3, working: 0, shipped: 0 } },
+      })
     if (path === '/admin/order-statistics')
       return route.fulfill({
         json: {
@@ -419,7 +423,7 @@ test('order filters use tabs and a compact select while month statistics stay in
         .getAll('statuses[]')
         .includes('processing'),
   )
-  await page.getByRole('tab', { name: 'В работе', exact: true }).click()
+  await page.getByRole('tab', { name: /^В работе/ }).click()
   const grouped = new URL((await filterRequest).url()).searchParams
   expect(grouped.get('status')).toBeNull()
   expect(grouped.getAll('statuses[]')).toEqual([
@@ -437,9 +441,9 @@ test('order filters use tabs and a compact select while month statistics stay in
       .getByRole('tab')
     await expect(tabs).toHaveText([
       'Все',
-      'Новые',
-      'В работе',
-      'В доставке',
+      /Новые\s*3/,
+      /В работе\s*0/,
+      /В доставке\s*0/,
       'Завершённые',
       'Отменённые',
     ])
@@ -669,4 +673,106 @@ test('candidate and mutation errors are recoverable without granting view-only a
       .getByRole('dialog', { name: order.order_number })
       .getByText('Анна Менеджер', { exact: true }),
   ).toBeVisible()
+})
+
+test('active queue counters update after a saved status and appear in compact selects', async ({
+  page,
+}, testInfo) => {
+  const state = await mockOrdersApi(page)
+  let requests = 0
+  await page.route('**/api/v1/admin/order-status-counts', (route) => {
+    requests++
+    return route.fulfill({
+      json: {
+        data: {
+          new: state.record.status === 'new' ? 3 : 2,
+          working: state.record.status === 'new' ? 0 : 1,
+          shipped: 0,
+        },
+      },
+    })
+  })
+  await page.goto('/orders')
+  await expect(page.locator('[data-order-count=new]')).toHaveText('3')
+  await expect(page.locator('[data-order-count=working]')).toHaveText('0')
+  await expect(page.locator('[data-order-count=shipped]')).toHaveText('0')
+  await page
+    .getByRole('button', { name: `Открыть заказ ${order.order_number}` })
+    .click()
+  const drawer = page.getByRole('dialog', {
+    name: order.order_number,
+    exact: true,
+  })
+  await drawer.getByRole('button', { name: 'Новый статус заказа' }).click()
+  await page.getByRole('button', { name: 'В обработке', exact: true }).click()
+  await drawer.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await expect(page.locator('[data-order-count=new]')).toHaveText('2')
+  await expect(page.locator('[data-order-count=working]')).toHaveText('1')
+  await expect(
+    drawer.getByRole('button', { name: 'Закрыть заказ' }),
+  ).toBeEnabled()
+  await drawer.getByRole('button', { name: 'Закрыть заказ' }).click()
+  await expect(drawer).toHaveCount(0)
+  const calls = requests
+  await page.getByRole('button', { name: 'Статус оплаты', exact: true }).click()
+  await page.getByRole('button', { name: 'Оплачено', exact: true }).click()
+  await page.getByRole('button', { name: 'Найти', exact: true }).click()
+  expect(requests).toBe(calls)
+  await page.screenshot({
+    path: testInfo.outputPath('queue-counts-desktop.png'),
+  })
+  for (const width of [320, 640, 768]) {
+    await page.setViewportSize({ width, height: 900 })
+    const select = page.getByRole('button', {
+      name: 'Статус заказа',
+      exact: true,
+    })
+    await select.click()
+    await expect(
+      page.getByRole('button', { name: 'Новые (2)', exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'В работе (1)', exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'В доставке (0)', exact: true }),
+    ).toBeVisible()
+    await page.screenshot({
+      path: testInfo.outputPath(`queue-counts-${width}.png`),
+    })
+    await page.keyboard.press('Escape')
+  }
+})
+
+test('failed queue counters stay unknown and retry shows real zeroes without blocking orders', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  const state = await mockOrdersApi(page)
+  state.record.status = 'completed'
+  let fail = true
+  browserIssueGuard.allowApiError(503, '/api/v1/admin/order-status-counts')
+  await page.route('**/api/v1/admin/order-status-counts', (route) =>
+    fail
+      ? route.fulfill({
+          status: 503,
+          json: { error: { message: 'Счётчики заказов недоступны' } },
+        })
+      : route.fulfill({ json: { data: { new: 0, working: 0, shipped: 0 } } }),
+  )
+  await page.goto('/orders')
+  await expect(
+    page.getByRole('button', { name: `Открыть заказ ${order.order_number}` }),
+  ).toBeVisible()
+  await expect(page.locator('[data-order-count]')).toHaveCount(0)
+  await expect(page.getByRole('alert')).toContainText(
+    'Счётчики заказов недоступны',
+  )
+  fail = false
+  await page
+    .getByRole('button', { name: 'Повторить загрузку счётчиков заказов' })
+    .click()
+  for (const code of ['new', 'working', 'shipped'])
+    await expect(page.locator(`[data-order-count=${code}]`)).toHaveText('0')
+  await expect(page.getByRole('alert')).toHaveCount(0)
 })

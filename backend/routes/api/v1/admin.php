@@ -96,6 +96,7 @@ Route::get('contact-requests/{contactRequest}/comments', [ContactRequestControll
 Route::post('contact-requests/{contactRequest}/comments', [ContactRequestController::class, 'storeComment'])
     ->name('contact-requests.comments.store');
 Route::get('order-statuses', [OrderController::class, 'statuses'])->name('order-statuses.index');
+Route::get('order-status-counts', [OrderController::class, 'counts'])->name('order-status-counts.index');
 Route::get('order-statistics', OrderStatisticsController::class)->name('order-statistics.index');
 Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
 Route::get('order-assignees', [OrderAssignmentController::class, 'candidates'])->name('order-assignees.index');

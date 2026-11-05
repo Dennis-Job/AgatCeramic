@@ -7,6 +7,7 @@ export type OrderItem = {
   line_total: string
 }
 export type OrderAssignee = { id: number; name: string }
+export type OrderStatusCounts = Record<'new' | 'working' | 'shipped', number>
 export type Order = {
   id: number
   order_number: string

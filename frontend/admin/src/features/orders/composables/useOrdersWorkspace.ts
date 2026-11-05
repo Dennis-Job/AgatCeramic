@@ -3,6 +3,7 @@ import { formatMoney } from '../../../utils/formatMoney'
 import { useAuthStore } from '../../../stores/auth'
 import { notifyAdminNotificationsChanged } from '../../notifications/services/notificationChanges'
 import { useOrderAssignees } from './useOrderAssignees'
+import { useOrderStatusCounts } from './useOrderStatusCounts'
 import {
   addOrderComment,
   assignOrder,
@@ -32,6 +33,7 @@ export const orderPaymentOptions = [
 ]
 
 export function useOrdersWorkspace() {
+  const queueCounts = useOrderStatusCounts()
   const auth = useAuthStore()
   const orders = ref<Order[]>([])
   const selected = ref<Order | null>(null)
@@ -317,6 +319,7 @@ export function useOrdersWorkspace() {
   }
 
   async function initialize(): Promise<void> {
+    const counts = queueCounts.refreshStatusCounts()
     const candidates = assignment.load()
     loading.value = true
     statusError.value = ''
@@ -333,11 +336,12 @@ export function useOrdersWorkspace() {
     } finally {
       statusLoading.value = false
     }
-    await Promise.all([load(), candidates])
+    await Promise.all([load(), candidates, counts])
   }
 
   watch([status, paymentStatus, assigneeFilter], () => void load())
   return {
+    ...queueCounts,
     orders,
     selected,
     statuses,

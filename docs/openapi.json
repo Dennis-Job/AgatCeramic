@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v17.0",
+        "version": "v17.1",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -3362,6 +3362,19 @@
         "/admin/contact-requests/{contactRequest}/comments": {
             "get": {"operationId": "listContactRequestComments", "summary": "List internal contact comments", "security": [{"sanctumSession": []}], "parameters": [{"$ref": "#/components/parameters/ContactRequestId"}, {"name": "per_page", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}}], "responses": {"200": {"description": "Comments", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCommentCollection"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}}},
             "post": {"operationId": "createContactRequestComment", "summary": "Add an internal contact comment", "security": [{"sanctumSession": []}], "parameters": [{"$ref": "#/components/parameters/ContactRequestId"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StoreContactRequestCommentRequest"}}}}, "responses": {"201": {"description": "Comment created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContactRequestCommentResponse"}}}}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationFailed"}}}
+        },
+        "/admin/order-status-counts": {
+            "get": {
+                "operationId": "getOrderStatusCounts",
+                "summary": "Count all orders in active queues independently of list filters",
+                "description": "Requires orders.view. new and shipped count their respective status codes. working combines all active non-terminal catalog statuses except new and shipped, including custom intermediate stages. Ignores search, payment, assignee, status, pagination and statistics month filters. Returns zero for empty queues, reads current persisted statuses without caching and exposes no personal data.",
+                "security": [{"sanctumSession": []}],
+                "responses": {
+                    "200": {"description": "Global current order queue counts", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrderStatusCountsResponse"}, "example": {"data": {"new": 0, "working": 0, "shipped": 0}}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"}
+                }
+            }
         },
         "/admin/order-statistics": {
             "get": {
@@ -9818,6 +9831,23 @@
                     "count": {"type": "integer", "minimum": 0},
                     "previous_count": {"type": "integer", "minimum": 0},
                     "change_percent": {"type": ["number", "null"], "description": "(count - previous_count) / previous_count * 100 rounded to one decimal. Null when previous_count is zero and count is positive; zero when both counts are zero."}
+                },
+                "additionalProperties": false
+            },
+            "OrderStatusCountsResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "required": ["new", "working", "shipped"],
+                        "properties": {
+                            "new": {"type": "integer", "minimum": 0},
+                            "working": {"type": "integer", "minimum": 0},
+                            "shipped": {"type": "integer", "minimum": 0}
+                        },
+                        "additionalProperties": false
+                    }
                 },
                 "additionalProperties": false
             },

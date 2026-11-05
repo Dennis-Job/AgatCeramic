@@ -294,6 +294,12 @@ export async function mockAdminBaseline(
       return route.fulfill({
         json: { data: [{ id: 2, name: 'Менеджер заказов' }] },
       })
+    if (path === '/admin/order-status-counts')
+      return route.fulfill({
+        json: {
+          data: { new: state === 'empty' ? 0 : 3, working: 0, shipped: 0 },
+        },
+      })
     if (path === '/admin/order-statuses')
       return route.fulfill({
         json: data([
