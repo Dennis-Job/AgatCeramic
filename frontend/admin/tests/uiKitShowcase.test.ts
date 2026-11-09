@@ -19,8 +19,8 @@ describe('UiKitShowcase', () => {
     expect(
       inventory.findAllComponents(UiBadge).map((badge) => badge.text()),
     ).toEqual([...uiComponents, ...sharedComponents])
-    expect(uiComponents).toHaveLength(29)
-    expect(inventory.text()).toContain('29 UI primitives и 3 shared-компонента')
+    expect(uiComponents).toHaveLength(30)
+    expect(inventory.text()).toContain('30 UI primitives и 3 shared-компонента')
     expect(wrapper.findAll('[data-ui-kit-section]')).toHaveLength(14)
     expect(wrapper.find('[data-ui-kit-section="tabs"]').exists()).toBe(true)
     expect(wrapper.find('input[aria-label="Загрузка товаров"]').exists()).toBe(

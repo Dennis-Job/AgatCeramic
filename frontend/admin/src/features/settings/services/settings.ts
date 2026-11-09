@@ -54,7 +54,7 @@ export async function getLegalDocuments(): Promise<LegalDocument[]> {
 }
 
 export async function createLegalDocument(
-  payload: Pick<LegalDocument, 'type' | 'version' | 'body'>,
+  payload: Pick<LegalDocument, 'type' | 'version' | 'body' | 'content'>,
 ): Promise<LegalDocument> {
   return write('/admin/legal-documents', payload)
 }

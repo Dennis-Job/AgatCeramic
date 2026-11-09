@@ -5,16 +5,24 @@ namespace App\Services;
 use App\Models\ComplianceApproval;
 use App\Models\LegalDocumentVersion;
 use App\Models\User;
+use App\Support\LegalDocumentContent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class LegalDocumentManagementService
 {
-    public function __construct(private readonly AuditLogService $auditLogService) {}
+    public function __construct(
+        private readonly AuditLogService $auditLogService,
+        private readonly LegalDocumentContent $documentContent,
+    ) {}
 
     /** @param array<string, mixed> $attributes */
     public function create(User $actor, array $attributes): LegalDocumentVersion
     {
+        if (isset($attributes['content'])) {
+            $attributes['body'] = $this->documentContent->toPlainText($attributes['content']);
+        }
+
         return DB::transaction(function () use ($actor, $attributes): LegalDocumentVersion {
             $document = LegalDocumentVersion::query()->create([...$attributes, 'created_by' => $actor->id]);
             $this->auditLogService->record($actor, 'legal-document.created', $document, ['type' => $document->type, 'version' => $document->version]);

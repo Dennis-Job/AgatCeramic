@@ -29,6 +29,182 @@ const document = {
   created_at: '2026-09-25T10:00:00Z',
 }
 
+test('visual legal editor saves formatting, alignment and keeps document statuses aligned', async ({
+  page,
+  browserIssueGuard,
+}, testInfo) => {
+  browserIssueGuard.allowApiError(422, '/api/v1/admin/legal-documents')
+  let attempts = 0
+  let saved: Record<string, unknown> | null = null
+  const documents = [
+    {
+      ...document,
+      id: 4,
+      published_at: '2026-11-05T10:00:00Z',
+      version: 'Очень-длинная-версия-документа-2026',
+    },
+    { ...document, id: 3, version: 'v1' },
+    {
+      ...document,
+      id: 2,
+      type: 'consent',
+      version: '2026-11-09',
+      published_at: '2026-11-05T10:00:00Z',
+    },
+  ]
+  await page.route('**/sanctum/csrf-cookie', (route) =>
+    route.fulfill({ status: 204 }),
+  )
+  await page.route('**/api/v1/**', (route) => {
+    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    if (path === '/admin/auth/me')
+      return route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            name: 'Редактор',
+            email: 'editor@example.test',
+            status: 'active',
+            permissions: ['settings.manage'],
+          },
+        },
+      })
+    if (path === '/admin/site-settings')
+      return route.fulfill({ json: { data: settings } })
+    if (path === '/admin/compliance-approvals')
+      return route.fulfill({ json: { data: [] } })
+    if (
+      path === '/admin/legal-documents' &&
+      route.request().method() === 'POST'
+    ) {
+      attempts++
+      saved = route.request().postDataJSON()
+      if (attempts === 1)
+        return route.fulfill({
+          status: 422,
+          json: { error: { message: 'Повторите сохранение.' } },
+        })
+      return route.fulfill({ json: { data: { ...document, ...saved, id: 5 } } })
+    }
+    if (path === '/admin/legal-documents')
+      return route.fulfill({ json: { data: documents } })
+    return route.fulfill({ json: { data: [] } })
+  })
+  await page.goto('/settings')
+  const editor = page.getByRole('textbox', {
+    name: 'Текст документа',
+    exact: true,
+  })
+  await page.getByRole('textbox', { name: /^Версия/ }).fill('2026-11-09')
+  await page
+    .getByRole('button', { name: 'Сохранить версию', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText(
+    'Введите текст документа.',
+  )
+  expect(attempts).toBe(0)
+  await editor.fill('Условия документа')
+  await page.getByRole('button', { name: 'Заголовок 2', exact: true }).click()
+  await expect(editor.locator('h2')).toHaveText('Условия документа')
+  await page
+    .getByRole('button', { name: 'По правому краю', exact: true })
+    .click()
+  await expect(editor.locator('h2')).toHaveCSS('text-align', 'right')
+  await editor.press('End')
+  await editor.press('Enter')
+  await page.getByRole('button', { name: 'Обычный текст', exact: true }).click()
+  await editor.pressSequentially('Текст с выделением и ссылкой')
+  await editor.press('Control+Shift+Home')
+  await page.getByRole('button', { name: 'Жирный', exact: true }).click()
+  await page.getByRole('button', { name: 'По ширине', exact: true }).click()
+  await expect(editor.locator('p')).toHaveCSS('text-align', 'justify')
+  await page
+    .getByRole('button', { name: 'Добавить или изменить ссылку', exact: true })
+    .click()
+  await page
+    .getByRole('textbox', { name: 'Адрес ссылки' })
+    .fill('javascript:alert(1)')
+  await page.getByRole('button', { name: 'Применить ссылку' }).click()
+  await expect(page.getByRole('alert').last()).toContainText('Введите ссылку')
+  await page
+    .getByRole('textbox', { name: 'Адрес ссылки' })
+    .fill('https://example.test')
+  await page.getByRole('button', { name: 'Применить ссылку' }).click()
+  await expect(editor.locator('a')).toHaveCount(2)
+  await page
+    .getByRole('button', { name: 'По левому краю', exact: true })
+    .click()
+  await expect(editor.locator('p')).toHaveCSS('text-align', 'left')
+  await page.getByRole('button', { name: 'По ширине', exact: true }).click()
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await editor.scrollIntoViewIfNeeded()
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    const badges = await page
+      .locator('.legal-document-row > span')
+      .evaluateAll((items) =>
+        items.map((item) => item.getBoundingClientRect().left),
+      )
+    expect(new Set(badges.map(Math.round)).size).toBe(1)
+    await page.screenshot({
+      path: testInfo.outputPath(`legal-editor-${width}.png`),
+      fullPage: true,
+    })
+  }
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .include('[aria-labelledby="legal-documents-title"]')
+        .analyze()
+    ).violations,
+  ).toEqual([])
+  await editor.press('ArrowRight')
+  await page
+    .locator('[aria-labelledby="legal-documents-title"]')
+    .screenshot({ path: '../../.tmp/legal-editor-final.png' })
+  await page
+    .getByRole('button', { name: 'Сохранить версию', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText('Повторите сохранение.')
+  await expect(editor.locator('h2')).toHaveText('Условия документа')
+  await page
+    .getByRole('button', { name: 'Сохранить версию', exact: true })
+    .click()
+  await expect(
+    page.getByText('Версия документа сохранена как черновик.', { exact: true }),
+  ).toBeVisible()
+  expect(saved?.body).toContain('Условия документа')
+  expect(JSON.stringify(saved?.content)).toContain('"textAlign":"justify"')
+  expect(JSON.stringify(saved?.content)).toContain('"type":"bold"')
+  await expect(editor).toHaveText('')
+  await page
+    .getByRole('button', {
+      name: 'Просмотреть Оферта версии 2026-11-09',
+      exact: true,
+    })
+    .click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.locator('h2').last()).toHaveText('Условия документа')
+  await expect(dialog.locator('.ui-rich-text p')).toHaveCSS(
+    'text-align',
+    'justify',
+  )
+  expect(
+    (await new AxeBuilder({ page }).include('[role="dialog"]').analyze())
+      .violations,
+  ).toEqual([])
+  await page.screenshot({
+    path: testInfo.outputPath('legal-editor-preview.png'),
+    fullPage: true,
+  })
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+})
+
 test('settings preserve edits after a failed save and require legal text review before publication', async ({
   page,
   browserIssueGuard,

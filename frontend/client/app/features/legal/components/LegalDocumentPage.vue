@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { setResponseStatus } from 'h3'
 import PageState from '~/components/shared/PageState.vue'
+import UiFormattedText from '~/components/ui/UiFormattedText.vue'
 import { siteOrigin } from '#shared/utils/pageUrls'
 import {
   fetchPublishedDocument,
@@ -14,7 +15,7 @@ const props = defineProps<{
 }>()
 const { requestBase } = usePublicApiConfig()
 const {
-  data: body,
+  data: document,
   error,
   status,
   refresh,
@@ -45,7 +46,12 @@ useHead({ link: [{ rel: 'canonical', href: canonical }] })
   <article class="container legal-document">
     <NuxtLink to="/" class="eyebrow">AgatCeramic</NuxtLink>
     <h1>{{ title }}</h1>
-    <p v-if="body" class="legal-document__body">{{ body }}</p>
+    <UiFormattedText
+      v-if="document"
+      class="legal-document__body"
+      :body="document.body"
+      :content="document.content"
+    />
     <PageState
       v-else
       :title="error ? 'Документ недоступен' : 'Загрузка документа'"
@@ -77,8 +83,5 @@ h1 {
 .legal-document__body {
   max-width: 880px;
   margin: 0;
-  font-size: 15px;
-  line-height: 1.8;
-  white-space: pre-wrap;
 }
 </style>

@@ -52,10 +52,13 @@ export function useSettingsWorkspace() {
   const busyAction = ref('')
   const error = ref('')
   const success = ref('')
-  const documentForm = ref<Pick<LegalDocument, 'type' | 'version' | 'body'>>({
+  const documentForm = ref<
+    Pick<LegalDocument, 'type' | 'version' | 'body' | 'content'>
+  >({
     type: 'offer',
     version: '',
     body: '',
+    content: null,
   })
   const approvalForm = ref({
     role: 'business_owner' as ComplianceApproval['role'],
@@ -161,9 +164,24 @@ export function useSettingsWorkspace() {
   function addDocument(): Promise<void> {
     return run(
       async () => {
+        if (!documentForm.value.body.trim())
+          throw new Error('Введите текст документа.')
+        if (
+          documentForm.value.body.length > 200000 ||
+          new TextEncoder().encode(JSON.stringify(documentForm.value.content))
+            .length > 200000
+        )
+          throw new Error(
+            'Текст документа слишком длинный. Сократите текст или форматирование (лимит — 200 КБ).',
+          )
         const document = await createLegalDocument(documentForm.value)
         documents.value.unshift(document)
-        documentForm.value = { type: 'offer', version: '', body: '' }
+        documentForm.value = {
+          type: 'offer',
+          version: '',
+          body: '',
+          content: null,
+        }
       },
       'Версия документа сохранена как черновик.',
       'document',

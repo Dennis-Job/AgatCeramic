@@ -1,3 +1,5 @@
+import type { FormattedTextNode } from '~/utils/formattedText'
+
 export type LegalDocumentType = 'privacy_policy' | 'consent'
 
 export async function fetchPublishedDocument(
@@ -5,7 +7,12 @@ export async function fetchPublishedDocument(
   type: LegalDocumentType,
 ) {
   const { data } = await $fetch<{
-    data: { type: LegalDocumentType; body: string; published_at: string }
+    data: {
+      type: LegalDocumentType
+      body: string
+      content?: FormattedTextNode | null
+      published_at: string
+    }
   }>(`${base}/legal-documents/${type}`, {
     cache: 'no-store',
     credentials: 'omit',
@@ -13,12 +20,12 @@ export async function fetchPublishedDocument(
   })
   if (data?.type !== type || !data.published_at || !data.body?.trim())
     throw new Error('Published legal document unavailable')
-  return data.body
+  return data
 }
 
 export function fetchCheckoutLegalDocuments(base: string) {
   return Promise.all([
     fetchPublishedDocument(base, 'privacy_policy'),
     fetchPublishedDocument(base, 'consent'),
-  ])
+  ]).then(([policy, consent]): [string, string] => [policy.body, consent.body])
 }

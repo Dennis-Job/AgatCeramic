@@ -31,6 +31,8 @@ import UiSelect from '../ui/UiSelect.vue'
 import UiTable from '../ui/UiTable.vue'
 import UiTabs from '../ui/UiTabs.vue'
 import UiTextarea from '../ui/UiTextarea.vue'
+import UiRichTextEditor from '../ui/UiRichTextEditor.vue'
+import type { JSONContent } from '@tiptap/vue-3'
 
 type ConfirmMode = 'default' | 'busy' | 'error'
 
@@ -50,6 +52,7 @@ const teleportedOption = ref('standard')
 const date = ref('2026-09-13')
 const emptyDate = ref('')
 const message = ref('')
+const formattedMessage = ref<JSONContent | null>(null)
 const checked = ref(false)
 const checkedByDefault = ref(true)
 const switchChecked = ref(true)
@@ -135,6 +138,7 @@ const uiComponents = [
   'UiPopover',
   'UiProgressBar',
   'UiRadio',
+  'UiRichTextEditor',
   'UiSegmentedControl',
   'UiSelect',
   'UiSwitch',
@@ -731,6 +735,13 @@ function submitAuthPreview(): void {
               disabled
             />
           </UiField>
+          <div class="space-y-2">
+            <p class="text-sm text-gray-500">Визуальный редактор</p>
+            <UiRichTextEditor
+              v-model="formattedMessage"
+              label="Пример визуального редактора"
+            />
+          </div>
           <UiField
             label="Короткое описание"
             help="UiTextarea compact: высота по числу строк, ручное увеличение сохраняется."

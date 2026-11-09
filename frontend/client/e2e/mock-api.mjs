@@ -379,6 +379,74 @@ createServer(async (request, response) => {
     return send({
       data: {
         type: legalType,
+        content:
+          scenario === 'legal-formatted'
+            ? {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'heading',
+                    attrs: { level: 2, textAlign: 'right' },
+                    content: [{ type: 'text', text: 'Условия обработки' }],
+                  },
+                  {
+                    type: 'paragraph',
+                    attrs: { textAlign: 'justify' },
+                    content: [
+                      {
+                        type: 'text',
+                        text: 'Важные условия',
+                        marks: [{ type: 'bold' }],
+                      },
+                      {
+                        type: 'text',
+                        text: ' и подробности',
+                        marks: [{ type: 'italic' }],
+                      },
+                    ],
+                  },
+                  {
+                    type: 'bulletList',
+                    content: [
+                      {
+                        type: 'listItem',
+                        content: [
+                          {
+                            type: 'paragraph',
+                            content: [{ type: 'text', text: 'Первый пункт' }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    type: 'paragraph',
+                    content: [
+                      {
+                        type: 'text',
+                        text: 'Ссылка',
+                        marks: [
+                          {
+                            type: 'link',
+                            attrs: { href: 'https://example.test' },
+                          },
+                        ],
+                      },
+                      {
+                        type: 'text',
+                        text: '<script>alert(1)</script>',
+                        marks: [
+                          {
+                            type: 'link',
+                            attrs: { href: 'javascript:alert(1)' },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              }
+            : null,
         body:
           legalType === 'consent'
             ? 'Тестовый текст согласия.'

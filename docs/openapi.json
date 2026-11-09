@@ -8568,6 +8568,7 @@
                     "type",
                     "version",
                     "body",
+                    "content",
                     "published_at",
                     "created_at"
                 ],
@@ -8587,7 +8588,8 @@
                         "type": "string"
                     },
                     "body": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Plain text, derived server-side from content when present."
                     },
                     "published_at": {
                         "type": [
@@ -8599,6 +8601,17 @@
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "content": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LegalDocumentContent"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Optional structured editor content; null for legacy plain-text versions."
                     }
                 }
             },
@@ -8622,7 +8635,19 @@
                         "type": "string"
                     },
                     "body": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Plain text. On create, required for compatibility and replaced server-side when content is provided."
+                    },
+                    "content": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LegalDocumentContent"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Optional structured editor content; null for legacy plain-text versions."
                     }
                 }
             },
@@ -15527,6 +15552,366 @@
                     }
                 },
                 "additionalProperties": false
+            },
+            "LegalDocumentContent": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "type",
+                    "content"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": "doc"
+                    },
+                    "content": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "$ref": "#/components/schemas/LegalDocumentBlock"
+                        }
+                    }
+                },
+                "description": "Safe Tiptap JSON subset; meaningful text required. Maximum 200000 bytes of compact unescaped UTF-8 JSON, 5000 nodes, node depth 16 (root = 0). Unknown nodes, marks, attributes and invalid nesting are rejected. Plain body is derived by the server. Optional textAlign is left/right/justify."
+            },
+            "LegalDocumentBlock": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "paragraph"
+                            },
+                            "attrs": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [],
+                                "properties": {
+                                    "textAlign": {
+                                        "type": "string",
+                                        "enum": [
+                                            "left",
+                                            "right",
+                                            "justify"
+                                        ]
+                                    }
+                                }
+                            },
+                            "content": {
+                                "type": "array",
+                                "minItems": 0,
+                                "items": {
+                                    "$ref": "#/components/schemas/LegalDocumentInline"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type",
+                            "attrs"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "heading"
+                            },
+                            "attrs": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "level"
+                                ],
+                                "properties": {
+                                    "level": {
+                                        "type": "integer",
+                                        "enum": [
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "textAlign": {
+                                        "type": "string",
+                                        "enum": [
+                                            "left",
+                                            "right",
+                                            "justify"
+                                        ]
+                                    }
+                                }
+                            },
+                            "content": {
+                                "type": "array",
+                                "minItems": 0,
+                                "items": {
+                                    "$ref": "#/components/schemas/LegalDocumentInline"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type",
+                            "content"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "bulletList"
+                            },
+                            "content": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                    "$ref": "#/components/schemas/LegalDocumentListItem"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type",
+                            "content"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "orderedList"
+                            },
+                            "attrs": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [],
+                                "properties": {
+                                    "start": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                }
+                            },
+                            "content": {
+                                "type": "array",
+                                "minItems": 1,
+                                "items": {
+                                    "$ref": "#/components/schemas/LegalDocumentListItem"
+                                }
+                            }
+                        }
+                    }
+                ]
+            },
+            "LegalDocumentListItem": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "type",
+                    "content"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": "listItem"
+                    },
+                    "content": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "oneOf": [
+                                {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "type"
+                                    ],
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "paragraph"
+                                        },
+                                        "attrs": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [],
+                                            "properties": {
+                                                "textAlign": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "left",
+                                                        "right",
+                                                        "justify"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "content": {
+                                            "type": "array",
+                                            "minItems": 0,
+                                            "items": {
+                                                "$ref": "#/components/schemas/LegalDocumentInline"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "type",
+                                        "content"
+                                    ],
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "bulletList"
+                                        },
+                                        "content": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "$ref": "#/components/schemas/LegalDocumentListItem"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [
+                                        "type",
+                                        "content"
+                                    ],
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "orderedList"
+                                        },
+                                        "attrs": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [],
+                                            "properties": {
+                                                "start": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                }
+                                            }
+                                        },
+                                        "content": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "$ref": "#/components/schemas/LegalDocumentListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                "description": "First child must be a paragraph; remaining children may be paragraphs or nested lists."
+            },
+            "LegalDocumentInline": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type",
+                            "text"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "text"
+                            },
+                            "text": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "marks": {
+                                "type": "array",
+                                "maxItems": 3,
+                                "items": {
+                                    "$ref": "#/components/schemas/LegalDocumentMark"
+                                },
+                                "description": "No duplicate mark types."
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "hardBreak"
+                            }
+                        }
+                    }
+                ]
+            },
+            "LegalDocumentMark": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "bold",
+                                    "italic"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type",
+                            "attrs"
+                        ],
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "const": "link"
+                            },
+                            "attrs": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "href"
+                                ],
+                                "properties": {
+                                    "href": {
+                                        "type": "string",
+                                        "description": "HTTP(S) URL without credentials, mailto: with one email, or root-relative path excluding //. No whitespace, control characters, backslashes or percent-encoded controls."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
             }
         },
         "parameters": {

@@ -1,3 +1,5 @@
+import type { JSONContent } from '@tiptap/vue-3'
+
 export type SiteSettings = {
   operator_type: 'individual_entrepreneur' | 'legal_entity' | null
   seller_name: string | null
@@ -22,6 +24,7 @@ export type LegalDocument = {
   type: 'offer' | 'privacy_policy' | 'consent'
   version: string
   body: string
+  content?: JSONContent | null
   published_at: string | null
   created_at: string
 }

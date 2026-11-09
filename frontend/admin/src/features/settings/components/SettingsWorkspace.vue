@@ -15,6 +15,7 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
+import UiRichTextEditor from '../../../components/ui/UiRichTextEditor.vue'
 import UiDialog from '../../../components/ui/UiDialog.vue'
 import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
 import { useAuthStore } from '../../../stores/auth'
@@ -336,13 +337,21 @@ async function confirmPublish(): Promise<void> {
                 placeholder="2026-09-25"
             /></UiField>
           </div>
-          <UiField label="Текст документа" required
-            ><UiTextarea
-              v-model="documentForm.body"
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-gray-500">
+              Текст документа <span aria-hidden="true">*</span>
+            </p>
+            <UiRichTextEditor
+              v-model="documentForm.content"
+              v-model:body="documentForm.body"
               required
-              rows="8"
-              maxlength="200000"
-          /></UiField>
+              :disabled="Boolean(busyAction)"
+            />
+            <p class="text-xs text-gray-500">
+              Выделите текст или поставьте курсор в абзац, затем выберите
+              форматирование. Enter — новый абзац, Shift+Enter — перенос строки.
+            </p>
+          </div>
           <UiButton
             type="submit"
             :loading="busyAction === 'document'"
@@ -357,9 +366,9 @@ async function confirmPublish(): Promise<void> {
           <article
             v-for="document in documents"
             :key="document.id"
-            class="flex flex-wrap items-center justify-between gap-3 py-4"
+            class="legal-document-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-4 md:grid-cols-[minmax(0,1fr)_8rem_8rem]"
           >
-            <div class="min-w-0">
+            <div class="col-span-2 min-w-0 md:col-span-1">
               <p class="break-words font-medium text-gray-500">
                 {{ label(documentOptions, document.type) }} ·
                 {{ document.version }}
@@ -373,12 +382,15 @@ async function confirmPublish(): Promise<void> {
                 }}
               </p>
             </div>
-            <UiBadge :tone="document.published_at ? 'success' : 'neutral'">{{
-              document.published_at ? 'Опубликован' : 'Черновик'
-            }}</UiBadge>
+            <UiBadge
+              class="justify-self-start"
+              :tone="document.published_at ? 'success' : 'neutral'"
+              >{{ document.published_at ? 'Опубликован' : 'Черновик' }}</UiBadge
+            >
             <UiButton
               variant="secondary"
               size="sm"
+              class="justify-self-end"
               :disabled="Boolean(busyAction)"
               :aria-label="`Просмотреть ${label(documentOptions, document.type)} версии ${document.version}`"
               @click="preview = document"
@@ -415,9 +427,14 @@ async function confirmPublish(): Promise<void> {
         <div
           class="mt-4 max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200 bg-gray-25 p-4"
         >
-          <pre
-            class="whitespace-pre-wrap break-words font-sans text-sm text-gray-500"
-            >{{ preview?.body }}</pre>
+          <UiRichTextEditor
+            v-if="preview"
+            :key="preview.id"
+            :model-value="preview.content"
+            :body="preview.body"
+            readonly
+            label="Предпросмотр документа"
+          />
         </div>
         <UiDialogFooter>
           <template #note>{{

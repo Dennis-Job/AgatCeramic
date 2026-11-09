@@ -17,6 +17,7 @@ class LegalDocumentVersionResource extends ApiResource
             'type' => $this->type,
             'version' => $this->version,
             'body' => $this->body,
+            'content' => $this->content,
             'published_at' => $this->published_at?->toAtomString(),
             'created_at' => $this->created_at?->toAtomString(),
         ];
