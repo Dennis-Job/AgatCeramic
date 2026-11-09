@@ -1,5 +1,35 @@
 # OpenAPI migration plan — version history
 
+## v19.0 — readable customer order numbers
+
+Date: 2026-11-09. New order numbers use `customer_id-customer_order_sequence`,
+e.g. `124-3`. Normalized phone determines the customer; registration is unchanged.
+Legacy `AC-YYYYMMDD-XXXXXXXXXX` numbers remain valid, and admin responses also
+document the existing `ANON-` plus 16 hexadecimal character retention format.
+
+### Breaking change
+
+Routes stay under `/api/v1`; response fields stay unchanged. Strict consumers
+validating the former AC-only response pattern must accept the new positive
+integer pair before backend deployment. The Admin and Client render the server
+string without parsing it. Accept both new and historical formats; admin
+Order/PaymentRegistration schemas also accept the existing ANON format.
+AdminOrder.customer.name and delivery_address accept null, matching existing
+retention output. Consumers must tolerate these anonymized contact values.
+`customer_id` and `customer_order_sequence` are server-only and prohibited on checkout.
+No new public lookup/history endpoint is introduced.
+
+Apply `2026_11_09_000001_add_customer_order_numbers` before serving new checkout
+code. The additive migration preserves all historical values; there is no history
+backfill. Number suffixes count only orders created by the new numbering system.
+Before rollback, stop new checkout writers and deploy code accepting both formats.
+Keep the customers table, IDs and counters after the first number has been issued;
+the migration deliberately refuses schema rollback after allocation, even after
+retention has removed every phone. Dropping/restoring counters could reuse numbers.
+Before any allocation, migration down/up is supported and preserves legacy rows.
+Existing retention clears order linkage/sequence and clears customer phone when
+its last linked order is destroyed, while retaining contact-free ID reservations.
+
 ## v18.0 — separate order progress from payment
 
 Date: 2026-11-09. `GET /admin/order-statuses` retains the server catalogue for
