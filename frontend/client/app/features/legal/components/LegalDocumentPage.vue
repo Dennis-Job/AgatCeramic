@@ -81,7 +81,6 @@ h1 {
   letter-spacing: -0.02em;
 }
 .legal-document__body {
-  max-width: 880px;
   margin: 0;
 }
 </style>
