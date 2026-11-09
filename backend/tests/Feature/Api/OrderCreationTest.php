@@ -57,7 +57,7 @@ class OrderCreationTest extends TestCase
             ->assertJsonMissingPath('data.delivery_address');
 
         $number = $response->json('data.order_number');
-        $this->assertMatchesRegularExpression('/^AC-\d{8}-[A-F0-9]{10}$/', $number);
+        $this->assertMatchesRegularExpression('/^[1-9][0-9]*-1$/D', $number);
         $this->assertDatabaseHas('orders', [
             'order_number' => $number,
             'customer_name' => 'Иван Петров',

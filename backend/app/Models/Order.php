@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** @property-read numeric-string $total_amount */
-#[Fillable(['order_number', 'customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment', 'status', 'payment_status', 'payment_amount', 'payment_method', 'payment_reference', 'total_amount', 'paid_at', 'completed_at', 'anonymized_at', 'commercial_retention_until', 'assignee_id', 'assigned_at'])]
+#[Fillable(['order_number', 'customer_id', 'customer_order_sequence', 'customer_name', 'customer_phone', 'customer_email', 'delivery_address', 'customer_comment', 'status', 'payment_status', 'payment_amount', 'payment_method', 'payment_reference', 'total_amount', 'paid_at', 'completed_at', 'anonymized_at', 'commercial_retention_until', 'assignee_id', 'assigned_at'])]
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
@@ -52,6 +52,8 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'customer_id' => 'integer',
+            'customer_order_sequence' => 'integer',
             'payment_status' => PaymentStatus::class,
             'payment_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',

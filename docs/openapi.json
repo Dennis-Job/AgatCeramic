@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v18.0",
+        "version": "v19.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -9985,12 +9985,12 @@
                 "required": ["id", "order_number", "customer", "delivery_address", "customer_comment", "status", "assignee", "assigned_at", "payment_status", "payment_amount", "payment_method", "payment_reference", "total_amount", "items", "paid_at", "completed_at", "created_at"],
                 "properties": {
                     "id": {"type": "integer"},
-                    "order_number": {"type": "string", "pattern": "^AC-\\d{8}-[A-F0-9]{10}$"},
+                    "order_number": {"type": "string", "maxLength": 64, "pattern": "^(?:[1-9][0-9]*-[1-9][0-9]*|AC-[0-9]{8}-[A-F0-9]{10}|ANON-[A-F0-9]{16})$", "example": "124-3"},
                     "customer": {
                         "type": "object",
                         "required": ["name", "phone", "email"],
                         "properties": {
-                            "name": {"type": "string"},
+                            "name": {"type": ["string", "null"]},
                             "phone": {
                                 "anyOf": [
                                     {
@@ -10009,7 +10009,7 @@
                         },
                         "additionalProperties": false
                     },
-                    "delivery_address": {"type": "string", "maxLength": 1000},
+                    "delivery_address": {"type": ["string", "null"], "maxLength": 1000},
                     "customer_comment": {"type": ["string", "null"]},
                     "assignee": {"anyOf": [{"$ref": "#/components/schemas/OrderAssignee"}, {"type": "null"}], "description": "Current employee identity; null if unassigned or employee deleted. Included in list and detail responses."},
                     "assigned_at": {"type": ["string", "null"], "format": "date-time", "description": "Last assignment time; null on explicit unassignment. Historical time may remain after employee deletion."},
@@ -10048,7 +10048,7 @@
                 "type": "object",
                 "required": ["order_number", "status", "payment_status", "total_amount", "items", "created_at"],
                 "properties": {
-                    "order_number": {"type": "string", "pattern": "^AC-\\d{8}-[A-F0-9]{10}$"},
+                    "order_number": {"type": "string", "maxLength": 64, "pattern": "^(?:[1-9][0-9]*-[1-9][0-9]*|AC-[0-9]{8}-[A-F0-9]{10})$", "example": "124-3"},
                     "status": {"type": "string", "maxLength": 50},
                     "payment_status": {"$ref": "#/components/schemas/PaymentStatus"},
                     "total_amount": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$"},
@@ -10071,7 +10071,7 @@
                 "type": "object",
                 "required": ["order_number", "payment_status", "payment_amount", "payment_method", "payment_reference", "paid_at"],
                 "properties": {
-                    "order_number": {"type": "string", "pattern": "^AC-\\d{8}-[A-F0-9]{10}$"},
+                    "order_number": {"type": "string", "maxLength": 64, "pattern": "^(?:[1-9][0-9]*-[1-9][0-9]*|AC-[0-9]{8}-[A-F0-9]{10}|ANON-[A-F0-9]{16})$", "example": "124-3"},
                     "payment_status": {"$ref": "#/components/schemas/PaymentStatus"},
                     "payment_amount": {"type": ["string", "null"], "pattern": "^[0-9]+\\.[0-9]{2}$"},
                     "payment_method": {"type": ["string", "null"], "maxLength": 100},

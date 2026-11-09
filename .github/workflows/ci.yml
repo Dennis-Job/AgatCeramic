@@ -223,6 +223,18 @@ jobs:
           throw_unless(config('queue.default') === 'redis');
           throw_unless(app('queue')->connection()->size() >= 0);"
 
+      - name: Test PostgreSQL readable order number concurrency
+        env:
+          CI: "true"
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: agatceramic_test
+          DB_USERNAME: agatceramic
+          DB_PASSWORD: ci-only-password
+          DB_SSLMODE: prefer
+        run: vendor/bin/phpunit --configuration=phpunit.postgres.xml tests/Integration/PostgresReadableOrderNumberTest.php
+
       - name: Run tests twice
         run: |
           composer test

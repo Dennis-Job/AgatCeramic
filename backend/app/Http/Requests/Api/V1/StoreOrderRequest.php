@@ -21,6 +21,8 @@ class StoreOrderRequest extends CartTokenRequest
             'items' => ['prohibited'],
             'total_amount' => ['prohibited'],
             'order_number' => ['prohibited'],
+            'customer_id' => ['prohibited'],
+            'customer_order_sequence' => ['prohibited'],
             'status' => ['prohibited'],
             'payment_status' => ['prohibited'],
             'idempotency_key' => ['required', 'string', 'min:16', 'max:255'],
@@ -51,7 +53,7 @@ class StoreOrderRequest extends CartTokenRequest
         return $this->string('idempotency_key')->toString();
     }
 
-    /** @return array<string, mixed> */
+    /** @return array{customer_name: string, customer_phone: string, customer_email: string, delivery_address: string, customer_comment: ?string} */
     public function orderAttributes(): array
     {
         return [

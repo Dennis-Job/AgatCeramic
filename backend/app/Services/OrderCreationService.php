@@ -27,7 +27,7 @@ class OrderCreationService
         private readonly GuestCartLifetime $cartLifetime,
     ) {}
 
-    /** @param array<string, mixed> $attributes */
+    /** @param array<string, mixed>&array{customer_phone: string} $attributes */
     public function create(Cart $cart, array $attributes, string $idempotencyKey): OrderCreationResult
     {
         $keyHash = hash_hmac('sha256', $idempotencyKey, $this->applicationKey());
@@ -46,7 +46,7 @@ class OrderCreationService
         throw new \LogicException('Order creation did not complete.');
     }
 
-    /** @param array<string, mixed> $attributes */
+    /** @param array<string, mixed>&array{customer_phone: string} $attributes */
     private function createInTransaction(Cart $cart, array $attributes, string $keyHash, string $requestHash): OrderCreationResult
     {
         $idempotency = CheckoutIdempotencyKey::query()->where('key_hash', $keyHash)->lockForUpdate()->first();
@@ -102,7 +102,7 @@ class OrderCreationService
 
         $order = Order::query()->create([
             ...$attributes,
-            'order_number' => $this->orderNumberService->generate(),
+            ...$this->orderNumberService->generate($attributes['customer_phone']),
             'status' => 'new',
             'payment_status' => PaymentStatus::NotPaid,
             'total_amount' => $total,
