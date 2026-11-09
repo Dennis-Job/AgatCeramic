@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { X } from '@lucide/vue'
 import AdminWorkspace from '../../../components/shared/AdminWorkspace.vue'
 import PageHeader from '../../../components/shared/PageHeader.vue'
@@ -45,6 +45,9 @@ const {
   error,
   success,
   documentForm,
+  editingDocumentId,
+  editDocument,
+  cancelDocumentEdit,
   approvalForm,
   load,
   save,
@@ -54,6 +57,38 @@ const {
 } = workspace
 const canApprove = computed(() => auth.hasPermission('settings.approve'))
 const preview = ref<LegalDocument | null>(null)
+const documentEditorForm = ref<HTMLFormElement | null>(null)
+const documentList = ref<HTMLDivElement | null>(null)
+
+async function beginDocumentEdit(document: LegalDocument): Promise<void> {
+  if (!editDocument(document)) return
+  preview.value = null
+  // Let the preview restore its opener before moving focus into the editor.
+  await nextTick()
+  await nextTick()
+  documentEditorForm.value?.focus({ preventScroll: true })
+  documentEditorForm.value?.scrollIntoView({ block: 'start' })
+}
+
+async function focusDocumentAction(id: number): Promise<void> {
+  await nextTick()
+  documentList.value
+    ?.querySelector<HTMLButtonElement>(`[data-edit-document="${id}"]`)
+    ?.focus()
+}
+
+async function submitDocument(): Promise<void> {
+  const id = editingDocumentId.value
+  await addDocument()
+  if (id !== null && !error.value) await focusDocumentAction(id)
+}
+
+async function cancelEdit(): Promise<void> {
+  const id = editingDocumentId.value
+  cancelDocumentEdit()
+  if (id !== null && editingDocumentId.value === null)
+    await focusDocumentAction(id)
+}
 const operatorOptions = [
   { value: 'individual_entrepreneur', label: 'Индивидуальный предприниматель' },
   { value: 'legal_entity', label: 'Юридическое лицо' },
@@ -318,7 +353,26 @@ async function confirmPublish(): Promise<void> {
             </p>
           </div>
         </template>
-        <form class="space-y-4" @submit.prevent="addDocument">
+        <form
+          id="legal-document-editor"
+          ref="documentEditorForm"
+          class="space-y-4"
+          tabindex="-1"
+          :aria-label="
+            editingDocumentId !== null
+              ? 'Редактирование черновика'
+              : 'Новая версия документа'
+          "
+          @submit.prevent="submitDocument"
+        >
+          <p
+            v-if="editingDocumentId !== null"
+            role="status"
+            class="text-sm text-gray-500"
+          >
+            Редактирование черновика · ID {{ editingDocumentId }}. Сохранение
+            обновит эту версию без публикации.
+          </p>
           <div
             class="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 [&>*]:min-w-0"
           >
@@ -326,12 +380,14 @@ async function confirmPublish(): Promise<void> {
               ><UiSelect
                 :model-value="documentForm.type"
                 :options="documentOptions"
+                :disabled="Boolean(busyAction) || editingDocumentId !== null"
                 accessible-name="Тип документа"
                 @update:model-value="updateDocumentType"
             /></UiField>
             <UiField label="Версия" required
               ><UiInput
                 v-model="documentForm.version"
+                :disabled="Boolean(busyAction)"
                 required
                 maxlength="64"
                 placeholder="2026-09-25"
@@ -352,23 +408,39 @@ async function confirmPublish(): Promise<void> {
               форматирование. Enter — новый абзац, Shift+Enter — перенос строки.
             </p>
           </div>
-          <UiButton
-            type="submit"
-            :loading="busyAction === 'document'"
-            :disabled="Boolean(busyAction)"
-            >Сохранить версию</UiButton
-          >
+          <div class="flex flex-wrap gap-3">
+            <UiButton
+              type="submit"
+              :loading="busyAction === 'document'"
+              :disabled="Boolean(busyAction)"
+              >{{
+                editingDocumentId !== null
+                  ? 'Сохранить изменения'
+                  : 'Сохранить версию'
+              }}</UiButton
+            >
+            <UiButton
+              v-if="editingDocumentId !== null"
+              type="button"
+              variant="secondary"
+              :disabled="Boolean(busyAction)"
+              @click="cancelEdit"
+            >
+              Отменить редактирование
+            </UiButton>
+          </div>
         </form>
         <div
           v-if="documents.length"
+          ref="documentList"
           class="mt-6 divide-y divide-gray-100 border-t border-gray-100"
         >
           <article
             v-for="document in documents"
             :key="document.id"
-            class="legal-document-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-4 md:grid-cols-[minmax(0,1fr)_8rem_8rem]"
+            class="legal-document-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-4 lg:grid-cols-[minmax(0,1fr)_8rem_16rem]"
           >
-            <div class="col-span-2 min-w-0 md:col-span-1">
+            <div class="col-span-2 min-w-0 lg:col-span-1">
               <p class="break-words font-medium text-gray-500">
                 {{ label(documentOptions, document.type) }} ·
                 {{ document.version }}
@@ -383,19 +455,33 @@ async function confirmPublish(): Promise<void> {
               </p>
             </div>
             <UiBadge
-              class="justify-self-start"
+              class="col-span-2 justify-self-start sm:col-span-1"
               :tone="document.published_at ? 'success' : 'neutral'"
               >{{ document.published_at ? 'Опубликован' : 'Черновик' }}</UiBadge
             >
-            <UiButton
-              variant="secondary"
-              size="sm"
-              class="justify-self-end"
-              :disabled="Boolean(busyAction)"
-              :aria-label="`Просмотреть ${label(documentOptions, document.type)} версии ${document.version}`"
-              @click="preview = document"
-              >Просмотреть</UiButton
+            <div
+              class="col-span-2 flex flex-wrap gap-2 sm:col-span-1 sm:justify-end"
             >
+              <UiButton
+                v-if="!document.published_at"
+                variant="secondary"
+                size="sm"
+                :data-edit-document="document.id"
+                :disabled="Boolean(busyAction) || editingDocumentId !== null"
+                :aria-label="`Редактировать ${label(documentOptions, document.type)} версии ${document.version}`"
+                @click="beginDocumentEdit(document)"
+                >Редактировать</UiButton
+              >
+              <UiButton
+                variant="secondary"
+                size="sm"
+                class="justify-self-end"
+                :disabled="Boolean(busyAction)"
+                :aria-label="`Просмотреть ${label(documentOptions, document.type)} версии ${document.version}`"
+                @click="preview = document"
+                >Просмотреть</UiButton
+              >
+            </div>
           </article>
         </div>
         <UiEmptyState v-else class="mt-5" label="Версий документов пока нет." />
@@ -403,7 +489,7 @@ async function confirmPublish(): Promise<void> {
       <UiDialog
         :open="Boolean(preview)"
         labelledby="legal-preview-title"
-        panel-class="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl"
+        panel-class="w-full max-w-5xl rounded-xl bg-white p-6 shadow-xl"
         :close-disabled="Boolean(busyAction)"
         @close="preview = null"
       >
@@ -437,11 +523,15 @@ async function confirmPublish(): Promise<void> {
           />
         </div>
         <UiDialogFooter>
-          <template #note>{{
-            preview?.published_at
-              ? 'Опубликованная версия'
-              : 'Черновик. Проверьте текст перед публикацией.'
-          }}</template>
+          <template #note
+            ><span class="block lg:max-w-sm">{{
+              preview?.published_at
+                ? 'Опубликованная версия'
+                : editingDocumentId !== null
+                  ? 'Сначала сохраните или отмените редактирование черновика.'
+                  : 'Черновик. Проверьте текст перед публикацией. Если нужны исправления, нажмите «Редактировать».'
+            }}</span></template
+          >
           <UiButton
             variant="secondary"
             :disabled="Boolean(busyAction)"
@@ -450,8 +540,15 @@ async function confirmPublish(): Promise<void> {
           >
           <UiButton
             v-if="preview && !preview.published_at"
+            variant="secondary"
+            :disabled="Boolean(busyAction) || editingDocumentId !== null"
+            @click="beginDocumentEdit(preview)"
+            >Редактировать</UiButton
+          >
+          <UiButton
+            v-if="preview && !preview.published_at"
             :loading="busyAction === `publish:${preview.id}`"
-            :disabled="Boolean(busyAction)"
+            :disabled="Boolean(busyAction) || editingDocumentId !== null"
             @click="confirmPublish"
             >Опубликовать эту версию</UiButton
           >

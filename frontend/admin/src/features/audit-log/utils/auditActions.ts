@@ -75,6 +75,7 @@ export const auditActionLabels: Record<string, string> = {
   'store.deleted': 'Удалён магазин',
   'store.working-hours-updated': 'Изменены часы работы магазина',
   'legal-document.created': 'Создан юридический документ',
+  'legal-document.updated': 'Изменён черновик юридического документа',
   'legal-document.published': 'Опубликован юридический документ',
   'compliance-approval.recorded': 'Зафиксировано согласование',
   'security.admin-auth-invalidated': 'Отозваны административные сессии',

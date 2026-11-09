@@ -31,6 +31,31 @@ class LegalDocumentManagementService
         });
     }
 
+    /** @param array<string, mixed> $attributes */
+    public function update(User $actor, LegalDocumentVersion $document, array $attributes): LegalDocumentVersion
+    {
+        return DB::transaction(function () use ($actor, $document, $attributes): LegalDocumentVersion {
+            // Publish takes the same lock: a stale draft cannot overwrite a published version.
+            $document = LegalDocumentVersion::query()->lockForUpdate()->findOrFail($document->id);
+            if ($document->published_at !== null) {
+                throw ValidationException::withMessages(['document' => 'Опубликованную версию нельзя изменить. Создайте новый черновик.']);
+            }
+            if (isset($attributes['type']) && $attributes['type'] !== $document->type) {
+                throw ValidationException::withMessages(['type' => 'Тип сохранённого документа нельзя изменить.']);
+            }
+            $content = $attributes['content'] ?? null;
+            $document->fill([
+                'version' => $attributes['version'],
+                'body' => $content !== null ? $this->documentContent->toPlainText($content) : $attributes['body'],
+                'content' => $content,
+            ]);
+            $document->save();
+            $this->auditLogService->record($actor, 'legal-document.updated', $document, ['type' => $document->type, 'version' => $document->version]);
+
+            return $document;
+        });
+    }
+
     public function publish(User $actor, LegalDocumentVersion $document): LegalDocumentVersion
     {
         return DB::transaction(function () use ($actor, $document): LegalDocumentVersion {

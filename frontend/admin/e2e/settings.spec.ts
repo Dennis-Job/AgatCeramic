@@ -29,6 +29,275 @@ const document = {
   created_at: '2026-09-25T10:00:00Z',
 }
 
+test('draft editing updates the saved version, preserves formatting and supports cancel and preview', async ({
+  page,
+  browserIssueGuard,
+}, testInfo) => {
+  browserIssueGuard.allowApiError(422, '/api/v1/admin/legal-documents/4')
+  let attempts = 0
+  let creates = 0
+  let publishes = 0
+  let submitted: Record<string, unknown> = {}
+  let savedDocument = {
+    ...document,
+    content: {
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 2, textAlign: 'right' },
+          content: [
+            { type: 'text', text: document.body, marks: [{ type: 'bold' }] },
+          ],
+        },
+      ],
+    },
+  }
+  const published = {
+    ...document,
+    id: 3,
+    version: 'published',
+    published_at: '2026-11-05T10:00:00Z',
+  }
+  await page.route('**/sanctum/csrf-cookie', (route) =>
+    route.fulfill({ status: 204 }),
+  )
+  await page.route('**/api/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    if (path === '/admin/auth/me')
+      return route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            name: 'Редактор',
+            email: 'editor@example.test',
+            status: 'active',
+            permissions: ['settings.manage'],
+          },
+        },
+      })
+    if (path === '/admin/site-settings')
+      return route.fulfill({ json: { data: settings } })
+    if (path === '/admin/compliance-approvals')
+      return route.fulfill({ json: { data: [] } })
+    if (
+      path === '/admin/legal-documents/4' &&
+      route.request().method() === 'PATCH'
+    ) {
+      attempts++
+      submitted = route.request().postDataJSON()
+      if (attempts === 1)
+        return route.fulfill({
+          status: 422,
+          json: { error: { message: 'Повторите сохранение черновика.' } },
+        })
+      savedDocument = { ...savedDocument, ...submitted }
+      return route.fulfill({ json: { data: savedDocument } })
+    }
+    if (path === '/admin/legal-documents/4/publish') {
+      publishes++
+      savedDocument.published_at = '2026-11-09T11:00:00Z'
+      return route.fulfill({ json: { data: savedDocument } })
+    }
+    if (path === '/admin/legal-documents') {
+      if (route.request().method() === 'POST') creates++
+      return route.fulfill({
+        json: {
+          data: [
+            savedDocument,
+            published,
+            { ...document, id: 2, version: 'plain' },
+          ],
+        },
+      })
+    }
+    return route.fulfill({
+      status: 404,
+      json: { error: { message: 'Unknown endpoint' } },
+    })
+  })
+  await page.goto('/settings')
+  const editor = page.getByRole('textbox', {
+    name: 'Текст документа',
+    exact: true,
+  })
+  const version = page.getByRole('textbox', { name: /^Версия/ })
+  await expect(
+    page.getByRole('button', {
+      name: 'Редактировать Политика ПДн версии published',
+      exact: true,
+    }),
+  ).toHaveCount(0)
+  await version.fill('new-version')
+  await editor.fill('Начатая новая версия')
+  await page
+    .getByRole('button', {
+      name: 'Просмотреть Политика ПДн версии v1',
+      exact: true,
+    })
+    .click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toContainText('Если нужны исправления')
+  await dialog
+    .getByRole('button', { name: 'Редактировать', exact: true })
+    .click()
+  await expect(dialog).toHaveCount(0)
+  const editForm = page.getByRole('form', { name: 'Редактирование черновика' })
+  await expect(editForm).toBeFocused()
+  await expect(
+    page.getByRole('button', { name: 'Тип документа', exact: true }),
+  ).toBeDisabled()
+  await expect(editor.locator('h2 strong')).toHaveText(document.body)
+  await expect(editor.locator('h2')).toHaveCSS('text-align', 'right')
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await editForm.evaluate((form) => form.scrollIntoView({ block: 'start' }))
+    const formTop = (await editForm.boundingBox())!.y
+    const header = (await page.locator('.admin-header').boundingBox())!
+    expect(formTop).toBeGreaterThanOrEqual(header.y + header.height)
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    const badgeLeft = await page
+      .locator('.legal-document-row > span')
+      .evaluateAll((items) =>
+        items.map((item) => Math.round(item.getBoundingClientRect().left)),
+      )
+    expect(new Set(badgeLeft).size).toBe(1)
+    await page.screenshot({
+      path: testInfo.outputPath(`draft-edit-${width}.png`),
+      fullPage: true,
+    })
+  }
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .include('[aria-labelledby="legal-documents-title"]')
+        .analyze()
+    ).violations,
+  ).toEqual([])
+  await version.fill('v1-fixed')
+  await editor.press('ControlOrMeta+End')
+  await editor.pressSequentially(' Исправлено')
+  const save = page.getByRole('button', {
+    name: 'Сохранить изменения',
+    exact: true,
+  })
+  await save.click()
+  await expect(page.getByRole('alert')).toContainText(
+    'Повторите сохранение черновика.',
+  )
+  await expect(version).toHaveValue('v1-fixed')
+  await expect(editor).toContainText('Исправлено')
+  await save.click()
+  await expect(
+    page.getByText('Изменения черновика сохранены.', { exact: true }),
+  ).toBeVisible()
+  expect(attempts).toBe(2)
+  expect(creates).toBe(0)
+  expect(publishes).toBe(0)
+  expect(submitted.version).toBe('v1-fixed')
+  expect(JSON.stringify(submitted.content)).toContain('"textAlign":"right"')
+  await expect(page.locator('.legal-document-row')).toHaveCount(3)
+  await expect(version).toHaveValue('new-version')
+  await expect(editor).toHaveText('Начатая новая версия')
+  const updatedEdit = page.getByRole('button', {
+    name: 'Редактировать Политика ПДн версии v1-fixed',
+    exact: true,
+  })
+  await expect(updatedEdit).toBeFocused()
+  await page.reload()
+  await page
+    .getByRole('button', {
+      name: 'Просмотреть Политика ПДн версии v1-fixed',
+      exact: true,
+    })
+    .click()
+  await expect(dialog.locator('h2 strong')).toContainText('Исправлено')
+  await dialog
+    .getByRole('button', { name: 'Редактировать', exact: true })
+    .click()
+  await editor.fill('Не сохранять')
+  await page
+    .getByRole('button', {
+      name: 'Просмотреть Политика ПДн версии v1-fixed',
+      exact: true,
+    })
+    .click()
+  await expect(
+    dialog.getByRole('button', { name: 'Опубликовать эту версию' }),
+  ).toBeDisabled()
+  await page.setViewportSize({ width: 1102, height: 883 })
+  const disabledActionTops = await dialog
+    .locator('footer button')
+    .evaluateAll((buttons) =>
+      buttons.map((button) => Math.round(button.getBoundingClientRect().top)),
+    )
+  expect(new Set(disabledActionTops).size).toBe(1)
+  await page.screenshot({
+    path: testInfo.outputPath('draft-preview-editing-1102.png'),
+  })
+  await page.keyboard.press('Escape')
+  await page
+    .getByRole('button', { name: 'Отменить редактирование', exact: true })
+    .click()
+  await expect(updatedEdit).toBeFocused()
+  expect(attempts).toBe(2)
+  expect(creates).toBe(0)
+  await page
+    .getByRole('button', {
+      name: 'Редактировать Политика ПДн версии plain',
+      exact: true,
+    })
+    .click()
+  await expect(editor).toHaveText(document.body)
+  await page
+    .getByRole('button', { name: 'Отменить редактирование', exact: true })
+    .click()
+  await page
+    .getByRole('button', {
+      name: 'Просмотреть Политика ПДн версии v1-fixed',
+      exact: true,
+    })
+    .click()
+  expect(
+    (await new AxeBuilder({ page }).include('[role="dialog"]').analyze())
+      .violations,
+  ).toEqual([])
+  for (const width of [320, 640, 768, 1024, 1102, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    if (width >= 1024) {
+      const actionTops = await dialog
+        .locator('footer button')
+        .evaluateAll((buttons) =>
+          buttons.map((button) =>
+            Math.round(button.getBoundingClientRect().top),
+          ),
+        )
+      expect(
+        new Set(actionTops).size,
+        `Preview actions stay in one row at ${width}px`,
+      ).toBe(1)
+    }
+    await page.screenshot({
+      path: testInfo.outputPath(`draft-preview-${width}.png`),
+      fullPage: true,
+    })
+  }
+  await dialog
+    .getByRole('button', { name: 'Опубликовать эту версию', exact: true })
+    .click()
+  await expect.poll(() => publishes).toBe(1)
+  await expect(updatedEdit).toHaveCount(0)
+})
+
 test('visual legal editor saves formatting, alignment and keeps document statuses aligned', async ({
   page,
   browserIssueGuard,

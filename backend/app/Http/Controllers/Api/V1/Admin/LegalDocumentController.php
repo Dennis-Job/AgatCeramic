@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\StoreLegalDocumentVersionRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateLegalDocumentVersionRequest;
 use App\Http\Resources\LegalDocumentVersionResource;
 use App\Models\LegalDocumentVersion;
 use App\Models\SiteSetting;
@@ -31,6 +32,11 @@ class LegalDocumentController extends Controller
 
         return (new LegalDocumentVersionResource($this->management->create($this->authenticatedAdmin($request), $request->validated())))
             ->response()->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    public function update(UpdateLegalDocumentVersionRequest $request, LegalDocumentVersion $legalDocumentVersion): LegalDocumentVersionResource
+    {
+        return new LegalDocumentVersionResource($this->management->update($this->authenticatedAdmin($request), $legalDocumentVersion, $request->validated()));
     }
 
     public function publish(Request $request, LegalDocumentVersion $legalDocumentVersion): LegalDocumentVersionResource

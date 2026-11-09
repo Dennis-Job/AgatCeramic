@@ -1519,7 +1519,7 @@
             },
             "post": {
                 "operationId": "createLegalDocumentVersion",
-                "summary": "Create an immutable draft legal document version",
+                "summary": "Create a draft legal document version",
                 "responses": {
                     "201": {
                         "description": "Successful response.",
@@ -1552,6 +1552,62 @@
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/CreateLegalDocumentVersionRequest"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/legal-documents/{legalDocumentVersion}": {
+            "parameters": [
+                {
+                    "name": "legalDocumentVersion",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "patch": {
+                "operationId": "updateLegalDocumentVersion",
+                "summary": "Update an unpublished legal document draft",
+                "description": "Updates the same draft ID. Published versions return 422. Type cannot change; version is unique within its type, ignoring this draft. Missing or null content clears previous rich formatting. Does not publish the document.",
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LegalDocumentVersionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctumSession": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateLegalDocumentVersionRequest"
                             }
                         }
                     }
@@ -8648,6 +8704,45 @@
                             }
                         ],
                         "description": "Optional structured editor content; null for legacy plain-text versions."
+                    }
+                }
+            },
+            "UpdateLegalDocumentVersionRequest": {
+                "type": "object",
+                "required": [
+                    "version",
+                    "body"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "offer",
+                            "privacy_policy",
+                            "consent"
+                        ],
+                        "description": "Optional; must equal the existing document type."
+                    },
+                    "version": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "pattern": "^[A-Za-z0-9._-]+$"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Required plain text; replaced server-side when content is provided.",
+                        "maxLength": 200000
+                    },
+                    "content": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/LegalDocumentContent"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Optional safe structured editor content. Missing or null clears previous formatting and uses body as plain text."
                     }
                 }
             },

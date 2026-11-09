@@ -7,6 +7,7 @@ import {
   getLegalDocuments,
   getSettings,
   publishLegalDocument,
+  updateLegalDocument,
   saveSettings,
 } from '../services/settings'
 import type {
@@ -60,6 +61,46 @@ export function useSettingsWorkspace() {
     body: '',
     content: null,
   })
+  const editingDocumentId = ref<number | null>(null)
+  let newDocumentForm: typeof documentForm.value | null = null
+
+  function editDocument(document: LegalDocument): boolean {
+    if (
+      document.published_at ||
+      busyAction.value ||
+      editingDocumentId.value !== null
+    )
+      return false
+    // Both forms own their JSON tree; editing must not mutate the saved preview.
+    newDocumentForm = JSON.parse(
+      JSON.stringify(documentForm.value),
+    ) as typeof documentForm.value
+    documentForm.value = JSON.parse(
+      JSON.stringify({
+        type: document.type,
+        version: document.version,
+        body: document.body,
+        content: document.content,
+      }),
+    ) as typeof documentForm.value
+    editingDocumentId.value = document.id
+    error.value = ''
+    success.value = ''
+    return true
+  }
+
+  function finishDocumentEdit(): void {
+    editingDocumentId.value = null
+    if (newDocumentForm) documentForm.value = newDocumentForm
+    newDocumentForm = null
+  }
+
+  function cancelDocumentEdit(): void {
+    if (busyAction.value || editingDocumentId.value === null) return
+    finishDocumentEdit()
+    error.value = ''
+    success.value = ''
+  }
   const approvalForm = ref({
     role: 'business_owner' as ComplianceApproval['role'],
     reviewer_name: '',
@@ -162,6 +203,7 @@ export function useSettingsWorkspace() {
   }
 
   function addDocument(): Promise<void> {
+    const editingId = editingDocumentId.value
     return run(
       async () => {
         if (!documentForm.value.body.trim())
@@ -174,6 +216,17 @@ export function useSettingsWorkspace() {
           throw new Error(
             'Текст документа слишком длинный. Сократите текст или форматирование (лимит — 200 КБ).',
           )
+        if (editingId !== null) {
+          const document = await updateLegalDocument(
+            editingId,
+            documentForm.value,
+          )
+          documents.value = documents.value.map((entry) =>
+            entry.id === document.id ? document : entry,
+          )
+          finishDocumentEdit()
+          return
+        }
         const document = await createLegalDocument(documentForm.value)
         documents.value.unshift(document)
         documentForm.value = {
@@ -183,12 +236,15 @@ export function useSettingsWorkspace() {
           content: null,
         }
       },
-      'Версия документа сохранена как черновик.',
+      editingId !== null
+        ? 'Изменения черновика сохранены.'
+        : 'Версия документа сохранена как черновик.',
       'document',
     )
   }
 
   function publish(id: number): Promise<void> {
+    if (editingDocumentId.value !== null) return Promise.resolve()
     return run(
       async () => {
         const document = await publishLegalDocument(id)
@@ -242,6 +298,9 @@ export function useSettingsWorkspace() {
     error,
     success,
     documentForm,
+    editingDocumentId,
+    editDocument,
+    cancelDocumentEdit,
     approvalForm,
     load,
     save,

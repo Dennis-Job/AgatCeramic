@@ -32,7 +32,7 @@ class AuditLabels
         'banner.created' => 'Создан баннер', 'banner.updated' => 'Изменён баннер', 'banner.deleted' => 'Удалён баннер',
         'slider.created' => 'Создан слайдер', 'slider.updated' => 'Изменён слайдер', 'slider.deleted' => 'Удалён слайдер',
         'store.created' => 'Добавлен магазин', 'store.updated' => 'Изменён магазин', 'store.deleted' => 'Удалён магазин', 'store.working-hours-updated' => 'Изменены часы работы магазина',
-        'legal-document.created' => 'Создан юридический документ', 'legal-document.published' => 'Опубликован юридический документ',
+        'legal-document.created' => 'Создан юридический документ', 'legal-document.updated' => 'Изменён черновик юридического документа', 'legal-document.published' => 'Опубликован юридический документ',
         'compliance-approval.recorded' => 'Зафиксировано согласование', 'security.admin-auth-invalidated' => 'Отозваны административные сессии',
     ];
 

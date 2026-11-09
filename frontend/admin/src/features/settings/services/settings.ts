@@ -63,6 +63,13 @@ export async function publishLegalDocument(id: number): Promise<LegalDocument> {
   return write(`/admin/legal-documents/${id}/publish`)
 }
 
+export async function updateLegalDocument(
+  id: number,
+  payload: Pick<LegalDocument, 'type' | 'version' | 'body' | 'content'>,
+): Promise<LegalDocument> {
+  return write(`/admin/legal-documents/${id}`, payload, 'PATCH')
+}
+
 export async function getComplianceApprovals(): Promise<ComplianceApproval[]> {
   return decode<ComplianceApproval[]>(
     await apiFetch('/admin/compliance-approvals'),

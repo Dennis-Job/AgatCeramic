@@ -75,6 +75,7 @@ Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-
 Route::patch('site-settings', [SiteSettingController::class, 'update'])->name('site-settings.update');
 Route::get('legal-documents', [LegalDocumentController::class, 'index'])->name('legal-documents.index');
 Route::post('legal-documents', [LegalDocumentController::class, 'store'])->name('legal-documents.store');
+Route::patch('legal-documents/{legalDocumentVersion}', [LegalDocumentController::class, 'update'])->name('legal-documents.update');
 Route::post('legal-documents/{legalDocumentVersion}/publish', [LegalDocumentController::class, 'publish'])->name('legal-documents.publish');
 Route::get('compliance-approvals', [ComplianceApprovalController::class, 'index'])->name('compliance-approvals.index');
 Route::post('compliance-approvals', [ComplianceApprovalController::class, 'store'])->name('compliance-approvals.store');
