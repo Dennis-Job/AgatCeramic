@@ -104,7 +104,7 @@ class CartItemManagementService
 
     private function assertAvailable(Product $product, int $quantity, bool $reportAvailableQuantity = false): void
     {
-        $canSell = $product->is_active && $product->is_on_sale
+        $canSell = $product->is_active
             && $product->category?->is_active === true && $product->price !== null;
         $availableQuantity = $canSell ? $product->stock_quantity : null;
 

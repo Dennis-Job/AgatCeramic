@@ -38,11 +38,20 @@ export function handleProducts(request, response, url, scenario) {
   }
   if (
     url.pathname === '/api/v1/catalog' &&
-    (scenario === 'catalog-card-standard' ||
+    (['catalog-card-standard', 'catalog-regular-products'].includes(scenario) ||
       ['category', 'brand', 'collection'].some((key) =>
         url.searchParams.has(key),
       ))
   ) {
+    if (scenario === 'catalog-regular-products') {
+      const regular = { ...products[0], is_on_sale: false }
+      configureCartProducts([{ ...regular, stock_quantity: 10 }])
+      return send({
+        data: [{ ...regular, description: 'Описание из API' }],
+        categories: [category],
+        meta: { current_page: 1, last_page: 1, total: 1 },
+      })
+    }
     return send({
       data: (scenario === 'catalog-card-standard'
         ? [
@@ -110,7 +119,11 @@ export function handleProducts(request, response, url, scenario) {
     }
   }
   configureCartProducts(
-    products.map((item) => ({ ...item, stock_quantity: 10 })),
+    products.map((item) => ({
+      ...item,
+      ...(scenario === 'product-not-sale' ? { is_on_sale: false } : {}),
+      stock_quantity: 10,
+    })),
   )
   const axes = [{ slug: 'tsvet', name: 'Цвет' }]
   const sizedVariants = scenario === 'product-sized-variants'
@@ -265,7 +278,14 @@ export function handleProducts(request, response, url, scenario) {
               ],
             })),
           },
-      related: empty ? [] : [products[2]],
+      related: empty
+        ? []
+        : [
+            {
+              ...products[2],
+              ...(scenario === 'product-not-sale' ? { is_on_sale: false } : {}),
+            },
+          ],
       recommended: empty
         ? []
         : scenario === 'product-recommendations'

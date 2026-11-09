@@ -159,11 +159,13 @@ class PublicProductTest extends TestCase
 
         $this->getJson('/api/v1/products/'.$product->slug)->assertOk()
             ->assertJsonPath('data.group.axes.0.slug', 'tsvet')
-            ->assertJsonCount(2, 'data.group.products')
+            ->assertJsonCount(3, 'data.group.products')
             ->assertJsonPath('data.group.products.0.id', $product->id)
             ->assertJsonPath('data.group.products.1.id', $sibling->id)
             ->assertJsonPath('data.group.products.1.slug', $sibling->slug)
             ->assertJsonPath('data.group.products.1.axis_values.0.display_value', 'Светлый')
+            ->assertJsonPath('data.group.products.2.id', $offSale->id)
+            ->assertJsonPath('data.group.products.2.is_on_sale', false)
             ->assertJsonMissingPath('data.group.products.1.stock_quantity');
     }
 
@@ -184,7 +186,9 @@ class PublicProductTest extends TestCase
         $this->getJson('/api/v1/products/'.$product->slug)->assertOk()
             ->assertJsonCount(2, 'data.related')->assertJsonPath('data.related.0.id', $first->id)
             ->assertJsonPath('data.related.1.id', $later->id)
-            ->assertJsonCount(1, 'data.recommended')->assertJsonPath('data.recommended.0.id', $recommended->id);
+            ->assertJsonCount(2, 'data.recommended')->assertJsonPath('data.recommended.0.id', $offSale->id)
+            ->assertJsonPath('data.recommended.0.is_on_sale', false)
+            ->assertJsonPath('data.recommended.1.id', $recommended->id);
     }
 
     public function test_multiselect_boolean_numeric_and_unknown_option_display_values_are_resolved(): void

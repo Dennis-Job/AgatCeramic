@@ -168,23 +168,50 @@ class GuestCartTest extends TestCase
         $this->assertDatabaseHas('cart_items', ['id' => $item->id, 'quantity' => 1]);
     }
 
-    public function test_cart_rechecks_sale_status_and_category_on_add_and_update_and_rejects_fractional_sale_units(): void
+    public function test_regular_and_discounted_products_can_be_added_updated_and_checked_out(): void
+    {
+        foreach ([false, true] as $onSale) {
+            $resolved = $this->createGuestCart();
+            $product = Product::factory()->create(['is_on_sale' => $onSale, 'price' => '125.50', 'stock_quantity' => 10]);
+            $this->withHeader('X-Cart-Token', $resolved->token);
+            $itemId = $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])
+                ->assertCreated()->json('data.id');
+            $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])
+                ->assertOk()->assertJsonPath('data.quantity', 2);
+            $this->withHeader('Idempotency-Key', 'sale-flag-checkout-'.($onSale ? 'discounted' : 'regular'))
+                ->postJson('/api/v1/orders', [
+                    'customer_name' => 'Иван Петров',
+                    'customer_phone' => '+79991234567',
+                    'customer_email' => 'ivan@example.test',
+                    'delivery_address' => 'Москва, улица Пример, дом 1',
+                ])->assertCreated()->assertJsonPath('data.total_amount', '251.00')
+                ->assertJsonPath('data.items.0.product_id', $product->id);
+            $this->assertSame($onSale, $product->fresh()->is_on_sale);
+        }
+    }
+
+    public function test_cart_rechecks_activity_category_and_price_and_rejects_fractional_sale_units(): void
     {
         $resolved = $this->createGuestCart();
         $product = Product::factory()->create(['is_on_sale' => true, 'stock_quantity' => 10, 'unit' => 'square_meter']);
         $this->withHeader('X-Cart-Token', $resolved->token);
         $itemId = $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertCreated()->json('data.id');
 
-        $product->update(['is_on_sale' => false]);
+        $product->update(['is_active' => false]);
         $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();
         $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])
             ->assertUnprocessable()
             ->assertJsonMissingPath('error.details.available_quantity');
-        $product->update(['is_on_sale' => true]);
+        $product->update(['is_active' => true]);
         $product->category->update(['is_active' => false]);
         $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();
         $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])->assertUnprocessable();
         $product->category->update(['is_active' => true]);
+        $price = $product->price;
+        $product->update(['price' => null]);
+        $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1])->assertUnprocessable();
+        $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 2])->assertUnprocessable();
+        $product->update(['price' => $price]);
         $this->postJson('/api/v1/cart/items', ['product_id' => $product->id, 'quantity' => 1.25])->assertUnprocessable();
         $this->patchJson('/api/v1/cart/items/'.$itemId, ['quantity' => 1.25])->assertUnprocessable();
         $this->assertDatabaseHas('cart_items', ['id' => $itemId, 'quantity' => 1]);

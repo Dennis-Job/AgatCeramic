@@ -16,10 +16,7 @@ const message = ref('')
 const { addItem, busy, error } = useCart()
 const { showSuccess } = useSuccessNotification()
 const canBuy = computed(
-  () =>
-    props.product.is_on_sale &&
-    props.product.in_stock &&
-    props.product.price !== null,
+  () => props.product.in_stock && props.product.price !== null,
 )
 const unit = computed(() => productUnitLabel(props.product.unit))
 const estimate = computed(() =>
@@ -150,11 +147,7 @@ async function add() {
       </div>
       <span class="stock"
         ><Check v-if="canBuy" :size="14" aria-hidden="true" />{{
-          !product.is_on_sale
-            ? 'Продажа приостановлена'
-            : product.in_stock
-              ? 'В наличии'
-              : 'Нет в наличии'
+          product.in_stock ? 'В наличии' : 'Нет в наличии'
         }}</span
       >
     </div>

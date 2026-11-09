@@ -206,7 +206,6 @@ export async function handleCart(req, res, url) {
     if (
       !product ||
       product.price === null ||
-      product.is_on_sale === false ||
       (existing?.quantity || 0) + payload.quantity > product.stock
     ) {
       failure(res, 422, 'validation_failed', { product_id: ['unavailable'] })

@@ -8,6 +8,31 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__cart/reset')
 })
 
+test('ordinary stocked products can be added without a sale badge', async ({
+  page,
+  request,
+}) => {
+  await request.get(
+    'http://127.0.0.1:8015/__scenario?name=catalog-regular-products',
+  )
+  await page.goto('/catalog')
+  const card = page.locator('#catalog-products .product-card').first()
+  await expect(card.locator('.product-sale-badge')).toHaveCount(0)
+  const add = card.getByRole('button', { name: 'В корзину +', exact: true })
+  await expect(add).toBeEnabled()
+  await card.hover()
+  await add.click()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Товар добавлен в корзину.' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Корзина', exact: true }).click()
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Корзина', exact: true })
+      .getByText('Керамогранит с длинным русским названием 1', { exact: true }),
+  ).toBeVisible()
+})
+
 test('catalog uses the approved cards in SSR, at five widths and with actual purchase restrictions', async ({
   page,
   request,

@@ -82,9 +82,7 @@ useHead(() => ({
                       url: canonical.value,
                       availability:
                         'https://schema.org/' +
-                        (product.value.in_stock && product.value.is_on_sale
-                          ? 'InStock'
-                          : 'OutOfStock'),
+                        (product.value.in_stock ? 'InStock' : 'OutOfStock'),
                     },
                   }
                 : {}),

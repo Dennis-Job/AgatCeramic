@@ -19,14 +19,14 @@ class PublicProductQuery
                 'attributeValues.attribute.options',
                 'attributeValues.attribute.group',
                 'groupMembership.group.axes' => fn (Relation $query) => $query->getQuery()->where('is_visible_on_product_page', true),
-                'groupMembership.group.products' => fn (Relation $query) => $query->getQuery()->where('is_active', true)->where('is_on_sale', true)
+                'groupMembership.group.products' => fn (Relation $query) => $query->getQuery()->where('is_active', true)
                     ->whereHas('category', fn ($category) => $category->where('is_active', true))->orderBy('products.id'),
                 'groupMembership.group.products.category', 'groupMembership.group.products.brand',
                 'groupMembership.group.products.primaryImage',
                 'groupMembership.group.products.attributeValues' => fn (Relation $query) => $query->getQuery()->whereHas('attribute', fn ($attribute) => $attribute->where('is_visible_on_product_page', true)),
                 'groupMembership.group.products.attributeValues.attribute.options',
                 'outgoingRelations' => fn (Relation $query) => $query->getQuery()->whereHas('relatedProduct', fn (Builder $related) => $related
-                    ->where('is_active', true)->where('is_on_sale', true)
+                    ->where('is_active', true)
                     ->whereHas('category', fn ($category) => $category->where('is_active', true)))
                     ->orderBy('sort_order')->orderBy('id'),
                 'outgoingRelations.relatedProduct.category', 'outgoingRelations.relatedProduct.brand',

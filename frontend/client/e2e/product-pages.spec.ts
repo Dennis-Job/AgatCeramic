@@ -264,6 +264,7 @@ test('sale badge follows the product flag, not old price, and does not block gal
   page,
   request,
 }) => {
+  await request.get('http://127.0.0.1:8015/__cart/reset')
   await page.goto(productPath)
   const gallery = page.locator('.product-gallery')
   await expect(gallery.locator('.product-sale-badge')).toHaveText('Распродажа')
@@ -282,6 +283,34 @@ test('sale badge follows the product flag, not old price, and does not block gal
   await page.goto(productPath)
   await expect(gallery.locator('.product-sale-badge')).toHaveCount(0)
   await expect(page.locator('.product-purchase del')).toBeVisible()
+  await expect(page.locator('.product-purchase .stock')).toHaveText('В наличии')
+  const html = await (await request.get(productPath)).text()
+  expect(html).toContain('https://schema.org/InStock')
+  const add = page
+    .locator('.product-purchase')
+    .getByRole('button', { name: 'В корзину', exact: true })
+  await expect(add).toBeEnabled()
+  await add.click()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Товар добавлен в корзину.' }),
+  ).toBeVisible()
+  const related = page
+    .locator('.related-section')
+    .getByRole('button', { name: 'Добавить', exact: true })
+    .first()
+  await expect(related).toBeEnabled()
+  await related.click()
+  await expect
+    .poll(async () => {
+      const stats = await (
+        await request.get('http://127.0.0.1:8015/__cart/stats')
+      ).json()
+      return stats.requests.filter(
+        (entry: { method: string; payload?: { product_id?: number } }) =>
+          entry.method === 'POST' && entry.payload?.product_id === 3,
+      ).length
+    })
+    .toBeGreaterThan(0)
   await request.get('http://127.0.0.1:8015/__scenario?name=product-empty')
   await page.goto(productPath)
   await expect(gallery.locator('.product-sale-badge')).toHaveText('Распродажа')

@@ -336,6 +336,13 @@ reduced motion управляется base.css. Row-карточки сопут�
 Проверки — `product-pages.spec.ts`, `catalog-card-standard.spec.ts`,
 пять ширин, SSR/hydration, toggle флага, zoom, touch и независимый UI Guard.
 
+Уточнение 2026-11-09: `is_on_sale` — только признак «Распродажа».
+Кнопки покупки в общих ProductCard (grid и row) и ProductPurchase доступны
+при `in_stock` и заданной `price` (включая цену 0), независимо
+от распродажи; busy временно блокирует повторное действие. Статус наличия и
+Schema.org Offer также не зависят от распродажи. Проверки —
+`catalog-card-standard.spec.ts`, `product-pages.spec.ts`, серверные GuestCartTest.
+
 ## Сопутствующие товары — 2026-11-02
 
 Блок `ProductCollections` следует ACCESSORIES из `productExample.html`:
@@ -410,7 +417,7 @@ uppercase, letter-spacing .18em, тонкая нижняя граница, gap20
 | UI-020 / 2026-11-02 | Сопутствующие товары как ACCESSORIES в productExample.html: надзаголовок «Сопутствующие товары», заголовок «Что ещё понадобится», подпись «К этому товару»; список 900 px, миниатюры 64/56 px, контурная компактная кнопка. Подробности в разделе «Сопутствующие товары». | ProductCollections + SectionHeading, ProductCard row, UiButton outline/compact; product-pages.spec.ts, пять ширин/axe, независимый UI Design Guard. |
 | UI-021 / 2026-11-02 | Нижнего блока «Варианты товара» нет. «Рекомендуем посмотреть» по SIMILAR productExample: надзаголовок «Обратите внимание», без описания, светлый band и карточки с фото 1/1.06, кнопкой поверх фото по hover/focus и постоянной кнопкой на touch. Производитель над названием uppercase; под названием категория и необязательный размер из характеристики. | ProductCollections, ProductCard, SectionHeading, UiButton image-overlay; подробности в разделе «Рекомендуем посмотреть», product-pages/product-collections E2E и UI Design Guard. |
 | UI-022 / 2026-11-02 | Карточка рекомендаций — эталон всех товарных плиток: каталог, фильтры, контентные каталоги, preview и рекомендации используют один ProductCardList/ProductCard; фото, uppercase производитель, название, категория/размер, цена, «В корзину +». По уточнению владельца компактные сопутствующие row сохраняются. | ProductCardList + ProductCard в features/product; CatalogListing и ProductCollections; catalog-card-standard/content-pages/product-pages/preview E2E. |
-| UI-023 / 2026-11-02 | SALE переводится как «Распродажа», видимость строго по is_on_sale. Тёмная плашка сверху слева фото в каталоге/рекомендациях и основной галерее товара; без изменения row сопутствующих. | ProductSaleBadge — общий стиль; ProductCard и ProductGallery — потребители; product-pages/catalog-card-standard E2E, пять ширин и UI Design Guard. |
+| UI-023 / 2026-11-02, уточнено 2026-11-09 | SALE переводится как «Распродажа», видимость строго по is_on_sale. Флаг не влияет на доступность покупки, статус наличия или Schema.org; обычные товары покупаются при наличии и заданной цене. Тёмная плашка сверху слева фото в каталоге/рекомендациях и основной галерее товара; без изменения row сопутствующих. | ProductSaleBadge — общий стиль; ProductCard и ProductGallery — потребители; ProductPurchase; product-pages/catalog-card-standard E2E, пять ширин и UI Design Guard. |
 | UI-024 / 2026-11-02 | Во вкладке характеристик видны названия реальных групп, тонкие линии и пары «название — значение». Группы идут в двух независимых колонках, до 520 px в одной. | ProductInfoTabs, `attributes[].group` в API. Подробности в разделе «Группы характеристик товара». Проверки включают product-pages E2E, пять ширин, SSR/axe и UI Design Guard. |
 | UI-025 / 2026-11-03 | Корзина по `exampleSite.html`: правый drawer до 460 px на всю высоту, компактные строки с квадратным фото, отдельная прокрутка списка и итог внизу. На странице корзины тот же компактный счётчик, колонка 100 px на широком экране. Кнопка «Оформить заказ» ведёт на `/cart`. Стрелка сдвигается на 4 px за 0,3 с при наведении и клавиатурном фокусе. При reduced motion стрелка остаётся на месте. | CartDialog, CartLineItem, UiDialog drawer, UiQuantityInput compact и UiButton. Подробности в разделе «Карточка товара и корзина». Проверки — `cart.spec.ts`, `checkout.spec.ts`, пять ширин и UI Design Guard. |
 | UI-026 / 2026-11-03 | На оформлении фон полей контактов и доставки белый по `orderExample.html`. В сводке при отсутствии или ошибке фото показывается «Нет фото». | UiTextField и UiTextarea с `surface="white"`, CheckoutSummary, `checkout.spec.ts`. |

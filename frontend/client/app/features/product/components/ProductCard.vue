@@ -23,10 +23,7 @@ watch(
   },
 )
 const canBuy = computed(
-  () =>
-    props.product.is_on_sale &&
-    props.product.in_stock &&
-    props.product.price !== null,
+  () => props.product.in_stock && props.product.price !== null,
 )
 const recommendationMeta = computed(() =>
   [props.product.category.name, props.product.size?.trim()]

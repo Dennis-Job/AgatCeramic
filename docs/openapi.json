@@ -5685,7 +5685,7 @@
             "get": {
                 "operationId": "getPublicProduct",
                 "summary": "Read one public product by its unique slug",
-                "description": "Active products in active categories only. Off-sale active products remain viewable. No exact inventory or admin metadata. Relations and independent group members are filtered to active/on-sale products in active categories; descriptions and missing media remain nullable.",
+                "description": "Active products in active categories only. is_on_sale marks a clearance sale and does not restrict purchases: regular products can be bought with a price and sufficient stock. No exact inventory or admin metadata. Relations and independent group members are filtered to active products in active categories regardless of is_on_sale; descriptions and missing media remain nullable.",
                 "parameters": [
                     {
                         "name": "slug",
