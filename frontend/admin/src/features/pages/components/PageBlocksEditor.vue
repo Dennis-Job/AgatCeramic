@@ -193,7 +193,7 @@ onBeforeUnmount(() => {
           </div>
         </template>
         <div
-          class="grid gap-1 sm:grid-cols-2"
+          class="grid grid-cols-1 gap-1"
           role="group"
           aria-label="Порядок блоков"
         >
