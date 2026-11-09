@@ -15554,7 +15554,25 @@
                 }
             },
             "TooManyRequests": {
-                "description": "Too many requests in the current rate-limit window.",
+                "description": "Too many requests in the current rate-limit window. Authenticated admin requests share 300 requests/minute per user; public and guest requests share a separate 60 requests/minute per IP. Login, password reset and public form limits still apply independently.",
+                "headers": {
+                    "Retry-After": {
+                        "description": "Seconds until the rate-limit window resets.",
+                        "schema": {"type": "integer", "minimum": 0}
+                    },
+                    "X-RateLimit-Limit": {
+                        "description": "Maximum requests in the exceeded budget.",
+                        "schema": {"type": "integer", "minimum": 1}
+                    },
+                    "X-RateLimit-Remaining": {
+                        "description": "Remaining requests in the exceeded budget.",
+                        "schema": {"type": "integer", "minimum": 0}
+                    },
+                    "X-RateLimit-Reset": {
+                        "description": "Unix timestamp when the rate-limit window resets.",
+                        "schema": {"type": "integer"}
+                    }
+                },
                 "content": {
                     "application/json": {
                         "schema": {
