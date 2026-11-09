@@ -5,6 +5,7 @@ import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiTable from '../../../components/ui/UiTable.vue'
 import type { Order } from '../types/order.types'
 import { orderStatusTone } from '../utils/orderStatusTone'
+import { paymentStatusTone } from '../utils/paymentStatusTone'
 import { formatPhone } from '../../../utils/phone'
 
 defineProps<{
@@ -65,9 +66,11 @@ defineEmits<{ select: [order: Order] }>()
               :tone="orderStatusTone(order.status)"
               class="whitespace-nowrap"
               >{{ statusName(order.status) }}</UiBadge
-            ><UiBadge tone="neutral">{{
-              paymentName(order.payment_status)
-            }}</UiBadge>
+            ><UiBadge
+              :tone="paymentStatusTone(order.payment_status)"
+              class="whitespace-nowrap"
+              >{{ paymentName(order.payment_status) }}</UiBadge
+            >
           </div>
           <p class="mt-3 break-words text-sm font-medium text-gray-500">
             {{ order.customer.name }}
@@ -134,7 +137,11 @@ defineEmits<{ select: [order: Order] }>()
               >
             </td>
             <td class="px-5 py-4 text-sm text-gray-500">
-              {{ paymentName(order.payment_status) }}
+              <UiBadge
+                :tone="paymentStatusTone(order.payment_status)"
+                class="whitespace-nowrap"
+                >{{ paymentName(order.payment_status) }}</UiBadge
+              >
             </td>
             <td class="px-5 py-4 text-right font-semibold text-gray-500">
               {{ amount(order.total_amount) }}

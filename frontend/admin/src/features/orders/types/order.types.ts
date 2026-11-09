@@ -32,6 +32,7 @@ export type OrderStatus = {
   name: string
   sort_order: number
   is_terminal: boolean
+  is_selectable?: boolean
 }
 export type OrderHistory = {
   id: number

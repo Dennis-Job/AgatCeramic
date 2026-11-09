@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\OrderStatus;
+use App\Support\OrderStatusSelection;
 use Illuminate\Http\Request;
 
 /** @extends ApiResource<OrderStatus> */
@@ -17,6 +18,7 @@ class OrderStatusResource extends ApiResource
             'name' => $this->name,
             'sort_order' => $this->sort_order,
             'is_terminal' => $this->is_terminal,
+            'is_selectable' => OrderStatusSelection::allows($this->code),
         ];
     }
 }

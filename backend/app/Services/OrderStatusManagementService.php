@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderStatus;
 use App\Models\User;
+use App\Support\OrderStatusSelection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -26,7 +27,7 @@ class OrderStatusManagementService
                 ->lockForUpdate()
                 ->first();
 
-            if ($targetStatus === null) {
+            if ($targetStatus === null || ! OrderStatusSelection::allows($targetStatus->code)) {
                 throw ValidationException::withMessages([
                     'status' => ['Выбранный статус недоступен.'],
                 ]);

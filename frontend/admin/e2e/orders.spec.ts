@@ -132,6 +132,7 @@ async function mockOrdersApi(
               name,
               sort_order: index + 2,
               is_terminal: ['completed', 'cancelled'].includes(code!),
+              is_selectable: !['awaiting_payment', 'paid'].includes(code!),
             })),
           ],
         },
@@ -511,12 +512,64 @@ test('order filters use tabs and a compact select while month statistics stay in
   await page.getByRole('button', { name: 'Новый статус заказа' }).click()
   await expect(
     page.getByRole('button', { name: 'Ожидает оплаты', exact: true }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: 'Оплачен', exact: true }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: 'Комплектация', exact: true }),
+  ).toBeVisible()
+})
+
+test('legacy payment order stages remain readable and can be replaced without changing payment', async ({
+  page,
+}, testInfo) => {
+  const state = await mockOrdersApi(page)
+  state.record.status = 'paid'
+  await page.goto('/orders?order=1')
+  const drawer = page.getByRole('dialog', {
+    name: order.order_number,
+    exact: true,
+  })
+  const statusSelect = drawer.getByRole('button', {
+    name: 'Новый статус заказа',
+  })
+  await expect(statusSelect).toContainText('Оплачен')
+  await expect(
+    drawer.getByText('Не оплачено', { exact: true }).first(),
+  ).toBeVisible()
+  const saveStatus = drawer.getByRole('button', {
+    name: 'Сохранить',
+    exact: true,
+  })
+  await expect(saveStatus).toBeDisabled()
+  await statusSelect.scrollIntoViewIfNeeded()
+  await page.screenshot({
+    path: testInfo.outputPath('legacy-order-status.png'),
+  })
+  await statusSelect.click()
+  await expect(
+    page.getByRole('button', { name: 'Оплачен', exact: true }),
+  ).toHaveCount(0)
+  await page.screenshot({
+    path: testInfo.outputPath('order-status-options.png'),
+  })
+  await page.getByRole('button', { name: 'Подтверждён', exact: true }).click()
+  await saveStatus.click()
+  await expect(statusSelect).toContainText('Подтверждён')
+  expect(state.record.payment_status).toBe('not_paid')
+  await statusSelect.scrollIntoViewIfNeeded()
+  await page.screenshot({
+    path: testInfo.outputPath('order-status-separated-from-payment.png'),
+  })
+  await drawer
+    .getByRole('button', { name: 'Статус оплаты', exact: true })
+    .click()
+  await expect(
+    page.getByRole('button', { name: 'Ожидает оплаты', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Оплачено', exact: true }),
   ).toBeVisible()
 })
 

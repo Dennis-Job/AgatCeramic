@@ -4,6 +4,7 @@ import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import { orderStatusTone } from '../utils/orderStatusTone'
+import { paymentStatusTone } from '../utils/paymentStatusTone'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
@@ -72,9 +73,11 @@ defineEmits<{
             :tone="orderStatusTone(selected.status)"
             class="whitespace-nowrap"
             >{{ statusName(selected.status) }}</UiBadge
-          ><UiBadge tone="neutral">{{
-            paymentName(selected.payment_status)
-          }}</UiBadge>
+          ><UiBadge
+            :tone="paymentStatusTone(selected.payment_status)"
+            class="whitespace-nowrap"
+            >{{ paymentName(selected.payment_status) }}</UiBadge
+          >
         </div>
         <strong class="text-lg">{{ amount(selected.total_amount) }}</strong>
         <time class="w-full text-xs" :datetime="selected.created_at">{{
@@ -159,13 +162,23 @@ defineEmits<{
           <UiSelect
             v-model="selected.status"
             :options="
-              statuses.map((item) => ({ label: item.name, value: item.code }))
+              statuses
+                .filter((item) => item.is_selectable !== false)
+                .map((item) => ({ label: item.name, value: item.code }))
             "
+            :placeholder="statusName(selected.status)"
             accessible-name="Новый статус заказа"
             :disabled="saving"
           /><UiButton
             :loading="saving"
-            :disabled="saving"
+            :disabled="
+              saving ||
+              statuses.some(
+                (item) =>
+                  item.code === selected?.status &&
+                  item.is_selectable === false,
+              )
+            "
             @click="$emit('changeStatus')"
             >Сохранить</UiButton
           >

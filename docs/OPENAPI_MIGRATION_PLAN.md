@@ -1,5 +1,26 @@
 # OpenAPI migration plan — version history
 
+## v18.0 — separate order progress from payment
+
+Date: 2026-11-09. `GET /admin/order-statuses` retains the server catalogue for
+historical names and queue filters, adding the required boolean `is_selectable`.
+It is false for legacy `awaiting_payment` and `paid`, true for other active codes.
+Admin hides non-selectable stages from the transition menu, retains historical
+labels, and disables saving the legacy stage until another stage is chosen.
+Payment options and data are independent and unchanged. No database migration.
+
+### Breaking change
+
+HTTP routes remain `/api/v1`. The previous OrderStatus response schema rejected
+additional properties, so strict consumers must accept `is_selectable` before
+deploying the backend. Filter transition options using this flag, retaining the
+whole catalogue for labels and working-queue filters. PATCH order status now
+returns 422 for `awaiting_payment` or `paid`, including a repeat of the current
+legacy stage. Transitioning from either code into an allowed stage still works
+and records history without changing payment. Existing orders and history are
+not rewritten. Deploy Admin and backend together; rollback both code versions
+if necessary. No data conversion or restoration is needed.
+
 ## v17.1 — active order queue counts
 
 Date: 2026-11-05. Additive read-only `GET /admin/order-status-counts` requires

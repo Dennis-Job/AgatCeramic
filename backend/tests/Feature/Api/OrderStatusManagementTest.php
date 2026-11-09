@@ -25,6 +25,9 @@ class OrderStatusManagementTest extends TestCase
             ->assertJsonCount(10, 'data')
             ->assertJsonPath('data.0.code', 'new')
             ->assertJsonPath('data.0.name', 'Новый')
+            ->assertJsonPath('data.0.is_selectable', true)
+            ->assertJsonPath('data.4.is_selectable', false)
+            ->assertJsonPath('data.5.is_selectable', false)
             ->assertJsonPath('data.8.code', 'completed')
             ->assertJsonPath('data.8.is_terminal', true)
             ->assertJsonPath('data.9.code', 'cancelled');
@@ -54,6 +57,46 @@ class OrderStatusManagementTest extends TestCase
             ->assertJsonPath('data.status', 'completed');
 
         $this->assertNotNull($order->fresh()->completed_at);
+    }
+
+    public function test_payment_stages_cannot_be_selected_as_order_statuses(): void
+    {
+        $manager = $this->userWithRole('order-manager');
+        $order = Order::factory()->create(['status' => 'processing']);
+
+        foreach (['awaiting_payment', 'paid'] as $status) {
+            $this->actingAs($manager)
+                ->patchJson("/api/v1/admin/orders/{$order->id}/status", ['status' => $status])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('status', 'error.details');
+        }
+
+        $this->assertSame('processing', $order->fresh()->status);
+        $this->assertDatabaseCount('order_status_histories', 0);
+        $this->assertDatabaseCount('audit_logs', 0);
+    }
+
+    public function test_legacy_payment_stages_can_transition_to_an_order_stage_without_changing_payment(): void
+    {
+        $manager = $this->userWithRole('order-manager');
+
+        foreach (['awaiting_payment', 'paid'] as $status) {
+            $order = Order::factory()->create(['status' => $status, 'payment_status' => 'not_paid']);
+            $this->actingAs($manager)
+                ->getJson("/api/v1/admin/orders/{$order->id}")
+                ->assertOk()
+                ->assertJsonPath('data.status', $status);
+            $this->actingAs($manager)
+                ->patchJson("/api/v1/admin/orders/{$order->id}/status", ['status' => 'confirmed'])
+                ->assertOk()
+                ->assertJsonPath('data.status', 'confirmed')
+                ->assertJsonPath('data.payment_status', 'not_paid');
+            $this->assertDatabaseHas('order_status_histories', [
+                'order_id' => $order->id,
+                'from_status' => $status,
+                'to_status' => 'confirmed',
+            ]);
+        }
     }
 
     public function test_terminal_order_status_cannot_be_changed_and_inactive_status_cannot_be_selected(): void

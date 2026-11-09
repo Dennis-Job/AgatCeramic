@@ -262,6 +262,11 @@ FK `order_id` удаляется каскадно. Статус ограниче
 `shipped`, `completed`, `cancelled`. Коды `completed` и `cancelled` терминальны; только `completed`
 устанавливает дату завершения.
 
+С 2026-11-09 `awaiting_payment` и `paid` сохранены для старых заказов/истории, но недоступны
+для новых переходов (`is_selectable: false` в API). Их `is_active` сохраняется, чтобы старые
+заказы продолжали входить в очередь «В работе». Оплата хранится отдельно в `payment_status`.
+Схема и существующие данные не меняются; миграция не требуется.
+
 ### order_items
 Immutable snapshot: nullable `product_id` (`nullOnDelete` сохраняет историю при удалении товара),
 `product_name`, `product_sku`, `unit_price`, `quantity` и `line_total`. Коммерческие значения не
