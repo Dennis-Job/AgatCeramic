@@ -81,7 +81,16 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Store::class, StorePolicy::class);
         Gate::policy(SiteSetting::class, SiteSettingPolicy::class);
 
-        RateLimiter::for('api', static fn (Request $request): Limit => Limit::perMinute(60)->by($request->ip()));
+        RateLimiter::for('api', static function (Request $request): Limit {
+            $user = $request->user();
+
+            // SPA reads and notification polling share the employee's budget, not the office IP.
+            if ($request->is('api/v1/admin/*') && $user instanceof User) {
+                return Limit::perMinute(300)->by('admin:'.$user->id);
+            }
+
+            return Limit::perMinute(60)->by('public:'.$request->ip());
+        });
 
         RateLimiter::for('login', static function (Request $request): Limit {
             $email = $request->input('email', '');

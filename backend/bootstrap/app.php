@@ -55,7 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (HttpExceptionInterface $exception, Request $request) use ($isApiV1Request) {
             return $isApiV1Request($request)
-                ? ApiErrorResponse::fromStatus($exception->getStatusCode())
+                ? ApiErrorResponse::fromStatus($exception->getStatusCode())->withHeaders($exception->getHeaders())
                 : null;
         });
 
