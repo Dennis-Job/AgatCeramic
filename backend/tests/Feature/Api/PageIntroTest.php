@@ -12,6 +12,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
 
 class PageIntroTest extends TestCase
@@ -28,8 +29,12 @@ class PageIntroTest extends TestCase
         $this->getJson('/api/v1/pages/about')->assertOk()->assertJsonPath('data.intro', null);
         self::assertFalse(PageBlocks::hasUnpublishedChanges($page));
 
-        $this->patchJson($url, ['intro' => $intro])->assertOk()->assertJsonPath('data.intro', $intro)->assertJsonPath('data.has_unpublished_changes', true);
-        $this->patchJson($url, ['title' => $page->title])->assertOk()->assertJsonPath('data.intro', $intro);
+        // JSON object key order can change after a PostgreSQL jsonb round-trip.
+        $this->patchJson($url, ['intro' => $intro])->assertOk()
+            ->assertJson(fn (AssertableJson $json) => $json->where('data.intro', $intro)->etc())
+            ->assertJsonPath('data.has_unpublished_changes', true);
+        $this->patchJson($url, ['title' => $page->title])->assertOk()
+            ->assertJson(fn (AssertableJson $json) => $json->where('data.intro', $intro)->etc());
         $this->getJson('/api/v1/admin/content-preview/about')->assertOk()
             ->assertJsonPath('data.page.intro.image_url', Storage::disk('public')->url($image->path))
             ->assertJsonPath('data.page.intro.image_alt', $intro['image_alt']);
@@ -76,7 +81,9 @@ class PageIntroTest extends TestCase
         $image = $this->image('url');
         $intro = ['image_url' => '/storage/'.$image->path, 'image_media_id' => null, 'image_alt' => 'Материалы'];
         $id = $this->postJson('/api/v1/admin/pages', ['title' => 'Материалы', 'slug' => 'intro-materials', 'body' => 'Текст страницы', 'intro' => $intro])
-            ->assertCreated()->assertJsonPath('data.intro', $intro)->json('data.id');
+            ->assertCreated()
+            ->assertJson(fn (AssertableJson $json) => $json->where('data.intro', $intro)->etc())
+            ->json('data.id');
         self::assertFalse(app(MediaManagementService::class)->deleteIfUnused($actor, $image->id));
         $this->postJson('/api/v1/admin/pages/'.$id.'/publish')->assertOk();
         $this->patchJson('/api/v1/admin/pages/'.$id, ['intro' => null])->assertOk();
