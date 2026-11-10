@@ -11,7 +11,7 @@ class ContentPreviewQuery
         private readonly SiteAppearanceQuery $appearance,
     ) {}
 
-    /** @return array{page: array{title: string, slug: string, body: string, blocks: list<array{id: string, type: string, enabled: bool, data: array<string, mixed>}>, seo: array<string, mixed>}, appearance: array{header: array<string, mixed>, footer: array<string, mixed>}} */
+    /** @return array{page: array{title: string, slug: string, body: string, blocks: list<array{id: string, type: string, enabled: bool, data: array<string, mixed>}>, seo: array<string, mixed>, intro: array<string, mixed>|null}, appearance: array{header: array<string, mixed>, footer: array<string, mixed>}} */
     public function get(string $slug): array
     {
         // Legacy home edits are synchronized into this canonical saved draft.
@@ -29,6 +29,7 @@ class ContentPreviewQuery
                 'body' => $page->body,
                 'blocks' => $this->content->resolve($page->blocks),
                 'seo' => $this->content->seo($page->seo),
+                'intro' => $page->intro !== null ? $this->content->seo($page->intro) : null,
             ],
             'appearance' => ['header' => $header, 'footer' => $footer],
         ];

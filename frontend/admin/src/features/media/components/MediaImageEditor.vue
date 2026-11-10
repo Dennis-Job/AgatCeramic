@@ -28,6 +28,7 @@ const props = defineProps<{
   compact?: boolean
   fallbackUrl?: string | null
   fallbackAlt?: string
+  emptySelectionLabel?: string
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: number | null]
@@ -172,7 +173,9 @@ async function cancelFile() {
         :disabled="controlsDisabled"
         @update:checked="toggleNoImage"
         >{{
-          fallbackUrl ? 'Использовать исходное изображение' : 'Без изображения'
+          fallbackUrl
+            ? 'Использовать исходное изображение'
+            : emptySelectionLabel || 'Без изображения'
         }}</UiCheckbox
       >
     </div>
@@ -318,7 +321,9 @@ async function cancelFile() {
           :model-value="modelValue === null ? '' : String(modelValue)"
           :options="[
             {
-              label: fallbackUrl ? 'Исходное изображение' : 'Без изображения',
+              label: fallbackUrl
+                ? 'Исходное изображение'
+                : emptySelectionLabel || 'Без изображения',
               value: '',
             },
             ...options.map((item) => ({

@@ -161,4 +161,55 @@ describe('page block draft workflow', () => {
     expect(publishPage).not.toHaveBeenCalled()
     scope.stop()
   })
+  it('loads and saves the intro image independently from the source and SEO image', async () => {
+    const source = {
+      ...page(),
+      intro: {
+        image_url: null,
+        image_media_id: 24,
+        image_alt: 'Образцы керамики',
+      },
+    }
+    const scope = effectScope()
+    const editor = scope.run(() => usePageBlocks(source, vi.fn()))!
+    expect(editor.form.value).toHaveProperty('intro', source.intro)
+    expect(editor.dirty.value).toBe(false)
+    editor.form.value.intro!.image_alt = 'Светлая керамика'
+    expect(source.intro.image_alt).toBe('Образцы керамики')
+    vi.mocked(savePage).mockResolvedValue({ ...source, ...editor.form.value })
+    await editor.save()
+    expect(savePage).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({
+        intro: {
+          image_url: null,
+          image_media_id: 24,
+          image_alt: 'Светлая керамика',
+        },
+        seo: expect.objectContaining({ og_image_media_id: null }),
+      }),
+    )
+    scope.stop()
+  })
+  it('normalizes legacy intro to the standard image and saves an explicit reset', async () => {
+    const scope = effectScope()
+    const editor = scope.run(() => usePageBlocks(page(), vi.fn()))!
+    expect(editor.form.value).toHaveProperty('intro', null)
+    expect(editor.dirty.value).toBe(false)
+    editor.form.value.intro = {
+      image_url: null,
+      image_media_id: 4,
+      image_alt: '',
+    }
+    editor.form.value.intro = null
+    expect(editor.dirty.value).toBe(false)
+    editor.form.value.title = 'Другое название'
+    vi.mocked(savePage).mockResolvedValue({ ...page(), ...editor.form.value })
+    await editor.save()
+    expect(savePage).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ intro: null }),
+    )
+    scope.stop()
+  })
 })

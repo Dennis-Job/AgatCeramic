@@ -33,7 +33,19 @@ export type ContentBlockDto =
     }['marquee' | 'categories' | 'materials' | 'promo' | 'about' | 'guide']
   | Extract<ContentBlock, { type: 'text' | 'stores' | 'catalog' }>
 
+export interface PageIntroImage {
+  imageUrl: string
+  imageAlt: string
+}
+
+export interface PageIntroDto {
+  image_url: string | null
+  image_media_id?: number | null
+  image_alt: string
+}
+
 export interface ContentPage {
+  intro?: PageIntroImage | null
   isIndexable?: boolean
   title: string
   slug: string

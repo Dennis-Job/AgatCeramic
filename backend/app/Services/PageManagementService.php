@@ -111,7 +111,7 @@ class PageManagementService
 
     public function syncMedia(Page $page): void
     {
-        $ids = PageBlocks::mediaIds([$page->blocks, $page->seo, $page->site_layout ?? [], $page->published_snapshot ?? []]);
+        $ids = PageBlocks::mediaIds([$page->blocks, $page->seo, $page->intro ?? [], $page->site_layout ?? [], $page->published_snapshot ?? []]);
         $found = $ids === [] ? [] : Media::query()->whereIn('id', $ids)->where('kind', 'image')->where('disk', 'public')->lockForUpdate()->pluck('id')->all();
         if (count($found) !== count($ids)) {
             throw ValidationException::withMessages(['blocks' => 'Изображение недоступно. Выберите публичный файл из медиатеки.']);

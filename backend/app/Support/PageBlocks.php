@@ -9,7 +9,7 @@ class PageBlocks
     /** @return array<string, mixed> */
     public static function snapshot(Page $page): array
     {
-        $snapshot = ['title' => $page->title, 'slug' => $page->slug, 'body' => $page->body, 'blocks' => $page->blocks, 'seo' => $page->seo, 'is_indexable' => $page->is_indexable];
+        $snapshot = ['title' => $page->title, 'slug' => $page->slug, 'body' => $page->body, 'blocks' => $page->blocks, 'seo' => $page->seo, 'is_indexable' => $page->is_indexable, 'intro' => $page->intro];
         if ($page->site_layout !== null) {
             $snapshot['site_layout'] = $page->site_layout;
         }
@@ -22,6 +22,7 @@ class PageBlocks
         $published = $page->published_snapshot;
         if ($published !== null) {
             $published['is_indexable'] ??= true;
+            $published['intro'] ??= null;
         }
         $draft = self::snapshot($page);
         unset($published['site_layout'], $draft['site_layout']);

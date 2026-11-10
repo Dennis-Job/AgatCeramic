@@ -1,9 +1,11 @@
 import { imageUrl, mapContentBlock } from './homePage'
 import type { HomePageDto } from './homePage'
+import { mapPageIntro } from '~/utils/pageIntro'
 import type {
   CatalogResult,
   ContentBlockDto,
   ContentPage,
+  PageIntroDto,
   PublicStore,
   SellerContacts,
 } from '~/types/contentPage'
@@ -19,6 +21,7 @@ export async function fetchContentPage(
       title: string
       slug: string
       body: string
+      intro?: PageIntroDto | null
       blocks: ContentBlockDto[]
       seo: HomePageDto['seo']
     }
@@ -28,6 +31,7 @@ export async function fetchContentPage(
     title: data.title,
     slug: data.slug,
     body: data.body,
+    intro: mapPageIntro(data.intro, publicBase),
     blocks: data.blocks.map((block) => mapContentBlock(block, publicBase)),
     seo: {
       title: data.seo.title || data.title,

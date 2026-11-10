@@ -510,6 +510,15 @@ createServer(async (request, response) => {
       data: {
         page: {
           title: 'Сохранённый черновик',
+          ...(scenario === 'intro-custom'
+            ? {
+                intro: {
+                  image_url: '/images/page-intro/about.webp',
+                  image_media_id: null,
+                  image_alt: 'Изображение черновика',
+                },
+              }
+            : {}),
           slug,
           body: '',
           blocks: [
@@ -731,8 +740,30 @@ createServer(async (request, response) => {
           data: { title: 'Заголовок'.repeat(28) },
         },
       ]
+    if (scenario === 'intro-hero')
+      blocks = [
+        {
+          id: 'hero',
+          type: 'hero',
+          enabled: true,
+          data: { slider_id: 1, slides },
+        },
+        ...blocks,
+      ]
     return send({
       data: {
+        ...(scenario === 'intro-custom' || scenario === 'intro-broken'
+          ? {
+              intro: {
+                image_url:
+                  scenario === 'intro-broken'
+                    ? '/missing-intro.webp'
+                    : '/images/page-intro/rospis.webp',
+                image_media_id: null,
+                image_alt: 'Авторская композиция',
+              },
+            }
+          : {}),
         ...(scenario === 'noindex' ? { is_indexable: false } : {}),
         ...(scenario === 'indexable' ? { is_indexable: true } : {}),
         title,

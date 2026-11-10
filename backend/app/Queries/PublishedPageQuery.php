@@ -37,6 +37,8 @@ class PublishedPageQuery
         $contentBlocks = $snapshot['blocks'];
         /** @var array<string, mixed> $seo */
         $seo = $snapshot['seo'];
+        /** @var array<string, mixed>|null $intro */
+        $intro = $snapshot['intro'] ?? null;
         /** @var array{header?: array<string, mixed>, footer?: array<string, mixed>} $layout */
         $layout = $snapshot['site_layout'] ?? [];
         if (is_array($layout['footer'] ?? null) && is_array($layout['header'] ?? null)) {
@@ -47,6 +49,7 @@ class PublishedPageQuery
         return [
             'id' => $page->id, 'slug' => $page->published_slug, 'title' => $snapshot['title'], 'body' => $snapshot['body'],
             'blocks' => $this->blocks->resolve($contentBlocks), 'seo' => $this->blocks->seo($seo),
+            'intro' => $intro !== null ? $this->blocks->seo($intro) : null,
             'is_published' => true, 'published_at' => $page->published_at?->toAtomString(),
             'is_indexable' => $snapshot['is_indexable'] ?? true,
             'created_at' => $page->created_at?->toAtomString(), 'updated_at' => $page->published_at?->toAtomString(),

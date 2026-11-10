@@ -1,4 +1,8 @@
-import type { ContentBlockDto, ContentPage } from '~/types/contentPage'
+import type {
+  ContentBlockDto,
+  ContentPage,
+  PageIntroDto,
+} from '~/types/contentPage'
 import type { HomePageDto } from '~/services/homePage'
 import type { HomePageContent } from '~/types/homePage'
 
@@ -7,6 +11,7 @@ export interface DraftPreviewDto {
     title: string
     slug: string
     body: string
+    intro?: PageIntroDto | null
     blocks: ContentBlockDto[]
     seo: HomePageDto['seo']
   }

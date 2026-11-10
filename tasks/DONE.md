@@ -1,5 +1,16 @@
 # DONE
 
+2026-11-10 — Вступительные блоки контентных страниц по утверждённому первому
+референсу (UI-030). Общий PageIntro, шесть тематических WebP и загрузка/медиатека/
+alt/возврат к стандартному фото в настройках страницы. Page.intro проходит
+сохранение черновика, preview, публикацию и защиту медиа. Миграция применена
+локально; OpenAPI v20. Client typecheck/format/Linux build, 19 E2E и итоговые
+4 feature E2E PASS; Backend 71 regression tests (704 assertions), Pint/PHPStan/
+architecture/OpenAPI PASS. Admin lint/format/build, 319 unit, целевые 2 E2E PASS;
+полный E2E: 724 PASS, 4 отличия прежних screenshot-эталонов на /products, /roles,
+/permissions, /settings (211–313 px), без обновления baseline. Независимый UI
+Design Guard PASS. Без commit. Отчёт: docs/PAGE_INTRO_IMPLEMENTATION.md.
+
 2026-11-10 — Перепроверены два октябрьских пункта IN_PROGRESS: исторический
 Windows follow-up PR #5 уже PASS, старые Client 11 high больше не воспроизводятся.
 Client обновлён до Nuxt 4.6.4/Nitro 2.13.6; install/typecheck/build/format,

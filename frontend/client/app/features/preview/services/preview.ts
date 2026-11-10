@@ -4,6 +4,7 @@ import {
   mapSiteAppearance,
 } from '~/services/homePage'
 import type { DraftPreview, DraftPreviewDto } from '../types/preview'
+import { mapPageIntro } from '~/utils/pageIntro'
 
 export async function fetchDraftPreview(
   slug: string,
@@ -30,6 +31,7 @@ export async function fetchDraftPreview(
   return {
     page: {
       ...data.page,
+      intro: mapPageIntro(data.page.intro, base),
       blocks: data.page.blocks.map((block) => mapContentBlock(block, base)),
       seo: {
         title: data.page.seo.title || data.page.title,

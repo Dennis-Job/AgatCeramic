@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v19.0",
+        "version": "v20.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -6170,6 +6170,40 @@
     },
     "components": {
         "schemas": {
+            "PageIntro": {
+                "type": [
+                    "object",
+                    "null"
+                ],
+                "description": "Page heading illustration. Null uses the Client default for this page. Media references resolve to public URLs in preview and published responses. Saved with the page draft and published separately.",
+                "required": [
+                    "image_url",
+                    "image_media_id",
+                    "image_alt"
+                ],
+                "properties": {
+                    "image_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2048,
+                        "description": "Relative site path or safe HTTPS URL; media ID takes precedence when present."
+                    },
+                    "image_media_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Existing image on public disk only."
+                    },
+                    "image_alt": {
+                        "type": "string",
+                        "maxLength": 1000
+                    }
+                },
+                "additionalProperties": false
+            },
             "ContentPreview": {
                 "type": "object",
                 "required": [
@@ -6185,7 +6219,8 @@
                             "slug",
                             "body",
                             "blocks",
-                            "seo"
+                            "seo",
+                            "intro"
                         ],
                         "additionalProperties": false,
                         "properties": {
@@ -6208,6 +6243,9 @@
                             },
                             "seo": {
                                 "$ref": "#/components/schemas/PageSeo"
+                            },
+                            "intro": {
+                                "$ref": "#/components/schemas/PageIntro"
                             }
                         }
                     },
@@ -8156,7 +8194,8 @@
                     "blocks",
                     "seo",
                     "published_at",
-                    "has_unpublished_changes"
+                    "has_unpublished_changes",
+                    "intro"
                 ],
                 "properties": {
                     "is_indexable": {
@@ -8212,6 +8251,9 @@
                     },
                     "has_unpublished_changes": {
                         "type": "boolean"
+                    },
+                    "intro": {
+                        "$ref": "#/components/schemas/PageIntro"
                     }
                 },
                 "additionalProperties": false
@@ -8271,7 +8313,9 @@
                         "type": "string",
                         "maxLength": 255,
                         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-                        "not": { "const": "preview" },
+                        "not": {
+                            "const": "preview"
+                        },
                         "description": "The preview slug is reserved for protected draft previews."
                     },
                     "body": {
@@ -8292,6 +8336,9 @@
                     },
                     "seo": {
                         "$ref": "#/components/schemas/PageSeo"
+                    },
+                    "intro": {
+                        "$ref": "#/components/schemas/PageIntro"
                     }
                 },
                 "additionalProperties": false,
@@ -8324,7 +8371,9 @@
                         "type": "string",
                         "maxLength": 255,
                         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-                        "not": { "const": "preview" },
+                        "not": {
+                            "const": "preview"
+                        },
                         "description": "The preview slug is reserved for protected draft previews."
                     },
                     "body": {
@@ -8345,6 +8394,9 @@
                     },
                     "seo": {
                         "$ref": "#/components/schemas/PageSeo"
+                    },
+                    "intro": {
+                        "$ref": "#/components/schemas/PageIntro"
                     }
                 },
                 "additionalProperties": false,
@@ -13136,7 +13188,8 @@
                     "updated_at",
                     "blocks",
                     "seo",
-                    "published_at"
+                    "published_at",
+                    "intro"
                 ],
                 "properties": {
                     "is_indexable": {
@@ -13190,6 +13243,9 @@
                             "null"
                         ],
                         "format": "date-time"
+                    },
+                    "intro": {
+                        "$ref": "#/components/schemas/PageIntro"
                     }
                 },
                 "additionalProperties": false

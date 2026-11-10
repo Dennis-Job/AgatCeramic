@@ -15,7 +15,7 @@ trait ValidatesPageContent
     protected function prepareForValidation(): void
     {
         $input = $this->all();
-        $fields = ['body', 'seo.description', 'seo.og_title', 'seo.og_description'];
+        $fields = ['body', 'seo.description', 'seo.og_title', 'seo.og_description', 'intro.image_alt'];
         $blocks = $this->input('blocks', []);
         foreach (is_array($blocks) ? $blocks : [] as $index => $block) {
             $type = is_array($block) ? ($block['type'] ?? null) : null;
@@ -45,6 +45,10 @@ trait ValidatesPageContent
     {
         $rules = [
             'is_indexable' => ['sometimes', 'required', 'boolean'],
+            'intro' => ['sometimes', 'nullable', 'array:image_url,image_media_id,image_alt', 'required_array_keys:image_url,image_media_id,image_alt'],
+            'intro.image_url' => ['nullable', 'string', 'max:2048', new SafeSiteUrl],
+            'intro.image_media_id' => ['nullable', 'integer', Rule::exists('media', 'id')->where('kind', 'image')->where('disk', 'public')],
+            'intro.image_alt' => ['string', 'max:1000'],
             'blocks' => ['sometimes', 'present', 'array', 'max:40', 'list'],
             'blocks.*' => ['required', 'array:id,type,enabled,data'],
             'blocks.*.id' => ['required', 'string', 'max:64', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'distinct'],
@@ -103,7 +107,7 @@ trait ValidatesPageContent
     public function after(): array
     {
         return [function (Validator $validator): void {
-            foreach (array_diff(array_keys($this->all()), ['title', 'slug', 'body', 'is_published', 'is_indexable', 'blocks', 'seo']) as $key) {
+            foreach (array_diff(array_keys($this->all()), ['title', 'slug', 'body', 'is_published', 'is_indexable', 'blocks', 'seo', 'intro']) as $key) {
                 $validator->errors()->add((string) $key, 'Неизвестное поле страницы.');
             }
             $seen = [];

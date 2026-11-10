@@ -9,18 +9,19 @@ use Illuminate\Support\Carbon;
 /**
  * @property list<array{id: string, type: string, enabled: bool, data: array<string, mixed>}> $blocks
  * @property array<string, mixed> $seo
+ * @property array{image_url: string|null, image_media_id: int|null, image_alt: string}|null $intro
  * @property array<string, mixed>|null $published_snapshot
  * @property Carbon|null $published_at
  * @property string|null $published_slug
  * @property array<string, mixed>|null $site_layout
  */
-#[Fillable(['title', 'slug', 'body', 'is_published', 'is_indexable', 'blocks', 'seo', 'published_snapshot', 'published_at', 'published_slug', 'site_layout'])]
+#[Fillable(['title', 'slug', 'body', 'is_published', 'is_indexable', 'blocks', 'seo', 'intro', 'published_snapshot', 'published_at', 'published_slug', 'site_layout'])]
 class Page extends Model
 {
     /** @return array<string, string> */
     #[\Override]
     protected function casts(): array
     {
-        return ['is_published' => 'boolean', 'is_indexable' => 'boolean', 'blocks' => 'array', 'seo' => 'array', 'published_snapshot' => 'array', 'published_at' => 'datetime', 'site_layout' => 'array'];
+        return ['is_published' => 'boolean', 'is_indexable' => 'boolean', 'blocks' => 'array', 'seo' => 'array', 'intro' => 'array', 'published_snapshot' => 'array', 'published_at' => 'datetime', 'site_layout' => 'array'];
     }
 }

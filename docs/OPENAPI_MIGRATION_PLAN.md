@@ -1,5 +1,26 @@
 # OpenAPI migration plan — version history
 
+## v20.0 — editable page heading illustration
+
+Date: 2026-11-10. Pages and saved content preview add nullable `intro`:
+`{image_url: string|null, image_media_id: integer|null, image_alt: string}`.
+Null selects the Client's page-specific default illustration. Omitted PATCH
+fields preserve saved content; an object supplies all three keys. Public image
+media IDs resolve to URLs in preview/published output. Drafts, snapshots and
+URL-only references all protect files from explicit/automatic media deletion.
+
+### Breaking change
+
+Routes remain `/api/v1`. The previous Page, PublishedPage and ContentPreview
+response schemas rejected extra properties, so strict consumers must accept
+`intro` before backend deployment. Apply the additive nullable JSONB migration
+`2026_11_10_000001_add_intro_to_pages` before serving backend code. Deploy Admin
+and Client mappings together; no historical content is rewritten or republished.
+Old snapshots project `intro: null` without being marked dirty solely for this
+new default. Roll back application code first and retain the nullable column
+and snapshots to preserve saved images. Dropping the column via migration down
+discards draft selections and is not required for an application rollback.
+
 ## v19.0 — readable customer order numbers
 
 Date: 2026-11-09. New order numbers use `customer_id-customer_order_sequence`,

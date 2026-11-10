@@ -36,6 +36,7 @@ import { blockLabels } from '../validation/blocks'
 import { usePageBlocks } from '../composables/usePageBlocks'
 import BlockSettings from './BlockSettings.vue'
 import HomePageSeoEditor from '../../homepage/components/HomePageSeoEditor.vue'
+import PageIntroEditor from './PageIntroEditor.vue'
 
 const props = withDefaults(
   defineProps<{ page: ContentPage; showActions?: boolean }>(),
@@ -65,12 +66,18 @@ const blockResourceDirty = ref(false)
 const blockResourceBusy = ref(false)
 const seoResourceDirty = ref(false)
 const seoResourceBusy = ref(false)
+const introResourceDirty = ref(false)
+const introResourceBusy = ref(false)
 watch(
-  () => blockResourceDirty.value || seoResourceDirty.value,
+  () =>
+    blockResourceDirty.value ||
+    seoResourceDirty.value ||
+    introResourceDirty.value,
   (value) => (editor.resourceDirty.value = value),
 )
 watch(
-  () => blockResourceBusy.value || seoResourceBusy.value,
+  () =>
+    blockResourceBusy.value || seoResourceBusy.value || introResourceBusy.value,
   (value) => (editor.resourceBusy.value = value),
 )
 const blocks = computed(() => editor.form.value.blocks ?? [])
@@ -363,6 +370,17 @@ onBeforeUnmount(() => {
             /></UiField>
           </div>
         </UiCard>
+        <PageIntroEditor
+          :key="page.id"
+          :model-value="editor.form.value.intro ?? null"
+          :has-hero="
+            blocks.some((block) => block.type === 'hero' && block.enabled)
+          "
+          :disabled="editor.busy.value || editor.resourceBusy.value"
+          @update:model-value="editor.form.value.intro = $event"
+          @pending="introResourceDirty = $event"
+          @uploading="introResourceBusy = $event"
+        />
         <UiCard aria-label="Содержимое страницы">
           <template #header>
             <h2 class="flex items-center gap-3 font-semibold text-gray-500">

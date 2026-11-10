@@ -23,6 +23,7 @@ class PageResource extends ApiResource
             'body' => $this->body,
             'blocks' => $this->blocks,
             'seo' => $this->seo,
+            'intro' => $this->intro,
             'is_published' => $this->is_published,
             'is_indexable' => $this->is_indexable,
             'has_unpublished_changes' => PageBlocks::hasUnpublishedChanges($page),

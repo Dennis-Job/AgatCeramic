@@ -40,8 +40,8 @@ class MediaUsageQuery
             }
         }
         // Drafts and published snapshots can both reference original or thumbnail URLs.
-        foreach (Page::query()->select(['id', 'blocks', 'seo', 'site_layout', 'published_snapshot'])->cursor() as $page) {
-            if ($this->containsFileUrl([$page->blocks, $page->seo, $page->site_layout, $page->published_snapshot], $paths)) {
+        foreach (Page::query()->select(['id', 'blocks', 'seo', 'intro', 'site_layout', 'published_snapshot'])->cursor() as $page) {
+            if ($this->containsFileUrl([$page->blocks, $page->seo, $page->intro, $page->site_layout, $page->published_snapshot], $paths)) {
                 return true;
             }
         }

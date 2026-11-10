@@ -302,3 +302,49 @@ worker, теми же assertions и default timeout, за 18,9 s общего п
 Все strict visual baseline прошли без обновления; исходный timeout сохранён.
 Evidence и полный список файлов: [отчёт](docs/PAGES_COMPACT_FORMS_2026-10-27.md),
 `.tmp/pages-compact/full-e2e.json`, `seo-rerun.json`, live screenshots.
+
+
+---
+
+# Page introduction design QA — 2026-11-10
+
+Visual target: first selected generated mock `exec-0ef63cac-8ae7-4298-abb2-11b4d67f7699.png`.
+
+Evidence: `.tmp/page-intro-qa/catalog-desktop.png`, `catalog-mobile.png`,
+`ui-guard-final-comparison.png` (reference left, implementation right).
+Comparison normalized to 1082×871 CSS pixels at 1× density. Source mock
+1398×1125 scaled proportionally to the matching viewport; browser chrome absent.
+Admin Settings captures inspected by independent UI Design Guard at 320/1280;
+production E2E covers all five required widths.
+
+## Findings resolved
+
+- P2: standard illustration had a visible rectangular background seam. Standard
+  assets now receive a shallow edge mask; uploaded photos retain complete edges.
+- P2: first media-library selection remounted the uploader and lost keyboard
+  focus. Removed the conditional key, retained per-page remount isolation.
+- P2: reset removed the focused button. Focus now returns to the surviving
+  standard-image checkbox; keyboard assertions cover selection and reset.
+
+## Fidelity surfaces
+
+- Typography: existing Inter 400/500, tracked eyebrow, 38–64px H1, readable 15px
+  supporting copy. Single H1 on public and draft pages.
+- Layout: title left and tactile material samples right; mobile stacks text
+  before art. Fixed image slot, contain, no overflow at required widths.
+- Colors: existing #F2F1EE background and ink/muted/line tokens unchanged.
+- Image fidelity: six individually generated realistic ceramic still lifes;
+  optimized 1200×800 WebP, 57–83KB each. No image substitutes drawn in code.
+  Uploaded images are not cropped or masked. Image error handles pre-hydration
+  failures and restores default art with a stable slot.
+- Copy: existing page title and shell kept; short editorial page-specific
+  descriptions accompany the new art. No invented addresses, offers or projects.
+
+Existing lower-catalog section spacing differs slightly from the mock; accepted
+as P3 because the surrounding catalog is outside the introduction change.
+Actual Admin login requires an employee session; upload/publish UI verified with
+the production Admin E2E against isolated test fixtures, not a real content edit.
+
+Independent UI Design Guard: passed; no unresolved P0/P1/P2 findings.
+
+final result: passed

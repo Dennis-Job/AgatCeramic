@@ -36,6 +36,7 @@ export function usePageBlocks(
           blocks: page.blocks ?? [],
           is_indexable: page.is_indexable ?? true,
           seo: page.seo ?? defaultPageSeo(page.title),
+          intro: page.intro ?? null,
         }),
       ) as PagePayload
       baseline.value = JSON.stringify(form.value)

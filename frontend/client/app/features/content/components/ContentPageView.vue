@@ -2,6 +2,7 @@
 import { setResponseStatus } from 'h3'
 import ContentPageBody from './ContentPageBody.vue'
 import PageState from '~/components/shared/PageState.vue'
+import PageIntro from '~/components/shared/PageIntro.vue'
 import { contentPagePath, siteOrigin } from '#shared/utils/pageUrls'
 
 const props = defineProps<{
@@ -75,10 +76,7 @@ useHead(() => ({
 </script>
 
 <template>
-  <div v-if="!content" class="container page-intro">
-    <NuxtLink to="/" class="eyebrow">AgatCeramic</NuxtLink>
-    <h1>{{ fallbackTitle }}</h1>
-  </div>
+  <PageIntro v-if="!content" :title="fallbackTitle" :slug="slug" />
   <ContentPageBody v-if="content" :content="content" />
   <div v-else class="container">
     <PageState
@@ -104,25 +102,3 @@ useHead(() => ({
     />
   </div>
 </template>
-
-<style scoped>
-.page-intro {
-  padding-block: clamp(60px, 8vw, 110px);
-  overflow-wrap: anywhere;
-}
-h1 {
-  max-width: 880px;
-  margin: 18px 0 24px;
-  font-size: clamp(38px, 4.6vw, 64px);
-  font-weight: 500;
-  line-height: 1.06;
-  letter-spacing: -0.02em;
-}
-p {
-  max-width: 680px;
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 15px;
-  line-height: 1.8;
-}
-</style>

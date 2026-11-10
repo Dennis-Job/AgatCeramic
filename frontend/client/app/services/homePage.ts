@@ -145,7 +145,8 @@ export function imageUrl(
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
   if (!url.startsWith('/') || url.startsWith('//')) return ''
-  if (url.startsWith('/images/home/')) return url
+  if (url.startsWith('/images/home/') || url.startsWith('/images/page-intro/'))
+    return url
   try {
     return new URL(url, apiBase).toString()
   } catch {
