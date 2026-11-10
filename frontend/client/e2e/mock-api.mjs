@@ -538,6 +538,16 @@ createServer(async (request, response) => {
               enabled: false,
               data: { title: 'Выключенный блок черновика', body: '' },
             },
+            ...(scenario === 'intro-later-hero'
+              ? [
+                  {
+                    id: 'later-hero',
+                    type: 'hero',
+                    enabled: true,
+                    data: { slider_id: 1, slides },
+                  },
+                ]
+              : []),
           ],
           seo: { ...seo, title: 'Сохранённый черновик' },
         },
@@ -746,12 +756,34 @@ createServer(async (request, response) => {
     if (scenario === 'intro-hero')
       blocks = [
         {
+          id: 'before-hero-disabled',
+          type: 'text',
+          enabled: false,
+          data: { title: 'Выключенное вступление', body: '' },
+        },
+        {
           id: 'hero',
           type: 'hero',
           enabled: true,
           data: { slider_id: 1, slides },
         },
         ...blocks,
+      ]
+    if (
+      scenario === 'intro-later-hero' ||
+      scenario === 'intro-later-empty-hero'
+    )
+      blocks = [
+        ...blocks,
+        {
+          id: 'later-hero',
+          type: 'hero',
+          enabled: true,
+          data: {
+            slider_id: 1,
+            slides: scenario === 'intro-later-empty-hero' ? [] : slides,
+          },
+        },
       ]
     return send({
       data: {

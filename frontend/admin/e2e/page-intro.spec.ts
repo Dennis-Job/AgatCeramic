@@ -193,3 +193,30 @@ test('intro settings fit required widths and keep accessible controls', async ({
     })
   }
 })
+
+test('intro visibility warning follows the first enabled block instead of any lower slider', async ({
+  page,
+}) => {
+  const state = await setup(page)
+  state.stored().blocks = [
+    {
+      id: 'text-first',
+      type: 'text',
+      enabled: true,
+      data: { title: 'Текст', body: 'Описание' },
+    },
+    {
+      id: 'hero-later',
+      type: 'hero',
+      enabled: true,
+      data: { slider_id: null },
+    },
+  ]
+  await page.goto('/content?page=2')
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
+  await expect(page.getByText(/вступительный блок скрыт/)).toHaveCount(0)
+  state.stored().blocks![0]!.enabled = false
+  await page.reload()
+  await page.getByRole('tab', { name: 'Настройки', exact: true }).click()
+  await expect(page.getByText(/вступительный блок скрыт/)).toBeVisible()
+})

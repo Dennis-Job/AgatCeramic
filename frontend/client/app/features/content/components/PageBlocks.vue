@@ -14,6 +14,7 @@ const props = defineProps<{
   blocks: ContentBlock[]
   title: string
   description?: string
+  heroHeadingTag?: 'h1' | 'h2'
 }>()
 const blocks = computed(() => props.blocks.filter((block) => block.enabled))
 </script>
@@ -25,6 +26,7 @@ const blocks = computed(() => props.blocks.filter((block) => block.enabled))
       :slides="block.data.slides"
       :empty-title="title"
       :empty-description="description || ''"
+      :heading-tag="heroHeadingTag"
     />
     <HomeMarquee
       v-else-if="block.type === 'marquee' && block.data.topics.length"

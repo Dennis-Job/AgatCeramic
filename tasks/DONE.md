@@ -1,5 +1,12 @@
 # DONE
 
+2026-11-10 — Исправлено пропавшее вступление на «О нас»: наличие слайдера ниже
+текста ошибочно скрывало PageIntro. Теперь его скрывает только первый включённый
+hero; нижний слайдер и пустой fallback используют H2, у страницы остаётся один
+H1. Согласованы public, saved preview и подсказка Admin. CMS-контент не менялся.
+Client typecheck/build/format, 35 E2E; Admin build/lint/format, 3 E2E/axe PASS.
+Свежие desktop/mobile скриншоты и независимый UI Design Guard PASS. Без commit.
+
 2026-11-10 — Исправлено падение PostgreSQL CI коммита `db4f781`:
 три сравнения JSON-объекта в `PageIntroTest` больше не зависят от порядка
 ключей после `jsonb` round-trip; точный набор полей, значения и типы проверяются

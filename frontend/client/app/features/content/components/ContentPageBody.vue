@@ -6,14 +6,14 @@ import PartnershipSection from '~/features/partnership/components/PartnershipSec
 import PageIntro from '~/components/shared/PageIntro.vue'
 
 const props = defineProps<{ content: ContentPage }>()
-const hasHero = computed(() =>
-  props.content.blocks.some((block) => block.enabled && block.type === 'hero'),
+const hasLeadingHero = computed(
+  () => props.content.blocks.find((block) => block.enabled)?.type === 'hero',
 )
 </script>
 
 <template>
   <PageIntro
-    v-if="!hasHero"
+    v-if="!hasLeadingHero"
     :title="content.title"
     :slug="content.slug"
     :description="content.seo.description"
@@ -23,6 +23,7 @@ const hasHero = computed(() =>
     :blocks="content.blocks"
     :title="content.title"
     :description="content.seo.description"
+    :hero-heading-tag="hasLeadingHero ? 'h1' : 'h2'"
   />
   <PartnershipSection v-if="content.slug === 'cooperation'" />
   <div

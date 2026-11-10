@@ -373,9 +373,7 @@ onBeforeUnmount(() => {
         <PageIntroEditor
           :key="page.id"
           :model-value="editor.form.value.intro ?? null"
-          :has-hero="
-            blocks.some((block) => block.type === 'hero' && block.enabled)
-          "
+          :has-hero="blocks.find((block) => block.enabled)?.type === 'hero'"
           :disabled="editor.busy.value || editor.resourceBusy.value"
           @update:model-value="editor.form.value.intro = $event"
           @pending="introResourceDirty = $event"

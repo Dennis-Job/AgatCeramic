@@ -139,3 +139,46 @@ test('saved draft intro maps its own image without changing public content', asy
     /rospis.webp$/,
   )
 })
+
+test('a slider below page content preserves the introduction and uses a secondary heading', async ({
+  page,
+  request,
+}) => {
+  for (const scenario of ['intro-later-hero', 'intro-later-empty-hero']) {
+    await request.get(`http://127.0.0.1:8015/__scenario?name=${scenario}`)
+    const html = await (await request.get('/about')).text()
+    expect(html).toContain('/images/page-intro/about-wide.webp')
+    await page.goto('/about')
+    await expect(page.locator('.page-intro')).toBeVisible()
+    await expect(page.locator('main h1')).toHaveText('О нас')
+    await expect(page.locator('.hero h1')).toHaveCount(0)
+    await expect(page.locator('.hero h2')).toHaveCount(1)
+    for (const width of [320, 1280]) {
+      await page.setViewportSize({ width, height: 900 })
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true)
+    }
+  }
+})
+
+test('draft preview also keeps an introduction before a lower slider', async ({
+  page,
+  request,
+  context,
+}) => {
+  await request.get('http://127.0.0.1:8015/__scenario?name=intro-later-hero')
+  await context.addCookies([
+    {
+      name: 'preview_test_session',
+      value: 'employee',
+      url: 'http://127.0.0.1:3015',
+    },
+  ])
+  await page.goto('/preview/about')
+  await expect(page.locator('.page-intro')).toBeVisible()
+  await expect(page.locator('main h1')).toHaveText('Сохранённый черновик')
+  await expect(page.locator('.hero h2')).toHaveCount(1)
+})

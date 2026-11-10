@@ -5,11 +5,15 @@ import type { HomeSlide } from '~/types/homePage'
 
 const SLIDE_DURATION = 6500
 
-const props = defineProps<{
-  slides: readonly HomeSlide[]
-  emptyTitle: string
-  emptyDescription: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    slides: readonly HomeSlide[]
+    emptyTitle: string
+    emptyDescription: string
+    headingTag?: 'h1' | 'h2'
+  }>(),
+  { headingTag: 'h1' },
+)
 const activeIndex = ref(0)
 const isReady = ref(false)
 const isPointerInside = ref(false)
@@ -166,7 +170,11 @@ onUnmounted(() => {
         <div class="hero__copy">
           <div class="hero__copy-inner">
             <span class="eyebrow hero__eyebrow">{{ activeSlide.eyebrow }}</span>
-            <h1 :aria-label="activeSlide.title">
+            <component
+              :is="headingTag"
+              class="hero__title"
+              :aria-label="activeSlide.title"
+            >
               <span
                 v-for="(word, index) in titleWords"
                 :key="index"
@@ -179,7 +187,7 @@ onUnmounted(() => {
                   >{{ word }}</span
                 ></span
               >
-            </h1>
+            </component>
             <p class="hero__description">{{ activeSlide.description }}</p>
             <div v-if="activeSlide.linkUrl" class="hero__cta">
               <UiButton :to="activeSlide.linkUrl">
@@ -208,7 +216,9 @@ onUnmounted(() => {
     </Transition>
 
     <div v-if="!activeSlide" class="hero__empty container">
-      <h1>{{ emptyTitle }}</h1>
+      <component :is="headingTag" class="hero__title">{{
+        emptyTitle
+      }}</component>
       <p>{{ emptyDescription }}</p>
     </div>
 
@@ -322,7 +332,7 @@ onUnmounted(() => {
 .hero__cta {
   animation-delay: 0.95s;
 }
-.hero h1 {
+.hero__title {
   margin: 28px 0;
   font-size: clamp(38px, 4.6vw, 64px);
   font-weight: 500;
@@ -541,7 +551,7 @@ onUnmounted(() => {
   .hero__copy {
     padding-top: 34px;
   }
-  .hero h1 {
+  .hero__title {
     margin: 18px 0;
   }
   .hero p {
