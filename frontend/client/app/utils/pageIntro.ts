@@ -26,13 +26,25 @@ const illustrations: Record<string, { description: string; alt: string }> = {
     description: 'Керамика с индивидуальным характером.',
     alt: 'Расписная керамическая плитка, кисть и палитра',
   },
+  delivery: {
+    description: 'Бережно к материалам. Внимательно к деталям.',
+    alt: 'Керамические образцы в защитной упаковке',
+  },
+  payment: {
+    description: 'Детали заказа — в прямом диалоге.',
+    alt: 'Образцы керамики, лист заказа и ручка',
+  },
+  designers: {
+    description: 'Материалы для ваших идей.',
+    alt: 'Палитра керамических материалов и архитектурный чертёж',
+  },
 }
 
 export function defaultPageIntro(slug: string, description = '') {
   const key = Object.hasOwn(illustrations, slug) ? slug : 'catalog'
   const illustration = illustrations[key]!
   return {
-    imageUrl: `/images/page-intro/${key}.webp`,
+    imageUrl: `/images/page-intro/${key}-wide.webp`,
     imageAlt: illustration.alt,
     description: Object.hasOwn(illustrations, slug)
       ? illustration.description

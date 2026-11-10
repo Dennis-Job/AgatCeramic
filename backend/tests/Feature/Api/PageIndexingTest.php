@@ -28,21 +28,21 @@ class PageIndexingTest extends TestCase
     public function test_new_pages_default_to_noindex_and_changes_only_reach_the_public_snapshot_after_publication(): void
     {
         $this->actingAs($this->manager());
-        $id = $this->postJson('/api/v1/admin/pages', ['title' => 'Доставка', 'slug' => 'delivery', 'body' => 'Условия'])
+        $id = $this->postJson('/api/v1/admin/pages', ['title' => 'Доставка', 'slug' => 'test-indexing-page', 'body' => 'Условия'])
             ->assertCreated()->assertJsonPath('data.is_indexable', false)->json('data.id');
         $url = '/api/v1/admin/pages/'.$id;
-        $this->getJson('/api/v1/pages/delivery')->assertNotFound();
+        $this->getJson('/api/v1/pages/test-indexing-page')->assertNotFound();
         $this->postJson($url.'/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
-        $this->getJson('/api/v1/pages/delivery')->assertOk()->assertJsonPath('data.is_indexable', false);
+        $this->getJson('/api/v1/pages/test-indexing-page')->assertOk()->assertJsonPath('data.is_indexable', false);
         $this->patchJson($url, ['is_indexable' => true])->assertOk()->assertJsonPath('data.has_unpublished_changes', true);
-        $this->getJson('/api/v1/pages/delivery')->assertJsonPath('data.is_indexable', false);
+        $this->getJson('/api/v1/pages/test-indexing-page')->assertJsonPath('data.is_indexable', false);
         $this->postJson($url.'/publish')->assertOk()->assertJsonPath('data.has_unpublished_changes', false);
-        $this->getJson('/api/v1/pages/delivery')->assertJsonPath('data.is_indexable', true);
+        $this->getJson('/api/v1/pages/test-indexing-page')->assertJsonPath('data.is_indexable', true);
         $this->patchJson($url, ['is_indexable' => false])->assertOk();
-        $this->getJson('/api/v1/pages/delivery')->assertJsonPath('data.is_indexable', true);
+        $this->getJson('/api/v1/pages/test-indexing-page')->assertJsonPath('data.is_indexable', true);
         $this->postJson($url.'/publish')->assertOk();
-        $this->getJson('/api/v1/pages')->assertOk()->assertJsonPath('data.4.is_indexable', false);
-        $this->getJson('/api/v1/pages/delivery')->assertJsonPath('data.is_indexable', false);
+        $this->getJson('/api/v1/pages')->assertOk()->assertJsonFragment(['slug' => 'test-indexing-page', 'is_indexable' => false]);
+        $this->getJson('/api/v1/pages/test-indexing-page')->assertJsonPath('data.is_indexable', false);
     }
 
     public function test_indexing_can_be_selected_on_creation_and_validates_boolean_and_permissions(): void
@@ -77,7 +77,7 @@ class PageIndexingTest extends TestCase
         $this->actingAs($this->manager());
         $this->postJson('/api/v1/admin/pages', ['title' => 'Страница', 'slug' => 'preview', 'body' => 'Текст'])
             ->assertUnprocessable()->assertJsonValidationErrors('slug', 'error.details');
-        $id = $this->postJson('/api/v1/admin/pages', ['title' => 'Страница', 'slug' => 'delivery', 'body' => 'Текст'])
+        $id = $this->postJson('/api/v1/admin/pages', ['title' => 'Страница', 'slug' => 'test-indexing-page', 'body' => 'Текст'])
             ->assertCreated()->json('data.id');
         $this->patchJson('/api/v1/admin/pages/'.$id, ['slug' => 'preview'])
             ->assertUnprocessable()->assertJsonValidationErrors('slug', 'error.details');

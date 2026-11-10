@@ -682,6 +682,9 @@ createServer(async (request, response) => {
         about: 'О нас',
         catalog: 'Каталог',
         cooperation: 'Сотрудничество',
+        delivery: 'Доставка',
+        payment: 'Оплата',
+        designers: 'Дизайнерам',
       }[slug] || 'Доставка керамической плитки и материалов для ремонта'
     let blocks =
       slug === 'contacts'

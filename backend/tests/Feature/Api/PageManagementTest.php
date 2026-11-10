@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Page;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -16,19 +17,20 @@ class PageManagementTest extends TestCase
     public function test_content_manager_can_create_publish_edit_and_delete_a_page(): void
     {
         $actor = $this->userWithRole('content-manager');
+        $publishedCount = Page::query()->where('is_published', true)->count();
         $created = $this->actingAs($actor)->postJson('/api/v1/admin/pages', [
             'title' => 'О компании', 'slug' => 'company', 'body' => '<script>alert(1)</script> Текст',
         ])->assertCreated()->assertJsonPath('data.is_published', false);
         $id = $created->json('data.id');
 
         $this->getJson('/api/v1/pages/company')->assertNotFound();
-        $this->getJson('/api/v1/pages')->assertOk()->assertJsonCount(4, 'data');
+        $this->getJson('/api/v1/pages')->assertOk()->assertJsonCount($publishedCount, 'data');
         $this->actingAs($actor)->getJson('/api/v1/admin/pages')->assertOk()->assertJsonPath('data.0.id', $id);
 
         $this->actingAs($actor)->postJson("/api/v1/admin/pages/{$id}/publish")
             ->assertOk()->assertJsonPath('data.is_published', true);
         $this->getJson('/api/v1/pages/company')->assertOk()->assertJsonPath('data.body', '<script>alert(1)</script> Текст');
-        $this->getJson('/api/v1/pages')->assertOk()->assertJsonPath('data.4.slug', 'company');
+        $this->getJson('/api/v1/pages')->assertOk()->assertJsonCount($publishedCount + 1, 'data')->assertJsonFragment(['slug' => 'company']);
 
         $this->actingAs($actor)->patchJson("/api/v1/admin/pages/{$id}", ['is_published' => false])->assertOk();
         $this->getJson('/api/v1/pages/company')->assertNotFound();

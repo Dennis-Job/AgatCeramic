@@ -1,3 +1,30 @@
+# Панорамные фоны и информационные страницы — 2026-11-10
+
+По запросу владельца сгенерированы девять новых самостоятельных панорамных
+натюрмортов 3:1, а не обрезаны прежние изображения. Встроенный ImageGen,
+нативные оригиналы 2172×724, финальные WebP 2400×800. Слева спокойная область
+под текст, справа тематические материалы; единый тёплый фон и мягкий свет.
+
+Актуальные доказательства: `.tmp/wide-backgrounds-qa/asset-sheet.jpg`,
+`catalog.png`, `delivery.png`, `payment.png`, `designers.png`,
+`designers-mobile.png`, `asset-metadata.json`.
+
+Независимый UI Design Guard проверил все изображения, реальные новые страницы
+и 320px mobile: монолитный фон, читаемый текст, отсутствие прямоугольных
+вставленных краёв и переполнения. Палитра/Inter/общий PageIntro сохранены.
+Сюжеты оплаты и доставки не обещают неутверждённые способы, цены или сроки.
+Новые страницы имеют обычные блоки CMS и безопасное начальное содержание;
+индексация выключена до его детализации. Существующий контент не перезаписан.
+
+Client typecheck/format/production build и 20 E2E (SSR, preview, 320–3840px,
+axe, fallback) PASS. Backend 36 tests/495 assertions, Pint/PHPStan PASS.
+Отдельная проверка миграции InformationPagesTest 3 tests/30 assertions PASS.
+Нерешённых P0/P1/P2 замечаний нет.
+
+final result: passed
+
+---
+
 # TASK-C006 — визуальная проверка «Контента» и общего оформления
 
 Дата: 2026-10-17. Источник — выбранный владельцем третий макет «Инспектор».
@@ -47,6 +74,31 @@ Build/typecheck, lint, форматирование, 158 unit-тестов, фу
 Общий E2E-прогон и сведения о существующих расхождениях visual baseline описаны в
 `docs/ADMIN_CONTENT_REDESIGN.md`. API/backend/client-код, миграции и зависимости не менялись.
 Linux/Windows baseline этой задачей не обновлялись.
+
+final result: passed
+
+## Follow-up: selected full-width HTML — 2026-11-10
+
+This iteration replaces the former inset/contain introduction with the owner's
+selected full-width background composition. The temporary HTML mockups and
+their comparison artifacts were subsequently removed at the owner's request.
+
+Implementation captures in `.tmp/page-intro-fullwidth-qa/`:
+`live-catalog.png`, `live-mobile.png`, `live-ultrawide.png`.
+The completed comparison used matching1082 CSS px hero captures; source
+top118px and implementation top120px accounted for the existing shell difference.
+
+Typography, warm palette and text hierarchy match the approved HTML. Image
+fills the complete banner with cover; no image-side container or mask remains.
+Horizontal veil and bottom fade match at normal widths. At>=1900px the98%
+text-safe veil covers the centered570px copy region, keeping the subtitle away
+from the transparent region even on3840px screens. Mobile keeps the text above
+the background instead of stacking the image underneath. The existing shell,
+lower catalog, draft flow and image fallback are preserved.
+
+Client geometry E2E covers320–3840px; public/preview accessibility and Admin
+upload/reset/focus/axe checks pass. Independent UI Design Guard inspected the
+same-size comparison, mobile, ultrawide and final CSS: no P0/P1/P2 findings.
 
 final result: passed
 
@@ -310,9 +362,9 @@ Evidence и полный список файлов: [отчёт](docs/PAGES_COMP
 
 Visual target: first selected generated mock `exec-0ef63cac-8ae7-4298-abb2-11b4d67f7699.png`.
 
-Evidence: `.tmp/page-intro-qa/catalog-desktop.png`, `catalog-mobile.png`,
-`ui-guard-final-comparison.png` (reference left, implementation right).
-Comparison normalized to 1082×871 CSS pixels at 1× density. Source mock
+Implementation captures: `.tmp/page-intro-qa/catalog-desktop.png`,
+`catalog-mobile.png`. The temporary comparison artifact was removed with the
+mockups. The completed comparison used 1082×871 CSS pixels at 1× density. Source mock
 1398×1125 scaled proportionally to the matching viewport; browser chrome absent.
 Admin Settings captures inspected by independent UI Design Guard at 320/1280;
 production E2E covers all five required widths.

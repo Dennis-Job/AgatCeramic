@@ -7,7 +7,7 @@ test.beforeEach(async ({ request }) => {
 test('content introductions have distinct SSR illustrations and a responsive stable layout', async ({
   page,
   request,
-}) => {
+}, testInfo) => {
   for (const slug of [
     'catalog',
     'about',
@@ -15,14 +15,18 @@ test('content introductions have distinct SSR illustrations and a responsive sta
     'cooperation',
     'rezka',
     'rospis',
+    'delivery',
+    'payment',
+    'designers',
   ]) {
     const html = await (await request.get(`/${slug}`)).text()
-    expect(html).toContain(`/images/page-intro/${slug}.webp`)
+    expect(html).toContain(`/images/page-intro/${slug}-wide.webp`)
     await page.goto(`/${slug}`)
     const image = page.locator('.page-intro__image')
     await expect(image).toBeVisible()
-    await expect(image).toHaveJSProperty('naturalWidth', 1200)
-    for (const width of [320, 640, 768, 1024, 1280]) {
+    await expect(image).toHaveJSProperty('naturalWidth', 2400)
+    await expect(image).toHaveJSProperty('naturalHeight', 800)
+    for (const width of [320, 640, 768, 1024, 1280, 1920, 2560, 3840]) {
       await page.setViewportSize({ width, height: 900 })
       expect(
         await page.evaluate(
@@ -31,18 +35,35 @@ test('content introductions have distinct SSR illustrations and a responsive sta
       ).toBe(true)
       await expect(page.locator('main h1')).toHaveCount(1)
       const boxes = await page.locator('.page-intro').evaluate((element) => {
+        const hero = element.getBoundingClientRect()
         const title = element.querySelector('h1')!.getBoundingClientRect()
-        const image = element.querySelector('img')!.getBoundingClientRect()
+        const imageElement = element.querySelector('img')!
+        const image = imageElement.getBoundingClientRect()
         return {
-          titleRight: title.right,
-          titleBottom: title.bottom,
-          imageLeft: image.left,
-          imageTop: image.top,
+          fullWidth: Math.abs(hero.width - document.body.clientWidth) < 1,
+          coversHero:
+            Math.abs(image.left - hero.left) < 1 &&
+            Math.abs(image.top - hero.top) < 1 &&
+            Math.abs(image.width - hero.width) < 1 &&
+            Math.abs(image.height - hero.height) < 1,
+          titleOverImage:
+            title.top >= image.top &&
+            title.bottom <= image.bottom &&
+            title.left >= image.left &&
+            title.right <= image.right,
+          fit: getComputedStyle(imageElement).objectFit,
         }
       })
-      if (width > 760)
-        expect(boxes.imageLeft).toBeGreaterThanOrEqual(boxes.titleRight - 1)
-      else expect(boxes.imageTop).toBeGreaterThan(boxes.titleBottom)
+      expect(boxes).toEqual({
+        fullWidth: true,
+        coversHero: true,
+        titleOverImage: true,
+        fit: 'cover',
+      })
+      if (slug === 'catalog' && [320, 1280, 3840].includes(width))
+        await page.screenshot({
+          path: testInfo.outputPath(`intro-fullwidth-${width}.png`),
+        })
     }
   }
 })
@@ -68,11 +89,11 @@ test('custom image appears in SSR and failed custom image restores the standard 
   await page.goto('/catalog')
   await expect(page.locator('.page-intro__image')).toHaveAttribute(
     'src',
-    '/images/page-intro/catalog.webp',
+    '/images/page-intro/catalog-wide.webp',
   )
   await expect(page.locator('.page-intro__image')).toHaveJSProperty(
     'naturalWidth',
-    1200,
+    2400,
   )
   const height = (await page.locator('.page-intro').boundingBox())!.height
   await page.route('**/images/page-intro/*.webp', (route) => route.abort())

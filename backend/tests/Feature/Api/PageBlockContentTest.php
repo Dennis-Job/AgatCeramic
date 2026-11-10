@@ -155,14 +155,14 @@ class PageBlockContentTest extends TestCase
     public function test_draft_slug_does_not_move_the_published_url_or_release_it_for_other_pages(): void
     {
         $actor = $this->manager();
-        $id = $this->actingAs($actor)->postJson('/api/v1/admin/pages', ['title' => 'Доставка', 'slug' => 'delivery', 'body' => 'Условия'])->assertCreated()->json('data.id');
+        $id = $this->actingAs($actor)->postJson('/api/v1/admin/pages', ['title' => 'Доставка', 'slug' => 'test-delivery', 'body' => 'Условия'])->assertCreated()->json('data.id');
         $this->postJson('/api/v1/admin/pages/'.$id.'/publish')->assertOk();
         $this->patchJson('/api/v1/admin/pages/'.$id, ['slug' => 'shipping'])->assertOk();
-        $this->getJson('/api/v1/pages/delivery')->assertOk()->assertJsonPath('data.slug', 'delivery');
+        $this->getJson('/api/v1/pages/test-delivery')->assertOk()->assertJsonPath('data.slug', 'test-delivery');
         $this->getJson('/api/v1/pages/shipping')->assertNotFound();
-        $this->postJson('/api/v1/admin/pages', ['title' => 'Другой текст', 'slug' => 'delivery', 'body' => 'Текст'])->assertUnprocessable();
+        $this->postJson('/api/v1/admin/pages', ['title' => 'Другой текст', 'slug' => 'test-delivery', 'body' => 'Текст'])->assertUnprocessable();
         $this->postJson('/api/v1/admin/pages/'.$id.'/publish')->assertOk();
-        $this->getJson('/api/v1/pages/delivery')->assertNotFound();
+        $this->getJson('/api/v1/pages/test-delivery')->assertNotFound();
         $this->getJson('/api/v1/pages/shipping')->assertOk();
     }
 

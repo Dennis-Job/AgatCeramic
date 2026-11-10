@@ -10,7 +10,24 @@
 
 **Decisions:** absent/null intro uses a standard illustration; reset restores this default. Uploaded images use contain (no destructive crop). Image failure falls back to standard art, then a stable text-only layout. Images are illustrative, not claims of actual showrooms or projects. SEO description remains a fallback for unspecified pages; known page descriptions are short editorial copy.
 
+**Subsequent owner-approved correction:** after comparing two working HTML
+mockups, the owner selected the full-width background composition.
+This supersedes the side-by-side/contain decision: images fill the entire banner
+with cover, text overlays within the existing container, a warm veil protects
+readability and the bottom fades into the page background. On ultrawide screens
+the text-safe veil follows the container copy boundary. Admin guidance now
+recommends a wide 2400×900 composition with text space left. Saved image fields,
+drafts and publication remain the same. Implemented and verified on 320–3840 px.
+
 ## Tasks
+
+Follow-up completed: all nine default illustrations are newly generated 3:1
+panoramas 2400×800 using explicit empty space left, now referenced as
+`*-wide.webp`. Added public editable delivery/payment/designers CMS pages using
+an idempotent additive content migration; existing draft/published slug owners
+are preserved. New pages start non-indexable pending fuller content. All 20
+Client E2E and 36 backend CMS regressions pass; UI Design Guard approved actual
+desktop/mobile pages. Navigation remains owner-managed.
 
 - [x] Backend: additive nullable migration, validation, admin/public/preview resources, snapshots and legacy dirty comparison, deletion protection; tests cover draft isolation, private/unsafe images and old snapshots. Synchronize API/OpenAPI.
 - [x] Admin: page types/form preservation and Settings card with upload/media selection, alt, reset, busy/pending and unsaved guards; lint/build/unit and targeted E2E.
