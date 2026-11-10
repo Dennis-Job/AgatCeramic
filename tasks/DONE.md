@@ -1,5 +1,15 @@
 # DONE
 
+2026-11-10 — Перепроверены два октябрьских пункта IN_PROGRESS: исторический
+Windows follow-up PR #5 уже PASS, старые Client 11 high больше не воспроизводятся.
+Client обновлён до Nuxt 4.6.4/Nitro 2.13.6; install/typecheck/build/format,
+135 production E2E, 2 dev E2E и 7 Node tests PASS. Исправлен устаревший contact
+smoke: real Laravel/PostgreSQL/Redis GREEN 1/1. UI Guard принял 6 Windows и
+2 Linux hosted эталона; целевые строгие Linux tests PASS 2/2. Независимый code
+review без P1/P2. Новый remote CI после публикации и upstream moderate/low
+findings остаются в IN_PROGRESS; commit/push не выполнялись.
+[Изменённые файлы, проверки и ограничения](../docs/CI_FOLLOWUP_2026-11-09.md).
+
 2026-11-09 — Список «Порядок блоков» в Admin-редакторе страниц переведён
 в один столбец на всех ширинах. Lint, format:check, 314 unit-тестов,
 production build и профильный content-blocks E2E PASS (axe и отсутствие

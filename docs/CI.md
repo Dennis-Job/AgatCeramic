@@ -19,8 +19,10 @@ Workflow получает только право `contents: read` и не ис�
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
 
-Исправления падений PR #5, независимая приёмка platform screenshots и оставшийся
-Client audit описаны в [отчёте 2026-10-19](CI_PR5_REPAIR_2026-10-19.md).
+Исправления падений PR #5 и независимая приёмка platform screenshots описаны
+в [отчёте 2026-10-19](CI_PR5_REPAIR_2026-10-19.md). Hosted Windows follow-up
+затем прошёл на head PR #5. Актуальная проверка Client audit, обновление Nuxt
+и новые CI findings main — в [отчёте 2026-11-09](CI_FOLLOWUP_2026-11-09.md).
 Admin jobs сохраняют browser `test-results/` при failure на семь дней для
 разбора remote-only расхождений без ослабления screenshot/palette gates.
 
@@ -28,10 +30,13 @@ Frontend text checkout использует LF через `.gitattributes`; defa
 проверяется без EOL override. Admin `.prettierignore` исключает локальные `.tmp`
 browser artifacts, чтобы обычный `format:check` оставался воспроизводимым.
 
-На 2026-10-14 совместимые npm lock updates очистили Admin audit. Client audit
-остаётся blocking: 11 high findings из unpatched braces/node-forge, без
-critical/moderate. Порог и классификация dependencies не менялись.
-[Исправления, reachability assessment и ограничения](WINDOWS_FIXES_2026-10-14.md).
+На 2026-10-14 совместимые npm lock updates очистили Admin audit; Client тогда
+сохранял 11 high findings braces/node-forge. Это историческое состояние:
+на 2026-11-09 high gate проходит, исходный lock уже содержит node-forge 1.4.2,
+а braces advisory отозван. После security update Nuxt 4.6.4 остаются 6 moderate
+и 6 low findings в транзитивных зависимостях, high/critical отсутствуют.
+Порог и классификация dependencies не менялись. [Октябрьские ограничения](WINDOWS_FIXES_2026-10-14.md)
+и [актуальные результаты](CI_FOLLOWUP_2026-11-09.md) относятся к разным датам.
 
 С 2026-10-13 текущая macOS-палитра утверждена владельцем также для Windows.
 Все Admin axe scans сначала сверяют замороженный цветовой контракт, затем

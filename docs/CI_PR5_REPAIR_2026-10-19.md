@@ -1,5 +1,11 @@
 # Исправления CI для PR #5 — 2026-10-19
 
+Актуализация 2026-11-09: ожидание hosted Windows закрыто — run 39254274462
+на последнем head PR #5 прошёл; PR merged. Старые 11 high Client audit больше
+не воспроизводятся. [Новый отчёт](CI_FOLLOWUP_2026-11-09.md) отделяет эти
+результаты от новых CI failures текущего main. Ниже сохранён исторический
+отчёт на дату его составления.
+
 Статус: исправления опубликованы в `aca2c57`; новый CI подтвердил Backend,
 PostgreSQL, Redis, repository security, smoke и Compose. Windows CI выявил
 четыре различия native rendering; приняты independently reviewed hosted actuals

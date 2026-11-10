@@ -86,19 +86,34 @@ test('production Admin crosses the real Sanctum and Laravel boundary', async ({
   await page
     .getByRole('button', { name: `Открыть обращение ${state.contact.id}` })
     .click()
-  await page.getByLabel('Новый статус обращения').click()
-  await page.getByRole('button', { name: 'В обработке', exact: true }).click()
+  const contactDialog = page.getByRole('dialog', {
+    name: `Обращение #${state.contact.id}`,
+    exact: true,
+  })
   const contactMutation = page.waitForResponse(
     (response) =>
       response.request().method() === 'PATCH' &&
       new URL(response.url()).pathname ===
         `/api/v1/admin/contact-requests/${state.contact.id}/status`,
   )
-  await page.getByRole('button', { name: 'Сохранить статус' }).click()
-  expect((await contactMutation).status()).toBe(200)
-  await expect(page.getByLabel('Новый статус обращения')).toContainText(
-    'В обработке',
-  )
+  await contactDialog
+    .getByRole('button', { name: 'Начать обработку', exact: true })
+    .click()
+  const contactResponse = await contactMutation
+  expect(contactResponse.status()).toBe(200)
+  expect(await contactResponse.json()).toMatchObject({
+    data: { id: state.contact.id, status: 'processing' },
+  })
+  await expect(
+    contactDialog.getByRole('button', { name: 'Ожидать клиента', exact: true }),
+  ).toBeEnabled()
+  await expect(
+    contactDialog.getByRole('list').filter({ hasText: 'Новое →' }),
+  ).toContainText('В обработке')
+  await contactDialog
+    .getByRole('button', { name: 'Закрыть обращение', exact: true })
+    .click()
+  await expect(contactDialog).toHaveCount(0)
 
   await logout(page)
   const unauthenticated = await page.evaluate(async () => {

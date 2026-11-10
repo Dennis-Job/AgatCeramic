@@ -137,4 +137,7 @@ if a fresh CLI config check already shows the updated values. For Docker use
 
 ## Runtime compatibility
 
-The scaffold uses Nuxt 4.5.2. It requires Node 22.19+, Node 24.11+, or Node 26+; the supported Node version must be used in development, CI, and production.
+The client uses Nuxt 4.6.4. It requires Node `^22.22.3 || ^24.15.0 || >=26.0.0`;
+the supported Node version must be used in development, CI, and production.
+CI uses Node 24.19.0. The dependency audit and remaining upstream findings are
+documented in [the November follow-up](../../docs/CI_FOLLOWUP_2026-11-09.md).
