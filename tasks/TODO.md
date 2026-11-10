@@ -4,6 +4,18 @@
 завершённые результаты — в [`DONE.md`](DONE.md); подробная история воспроизводима из Git, ADR,
 canonical documentation и audit reports.
 
+## Ожидание upstream-исправлений Client dependencies — 2026-11-10
+
+- [ ] Повторить проверку поддерживаемых обновлений deepmerge/glob/minimatch
+  после upstream releases/range updates. Последний audit после Nuxt 4.6.4:
+  0 high/critical, 6 moderate / 6 low findings с учётом зависимых узлов;
+  `--omit=dev --audit-level=high` PASS. Совместимый audit fix их не устраняет.
+  Порог high сохранять; suppressions/overrides/force и downgrade не применять.
+  После доступного исправления выполнить clean install, audit, typecheck,
+  SSR build и релевантные E2E. До повторной проверки задача отложена,
+  уязвимости не считаются устранёнными.
+  [Причины и источники](../docs/CI_FOLLOWUP_2026-11-09.md).
+
 ## Исправления и рефакторинг по аудиту проекта — 2026-10-03
 
 TASK-A066–TASK-A081 внесены 2026-10-04 по проверке версии `39d5cb2`. При составлении списка на

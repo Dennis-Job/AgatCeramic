@@ -42,3 +42,7 @@ API, данные и миграции не затрагивать.
 - Финальный audit: high/critical 0, moderate/low 6/6, exit 0. Repository hygiene
   198 Markdown / 1806 files PASS; diff --check PASS. Тестовый Compose project
   удалён, Client dev на порту 3000 восстановлен и отвечает HTTP 200.
+- Hosted follow-up 2026-11-10: изменения опубликованы в `d5ef27c`; основной
+  run 42767832304 и Windows run 42767832283 завершились SUCCESS на этом SHA.
+  CI-задача закрыта в DONE; ожидание upstream moderate/low fixes перенесено
+  в TODO. В IN_PROGRESS активных задач нет.

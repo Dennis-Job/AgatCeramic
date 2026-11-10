@@ -126,13 +126,17 @@ Manifest/review сохранены в `.tmp/ci-followup-20261109/linux/`.
   Завершённый isolated Compose project и его тестовые volumes удалены;
   рабочие данные не затрагивались.
 
-## Остаток
+## Окончательное подтверждение CI — 2026-11-10
 
-Оба старых октябрьских ожидания закрыты. Текущие локальные CI-исправления готовы;
-их новый hosted Linux/Windows прогон возможен после публикации diff. Исторические
-успешные jobs и локальные targeted tests не заменяют проверку неопубликованного
-состояния remote runner. Этот шаг оставлен явно в `tasks/IN_PROGRESS.md`.
-Отдельно там сохранён upstream follow-up для оставшихся moderate/low findings.
+Изменения опубликованы в `d5ef27c306c6e03e63093530ab1838cb02363db5`.
+[Основной CI 42767832304](https://github.com/Dennis-Job/AgatCeramic/actions/runs/42767832304)
+и [Windows CI 42767832283](https://github.com/Dennis-Job/AgatCeramic/actions/runs/42767832283)
+завершились `completed / success` на этом SHA. Это подтверждает hosted gates
+после исправления smoke и adoption Linux/Windows baselines; CI follow-up закрыт.
+
+Ожидание upstream-исправлений оставшихся moderate/low findings перенесено в
+`tasks/TODO.md`: оно отложено и не считается устранением уязвимостей.
+`tasks/IN_PROGRESS.md` очищен; активных задач нет.
 
 ## Изменённые файлы
 
@@ -144,7 +148,8 @@ Manifest/review сохранены в `.tmp/ci-followup-20261109/linux/`.
 - `docs/CI.md`, `CI_PR5_REPAIR_2026-10-19.md`, `WINDOWS_FIXES_2026-10-14.md`,
   этот отчёт и `docs/superpowers/plans/2026-11-09-in-progress-followup.md` —
   разделение исторических и текущих результатов.
-- `tasks/IN_PROGRESS.md`, `tasks/DONE.md` — актуальные статусы и остатки.
+- `tasks/IN_PROGRESS.md`, `tasks/DONE.md`, `tasks/TODO.md` — актуальные статусы.
 
-API, production UI, палитра и миграции не менялись. Commit/push не выполняются
-в рамках этого поручения; remote CI не проверяет неопубликованные изменения.
+API, production UI, палитра и миграции не менялись. Исходные исправления
+подтверждены hosted CI на `d5ef27c`; последующая правка статусов документации
+выполнена локально без дополнительного commit/push.
