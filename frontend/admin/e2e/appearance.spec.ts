@@ -357,8 +357,23 @@ test('submenu mode reversal preserves local fields and saves, reloads and publis
   await page.getByRole('button', { name: 'Вид фильтров', exact: true }).click()
   await page.getByRole('button', { name: /^Шапка и навигация/ }).click()
   const save = page.getByRole('button', { name: 'Сохранить черновик раздела' })
-  await save.click()
-  await expect(save).toBeDisabled()
+  const saveHeader = async (patchCount: number) => {
+    const pending = api.deferred.defer(`PATCH ${appearancePath}`)
+    await save.click()
+    await pending.requested
+    // Disabled also means "saving", so it cannot signal a completed request.
+    await expect(save).toBeDisabled()
+    expect(api.patches).toHaveLength(patchCount - 1)
+    pending.release()
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: 'Черновик раздела сохранён.' }),
+    ).toBeVisible()
+    await expect(save).toBeDisabled()
+    expect(api.patches).toHaveLength(patchCount)
+  }
+  await saveHeader(1)
   expect(api.patches[0]).toHaveProperty('header.navigation', [
     { label: 'Каталог керамической плитки', to: '/unsaved-catalog' },
     { label: 'Контакты наших магазинов', to: '/contacts' },
@@ -373,8 +388,7 @@ test('submenu mode reversal preserves local fields and saves, reloads and publis
   await page
     .getByRole('button', { name: 'Опустить пункт меню 1', exact: true })
     .click()
-  await save.click()
-  await expect(save).toBeDisabled()
+  await saveHeader(2)
   const expected = [
     { label: 'Контакты наших магазинов', to: '/contacts' },
     {
