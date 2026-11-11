@@ -15,7 +15,8 @@ class BrandFactory extends Factory
     #[\Override]
     public function definition(): array
     {
-        $name = fake()->unique()->company();
+        // Faker uniqueness resets between applications while integration rows can persist.
+        $name = fake()->company().' '.Str::uuid();
 
         return ['name' => $name, 'slug' => Str::slug($name), 'description' => fake()->optional()->paragraph(), 'country_code' => fake()->optional()->randomElement(['IT', 'ES', 'RU']), 'is_active' => true];
     }

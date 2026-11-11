@@ -1,5 +1,16 @@
 # DONE
 
+2026-11-11 — Исправлено новое падение backend CI `b36eaa6`: `BrandFactory`
+больше не полагается на сбрасываемый между приложениями Faker unique;
+UUID-суффикс защищает name/slug тестовых брендов при сохранении строк PostgreSQL.
+Добавлена детерминированная регрессия со сбросом unique и повтором seed.
+PostgreSQL integration 32 tests/220 assertions, PostgreSQL feature
+717/8908 и SQLite 815/9227 (7 skipped) PASS; Pint/PHPStan/architecture PASS.
+Отдельная Windows ошибка `ERR_NO_BUFFER_SPACE` не повторилась в hosted rerun
+на том же SHA: 230 browser и 319 unit tests PASS. Предыдущий appearance fix
+подтверждён hosted Linux Admin E2E 729/729. Изменения backend локальные,
+без commit/push. [Причины и проверки](../docs/CI_B36EAA6_REPAIR_2026-11-11.md).
+
 2026-11-11 — Исправлено падение Admin E2E в CI `ae62a5e`: тест переключения
 подменю больше не считает disabled-кнопку признаком завершённого PATCH.
 Оба сохранения проверяются с управляемой задержкой и ожиданием success status;
