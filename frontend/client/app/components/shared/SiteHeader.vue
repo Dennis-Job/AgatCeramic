@@ -37,6 +37,7 @@ const searchPanel = ref<HTMLElement | null>(null)
 const searchInput = ref<HTMLInputElement | null>(null)
 const header = ref<HTMLElement | null>(null)
 const headerBottom = ref(0)
+const headerHeight = useSiteHeaderHeight()
 const scrolled = ref(false)
 const backdropPanel = ref<Exclude<Panel, null>>('menu')
 const searchPosition = computed(() => ({
@@ -47,8 +48,11 @@ const leavingPanels = new Set<Element>()
 
 function updateHeaderBottom() {
   scrolled.value = window.scrollY > 10
-  if (header.value)
-    headerBottom.value = header.value.getBoundingClientRect().bottom
+  if (header.value) {
+    const bounds = header.value.getBoundingClientRect()
+    headerBottom.value = bounds.bottom
+    headerHeight.value = bounds.height
+  }
 }
 
 function onResize() {

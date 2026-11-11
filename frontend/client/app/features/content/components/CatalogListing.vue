@@ -6,6 +6,58 @@ import ProductCardList from '~/features/product/components/ProductCardList.vue'
 
 defineProps<{ title: string; description: string }>()
 const route = useRoute()
+const headerHeight = useSiteHeaderHeight()
+const stickyCategories = computed(() => /^\/catalog\/?$/.test(route.path))
+const categoriesElement = ref<HTMLElement | null>(null)
+const categoriesPinned = ref(false)
+function updateCategoriesPinned() {
+  const top = categoriesElement.value?.getBoundingClientRect().top
+  categoriesPinned.value =
+    stickyCategories.value &&
+    top !== undefined &&
+    Math.abs(top - headerHeight.value) < 1
+}
+onMounted(() => {
+  window.addEventListener('scroll', updateCategoriesPinned, { passive: true })
+  window.addEventListener('resize', updateCategoriesPinned)
+  watch(
+    [categoriesElement, headerHeight, stickyCategories],
+    updateCategoriesPinned,
+    {
+      immediate: true,
+      flush: 'post',
+    },
+  )
+})
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateCategoriesPinned)
+  window.removeEventListener('resize', updateCategoriesPinned)
+})
+function revealFocusedProduct(event: FocusEvent) {
+  const target = event.target
+  const categories = categoriesElement.value
+  if (
+    !stickyCategories.value ||
+    !categories ||
+    !(target instanceof HTMLElement) ||
+    categories.contains(target) ||
+    !(
+      categories.compareDocumentPosition(target) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+    ) ||
+    !target.matches(':focus-visible')
+  )
+    return
+  // Native focus scrolling finishes after focusin; then account for sticky layers.
+  requestAnimationFrame(() => {
+    if (!target.isConnected || document.activeElement !== target) return
+    const offset =
+      headerHeight.value + categories.getBoundingClientRect().height + 8
+    const top = target.getBoundingClientRect().top
+    if (top < offset || top >= window.innerHeight)
+      window.scrollBy({ top: top - offset, behavior: 'instant' })
+  })
+}
 const filters = computed(() => {
   const result: { category?: string; brand?: string; collection?: string } = {}
   for (const key of ['category', 'brand', 'collection'] as const) {
@@ -53,7 +105,11 @@ function pageLink(next: number) {
 </script>
 
 <template>
-  <section id="catalog-products" class="section catalog-section">
+  <section
+    id="catalog-products"
+    class="section catalog-section"
+    @focusin="revealFocusedProduct"
+  >
     <div class="container">
       <SectionHeading
         eyebrow="Коллекция материалов"
@@ -74,9 +130,15 @@ function pageLink(next: number) {
         @retry="refresh()"
       />
       <template v-else>
-        <div
+        <nav
           v-if="catalog?.categories.length"
+          ref="categoriesElement"
           class="categories"
+          :class="{
+            'categories--sticky': stickyCategories,
+            'categories--pinned': categoriesPinned,
+          }"
+          :style="{ '--catalog-header-height': `${headerHeight}px` }"
           aria-label="Категории каталога"
         >
           <NuxtLink
@@ -85,7 +147,7 @@ function pageLink(next: number) {
             :to="{ path: '/catalog', query: { category: category.slug } }"
             >{{ category.name }}</NuxtLink
           >
-        </div>
+        </nav>
         <ProductCardList
           v-if="catalog?.data.length"
           :products="catalog.data"
@@ -142,6 +204,26 @@ function pageLink(next: number) {
   color: var(--color-muted);
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+.categories--sticky {
+  position: sticky;
+  z-index: 40;
+  top: var(--catalog-header-height);
+  max-height: calc(100dvh - var(--catalog-header-height) - 44px);
+  overflow-y: auto;
+  margin-top: -16px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid transparent;
+  padding-block: 16px 15px;
+  background: var(--color-bg);
+}
+.categories--pinned {
+  border-bottom-color: var(--color-line);
+  /* Paint past the content container without widening the menu or scroll area. */
+  border-image-source: linear-gradient(var(--color-line), var(--color-line));
+  border-image-slice: 1;
+  border-image-width: 0 0 1px;
+  border-image-outset: 0 100vw 0;
 }
 .pagination {
   display: flex;

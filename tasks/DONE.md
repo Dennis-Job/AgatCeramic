@@ -1,5 +1,35 @@
 # DONE
 
+2026-11-11 — Нижняя граница закреплённых категорий растянута на всю ширину
+экрана по уточнению владельца. Border-image рисуется за пределами контейнера
+без изменения ширины меню, геометрии и scrollable overflow. Изменены
+CatalogListing.vue, UI-031 в docs/CLIENT_UI_KIT.md и этот статус.
+Client typecheck/build и форматирование компонента PASS; existing sticky E2E
+на пяти ширинах PASS. Свежий реальный screenshot подтверждает линию от края
+до края, горизонтального overflow нет. API/БД не менялись, без commit.
+
+2026-11-11 — По уточнению владельца у закреплённого меню категорий добавлена
+нижняя граница 1 px в существующем `--color-line`. В обычном положении она
+прозрачна; высота меню не меняется. Обновлены CatalogListing.vue,
+catalog-sticky-categories.spec.ts, UI-031 в docs/CLIENT_UI_KIT.md и этот статус.
+Client typecheck/build/format PASS; E2E прокрутки и границы на пяти ширинах PASS.
+Реальный каталог визуально проверен; API/БД не менялись. Без commit.
+
+2026-11-11 — Только на `/catalog` меню категорий закрепляется под основной
+шапкой при прокрутке до конца секции товаров и возвращается в исходное место
+при прокрутке вверх. Высота шапки измеряется существующим ResizeObserver;
+перенос категорий и палитра сохранены. Короткий экран поддерживает внутреннюю
+прокрутку меню; клавиатурный фокус товаров показывается ниже закреплённых слоёв.
+Изменены: `frontend/client/app/features/content/components/CatalogListing.vue`,
+`frontend/client/app/components/shared/SiteHeader.vue`, добавлены
+`frontend/client/app/composables/useSiteHeaderHeight.ts` и
+`frontend/client/e2e/catalog-sticky-categories.spec.ts`; обновлены
+`docs/CLIENT_UI_KIT.md` (UI-031) и этот статус.
+Client typecheck/build/format PASS; 7 E2E catalog-sticky-categories,
+catalog-card-standard и header-menu-placement PASS. Реальный каталог проверен
+на 320/640/768/1024/1280 px, короткий экран 320×260 и клавиатурный фокус;
+независимый UI Design Guard PASS. API/БД/миграции не менялись. Без commit.
+
 2026-11-10 — Исправлено пропавшее вступление на «О нас»: наличие слайдера ниже
 текста ошибочно скрывало PageIntro. Теперь его скрывает только первый включённый
 hero; нижний слайдер и пустой fallback используют H2, у страницы остаётся один
