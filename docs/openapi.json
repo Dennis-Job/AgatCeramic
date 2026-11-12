@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v20.0",
+        "version": "v21.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -5680,7 +5680,7 @@
             "get": {
                 "operationId": "getPublicCatalog",
                 "summary": "Read the active public catalog",
-                "description": "24 active products with active categories per page, ordered by name/id. Optional exact category/brand slug filters and a brand-scoped visible kollektsiya attribute filter are applied before pagination. Existing catalog projection remains unchanged.",
+                "description": "24 public active products in their own active categories per page. Exact category/brand and brand-scoped active collection filters remain compatible. category_descendants=1 opts into subtree products, including active descendants of inactive ancestors. SQL applies all filters before pagination. Stable ID tie-breaker; null prices last for either price sort. include_filters=1 opts into metadata from the selected category scope before other filters; only collection choices additionally use the selected brand. Characteristics require is_filterable and explicit assignment to the selected category, with no inheritance and none without a category. Foreign/unknown characteristics and malformed or oversized filters return 422; unknown values return no matches. No inventory quantities or private media are exposed.",
                 "parameters": [
                     {
                         "name": "page",
@@ -5718,6 +5718,87 @@
                             "type": "string",
                             "maxLength": 255
                         }
+                    },
+                    {
+                        "name": "include_filters",
+                        "in": "query",
+                        "description": "1 adds filters metadata; omitted or 0 preserves the existing envelope.",
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    },
+                    {
+                        "name": "category_descendants",
+                        "in": "query",
+                        "description": "1 includes public products throughout the selected active category subtree; exact category otherwise.",
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    },
+                    {
+                        "name": "price_from",
+                        "in": "query",
+                        "description": "Inclusive nonnegative price bound. Unpriced products are excluded. Reversed bounds return 422.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 20,
+                            "pattern": "^\\d+(?:\\.\\d{1,2})?$"
+                        }
+                    },
+                    {
+                        "name": "price_to",
+                        "in": "query",
+                        "description": "Inclusive nonnegative price bound. Unpriced products are excluded. Reversed bounds return 422.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 20,
+                            "pattern": "^\\d+(?:\\.\\d{1,2})?$"
+                        }
+                    },
+                    {
+                        "name": "in_stock",
+                        "in": "query",
+                        "description": "1 restricts to positive stock; 0 or omitted includes all products.",
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "name_asc",
+                                "name_desc",
+                                "price_asc",
+                                "price_desc",
+                                "newest"
+                            ],
+                            "default": "name_asc"
+                        }
+                    },
+                    {
+                        "name": "attributes",
+                        "in": "query",
+                        "description": "JSON object keyed by explicitly assigned filterable attribute ID. Max 20 attributes and 16384 characters. select/multiselect/boolean: {values:string[]} with 1-50 nonempty strings <=255 chars (boolean only true/false strings). integer/decimal/date: {min?:string,max?:string}, at least one bound; signed numbers <=16 integer digits, decimal <=8 fraction digits, date YYYY-MM-DD. string/text: {text:string}, nonempty <=200 chars, case-insensitive literal substring. Unknown keys, wrong JSON types, reversed bounds and foreign attributes return 422. OR within values; AND across attributes. JSON types remain distinct (false versus string false; select string 0 versus number 0).",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 16384
+                        },
+                        "example": "{\"12\":{\"values\":[\"red\",\"blue\"]},\"15\":{\"min\":\"0\",\"max\":\"10\"}}"
                     }
                 ],
                 "responses": {
@@ -14724,6 +14805,13 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "parent_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Original parent ID; inactive ancestors are absent from categories, so clients keep these active children reachable."
                     }
                 },
                 "required": [
@@ -14731,9 +14819,132 @@
                     "name",
                     "slug",
                     "description",
-                    "image_url"
+                    "image_url",
+                    "parent_id"
                 ],
                 "additionalProperties": false
+            },
+            "PublicCatalogFilters": {
+                "type": "object",
+                "required": [
+                    "brands",
+                    "collections",
+                    "attributes"
+                ],
+                "properties": {
+                    "brands": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "name",
+                                "slug"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "slug": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "collections": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "name",
+                                "brand_slug"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "brand_slug": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "id",
+                                "name",
+                                "slug",
+                                "type",
+                                "unit",
+                                "options"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "slug": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "string",
+                                        "text",
+                                        "integer",
+                                        "decimal",
+                                        "boolean",
+                                        "select",
+                                        "multiselect",
+                                        "date"
+                                    ]
+                                },
+                                "unit": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "options": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "value",
+                                            "label"
+                                        ],
+                                        "properties": {
+                                            "value": {
+                                                "type": "string"
+                                            },
+                                            "label": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    }
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "additionalProperties": false,
+                "description": "Scoped to all public products before other filters; collections additionally require the selected brand. Options contain distinct real values, independent of the current result page. No characteristic inheritance."
             },
             "PublicCatalogProduct": {
                 "type": "object",
@@ -14884,6 +15095,9 @@
                     },
                     "meta": {
                         "type": "object"
+                    },
+                    "filters": {
+                        "$ref": "#/components/schemas/PublicCatalogFilters"
                     }
                 },
                 "required": [

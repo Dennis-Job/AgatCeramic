@@ -68,6 +68,8 @@ img {
   input[type='tel'],
   input[type='email'],
   input[type='search'],
+  input[type='number'],
+  input[type='date'],
   textarea
 ) {
   transition: border-color 0.3s;
@@ -78,6 +80,8 @@ img {
   input[type='tel'],
   input[type='email'],
   input[type='search'],
+  input[type='number'],
+  input[type='date'],
   textarea
 ):focus {
   --field-border-color: var(--color-ink);

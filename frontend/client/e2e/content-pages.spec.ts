@@ -218,7 +218,7 @@ test('API failures, unpublished and empty pages have honest states and retry', a
   ).toBeVisible()
   await page.goto('/catalog')
   await expect(
-    page.getByRole('heading', { name: 'Товары пока не опубликованы' }),
+    page.getByRole('heading', { name: 'По вашему запросу ничего не найдено' }),
   ).toBeVisible()
   await request.get('http://127.0.0.1:8015/__scenario?name=empty-page')
   await page.goto('/about')
@@ -234,7 +234,7 @@ test('catalog and contacts errors can be retried independently', async ({
   await request.get('http://127.0.0.1:8015/__scenario?name=catalog-error')
   await page.goto('/catalog')
   await expect(page.getByRole('alert')).toContainText(
-    'Не удалось загрузить каталог.',
+    'Не удалось загрузить каталог',
   )
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
   await page.getByRole('button', { name: 'Повторить загрузку' }).click()
@@ -277,4 +277,33 @@ test('standalone categories have no dead action; long content wraps at 320', asy
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true)
+})
+
+test('a normal CMS page retains its catalog block renderer', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/pages/about', async (route) => {
+    const response = await route.fetch()
+    const body = await response.json()
+    body.data.blocks = [
+      {
+        id: 'catalog-on-content',
+        type: 'catalog',
+        enabled: true,
+        data: {
+          title: 'Материалы на контентной странице',
+          description: 'Каталог CMS',
+        },
+      },
+    ]
+    await route.fulfill({ response, json: body })
+  })
+  await page.goto('/contacts')
+  await page.getByRole('link', { name: 'О нас', exact: true }).first().click()
+  await expect(
+    page.getByRole('heading', { name: 'Материалы на контентной странице' }),
+  ).toBeVisible()
+  await expect(page.locator('.product-card')).toHaveCount(1)
+  await expect(page.locator('.standalone-catalog')).toHaveCount(0)
+  await expect(page.locator('.categories--sticky')).toHaveCount(0)
 })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
+import UiField from '../../../components/ui/UiField.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
 import type { CategoryPayload } from '../types/category.types'
@@ -66,15 +67,19 @@ const emit = defineEmits<{
             form.parent_id = $event === '' ? null : Number($event)
           "
       /></label>
-      <label class="text-sm font-medium text-gray-500"
-        >Порядок сортировки<UiInput
+      <UiField
+        label="Порядок сортировки"
+        help="Определяет порядок категорий на сайте и в админке среди категорий одного уровня. Меньшее число показывается раньше; при одинаковом числе — по названию."
+      >
+        <UiInput
           :model-value="String(form.sort_order)"
           class="mt-1.5"
           type="number"
           min="0"
           required
           @update:model-value="form.sort_order = Number($event)"
-      /></label>
+        />
+      </UiField>
     </div>
     <div class="space-y-2">
       <UiCheckbox

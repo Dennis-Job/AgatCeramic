@@ -14,6 +14,7 @@ export async function fetchContentPage(
   slug: string,
   requestBase: string,
   publicBase: string,
+  options: { timeout?: number; retry?: number } = {},
 ): Promise<ContentPage> {
   const { data } = await $fetch<{
     data: {
@@ -25,7 +26,7 @@ export async function fetchContentPage(
       blocks: ContentBlockDto[]
       seo: HomePageDto['seo']
     }
-  }>(apiUrl(`pages/${encodeURIComponent(slug)}`, requestBase))
+  }>(apiUrl(`pages/${encodeURIComponent(slug)}`, requestBase), options)
   return {
     isIndexable: data.is_indexable !== false,
     title: data.title,

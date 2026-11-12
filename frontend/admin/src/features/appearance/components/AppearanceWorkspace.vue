@@ -15,9 +15,11 @@ import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import { useAppearance } from '../composables/useAppearance'
 import type { AppearancePanel } from '../types/appearance.types'
 import SiteChromeEditor from './SiteChromeEditor.vue'
+import { useAuthStore } from '../../../stores/auth'
 import DraftPreview from '../../content-preview/components/DraftPreview.vue'
 
 const workspace = useAppearance()
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const mediaPending = ref(false)
@@ -172,13 +174,32 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
               Представление фильтров
             </h2>
             <p class="text-sm text-gray-500" role="status">
-              Фильтры клиентского каталога пока не реализованы. Настройки их
-              внешнего вида появятся вместе с фильтрами каталога.
+              Каталог товаров работает независимо от блоков страниц. На широком
+              экране фильтры расположены слева, на телефоне открываются
+              отдельной панелью.
             </p>
             <p class="mt-3 text-sm text-gray-500">
-              Здесь будут параметры представления. Состав фильтров,
-              характеристики и значения товаров управляются в каталоге.
+              В фильтрах участвуют только характеристики с признаком
+              «Использовать в фильтре», назначенные выбранной категории.
+              Характеристики других категорий не подмешиваются.
             </p>
+            <p class="mt-3 text-sm text-gray-500">
+              Порядок категорий задаётся полем «Порядок сортировки» в
+              справочнике категорий: меньшее число показывается раньше. Данные
+              товаров, характеристики и их значения управляются в товарном
+              каталоге.
+            </p>
+            <div
+              v-if="auth.hasPermission('catalog.manage')"
+              class="mt-4 flex flex-wrap gap-3"
+            >
+              <UiButton variant="secondary" @click="router.push('/categories')"
+                >Категории</UiButton
+              >
+              <UiButton variant="secondary" @click="router.push('/attributes')"
+                >Характеристики</UiButton
+              >
+            </div>
           </section>
           <section
             v-else

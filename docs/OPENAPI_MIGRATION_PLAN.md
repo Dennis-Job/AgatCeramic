@@ -1,5 +1,25 @@
 # OpenAPI migration plan — version history
 
+## v21.0 — independent catalog filters and category navigation
+
+Date: 2026-11-11. `GET /catalog` adds category `parent_id` and opt-in
+`filters` metadata with `include_filters=1`. Optional subtree, price, stock,
+sort and explicitly category-assigned characteristic filters are applied in SQL
+before pagination. Existing exact category/brand/collection inputs and public
+product projection remain available; no database migration is required.
+
+### Breaking change
+
+Routes remain `/api/v1`. Previous public catalog and category schemas rejected
+additional response properties, so strict consumers must accept nullable
+`categories[].parent_id` and optional `filters` before backend deployment.
+Consumers omitting `include_filters` never receive `filters`; they still receive
+category parent IDs. Deploy the updated Client with the backend to enable the
+independent `/catalog` route; CMS publication and blocks no longer gate its
+product listing. CMS title, illustration and SEO remain optional decoration.
+Rollback application code together; saved CMS blocks and product data are
+preserved, with no database conversion or restoration needed.
+
 ## v20.0 — editable page heading illustration
 
 Date: 2026-11-10. Pages and saved content preview add nullable `intro`:

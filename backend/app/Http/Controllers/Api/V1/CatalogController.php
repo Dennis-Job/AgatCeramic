@@ -13,8 +13,14 @@ class CatalogController extends Controller
 {
     public function index(PublicCatalogRequest $request, PublicCatalogQuery $query): AnonymousResourceCollection
     {
-        return PublicCatalogProductResource::collection($query->products($request->validated()))->additional([
+        $filters = $request->validated();
+        $additional = [
             'categories' => PublicCatalogCategoryResource::collection($query->categories())->resolve($request),
-        ]);
+        ];
+        if ($request->boolean('include_filters')) {
+            $additional['filters'] = $query->filters($filters);
+        }
+
+        return PublicCatalogProductResource::collection($query->products($filters))->additional($additional);
     }
 }

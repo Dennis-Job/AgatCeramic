@@ -58,7 +58,7 @@ function isBackdrop(event: MouseEvent) {
 function trapFocus(event: KeyboardEvent) {
   const controls = Array.from(
     dialog.value?.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), input:not([disabled]), [tabindex="0"]',
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
     ) ?? [],
   )
   const first = controls[0]

@@ -810,7 +810,11 @@ test('appearance media controls require media.manage and filters stay informatio
     name: 'Представление фильтров',
     exact: true,
   })
-  await expect(filters.getByRole('status')).toContainText('пока не реализованы')
+  await expect(filters.getByRole('status')).toContainText(
+    'Каталог товаров работает независимо от блоков страниц',
+  )
+  await expect(filters).toContainText('Использовать в фильтре')
+  await expect(filters).toContainText('назначенные выбранной категории')
   await expect(filters.getByRole('textbox')).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: 'Сохранить черновик раздела' }),

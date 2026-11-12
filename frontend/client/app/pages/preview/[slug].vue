@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDraftPreview } from '~/features/preview/composables/useDraftPreview'
 import ContentPageBody from '~/features/content/components/ContentPageBody.vue'
+import CatalogPageBody from '~/features/catalog/components/CatalogPageBody.vue'
 import HomePageBody from '~/features/home/components/HomePageBody.vue'
 import StorefrontHeader from '~/features/callback/components/StorefrontHeader.vue'
 import SiteFooter from '~/components/shared/SiteFooter.vue'
@@ -27,6 +28,11 @@ useHead({ meta: [{ name: 'referrer', content: 'no-referrer' }] })
     />
     <main aria-label="Содержимое предпросмотра сайта">
       <HomePageBody v-if="data.page.slug === 'home'" :content="data.page" />
+      <CatalogPageBody
+        v-else-if="data.page.slug === 'catalog'"
+        :content="data.page"
+        preview
+      />
       <ContentPageBody v-else :content="data.page" />
     </main>
     <SiteFooter

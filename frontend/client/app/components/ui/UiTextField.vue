@@ -8,7 +8,11 @@ import {
 
 const props = defineProps<{
   label: string
-  type?: 'text' | 'tel' | 'email'
+  type?: 'text' | 'tel' | 'email' | 'number' | 'date'
+  money?: boolean
+  min?: string
+  max?: string
+  step?: string
   surface?: 'white'
   autocomplete?: string
   required?: boolean
@@ -22,9 +26,36 @@ const model = defineModel<string>({ required: true })
 const id = useId()
 const input = ref<HTMLInputElement | null>(null)
 const isPhone = computed(() => props.type === 'tel')
-const display = computed(() =>
-  isPhone.value ? formatPhoneInput(model.value) : model.value,
-)
+const editingMoney = ref(false)
+function canonicalMoney(value: string) {
+  const plain = value.replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')
+  if (!/^\d+(?:\.\d{0,2})?$/.test(plain)) return null
+  const [integer = '', decimals = ''] = plain.split('.')
+  return integer.replace(/^0+(?=\d)/, '') + '.' + decimals.padEnd(2, '0')
+}
+const display = computed(() => {
+  if (isPhone.value) return formatPhoneInput(model.value)
+  if (!props.money || editingMoney.value || !model.value) return model.value
+  const canonical = canonicalMoney(model.value)
+  if (canonical === null) return model.value
+  const [integer = '', decimals] = canonical.split('.')
+  return integer.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0') + ',' + decimals
+})
+function validateMoney() {
+  if (!props.money || !input.value) return
+  input.value.setCustomValidity(
+    model.value && canonicalMoney(model.value) === null
+      ? 'Введите положительную сумму с точностью до копеек.'
+      : '',
+  )
+}
+function onBlur() {
+  if (!props.money) return
+  const canonical = canonicalMoney(model.value)
+  if (canonical !== null) model.value = canonical
+  editingMoney.value = false
+  validateMoney()
+}
 
 function validatePhone() {
   if (!isPhone.value || !input.value) return
@@ -99,11 +130,22 @@ function onInput(event: Event) {
     )
     target.setSelectionRange(caret, caret)
     validatePhone()
-  } else model.value = target.value
+  } else {
+    model.value = props.money
+      ? target.value.replace(/[\s\u00a0\u202f]/g, '').replace(',', '.')
+      : target.value
+    validateMoney()
+  }
 }
 
-onMounted(validatePhone)
-watch([model, () => props.required], validatePhone)
+onMounted(() => {
+  validatePhone()
+  validateMoney()
+})
+watch([model, () => props.required], () => {
+  validatePhone()
+  validateMoney()
+})
 </script>
 
 <template>
@@ -116,15 +158,20 @@ watch([model, () => props.required], validatePhone)
       :id="id"
       ref="input"
       :value="display"
-      :type="type || 'text'"
+      :type="money ? 'text' : type || 'text'"
       :autocomplete="autocomplete"
       :required="required"
       :maxlength="isPhone ? undefined : maxlength"
       :pattern="isPhone ? undefined : pattern"
-      :inputmode="isPhone ? 'tel' : undefined"
+      :min="min"
+      :max="max"
+      :step="step"
+      :inputmode="isPhone ? 'tel' : money ? 'decimal' : undefined"
       :autofocus="autofocus"
       :disabled="disabled"
       :readonly="readonly"
+      @focus="editingMoney = !!money"
+      @blur="onBlur"
       @beforeinput="beforeInput"
       @paste="paste"
       @input="onInput"

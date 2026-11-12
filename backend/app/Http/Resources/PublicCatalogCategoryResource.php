@@ -15,6 +15,7 @@ class PublicCatalogCategoryResource extends ApiResource
     {
         return [
             'id' => $this->id, 'name' => $this->name, 'slug' => $this->slug, 'description' => $this->description,
+            'parent_id' => $this->parent_id,
             'image_url' => $this->image?->disk === 'public' ? Storage::disk('public')->url($this->image->path) : null,
         ];
     }

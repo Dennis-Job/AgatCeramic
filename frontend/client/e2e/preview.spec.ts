@@ -50,9 +50,15 @@ test('saved draft uses actual blocks and chrome; routes are responsive and acces
   for (const slug of ['home', 'about', 'contacts', 'catalog']) {
     await page.goto(`/preview/${slug}`)
     await expect(page.getByText('Черновая шапка')).toBeVisible()
-    await expect(
-      page.getByRole('heading', { name: 'Сохранённый текст черновика' }),
-    ).toBeVisible()
+    if (slug === 'catalog') {
+      await expect(
+        page.getByRole('heading', { name: 'Сохранённый текст черновика' }),
+      ).toHaveCount(0)
+      await expect(page.locator('.standalone-catalog')).toHaveCount(1)
+    } else
+      await expect(
+        page.getByRole('heading', { name: 'Сохранённый текст черновика' }),
+      ).toBeVisible()
     await expect(page.getByText('Выключенный блок черновика')).toHaveCount(0)
     if (slug === 'contacts')
       await expect(
