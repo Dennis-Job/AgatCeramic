@@ -29,11 +29,18 @@ test('topbar places editable text left and canonical contacts right using refere
     /заказать звонок\s*·\s*shop@example\.test\s*·\s*\+7 \(900\) 000-00-00/,
   )
   await expect(topbar).toHaveCSS('font-size', '11px')
-  for (const width of [320, 640, 768, 1024, 1280]) {
+  for (const width of [320, 640, 768, 973, 1024, 1025, 1280]) {
     await page.setViewportSize({ width, height: 707 })
-    if (width <= 760) await expect(text).toBeHidden()
-    else await expect(text).toBeVisible()
-    await expect(phone).toBeVisible()
+    await expect(topbar).toBeVisible()
+    await expect(button).toBeVisible()
+    if (width <= 1024) {
+      await expect(text).toBeHidden()
+      await expect(phone).toBeHidden()
+      await expect(topbar.getByRole('link')).toHaveCount(0)
+    } else {
+      await expect(text).toBeVisible()
+      await expect(phone).toBeVisible()
+    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

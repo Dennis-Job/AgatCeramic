@@ -111,4 +111,9 @@ watch(
 .store-contacts button:hover {
   color: var(--color-ink);
 }
+@media (max-width: 1024px) {
+  .store-contacts__item {
+    display: none;
+  }
+}
 </style>

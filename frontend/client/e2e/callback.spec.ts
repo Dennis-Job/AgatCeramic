@@ -132,12 +132,16 @@ test('callback stays usable at all widths with focus containment, backdrop close
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 707 })
     const topbar = page.getByRole('region', { name: 'Информация магазина' })
-    await expect(
-      topbar.getByRole('link', { name: '+7 (900) 000-00-00' }),
-    ).toBeVisible()
-    await expect(
-      topbar.getByRole('link', { name: 'shop@example.test' }),
-    ).toBeVisible()
+    if (width > 1024) {
+      await expect(
+        topbar.getByRole('link', { name: '+7 (900) 000-00-00' }),
+      ).toBeVisible()
+      await expect(
+        topbar.getByRole('link', { name: 'shop@example.test' }),
+      ).toBeVisible()
+    } else {
+      await expect(topbar.getByRole('link')).toHaveCount(0)
+    }
     await topbar.getByRole('button', { name: 'заказать звонок' }).click()
     const dialog = page.getByRole('dialog', { name: 'Заказать звонок' })
     await expect(dialog).toBeFocused()

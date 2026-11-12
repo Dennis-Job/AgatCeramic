@@ -517,6 +517,9 @@ onUnmounted(() => {
   display: none;
 }
 @media (max-width: 1024px) {
+  .topbar__text {
+    display: none;
+  }
   .site-header__actions .site-header__menu-toggle {
     display: inline-flex;
   }
@@ -661,9 +664,6 @@ onUnmounted(() => {
   font-size: 14px;
 }
 @media (max-width: 760px) {
-  .topbar__text {
-    display: none;
-  }
   .site-header__inner {
     min-height: 68px;
   }
