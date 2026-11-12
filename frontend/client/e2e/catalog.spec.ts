@@ -242,7 +242,7 @@ test('reset retains sorting; applied chips describe selected values and bounds',
     .getByRole('button', { name: 'Сбросить всё', exact: true })
     .last()
     .click()
-  await expect(page).toHaveURL(/sort=price_desc/)
+  await expect(page).toHaveURL(/\/catalog\?sort=price_desc#catalog-products$/)
   expect(page.url()).not.toContain('attributes=')
   expect(page.url()).not.toContain('category=')
 })

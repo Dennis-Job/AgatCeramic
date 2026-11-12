@@ -1,39 +1,17 @@
 <script setup lang="ts">
 import type { StandaloneCatalog, CatalogQuery } from '../types/catalog'
+import CatalogCategoryBranch from './CatalogCategoryBranch.vue'
+import { buildCategoryTree, flattenCategoryTree } from '../utils/categoryTree'
 
 const props = defineProps<{
   categories: StandaloneCatalog['categories']
   query: CatalogQuery
   path: string
+  vertical?: boolean
 }>()
-defineEmits<{ navigate: [] }>()
-const entries = computed(() => {
-  const result: {
-    category: StandaloneCatalog['categories'][number]
-    depth: number
-  }[] = []
-  const seen = new Set<number>()
-  function visit(
-    category: StandaloneCatalog['categories'][number],
-    depth: number,
-  ) {
-    if (seen.has(category.id)) return
-    seen.add(category.id)
-    result.push({ category, depth })
-    for (const child of props.categories.filter(
-      (child) => child.parent_id === category.id,
-    ))
-      visit(child, depth + 1)
-  }
-  for (const category of props.categories.filter(
-    (category) =>
-      !category.parent_id ||
-      !props.categories.some((parent) => parent.id === category.parent_id),
-  ))
-    visit(category, 0)
-  for (const category of props.categories) visit(category, 0)
-  return result
-})
+defineEmits<{ navigate: []; select: [category: string] }>()
+const tree = computed(() => buildCategoryTree(props.categories))
+const entries = computed(() => flattenCategoryTree(tree.value))
 function link(category?: string) {
   const query = { ...props.query }
   delete query.page
@@ -45,27 +23,54 @@ function link(category?: string) {
 </script>
 
 <template>
-  <nav class="catalog-categories" aria-label="Категории каталога">
-    <h2>Категории</h2>
-    <ul>
+  <nav
+    class="catalog-categories"
+    :class="{
+      'catalog-categories--vertical': vertical,
+      'ui-drawer-navigation': vertical,
+    }"
+    aria-label="Категории каталога"
+  >
+    <h2 v-if="vertical">Категории</h2>
+    <ul v-if="vertical" class="catalog-categories__tree">
+      <li class="ui-drawer-navigation__item">
+        <button
+          type="button"
+          class="ui-drawer-navigation__link"
+          :class="{ 'ui-drawer-navigation__link--current': !query.category }"
+          :aria-current="!query.category ? 'true' : undefined"
+          @click="$emit('select', '')"
+        >
+          <span>Все товары</span>
+          <span class="ui-drawer-navigation__number" aria-hidden="true"
+            >01</span
+          >
+        </button>
+      </li>
+      <CatalogCategoryBranch
+        v-for="(node, index) in tree"
+        :key="node.category.id"
+        :node="node"
+        :number="index + 2"
+        :selected="query.category"
+        @select="$emit('select', $event)"
+      />
+    </ul>
+    <ul v-else>
       <li>
         <NuxtLink
           :to="link()"
           :aria-current="!query.category ? 'page' : undefined"
           @click="$emit('navigate')"
-          >Все товары</NuxtLink
+          ><span>Все товары</span></NuxtLink
         >
       </li>
-      <li
-        v-for="{ category, depth } in entries"
-        :key="category.id"
-        :style="{ '--category-depth': Math.min(depth, 4) }"
-      >
+      <li v-for="category in entries" :key="category.id">
         <NuxtLink
           :to="link(category.slug)"
           :aria-current="query.category === category.slug ? 'page' : undefined"
           @click="$emit('navigate')"
-          >{{ category.name }}</NuxtLink
+          ><span>{{ category.name }}</span></NuxtLink
         >
       </li>
     </ul>
@@ -79,20 +84,23 @@ h2 {
   font-weight: 500;
 }
 ul {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 32px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 li {
   min-width: 0;
-  padding-left: calc(var(--category-depth, 0) * 12px);
 }
 a {
   display: block;
   min-height: 44px;
   border-bottom: 1px solid transparent;
   padding: 12px 0;
+  text-align: center;
   color: var(--color-muted);
   font-size: 13px;
   line-height: 1.5;
@@ -104,5 +112,14 @@ a:hover {
 }
 a[aria-current] {
   border-bottom-color: var(--color-ink);
+}
+.catalog-categories--vertical {
+  --drawer-navigation-font-size: 13px;
+}
+.catalog-categories__tree {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  gap: 0;
 }
 </style>

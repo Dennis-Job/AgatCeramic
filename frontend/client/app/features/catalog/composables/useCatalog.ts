@@ -1,4 +1,5 @@
 import { fetchStandaloneCatalog } from '../services/catalog'
+import { useCatalogDraftFilters } from './useCatalogDraftFilters'
 import type {
   AttributeFilter,
   CatalogDraft,
@@ -49,6 +50,7 @@ function draftFrom(query: CatalogQuery): CatalogDraft {
     /* Invalid direct links remain in the request for server validation. */
   }
   return {
+    category: query.category || '',
     brand: query.brand || '',
     collection: query.collection || '',
     price_from: query.price_from || '',
@@ -91,65 +93,25 @@ export function useCatalog() {
     },
   )
   let syncingDraft = false
-  let controller: AbortController | undefined
+  const draftChoices = useCatalogDraftFilters(
+    draft,
+    query,
+    result.data,
+    () => syncingDraft,
+  )
   watch(query, (value) => {
-    controller?.abort()
+    draftChoices.clear()
     syncingDraft = true
     draft.value = draftFrom(value)
     syncingDraft = false
   })
-  const collections = ref(result.data.value?.filters.collections || [])
-  watch(
-    () => result.data.value?.filters.collections,
-    (value) => {
-      collections.value = value || []
-    },
-  )
-  watch(
-    () => draft.value.brand,
-    async (brand, previous) => {
-      if (brand === previous || syncingDraft) return
-      draft.value.collection = ''
-      collections.value = []
-      controller?.abort()
-      const lookup = new AbortController()
-      controller = lookup
-      const category = query.value.category
-      if (!brand) return
-      if (brand === (query.value.brand || '')) {
-        collections.value = result.data.value?.filters.collections || []
-        return
-      }
-      try {
-        const response = await fetchStandaloneCatalog(
-          requestBase,
-          publicBase,
-          {
-            ...(category ? { category } : {}),
-            brand,
-          },
-          lookup.signal,
-        )
-        if (
-          !lookup.signal.aborted &&
-          draft.value.brand === brand &&
-          query.value.category === category
-        )
-          collections.value = response.filters.collections
-      } catch {
-        /* The result request reports API errors when filters are applied. */
-      }
-    },
-    { flush: 'sync' },
-  )
-  onScopeDispose(() => controller?.abort())
   function navigate(value: CatalogQuery, hash = '#catalog-products') {
     return navigateTo({ path: route.path, query: value, hash })
   }
   function apply() {
     const value: CatalogQuery = {}
-    for (const key of ['category', 'sort'] as const)
-      if (query.value[key]) value[key] = query.value[key]
+    if (query.value.sort) value.sort = query.value.sort
+    if (draft.value.category) value.category = draft.value.category
     for (const key of [
       'brand',
       'collection',
@@ -199,15 +161,21 @@ export function useCatalog() {
     else next.sort = value
     return navigate(next)
   }
+  function clearDraft() {
+    draftChoices.clear()
+    syncingDraft = true
+    draft.value = draftFrom({})
+    syncingDraft = false
+  }
+  function resetDraft() {
+    clearDraft()
+    void draftChoices.refresh()
+  }
   function reset() {
     const target: CatalogQuery = query.value.sort
       ? { sort: query.value.sort }
       : {}
-    controller?.abort()
-    syncingDraft = true
-    draft.value = draftFrom(target)
-    syncingDraft = false
-    collections.value = []
+    clearDraft()
     return navigate(target)
   }
   return {
@@ -215,7 +183,15 @@ export function useCatalog() {
     ready: result,
     query,
     draft,
-    collections,
+    collections: draftChoices.collections,
+    draftFilters: draftChoices.filters,
+    draftFiltersPending: draftChoices.pending,
+    draftFiltersError: draftChoices.error,
+    refreshDraftFilters: () => draftChoices.refresh(true),
+    selectCategory: (category: string) => {
+      draft.value.category = category
+    },
+    resetDraft,
     apply,
     remove,
     sort,

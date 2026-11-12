@@ -24,6 +24,7 @@ export interface StandaloneCatalog extends CatalogResult {
   filters: CatalogFilters
 }
 export interface CatalogDraft {
+  category: string
   brand: string
   collection: string
   price_from: string

@@ -161,7 +161,10 @@ defineExpose({ close })
 <template>
   <nav
     ref="root"
-    :class="variant === 'desktop' ? 'site-nav' : 'menu-panel__nav'"
+    :class="[
+      variant === 'desktop' ? 'site-nav' : 'menu-panel__nav',
+      { 'ui-drawer-navigation': variant === 'drawer' },
+    ]"
     :aria-label="label"
   >
     <ul class="navigation-list">
@@ -169,6 +172,7 @@ defineExpose({ close })
         v-for="(item, index) in items"
         :key="index"
         class="navigation-item"
+        :class="{ 'ui-drawer-navigation__item': variant === 'drawer' }"
         :style="{ '--menu-link-index': index }"
       >
         <template v-if="'children' in item">
@@ -177,6 +181,9 @@ defineExpose({ close })
             :class="{
               'is-current': isCurrentGroup(item),
               'ui-hover-underline': variant === 'desktop',
+              'ui-drawer-navigation__link': variant === 'drawer',
+              'ui-drawer-navigation__link--current':
+                variant === 'drawer' && isCurrentGroup(item),
             }"
             type="button"
             :data-trigger="index"
@@ -226,7 +233,10 @@ defineExpose({ close })
         <NuxtLink
           v-else
           class="navigation-link"
-          :class="{ 'ui-hover-underline': variant === 'desktop' }"
+          :class="{
+            'ui-hover-underline': variant === 'desktop',
+            'ui-drawer-navigation__link': variant === 'drawer',
+          }"
           :to="item.to"
           :aria-current="isCurrent(item.to) ? 'page' : undefined"
           @click="navigate"
@@ -234,7 +244,7 @@ defineExpose({ close })
           <span>{{ item.label }}</span>
           <span
             v-if="variant === 'drawer'"
-            class="navigation-number"
+            class="navigation-number ui-drawer-navigation__number"
             aria-hidden="true"
             >{{ String(index + 1).padStart(2, '0') }}</span
           >
@@ -348,25 +358,8 @@ defineExpose({ close })
   flex-direction: column;
 }
 .menu-panel__nav .navigation-item {
-  border-bottom: 1px solid var(--color-line);
   animation: menu-link-enter 0.6s var(--ease-out) both;
   animation-delay: calc(0.15s + var(--menu-link-index) * 0.07s);
-}
-.menu-panel__nav .navigation-link {
-  width: 100%;
-  padding: 14px 0;
-  font-size: clamp(26px, 3vw, 34px);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-.menu-panel__nav .navigation-link:hover {
-  color: var(--color-muted);
-}
-.navigation-number {
-  flex-shrink: 0;
-  color: var(--color-muted);
-  font-size: 11px;
-  letter-spacing: 0.2em;
 }
 .menu-panel__nav .navigation-submenu {
   background: transparent;
@@ -381,10 +374,6 @@ defineExpose({ close })
 .menu-panel__nav .navigation-submenu a {
   padding: 12px;
   font-size: 16px;
-}
-.menu-panel__nav .navigation-trigger.is-current > span {
-  text-decoration: underline;
-  text-underline-offset: 6px;
 }
 @keyframes menu-link-enter {
   from {

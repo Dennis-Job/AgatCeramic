@@ -4,15 +4,18 @@ import UiSelect from '~/components/ui/UiSelect.vue'
 import UiCheckbox from '~/components/ui/UiCheckbox.vue'
 import UiTextField from '~/components/ui/UiTextField.vue'
 import CatalogAttributeFilter from './CatalogAttributeFilter.vue'
+import PageState from '~/components/shared/PageState.vue'
 import type { CatalogDraft, CatalogFilters } from '../types/catalog'
 
 defineProps<{
   filters: CatalogFilters
   collections: CatalogFilters['collections']
   busy?: boolean
+  pending?: boolean
+  error?: string
 }>()
 const model = defineModel<CatalogDraft>({ required: true })
-defineEmits<{ apply: []; reset: [] }>()
+defineEmits<{ apply: []; reset: []; retry: [] }>()
 </script>
 
 <template>
@@ -21,7 +24,18 @@ defineEmits<{ apply: []; reset: [] }>()
     aria-label="Подбор товаров"
     @submit.prevent="$emit('apply')"
   >
-    <fieldset class="catalog-filter-form__fields" :disabled="busy">
+    <PageState
+      v-if="error"
+      title="Не удалось загрузить фильтры"
+      :message="error"
+      error
+      @retry="$emit('retry')"
+    />
+    <p v-else-if="pending" role="status">Загружаем фильтры…</p>
+    <fieldset
+      class="catalog-filter-form__fields"
+      :disabled="busy || pending || !!error"
+    >
       <UiSelect
         v-model="model.brand"
         label="Бренд"
@@ -31,6 +45,10 @@ defineEmits<{ apply: []; reset: [] }>()
             value: item.slug,
             label: item.name,
           })),
+          ...(model.brand &&
+          !filters.brands.some((item) => item.slug === model.brand)
+            ? [{ value: model.brand, label: model.brand }]
+            : []),
         ]"
       />
       <UiSelect

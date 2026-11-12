@@ -36,8 +36,10 @@ export function handleCatalog(request, response, url, scenario) {
   if (
     Object.keys(attributes).some(
       (id) =>
-        category !== 'tile' ||
-        !['1', '2', '3', '4', '5', '6', '7', '8'].includes(id),
+        !(
+          category === 'tile' &&
+          ['1', '2', '3', '4', '5', '6', '7', '8'].includes(id)
+        ) && !(category === 'bath' && id === '9'),
     )
   )
     return send({}, 422)
@@ -45,6 +47,12 @@ export function handleCatalog(request, response, url, scenario) {
     { id: 1, parent_id: null, slug: 'materials', name: 'Материалы' },
     { id: 2, parent_id: 1, slug: 'tile', name: 'Плитка' },
     { id: 3, parent_id: null, slug: 'mosaic', name: 'Мозаика' },
+    { id: 4, parent_id: null, slug: 'plumbing', name: 'Сантехника' },
+    { id: 5, parent_id: 4, slug: 'bath', name: 'Ванны' },
+    { id: 6, parent_id: 4, slug: 'showers', name: 'Душевые кабины' },
+    { id: 7, parent_id: 4, slug: 'sinks', name: 'Раковины' },
+    { id: 8, parent_id: 4, slug: 'mixers', name: 'Смесители' },
+    { id: 9, parent_id: 4, slug: 'toilets', name: 'Унитазы' },
   ]
   const definitions = [
     'select',
@@ -84,7 +92,9 @@ export function handleCatalog(request, response, url, scenario) {
   let products = Array.from({ length: 27 }, (_, i) => ({
     id: i + 1,
     slug: 'tile-' + (i + 1),
-    name: 'Плитка ' + String(i + 1).padStart(2, '0'),
+    name:
+      (category === 'bath' ? 'Ванна ' : 'Плитка ') +
+      String(i + 1).padStart(2, '0'),
     description: null,
     price: i === 26 ? null : String(100 + i * 10),
     old_price: null,
@@ -147,7 +157,24 @@ export function handleCatalog(request, response, url, scenario) {
         url.searchParams.get('brand') === 'atlas'
           ? [{ id: 1, name: 'Stone', brand_slug: 'atlas' }]
           : [],
-      attributes: category === 'tile' ? definitions : [],
+      attributes:
+        category === 'tile'
+          ? definitions
+          : category === 'bath'
+            ? [
+                {
+                  id: 9,
+                  type: 'select',
+                  name: 'Материал сантехники',
+                  slug: 'plumbing-material',
+                  unit: null,
+                  options: [
+                    { value: 'acrylic', label: 'Акрил' },
+                    { value: 'steel', label: 'Сталь' },
+                  ],
+                },
+              ]
+            : [],
     },
   })
 }

@@ -1,0 +1,46 @@
+/* Shared row appearance for the site menu and compact catalog categories. */
+.ui-drawer-navigation .ui-drawer-navigation__item {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.ui-drawer-navigation .ui-drawer-navigation__item .ui-drawer-navigation__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  padding: 14px 0;
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  font-size: var(--drawer-navigation-font-size, clamp(26px, 3vw, 34px));
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.ui-drawer-navigation__link > span:first-child {
+  min-width: 0;
+}
+
+.ui-drawer-navigation
+  .ui-drawer-navigation__item
+  .ui-drawer-navigation__link:hover {
+  color: var(--color-muted);
+}
+
+.ui-drawer-navigation .ui-drawer-navigation__number {
+  flex-shrink: 0;
+  color: var(--color-muted);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}
+
+.ui-drawer-navigation__link--current > span:first-child {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}

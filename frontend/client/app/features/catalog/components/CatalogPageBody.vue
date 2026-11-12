@@ -9,12 +9,15 @@ import ProductCardList from '~/features/product/components/ProductCardList.vue'
 import CatalogCategories from './CatalogCategories.vue'
 import CatalogFilterForm from './CatalogFilterForm.vue'
 import { useCatalog } from '../composables/useCatalog'
+import { useStickyCatalogNavigation } from '../composables/useStickyCatalogNavigation'
 import type { ContentPage } from '~/types/contentPage'
 import { siteOrigin } from '#shared/utils/pageUrls'
 import { formatMoney } from '~/utils/formatMoney'
 
 const props = defineProps<{ content?: ContentPage | null; preview?: boolean }>()
 const route = useRoute()
+const { navigation, headerHeight, pinned, revealFocusedControl } =
+  useStickyCatalogNavigation()
 const {
   data: catalog,
   status,
@@ -23,6 +26,12 @@ const {
   query,
   draft,
   collections,
+  draftFilters,
+  draftFiltersPending,
+  draftFiltersError,
+  refreshDraftFilters,
+  selectCategory,
+  resetDraft,
   apply,
   reset,
   remove,
@@ -193,107 +202,124 @@ if (!props.preview) {
     :description="content?.seo.description"
     :image="content?.intro"
   />
-  <section id="catalog-products" class="section standalone-catalog">
-    <div class="container catalog-layout">
-      <aside class="catalog-sidebar" aria-label="Фильтры каталога">
+  <section
+    id="catalog-products"
+    class="section standalone-catalog"
+    :style="{ '--catalog-header-height': `${headerHeight}px` }"
+    @focusin="revealFocusedControl"
+  >
+    <div class="container">
+      <div
+        v-if="catalog?.categories.length"
+        ref="navigation"
+        class="catalog-category-navigation"
+        :class="{ 'catalog-category-navigation--pinned': pinned }"
+      >
         <CatalogCategories
-          :categories="catalog?.categories || []"
+          :categories="catalog.categories"
           :query="query"
           :path="route.path"
         />
-        <h2 class="catalog-sidebar__title">Фильтры</h2>
-        <CatalogFilterForm
-          v-model="draft"
-          :filters="filters"
-          :collections="collections"
-          :busy="status === 'pending'"
-          @apply="commit()"
-          @reset="clear()"
-        />
-      </aside>
-      <div class="catalog-results" :aria-busy="status === 'pending'">
-        <div class="catalog-toolbar">
-          <p role="status">Товаров: {{ catalog?.meta.total ?? '—' }}</p>
-          <UiButton
-            class="catalog-mobile-toggle"
-            variant="outline"
-            size="compact"
-            @click="drawer = true"
-            >Фильтры</UiButton
-          >
-          <UiSelect
-            v-model="sorting"
-            label="Сортировка"
-            :options="sortOptions"
+      </div>
+      <div class="catalog-layout">
+        <aside class="catalog-sidebar" aria-label="Фильтры каталога">
+          <h2 class="catalog-sidebar__title">Фильтры</h2>
+          <CatalogFilterForm
+            v-model="draft"
+            :filters="draftFilters"
+            :collections="collections"
+            :pending="draftFiltersPending"
+            :error="draftFiltersError"
+            @retry="refreshDraftFilters()"
+            :busy="status === 'pending'"
+            @apply="commit()"
+            @reset="clear()"
           />
-        </div>
-        <div
-          v-if="chips.length"
-          class="catalog-applied"
-          aria-label="Применённые фильтры"
-        >
-          <UiButton
-            v-for="chip in chips"
-            :key="chip.key + chip.id"
-            size="compact"
-            variant="outline"
-            :aria-label="'Убрать фильтр: ' + chip.label"
-            @click="remove(chip.key, chip.id)"
-            >{{ chip.label }} ×</UiButton
+        </aside>
+        <div class="catalog-results" :aria-busy="status === 'pending'">
+          <div class="catalog-toolbar">
+            <p role="status">Товаров: {{ catalog?.meta.total ?? '—' }}</p>
+            <UiButton
+              class="catalog-mobile-toggle"
+              variant="outline"
+              size="compact"
+              @click="drawer = true"
+              >Фильтры</UiButton
+            >
+            <UiSelect
+              v-model="sorting"
+              label="Сортировка"
+              :options="sortOptions"
+            />
+          </div>
+          <div
+            v-if="chips.length"
+            class="catalog-applied"
+            aria-label="Применённые фильтры"
           >
-          <UiButton size="compact" variant="outline" @click="clear()"
-            >Сбросить всё</UiButton
-          >
-        </div>
-        <PageState
-          v-if="error"
-          title="Не удалось загрузить каталог"
-          :message="
-            error.statusCode === 422
-              ? 'Проверьте фильтры: ссылка содержит недоступные или неверные значения. Сбросьте фильтры и попробуйте снова.'
-              : 'Попробуйте ещё раз позже.'
-          "
-          error
-          @retry="refresh()"
-        />
-        <PageState
-          v-else-if="status === 'pending'"
-          title="Товары"
-          message="Загружаем каталог…"
-          loading
-        />
-        <template v-else>
-          <ProductCardList
-            v-if="catalog?.data.length"
-            :products="catalog.data"
-            class="products"
+            <UiButton
+              v-for="chip in chips"
+              :key="chip.key + chip.id"
+              size="compact"
+              variant="outline"
+              :aria-label="'Убрать фильтр: ' + chip.label"
+              @click="remove(chip.key, chip.id)"
+              >{{ chip.label }} ×</UiButton
+            >
+            <UiButton size="compact" variant="outline" @click="clear()"
+              >Сбросить всё</UiButton
+            >
+          </div>
+          <PageState
+            v-if="error"
+            title="Не удалось загрузить каталог"
+            :message="
+              error.statusCode === 422
+                ? 'Проверьте фильтры: ссылка содержит недоступные или неверные значения. Сбросьте фильтры и попробуйте снова.'
+                : 'Попробуйте ещё раз позже.'
+            "
+            error
+            @retry="refresh()"
           />
           <PageState
-            v-else
-            title="По вашему запросу ничего не найдено"
-            message="Измените параметры или сбросьте фильтры."
+            v-else-if="status === 'pending'"
+            title="Товары"
+            message="Загружаем каталог…"
+            loading
           />
-          <nav
-            v-if="catalog && catalog.meta.last_page > 1"
-            class="catalog-pagination"
-            aria-label="Страницы каталога"
-          >
-            <NuxtLink
-              v-if="catalog.meta.current_page > 1"
-              :to="pageLink(catalog.meta.current_page - 1)"
-              >← Предыдущая</NuxtLink
+          <template v-else>
+            <ProductCardList
+              v-if="catalog?.data.length"
+              :products="catalog.data"
+              class="products"
+            />
+            <PageState
+              v-else
+              title="По вашему запросу ничего не найдено"
+              message="Измените параметры или сбросьте фильтры."
+            />
+            <nav
+              v-if="catalog && catalog.meta.last_page > 1"
+              class="catalog-pagination"
+              aria-label="Страницы каталога"
             >
-            <span aria-current="page"
-              >{{ catalog.meta.current_page }} /
-              {{ catalog.meta.last_page }}</span
-            >
-            <NuxtLink
-              v-if="catalog.meta.current_page < catalog.meta.last_page"
-              :to="pageLink(catalog.meta.current_page + 1)"
-              >Следующая →</NuxtLink
-            >
-          </nav>
-        </template>
+              <NuxtLink
+                v-if="catalog.meta.current_page > 1"
+                :to="pageLink(catalog.meta.current_page - 1)"
+                >← Предыдущая</NuxtLink
+              >
+              <span aria-current="page"
+                >{{ catalog.meta.current_page }} /
+                {{ catalog.meta.last_page }}</span
+              >
+              <NuxtLink
+                v-if="catalog.meta.current_page < catalog.meta.last_page"
+                :to="pageLink(catalog.meta.current_page + 1)"
+                >Следующая →</NuxtLink
+              >
+            </nav>
+          </template>
+        </div>
       </div>
     </div>
     <UiDialog
@@ -305,18 +331,23 @@ if (!props.preview) {
     >
       <div class="catalog-drawer-body">
         <CatalogCategories
-          :categories="catalog?.categories || []"
-          :query="query"
+          v-if="catalog?.categories.length"
+          :categories="catalog.categories"
+          :query="{ ...query, category: draft.category }"
           :path="route.path"
-          @navigate="close()"
+          vertical
+          @select="selectCategory"
         />
         <CatalogFilterForm
           v-model="draft"
-          :filters="filters"
+          :filters="draftFilters"
           :collections="collections"
+          :pending="draftFiltersPending"
+          :error="draftFiltersError"
+          @retry="refreshDraftFilters()"
           :busy="status === 'pending'"
           @apply="commit(close)"
-          @reset="clear(close)"
+          @reset="resetDraft()"
         />
       </div>
     </UiDialog>
@@ -325,7 +356,26 @@ if (!props.preview) {
 
 <style scoped>
 .standalone-catalog {
-  scroll-margin-top: 100px;
+  scroll-margin-top: var(--catalog-header-height);
+}
+.catalog-category-navigation {
+  position: sticky;
+  z-index: 40;
+  top: var(--catalog-header-height);
+  max-height: calc(100dvh - var(--catalog-header-height) - 44px);
+  overflow-y: auto;
+  margin-top: -16px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid transparent;
+  padding-block: 16px 15px;
+  background: var(--color-bg);
+}
+.catalog-category-navigation--pinned {
+  border-bottom-color: var(--color-line);
+  border-image-source: linear-gradient(var(--color-line), var(--color-line));
+  border-image-slice: 1;
+  border-image-width: 0 0 1px;
+  border-image-outset: 0 100vw 0;
 }
 .catalog-layout {
   display: grid;
@@ -338,9 +388,7 @@ if (!props.preview) {
   min-width: 0;
 }
 .catalog-sidebar__title {
-  margin: 32px 0 24px;
-  border-top: 1px solid var(--color-line);
-  padding-top: 24px;
+  margin: 0 0 24px;
   font-size: 14px;
   font-weight: 500;
 }
@@ -394,10 +442,13 @@ if (!props.preview) {
   overflow-y: auto;
   padding: 24px var(--ui-drawer-gutter);
 }
-.catalog-drawer-body .catalog-filter-form {
+.catalog-drawer-body .catalog-categories + .catalog-filter-form {
   margin-top: 32px;
 }
 @media (max-width: 1023px) {
+  .catalog-category-navigation {
+    display: none;
+  }
   .catalog-layout {
     grid-template-columns: minmax(0, 1fr);
   }
