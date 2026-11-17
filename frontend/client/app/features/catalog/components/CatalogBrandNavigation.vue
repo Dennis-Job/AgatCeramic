@@ -71,6 +71,7 @@ const route = useRoute()
 .catalog-brand-navigation {
   display: flex;
   align-items: baseline;
+  justify-content: center;
   gap: 12px 24px;
   margin-bottom: 32px;
   border-block: 1px solid var(--color-line);
@@ -82,9 +83,10 @@ const route = useRoute()
 }
 .catalog-brand-navigation__alphabet {
   display: flex;
-  flex: 1;
+  flex: 0 1 auto;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 0 12px;
   min-width: 0;
 }
 ul {
@@ -150,9 +152,6 @@ li {
   .catalog-brand-navigation {
     flex-wrap: wrap;
     gap: 0 12px;
-  }
-  .catalog-brand-navigation__alphabet {
-    justify-content: start;
   }
   .catalog-brand-navigation__panel {
     padding: 12px;
