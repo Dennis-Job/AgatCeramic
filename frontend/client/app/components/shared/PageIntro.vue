@@ -129,14 +129,6 @@ p {
     color-mix(in srgb, var(--color-bg) 2%, transparent) 100%
   );
 }
-.page-intro::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(to top, var(--color-bg) 0%, transparent 20%);
-}
 @media (min-width: 1900px) {
   .page-intro__inner {
     min-height: 460px;
