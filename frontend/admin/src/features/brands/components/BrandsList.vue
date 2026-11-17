@@ -5,16 +5,25 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
+import UiSwitch from '../../../components/ui/UiSwitch.vue'
 import { countryName } from '../../../constants/countries'
 import type { Brand } from '../types/brand.types'
 
-defineProps<{
-  brands: Brand[]
-  loading: boolean
-  canManage: boolean
-  search?: string
+withDefaults(
+  defineProps<{
+    brands: Brand[]
+    loading: boolean
+    canManage: boolean
+    search?: string
+    menuPendingIds?: Set<number>
+  }>(),
+  { menuPendingIds: () => new Set<number>(), search: '' },
+)
+const emit = defineEmits<{
+  edit: [brand: Brand]
+  remove: [brand: Brand]
+  catalogMenu: [brand: Brand, visible: boolean]
 }>()
-const emit = defineEmits<{ edit: [brand: Brand]; remove: [brand: Brand] }>()
 </script>
 
 <template>
@@ -56,6 +65,21 @@ const emit = defineEmits<{ edit: [brand: Brand]; remove: [brand: Brand] }>()
                     : 'Страна не указана'
                 }}
               </p>
+              <div class="mt-2 flex items-center gap-2">
+                <UiSwitch
+                  :id="`brand-menu-${brand.id}`"
+                  :checked="brand.show_in_catalog_menu"
+                  :accessible-name="`В алфавитном меню: ${brand.name}`"
+                  :disabled="!canManage"
+                  :busy="menuPendingIds.has(brand.id)"
+                  @update:checked="emit('catalogMenu', brand, $event)"
+                />
+                <label
+                  :for="`brand-menu-${brand.id}`"
+                  class="min-w-0 cursor-pointer [overflow-wrap:anywhere]"
+                  >В алфавитном меню</label
+                >
+              </div>
             </div>
             <div v-if="canManage" class="brand-actions flex gap-1">
               <UiButton
@@ -63,6 +87,7 @@ const emit = defineEmits<{ edit: [brand: Brand]; remove: [brand: Brand] }>()
                 size="sm"
                 tooltip="Редактировать бренд"
                 :aria-label="`Редактировать бренд ${brand.name}`"
+                :disabled="menuPendingIds.has(brand.id)"
                 @click="emit('edit', brand)"
                 ><Pencil :size="17"
               /></UiButton>
@@ -71,6 +96,7 @@ const emit = defineEmits<{ edit: [brand: Brand]; remove: [brand: Brand] }>()
                 size="sm"
                 tooltip="Удалить бренд"
                 :aria-label="`Удалить бренд ${brand.name}`"
+                :disabled="menuPendingIds.has(brand.id)"
                 @click="emit('remove', brand)"
                 ><Trash2 :size="17"
               /></UiButton>

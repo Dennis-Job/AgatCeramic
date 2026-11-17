@@ -24,6 +24,7 @@ class StoreBrandRequest extends FormRequest
             'document_ids.*' => ['integer', 'distinct', Rule::exists('media', 'id')->where('kind', 'document')],
             'country_code' => ['nullable', 'string', 'size:2', 'regex:/^[A-Z]{2}$/'],
             'is_active' => ['sometimes', 'boolean'],
+            'show_in_catalog_menu' => ['sometimes', 'boolean'],
         ];
     }
 }

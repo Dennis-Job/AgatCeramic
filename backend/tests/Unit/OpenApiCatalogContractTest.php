@@ -8,6 +8,21 @@ use Tests\TestCase;
 
 class OpenApiCatalogContractTest extends TestCase
 {
+    public function test_brand_navigation_contract_documents_admin_publication_and_public_projection(): void
+    {
+        $spec = json_decode(file_get_contents(base_path('../docs/openapi.json')), true, 512, JSON_THROW_ON_ERROR);
+        $schemas = $spec['components']['schemas'];
+        self::assertSame('boolean', $schemas['Brand']['properties']['show_in_catalog_menu']['type'] ?? null);
+        self::assertContains('show_in_catalog_menu', $schemas['Brand']['required']);
+        self::assertFalse($schemas['StoreBrandRequest']['properties']['show_in_catalog_menu']['default'] ?? null);
+        self::assertSame('boolean', $schemas['UpdateBrandRequest']['properties']['show_in_catalog_menu']['type'] ?? null);
+        self::assertNotContains('show_in_catalog_menu', $schemas['UpdateBrandRequest']['required'] ?? []);
+        self::assertContains('brand_navigation', $schemas['PublicCatalogCollection']['required']);
+        self::assertSame('#/components/schemas/PublicCatalogBrand', $schemas['PublicCatalogCollection']['properties']['brand_navigation']['items']['$ref']);
+        self::assertSame(['id', 'name', 'slug'], $schemas['PublicCatalogBrand']['required']);
+        self::assertSame(['id', 'name', 'slug'], array_keys($schemas['PublicCatalogBrand']['properties']));
+    }
+
     #[Test]
     public function it_documents_every_catalog_management_route_and_resource_schema(): void
     {

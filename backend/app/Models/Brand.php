@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'slug', 'description', 'country_code', 'logo_id', 'is_active'])]
+#[Fillable(['name', 'slug', 'description', 'country_code', 'logo_id', 'is_active', 'show_in_catalog_menu'])]
 class Brand extends Model
 {
     /** @use HasFactory<BrandFactory> */
@@ -39,6 +39,6 @@ class Brand extends Model
     #[\Override]
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'show_in_catalog_menu' => 'boolean'];
     }
 }

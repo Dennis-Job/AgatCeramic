@@ -3,6 +3,7 @@ import { reactive, ref, watch } from 'vue'
 import { X } from '@lucide/vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiCheckbox from '../../../components/ui/UiCheckbox.vue'
+import UiSwitch from '../../../components/ui/UiSwitch.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
@@ -162,6 +163,29 @@ watch(
             @update:checked="form.is_active = $event"
             >Бренд активен</UiCheckbox
           >
+          <div class="flex items-start gap-3">
+            <UiSwitch
+              id="brand-catalog-menu"
+              :checked="form.show_in_catalog_menu"
+              accessible-name="Показывать в алфавитном меню каталога"
+              aria-describedby="brand-catalog-menu-description"
+              :disabled="busy || mediaUploading"
+              @update:checked="form.show_in_catalog_menu = $event"
+            />
+            <div class="min-w-0 flex-1">
+              <label
+                for="brand-catalog-menu"
+                class="cursor-pointer text-sm font-medium text-gray-500"
+                >Показывать в алфавитном меню каталога</label
+              >
+              <p
+                id="brand-catalog-menu-description"
+                class="mt-1 text-xs text-gray-500"
+              >
+                Включите для брендов, которые нужно показывать под категориями
+              </p>
+            </div>
+          </div>
         </fieldset>
       </div>
       <UiDialogFooter>

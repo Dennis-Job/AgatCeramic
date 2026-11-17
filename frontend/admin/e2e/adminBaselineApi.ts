@@ -90,6 +90,7 @@ export async function mockAdminBaseline(
       logo: null,
       documents: [],
       is_active: true,
+      show_in_catalog_menu: false,
       created_at: timestamp,
       updated_at: timestamp,
     }

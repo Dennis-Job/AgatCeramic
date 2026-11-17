@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v21.0",
+        "version": "v22.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -9676,6 +9676,10 @@
                             "minimum": 1
                         },
                         "uniqueItems": true
+                    },
+                    "show_in_catalog_menu": {
+                        "type": "boolean",
+                        "default": false
                     }
                 },
                 "additionalProperties": false
@@ -9715,6 +9719,10 @@
                             "minimum": 1
                         },
                         "uniqueItems": true
+                    },
+                    "show_in_catalog_menu": {
+                        "type": "boolean",
+                        "description": "Omitting this field preserves the current setting."
                     }
                 },
                 "additionalProperties": false
@@ -11044,7 +11052,8 @@
                     "updated_at",
                     "logo_id",
                     "logo",
-                    "documents"
+                    "documents",
+                    "show_in_catalog_menu"
                 ],
                 "properties": {
                     "id": {
@@ -11108,6 +11117,10 @@
                         "items": {
                             "$ref": "#/components/schemas/Media"
                         }
+                    },
+                    "show_in_catalog_menu": {
+                        "type": "boolean",
+                        "description": "Opt-in alphabet navigation flag. Publication also requires is_active=true."
                     }
                 },
                 "additionalProperties": false
@@ -15075,6 +15088,26 @@
                 ],
                 "additionalProperties": false
             },
+            "PublicCatalogBrand": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug"
+                ],
+                "additionalProperties": false
+            },
             "PublicCatalogCollection": {
                 "type": "object",
                 "properties": {
@@ -15098,13 +15131,21 @@
                     },
                     "filters": {
                         "$ref": "#/components/schemas/PublicCatalogFilters"
+                    },
+                    "brand_navigation": {
+                        "type": "array",
+                        "description": "All active opted-in brands, including those without products, independent of all catalog filters and pagination.",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicCatalogBrand"
+                        }
                     }
                 },
                 "required": [
                     "data",
                     "categories",
                     "links",
-                    "meta"
+                    "meta",
+                    "brand_navigation"
                 ],
                 "additionalProperties": false
             },

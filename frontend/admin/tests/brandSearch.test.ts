@@ -20,6 +20,7 @@ const brand: Brand = {
   logo: null,
   documents: [],
   is_active: true,
+  show_in_catalog_menu: false,
   created_at: '2026-10-14T10:00:00Z',
   updated_at: '2026-10-14T10:00:00Z',
 }

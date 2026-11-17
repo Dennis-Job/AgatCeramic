@@ -125,4 +125,11 @@ class PublicCatalogQuery
     {
         return Category::query()->where('is_active', true)->with('image')->orderBy('sort_order')->orderBy('name')->orderBy('id')->get();
     }
+
+    /** @return Collection<int, Brand> */
+    public function brandNavigation(): Collection
+    {
+        return Brand::query()->where('is_active', true)->where('show_in_catalog_menu', true)
+            ->orderBy('name')->orderBy('id')->get(['id', 'name', 'slug']);
+    }
 }

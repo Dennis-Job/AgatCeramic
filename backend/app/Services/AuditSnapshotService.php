@@ -50,7 +50,7 @@ class AuditSnapshotService
             $entity instanceof User => ['status'],
             $entity instanceof Role => ['name', 'slug', 'description'],
             $entity instanceof ProductCollection => ['brand_id', 'name', 'slug', 'headline', 'description', 'image_id', 'is_active'],
-            $entity instanceof Brand => ['name', 'slug', 'description', 'country_code', 'logo_id', 'is_active'],
+            $entity instanceof Brand => ['name', 'slug', 'description', 'country_code', 'logo_id', 'is_active', 'show_in_catalog_menu'],
             $entity instanceof Category => ['name', 'slug', 'description', 'parent_id', 'image_id', 'is_parent', 'is_active', 'uses_collections', 'sort_order'],
             $entity instanceof AttributeGroup => ['name', 'slug', 'description', 'sort_order'],
             $entity instanceof Attribute => ['name', 'slug', 'attribute_group_id', 'type', 'unit', 'is_filterable', 'is_visible_on_product_page', 'sort_order'],

@@ -143,6 +143,28 @@ export function handleCatalog(request, response, url, scenario) {
   return send({
     data: products.slice((page - 1) * 24, page * 24),
     categories,
+    brand_navigation:
+      scenario === 'standalone-brand-menu'
+        ? [
+            { id: 101, name: '41zero42', slug: '41zero42' },
+            { id: 102, name: '9Cento', slug: '9cento' },
+            { id: 103, name: 'Атлас', slug: 'atlas-ru' },
+            { id: 104, name: 'Ёлка', slug: 'elka' },
+            { id: 105, name: 'Ясень', slug: 'yasen' },
+            { id: 106, name: 'Équipe', slug: 'equipe' },
+            { id: 107, name: '  «Atlas»', slug: 'atlas' },
+            ...Array.from({ length: 32 }, (_, index) => ({
+              id: 200 + index,
+              name:
+                index === 0
+                  ? 'Atelier с очень длинным названием производителя керамической плитки'
+                  : `Atelier ${String(index).padStart(2, '0')}`,
+              slug: `atelier-${index}`,
+            })),
+          ]
+        : scenario === 'standalone-brand-menu-latin'
+          ? [{ id: 107, name: 'Beta', slug: 'beta' }]
+          : [],
     meta: {
       current_page: page,
       last_page: Math.max(1, Math.ceil(products.length / 24)),

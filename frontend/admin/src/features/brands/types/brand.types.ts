@@ -10,6 +10,7 @@ export type Brand = {
   logo: Media | null
   documents: Media[]
   is_active: boolean
+  show_in_catalog_menu: boolean
   created_at: string
   updated_at: string
 }

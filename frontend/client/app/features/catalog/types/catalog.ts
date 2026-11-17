@@ -22,6 +22,12 @@ export interface CatalogFilters {
 export interface StandaloneCatalog extends CatalogResult {
   categories: (CatalogCategory & { parent_id?: number | null })[]
   filters: CatalogFilters
+  brand_navigation: CatalogBrand[]
+}
+export interface CatalogBrand {
+  id: number
+  name: string
+  slug: string
 }
 export interface CatalogDraft {
   category: string

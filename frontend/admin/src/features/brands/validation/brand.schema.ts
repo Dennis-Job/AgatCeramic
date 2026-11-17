@@ -8,6 +8,7 @@ export function emptyBrand(): BrandPayload {
     logo_id: null,
     document_ids: [],
     is_active: true,
+    show_in_catalog_menu: false,
   }
 }
 export function validateBrand(payload: BrandPayload): string {

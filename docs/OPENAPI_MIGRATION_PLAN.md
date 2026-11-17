@@ -1,5 +1,31 @@
 # OpenAPI migration plan — version history
 
+## v22.0 — selected brands in catalog alphabet navigation
+
+Date: 2026-11-17. Admin brand create/update requests accept the optional boolean
+`show_in_catalog_menu`; it defaults to false, and omitting it on update preserves
+the current setting. All Brand responses include the flag. Public `GET /catalog`
+always includes `brand_navigation: [{id, name, slug}]`, selected only from active
+opted-in brands, independent of category, filters, pagination or product presence.
+Existing brand filters and product publication rules remain unchanged.
+
+### Breaking change
+
+Routes remain `/api/v1`. Previous Brand and PublicCatalogCollection schemas
+rejected additional response properties. Strict consumers must accept the new
+Brand property, including nested brands in admin product, relation and collection
+responses, and the catalog `brand_navigation` array before backend deployment.
+Deploy Admin and Client mappings together with the backend; Client treats an
+absent navigation array from an older backend as empty during rollout.
+
+Apply only the additive migration
+`2026_11_17_000001_add_show_in_catalog_menu_to_brands` before serving the new
+backend. Existing brands receive false and are never selected automatically;
+staff opt them in through the existing catalog-management form and audit flow.
+Rollback application code together first and retain the column to preserve staff
+selections. Migration down removes only this new column and discards its choices;
+it is unnecessary for an application rollback. No product data is converted.
+
 ## v21.0 — independent catalog filters and category navigation
 
 Date: 2026-11-11. `GET /catalog` adds category `parent_id` and opt-in

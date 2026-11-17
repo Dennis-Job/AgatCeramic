@@ -7,6 +7,7 @@ import UiDialog from '~/components/ui/UiDialog.vue'
 import UiSelect from '~/components/ui/UiSelect.vue'
 import ProductCardList from '~/features/product/components/ProductCardList.vue'
 import CatalogCategories from './CatalogCategories.vue'
+import CatalogBrandNavigation from './CatalogBrandNavigation.vue'
 import CatalogFilterForm from './CatalogFilterForm.vue'
 import { useCatalog } from '../composables/useCatalog'
 import { useStickyCatalogNavigation } from '../composables/useStickyCatalogNavigation'
@@ -221,6 +222,10 @@ if (!props.preview) {
           :path="route.path"
         />
       </div>
+      <CatalogBrandNavigation
+        :brands="catalog?.brand_navigation || []"
+        :path="route.path"
+      />
       <div class="catalog-layout">
         <aside class="catalog-sidebar" aria-label="Фильтры каталога">
           <h2 class="catalog-sidebar__title">Фильтры</h2>

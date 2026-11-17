@@ -41,6 +41,7 @@ class AuditLabels
         'article_number' => 'Артикул', 'barcode' => 'Штрихкод', 'description' => 'Описание',
         'price' => 'Цена', 'old_price' => 'Старая цена', 'stock_quantity' => 'Остаток', 'unit' => 'Единица измерения',
         'is_active' => 'Активность', 'is_on_sale' => 'Распродажа', 'category_id' => 'Категория (ID)', 'brand_id' => 'Бренд (ID)',
+        'show_in_catalog_menu' => 'Показывать в алфавитном меню каталога',
         'collection_id' => 'Коллекция (ID)', 'headline' => 'Заголовок', 'uses_collections' => 'Использует коллекции',
         'parent_id' => 'Родительская категория (ID)', 'is_parent' => 'Родительская категория',
         'image_id' => 'Изображение (ID)', 'logo_id' => 'Логотип (ID)', 'country_code' => 'Страна', 'documents' => 'Документы',

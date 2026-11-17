@@ -18,6 +18,7 @@ export async function fetchStandaloneCatalog(
   return {
     ...response,
     categories: response.categories,
+    brand_navigation: response.brand_navigation || [],
     filters: response.filters || {
       brands: [],
       collections: [],

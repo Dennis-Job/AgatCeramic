@@ -32,6 +32,7 @@ export function useBrandForm(
           logo_id: brand.logo_id,
           document_ids: brand.documents.map((item) => item.id),
           is_active: brand.is_active,
+          show_in_catalog_menu: brand.show_in_catalog_menu,
         }
       : emptyBrand()
     open.value = true

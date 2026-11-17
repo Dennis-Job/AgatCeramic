@@ -31,6 +31,7 @@ export const brand = {
   documents: [],
   country_code: 'RU',
   is_active: true,
+  show_in_catalog_menu: false,
   created_at: now,
   updated_at: now,
 }

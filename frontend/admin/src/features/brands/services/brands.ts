@@ -32,9 +32,9 @@ export async function getBrands(
 export async function getAllBrands(): Promise<Brand[]> {
   return loadAllPages(getBrands)
 }
-export async function saveBrand(
+async function persistBrand(
   id: number | null,
-  payload: BrandPayload,
+  payload: Partial<BrandPayload>,
 ): Promise<Brand> {
   await requestCsrfCookie()
   const response = await apiFetch(
@@ -47,6 +47,18 @@ export async function saveBrand(
   )
   if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Brand }).data
+}
+export function saveBrand(
+  id: number | null,
+  payload: BrandPayload,
+): Promise<Brand> {
+  return persistBrand(id, payload)
+}
+export function updateBrandCatalogMenu(
+  id: number,
+  visible: boolean,
+): Promise<Brand> {
+  return persistBrand(id, { show_in_catalog_menu: visible })
 }
 export async function deleteBrand(id: number): Promise<void> {
   await requestCsrfCookie()
