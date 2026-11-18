@@ -13,6 +13,8 @@ defineProps<{
   busy?: boolean
   pending?: boolean
   error?: string
+  hideBrand?: boolean
+  scoped?: boolean
 }>()
 const model = defineModel<CatalogDraft>({ required: true })
 defineEmits<{ apply: []; reset: []; retry: [] }>()
@@ -37,6 +39,7 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
       :disabled="busy || pending || !!error"
     >
       <UiSelect
+        v-if="!hideBrand"
         v-model="model.brand"
         label="Бренд"
         :options="[
@@ -86,9 +89,9 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
       />
       <div class="catalog-filter-form__actions">
         <UiButton type="submit" :disabled="busy">Применить</UiButton>
-        <UiButton variant="outline" :disabled="busy" @click="$emit('reset')"
-          >Сбросить всё</UiButton
-        >
+        <UiButton variant="outline" :disabled="busy" @click="$emit('reset')">{{
+          scoped ? 'Сбросить фильтры' : 'Сбросить всё'
+        }}</UiButton>
       </div>
     </fieldset>
   </form>

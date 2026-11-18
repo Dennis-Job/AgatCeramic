@@ -8,6 +8,18 @@ use Tests\TestCase;
 
 class OpenApiCatalogContractTest extends TestCase
 {
+    public function test_category_navigation_contract_documents_brand_scope_and_counts(): void
+    {
+        $spec = json_decode(file_get_contents(base_path('../docs/openapi.json')), true, 512, JSON_THROW_ON_ERROR);
+        $schemas = $spec['components']['schemas'];
+        self::assertContains('category_navigation', $schemas['PublicCatalogCollection']['required']);
+        self::assertSame('#/components/schemas/PublicCatalogNavigation', $schemas['PublicCatalogCollection']['properties']['category_navigation']['$ref']);
+        self::assertSame(['brand', 'total', 'categories'], $schemas['PublicCatalogNavigation']['required']);
+        self::assertSame('#/components/schemas/PublicCatalogNavigationCategory', $schemas['PublicCatalogNavigation']['properties']['categories']['items']['$ref']);
+        self::assertSame(0, $schemas['PublicCatalogNavigationCategory']['properties']['product_count']['minimum']);
+        self::assertContains('product_count', $schemas['PublicCatalogNavigationCategory']['required']);
+    }
+
     public function test_brand_navigation_contract_documents_admin_publication_and_public_projection(): void
     {
         $spec = json_decode(file_get_contents(base_path('../docs/openapi.json')), true, 512, JSON_THROW_ON_ERROR);

@@ -25,9 +25,12 @@ function escapeXml(value: string): string {
   )
 }
 
-function productPagePath(slug: string): string | null {
+function catalogEntryPath(
+  resource: 'catalog' | 'brands',
+  slug: string,
+): string | null {
   if (slug.length > 255 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null
-  return `/products/${slug}`
+  return `${resource === 'brands' ? '/brand/' : '/products/'}${slug}`
 }
 
 export default defineEventHandler(async (event) => {
@@ -40,7 +43,7 @@ export default defineEventHandler(async (event) => {
     )
     const base = config.apiBaseInternal || config.public.apiBase
     const entries = new Map<string, string>()
-    for (const resource of ['pages', 'catalog'] as const) {
+    for (const resource of ['pages', 'catalog', 'brands'] as const) {
       const endpoint = new URL(
         resource,
         base.endsWith('/') ? base : `${base}/`,
@@ -68,7 +71,7 @@ export default defineEventHandler(async (event) => {
           const path =
             resource === 'pages'
               ? contentPagePath(entry.slug)
-              : productPagePath(entry.slug)
+              : catalogEntryPath(resource, entry.slug)
           if (!path || (resource === 'pages' && entry.is_indexable === false))
             continue
           const url = new URL(path, origin).toString()

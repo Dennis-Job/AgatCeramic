@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\BannerController;
+use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CallbackRequestController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
@@ -41,6 +42,8 @@ Route::get('site-settings', [SiteSettingController::class, 'show'])->name('site-
 Route::get('home-page', [HomePageController::class, 'show'])->name('home-page.show');
 Route::get('site-appearance', [SiteAppearanceController::class, 'show'])->name('site-appearance.show');
 Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
+Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
+Route::get('brands/{slug}', [BrandController::class, 'show'])->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')->name('brands.show');
 Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 Route::get('banners', [BannerController::class, 'index'])->name('banners.index');

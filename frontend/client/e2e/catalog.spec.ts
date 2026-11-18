@@ -26,7 +26,7 @@ test('standalone SSR catalog survives missing and failed CMS, and absent catalog
 test('filter drafts commit to URL, scoped characteristics reset and history restores', async ({
   page,
 }) => {
-  await page.goto('/catalog?category=tile&brand=atlas&collection=Stone')
+  await page.goto('/catalog?category=tile')
   const filters = page.getByRole('complementary', { name: 'Фильтры каталога' })
   await expect(
     filters.getByText('Морозостойкость', { exact: true }),
@@ -178,7 +178,7 @@ test('malformed nested and repeated query values show a recoverable error', asyn
     await page.goto('/catalog?' + query)
     await expect(page.getByRole('alert')).toContainText('Проверьте фильтры')
     await page
-      .getByRole('button', { name: 'Сбросить всё', exact: true })
+      .getByRole('button', { name: /^Сбросить (всё|фильтры)$/ })
       .first()
       .click()
     await expect(page.locator('.product-card')).toHaveCount(24)
@@ -189,8 +189,10 @@ test('malformed nested and repeated query values show a recoverable error', asyn
 test('draft brand changes clear incompatible collections and restore applied choices', async ({
   page,
 }) => {
-  await page.goto('/catalog?brand=atlas&collection=Stone')
+  await page.goto('/catalog?category=tile')
   const form = page.getByRole('complementary')
+  await form.getByLabel('Бренд', { exact: true }).selectOption('atlas')
+  await form.getByLabel('Коллекция', { exact: true }).selectOption('Stone')
   await form.getByLabel('Бренд', { exact: true }).selectOption('empty')
   await expect(form.getByLabel('Коллекция', { exact: true })).toHaveValue('')
   await form.getByLabel('Бренд', { exact: true }).selectOption('atlas')
@@ -239,11 +241,13 @@ test('reset retains sorting; applied chips describe selected values and bounds',
     }),
   ).toBeVisible()
   await page
-    .getByRole('button', { name: 'Сбросить всё', exact: true })
+    .getByRole('button', { name: 'Сбросить фильтры', exact: true })
     .last()
     .click()
+  await expect(page).toHaveURL(/category=tile/)
+  await expect(page).not.toHaveURL(/attributes=/)
+  await page.getByRole('link', { name: 'Весь каталог', exact: true }).click()
   await expect(page).toHaveURL(/\/catalog\?sort=price_desc#catalog-products$/)
-  expect(page.url()).not.toContain('attributes=')
   expect(page.url()).not.toContain('category=')
 })
 
@@ -344,7 +348,7 @@ test('all characteristic input types serialize exact selected values including z
 test('an old collection lookup cannot replace metadata after category navigation', async ({
   page,
 }) => {
-  await page.goto('/catalog?category=tile&brand=atlas')
+  await page.goto('/catalog?category=tile')
   let release: () => void = () => {}
   const gate = new Promise<void>((resolve) => (release = resolve))
   let started: () => void = () => {}
@@ -382,12 +386,8 @@ test('an old collection lookup cannot replace metadata after category navigation
     .getByRole('navigation', { name: 'Категории каталога' })
     .getByRole('link', { name: 'Мозаика', exact: true })
     .click()
-  await expect(form.getByLabel('Бренд', { exact: true })).toHaveValue('atlas')
-  await expect(
-    form
-      .getByLabel('Коллекция', { exact: true })
-      .getByRole('option', { name: 'Stone', exact: true }),
-  ).toHaveCount(1)
+  await expect(form.getByLabel('Бренд', { exact: true })).toHaveValue('')
+  await expect(form.getByLabel('Коллекция', { exact: true })).toBeDisabled()
   release()
   await page.waitForTimeout(150)
   await expect(

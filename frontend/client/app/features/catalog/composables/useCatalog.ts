@@ -1,5 +1,6 @@
 import { fetchStandaloneCatalog } from '../services/catalog'
 import { useCatalogDraftFilters } from './useCatalogDraftFilters'
+import { catalogLocation } from '../utils/catalogLocation'
 import type {
   AttributeFilter,
   CatalogDraft,
@@ -62,11 +63,19 @@ function draftFrom(query: CatalogQuery): CatalogDraft {
 
 export function useCatalog() {
   const route = useRoute()
+  const routeBrand = computed(() =>
+    route.path.startsWith('/brand/') && typeof route.params.slug === 'string'
+      ? route.params.slug
+      : '',
+  )
   const { requestBase, publicBase } = usePublicApiConfig()
   const query = computed<CatalogQuery>(() =>
     Object.fromEntries(
       keys.flatMap((key) => {
-        const value = route.query[key]
+        const value =
+          key === 'brand' && routeBrand.value
+            ? routeBrand.value
+            : route.query[key]
         return typeof value === 'string' && value !== '' ? [[key, value]] : []
       }),
     ),
@@ -106,7 +115,13 @@ export function useCatalog() {
     syncingDraft = false
   })
   function navigate(value: CatalogQuery, hash = '#catalog-products') {
-    return navigateTo({ path: route.path, query: value, hash })
+    const changingBrand =
+      value.brand &&
+      value.brand !== routeBrand.value &&
+      !route.path.startsWith('/preview/')
+    return navigateTo(
+      catalogLocation(route.path, value, changingBrand ? '' : hash),
+    )
   }
   function apply() {
     const value: CatalogQuery = {}
@@ -150,7 +165,10 @@ export function useCatalog() {
     } else {
       delete value[key]
       if (key === 'brand') delete value.collection
-      if (key === 'category') delete value.attributes
+      if (key === 'category') {
+        delete value.attributes
+        delete value.collection
+      }
     }
     return navigate(value)
   }
@@ -161,15 +179,25 @@ export function useCatalog() {
     else next.sort = value
     return navigate(next)
   }
-  function clearDraft() {
+  function clearDraft(scope: CatalogQuery = {}) {
     draftChoices.clear()
     syncingDraft = true
-    draft.value = draftFrom({})
+    draft.value = draftFrom(scope)
     syncingDraft = false
   }
   function resetDraft() {
-    clearDraft()
+    clearDraft({ category: draft.value.category, brand: draft.value.brand })
     void draftChoices.refresh()
+  }
+  function resetFilters() {
+    const target: CatalogQuery = {}
+    for (const key of ['category', 'brand', 'sort'] as const)
+      if (query.value[key]) target[key] = query.value[key]
+    clearDraft(target)
+    return navigate(target)
+  }
+  function restoreDraft() {
+    clearDraft(query.value)
   }
   function reset() {
     const target: CatalogQuery = query.value.sort
@@ -185,6 +213,7 @@ export function useCatalog() {
     draft,
     collections: draftChoices.collections,
     draftFilters: draftChoices.filters,
+    draftNavigation: draftChoices.navigation,
     draftFiltersPending: draftChoices.pending,
     draftFiltersError: draftChoices.error,
     refreshDraftFilters: () => draftChoices.refresh(true),
@@ -192,17 +221,19 @@ export function useCatalog() {
       draft.value.category = category
     },
     resetDraft,
+    restoreDraft,
     apply,
     remove,
     sort,
     reset,
-    pageLink: (page: number) => ({
-      path: route.path,
-      query: {
-        ...query.value,
-        ...(page > 1 ? { page: String(page) } : { page: undefined }),
-      },
-      hash: '#catalog-products',
-    }),
+    resetFilters,
+    pageLink: (page: number) => {
+      const next = { ...query.value }
+      delete next.page
+      return catalogLocation(route.path, {
+        ...next,
+        ...(page > 1 ? { page: String(page) } : {}),
+      })
+    },
   }
 }

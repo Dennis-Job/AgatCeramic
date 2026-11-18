@@ -46,7 +46,7 @@ test('narrow screens show vertical categories inside filters and preserve URLs',
 }, testInfo) => {
   for (const width of [320, 640, 768, 1023]) {
     await page.setViewportSize({ width, height: 900 })
-    await page.goto('/catalog?brand=atlas&price_from=100&page=2')
+    await page.goto('/brand/atlas?price_from=100&page=2')
     await expect(page.locator('.catalog-category-navigation')).toBeHidden()
     const opener = page.getByRole('button', { name: 'Фильтры', exact: true })
     await opener.click()
@@ -66,7 +66,8 @@ test('narrow screens show vertical categories inside filters and preserve URLs',
     await expect(drawer.getByText('Цвет', { exact: true })).toBeVisible()
     await drawer.getByRole('button', { name: 'Применить', exact: true }).click()
     await expect(page).toHaveURL(/category=tile/)
-    expect(page.url()).toContain('brand=atlas')
+    expect(new URL(page.url()).pathname).toBe('/brand/atlas')
+    expect(page.url()).not.toContain('brand=')
     expect(page.url()).toContain('price_from=100')
     expect(page.url()).not.toContain('page=2')
     await expect(drawer).toHaveCount(0)

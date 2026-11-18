@@ -65,7 +65,7 @@ test('plumbing discloses all children and only Apply commits category and filter
 test('disclosure Escape returns to parent; closing and resetting drafts do not change results', async ({
   page,
 }) => {
-  await page.goto('/catalog?category=tile&brand=atlas&price_from=120')
+  await page.goto('/catalog?category=tile&price_from=120')
   const original = page.url()
   const opener = page.getByRole('button', { name: 'Фильтры', exact: true })
   await opener.click()
@@ -85,12 +85,12 @@ test('disclosure Escape returns to parent; closing and resetting drafts do not c
   await expect(drawer.getByLabel('Акрил', { exact: true })).toBeVisible()
   await expect(drawer.getByText('Цвет', { exact: true })).toHaveCount(0)
   await drawer
-    .getByRole('button', { name: 'Сбросить всё', exact: true })
+    .getByRole('button', { name: 'Сбросить фильтры', exact: true })
     .click()
   await expect(drawer).toBeVisible()
   expect(page.url()).toBe(original)
   await expect(
-    drawer.getByRole('button', { name: 'Все товары', exact: true }),
+    drawer.getByRole('button', { name: 'Ванны', exact: true }),
   ).toHaveAttribute('aria-current', 'true')
   await drawer.getByRole('button', { name: 'Закрыть', exact: true }).click()
   await expect(drawer).toHaveCount(0)

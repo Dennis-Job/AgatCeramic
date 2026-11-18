@@ -7,6 +7,7 @@ const props = defineProps<{
   slug: string
   description?: string
   image?: PageIntroImage | null
+  variant?: 'brand'
 }>()
 const standard = computed(() => defaultPageIntro(props.slug, props.description))
 const failed = ref<string[]>([])
@@ -14,6 +15,7 @@ const imageElement = ref<HTMLImageElement | null>(null)
 const source = computed(() => {
   const custom = props.image?.imageUrl
   if (custom && !failed.value.includes(custom)) return custom
+  if (props.variant === 'brand') return ''
   return failed.value.includes(standard.value.imageUrl)
     ? ''
     : standard.value.imageUrl
@@ -22,6 +24,9 @@ const alt = computed(() =>
   source.value === props.image?.imageUrl
     ? props.image.imageAlt
     : standard.value.imageAlt,
+)
+const description = computed(() =>
+  props.variant === 'brand' ? props.description : standard.value.description,
 )
 watch(
   () => [props.slug, props.image?.imageUrl],
@@ -47,9 +52,13 @@ watch(source, async () => {
 </script>
 
 <template>
-  <section class="page-intro" aria-label="Вступление страницы">
+  <section
+    class="page-intro"
+    :class="{ 'page-intro--brand': variant === 'brand' }"
+    aria-label="Вступление страницы"
+  >
     <img
-      v-if="source"
+      v-if="source && variant !== 'brand'"
       ref="imageElement"
       :key="source"
       class="page-intro__image"
@@ -61,13 +70,30 @@ watch(source, async () => {
       decoding="async"
       @error="onImageError"
     />
-    <div class="page-intro__veil" aria-hidden="true" />
+    <div
+      v-if="variant !== 'brand'"
+      class="page-intro__veil"
+      aria-hidden="true"
+    />
     <div class="container page-intro__inner">
       <div class="page-intro__copy">
         <NuxtLink to="/" class="eyebrow">AgatCeramic</NuxtLink>
         <h1>{{ title }}</h1>
-        <p v-if="standard.description">{{ standard.description }}</p>
+        <p v-if="description">{{ description }}</p>
       </div>
+      <img
+        v-if="source && variant === 'brand'"
+        ref="imageElement"
+        :key="source"
+        class="page-intro__brand-image"
+        :src="source"
+        :alt="alt"
+        width="600"
+        height="400"
+        fetchpriority="high"
+        decoding="async"
+        @error="onImageError"
+      />
     </div>
   </section>
 </template>
@@ -86,6 +112,25 @@ watch(source, async () => {
   display: flex;
   align-items: center;
   min-height: clamp(340px, 31vw, 440px);
+}
+.page-intro--brand .page-intro__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 48px;
+}
+.page-intro--brand .page-intro__copy {
+  width: 100%;
+}
+.page-intro--brand p {
+  max-width: 570px;
+  white-space: pre-line;
+}
+.page-intro__brand-image {
+  width: 100%;
+  height: 280px;
+  min-width: 0;
+  object-fit: contain;
+  align-self: center;
 }
 .page-intro__copy {
   width: min(100%, 570px);
@@ -150,6 +195,18 @@ p {
   }
 }
 @media (max-width: 760px) {
+  .page-intro--brand .page-intro__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .page-intro--brand .page-intro__copy {
+    max-width: none;
+    padding-block: 40px 24px;
+  }
+  .page-intro__brand-image {
+    height: 180px;
+    margin-bottom: 32px;
+  }
   .page-intro__inner {
     min-height: 330px;
     align-items: flex-start;

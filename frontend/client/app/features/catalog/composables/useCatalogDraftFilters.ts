@@ -4,6 +4,7 @@ import type {
   CatalogDraft,
   CatalogFilters,
   CatalogQuery,
+  CatalogNavigation,
   StandaloneCatalog,
 } from '../types/catalog'
 
@@ -17,9 +18,11 @@ export function useCatalogDraftFilters(
   const { requestBase, publicBase } = usePublicApiConfig()
   const pending = ref(false)
   const error = ref('')
-  const choices = shallowRef<{ scope: string; filters: CatalogFilters } | null>(
-    null,
-  )
+  const choices = shallowRef<{
+    scope: string
+    filters: CatalogFilters
+    navigation?: CatalogNavigation
+  } | null>(null)
   let controller: AbortController | undefined
   const scope = () => JSON.stringify([draft.value.category, draft.value.brand])
   const appliedScope = () =>
@@ -37,6 +40,12 @@ export function useCatalogDraftFilters(
   const collections = computed(() =>
     draft.value.brand ? filters.value.collections : [],
   )
+  const navigation = computed(() => {
+    if (choices.value?.scope === scope()) return choices.value.navigation
+    if (draft.value.brand === (query.value.brand || ''))
+      return catalog.value?.category_navigation
+    return undefined
+  })
 
   function clear() {
     controller?.abort()
@@ -64,7 +73,11 @@ export function useCatalogDraftFilters(
         lookup.signal,
       )
       if (!lookup.signal.aborted && requestScope === scope())
-        choices.value = { scope: requestScope, filters: response.filters }
+        choices.value = {
+          scope: requestScope,
+          filters: response.filters,
+          navigation: response.category_navigation,
+        }
     } catch {
       if (!lookup.signal.aborted && requestScope === scope())
         error.value = 'Не удалось загрузить фильтры. Повторите попытку.'
@@ -94,5 +107,5 @@ export function useCatalogDraftFilters(
     },
   )
   onScopeDispose(clear)
-  return { filters, collections, pending, error, clear, refresh }
+  return { filters, collections, navigation, pending, error, clear, refresh }
 }

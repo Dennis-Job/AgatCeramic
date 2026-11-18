@@ -20,9 +20,19 @@ export interface CatalogFilters {
   attributes: CatalogAttribute[]
 }
 export interface StandaloneCatalog extends CatalogResult {
-  categories: (CatalogCategory & { parent_id?: number | null })[]
+  categories: CatalogNavigationCategory[]
   filters: CatalogFilters
   brand_navigation: CatalogBrand[]
+  category_navigation?: CatalogNavigation
+}
+export interface CatalogNavigationCategory extends CatalogCategory {
+  parent_id?: number | null
+  product_count?: number
+}
+export interface CatalogNavigation {
+  brand: CatalogBrand | null
+  total: number
+  categories: CatalogNavigationCategory[]
 }
 export interface CatalogBrand {
   id: number

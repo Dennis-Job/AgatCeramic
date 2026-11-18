@@ -1,5 +1,25 @@
 # DONE
 
+2026-11-18 — TASK-120: по уточнению владельца прежний референс заменён
+ЧПУ страницами `/brand/<slug>`. Имя, description и contain-изображение бренда
+показаны в PageIntro; алфавит одинаковый с каталогом, категории центрированы,
+верхний отступ 55 px. Legacy 301, SSR/SEO/sitemap, active-only brand choices,
+null/error/retry и mobile Apply/cancel. Миграций и коммита нет.
+75 Client E2E PASS; backend 859 PASS / 8 SKIP, PostgreSQL 43 PASS;
+typecheck/format/build/Pint/PHPStan/architecture/OpenAPI PASS, UI Guard выполнен.
+Composer audit: прежний low Laravel advisory, зависимости не менялись.
+[Файлы, проверки и ограничения](../docs/BRAND_PAGES_2026-11-18.md).
+
+2026-11-17 — TASK-120: реализован выбранный первый вариант каталога бренда.
+Алфавит сверху, категории бренда со стабильными счётчиками, независимое снятие
+бренда/категории, понятные «Все товары бренда»/«Весь каталог», scoped reset,
+отмена mobile draft и общий preview. OpenAPI v23.0; миграций нет.
+44 Client E2E PASS, backend 852 PASS / 8 SKIP, PostgreSQL 43 PASS и финальный
+набор 5 PASS; typecheck/format/build/Pint/PHPStan/architecture/OpenAPI PASS.
+Независимый UI Design Guard выполнен, P2 исправлены RED → GREEN.
+Composer audit недоступен: Packagist timeout. Коммита нет.
+[Файлы, проверки и ограничения](../docs/CATALOG_BRAND_SCOPE_2026-11-17.md).
+
 2026-11-17 — Уточнение TASK-120: подпись и буквы алфавитного меню собраны
 компактной группой по центру вместо space-between. Полная ширина dropdown
 сохранена; центрированный перенос на узких экранах. Client typecheck,

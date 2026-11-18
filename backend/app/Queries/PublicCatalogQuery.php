@@ -102,7 +102,7 @@ class PublicCatalogQuery
     public function filters(array $filters): array
     {
         $scope = $this->scope($filters);
-        $brands = Brand::query()->whereIn('id', (clone $scope)->select('brand_id'))->orderBy('name')->orderBy('id')->get(['id', 'name', 'slug']);
+        $brands = Brand::query()->where('is_active', true)->whereIn('id', (clone $scope)->select('brand_id'))->orderBy('name')->orderBy('id')->get(['id', 'name', 'slug']);
         $collections = ProductCollection::query()->where('is_active', true)->whereIn('id', (clone $scope)->select('collection_id'))
             ->whereHas('brand', fn ($brand) => $brand->where('slug', $filters['brand'] ?? null))
             ->with('brand')->orderBy('name')->orderBy('id')->get();

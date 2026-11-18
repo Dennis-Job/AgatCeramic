@@ -2,12 +2,15 @@
 import type { StandaloneCatalog, CatalogQuery } from '../types/catalog'
 import CatalogCategoryBranch from './CatalogCategoryBranch.vue'
 import { buildCategoryTree, flattenCategoryTree } from '../utils/categoryTree'
+import { catalogLocation } from '../utils/catalogLocation'
 
 const props = defineProps<{
   categories: StandaloneCatalog['categories']
   query: CatalogQuery
   path: string
   vertical?: boolean
+  brand?: string
+  total?: number
 }>()
 defineEmits<{ navigate: []; select: [category: string] }>()
 const tree = computed(() => buildCategoryTree(props.categories))
@@ -16,9 +19,10 @@ function link(category?: string) {
   const query = { ...props.query }
   delete query.page
   delete query.attributes
+  delete query.collection
   if (category) query.category = category
   else delete query.category
-  return { path: props.path, query, hash: '#catalog-products' }
+  return catalogLocation(props.path, query)
 }
 </script>
 
@@ -31,7 +35,7 @@ function link(category?: string) {
     }"
     aria-label="Категории каталога"
   >
-    <h2 v-if="vertical">Категории</h2>
+    <h2 v-if="vertical">{{ brand ? 'Категории бренда' : 'Категории' }}</h2>
     <ul v-if="vertical" class="catalog-categories__tree">
       <li class="ui-drawer-navigation__item">
         <button
@@ -39,12 +43,13 @@ function link(category?: string) {
           class="ui-drawer-navigation__link"
           :class="{ 'ui-drawer-navigation__link--current': !query.category }"
           :aria-current="!query.category ? 'true' : undefined"
+          :aria-label="brand ? 'Все товары бренда' : 'Все товары'"
           @click="$emit('select', '')"
         >
-          <span>Все товары</span>
-          <span class="ui-drawer-navigation__number" aria-hidden="true"
-            >01</span
-          >
+          <span>{{ brand ? 'Все товары бренда' : 'Все товары' }}</span>
+          <span class="ui-drawer-navigation__number" aria-hidden="true">{{
+            brand ? total : '01'
+          }}</span>
         </button>
       </li>
       <CatalogCategoryBranch
@@ -53,6 +58,7 @@ function link(category?: string) {
         :node="node"
         :number="index + 2"
         :selected="query.category"
+        :show-counts="!!brand"
         @select="$emit('select', $event)"
       />
     </ul>
@@ -61,16 +67,35 @@ function link(category?: string) {
         <NuxtLink
           :to="link()"
           :aria-current="!query.category ? 'page' : undefined"
+          :aria-label="brand ? 'Все товары бренда' : 'Все товары'"
           @click="$emit('navigate')"
-          ><span>Все товары</span></NuxtLink
+          ><span>{{ brand ? 'Все товары бренда' : 'Все товары' }}</span
+          ><span
+            v-if="brand && total !== undefined"
+            class="catalog-categories__count"
+            aria-hidden="true"
+            >{{ total }}</span
+          ></NuxtLink
         >
       </li>
       <li v-for="category in entries" :key="category.id">
         <NuxtLink
           :to="link(category.slug)"
           :aria-current="query.category === category.slug ? 'page' : undefined"
+          :aria-label="category.name"
+          :aria-description="
+            brand && category.product_count !== undefined
+              ? `Товаров в категории: ${category.product_count}`
+              : undefined
+          "
           @click="$emit('navigate')"
-          ><span>{{ category.name }}</span></NuxtLink
+          ><span>{{ category.name }}</span
+          ><span
+            v-if="brand && category.product_count !== undefined"
+            class="catalog-categories__count"
+            aria-hidden="true"
+            >{{ category.product_count }}</span
+          ></NuxtLink
         >
       </li>
     </ul>
@@ -105,6 +130,10 @@ a {
   font-size: 13px;
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+.catalog-categories__count {
+  margin-left: 8px;
+  color: var(--color-muted);
 }
 a[aria-current],
 a:hover {

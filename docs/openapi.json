@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v22.0",
+        "version": "v23.1",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -249,6 +249,57 @@
                     "422": {
                         "$ref": "#/components/responses/ValidationFailed"
                     }
+                }
+            }
+        },
+        "/brands": {
+            "get": {
+                "operationId": "listPublicBrands",
+                "summary": "List active public brands",
+                "description": "All active brands, including brands without products or alphabet-menu publication. Stable name/id order, 25 brands per page. Private media and administrative metadata are not exposed.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {"type": "integer", "minimum": 1}
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated active brands",
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/PublicBrandCollection"}
+                            }
+                        }
+                    },
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            }
+        },
+        "/brands/{slug}": {
+            "parameters": [
+                {
+                    "name": "slug",
+                    "in": "path",
+                    "required": true,
+                    "schema": {"type": "string", "maxLength": 255, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+                }
+            ],
+            "get": {
+                "operationId": "getPublicBrand",
+                "summary": "Get an active brand by slug",
+                "description": "Uses the existing brand name, description and public logo image. The alphabet-menu flag and product presence do not restrict the page. Missing or inactive brands return 404.",
+                "responses": {
+                    "200": {
+                        "description": "Public brand profile",
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/PublicBrandResponse"}
+                            }
+                        }
+                    },
+                    "404": {"$ref": "#/components/responses/NotFound"}
                 }
             }
         },
@@ -15108,6 +15159,88 @@
                 ],
                 "additionalProperties": false
             },
+            "PublicBrand": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "slug": {"type": "string"},
+                    "description": {"type": ["string", "null"]},
+                    "logo_url": {
+                        "type": ["string", "null"],
+                        "format": "uri-reference",
+                        "description": "Existing brand logo, only when stored as a public image with an image MIME type. No private storage URL is exposed."
+                    },
+                    "logo_alt": {"type": "string", "description": "Public image alt, falling back to the brand name. Without a public image only the brand name is returned."}
+                },
+                "required": ["id", "name", "slug", "description", "logo_url", "logo_alt"],
+                "additionalProperties": false
+            },
+            "PublicBrandResponse": {
+                "type": "object",
+                "properties": {"data": {"$ref": "#/components/schemas/PublicBrand"}},
+                "required": ["data"],
+                "additionalProperties": false
+            },
+            "PublicBrandCollection": {
+                "type": "object",
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/PublicBrand"}},
+                    "links": {"type": "object"},
+                    "meta": {"type": "object"}
+                },
+                "required": ["data", "links", "meta"],
+                "additionalProperties": false
+            },
+            "PublicCatalogNavigationCategory": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "parent_id": {
+                        "type": ["integer", "null"]
+                    },
+                    "product_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Public products in this category and all its descendants, within the selected brand scope."
+                    }
+                },
+                "required": ["id", "name", "slug", "parent_id", "product_count"],
+                "additionalProperties": false
+            },
+            "PublicCatalogNavigation": {
+                "type": "object",
+                "description": "Navigation depends only on brand, never on category, collection, additional filters, sorting or pagination. Counts include active products in active own categories, including public descendants of inactive ancestors. With a selected brand, categories contain only nonempty branches and their active ancestors; without a brand, all active categories remain, including zero counts. Brand metadata is independent of menu publication and remains present for a known empty brand. An unknown brand returns null brand, zero total and no categories. Existing public product visibility is preserved, including products of inactive brands.",
+                "properties": {
+                    "brand": {
+                        "anyOf": [
+                            {"$ref": "#/components/schemas/PublicCatalogBrand"},
+                            {"type": "null"}
+                        ]
+                    },
+                    "total": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Distinct public products in the brand scope before category and additional filters."
+                    },
+                    "categories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicCatalogNavigationCategory"
+                        }
+                    }
+                },
+                "required": ["brand", "total", "categories"],
+                "additionalProperties": false
+            },
             "PublicCatalogCollection": {
                 "type": "object",
                 "properties": {
@@ -15138,6 +15271,9 @@
                         "items": {
                             "$ref": "#/components/schemas/PublicCatalogBrand"
                         }
+                    },
+                    "category_navigation": {
+                        "$ref": "#/components/schemas/PublicCatalogNavigation"
                     }
                 },
                 "required": [
@@ -15145,7 +15281,8 @@
                     "categories",
                     "links",
                     "meta",
-                    "brand_navigation"
+                    "brand_navigation",
+                    "category_navigation"
                 ],
                 "additionalProperties": false
             },

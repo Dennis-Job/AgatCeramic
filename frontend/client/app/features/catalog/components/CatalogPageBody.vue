@@ -13,9 +13,15 @@ import { useCatalog } from '../composables/useCatalog'
 import { useStickyCatalogNavigation } from '../composables/useStickyCatalogNavigation'
 import type { ContentPage } from '~/types/contentPage'
 import { siteOrigin } from '#shared/utils/pageUrls'
-import { formatMoney } from '~/utils/formatMoney'
+import { useCatalogAppliedFilters } from '../composables/useCatalogAppliedFilters'
+import type { PublicBrand } from '~/features/brands/types/brand'
+import { brandPath } from '~/features/brands/services/brands'
 
-const props = defineProps<{ content?: ContentPage | null; preview?: boolean }>()
+const props = defineProps<{
+  content?: ContentPage | null
+  preview?: boolean
+  brand?: PublicBrand
+}>()
 const route = useRoute()
 const { navigation, headerHeight, pinned, revealFocusedControl } =
   useStickyCatalogNavigation()
@@ -28,13 +34,16 @@ const {
   draft,
   collections,
   draftFilters,
+  draftNavigation,
   draftFiltersPending,
   draftFiltersError,
   refreshDraftFilters,
   selectCategory,
   resetDraft,
+  restoreDraft,
   apply,
   reset,
+  resetFilters,
   remove,
   sort,
   pageLink,
@@ -44,10 +53,46 @@ await ready
 const event = useRequestEvent()
 if (event && error.value && !props.preview) setResponseStatus(event, 503)
 const drawer = ref(false)
-const filters = computed(
-  () =>
-    catalog.value?.filters || { brands: [], collections: [], attributes: [] },
+const scopeBrand = computed(() =>
+  query.value.brand
+    ? props.brand?.name ||
+      catalog.value?.category_navigation?.brand?.name ||
+      catalog.value?.brand_navigation.find(
+        (brand) => brand.slug === query.value.brand,
+      )?.name ||
+      catalog.value?.filters.brands.find(
+        (brand) => brand.slug === query.value.brand,
+      )?.name ||
+      query.value.brand
+    : '',
 )
+const scopeCategories = computed(
+  () =>
+    catalog.value?.category_navigation?.categories ||
+    catalog.value?.categories ||
+    [],
+)
+const scopeTotal = computed(() => catalog.value?.category_navigation?.total)
+const draftCategories = computed(
+  () =>
+    draftNavigation.value?.categories ||
+    (draft.value.brand === (query.value.brand || '')
+      ? scopeCategories.value
+      : []),
+)
+const scoped = computed(() => !!(query.value.brand || query.value.category))
+const catalogLink = computed(
+  () =>
+    `${props.preview ? route.path : '/catalog'}${query.value.sort ? '?sort=' + encodeURIComponent(query.value.sort) : ''}#catalog-products`,
+)
+function openFilters() {
+  restoreDraft()
+  drawer.value = true
+}
+function closeFilters() {
+  drawer.value = false
+  restoreDraft()
+}
 const sorting = computed({
   get: () => query.value.sort || 'name_asc',
   set: (value) => {
@@ -61,79 +106,9 @@ const sortOptions = [
   { value: 'price_desc', label: 'Цена по убыванию' },
   { value: 'newest', label: 'Сначала новые' },
 ]
+const appliedChips = useCatalogAppliedFilters(catalog, query)
 const chips = computed(() =>
-  Object.entries(query.value).flatMap(([key, value]) => {
-    if (key === 'page' || key === 'sort') return []
-    if (key === 'attributes') {
-      try {
-        const attributes = JSON.parse(value) as Record<string, unknown>
-        return Object.entries(attributes).map(([id, raw]) => {
-          const attribute = filters.value.attributes.find(
-            (attribute) => String(attribute.id) === id,
-          )
-          const filter =
-            raw && typeof raw === 'object' && !Array.isArray(raw)
-              ? (raw as Record<string, unknown>)
-              : {}
-          const values = Array.isArray(filter.values)
-            ? filter.values
-                .filter((value) => typeof value === 'string')
-                .map(
-                  (value) =>
-                    attribute?.options.find((option) => option.value === value)
-                      ?.label ||
-                    (attribute?.type === 'boolean'
-                      ? value === 'true'
-                        ? 'Да'
-                        : 'Нет'
-                      : value),
-                )
-                .join(', ')
-            : ''
-          const bounds = [
-            typeof filter.min === 'string' && filter.min
-              ? 'от ' + filter.min
-              : '',
-            typeof filter.max === 'string' && filter.max
-              ? 'до ' + filter.max
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' ')
-          const detail =
-            values ||
-            (bounds
-              ? bounds + (attribute?.unit ? ' ' + attribute.unit : '')
-              : '') ||
-            (typeof filter.text === 'string' ? filter.text : '')
-          return {
-            key,
-            id,
-            label:
-              (attribute?.name || 'Характеристика ' + id) +
-              (detail ? ': ' + detail : ''),
-          }
-        })
-      } catch {
-        return [{ key, id: '', label: 'Характеристики' }]
-      }
-    }
-    const label =
-      key === 'category'
-        ? catalog.value?.categories.find((item) => item.slug === value)?.name ||
-          value
-        : key === 'brand'
-          ? filters.value.brands.find((item) => item.slug === value)?.name ||
-            value
-          : key === 'in_stock'
-            ? 'В наличии'
-            : key === 'price_from'
-              ? 'Цена от ' + formatMoney(value)
-              : key === 'price_to'
-                ? 'Цена до ' + formatMoney(value)
-                : value
-    return [{ key, id: '', label }]
-  }),
+  appliedChips.value.filter((chip) => !props.brand || chip.key !== 'brand'),
 )
 async function commit(close?: () => void) {
   await apply()
@@ -143,52 +118,91 @@ async function clear(close?: () => void) {
   await reset()
   close?.()
 }
+async function clearFilters() {
+  await resetFilters()
+}
 if (!props.preview) {
   const origin = siteOrigin(
     useRuntimeConfig().public.siteUrl || useRequestURL().origin,
   )
-  const canonical = new URL('/catalog', origin).toString()
+  const canonical = computed(() =>
+    new URL(
+      props.brand ? brandPath(props.brand.slug) : '/catalog',
+      origin,
+    ).toString(),
+  )
   const seo = computed(() => props.content?.seo)
+  const pageTitle = computed(() =>
+    props.brand
+      ? `${props.brand.name} — AgatCeramic`
+      : seo.value?.title || 'Каталог — AgatCeramic',
+  )
+  const description = computed(() =>
+    props.brand
+      ? props.brand.description?.slice(0, 300) ||
+        `Товары ${props.brand.name} в каталоге AgatCeramic.`
+      : seo.value?.description ||
+        'Каталог плитки, керамогранита, мозаики и материалов для ремонта.',
+  )
   useSeoMeta({
-    title: () => seo.value?.title || 'Каталог — AgatCeramic',
-    description: () =>
-      seo.value?.description ||
-      'Каталог плитки, керамогранита, мозаики и материалов для ремонта.',
+    title: pageTitle,
+    description,
     ogTitle: () =>
-      seo.value?.ogTitle || seo.value?.title || 'Каталог — AgatCeramic',
+      props.brand ? pageTitle.value : seo.value?.ogTitle || pageTitle.value,
     ogDescription: () =>
-      seo.value?.ogDescription || seo.value?.description || undefined,
+      props.brand
+        ? description.value
+        : seo.value?.ogDescription || description.value,
     ogImage: () =>
-      seo.value?.ogImage
-        ? new URL(seo.value.ogImage, canonical).toString()
-        : undefined,
+      props.brand?.logoUrl
+        ? new URL(props.brand.logoUrl, canonical.value).toString()
+        : seo.value?.ogImage
+          ? new URL(seo.value.ogImage, canonical.value).toString()
+          : undefined,
     ogUrl: canonical,
     ogType: 'website',
     robots: () =>
       error.value ||
       props.content?.isIndexable === false ||
       Object.entries(query.value).some(([key, value]) =>
-        key === 'page'
-          ? value !== '1'
-          : key === 'sort'
-            ? value !== 'name_asc'
-            : !!value,
+        key === 'brand' && props.brand
+          ? false
+          : key === 'page'
+            ? value !== '1'
+            : key === 'sort'
+              ? value !== 'name_asc'
+              : !!value,
       )
         ? 'noindex,follow'
         : 'index,follow',
   })
   useHead(() => ({
-    link: [{ rel: 'canonical', href: canonical }],
+    link: [{ rel: 'canonical', href: canonical.value }],
     script: [
       {
         type: 'application/ld+json',
         innerHTML: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
-          name: props.content?.title || 'Каталог',
-          url: canonical,
+          name: props.brand?.name || props.content?.title || 'Каталог',
+          url: canonical.value,
           inLanguage: 'ru-RU',
-          description: seo.value?.description || '',
+          description: description.value,
+          ...(props.brand
+            ? {
+                about: {
+                  '@type': 'Brand',
+                  name: props.brand.name,
+                  url: canonical.value,
+                  ...(props.brand.description
+                    ? { description: props.brand.description }
+                    : {}),
+                  ...(props.brand.logoUrl
+                    ? { logo: new URL(props.brand.logoUrl, origin).toString() }
+                    : {}),
+                },
+              }
+            : {}),
         }).replace(/</g, '\\u003c'),
       },
     ],
@@ -198,10 +212,17 @@ if (!props.preview) {
 
 <template>
   <PageIntro
-    :title="content?.title || 'Каталог'"
-    slug="catalog"
-    :description="content?.seo.description"
-    :image="content?.intro"
+    :title="brand?.name || content?.title || 'Каталог'"
+    :slug="brand ? 'brand' : 'catalog'"
+    :variant="brand ? 'brand' : undefined"
+    :description="brand ? brand.description || '' : content?.seo.description"
+    :image="
+      brand
+        ? brand.logoUrl
+          ? { imageUrl: brand.logoUrl, imageAlt: brand.logoAlt }
+          : null
+        : content?.intro
+    "
   />
   <section
     id="catalog-products"
@@ -210,22 +231,24 @@ if (!props.preview) {
     @focusin="revealFocusedControl"
   >
     <div class="container">
+      <CatalogBrandNavigation
+        :brands="catalog?.brand_navigation || []"
+        :path="route.path"
+      />
       <div
-        v-if="catalog?.categories.length"
+        v-if="scopeCategories.length || query.brand"
         ref="navigation"
         class="catalog-category-navigation"
         :class="{ 'catalog-category-navigation--pinned': pinned }"
       >
         <CatalogCategories
-          :categories="catalog.categories"
+          :categories="scopeCategories"
           :query="query"
           :path="route.path"
+          :brand="scopeBrand"
+          :total="scopeTotal"
         />
       </div>
-      <CatalogBrandNavigation
-        :brands="catalog?.brand_navigation || []"
-        :path="route.path"
-      />
       <div class="catalog-layout">
         <aside class="catalog-sidebar" aria-label="Фильтры каталога">
           <h2 class="catalog-sidebar__title">Фильтры</h2>
@@ -235,20 +258,24 @@ if (!props.preview) {
             :collections="collections"
             :pending="draftFiltersPending"
             :error="draftFiltersError"
+            :hide-brand="!!query.brand"
+            :scoped="scoped"
             @retry="refreshDraftFilters()"
             :busy="status === 'pending'"
             @apply="commit()"
-            @reset="clear()"
+            @reset="scoped ? clearFilters() : clear()"
           />
         </aside>
         <div class="catalog-results" :aria-busy="status === 'pending'">
           <div class="catalog-toolbar">
-            <p role="status">Товаров: {{ catalog?.meta.total ?? '—' }}</p>
+            <div class="catalog-toolbar__heading">
+              <p role="status">Товаров: {{ catalog?.meta.total ?? '—' }}</p>
+            </div>
             <UiButton
               class="catalog-mobile-toggle"
               variant="outline"
               size="compact"
-              @click="drawer = true"
+              @click="openFilters()"
               >Фильтры</UiButton
             >
             <UiSelect
@@ -271,8 +298,14 @@ if (!props.preview) {
               @click="remove(chip.key, chip.id)"
               >{{ chip.label }} ×</UiButton
             >
-            <UiButton size="compact" variant="outline" @click="clear()"
-              >Сбросить всё</UiButton
+            <UiButton
+              size="compact"
+              variant="outline"
+              @click="scoped ? clearFilters() : clear()"
+              >{{ scoped ? 'Сбросить фильтры' : 'Сбросить всё' }}</UiButton
+            >
+            <NuxtLink v-if="scoped" :to="catalogLink" class="catalog-reset-link"
+              >Весь каталог</NuxtLink
             >
           </div>
           <PageState
@@ -298,11 +331,15 @@ if (!props.preview) {
               :products="catalog.data"
               class="products"
             />
-            <PageState
-              v-else
-              title="По вашему запросу ничего не найдено"
-              message="Измените параметры или сбросьте фильтры."
-            />
+            <template v-else>
+              <PageState
+                title="По вашему запросу ничего не найдено"
+                message="Измените дополнительные фильтры или вернитесь ко всему каталогу."
+              />
+              <UiButton variant="outline" @click="clearFilters()"
+                >Сбросить фильтры</UiButton
+              >
+            </template>
             <nav
               v-if="catalog && catalog.meta.last_page > 1"
               class="catalog-pagination"
@@ -332,14 +369,18 @@ if (!props.preview) {
       v-slot="{ close }"
       title="Фильтры каталога"
       size="drawer"
-      @close="drawer = false"
+      @close="closeFilters()"
     >
       <div class="catalog-drawer-body">
         <CatalogCategories
-          v-if="catalog?.categories.length"
-          :categories="catalog.categories"
-          :query="{ ...query, category: draft.category }"
+          v-if="draftCategories.length || draft.brand"
+          :categories="draftCategories"
+          :query="{ ...query, category: draft.category, brand: draft.brand }"
           :path="route.path"
+          :brand="
+            draft.brand ? draftNavigation?.brand?.name || draft.brand : ''
+          "
+          :total="draftNavigation?.total"
           vertical
           @select="selectCategory"
         />
@@ -349,6 +390,8 @@ if (!props.preview) {
           :collections="collections"
           :pending="draftFiltersPending"
           :error="draftFiltersError"
+          :hide-brand="!!query.brand"
+          :scoped="!!(draft.category || draft.brand)"
           @retry="refreshDraftFilters()"
           :busy="status === 'pending'"
           @apply="commit(close)"
@@ -362,8 +405,19 @@ if (!props.preview) {
 <style scoped>
 .standalone-catalog {
   scroll-margin-top: var(--catalog-header-height);
+  padding-top: 55px;
+}
+.catalog-reset-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  font-size: 13px;
 }
 .catalog-category-navigation {
+  justify-content: center;
+  display: flex;
+  align-items: baseline;
+  gap: 12px 32px;
   position: sticky;
   z-index: 40;
   top: var(--catalog-header-height);
@@ -374,6 +428,10 @@ if (!props.preview) {
   border-bottom: 1px solid transparent;
   padding-block: 16px 15px;
   background: var(--color-bg);
+}
+.catalog-category-navigation .catalog-categories {
+  width: 100%;
+  min-width: 0;
 }
 .catalog-category-navigation--pinned {
   border-bottom-color: var(--color-line);
@@ -411,6 +469,9 @@ if (!props.preview) {
   padding-bottom: 14px;
   font-size: 13px;
   color: var(--color-muted);
+}
+.catalog-toolbar__heading {
+  min-width: 0;
 }
 .catalog-toolbar .ui-select {
   width: min(260px, 100%);

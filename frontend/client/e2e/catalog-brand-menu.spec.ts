@@ -15,8 +15,8 @@ test('SSR includes selected brand links and only populated alphabet groups', asy
 }) => {
   const response = await request.get('/catalog?category=tile&page=2')
   const html = await response.text()
-  expect(html).toContain('brand=41zero42')
-  expect(html).toContain('brand=atlas-ru')
+  expect(html).toContain('/brand/41zero42')
+  expect(html).toContain('/brand/atlas-ru')
   await page.goto('/catalog?category=tile&page=2')
   const menu = page.getByRole('navigation', { name: menuName })
   await expect(menu.getByRole('button')).toHaveText(['0–9', 'A', 'E', 'РУС'])
@@ -49,7 +49,7 @@ test('hover reaches panel, click after hover keeps it open and brand links reset
   await atlas.hover()
   await expect(atlas).toBeVisible()
   await atlas.click()
-  await expect(page).toHaveURL(/\/catalog\?brand=atlas#catalog-products$/)
+  await expect(page).toHaveURL(/\/brand\/atlas$/)
   await expect(menu.getByRole('button', { expanded: true })).toHaveCount(0)
   await menu.getByRole('button', { name: 'A', exact: true }).click()
   await expect(
@@ -93,7 +93,7 @@ test('panels span the container with four desktop columns and responsive reachab
     await letter.click()
     const panel = page.locator(`#${await letter.getAttribute('aria-controls')}`)
     await expect(panel).toBeVisible()
-    const bounds = await menu.boundingBox()
+    const bounds = await page.locator('.catalog-brand-navigation').boundingBox()
     const popup = await panel.boundingBox()
     expect(Math.abs(popup!.x - bounds!.x)).toBeLessThan(2)
     expect(Math.abs(popup!.width - bounds!.width)).toBeLessThan(2)

@@ -1,70 +1,88 @@
 <script setup lang="ts">
+import { brandPath } from '~/features/brands/services/brands'
 import type { CatalogBrand } from '../types/catalog'
 import { groupBrands } from '../utils/brandAlphabet'
 import { useBrandAlphabetMenu } from '../composables/useBrandAlphabetMenu'
 
-const props = defineProps<{ brands: CatalogBrand[]; path: string }>()
+const props = defineProps<{
+  brands: CatalogBrand[]
+  path: string
+}>()
 const groups = computed(() => groupBrands(props.brands))
 const { root, openKey, positions, close, enter, toggle, leave, revealLink } =
   useBrandAlphabetMenu(groups)
 const id = useId()
 const route = useRoute()
+const selectedSlug = computed(() =>
+  typeof route.params.slug === 'string' && route.path.startsWith('/brand/')
+    ? route.params.slug
+    : route.query.brand,
+)
+function brandLink(slug: string) {
+  return props.path.startsWith('/preview/')
+    ? { path: props.path, query: { brand: slug }, hash: '#catalog-products' }
+    : { path: brandPath(slug) }
+}
 </script>
 
 <template>
-  <nav
+  <div
     v-if="groups.length"
     ref="root"
     class="catalog-brand-navigation"
-    aria-label="Бренды по алфавиту"
     @pointerleave="leave"
     @focusin="revealLink"
   >
-    <span class="catalog-brand-navigation__label">Бренды:</span>
-    <ul class="catalog-brand-navigation__alphabet">
-      <li v-for="group in groups" :key="group.key">
-        <button
-          :id="`${id}-trigger-${group.key}`"
-          type="button"
-          class="catalog-brand-navigation__trigger ui-hover-underline"
-          :data-brand-trigger="group.key"
-          :aria-expanded="openKey === group.key"
-          :aria-controls="`${id}-panel-${group.key}`"
-          @pointerenter="enter(group.key, $event)"
-          @click="toggle(group.key, $event)"
-        >
-          {{ group.label }}
-        </button>
-        <div
-          :id="`${id}-panel-${group.key}`"
-          :data-brand-panel="group.key"
-          class="catalog-brand-navigation__panel ui-submenu-popover"
-          popover="manual"
-          :aria-labelledby="`${id}-trigger-${group.key}`"
-          :inert="openKey !== group.key"
-          :aria-hidden="openKey !== group.key"
-          :style="positions[group.key]"
-        >
-          <ul class="catalog-brand-navigation__brands">
-            <li v-for="brand in group.brands" :key="brand.id">
-              <NuxtLink
-                :to="{
-                  path,
-                  query: { brand: brand.slug },
-                  hash: '#catalog-products',
-                }"
-                :aria-current="
-                  route.query.brand === brand.slug ? 'true' : 'false'
-                "
-                @click="close()"
-                >{{ brand.name.trim() }}</NuxtLink
-              >
-            </li>
-          </ul>
-        </div>
-      </li>
-    </ul>
-  </nav>
+    <nav
+      v-if="groups.length"
+      class="catalog-brand-navigation__menu"
+      aria-label="Бренды по алфавиту"
+    >
+      <span class="catalog-brand-navigation__label">Бренды:</span>
+      <ul class="catalog-brand-navigation__alphabet">
+        <li v-for="group in groups" :key="group.key">
+          <button
+            :id="`${id}-trigger-${group.key}`"
+            type="button"
+            class="catalog-brand-navigation__trigger ui-hover-underline"
+            :data-brand-trigger="group.key"
+            :aria-expanded="openKey === group.key"
+            :aria-controls="`${id}-panel-${group.key}`"
+            :class="{
+              'catalog-brand-navigation__trigger--selected': group.brands.some(
+                (brand) => brand.slug === selectedSlug,
+              ),
+            }"
+            @pointerenter="enter(group.key, $event)"
+            @click="toggle(group.key, $event)"
+          >
+            {{ group.label }}
+          </button>
+          <div
+            :id="`${id}-panel-${group.key}`"
+            :data-brand-panel="group.key"
+            class="catalog-brand-navigation__panel ui-submenu-popover"
+            popover="manual"
+            :aria-labelledby="`${id}-trigger-${group.key}`"
+            :inert="openKey !== group.key"
+            :aria-hidden="openKey !== group.key"
+            :style="positions[group.key]"
+          >
+            <ul class="catalog-brand-navigation__brands">
+              <li v-for="brand in group.brands" :key="brand.id">
+                <NuxtLink
+                  :to="brandLink(brand.slug)"
+                  :aria-current="selectedSlug === brand.slug ? 'true' : 'false'"
+                  @click="close()"
+                  >{{ brand.name.trim() }}</NuxtLink
+                >
+              </li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </div>
 </template>
 
 <style scoped>
@@ -77,6 +95,13 @@ const route = useRoute()
   border-block: 1px solid var(--color-line);
   color: var(--color-muted);
   font-size: 13px;
+}
+.catalog-brand-navigation__menu {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px 24px;
+  min-width: 0;
 }
 .catalog-brand-navigation__label {
   padding-block: 14px;
@@ -110,6 +135,11 @@ li {
 .catalog-brand-navigation__trigger:hover,
 .catalog-brand-navigation__trigger[aria-expanded='true'] {
   color: var(--color-ink);
+}
+.catalog-brand-navigation__trigger--selected {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 6px;
 }
 .catalog-brand-navigation__panel {
   position: fixed;
@@ -149,6 +179,11 @@ li {
   }
 }
 @media (max-width: 639px) {
+  .catalog-brand-navigation__menu {
+    flex-wrap: wrap;
+    gap: 0 12px;
+    width: 100%;
+  }
   .catalog-brand-navigation {
     flex-wrap: wrap;
     gap: 0 12px;

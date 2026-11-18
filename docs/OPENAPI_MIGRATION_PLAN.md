@@ -1,5 +1,42 @@
 # OpenAPI migration plan — version history
 
+## v23.1 — public brand pages
+
+Date: 2026-11-17. Adds `GET /brands` (25 active brands per page, stable name/id
+order) and `GET /brands/{slug}` with public brand profiles. Known active brands
+are public independently of alphabet-menu publication or product presence;
+unknown and inactive brands return 404. Existing brand name, description and
+public image are used; private/nonimage media and administration metadata are
+not exposed. No existing response schema changes, database migration or data
+conversion is required. Deploy the API before enabling Client `/brand/<slug>`
+links and sitemap entries. Roll back Client routing before removing the API.
+
+### Breaking change
+
+The combined unreleased v23.1 delivery also contains the v23.0 catalog
+navigation projection described below. Relative to v22.0, strict consumers
+must accept the added `category_navigation` response property before rollout.
+The new brand endpoints themselves are additive; existing routes stay `/api/v1`.
+No database migration is needed. Roll back application releases together.
+
+## v23.0 — brand-scoped catalog category navigation
+
+Date: 2026-11-17. `GET /catalog` always includes `category_navigation` with
+`brand`, `total` and `categories` (each including `product_count`). Navigation
+depends only on the selected brand, before category and additional refinements.
+Counts include public products in the category subtree. Empty brands retain
+their metadata; unknown brands produce null brand, zero total and no categories.
+The global `categories` and `brand_navigation` projections remain unchanged.
+
+### Breaking change
+
+The previous PublicCatalogCollection schema rejected additional properties.
+Strict response consumers must accept `category_navigation` before deployment.
+Routes remain `/api/v1`; no database migration is required. Deploy backend and
+Client together. During rollout Client accepts an absent navigation projection
+and falls back to the previous category list without invented counts. Rollback
+application releases together; no stored data or staff settings are converted.
+
 ## v22.0 — selected brands in catalog alphabet navigation
 
 Date: 2026-11-17. Admin brand create/update requests accept the optional boolean

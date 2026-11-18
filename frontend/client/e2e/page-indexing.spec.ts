@@ -22,7 +22,7 @@ test('published flags control SSR robots on home, static and generic content rou
         `rel="canonical" href="https://agatceramic.example${route}"`,
       )
       if (route === '/delivery') {
-        expect(html).toContain('Доставка керамической плитки')
+        expect(html).toContain('<title>Доставка — AgatCeramic</title>')
         expect(html).toContain('"@type":"WebPage"')
       }
     }
@@ -147,9 +147,7 @@ test('generic page reuses responsive accessible content and hydrates without err
     if (/hydration/i.test(message.text())) issues.push(message.text())
   })
   await page.goto('/delivery')
-  await expect(page.locator('main h1')).toHaveText(
-    'Доставка керамической плитки и материалов для ремонта',
-  )
+  await expect(page.locator('main h1')).toHaveText('Доставка')
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     expect(
