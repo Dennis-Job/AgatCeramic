@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import type { StandaloneCatalog, CatalogQuery } from '../types/catalog'
 import CatalogCategoryBranch from './CatalogCategoryBranch.vue'
-import { buildCategoryTree, flattenCategoryTree } from '../utils/categoryTree'
-import { catalogLocation } from '../utils/catalogLocation'
+import CatalogCategoryLinks from './CatalogCategoryLinks.vue'
+import UiNavigationDropdown from '~/components/ui/UiNavigationDropdown.vue'
+import {
+  buildCategoryTree,
+  categoryBranchContains,
+} from '../utils/categoryTree'
+import { catalogCategoryLocation } from '../utils/catalogLocation'
 
 const props = defineProps<{
   categories: StandaloneCatalog['categories']
@@ -12,17 +17,14 @@ const props = defineProps<{
   brand?: string
   total?: number
 }>()
-defineEmits<{ navigate: []; select: [category: string] }>()
+const emit = defineEmits<{ navigate: []; select: [category: string] }>()
 const tree = computed(() => buildCategoryTree(props.categories))
-const entries = computed(() => flattenCategoryTree(tree.value))
 function link(category?: string) {
-  const query = { ...props.query }
-  delete query.page
-  delete query.attributes
-  delete query.collection
-  if (category) query.category = category
-  else delete query.category
-  return catalogLocation(props.path, query)
+  return catalogCategoryLocation(props.path, props.query, category)
+}
+function navigate(close: () => void) {
+  close()
+  emit('navigate')
 }
 </script>
 
@@ -62,7 +64,7 @@ function link(category?: string) {
         @select="$emit('select', $event)"
       />
     </ul>
-    <ul v-else>
+    <ul v-else class="catalog-categories__roots">
       <li>
         <NuxtLink
           :to="link()"
@@ -78,23 +80,54 @@ function link(category?: string) {
           ></NuxtLink
         >
       </li>
-      <li v-for="category in entries" :key="category.id">
+      <li v-for="node in tree" :key="node.category.id">
+        <UiNavigationDropdown
+          v-if="node.children.length"
+          :label="node.category.name"
+          :current="categoryBranchContains(node, query.category)"
+        >
+          <template v-if="brand" #suffix>
+            <span class="catalog-categories__count" aria-hidden="true">{{
+              node.category.product_count
+            }}</span>
+          </template>
+          <template #default="{ close }">
+            <NuxtLink
+              :to="link(node.category.slug)"
+              :aria-current="
+                query.category === node.category.slug ? 'page' : undefined
+              "
+              @click="navigate(close)"
+              >Все товары категории</NuxtLink
+            >
+            <CatalogCategoryLinks
+              :nodes="node.children"
+              :query="query"
+              :path="path"
+              :show-counts="!!brand"
+              @navigate="navigate(close)"
+            />
+          </template>
+        </UiNavigationDropdown>
         <NuxtLink
-          :to="link(category.slug)"
-          :aria-current="query.category === category.slug ? 'page' : undefined"
-          :aria-label="category.name"
+          v-else
+          :to="link(node.category.slug)"
+          :aria-current="
+            query.category === node.category.slug ? 'page' : undefined
+          "
+          :aria-label="node.category.name"
           :aria-description="
-            brand && category.product_count !== undefined
-              ? `Товаров в категории: ${category.product_count}`
+            brand && node.category.product_count !== undefined
+              ? `Товаров в категории: ${node.category.product_count}`
               : undefined
           "
           @click="$emit('navigate')"
-          ><span>{{ category.name }}</span
+          ><span>{{ node.category.name }}</span
           ><span
-            v-if="brand && category.product_count !== undefined"
+            v-if="brand && node.category.product_count !== undefined"
             class="catalog-categories__count"
             aria-hidden="true"
-            >{{ category.product_count }}</span
+            >{{ node.category.product_count }}</span
           ></NuxtLink
         >
       </li>
@@ -108,7 +141,7 @@ h2 {
   font-size: 14px;
   font-weight: 500;
 }
-ul {
+.catalog-categories__roots {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -120,7 +153,7 @@ ul {
 li {
   min-width: 0;
 }
-a {
+.catalog-categories__roots > li > a {
   display: block;
   min-height: 44px;
   border-bottom: 1px solid transparent;
@@ -135,11 +168,11 @@ a {
   margin-left: 8px;
   color: var(--color-muted);
 }
-a[aria-current],
-a:hover {
+.catalog-categories__roots > li > a[aria-current],
+.catalog-categories__roots > li > a:hover {
   color: var(--color-ink);
 }
-a[aria-current] {
+.catalog-categories__roots > li > a[aria-current] {
   border-bottom-color: var(--color-ink);
 }
 .catalog-categories--vertical {
@@ -150,5 +183,8 @@ a[aria-current] {
   grid-template-columns: minmax(0, 1fr);
   justify-content: stretch;
   gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 </style>

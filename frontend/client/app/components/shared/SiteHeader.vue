@@ -521,7 +521,7 @@ onUnmounted(() => {
     display: none;
   }
   .site-header__actions .site-header__menu-toggle {
-    display: inline-flex;
+    display: grid;
   }
 }
 @media (max-width: 480px) {

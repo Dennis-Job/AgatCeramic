@@ -33,6 +33,9 @@ test('brand menu opens a clean brand page with its own intro and scoped categori
   const categories = page.getByRole('navigation', {
     name: 'Категории каталога',
   })
+  await categories
+    .getByRole('button', { name: 'Материалы', exact: true })
+    .click()
   await expect(
     categories.getByRole('link', { name: 'Плитка', exact: true }),
   ).toBeVisible()
@@ -146,6 +149,9 @@ test('switching brands changes the intro and full range without retaining old ca
   const categories = page.getByRole('navigation', {
     name: 'Категории каталога',
   })
+  await categories
+    .getByRole('button', { name: 'Сантехника', exact: true })
+    .click()
   await expect(
     categories.getByRole('link', { name: 'Ванны', exact: true }),
   ).toBeVisible()
@@ -176,6 +182,10 @@ test('legacy brand query redirects permanently and route brand cannot be overrid
     page.getByRole('heading', { name: 'Atlas', exact: true, level: 1 }),
   ).toBeVisible()
   await expect(page.locator('.product-card')).toHaveCount(3)
+  await page
+    .getByRole('navigation', { name: 'Категории каталога' })
+    .getByRole('button', { name: 'Материалы', exact: true })
+    .click()
   await page
     .getByRole('navigation', { name: 'Категории каталога' })
     .getByRole('link', { name: 'Плитка', exact: true })
@@ -290,6 +300,24 @@ test('catalog and brand navigation retain 55px top spacing and centered groups',
     for (const path of ['/catalog', '/brand/atlas']) {
       await page.goto(path)
       const intro = await page.locator('.page-intro').boundingBox()
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true)
+      if (width <= 1024) {
+        await expect(page.locator('.catalog-brand-navigation')).toBeHidden()
+        await page.screenshot({
+          path: testInfo.outputPath(
+            (path === '/catalog' ? 'catalog' : 'brand') +
+              '-layout-' +
+              width +
+              '.png',
+          ),
+          fullPage: true,
+        })
+        continue
+      }
       const brands = await page
         .locator('.catalog-brand-navigation')
         .boundingBox()
@@ -322,7 +350,11 @@ test('catalog and brand navigation retain 55px top spacing and centered groups',
         const bounds = (await page
           .locator('.catalog-category-navigation')
           .boundingBox())!
-        const links = await nav.getByRole('link').all()
+        const links = await nav
+          .locator(
+            '.catalog-categories__roots > li > a, .ui-navigation-dropdown__trigger',
+          )
+          .all()
         const boxes = await Promise.all(links.map((link) => link.boundingBox()))
         const left = Math.min(...boxes.map((box) => box!.x))
         const right = Math.max(...boxes.map((box) => box!.x + box!.width))

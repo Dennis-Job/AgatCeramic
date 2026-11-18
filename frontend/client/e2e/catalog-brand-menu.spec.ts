@@ -51,6 +51,10 @@ test('hover reaches panel, click after hover keeps it open and brand links reset
   await atlas.click()
   await expect(page).toHaveURL(/\/brand\/atlas$/)
   await expect(menu.getByRole('button', { expanded: true })).toHaveCount(0)
+  await expect(menu.getByRole('button', { name: 'A', exact: true })).toHaveCSS(
+    'text-decoration-line',
+    'none',
+  )
   await menu.getByRole('button', { name: 'A', exact: true }).click()
   await expect(
     menu.getByRole('link', { name: '«Atlas»', exact: true }),
@@ -80,15 +84,27 @@ test('keyboard opens groups, Escape restores focus and outside interaction close
   await expect(letter).toHaveAttribute('aria-expanded', 'false')
 })
 
-test('panels span the container with four desktop columns and responsive reachable links', async ({
+test('brand menu is desktop-only and panels close when resizing to a small screen', async ({
   page,
 }, testInfo) => {
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
-  for (const width of [320, 640, 768, 1024, 1280]) {
+  for (const width of [320, 640, 704, 768, 1024, 1025, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/catalog')
     const menu = page.getByRole('navigation', { name: menuName })
+    if (width <= 1024) {
+      await expect(page.locator('.catalog-brand-navigation')).toBeHidden()
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true)
+      await page.screenshot({
+        path: testInfo.outputPath(`brand-menu-${width}.png`),
+      })
+      continue
+    }
     const letter = menu.getByRole('button', { name: 'A', exact: true })
     await letter.click()
     const panel = page.locator(`#${await letter.getAttribute('aria-controls')}`)
@@ -102,7 +118,7 @@ test('panels span the container with four desktop columns and responsive reachab
       .evaluate(
         (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
       )
-    expect(columns).toBe(width >= 1024 ? 4 : width >= 640 ? 2 : 1)
+    expect(columns).toBe(4)
     expect(popup!.y + popup!.height).toBeLessThanOrEqual(901)
     await menu
       .getByRole('link', { name: 'Atelier 31', exact: true })
@@ -118,7 +134,17 @@ test('panels span the container with four desktop columns and responsive reachab
     await page.screenshot({
       path: testInfo.outputPath(`brand-menu-${width}.png`),
     })
-    await page.keyboard.press('Escape')
+    await menu.getByRole('link', { name: 'Atelier 31', exact: true }).focus()
+    await page.mouse.move(0, 0)
+    await expect(letter).toHaveAttribute('aria-expanded', 'true')
+    await page.setViewportSize({ width: 1024, height: 900 })
+    await expect(page.locator('.catalog-brand-navigation')).toBeHidden()
+    await expect(
+      page.locator('.catalog-brand-navigation :popover-open'),
+    ).toHaveCount(0)
+    await page.setViewportSize({ width, height: 900 })
+    await expect(menu).toBeVisible()
+    await expect(letter).toHaveAttribute('aria-expanded', 'false')
   }
   expect(errors).toEqual([])
 })
@@ -128,7 +154,7 @@ test('touch opens and closes a letter and empty special groups disappear after d
   request,
 }) => {
   const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: { width: 1280, height: 900 },
     hasTouch: true,
     isMobile: true,
   })
@@ -200,6 +226,10 @@ test('short viewport permits keyboard reach to the final brand and refresh remov
   await request.get(
     'http://127.0.0.1:8015/__scenario?name=standalone-brand-menu-latin',
   )
+  await page
+    .getByRole('navigation', { name: 'Категории каталога' })
+    .getByRole('button', { name: 'Материалы', exact: true })
+    .click()
   await page
     .getByRole('navigation', { name: 'Категории каталога' })
     .getByRole('link', { name: 'Плитка', exact: true })

@@ -92,7 +92,12 @@ test('keyboard focus is revealed below both sticky layers', async ({
     name: 'Категории каталога',
   })
   await page.evaluate(() => window.scrollTo(0, 1000))
-  await categories.getByRole('link').last().focus()
+  await categories
+    .locator('.catalog-categories__roots > li')
+    .last()
+    .locator('a, button')
+    .first()
+    .focus()
   await page.keyboard.press('Tab')
   await expect
     .poll(() =>

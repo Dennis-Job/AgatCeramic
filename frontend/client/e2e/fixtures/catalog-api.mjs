@@ -54,6 +54,24 @@ export function handleCatalog(request, response, url, scenario) {
     { id: 8, parent_id: 4, slug: 'mixers', name: 'Смесители' },
     { id: 9, parent_id: 4, slug: 'toilets', name: 'Унитазы' },
   ]
+  if (scenario === 'standalone-category-dropdowns') {
+    categories.push({
+      id: 10,
+      parent_id: 5,
+      slug: 'corner-baths',
+      name: 'Угловые ванны',
+    })
+    for (let index = 0; index < 30; index++)
+      categories.push({
+        id: 100 + index,
+        parent_id: 4,
+        slug: `new-category-${index}`,
+        name:
+          index === 0
+            ? 'Новая дочерняя категория с очень длинным русским названием сантехнических принадлежностей'
+            : `Новая категория ${index}`,
+      })
+  }
   const definitions = [
     'select',
     'multiselect',

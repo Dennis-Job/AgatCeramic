@@ -138,8 +138,6 @@ li {
 }
 .catalog-brand-navigation__trigger--selected {
   color: var(--color-ink);
-  text-decoration: underline;
-  text-underline-offset: 6px;
 }
 .catalog-brand-navigation__panel {
   position: fixed;
@@ -173,26 +171,9 @@ li {
 .catalog-brand-navigation__brands a:focus-visible {
   outline-offset: -3px;
 }
-@media (max-width: 1023px) {
-  .catalog-brand-navigation__brands {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 639px) {
-  .catalog-brand-navigation__menu {
-    flex-wrap: wrap;
-    gap: 0 12px;
-    width: 100%;
-  }
+@media (max-width: 1024px) {
   .catalog-brand-navigation {
-    flex-wrap: wrap;
-    gap: 0 12px;
-  }
-  .catalog-brand-navigation__panel {
-    padding: 12px;
-  }
-  .catalog-brand-navigation__brands {
-    grid-template-columns: minmax(0, 1fr);
+    display: none;
   }
 }
 </style>

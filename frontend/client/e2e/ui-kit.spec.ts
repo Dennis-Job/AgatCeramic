@@ -128,6 +128,14 @@ test('header actions follow the reference order, fit narrow screens and return s
       await expect(button).toBeVisible()
       await expect(button).toHaveCSS('width', '44px')
       await expect(button).toHaveCSS('height', '44px')
+      const bounds = (await button.boundingBox())!
+      const icon = (await button.locator('svg').boundingBox())!
+      expect(
+        Math.abs(icon.x + icon.width / 2 - bounds.x - bounds.width / 2),
+      ).toBeLessThan(1)
+      expect(
+        Math.abs(icon.y + icon.height / 2 - bounds.y - bounds.height / 2),
+      ).toBeLessThan(1)
     }
     const brandRect = (await page
       .locator('.site-header .ui-wordmark')
