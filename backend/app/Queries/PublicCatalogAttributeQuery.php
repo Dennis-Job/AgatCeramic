@@ -23,7 +23,8 @@ class PublicCatalogAttributeQuery
             $pgsql = DB::connection($values->getModel()->getConnectionName())->getDriverName() === 'pgsql';
             $type = $pgsql ? 'jsonb_typeof(product_attribute_values.value::jsonb)' : "json_type(product_attribute_values.value, '$')";
             $text = $pgsql ? "(product_attribute_values.value::jsonb #>> '{}')" : "json_extract(product_attribute_values.value, '$')";
-            if (in_array($attribute->type, ['select', 'multiselect', 'boolean'], true)) {
+            $exactSize = $attribute->slug === 'razmer' && in_array($attribute->type, ['string', 'text'], true) && isset($filter['values']);
+            if (in_array($attribute->type, ['select', 'multiselect', 'boolean'], true) || $exactSize) {
                 $selected = $filter['values'] ?? [];
                 $selected = is_array($selected) ? array_values(array_filter($selected, is_string(...))) : [];
                 $values->where(function (Builder $matches) use ($selected, $attribute, $pgsql, $type, $text): void {
@@ -82,6 +83,10 @@ class PublicCatalogAttributeQuery
             if ($ids !== []) {
                 $actual += $this->actualValues($products, $ids, $type);
             }
+        }
+        $sizeIds = array_values($attributes->where('slug', 'razmer')->whereIn('type', ['string', 'text'])->modelKeys());
+        if ($sizeIds !== []) {
+            $actual += $this->actualValues($products, $sizeIds, 'string');
         }
         $result = [];
         foreach ($attributes as $attribute) {

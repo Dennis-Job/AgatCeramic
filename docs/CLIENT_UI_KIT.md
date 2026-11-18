@@ -89,6 +89,7 @@ catalog/about/contacts/cooperation/rezka/rospis/delivery/payment/designers.
 | Основное действие                 | [`UiButton.vue`](../frontend/client/app/components/ui/UiButton.vue)                                                     | CTA, варианты dark/light; не дублировать button-стили в страницах                                                                  |
 | Уведомление об успехе             | [`UiSuccessNotification.vue`](../frontend/client/app/components/ui/UiSuccessNotification.vue), `useSuccessNotification` | Единый host в app.vue; успешные заявки на звонок и партнёрство, будущие подтверждения                                              |
 | Количество товара                 | [`UiQuantityInput.vue`](../frontend/client/app/components/ui/UiQuantityInput.vue)                                       | Карточка товара и корзина: целые значения 1–9999, шаг 1, подпись, кнопки −/+, disabled; локальный draft отделён от commit          |
+| Выбор цвета                       | [`UiColorSwatch.vue`](../frontend/client/app/components/ui/UiColorSwatch.vue)                                           | Native checkbox, HEX-круг, aria-label/title, checked/focus/disabled; каталог и мобильные фильтры                               |
 | Вкладки информации                | [`UiTabs.vue`](../frontend/client/app/components/ui/UiTabs.vue)                                                         | Центрированная навигация с активным подчёркиванием как в productExample.html; tablist/tabpanel, стрелки, Home/End и roving tabindex     |
 
 | Выпадающая группа навигации       | [`UiNavigationDropdown.vue`](../frontend/client/app/components/ui/UiNavigationDropdown.vue)                          | Родительские категории desktop-каталога, брендов и preview; кнопка со стрелкой, native popover, общий normal/reduced motion         |
@@ -1005,6 +1006,30 @@ gap 8 px, перенос длинных русских подписей. Toolbar
 Проверки: catalog/ui-select, mobile draft, brand scope/brand pages,
 preview/content, Ui-kit, field-labels и checkout; пять ширин,
 keyboard, forced colors, coarse pointer и независимый UI Design Guard.
+
+### Размеры и цветовые кружки — UI-036 / 2026-11-18
+
+По указанию владельца `razmer` типа string/text показывается списком checkbox
+из фактических `options` API: все уникальные размеры публичных товаров scope
+до pagination, без свободного ввода. Несколько выбранных размеров — точный
+OR, с единицей в legend. Старые текстовые URL работают; выбор размера
+заменяет прежнее текстовое ограничение. Остальные текстовые поля сохраняются.
+
+Цвет `tsvet`/`color` типа select/multiselect выводится общим `UiColorSwatch`
+в ряд с переносом и gap 8 px. Круг 24 px с тонким контуром line-strong,
+цель 32 px и 44 px на coarse pointer. Цвет берётся из сохранённого HEX-кода
+option.value, название — из option.label (aria-label и title при наведении).
+Выбранный круг имеет ink-границу 2 px и внешний ink-контур; keyboard focus —
+пунктирный контур, native checkbox сохраняет Space/Tab, checked и disabled.
+Палитра интерфейса прежняя; цветовые образцы — данные товара. В inline CSS
+допускается только literal HEX (3/4/6/8 знаков); неизвестный исторический
+код остаётся текстовым checkbox без придумывания оттенка. В forced colors
+цвет сохраняется, выбранный/focus-контур использует CanvasText.
+
+Каталог, бренд и preview используют один компонент, прежние draft/Apply,
+chip с названием, reset/history, мобильную отмену. Проверки: реальные
+API/PG, 36 Client E2E включая размеры/цвета, пять ширин, touch 44 px,
+клавиатура/axe, SSR/hydration и независимый UI Design Guard.
 
 ### Поведение панели списка выбора
 

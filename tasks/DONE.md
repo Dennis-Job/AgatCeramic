@@ -1,5 +1,14 @@
 # DONE
 
+2026-11-18 — По замечаниям владельца размеры каталога выбираются из реальных
+уникальных значений `razmer` всех публичных товаров scope до pagination,
+цвета выводятся кружками в ряд по сохранённым HEX-кодам с названием/selected/focus.
+Точный OR размеров, legacy text, общий UiColorSwatch, draft/Apply/chips/reset
+сохранены. API/OpenAPI/UI-036 обновлены. Typecheck/build/format, 36 Client E2E,
+74 SQLite и 71 PostgreSQL tests, независимый UI Guard на пяти ширинах PASS.
+Миграций/Admin/data changes/коммита нет.
+[Файлы и проверки](../docs/CATALOG_SIZES_COLORS_2026-11-18.md).
+
 2026-11-18 — По уточнению владельца расстояние между checkbox «В наличии» и
 «Распродажа» уменьшено с 16 до 4 px общей группой в CatalogFilterForm.
 Внешние интервалы и touch-цели сохранены. Typecheck/build/format и 4 Client

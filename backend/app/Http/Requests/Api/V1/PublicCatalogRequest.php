@@ -76,6 +76,10 @@ class PublicCatalogRequest extends FormRequest
                         'min' => ['required_without:max', 'filled', 'string', 'max:32', $attribute->type === 'date' ? 'date_format:Y-m-d' : ($attribute->type === 'integer' ? 'regex:/^-?\d{1,16}$/' : 'regex:/^-?\d{1,16}(?:\.\d{1,8})?$/')],
                         'max' => ['required_without:min', 'filled', 'string', 'max:32', $attribute->type === 'date' ? 'date_format:Y-m-d' : ($attribute->type === 'integer' ? 'regex:/^-?\d{1,16}$/' : 'regex:/^-?\d{1,16}(?:\.\d{1,8})?$/')],
                     ],
+                    'string', 'text' => $attribute->slug === 'razmer' && array_key_exists('values', $data) ? [
+                        'values' => ['bail', 'required', 'array', 'list', 'min:1', 'max:50'],
+                        'values.*' => ['bail', 'required', 'string', 'max:255'],
+                    ] : ['text' => ['required', 'string', 'max:200']],
                     default => ['text' => ['required', 'string', 'max:200']],
                 };
                 $check = Validator::make($data, $rules);

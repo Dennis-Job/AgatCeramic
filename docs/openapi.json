@@ -5853,7 +5853,7 @@
                     {
                         "name": "attributes",
                         "in": "query",
-                        "description": "JSON object keyed by explicitly assigned filterable attribute ID. Max 20 attributes and 16384 characters. select/multiselect/boolean: {values:string[]} with 1-50 nonempty strings <=255 chars (boolean only true/false strings). integer/decimal/date: {min?:string,max?:string}, at least one bound; signed numbers <=16 integer digits, decimal <=8 fraction digits, date YYYY-MM-DD. string/text: {text:string}, nonempty <=200 chars, case-insensitive literal substring. Unknown keys, wrong JSON types, reversed bounds and foreign attributes return 422. OR within values; AND across attributes. JSON types remain distinct (false versus string false; select string 0 versus number 0).",
+                        "description": "JSON object keyed by explicitly assigned filterable attribute ID. Max 20 attributes and 16384 characters. select/multiselect/boolean: {values:string[]} with 1-50 nonempty strings <=255 chars (boolean only true/false strings). integer/decimal/date: {min?:string,max?:string}, at least one bound; signed numbers <=16 integer digits, decimal <=8 fraction digits, date YYYY-MM-DD. string/text: {text:string}, nonempty <=200 chars, case-insensitive literal substring. The string/text attribute with slug razmer also accepts {values:string[]} with 1-50 nonempty strings <=255 chars, matching exact JSON strings without normalization; values and text are mutually exclusive. Unknown keys, wrong JSON types, reversed bounds and foreign attributes return 422. OR within values; AND across attributes. JSON types remain distinct (false versus string false; select string 0 versus number 0).",
                         "schema": {
                             "type": "string",
                             "maxLength": 16384
@@ -14898,6 +14898,7 @@
                 "additionalProperties": false
             },
             "PublicCatalogFilters": {
+                "description": "Category-scoped filter metadata before product filters and pagination. For string/text razmer, options are distinct nonblank actual JSON string values from public products in scope, including values beyond the current page; values preserve the original string. Unused historical options are omitted.",
                 "type": "object",
                 "required": [
                     "brands",

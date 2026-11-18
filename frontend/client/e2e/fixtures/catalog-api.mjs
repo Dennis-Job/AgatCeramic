@@ -107,6 +107,22 @@ export function handleCatalog(request, response, url, scenario) {
             { value: 'white', label: 'Белый' },
           ],
   }))
+  if (scenario === 'standalone-sizes-colors') {
+    definitions[0].slug = 'tsvet'
+    definitions[0].options = [
+      { value: '#FFFFFF', label: 'Белый' },
+      { value: '#EFDFCE', label: 'Песочный' },
+      { value: '#808080', label: 'Серый' },
+    ]
+    definitions[6].slug = 'razmer'
+    definitions[6].name = 'Размер'
+    definitions[6].unit = 'мм'
+    definitions[6].options = ['300×300', '300×3000', '600×300', '900×900'].map(
+      (value) => ({ value, label: value }),
+    )
+    definitions.splice(7, 1)
+    definitions.splice(1, 5)
+  }
   let products = Array.from({ length: 27 }, (_, i) => ({
     id: i + 1,
     slug: 'tile-' + (i + 1),
@@ -202,7 +218,24 @@ export function handleCatalog(request, response, url, scenario) {
         Number(p.price) <= Number(url.searchParams.get('price_to')),
     )
   if (Object.keys(attributes).length)
-    products = products.filter((p) => p.id <= 3)
+    products = products.filter((p) => {
+      if (scenario !== 'standalone-sizes-colors') return p.id <= 3
+      const size =
+        p.id === 27
+          ? '900×900'
+          : p.id === 3
+            ? '300×3000'
+            : p.id === 2
+              ? '600×300'
+              : '300×300'
+      const color = ['#FFFFFF', '#EFDFCE', '#808080'][(p.id - 1) % 3]
+      return Object.entries(attributes).every(([id, filter]) => {
+        const actual = id === '7' ? size : color
+        return filter.values
+          ? filter.values.includes(actual)
+          : actual.includes(filter.text || '')
+      })
+    })
   const sort = url.searchParams.get('sort')
   if (sort === 'name_desc' || sort === 'newest') products.reverse()
   if (sort?.startsWith('price_'))
