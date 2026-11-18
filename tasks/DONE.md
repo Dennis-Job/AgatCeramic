@@ -1,5 +1,34 @@
 # DONE
 
+2026-11-18 — По уточнению владельца расстояние между checkbox «В наличии» и
+«Распродажа» уменьшено с 16 до 4 px общей группой в CatalogFilterForm.
+Внешние интервалы и touch-цели сохранены. Typecheck/build/format и 4 Client
+E2E (распродажа, mobile Apply/cancel, SSR, пять ширин/axe/hydration) PASS.
+Независимый UI Guard повторно проверил код и пять ширин: PASS.
+
+2026-11-18 — По замечанию владельца добавлен фильтр «Распродажа» под «В наличии»
+в общей форме Client-каталога, брендов и preview. Существующий `is_on_sale`,
+draft/Apply, URL, chip, сброс и история; публичный API валидирует boolean и
+фильтрует выдачу до pagination без сужения navigation/facets. OpenAPI/API/UI-kit
+обновлены. Typecheck/build/format, 32 Client E2E, SQLite backend и focused
+PostgreSQL PASS; независимый UI Guard code/PNG на пяти ширинах PASS.
+Миграций и коммита нет. [Файлы и проверки](../docs/CATALOG_SALE_FILTER_2026-11-18.md).
+
+2026-11-18 — Дополнительное уточнение владельца к компактным checkbox:
+светло-серый line-strong вместо тёмного muted, отмеченные также без чёрной
+заливки (bg-soft и muted-галочка). Build и 13 catalog E2E PASS;
+UI Guard code/visual PASS, цветовое уточнение внесено в UI-035.
+Ограничение контраста светлой рамки записано в отчёте.
+
+2026-11-18 — По замечаниям владельца уплотнены фильтры каталога:
+поля/select от 36 px, checkbox-строки и applied chips от 28 px,
+серый контур checkbox, интервалы групп 16 px. Общие варианты primitives,
+на coarse pointer цели от 44 px; каталог/бренды/preview используют один вид.
+Typecheck/build/format/diff-check PASS; 68 Client E2E и ещё 16 catalog/select
+после финального уточнения цвета PASS. Независимый UI Design Guard PASS.
+API/миграций и коммита нет.
+[Файлы и проверки](../docs/CATALOG_DENSITY_2026-11-18.md).
+
 2026-11-18 — Замечания владельца к карточкам и спискам каталога:
 категория/цена выровнены в каждом ряду без обрезки названий, общий UiSelect
 компактный, без нативной стрелки/рамки при клике, со светлой плавной панелью.

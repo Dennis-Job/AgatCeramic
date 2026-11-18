@@ -5,6 +5,7 @@ const props = defineProps<{
   label: string
   options: { value: string; label: string }[]
   disabled?: boolean
+  size?: 'normal' | 'compact'
 }>()
 const model = defineModel<string>({ required: true })
 const id = useId()
@@ -209,7 +210,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="root" class="ui-select">
+  <div
+    ref="root"
+    class="ui-select"
+    :class="{ 'ui-select--compact': size === 'compact' }"
+  >
     <label :id="`${id}-label`" :for="id" class="ui-field-label">{{
       label
     }}</label>
@@ -292,6 +297,18 @@ onBeforeUnmount(() => {
 }
 .ui-select__trigger:disabled {
   opacity: 0.55;
+}
+.ui-select--compact {
+  gap: 6px;
+}
+.ui-select--compact .ui-select__trigger {
+  min-height: 36px;
+  padding: 7px 10px;
+}
+@media (pointer: coarse) {
+  .ui-select--compact .ui-select__trigger {
+    min-height: 44px;
+  }
 }
 .ui-select__panel {
   position: fixed;

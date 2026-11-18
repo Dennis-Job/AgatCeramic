@@ -13,6 +13,7 @@ export function useCatalogAppliedFilters(
   const chips = computed(() =>
     Object.entries(query.value).flatMap(([key, value]) => {
       if (key === 'page' || key === 'sort') return []
+      if (key === 'is_on_sale' && value !== '1') return []
       if (key === 'attributes') {
         try {
           const attributes = JSON.parse(value) as Record<string, unknown>
@@ -81,11 +82,13 @@ export function useCatalogAppliedFilters(
               value
             : key === 'in_stock'
               ? 'В наличии'
-              : key === 'price_from'
-                ? 'Цена от ' + formatMoney(value)
-                : key === 'price_to'
-                  ? 'Цена до ' + formatMoney(value)
-                  : value
+              : key === 'is_on_sale'
+                ? 'Распродажа'
+                : key === 'price_from'
+                  ? 'Цена от ' + formatMoney(value)
+                  : key === 'price_to'
+                    ? 'Цена до ' + formatMoney(value)
+                    : value
       const prefix =
         key === 'brand' ? 'Бренд: ' : key === 'category' ? 'Категория: ' : ''
       return [{ key, id: '', label: prefix + label }]

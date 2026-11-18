@@ -5827,6 +5827,15 @@
                         }
                     },
                     {
+                        "name": "is_on_sale",
+                        "in": "query",
+                        "required": false,
+                        "description": "1 restricts to products marked as clearance (is_on_sale); 0 or omitted includes all products. Independent of price discounts. Does not narrow navigation or filter metadata.",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
                         "name": "sort",
                         "in": "query",
                         "schema": {

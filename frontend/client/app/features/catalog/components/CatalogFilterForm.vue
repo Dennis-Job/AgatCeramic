@@ -42,6 +42,7 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
         v-if="!hideBrand"
         v-model="model.brand"
         label="Бренд"
+        size="compact"
         :options="[
           { value: '', label: 'Все бренды' },
           ...filters.brands.map((item) => ({
@@ -57,6 +58,7 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
       <UiSelect
         v-model="model.collection"
         label="Коллекция"
+        size="compact"
         :disabled="!model.brand"
         :options="[
           {
@@ -76,11 +78,28 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
       <fieldset class="catalog-filter-form__price">
         <legend>Цена за единицу продажи, ₽</legend>
         <div class="catalog-filter-form__range">
-          <UiTextField v-model="model.price_from" label="Цена от" money />
-          <UiTextField v-model="model.price_to" label="Цена до" money />
+          <UiTextField
+            v-model="model.price_from"
+            label="Цена от"
+            size="compact"
+            money
+          />
+          <UiTextField
+            v-model="model.price_to"
+            label="Цена до"
+            size="compact"
+            money
+          />
         </div>
       </fieldset>
-      <UiCheckbox v-model="model.in_stock" label="В наличии" />
+      <div class="catalog-filter-form__flags">
+        <UiCheckbox v-model="model.in_stock" label="В наличии" size="compact" />
+        <UiCheckbox
+          v-model="model.is_on_sale"
+          label="Распродажа"
+          size="compact"
+        />
+      </div>
       <CatalogAttributeFilter
         v-for="attribute in filters.attributes"
         :key="attribute.id"
@@ -88,10 +107,16 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
         :attribute="attribute"
       />
       <div class="catalog-filter-form__actions">
-        <UiButton type="submit" :disabled="busy">Применить</UiButton>
-        <UiButton variant="outline" :disabled="busy" @click="$emit('reset')">{{
-          scoped ? 'Сбросить фильтры' : 'Сбросить всё'
-        }}</UiButton>
+        <UiButton type="submit" size="compact" :disabled="busy"
+          >Применить</UiButton
+        >
+        <UiButton
+          variant="outline"
+          size="compact"
+          :disabled="busy"
+          @click="$emit('reset')"
+          >{{ scoped ? 'Сбросить фильтры' : 'Сбросить всё' }}</UiButton
+        >
       </div>
     </fieldset>
   </form>
@@ -100,12 +125,12 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
 <style scoped>
 .catalog-filter-form {
   display: grid;
-  gap: 24px;
+  gap: 16px;
   min-width: 0;
 }
 .catalog-filter-form__fields {
   display: grid;
-  gap: 24px;
+  gap: 16px;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -117,20 +142,24 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
   padding: 0;
   border: 0;
 }
+.catalog-filter-form__flags {
+  display: grid;
+  gap: 4px;
+}
 legend {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding: 0;
   font-size: 13px;
 }
 .catalog-filter-form__range {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
 }
 .catalog-filter-form__actions {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   border-top: 1px solid var(--color-line);
-  padding-top: 24px;
+  padding-top: 16px;
 }
 </style>

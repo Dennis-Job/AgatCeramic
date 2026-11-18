@@ -12,7 +12,7 @@ test('compact select supports keyboard exploration, cancel and commit', async ({
   await page.goto('/catalog')
   const sort = page.getByRole('combobox', { name: 'Сортировка', exact: true })
   await expect(sort).toHaveText('Название А–Я')
-  await expect(sort).toHaveCSS('min-height', '44px')
+  await expect(sort).toHaveCSS('min-height', '36px')
   await sort.focus()
   await sort.press('ArrowDown')
   const list = page.getByRole('listbox', { name: 'Сортировка', exact: true })

@@ -14,6 +14,7 @@ const keys = [
   'price_from',
   'price_to',
   'in_stock',
+  'is_on_sale',
   'sort',
   'attributes',
   'page',
@@ -57,6 +58,7 @@ function draftFrom(query: CatalogQuery): CatalogDraft {
     price_from: query.price_from || '',
     price_to: query.price_to || '',
     in_stock: query.in_stock === '1',
+    is_on_sale: query.is_on_sale === '1',
     attributes,
   }
 }
@@ -135,6 +137,7 @@ export function useCatalog() {
     ] as const)
       if (draft.value[key].trim()) value[key] = draft.value[key].trim()
     if (draft.value.in_stock) value.in_stock = '1'
+    if (draft.value.is_on_sale) value.is_on_sale = '1'
     const attributes = Object.fromEntries(
       Object.entries(draft.value.attributes).flatMap(([id, filter]) => {
         if (!filter || typeof filter !== 'object') return []

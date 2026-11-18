@@ -5,7 +5,7 @@ withDefaults(
   defineProps<{
     to?: string
     variant?: 'dark' | 'light' | 'outline' | 'image-overlay'
-    size?: 'normal' | 'compact'
+    size?: 'normal' | 'compact' | 'small'
     type?: 'button' | 'submit'
     arrow?: boolean
   }>(),
@@ -132,6 +132,17 @@ defineEmits<{ click: [event: MouseEvent] }>()
   font-size: 10px;
   letter-spacing: 0.2em;
   white-space: nowrap;
+}
+.ui-button--small {
+  min-height: 28px;
+  padding: 5px 10px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+@media (pointer: coarse) {
+  .ui-button--small {
+    min-height: 44px;
+  }
 }
 
 .ui-button--image-overlay {

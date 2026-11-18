@@ -27,6 +27,7 @@ class PublicCatalogRequest extends FormRequest
             'include_filters' => ['sometimes', 'boolean'],
             'category_descendants' => ['sometimes', 'boolean'],
             'in_stock' => ['sometimes', 'boolean'],
+            'is_on_sale' => ['sometimes', 'boolean'],
             'price_from' => ['sometimes', 'string', 'max:20', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'price_to' => ['sometimes', 'string', 'max:20', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'sort' => ['sometimes', Rule::in(['name_asc', 'name_desc', 'price_asc', 'price_desc', 'newest'])],

@@ -281,6 +281,7 @@ if (!props.preview) {
             <UiSelect
               v-model="sorting"
               label="Сортировка"
+              size="compact"
               :options="sortOptions"
             />
           </div>
@@ -292,14 +293,14 @@ if (!props.preview) {
             <UiButton
               v-for="chip in chips"
               :key="chip.key + chip.id"
-              size="compact"
+              size="small"
               variant="outline"
               :aria-label="'Убрать фильтр: ' + chip.label"
               @click="remove(chip.key, chip.id)"
               >{{ chip.label }} ×</UiButton
             >
             <UiButton
-              size="compact"
+              size="small"
               variant="outline"
               @click="scoped ? clearFilters() : clear()"
               >{{ scoped ? 'Сбросить фильтры' : 'Сбросить всё' }}</UiButton
@@ -409,7 +410,7 @@ if (!props.preview) {
 }
 .catalog-reset-link {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 28px;
   align-items: center;
   font-size: 13px;
 }
@@ -424,7 +425,7 @@ if (!props.preview) {
   max-height: calc(100dvh - var(--catalog-header-height) - 44px);
   overflow-y: auto;
   margin-top: -16px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   border-bottom: 1px solid transparent;
   padding-block: 16px 15px;
   background: var(--color-bg);
@@ -451,7 +452,7 @@ if (!props.preview) {
   min-width: 0;
 }
 .catalog-sidebar__title {
-  margin: 0 0 24px;
+  margin: 0 0 16px;
   font-size: 14px;
   font-weight: 500;
 }
@@ -460,13 +461,13 @@ if (!props.preview) {
   justify-content: space-between;
   align-items: end;
   gap: 20px;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--color-line);
-  padding-bottom: 24px;
+  padding-bottom: 16px;
 }
 .catalog-toolbar p {
   margin: 0;
-  padding-bottom: 14px;
+  padding-bottom: 8px;
   font-size: 13px;
   color: var(--color-muted);
 }
@@ -482,8 +483,9 @@ if (!props.preview) {
 .catalog-applied {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 32px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 .catalog-applied :deep(.ui-button) {
   max-width: 100%;
@@ -509,7 +511,12 @@ if (!props.preview) {
   padding: 24px var(--ui-drawer-gutter);
 }
 .catalog-drawer-body .catalog-categories + .catalog-filter-form {
-  margin-top: 32px;
+  margin-top: 20px;
+}
+@media (pointer: coarse) {
+  .catalog-reset-link {
+    min-height: 44px;
+  }
 }
 @media (max-width: 1023px) {
   .catalog-category-navigation {

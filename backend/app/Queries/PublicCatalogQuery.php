@@ -37,6 +37,9 @@ class PublicCatalogQuery
         if ($filters['in_stock'] ?? false) {
             $query->where('stock_quantity', '>', 0);
         }
+        if ($filters['is_on_sale'] ?? false) {
+            $query->where('is_on_sale', true);
+        }
         $raw = $filters['attributes'] ?? null;
         if (is_string($raw)) {
             $attributes = json_decode($raw, true, 32, JSON_THROW_ON_ERROR);

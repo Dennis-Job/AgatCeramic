@@ -6,6 +6,65 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=standalone-default')
 })
 
+test('compact checkboxes retain keyboard, forced colors and touch behavior', async ({
+  page,
+  browser,
+}, testInfo) => {
+  await page.goto('/catalog?category=tile')
+  const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
+  const checkbox = form.getByLabel('В наличии', { exact: true })
+  await checkbox.focus()
+  await checkbox.press('Space')
+  await expect(checkbox).toBeChecked()
+  await expect(checkbox).toHaveCSS('background-color', 'rgb(250, 250, 248)')
+  await expect(checkbox).toHaveCSS('border-color', 'rgb(205, 201, 192)')
+  await expect(checkbox).toHaveCSS('outline-style', 'solid')
+  await expect(checkbox.locator('..').locator('.ui-checkbox__mark')).toHaveCSS(
+    'visibility',
+    'visible',
+  )
+  await checkbox.blur()
+  await checkbox
+    .locator('..')
+    .screenshot({ path: testInfo.outputPath('checkbox-checked.png') })
+  await checkbox.press('Space')
+  await expect(checkbox).not.toBeChecked()
+  await expect(checkbox).toHaveCSS('border-color', 'rgb(205, 201, 192)')
+  await checkbox.blur()
+  await checkbox
+    .locator('..')
+    .screenshot({ path: testInfo.outputPath('checkbox-unchecked.png') })
+  await page.emulateMedia({ forcedColors: 'active' })
+  await expect(checkbox).toHaveCSS('appearance', 'auto')
+  await page.emulateMedia({ forcedColors: 'none' })
+
+  const touch = await browser.newContext({
+    hasTouch: true,
+    viewport: { width: 390, height: 844 },
+  })
+  const mobile = await touch.newPage()
+  await mobile.goto('/catalog?category=tile')
+  await mobile.getByRole('button', { name: 'Фильтры', exact: true }).click()
+  const dialog = mobile.getByRole('dialog', { name: 'Фильтры каталога' })
+  const stock = dialog.getByLabel('В наличии', { exact: true })
+  expect(
+    (await stock.locator('..').boundingBox())!.height,
+  ).toBeGreaterThanOrEqual(44)
+  expect(
+    (await dialog.getByLabel('Цена от').boundingBox())!.height,
+  ).toBeGreaterThanOrEqual(44)
+  await stock.check()
+  await expect(stock).toBeChecked()
+  await dialog.getByRole('button', { name: 'Применить', exact: true }).click()
+  await expect(mobile).toHaveURL(/in_stock=1/)
+  expect(
+    (await mobile
+      .getByRole('button', { name: 'Убрать фильтр: В наличии', exact: true })
+      .boundingBox())!.height,
+  ).toBeGreaterThanOrEqual(44)
+  await touch.close()
+})
+
 test('standalone SSR catalog survives missing and failed CMS, and absent catalog blocks', async ({
   request,
 }) => {

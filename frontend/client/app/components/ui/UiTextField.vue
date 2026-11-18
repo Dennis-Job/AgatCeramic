@@ -14,6 +14,7 @@ const props = defineProps<{
   max?: string
   step?: string
   surface?: 'white'
+  size?: 'normal' | 'compact'
   autocomplete?: string
   required?: boolean
   maxlength?: number
@@ -151,7 +152,10 @@ watch([model, () => props.required], () => {
 <template>
   <div
     class="ui-text-field"
-    :class="{ 'ui-field--white': surface === 'white' }"
+    :class="{
+      'ui-field--white': surface === 'white',
+      'ui-text-field--compact': size === 'compact',
+    }"
   >
     <label :for="id" class="ui-field-label">{{ label }}</label>
     <input
@@ -198,5 +202,18 @@ input {
 }
 input:disabled {
   opacity: 0.55;
+}
+.ui-text-field--compact {
+  gap: 6px;
+}
+.ui-text-field--compact input {
+  min-height: 36px;
+  padding: 7px 10px;
+  line-height: 20px;
+}
+@media (pointer: coarse) {
+  .ui-text-field--compact input {
+    min-height: 44px;
+  }
 }
 </style>

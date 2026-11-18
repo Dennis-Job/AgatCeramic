@@ -49,6 +49,7 @@ function bound(key: 'min' | 'max' | 'text', text: string) {
         v-for="option in options"
         :key="option.value"
         :label="option.label"
+        size="compact"
         :model-value="value.values?.includes(option.value) || false"
         @update:model-value="toggle(option.value, $event)"
       />
@@ -63,6 +64,7 @@ function bound(key: 'min' | 'max' | 'text', text: string) {
     >
       <UiTextField
         :label="attribute.name + ' от'"
+        size="compact"
         :type="attribute.type === 'date' ? 'date' : 'number'"
         :step="attribute.type === 'integer' ? '1' : 'any'"
         :model-value="value.min || ''"
@@ -70,6 +72,7 @@ function bound(key: 'min' | 'max' | 'text', text: string) {
       />
       <UiTextField
         :label="attribute.name + ' до'"
+        size="compact"
         :type="attribute.type === 'date' ? 'date' : 'number'"
         :step="attribute.type === 'integer' ? '1' : 'any'"
         :model-value="value.max || ''"
@@ -79,6 +82,7 @@ function bound(key: 'min' | 'max' | 'text', text: string) {
     <UiTextField
       v-else
       :label="attribute.name"
+      size="compact"
       :maxlength="200"
       :model-value="value.text || ''"
       @update:model-value="bound('text', $event)"
@@ -92,12 +96,12 @@ function bound(key: 'min' | 'max' | 'text', text: string) {
   margin: 0;
   border: 0;
   border-top: 1px solid var(--color-line);
-  padding: 24px 0 0;
+  padding: 16px 0 0;
 }
 legend {
   float: left;
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding: 0;
   font-size: 13px;
   font-weight: 500;
@@ -109,7 +113,7 @@ legend + * {
 .attribute-filter__range {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
 }
 .attribute-filter__range--date {
   grid-template-columns: minmax(0, 1fr);

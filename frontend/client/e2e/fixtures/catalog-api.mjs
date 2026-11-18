@@ -118,7 +118,7 @@ export function handleCatalog(request, response, url, scenario) {
     old_price: null,
     unit: 'square_meter',
     in_stock: i % 2 === 0,
-    is_on_sale: false,
+    is_on_sale: scenario === 'standalone-sale' && i % 3 === 0,
     image_url: null,
     image_alt: '',
     category: categories[1],
@@ -187,6 +187,8 @@ export function handleCatalog(request, response, url, scenario) {
     products = []
   if (url.searchParams.get('in_stock'))
     products = products.filter((p) => p.in_stock)
+  if (url.searchParams.get('is_on_sale') === '1')
+    products = products.filter((p) => p.is_on_sale)
   if (url.searchParams.get('price_from'))
     products = products.filter(
       (p) =>

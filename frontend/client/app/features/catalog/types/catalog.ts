@@ -46,6 +46,7 @@ export interface CatalogDraft {
   price_from: string
   price_to: string
   in_stock: boolean
+  is_on_sale: boolean
   attributes: Record<string, AttributeFilter>
 }
 export type CatalogQuery = Record<string, string>
