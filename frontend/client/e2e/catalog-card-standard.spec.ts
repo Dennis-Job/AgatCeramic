@@ -8,6 +8,45 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__cart/reset')
 })
 
+test('category and price align within each card row without clipping long names', async ({
+  page,
+}) => {
+  await page.goto('/catalog')
+  const cards = page.locator('#catalog-products .product-card')
+  await expect(cards).toHaveCount(3)
+  for (const width of [320, 640, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.evaluate(() => document.fonts.ready)
+    const geometry = await cards.evaluateAll((elements) =>
+      elements.map((card) => {
+        const title = card.querySelector<HTMLElement>('h3')!
+        return {
+          row: card.getBoundingClientRect().top,
+          category: card.querySelector('.card-meta')!.getBoundingClientRect()
+            .top,
+          price: card.querySelector('.card-price')!.getBoundingClientRect().top,
+          titleClipped: title.scrollHeight > title.clientHeight + 1,
+        }
+      }),
+    )
+    for (const card of geometry) {
+      expect(card.titleClipped, `title at ${width}px`).toBe(false)
+      for (const neighbor of geometry.filter(
+        (other) => Math.abs(other.row - card.row) < 1,
+      )) {
+        expect(
+          Math.abs(card.category - neighbor.category),
+          `category at ${width}px`,
+        ).toBeLessThan(1)
+        expect(
+          Math.abs(card.price - neighbor.price),
+          `price at ${width}px`,
+        ).toBeLessThan(1)
+      }
+    }
+  }
+})
+
 test('ordinary stocked products can be added without a sale badge', async ({
   page,
   request,

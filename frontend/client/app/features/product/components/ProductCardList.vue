@@ -44,7 +44,15 @@ async function add(id: number) {
 .product-card-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
+  column-gap: 32px;
+  row-gap: 0;
+}
+/* Internal subgrid tracks have no gutters; only complete card rows are spaced. */
+.product-card-list :deep(.product-card:not(.product-card--row)) {
+  margin-bottom: 32px;
+}
+.product-card-list :deep(.product-card:nth-last-child(-n + 3)) {
+  margin-bottom: 0;
 }
 .product-card-list--rows {
   display: block;
@@ -62,10 +70,22 @@ async function add(id: number) {
   .product-card-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .product-card-list :deep(.product-card:not(.product-card--row)) {
+    margin-bottom: 32px;
+  }
+  .product-card-list :deep(.product-card:nth-last-child(-n + 2)) {
+    margin-bottom: 0;
+  }
 }
 @media (max-width: 520px) {
   .product-card-list {
     grid-template-columns: 1fr;
+  }
+  .product-card-list :deep(.product-card:not(.product-card--row)) {
+    margin-bottom: 32px;
+  }
+  .product-card-list :deep(.product-card:last-child) {
+    margin-bottom: 0;
   }
 }
 </style>

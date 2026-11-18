@@ -1,3 +1,4 @@
+import { selectChoice } from './helpers/selectChoice'
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
@@ -205,7 +206,10 @@ test('brand pagination and sorting stay under the same route without a brand que
   await expect(page).toHaveURL(/\/brand\/atlas\?page=2/)
   await expect(page).not.toHaveURL(/brand=/)
   await expect(page.locator('.product-card')).toHaveCount(3)
-  await page.getByLabel('Сортировка').selectOption('price_desc')
+  await selectChoice(
+    page.getByRole('combobox', { name: 'Сортировка', exact: true }),
+    'Цена по убыванию',
+  )
   await expect(page).not.toHaveURL(/page=2|brand=/)
   await expect(page).toHaveURL(/\/brand\/atlas\?sort=price_desc/)
 })

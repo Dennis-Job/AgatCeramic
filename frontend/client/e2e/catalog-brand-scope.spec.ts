@@ -1,3 +1,4 @@
+import { selectChoice } from './helpers/selectChoice'
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
@@ -17,8 +18,13 @@ test('brand category and refinements remain independent on its clean URL', async
     name: 'Категории каталога',
   })
   const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
-  await expect(form.getByLabel('Бренд', { exact: true })).toHaveCount(0)
+  await expect(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+  ).toHaveCount(0)
   await expect(form.getByText('Цвет', { exact: true })).toHaveCount(0)
+  await categories
+    .getByRole('button', { name: 'Материалы', exact: true })
+    .click()
   await categories.getByRole('link', { name: 'Плитка', exact: true }).click()
   await expect(page).toHaveURL(/\/brand\/atlas\?category=tile/)
   await expect(page).not.toHaveURL(/brand=/)
@@ -44,7 +50,10 @@ test('category entry refines by brand and history restores the previous page', a
 }) => {
   await page.goto('/catalog?category=tile')
   const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
-  await form.getByLabel('Бренд', { exact: true }).selectOption('atlas')
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    'Atlas',
+  )
   await form.getByRole('button', { name: 'Применить', exact: true }).click()
   await expect(page).toHaveURL(/\/brand\/atlas\?category=tile/)
   await expect(page).not.toHaveURL(/brand=/)
@@ -62,7 +71,9 @@ test('category entry refines by brand and history restores the previous page', a
   await expect(page.locator('.product-card')).toHaveCount(2)
   await page.goBack()
   await expect(page).toHaveURL(/\/catalog\?category=tile/)
-  await expect(form.getByLabel('Бренд', { exact: true })).toHaveValue('')
+  await expect(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+  ).toHaveText('Все бренды')
 })
 
 test('category changes clear dependent values while brand counts ignore refinements', async ({
@@ -78,6 +89,9 @@ test('category changes clear dependent values while brand counts ignore refineme
   const categories = page.getByRole('navigation', {
     name: 'Категории каталога',
   })
+  await categories
+    .getByRole('button', { name: 'Материалы', exact: true })
+    .click()
   await expect(
     categories.getByRole('link', { name: 'Плитка', exact: true }),
   ).toContainText('2')
@@ -89,6 +103,9 @@ test('category changes clear dependent values while brand counts ignore refineme
   await expect(page).toHaveURL(/price_from=150/)
   await expect(page).not.toHaveURL(/collection=|page=|attributes=|brand=/)
   await expect(page.locator('.product-card')).toHaveCount(1)
+  await categories
+    .getByRole('button', { name: 'Материалы', exact: true })
+    .click()
   await expect(
     categories.getByRole('link', { name: 'Плитка', exact: true }),
   ).toContainText('2')

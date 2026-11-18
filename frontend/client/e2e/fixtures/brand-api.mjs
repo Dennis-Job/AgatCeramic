@@ -36,7 +36,17 @@ export function handleBrands(request, response, url, scenario) {
   if (url.pathname !== '/api/v1/brands') {
     if (scenario === 'brand-page-error') return send({}, 503)
     const slug = decodeURIComponent(url.pathname.split('/').at(-1))
-    const brand = brands.find((item) => item.slug === slug)
+    const brand =
+      slug === 'test-brand'
+        ? {
+            id: 1,
+            name: 'Тестовый бренд',
+            slug,
+            description: null,
+            logo_url: null,
+            logo_alt: '',
+          }
+        : brands.find((item) => item.slug === slug)
     if (brand && scenario === 'brand-page-long-broken')
       return send({
         data: {

@@ -70,7 +70,7 @@ test('dropdown keyboard, dismissal and one open group', async ({ page }) => {
     .click()
   await expect(nav.locator(':popover-open')).toHaveCount(0)
   await parent.click()
-  await page.getByLabel('Сортировка').focus()
+  await page.getByRole('combobox', { name: 'Сортировка', exact: true }).focus()
   await expect(parent).toHaveAttribute('aria-expanded', 'false')
 })
 

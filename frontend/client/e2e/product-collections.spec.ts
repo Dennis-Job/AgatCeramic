@@ -48,10 +48,10 @@ test('complete collection renders in SSR between details and accessories with a 
     await link.evaluate((el) => getComputedStyle(el).outlineStyle),
   ).not.toBe('none')
   await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/\/catalog\?/)
+  await expect(page).toHaveURL(/\/brand\/test-brand\?/)
   const url = new URL(page.url())
-  expect(url.pathname).toBe('/catalog')
-  expect(url.searchParams.get('brand')).toBe('test-brand')
+  expect(url.pathname).toBe('/brand/test-brand')
+  expect(url.searchParams.has('brand')).toBe(false)
   expect(url.searchParams.get('collection')).toBe('Тестовая коллекция')
   expect(issues).toEqual([])
 })

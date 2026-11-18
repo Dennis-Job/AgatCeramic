@@ -102,6 +102,34 @@ const recommendationMeta = computed(() =>
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.product-card:not(.product-card--row) {
+  display: grid;
+  /* Share image, brand, title, category and price tracks across a card row. */
+  grid-row: span 5;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+}
+.product-card:not(.product-card--row) .card-media {
+  grid-row: 1;
+}
+.product-card:not(.product-card--row) .card-info {
+  display: grid;
+  grid-row: 2 / span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+}
+.product-card:not(.product-card--row) .card-brand {
+  grid-row: 1;
+}
+.product-card:not(.product-card--row) h3 {
+  grid-row: 2;
+}
+.product-card:not(.product-card--row) .card-meta {
+  grid-row: 3;
+}
+.product-card:not(.product-card--row) .card-price {
+  grid-row: 5;
+}
 .card-media {
   position: relative;
   overflow: hidden;

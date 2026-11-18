@@ -474,7 +474,7 @@ if (!props.preview) {
   min-width: 0;
 }
 .catalog-toolbar .ui-select {
-  width: min(260px, 100%);
+  width: min(230px, 100%);
 }
 .catalog-toolbar .catalog-mobile-toggle {
   display: none;

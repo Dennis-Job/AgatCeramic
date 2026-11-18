@@ -1,3 +1,4 @@
+import { selectChoice } from './helpers/selectChoice'
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
@@ -60,7 +61,10 @@ test('pagination, sorting, empty, validation error and retry are usable', async 
   await expect(page.locator('.product-card')).toHaveCount(24)
   await page.getByRole('link', { name: 'Следующая →' }).click()
   await expect(page.locator('.product-card')).toHaveCount(3)
-  await page.getByLabel('Сортировка').selectOption('price_desc')
+  await selectChoice(
+    page.getByRole('combobox', { name: 'Сортировка', exact: true }),
+    'Цена по убыванию',
+  )
   await expect(page).not.toHaveURL(/page=2/)
   await page.goto('/catalog?category=mosaic')
   await expect(
@@ -191,20 +195,46 @@ test('draft brand changes clear incompatible collections and restore applied cho
 }) => {
   await page.goto('/catalog?category=tile')
   const form = page.getByRole('complementary')
-  await form.getByLabel('Бренд', { exact: true }).selectOption('atlas')
-  await form.getByLabel('Коллекция', { exact: true }).selectOption('Stone')
-  await form.getByLabel('Бренд', { exact: true }).selectOption('empty')
-  await expect(form.getByLabel('Коллекция', { exact: true })).toHaveValue('')
-  await form.getByLabel('Бренд', { exact: true }).selectOption('atlas')
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    'Atlas',
+  )
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Коллекция', exact: true }),
+    'Stone',
+  )
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    'Другой бренд',
+  )
   await expect(
-    form
-      .getByLabel('Коллекция', { exact: true })
-      .getByRole('option', { name: 'Stone', exact: true }),
+    form.getByRole('combobox', { name: 'Коллекция', exact: true }),
+  ).toHaveText('Все коллекции')
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    'Atlas',
+  )
+  await form.getByRole('combobox', { name: 'Коллекция', exact: true }).click()
+  await expect(
+    form.getByRole('option', { name: 'Stone', exact: true }),
   ).toHaveCount(1)
-  await form.getByLabel('Коллекция', { exact: true }).selectOption('Stone')
-  await form.getByLabel('Бренд', { exact: true }).selectOption('')
-  await expect(form.getByLabel('Коллекция', { exact: true })).toHaveValue('')
-  await expect(form.getByLabel('Коллекция', { exact: true })).toBeDisabled()
+  await form
+    .getByRole('combobox', { name: 'Коллекция', exact: true })
+    .press('Escape')
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Коллекция', exact: true }),
+    'Stone',
+  )
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    'Все бренды',
+  )
+  await expect(
+    form.getByRole('combobox', { name: 'Коллекция', exact: true }),
+  ).toHaveText('Сначала выберите бренд')
+  await expect(
+    form.getByRole('combobox', { name: 'Коллекция', exact: true }),
+  ).toBeDisabled()
   await form.getByRole('button', { name: 'Применить', exact: true }).click()
   await expect(page).not.toHaveURL(/collection=/)
   await expect(page).not.toHaveURL(/brand=/)
@@ -287,10 +317,15 @@ test('reset clears draft and money validity even when URL and hash are unchanged
       .getByLabel('Цена от')
       .evaluate((el: HTMLInputElement) => el.validity.valid),
   ).toBe(false)
-  await form.getByLabel('Бренд', { exact: true }).selectOption('atlas')
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    'Atlas',
+  )
   await form.getByRole('button', { name: 'Сбросить всё', exact: true }).click()
   await expect(form.getByLabel('Цена от')).toHaveValue('')
-  await expect(form.getByLabel('Бренд', { exact: true })).toHaveValue('')
+  await expect(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+  ).toHaveText('Все бренды')
   expect(
     await form
       .getByLabel('Цена от')
@@ -380,19 +415,30 @@ test('an old collection lookup cannot replace metadata after category navigation
     } else await route.continue()
   })
   const form = page.getByRole('complementary')
-  await form.getByLabel('Бренд', { exact: true }).selectOption('empty')
+  await selectChoice(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    'Другой бренд',
+  )
   await seen
   await page
     .getByRole('navigation', { name: 'Категории каталога' })
     .getByRole('link', { name: 'Мозаика', exact: true })
     .click()
-  await expect(form.getByLabel('Бренд', { exact: true })).toHaveValue('')
-  await expect(form.getByLabel('Коллекция', { exact: true })).toBeDisabled()
+  await expect(
+    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+  ).toHaveText('Все бренды')
+  await expect(
+    form.getByRole('combobox', { name: 'Коллекция', exact: true }),
+  ).toBeDisabled()
   release()
   await page.waitForTimeout(150)
   await expect(
     form
-      .getByLabel('Коллекция', { exact: true })
+      .getByRole('listbox', {
+        name: 'Коллекция',
+        exact: true,
+        includeHidden: true,
+      })
       .getByRole('option', { name: 'Устаревшая коллекция', exact: true }),
   ).toHaveCount(0)
 })
