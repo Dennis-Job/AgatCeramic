@@ -1,5 +1,12 @@
 # DONE
 
+2026-11-19 — По референсам владельца добавлена кнопочная подгрузка товаров
+в каталоге, брендах и preview. Счётчик/прогресс, append/dedupe, retry,
+scope reset, отмена stale-запросов и keyboard focus. UI-042 обновлён.
+Typecheck/build/format/diff-check, 46 E2E и дополнительный прогон 4/4 PASS.
+Независимый UI Design Guard — PASS, локальный Client обновлён и осмотрен.
+[Файлы и проверки](../docs/CATALOG_LOAD_MORE_2026-11-19.md).
+
 2026-11-19 — По замечанию владельца булевы значения характеристик каталога
 отображаются общими переключателями UiCheckbox variant="switch".
 Фактические options, OR/AND, legacy URL, desktop auto/mobile Apply сохранены.

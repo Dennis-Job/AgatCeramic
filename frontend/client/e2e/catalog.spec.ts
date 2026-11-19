@@ -122,8 +122,8 @@ test('pagination, sorting, empty, validation error and retry are usable', async 
 }) => {
   await page.goto('/catalog')
   await expect(page.locator('.product-card')).toHaveCount(24)
-  await page.getByRole('link', { name: 'Следующая →' }).click()
-  await expect(page.locator('.product-card')).toHaveCount(3)
+  await page.getByRole('link', { name: 'Показать ещё 3' }).click()
+  await expect(page.locator('.product-card')).toHaveCount(27)
   await selectChoice(
     page.getByRole('combobox', { name: 'Сортировка', exact: true }),
     'Цена по убыванию',

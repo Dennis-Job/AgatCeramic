@@ -10,6 +10,7 @@ import CatalogCategories from './CatalogCategories.vue'
 import CatalogBrandNavigation from './CatalogBrandNavigation.vue'
 import CatalogFilterForm from './CatalogFilterForm.vue'
 import { useCatalog } from '../composables/useCatalog'
+import { useCatalogLoadMore } from '../composables/useCatalogLoadMore'
 import { useStickyCatalogNavigation } from '../composables/useStickyCatalogNavigation'
 import type { ContentPage } from '~/types/contentPage'
 import { siteOrigin } from '#shared/utils/pageUrls'
@@ -23,6 +24,7 @@ const props = defineProps<{
   brand?: PublicBrand
 }>()
 const route = useRoute()
+const router = useRouter()
 const { navigation, headerHeight, pinned, revealFocusedControl } =
   useStickyCatalogNavigation()
 const {
@@ -55,6 +57,55 @@ watch(responseCatalog, (value) => {
   if (value) previousCatalog.value = value
 })
 const catalog = computed(() => responseCatalog.value || previousCatalog.value)
+const more = useCatalogLoadMore(
+  catalog,
+  query,
+  computed(() => status.value === 'pending'),
+)
+const {
+  products,
+  loading: loadingMore,
+  error: moreError,
+  hasMore,
+  total: listingTotal,
+  nextPage,
+  nextCount,
+} = more
+const moreControl = ref<HTMLElement | null>(null)
+const moreCounter = ref<HTMLElement | null>(null)
+watch(
+  hasMore,
+  async (value) => {
+    if (import.meta.server || value || !loadingMore.value) return
+    const active = document.activeElement
+    if (
+      !value &&
+      loadingMore.value &&
+      active &&
+      moreControl.value?.contains(active)
+    ) {
+      await nextTick()
+      if (
+        document.activeElement === document.body ||
+        document.activeElement === active
+      )
+        moreCounter.value?.focus({ preventScroll: true })
+    }
+  },
+  { flush: 'sync' },
+)
+function loadNext(event: MouseEvent) {
+  if (
+    event.button ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey ||
+    event.altKey
+  )
+    return
+  event.preventDefault()
+  void more.loadMore()
+}
 const event = useRequestEvent()
 if (event && error.value && !props.preview) setResponseStatus(event, 503)
 const drawer = ref(false)
@@ -277,7 +328,10 @@ if (!props.preview) {
             @reset="scoped ? clearFilters() : clear()"
           />
         </aside>
-        <div class="catalog-results" :aria-busy="status === 'pending'">
+        <div
+          class="catalog-results"
+          :aria-busy="status === 'pending' || loadingMore"
+        >
           <div class="catalog-toolbar">
             <div class="catalog-toolbar__heading">
               <h2>{{ listingTitle }}</h2>
@@ -344,7 +398,7 @@ if (!props.preview) {
           <template v-else>
             <ProductCardList
               v-if="catalog?.data.length"
-              :products="catalog.data"
+              :products="products"
               class="products"
             />
             <template v-else>
@@ -356,26 +410,32 @@ if (!props.preview) {
                 >Сбросить фильтры</UiButton
               >
             </template>
-            <nav
-              v-if="catalog && catalog.meta.last_page > 1"
-              class="catalog-pagination"
-              aria-label="Страницы каталога"
-            >
+            <div v-if="products.length" class="catalog-load-more">
+              <p ref="moreCounter" role="status" tabindex="-1">
+                Показано {{ products.length }} из {{ listingTotal }}
+              </p>
+              <progress
+                :value="products.length"
+                :max="listingTotal"
+                aria-label="Показано товаров"
+              />
+              <p v-if="moreError" role="alert">{{ moreError }}</p>
+              <div v-if="hasMore" ref="moreControl" @click.capture="loadNext">
+                <UiButton
+                  :to="router.resolve(pageLink(nextPage)).href"
+                  variant="outline"
+                  :aria-disabled="loadingMore || status === 'pending'"
+                  >{{
+                    loadingMore ? 'Загружаем…' : `Показать ещё ${nextCount}`
+                  }}</UiButton
+                >
+              </div>
               <NuxtLink
-                v-if="catalog.meta.current_page > 1"
+                v-if="catalog && catalog.meta.current_page > 1"
                 :to="pageLink(catalog.meta.current_page - 1)"
                 >← Предыдущая</NuxtLink
               >
-              <span aria-current="page"
-                >{{ catalog.meta.current_page }} /
-                {{ catalog.meta.last_page }}</span
-              >
-              <NuxtLink
-                v-if="catalog.meta.current_page < catalog.meta.last_page"
-                :to="pageLink(catalog.meta.current_page + 1)"
-                >Следующая →</NuxtLink
-              >
-            </nav>
+            </div>
           </template>
         </div>
       </div>
@@ -522,19 +582,39 @@ if (!props.preview) {
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.catalog-pagination {
+.catalog-load-more {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
+  gap: 20px;
   margin-top: 48px;
-  font-size: 13px;
+  font-size: 12px;
+  color: var(--color-muted);
 }
-.catalog-pagination a {
-  min-height: 44px;
-  border-bottom: 1px solid var(--color-line);
-  padding-block: 14px;
+.catalog-load-more p {
+  margin: 0;
+}
+.catalog-load-more progress {
+  appearance: none;
+  width: 200px;
+  max-width: 100%;
+  height: 2px;
+  border: 0;
+  background: var(--color-line);
+  color: var(--color-ink);
+}
+.catalog-load-more progress::-webkit-progress-bar {
+  background: var(--color-line);
+}
+.catalog-load-more progress::-webkit-progress-value {
+  background: var(--color-ink);
+}
+.catalog-load-more progress::-moz-progress-bar {
+  background: var(--color-ink);
+}
+.catalog-load-more :deep([aria-disabled='true']) {
+  opacity: 0.55;
+  cursor: wait;
 }
 .catalog-drawer-body {
   overflow-y: auto;

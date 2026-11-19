@@ -202,10 +202,10 @@ test('brand pagination and sorting stay under the same route without a brand que
   await request.get('http://127.0.0.1:8015/__scenario?name=standalone-default')
   await page.goto('/brand/atlas')
   await expect(page.locator('.product-card')).toHaveCount(24)
-  await page.getByRole('link', { name: 'Следующая →' }).click()
-  await expect(page).toHaveURL(/\/brand\/atlas\?page=2/)
+  await page.getByRole('link', { name: 'Показать ещё 3' }).click()
+  await expect(page).toHaveURL(/\/brand\/atlas(?:#|$)/)
   await expect(page).not.toHaveURL(/brand=/)
-  await expect(page.locator('.product-card')).toHaveCount(3)
+  await expect(page.locator('.product-card')).toHaveCount(27)
   await selectChoice(
     page.getByRole('combobox', { name: 'Сортировка', exact: true }),
     'Цена по убыванию',

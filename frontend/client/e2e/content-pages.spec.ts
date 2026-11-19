@@ -172,11 +172,11 @@ test('long Russian navigation and all sixteen links stay usable without page ove
   }
 })
 
-test('catalog pagination uses URL and API page', async ({ page }) => {
+test('catalog load more appends the next API page', async ({ page }) => {
   await page.goto('/catalog')
   await expect(page.getByText(/1.*234,50/)).toBeVisible()
-  await page.getByRole('link', { name: 'Следующая →' }).click()
-  await expect(page).toHaveURL(/page=2/)
+  await page.getByRole('link', { name: /Показать ещё/ }).click()
+  await expect(page).not.toHaveURL(/page=2/)
   await expect(
     page.getByRole('heading', {
       name: 'Керамогранит с длинным русским названием 2',
@@ -184,7 +184,7 @@ test('catalog pagination uses URL and API page', async ({ page }) => {
   ).toBeVisible()
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
     'content',
-    'noindex,follow',
+    'index,follow',
   )
 })
 
