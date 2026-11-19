@@ -3,6 +3,7 @@ import UiButton from '~/components/ui/UiButton.vue'
 import UiSelect from '~/components/ui/UiSelect.vue'
 import UiCheckbox from '~/components/ui/UiCheckbox.vue'
 import UiTextField from '~/components/ui/UiTextField.vue'
+import UiRange from '~/components/ui/UiRange.vue'
 import CatalogAttributeFilter from './CatalogAttributeFilter.vue'
 import PageState from '~/components/shared/PageState.vue'
 import type { CatalogDraft, CatalogFilters } from '../types/catalog'
@@ -25,6 +26,64 @@ const emit = defineEmits<{
 }>()
 const form = ref<HTMLFormElement | null>(null)
 const route = useRoute()
+const priceBounds = computed(() => {
+  const range = props.filters.price_range
+  if (!range) return null
+  const min = Math.round(Number(range.min) * 100)
+  const max = Math.round(Number(range.max) * 100)
+  if (
+    !Number.isSafeInteger(min) ||
+    !Number.isSafeInteger(max) ||
+    min < 0 ||
+    max < min
+  )
+    return null
+  return { min, max }
+})
+const sliderFrom = computed({
+  get: () =>
+    Math.min(
+      sliderTo.value,
+      Math.max(
+        priceBounds.value?.min ?? 0,
+        Math.round(
+          Number(
+            model.value.price_from || props.filters.price_range?.min || 0,
+          ) * 100,
+        ) || 0,
+      ),
+    ),
+  set: (value: number) => {
+    model.value.price_from = (value / 100).toFixed(2)
+  },
+})
+const sliderTo = computed({
+  get: () =>
+    Math.max(
+      priceBounds.value?.min ?? 0,
+      Math.min(
+        priceBounds.value?.max ?? 0,
+        Math.round(
+          Number(model.value.price_to || props.filters.price_range?.max || 0) *
+            100,
+        ) || 0,
+      ),
+    ),
+  set: (value: number) => {
+    model.value.price_to = (value / 100).toFixed(2)
+  },
+})
+function priceHint(value?: string) {
+  return value
+    ? Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+    : undefined
+}
+function sliderPrice(value: number) {
+  return (value / 100).toLocaleString('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+  })
+}
 let timer: ReturnType<typeof setTimeout> | undefined
 let media: MediaQueryList | undefined
 function cancel() {
@@ -153,6 +212,8 @@ onBeforeUnmount(() => {
             v-model="model.price_from"
             @update:model-value="queueApply(350)"
             label="Цена от"
+            prefix="от"
+            :placeholder="priceHint(filters.price_range?.min)"
             size="compact"
             money
           />
@@ -160,15 +221,29 @@ onBeforeUnmount(() => {
             v-model="model.price_to"
             @update:model-value="queueApply(350)"
             label="Цена до"
+            prefix="до"
+            :placeholder="priceHint(filters.price_range?.max)"
             size="compact"
             money
           />
         </div>
+        <UiRange
+          v-if="priceBounds && priceBounds.max > priceBounds.min"
+          v-model:from="sliderFrom"
+          v-model:to="sliderTo"
+          :min="priceBounds.min"
+          :max="priceBounds.max"
+          label-from="Минимальная цена"
+          label-to="Максимальная цена"
+          :format-value="sliderPrice"
+          @change="queueApply(350)"
+        />
       </fieldset>
       <div class="catalog-filter-form__flags">
         <UiCheckbox
           v-model="model.in_stock"
           label="В наличии"
+          variant="switch"
           size="compact"
           @update:model-value="queueApply()"
         />
@@ -176,6 +251,7 @@ onBeforeUnmount(() => {
           v-model="model.is_on_sale"
           @update:model-value="queueApply()"
           label="Распродажа"
+          variant="switch"
           size="compact"
         />
       </div>

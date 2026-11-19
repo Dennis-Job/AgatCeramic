@@ -86,6 +86,14 @@ const recommendationMeta = computed(() =>
         "
         >{{ formatMoney(product.old_price) }}</del
       >
+      <p
+        v-if="!row"
+        class="card-stock"
+        :class="{ 'card-stock--available': product.in_stock }"
+      >
+        <span class="card-stock__dot" aria-hidden="true" />
+        {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
+      </p>
     </div>
     <UiButton
       v-if="action && row"
@@ -204,6 +212,26 @@ h3 a:hover {
   color: var(--color-muted);
   font-size: 12px;
   font-weight: 400;
+}
+.card-stock {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.card-stock__dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-stock-unavailable);
+}
+.card-stock--available .card-stock__dot {
+  background: var(--color-stock-available);
 }
 .product-card > :last-child:not(.card-price):not(.card-info) {
   margin-top: 17px;

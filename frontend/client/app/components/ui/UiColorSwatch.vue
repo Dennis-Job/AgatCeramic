@@ -56,13 +56,12 @@ input {
   pointer-events: none;
 }
 input:checked + .ui-color-swatch__color {
-  border: 2px solid var(--color-ink);
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
 input:focus-visible + .ui-color-swatch__color {
   outline: 2px dashed var(--color-ink);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 .ui-color-swatch:has(input:disabled) {
   opacity: 0.55;

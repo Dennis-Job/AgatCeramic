@@ -41,6 +41,44 @@ UiSelect поддерживает тот же наследуемый контр�
 drawer с черновиком и Apply, desktop-фильтры применяются автоматически.
 Применяется в каталоге, страницах брендов и сохранённом preview каталога.
 
+### Уточнение controls каталога — UI-040 / 2026-11-19
+
+По присланным владельцем референсам поле сортировки получает bg-soft.
+Компактные checkbox характеристик наследуют field-background панели, включая
+светлый unchecked. Флаги «В наличии» и «Распродажа» используют общий
+UiCheckbox variant="switch" с подписью слева, капсулой 34×18 px справа
+и круглым индикатором; native input имеет role="switch", поддерживает
+Space, focus-visible, disabled и forced colors. Другие checkbox остаются
+квадратными. По последующему референсу владельца выбранные checkbox и
+включённые switch имеют ink-фон и белую галочку/круглый индикатор.
+Выключенный switch сохраняет светлый фон и серый индикатор.
+
+Цена использует UiTextField prefix="от"/"до" с доступным скрытым label.
+Шрифт 13 px desktop, 16 px до 1024 px; светлый фон и прямые углы.
+Placeholder показывает реальную границу, пустая модель остаётся пустой.
+Общий UiRange связывает два native range с полями, работает в целых копейках,
+не допускает пересечения, озвучивает рубли и поддерживает клавиатуру.
+Выбранный участок линии имеет ink-цвет, свободные участки — line.
+На coarse pointer цель 44 px при видимом кружке 18 px. Совпавшие ползунки
+можно раздвинуть указателем. Границы берутся из filters.price_range API для
+полного публичного category/brand scope до дополнительных фильтров/pagination.
+Пустой или одноценовой scope оставляет поля без ползунков.
+Desktop сохраняет debounce 350 ms, mobile — draft/Apply и отмену.
+Общие потребители — каталог, бренд и preview. Проверки — catalog-filter-controls,
+catalog, catalog-auto-filters, ui-select, brands и preview, пять ширин и UI Guard.
+
+### Наличие под ценой карточки — UI-041 / 2026-11-19
+
+По референсу владельца общий ProductCard в сетке показывает под ценой
+«В наличии» с зелёной точкой либо «Нет в наличии» с серой точкой по
+фактическому in_stock API. Срок поставки не выводится без данных.
+Текст muted 12 px / 400, line-height 1.6, верхний отступ 8 px и gap 7 px;
+точка 6 px, скрыта от assistive technology. Цвета — tokens
+stock-available #5e8067 и stock-unavailable #a3a09b, подобраны по референсу.
+В row статус остаётся в существующей строке метаданных.
+Общие потребители — каталог, рекомендации и контентные блоки/preview.
+Проверки — catalog-card-standard, product-pages, пять ширин и UI Guard.
+
 
 ### Вступительный блок страницы — UI-030 / 2026-11-10
 
@@ -603,7 +641,7 @@ SSR/hydration и независимый UI Design Guard. Актуальные р
 | UI-021 / 2026-11-02 | Нижнего блока «Варианты товара» нет. «Рекомендуем посмотреть» по SIMILAR productExample: надзаголовок «Обратите внимание», без описания, светлый band и карточки с фото 1/1.06, кнопкой поверх фото по hover/focus и постоянной кнопкой на touch. Производитель над названием uppercase; под названием категория и необязательный размер из характеристики. | ProductCollections, ProductCard, SectionHeading, UiButton image-overlay; подробности в разделе «Рекомендуем посмотреть», product-pages/product-collections E2E и UI Design Guard. |
 | UI-022 / 2026-11-02, уточнено 2026-11-18 | Карточка рекомендаций — эталон всех товарных плиток: каталог, фильтры, контентные каталоги, preview и рекомендации используют один ProductCardList/ProductCard; фото, uppercase производитель, полное название, категория/размер, цена, «В корзину +». Категория и цена всегда выровнены с соседями одного ряда через общие строки CSS subgrid, без обрезки названий и фиксированной высоты. Компактные сопутствующие row сохраняются. | ProductCardList + ProductCard в features/product; CatalogListing и ProductCollections; catalog-card-standard/content-pages/product-pages/preview E2E. |
 | UI-034 / 2026-11-18 | Общие списки выбора: обычная цель от 44 px, в каталоге `size="compact"` от 36 px (44 px при coarse pointer), текст 13 px, без нативной стрелки и выделяющей рамки при клике; Tab-фокус обозначен подчёркиванием текста. Панель вариантов светлее фона страницы (`bg-soft`), тонкая граница, мягкая тень и общий плавный вход/выход 0.35 s. Сортировка до 230 px на desktop. Подробный контракт ниже. | UiSelect, CatalogFilterForm, CatalogPageBody; каталог, бренды, preview/catalog; ui-select/catalog/brand-pages E2E, пять ширин, keyboard, axe, normal/reduced motion и UI Design Guard. |
-| UI-035 / 2026-11-18 | По замечаниям владельца каталог плотнее: поля/select от 36 px, подпись с gap 6 px, группы/разделители 16 px, checkbox-строки 28 px с gap 8 px, квадрат 16 px со светло-серым контуром line-strong и светлым checked; applied chips и reset — UiButton small от 28 px с padding 5×10 px. На coarse pointer controls сохраняют цель 44 px. | Компактные варианты UiTextField/UiSelect/UiCheckbox и UiButton small; CatalogFilterForm, CatalogAttributeFilter, CatalogPageBody на /catalog, /brand/<slug>, /preview/catalog. Catalog/ui-select/mobile-draft/brand/preview E2E и независимый UI Design Guard. |
+| UI-035 / 2026-11-18 | По замечаниям владельца каталог плотнее: поля/select от 36 px, подпись с gap 6 px, группы/разделители 16 px, checkbox-строки 28 px с gap 8 px, квадрат 16 px со светло-серым контуром line-strong и чёрным checked с белой галочкой; applied chips и reset — UiButton small от 28 px с padding 5×10 px. На coarse pointer controls сохраняют цель 44 px. | Компактные варианты UiTextField/UiSelect/UiCheckbox и UiButton small; CatalogFilterForm, CatalogAttributeFilter, CatalogPageBody на /catalog, /brand/<slug>, /preview/catalog. Catalog/ui-select/mobile-draft/brand/preview E2E и независимый UI Design Guard. |
 | UI-023 / 2026-11-02, уточнено 2026-11-09 | SALE переводится как «Распродажа», видимость строго по is_on_sale. Флаг не влияет на доступность покупки, статус наличия или Schema.org; обычные товары покупаются при наличии и заданной цене. Тёмная плашка сверху слева фото в каталоге/рекомендациях и основной галерее товара; без изменения row сопутствующих. | ProductSaleBadge — общий стиль; ProductCard и ProductGallery — потребители; ProductPurchase; product-pages/catalog-card-standard E2E, пять ширин и UI Design Guard. |
 | UI-024 / 2026-11-02 | Во вкладке характеристик видны названия реальных групп, тонкие линии и пары «название — значение». Группы идут в двух независимых колонках, до 520 px в одной. | ProductInfoTabs, `attributes[].group` в API. Подробности в разделе «Группы характеристик товара». Проверки включают product-pages E2E, пять ширин, SSR/axe и UI Design Guard. |
 | UI-025 / 2026-11-03 | Корзина по `exampleSite.html`: правый drawer до 460 px на всю высоту, компактные строки с квадратным фото, отдельная прокрутка списка и итог внизу. На странице корзины тот же компактный счётчик, колонка 100 px на широком экране. Кнопка «Оформить заказ» ведёт на `/cart`. Стрелка сдвигается на 4 px за 0,3 с при наведении и клавиатурном фокусе. При reduced motion стрелка остаётся на месте. | CartDialog, CartLineItem, UiDialog drawer, UiQuantityInput compact и UiButton. Подробности в разделе «Карточка товара и корзина». Проверки — `cart.spec.ts`, `checkout.spec.ts`, пять ширин и UI Design Guard. |
@@ -1010,7 +1048,8 @@ checkbox «Распродажа» на том же `UiCheckbox size="compact"`. 
 Текстовые поля от 36 px с padding 7×10 px, шрифт 16 px / 20 px
 сохраняет читаемость и не вызывает мобильный zoom. Checkbox-строка от 28 px,
 gap 8 px, квадрат 16 px: светло-серый контур `--color-line-strong` вместо системного
-чёрного; по повторному уточнению владельца checked также без чёрной заливки: bg-soft и серая галочка muted. Native input и связанный label
+чёрного; по актуальному референсу владельца от 2026-11-19 checked имеет
+ink-заливку и белую галочку. Native input и связанный label
 сохраняют keyboard, disabled родительского fieldset и focus-visible;
 при forced colors возвращается нативное оформление. На coarse pointer
 поля, trigger, checkbox-строки, chips и ссылка «Весь каталог» от 44 px.
@@ -1038,8 +1077,10 @@ OR, с единицей в legend. Старые текстовые URL рабо�
 в ряд с переносом и gap 8 px. Круг 24 px с тонким контуром line-strong,
 цель 32 px и 44 px на coarse pointer. Цвет берётся из сохранённого HEX-кода
 option.value, название — из option.label (aria-label и title при наведении).
-Выбранный круг имеет ink-границу 2 px и внешний ink-контур; keyboard focus —
-пунктирный контур, native checkbox сохраняет Space/Tab, checked и disabled.
+По уточнению владельца от 2026-11-19 выделение выбранного цвета задаётся
+только внешним ink-кольцом 2 px с отступом 2 px. Обычная тонкая граница
+самого кружка 1 px line-strong сохраняется. Keyboard focus меняет внешнее
+кольцо на пунктирное; native checkbox сохраняет Space/Tab, checked и disabled.
 Палитра интерфейса прежняя; цветовые образцы — данные товара. В inline CSS
 допускается только literal HEX (3/4/6/8 знаков); неизвестный исторический
 код остаётся текстовым checkbox без придумывания оттенка. В forced colors

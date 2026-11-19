@@ -14906,6 +14906,16 @@
                     "attributes"
                 ],
                 "properties": {
+                    "price_range": {
+                        "description": "Minimum and maximum sales-unit price across the public category/descendant and selected brand scope before collection, price, stock, sale, attribute filters and pagination. Null when no priced products exist. Zero and equal bounds are valid.",
+                        "type": ["object", "null"],
+                        "required": ["min", "max"],
+                        "properties": {
+                            "min": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$", "example": "390.00"},
+                            "max": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{2}$", "example": "89900.00"}
+                        },
+                        "additionalProperties": false
+                    },
                     "brands": {
                         "type": "array",
                         "items": {
@@ -15017,8 +15027,7 @@
                         }
                     }
                 },
-                "additionalProperties": false,
-                "description": "Scoped to all public products before other filters; collections additionally require the selected brand. Options contain distinct real values, independent of the current result page. No characteristic inheritance."
+                "additionalProperties": false
             },
             "PublicCatalogProduct": {
                 "type": "object",

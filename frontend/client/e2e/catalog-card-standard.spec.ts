@@ -14,6 +14,16 @@ test('category and price align within each card row without clipping long names'
   await page.goto('/catalog')
   const cards = page.locator('#catalog-products .product-card')
   await expect(cards).toHaveCount(3)
+  await expect(cards.first().locator('.card-stock')).toHaveText('В наличии')
+  await expect(cards.first().locator('.card-stock__dot')).toHaveCSS(
+    'background-color',
+    'rgb(94, 128, 103)',
+  )
+  await expect(cards.nth(2).locator('.card-stock')).toHaveText('Нет в наличии')
+  await expect(cards.nth(2).locator('.card-stock__dot')).toHaveCSS(
+    'background-color',
+    'rgb(163, 160, 155)',
+  )
   for (const width of [320, 640, 768, 1024, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     await page.evaluate(() => document.fonts.ready)

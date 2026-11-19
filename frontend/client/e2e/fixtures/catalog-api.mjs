@@ -230,6 +230,15 @@ export function handleCatalog(request, response, url, scenario) {
     scenario === 'standalone-empty'
   )
     products = []
+  const scopePrices = products
+    .filter((product) => product.price !== null)
+    .map((product) => Number(product.price))
+  const priceRange = scopePrices.length
+    ? {
+        min: Math.min(...scopePrices).toFixed(2),
+        max: Math.max(...scopePrices).toFixed(2),
+      }
+    : null
   if (url.searchParams.get('in_stock'))
     products = products.filter((p) => p.in_stock)
   if (url.searchParams.get('is_on_sale') === '1')
@@ -332,6 +341,7 @@ export function handleCatalog(request, response, url, scenario) {
       total: products.length,
     },
     filters: {
+      price_range: priceRange,
       brands: [
         { id: 1, slug: 'atlas', name: 'Atlas' },
         { id: 2, slug: 'empty', name: 'Другой бренд' },

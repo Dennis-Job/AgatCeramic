@@ -505,6 +505,7 @@ if (!props.preview) {
 }
 .catalog-toolbar .ui-select {
   width: min(230px, 100%);
+  --field-background: var(--color-bg-soft);
 }
 .catalog-toolbar .catalog-mobile-toggle {
   display: none;

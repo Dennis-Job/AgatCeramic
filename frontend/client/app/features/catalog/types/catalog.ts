@@ -15,6 +15,7 @@ export interface AttributeFilter {
   text?: string
 }
 export interface CatalogFilters {
+  price_range?: { min: string; max: string } | null
   brands: { id: number; name: string; slug: string }[]
   collections: { id: number; name: string; brand_slug: string }[]
   attributes: CatalogAttribute[]

@@ -10,6 +10,8 @@ const props = defineProps<{
   label: string
   type?: 'text' | 'tel' | 'email' | 'number' | 'date'
   money?: boolean
+  prefix?: string
+  placeholder?: string
   min?: string
   max?: string
   step?: string
@@ -155,9 +157,15 @@ watch([model, () => props.required], () => {
     :class="{
       'ui-field--white': surface === 'white',
       'ui-text-field--compact': size === 'compact',
+      'ui-text-field--prefix': !!prefix,
     }"
   >
-    <label :for="id" class="ui-field-label">{{ label }}</label>
+    <label :for="id" :class="prefix ? 'visually-hidden' : 'ui-field-label'">{{
+      label
+    }}</label>
+    <span v-if="prefix" class="ui-text-field__prefix" aria-hidden="true">{{
+      prefix
+    }}</span>
     <input
       :id="id"
       ref="input"
@@ -174,6 +182,7 @@ watch([model, () => props.required], () => {
       :autofocus="autofocus"
       :disabled="disabled"
       :readonly="readonly"
+      :placeholder="placeholder"
       @focus="editingMoney = !!money"
       @blur="onBlur"
       @beforeinput="beforeInput"
@@ -188,6 +197,27 @@ watch([model, () => props.required], () => {
   display: grid;
   gap: 8px;
   min-width: 0;
+}
+.ui-text-field--prefix {
+  position: relative;
+}
+.ui-text-field__prefix {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+.ui-text-field.ui-text-field--prefix input {
+  padding-left: 34px;
+  font-size: 13px;
+}
+@media (max-width: 1023px) {
+  .ui-text-field.ui-text-field--prefix input {
+    font-size: 16px;
+  }
 }
 input {
   width: 100%;

@@ -7,6 +7,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductCollection;
+use Brick\Math\BigDecimal;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -114,12 +115,36 @@ class PublicCatalogQuery
         $options = (new PublicCatalogAttributeQuery)->options($scope, $attributes);
 
         return [
+            'price_range' => $this->priceRange($scope, $filters),
             'brands' => $brands->map(fn (Brand $brand) => ['id' => $brand->id, 'name' => $brand->name, 'slug' => $brand->slug])->all(),
             'collections' => $collections->map(fn (ProductCollection $collection) => ['id' => $collection->id, 'name' => $collection->name, 'brand_slug' => $collection->brand?->slug])->all(),
             'attributes' => $attributes->map(fn (Attribute $attribute) => [
                 'id' => $attribute->id, 'name' => $attribute->name, 'slug' => $attribute->slug, 'type' => $attribute->type, 'unit' => $attribute->unit,
                 'options' => $options[$attribute->id],
             ])->all(),
+        ];
+    }
+
+    /**
+     * @param  Builder<Product>  $scope
+     * @param  array<string, mixed>  $filters
+     * @return array{min: string, max: string}|null
+     */
+    private function priceRange(Builder $scope, array $filters): ?array
+    {
+        $query = clone $scope;
+        if (is_string($filters['brand'] ?? null) && $filters['brand'] !== '') {
+            $query->whereHas('brand', fn ($brand) => $brand->where('slug', $filters['brand']));
+        }
+        /** @var object{min_price: int|float|string|null, max_price: int|float|string|null}|null $bounds */
+        $bounds = $query->toBase()->selectRaw('MIN(price) AS min_price, MAX(price) AS max_price')->first();
+        if ($bounds === null || $bounds->min_price === null || $bounds->max_price === null) {
+            return null;
+        }
+
+        return [
+            'min' => (string) BigDecimal::of((string) $bounds->min_price)->toScale(2),
+            'max' => (string) BigDecimal::of((string) $bounds->max_price)->toScale(2),
         ];
     }
 

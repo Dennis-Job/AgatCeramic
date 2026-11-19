@@ -63,6 +63,14 @@ test('size and color controls stay usable across five widths and mobile Apply ca
     await white.focus()
     await white.press('Space')
     await expect(white).toBeChecked()
+    const swatch = white.locator('..').locator('.ui-color-swatch__color')
+    await expect(swatch).toHaveCSS('outline-style', 'dashed')
+    await expect(swatch).toHaveCSS('border-width', '1px')
+    await white.blur()
+    await expect(swatch).toHaveCSS('border-style', 'solid')
+    await expect(swatch).toHaveCSS('border-width', '1px')
+    await expect(swatch).toHaveCSS('outline-style', 'solid')
+    await expect(swatch).toHaveCSS('outline-width', '2px')
     await expect(
       white.locator('..').locator('.ui-color-swatch__color'),
     ).toHaveCSS('background-color', 'rgb(255, 255, 255)')

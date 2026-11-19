@@ -12,12 +12,18 @@ test('compact checkboxes retain keyboard, forced colors and touch behavior', asy
 }, testInfo) => {
   await page.goto('/catalog?category=tile')
   const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
-  const checkbox = form.getByLabel('В наличии', { exact: true })
+  const checkbox = form
+    .getByRole('group', { name: 'Цвет', exact: true })
+    .getByLabel('Серый', { exact: true })
   await checkbox.focus()
   await checkbox.press('Space')
   await expect(checkbox).toBeChecked()
-  await expect(checkbox).toHaveCSS('background-color', 'rgb(250, 250, 248)')
-  await expect(checkbox).toHaveCSS('border-color', 'rgb(205, 201, 192)')
+  await expect(checkbox).toHaveCSS('background-color', 'rgb(20, 20, 20)')
+  await expect(checkbox).toHaveCSS('border-color', 'rgb(20, 20, 20)')
+  await expect(checkbox.locator('..').locator('.ui-checkbox__mark')).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  )
   await expect(checkbox).toHaveCSS('outline-style', 'solid')
   await expect(checkbox.locator('..').locator('.ui-checkbox__mark')).toHaveCSS(
     'visibility',
