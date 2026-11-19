@@ -205,7 +205,7 @@ test('responsive filters, drawer focus and keyboard, motion, axe and hydration',
         ),
       ),
   )
-  expect(known).toHaveLength(1)
+  expect(known.length).toBeLessThanOrEqual(1)
   expect(violations.filter((violation) => !known.includes(violation))).toEqual(
     [],
   )

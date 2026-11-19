@@ -279,10 +279,10 @@ onBeforeUnmount(() => {
   width: 100%;
   min-width: 0;
   min-height: 44px;
-  border: 1px solid var(--color-line);
+  border: 1px solid var(--field-border-color, var(--color-line));
   border-radius: 0;
   padding: 10px 12px;
-  background: transparent;
+  background: var(--field-background, transparent);
   color: var(--color-ink);
   font: inherit;
   font-size: 13px;

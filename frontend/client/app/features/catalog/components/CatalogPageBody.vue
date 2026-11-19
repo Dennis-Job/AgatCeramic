@@ -78,6 +78,12 @@ const scopeCategories = computed(
     [],
 )
 const scopeTotal = computed(() => catalog.value?.category_navigation?.total)
+const listingTitle = computed(
+  () =>
+    scopeCategories.value.find(
+      (category) => category.slug === query.value.category,
+    )?.name || 'Все товары',
+)
 const draftCategories = computed(
   () =>
     draftNavigation.value?.categories ||
@@ -256,7 +262,6 @@ if (!props.preview) {
       </div>
       <div class="catalog-layout">
         <aside class="catalog-sidebar" aria-label="Фильтры каталога">
-          <h2 class="catalog-sidebar__title">Фильтры</h2>
           <CatalogFilterForm
             v-model="draft"
             auto-apply
@@ -275,6 +280,7 @@ if (!props.preview) {
         <div class="catalog-results" :aria-busy="status === 'pending'">
           <div class="catalog-toolbar">
             <div class="catalog-toolbar__heading">
+              <h2>{{ listingTitle }}</h2>
               <p role="status">
                 Товаров: {{ catalog?.meta.total ?? '—'
                 }}<span v-if="status === 'pending'"> · Обновляем…</span>
@@ -460,10 +466,13 @@ if (!props.preview) {
 .catalog-results {
   min-width: 0;
 }
-.catalog-sidebar__title {
-  margin: 0 0 16px;
-  font-size: 14px;
-  font-weight: 500;
+.catalog-sidebar {
+  padding: 20px;
+  background: var(--color-beige);
+  --field-background: var(--color-bg-soft);
+  --field-border-color: var(--color-line-strong);
+  --color-muted: var(--color-ink-soft);
+  --color-line: var(--color-line-strong);
 }
 .catalog-toolbar {
   display: flex;
@@ -481,7 +490,18 @@ if (!props.preview) {
   color: var(--color-muted);
 }
 .catalog-toolbar__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 20px;
   min-width: 0;
+}
+.catalog-toolbar__heading h2 {
+  margin: 0;
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 500;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 .catalog-toolbar .ui-select {
   width: min(230px, 100%);

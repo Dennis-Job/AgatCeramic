@@ -84,6 +84,17 @@ onBeforeUnmount(() => {
     aria-label="Подбор товаров"
     @submit.prevent="submit()"
   >
+    <div v-if="autoApply" class="catalog-filter-form__heading">
+      <h2>Фильтры</h2>
+      <button
+        class="catalog-filter-form__reset"
+        type="button"
+        :aria-label="scoped ? 'Сбросить фильтры' : 'Сбросить всё'"
+        @click="reset()"
+      >
+        Сбросить
+      </button>
+    </div>
     <PageState
       v-if="error"
       title="Не удалось загрузить фильтры"
@@ -209,6 +220,27 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
 }
+.catalog-filter-form__heading {
+  display: none;
+}
+.catalog-filter-form__heading h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.catalog-filter-form__reset {
+  min-height: 28px;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  font-size: 13px;
+  color: var(--color-ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.catalog-filter-form__reset:hover {
+  color: var(--color-ink);
+}
 .catalog-filter-form__price {
   min-width: 0;
   margin: 0;
@@ -236,8 +268,32 @@ legend {
   padding-top: 16px;
 }
 @media (min-width: 1024px) {
+  .catalog-filter-form--automatic .catalog-filter-form__heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--color-line-strong);
+    padding-bottom: 12px;
+  }
+  .catalog-filter-form--automatic
+    .catalog-filter-form__fields
+    > :deep(.ui-select),
+  .catalog-filter-form--automatic .catalog-filter-form__price {
+    border-bottom: 1px solid var(--color-line-strong);
+    padding-bottom: 16px;
+  }
+  .catalog-filter-form--automatic .catalog-filter-form__actions {
+    display: none;
+  }
   .catalog-filter-form--automatic .catalog-filter-form__submit {
     display: none;
+  }
+}
+@media (pointer: coarse) {
+  .catalog-filter-form__reset {
+    min-height: 44px;
   }
 }
 </style>
