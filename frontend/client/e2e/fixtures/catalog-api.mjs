@@ -107,6 +107,35 @@ export function handleCatalog(request, response, url, scenario) {
             { value: 'white', label: 'Белый' },
           ],
   }))
+  const actualChoices = {
+    integer: ['0', '600', '800'],
+    decimal: ['0.5', '1.25'],
+    date: ['2026-01-01', '2026-12-31'],
+    string: ['камень'],
+    text: ['матовая'],
+  }
+  for (const definition of definitions) {
+    const values = actualChoices[definition.type]
+    if (values)
+      definition.options = values.map((value) => ({ value, label: value }))
+  }
+  const longDescription = 'Гладкая поверхность с подробным описанием. '.repeat(
+    8,
+  )
+  if (scenario === 'standalone-attribute-values') {
+    definitions[2].options = [{ value: 'true', label: 'Да' }]
+    definitions[6].name = 'Ширина шва'
+    definitions[6].slug = 'shirina-shva'
+    definitions[6].unit = 'мм'
+    definitions[6].options = ['1–6', '1–10', '2–20'].map((value) => ({
+      value,
+      label: value,
+    }))
+    definitions[7].options = ['матовая', longDescription].map((value) => ({
+      value,
+      label: value,
+    }))
+  }
   if (scenario === 'standalone-sizes-colors') {
     definitions[0].slug = 'tsvet'
     definitions[0].options = [
@@ -219,6 +248,27 @@ export function handleCatalog(request, response, url, scenario) {
     )
   if (Object.keys(attributes).length)
     products = products.filter((p) => {
+      if (scenario === 'standalone-attribute-values') {
+        const values = {
+          1: p.id % 2 ? 'gray' : 'white',
+          2: p.id % 2 ? 'gray' : 'white',
+          3: 'true',
+          4: p.id === 3 ? '600' : '0',
+          5: p.id === 3 ? '1.25' : '0.5',
+          6: p.id === 3 ? '2026-12-31' : '2026-01-01',
+          7: p.id === 27 ? '2–20' : p.id === 3 ? '1–10' : '1–6',
+          8: p.id === 3 ? longDescription : 'матовая',
+        }
+        return Object.entries(attributes).every(([id, filter]) => {
+          const actual = values[id]
+          if (filter.values) return filter.values.includes(actual)
+          if (filter.text) return actual.includes(filter.text)
+          return (
+            (filter.min === undefined || actual >= filter.min) &&
+            (filter.max === undefined || actual <= filter.max)
+          )
+        })
+      }
       if (scenario !== 'standalone-sizes-colors') return p.id <= 3
       const size =
         p.id === 27

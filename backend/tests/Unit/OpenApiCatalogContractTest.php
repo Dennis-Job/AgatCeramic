@@ -99,6 +99,7 @@ class OpenApiCatalogContractTest extends TestCase
         $publicCatalogParameters = array_column($spec['paths']['/catalog']['get']['parameters'], null, 'name');
         self::assertSame('boolean', $publicCatalogParameters['is_on_sale']['schema']['type']);
         self::assertFalse($publicCatalogParameters['is_on_sale']['required']);
+        self::assertSame(65536, $publicCatalogParameters['attributes']['schema']['maxLength']);
         self::assertSame(
             '#/components/schemas/ProductFilterCountsResponse',
             $spec['paths']['/admin/products/filter-counts']['get']['responses']['200']['content']['application/json']['schema']['$ref'],

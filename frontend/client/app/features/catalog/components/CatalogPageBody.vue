@@ -26,7 +26,7 @@ const route = useRoute()
 const { navigation, headerHeight, pinned, revealFocusedControl } =
   useStickyCatalogNavigation()
 const {
-  data: catalog,
+  data: responseCatalog,
   status,
   error,
   refresh,
@@ -50,6 +50,11 @@ const {
   ready,
 } = useCatalog()
 await ready
+const previousCatalog = shallowRef(responseCatalog.value)
+watch(responseCatalog, (value) => {
+  if (value) previousCatalog.value = value
+})
+const catalog = computed(() => responseCatalog.value || previousCatalog.value)
 const event = useRequestEvent()
 if (event && error.value && !props.preview) setResponseStatus(event, 503)
 const drawer = ref(false)
@@ -110,8 +115,8 @@ const appliedChips = useCatalogAppliedFilters(catalog, query)
 const chips = computed(() =>
   appliedChips.value.filter((chip) => !props.brand || chip.key !== 'brand'),
 )
-async function commit(close?: () => void) {
-  await apply()
+async function commit(close?: () => void, automatic = false) {
+  await apply(automatic)
   close?.()
 }
 async function clear(close?: () => void) {
@@ -254,6 +259,7 @@ if (!props.preview) {
           <h2 class="catalog-sidebar__title">Фильтры</h2>
           <CatalogFilterForm
             v-model="draft"
+            auto-apply
             :filters="draftFilters"
             :collections="collections"
             :pending="draftFiltersPending"
@@ -262,14 +268,17 @@ if (!props.preview) {
             :scoped="scoped"
             @retry="refreshDraftFilters()"
             :busy="status === 'pending'"
-            @apply="commit()"
+            @apply="commit(undefined, $event)"
             @reset="scoped ? clearFilters() : clear()"
           />
         </aside>
         <div class="catalog-results" :aria-busy="status === 'pending'">
           <div class="catalog-toolbar">
             <div class="catalog-toolbar__heading">
-              <p role="status">Товаров: {{ catalog?.meta.total ?? '—' }}</p>
+              <p role="status">
+                Товаров: {{ catalog?.meta.total ?? '—'
+                }}<span v-if="status === 'pending'"> · Обновляем…</span>
+              </p>
             </div>
             <UiButton
               class="catalog-mobile-toggle"
@@ -321,7 +330,7 @@ if (!props.preview) {
             @retry="refresh()"
           />
           <PageState
-            v-else-if="status === 'pending'"
+            v-else-if="status === 'pending' && !catalog"
             title="Товары"
             message="Загружаем каталог…"
             loading

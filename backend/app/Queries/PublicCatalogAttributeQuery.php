@@ -5,6 +5,8 @@ namespace App\Queries;
 use App\Models\Attribute;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
+use App\Support\CatalogAttributeOptionValue;
+use Brick\Math\BigDecimal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,15 +23,16 @@ class PublicCatalogAttributeQuery
         $products->whereHas('attributeValues', function (Builder $values) use ($attribute, $filter): void {
             $values->where('attribute_id', $attribute->id);
             $pgsql = DB::connection($values->getModel()->getConnectionName())->getDriverName() === 'pgsql';
-            $type = $pgsql ? 'jsonb_typeof(product_attribute_values.value::jsonb)' : "json_type(product_attribute_values.value, '$')";
-            $text = $pgsql ? "(product_attribute_values.value::jsonb #>> '{}')" : "json_extract(product_attribute_values.value, '$')";
-            $exactSize = $attribute->slug === 'razmer' && in_array($attribute->type, ['string', 'text'], true) && isset($filter['values']);
-            if (in_array($attribute->type, ['select', 'multiselect', 'boolean'], true) || $exactSize) {
-                $selected = $filter['values'] ?? [];
+            ['type' => $type, 'text' => $text] = $this->jsonExpressions($pgsql, $attribute->type);
+            if (isset($filter['values'])) {
+                $selected = $filter['values'];
                 $selected = is_array($selected) ? array_values(array_filter($selected, is_string(...))) : [];
                 $values->where(function (Builder $matches) use ($selected, $attribute, $pgsql, $type, $text): void {
                     foreach ($selected as $value) {
-                        if ($attribute->type === 'boolean') {
+                        if (in_array($attribute->type, ['integer', 'decimal'], true)) {
+                            $numeric = $this->exactNumericExpression($pgsql, $type, $text);
+                            $matches->orWhereRaw("($numeric) = CAST(? AS NUMERIC)", [$value]);
+                        } elseif ($attribute->type === 'boolean') {
                             $matches->orWhereRaw($pgsql ? "$type = 'boolean' AND $text = ?" : "$type = ?", [$value]);
                         } elseif ($attribute->type === 'multiselect') {
                             $matches->orWhereRaw($pgsql
@@ -78,15 +81,11 @@ class PublicCatalogAttributeQuery
     public function options(Builder $products, Collection $attributes): array
     {
         $actual = [];
-        foreach (['select', 'multiselect', 'boolean'] as $type) {
+        foreach (Attribute::TYPES as $type) {
             $ids = array_values($attributes->where('type', $type)->modelKeys());
             if ($ids !== []) {
                 $actual += $this->actualValues($products, $ids, $type);
             }
-        }
-        $sizeIds = array_values($attributes->where('slug', 'razmer')->whereIn('type', ['string', 'text'])->modelKeys());
-        if ($sizeIds !== []) {
-            $actual += $this->actualValues($products, $sizeIds, 'string');
         }
         $result = [];
         foreach ($attributes as $attribute) {
@@ -105,8 +104,7 @@ class PublicCatalogAttributeQuery
     {
         $values = ProductAttributeValue::query()->whereIn('attribute_id', $ids)->whereIn('product_id', (clone $products)->select('products.id'));
         $pgsql = DB::connection($values->getModel()->getConnectionName())->getDriverName() === 'pgsql';
-        $type = $pgsql ? 'jsonb_typeof(product_attribute_values.value::jsonb)' : "json_type(product_attribute_values.value, '$')";
-        $text = $pgsql ? "(product_attribute_values.value::jsonb #>> '{}')" : "json_extract(product_attribute_values.value, '$')";
+        ['type' => $type, 'text' => $text] = $this->jsonExpressions($pgsql, $attributeType);
         if ($attributeType === 'multiselect') {
             $values->crossJoin(DB::raw($pgsql
                 ? "LATERAL jsonb_array_elements(CASE WHEN $type = 'array' THEN product_attribute_values.value::jsonb ELSE '[]'::jsonb END) AS item"
@@ -118,6 +116,12 @@ class PublicCatalogAttributeQuery
             if (! $pgsql) {
                 $text = "CASE WHEN $type = 'true' THEN 'true' ELSE 'false' END";
             }
+        } elseif (in_array($attributeType, ['integer', 'decimal'], true)) {
+            $values->whereRaw($pgsql ? "$type IN ('number', 'string')" : "$type IN ('integer', 'real', 'text')");
+            // Preserve the JSON numeric literal; SQLite json_extract would round it through a float.
+            if (! $pgsql) {
+                $text = "CASE WHEN $type IN ('integer', 'real') THEN CAST(product_attribute_values.value AS TEXT) ELSE $text END";
+            }
         } else {
             $values->whereRaw("$type = ?", [$pgsql ? 'string' : 'text']);
         }
@@ -125,12 +129,49 @@ class PublicCatalogAttributeQuery
         $actual = [];
         $rows = $values->selectRaw("product_attribute_values.attribute_id, $text AS option_value")->distinct()->toBase()->get();
         foreach ($rows as $row) {
-            if (is_string($row->option_value) && trim($row->option_value) !== '' && (is_int($row->attribute_id) || is_string($row->attribute_id))) {
-                $actual[(int) $row->attribute_id][] = $row->option_value;
+            if (is_string($row->option_value) && (is_int($row->attribute_id) || is_string($row->attribute_id))) {
+                $value = CatalogAttributeOptionValue::normalize($attributeType, $row->option_value);
+                if ($value !== null) {
+                    $actual[(int) $row->attribute_id][] = $value;
+                }
             }
         }
 
-        return $actual;
+        return array_map(fn (array $options): array => array_values(array_unique($options, SORT_STRING)), $actual);
+    }
+
+    /**
+     * @param  literal-string  $type
+     * @param  literal-string  $text
+     * @return literal-string
+     */
+    private function exactNumericExpression(bool $pgsql, string $type, string $text): string
+    {
+        return $pgsql
+            ? "CASE WHEN $type IN ('number', 'string') AND LENGTH($text) <= 1024 AND $text ~ '^-?(0|[1-9][0-9]*)([.][0-9]+)?([eE][+-]?[0-9]{1,3})?$' THEN CAST($text AS NUMERIC) END"
+            : "CASE WHEN $type IN ('integer', 'real') OR ($type = 'text' AND LENGTH($text) <= 1024 AND $text NOT GLOB '*[^0-9.eE+-]*' AND CASE WHEN json_valid($text) THEN json_type($text) END IN ('integer', 'real')) THEN CAST($text AS NUMERIC) END";
+    }
+
+    /** @return array{type: literal-string, text: literal-string} */
+    private function jsonExpressions(bool $pgsql, string $attributeType): array
+    {
+        $value = 'product_attribute_values.value';
+        $guardedScalar = in_array($attributeType, ['string', 'text', 'integer', 'decimal', 'date'], true);
+        if ($pgsql) {
+            // Guard the cast itself: historical json may contain escapes jsonb cannot represent.
+            $json = $guardedScalar
+                ? "CASE WHEN pg_input_is_valid($value::text, 'jsonb') THEN $value::jsonb END"
+                : "$value::jsonb";
+
+            return ['type' => "jsonb_typeof($json)", 'text' => "($json #>> '{}')"];
+        }
+        $text = "json_extract($value, '$')";
+        if ($guardedScalar) {
+            // SQLite truncates strings at NUL; remove escaped backslash pairs before detecting it.
+            $text = "CASE WHEN INSTR(REPLACE(LOWER($value), '\\\\', ''), '\\u0000') = 0 THEN $text END";
+        }
+
+        return ['type' => "json_type($value, '$')", 'text' => $text];
     }
 
     /**
@@ -153,7 +194,11 @@ class PublicCatalogAttributeQuery
                     $actual = array_values(array_diff($actual, [$option->value]));
                 }
             }
-            sort($actual, SORT_STRING);
+            if (in_array($attribute->type, ['integer', 'decimal'], true)) {
+                usort($actual, fn (string $left, string $right): int => BigDecimal::of($left)->compareTo($right));
+            } else {
+                sort($actual, SORT_STRING);
+            }
             foreach ($actual as $value) {
                 $result[] = ['value' => $value, 'label' => $value];
             }

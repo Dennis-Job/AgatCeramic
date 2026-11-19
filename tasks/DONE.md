@@ -1,5 +1,24 @@
 # DONE
 
+2026-11-19 — По замечанию владельца ширина шва и все остальные характеристики
+выбираются только из фактических значений товаров; ручные поля характеристик
+убраны. DISTINCT всех типов до pagination, typed exact OR/AND, только реальные
+boolean-варианты, цвета кружками. Старые text/min/max URL и desktop-auto/mobile
+Apply сохранены; цена остаётся диапазоном. API/OpenAPI/UI-038 обновлены.
+Client typecheck/build/format, 42 E2E и независимый UI Guard PASS; backend
+SQLite103/PG100 tests, после финальной NUL-защиты choice31/31 tests,
+Pint/PHPStan/architecture PASS. Реальная затирка:
+«1-10» — 2 товара, «1-15» — 1 товар. Миграций/данных/Admin/коммита нет.
+[Файлы и проверки](../docs/CATALOG_ACTUAL_ATTRIBUTE_VALUES_2026-11-19.md).
+
+2026-11-18 — По запросу и явному выбору владельца desktop-фильтры каталога
+обновляют товары автоматически: checkbox/select сразу, ввод через 350 ms;
+mobile сохраняет draft/Apply. Сохранены URL/history, текущие карточки/controls
+при pending, scope metadata, scroll и отмена таймеров. Enter не обходит
+проверку диапазонов. Typecheck/build/format, 39 Client E2E, независимый UI Guard
+на пяти ширинах PASS. API/данных/миграций/коммита нет.
+[Файлы и проверки](../docs/CATALOG_REACTIVE_FILTERS_2026-11-18.md).
+
 2026-11-18 — По замечаниям владельца размеры каталога выбираются из реальных
 уникальных значений `razmer` всех публичных товаров scope до pagination,
 цвета выводятся кружками в ряд по сохранённым HEX-кодам с названием/selected/focus.

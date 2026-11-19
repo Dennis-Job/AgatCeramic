@@ -10,8 +10,6 @@ test('sale selection applies to the API, combines with stock and restores throug
   await page.goto('/catalog?category=tile&sort=price_desc&page=2')
   const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
   const sale = form.getByLabel('Распродажа', { exact: true })
-  await sale.check()
-  expect(page.url()).not.toContain('is_on_sale')
   await expect(page.locator('.product-card')).toHaveCount(3)
   const response = page.waitForResponse((response) => {
     const url = new URL(response.url())
@@ -20,14 +18,13 @@ test('sale selection applies to the API, combines with stock and restores throug
       url.searchParams.get('is_on_sale') === '1'
     )
   })
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
+  await sale.check()
   await response
   await expect(page).toHaveURL(/is_on_sale=1/)
   await expect(page).not.toHaveURL(/page=/)
   await expect(page.locator('.product-card')).toHaveCount(9)
   await expect(page.locator('.product-card .product-sale-badge')).toHaveCount(9)
   await form.getByLabel('В наличии', { exact: true }).check()
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
   await expect(page).toHaveURL(/in_stock=1/)
   await expect(page.locator('.product-card')).toHaveCount(5)
   await page

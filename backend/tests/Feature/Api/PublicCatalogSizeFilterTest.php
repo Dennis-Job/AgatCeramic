@@ -81,12 +81,14 @@ class PublicCatalogSizeFilterTest extends TestCase
         $this->catalog(['category' => $parent->slug, 'include_filters' => 1])->assertOk()->assertJsonPath('filters.attributes', []);
     }
 
-    public function test_other_string_attributes_still_reject_exact_values(): void
+    public function test_other_string_attributes_accept_exact_values(): void
     {
         $category = Category::factory()->create();
         $attribute = Attribute::factory()->create(['type' => 'string', 'slug' => 'finish', 'is_filterable' => true]);
         $category->attributes()->attach($attribute);
-        $this->catalog(['category' => $category->slug, 'attributes' => json_encode([$attribute->id => ['values' => ['matte']]])])->assertUnprocessable();
+        $this->value(Product::factory()->create(['category_id' => $category->id]), $attribute, 'matte');
+        $this->value(Product::factory()->create(['category_id' => $category->id]), $attribute, 'matte finish');
+        $this->catalog(['category' => $category->slug, 'attributes' => json_encode([$attribute->id => ['values' => ['matte']]])])->assertOk()->assertJsonCount(1, 'data');
     }
 
     #[DataProvider('malformedSizeFilters')]

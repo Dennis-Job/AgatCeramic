@@ -7,7 +7,7 @@ import CatalogAttributeFilter from './CatalogAttributeFilter.vue'
 import PageState from '~/components/shared/PageState.vue'
 import type { CatalogDraft, CatalogFilters } from '../types/catalog'
 
-defineProps<{
+const props = defineProps<{
   filters: CatalogFilters
   collections: CatalogFilters['collections']
   busy?: boolean
@@ -15,16 +15,74 @@ defineProps<{
   error?: string
   hideBrand?: boolean
   scoped?: boolean
+  autoApply?: boolean
 }>()
 const model = defineModel<CatalogDraft>({ required: true })
-defineEmits<{ apply: []; reset: []; retry: [] }>()
+const emit = defineEmits<{
+  apply: [automatic?: boolean]
+  reset: []
+  retry: []
+}>()
+const form = ref<HTMLFormElement | null>(null)
+const route = useRoute()
+let timer: ReturnType<typeof setTimeout> | undefined
+let media: MediaQueryList | undefined
+function cancel() {
+  clearTimeout(timer)
+  timer = undefined
+}
+function validPrices() {
+  const { price_from: from, price_to: to } = model.value
+  if ([from, to].some((value) => value && !/^\d+(?:\.\d{1,2})?$/.test(value)))
+    return false
+  const cents = (value: string) => {
+    const [integer = '', decimal = ''] = value.split('.')
+    return BigInt(integer + decimal.padEnd(2, '0'))
+  }
+  return !from || !to || cents(from) <= cents(to)
+}
+function queueApply(delay = 0) {
+  if (!props.autoApply) return
+  cancel()
+  timer = setTimeout(() => {
+    timer = undefined
+    if (
+      window.matchMedia('(min-width: 1024px)').matches &&
+      form.value?.checkValidity() &&
+      validPrices()
+    )
+      emit('apply', true)
+  }, delay)
+}
+function submit() {
+  cancel()
+  const automatic =
+    !!props.autoApply && window.matchMedia('(min-width: 1024px)').matches
+  if (automatic && (!form.value?.checkValidity() || !validPrices())) return
+  emit('apply', automatic)
+}
+function reset() {
+  cancel()
+  emit('reset')
+}
+watch(() => route.fullPath, cancel)
+onMounted(() => {
+  media = window.matchMedia('(min-width: 1024px)')
+  media.addEventListener('change', cancel)
+})
+onBeforeUnmount(() => {
+  cancel()
+  media?.removeEventListener('change', cancel)
+})
 </script>
 
 <template>
   <form
+    ref="form"
     class="catalog-filter-form"
+    :class="{ 'catalog-filter-form--automatic': autoApply }"
     aria-label="Подбор товаров"
-    @submit.prevent="$emit('apply')"
+    @submit.prevent="submit()"
   >
     <PageState
       v-if="error"
@@ -36,11 +94,12 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
     <p v-else-if="pending" role="status">Загружаем фильтры…</p>
     <fieldset
       class="catalog-filter-form__fields"
-      :disabled="busy || pending || !!error"
+      :disabled="(!autoApply && busy) || pending || !!error"
     >
       <UiSelect
         v-if="!hideBrand"
         v-model="model.brand"
+        @update:model-value="queueApply()"
         label="Бренд"
         size="compact"
         :options="[
@@ -57,6 +116,7 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
       />
       <UiSelect
         v-model="model.collection"
+        @update:model-value="queueApply()"
         label="Коллекция"
         size="compact"
         :disabled="!model.brand"
@@ -80,12 +140,14 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
         <div class="catalog-filter-form__range">
           <UiTextField
             v-model="model.price_from"
+            @update:model-value="queueApply(350)"
             label="Цена от"
             size="compact"
             money
           />
           <UiTextField
             v-model="model.price_to"
+            @update:model-value="queueApply(350)"
             label="Цена до"
             size="compact"
             money
@@ -93,9 +155,15 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
         </div>
       </fieldset>
       <div class="catalog-filter-form__flags">
-        <UiCheckbox v-model="model.in_stock" label="В наличии" size="compact" />
+        <UiCheckbox
+          v-model="model.in_stock"
+          label="В наличии"
+          size="compact"
+          @update:model-value="queueApply()"
+        />
         <UiCheckbox
           v-model="model.is_on_sale"
+          @update:model-value="queueApply()"
           label="Распродажа"
           size="compact"
         />
@@ -105,16 +173,21 @@ defineEmits<{ apply: []; reset: []; retry: [] }>()
         :key="attribute.id"
         v-model="model.attributes[String(attribute.id)]"
         :attribute="attribute"
+        @change="queueApply($event ? 350 : 0)"
       />
       <div class="catalog-filter-form__actions">
-        <UiButton type="submit" size="compact" :disabled="busy"
+        <UiButton
+          class="catalog-filter-form__submit"
+          type="submit"
+          size="compact"
+          :disabled="busy"
           >Применить</UiButton
         >
         <UiButton
           variant="outline"
           size="compact"
-          :disabled="busy"
-          @click="$emit('reset')"
+          :disabled="!autoApply && busy"
+          @click="reset()"
           >{{ scoped ? 'Сбросить фильтры' : 'Сбросить всё' }}</UiButton
         >
       </div>
@@ -161,5 +234,10 @@ legend {
   gap: 8px;
   border-top: 1px solid var(--color-line);
   padding-top: 16px;
+}
+@media (min-width: 1024px) {
+  .catalog-filter-form--automatic .catalog-filter-form__submit {
+    display: none;
+  }
 }
 </style>

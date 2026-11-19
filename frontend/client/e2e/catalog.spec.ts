@@ -83,7 +83,7 @@ test('standalone SSR catalog survives missing and failed CMS, and absent catalog
   }
 })
 
-test('filter drafts commit to URL, scoped characteristics reset and history restores', async ({
+test('automatic filters commit to URL, scoped characteristics reset and history restores', async ({
   page,
 }) => {
   await page.goto('/catalog?category=tile')
@@ -93,8 +93,6 @@ test('filter drafts commit to URL, scoped characteristics reset and history rest
   ).toBeVisible()
   await filters.getByLabel('Цена от').fill('120')
   await filters.getByLabel('Нет', { exact: true }).check()
-  expect(page.url()).not.toContain('price_from')
-  await filters.getByRole('button', { name: 'Применить' }).click()
   await expect(page).toHaveURL(/price_from=120/)
   await expect(page).toHaveURL(/attributes=/)
   await expect(page.locator('.product-card')).toHaveCount(1)
@@ -177,7 +175,11 @@ test('responsive filters, drawer focus and keyboard, motion, axe and hydration',
       await expect(opener).toBeFocused()
     }
     if (width >= 1024) {
-      const date = page.getByRole('complementary').getByLabel('Дата выпуска от')
+      const date = page
+        .getByRole('complementary')
+        .getByRole('group', { name: 'Дата выпуска', exact: true })
+        .getByLabel('2026-01-01', { exact: true })
+        .locator('..')
       expect(
         await date.evaluate((el) => el.clientWidth >= el.scrollWidth),
       ).toBe(true)
@@ -218,10 +220,6 @@ test('price fields format editable rubles while URL carries exact decimals', asy
   await field.fill('17926.5')
   await field.blur()
   await expect(field).toHaveValue('17\u00a0926,50')
-  await page
-    .getByRole('complementary')
-    .getByRole('button', { name: 'Применить' })
-    .click()
   await expect(page).toHaveURL(/price_from=17926.50/)
 })
 
@@ -249,11 +247,14 @@ test('malformed nested and repeated query values show a recoverable error', asyn
   expect(issues).toEqual([])
 })
 
-test('draft brand changes clear incompatible collections and restore applied choices', async ({
+test('mobile draft brand changes clear incompatible collections and restore applied choices', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 640, height: 900 })
   await page.goto('/catalog?category=tile')
-  const form = page.getByRole('complementary')
+  const original = page.url()
+  await page.getByRole('button', { name: 'Фильтры', exact: true }).click()
+  const form = page.getByRole('dialog', { name: 'Фильтры каталога' })
   await selectChoice(
     form.getByRole('combobox', { name: 'Бренд', exact: true }),
     'Atlas',
@@ -294,6 +295,7 @@ test('draft brand changes clear incompatible collections and restore applied cho
   await expect(
     form.getByRole('combobox', { name: 'Коллекция', exact: true }),
   ).toBeDisabled()
+  expect(page.url()).toBe(original)
   await form.getByRole('button', { name: 'Применить', exact: true }).click()
   await expect(page).not.toHaveURL(/collection=/)
   await expect(page).not.toHaveURL(/brand=/)
@@ -354,12 +356,19 @@ test('pending category result disables stale characteristic controls', async ({
     .getByRole('navigation', { name: 'Категории каталога' })
     .getByRole('link', { name: 'Мозаика', exact: true })
     .click()
-  await expect(
-    page.getByRole('complementary').getByLabel('Рисунок', { exact: true }),
-  ).toBeDisabled()
+  const stale = page
+    .getByRole('complementary')
+    .getByRole('group', { name: 'Рисунок', exact: true })
+    .getByRole('checkbox')
+    .first()
+  await expect
+    .poll(async () => !(await stale.isVisible()) || !(await stale.isEnabled()))
+    .toBe(true)
   release()
   await expect(
-    page.getByRole('complementary').getByLabel('Рисунок', { exact: true }),
+    page
+      .getByRole('complementary')
+      .getByRole('group', { name: 'Рисунок', exact: true }),
   ).toHaveCount(0)
 })
 
@@ -391,8 +400,7 @@ test('reset clears draft and money validity even when URL and hash are unchanged
       .evaluate((el: HTMLInputElement) => el.validity.valid),
   ).toBe(true)
   await form.getByLabel('Цена от').fill('120')
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
-  await expect(page).toHaveURL(/price_from=120.00/)
+  await expect(page).toHaveURL(/price_from=120(?:\.00)?(?:#|&|$)/)
 })
 
 test('all characteristic input types serialize exact selected values including zero and false', async ({
@@ -404,45 +412,85 @@ test('all characteristic input types serialize exact selected values including z
     .getByRole('group', { name: 'Цвет', exact: true })
     .getByLabel('Серый')
     .check()
+  await expect
+    .poll(() =>
+      JSON.parse(new URL(page.url()).searchParams.get('attributes') || '{}'),
+    )
+    .toEqual({ 1: { values: ['gray'] } })
   await form
     .getByRole('group', { name: 'Поверхность', exact: true })
     .getByLabel('Белый')
     .check()
+  await expect
+    .poll(() =>
+      JSON.parse(new URL(page.url()).searchParams.get('attributes') || '{}'),
+    )
+    .toEqual({ 1: { values: ['gray'] }, 2: { values: ['white'] } })
   await form
     .getByRole('group', { name: 'Морозостойкость', exact: true })
     .getByLabel('Нет', { exact: true })
     .check()
-  await form.getByLabel('Длина от', { exact: true }).fill('0')
-  await form.getByLabel('Длина до', { exact: true }).fill('600')
-  await form.getByLabel('Толщина от', { exact: true }).fill('0.5')
-  await form.getByLabel('Дата выпуска от', { exact: true }).fill('2026-01-01')
-  await form.getByLabel('Дата выпуска до', { exact: true }).fill('2026-12-31')
-  await form.getByLabel('Рисунок', { exact: true }).fill('камень')
-  await form.getByLabel('Описание', { exact: true }).fill('матовая')
-  await expect(form.getByLabel('Описание', { exact: true })).toHaveAttribute(
-    'maxlength',
-    '200',
-  )
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
-  await expect(page).toHaveURL(/attributes=/)
-  expect(
-    JSON.parse(new URL(page.url()).searchParams.get('attributes')!),
-  ).toEqual({
-    1: { values: ['gray'] },
-    2: { values: ['white'] },
-    3: { values: ['false'] },
-    4: { min: '0', max: '600' },
-    5: { min: '0.5' },
-    6: { min: '2026-01-01', max: '2026-12-31' },
-    7: { text: 'камень' },
-    8: { text: 'матовая' },
-  })
+  await expect
+    .poll(() =>
+      JSON.parse(new URL(page.url()).searchParams.get('attributes') || '{}'),
+    )
+    .toEqual({
+      1: { values: ['gray'] },
+      2: { values: ['white'] },
+      3: { values: ['false'] },
+    })
+  for (const [group, label, id] of [
+    ['Длина · мм', '0', '4'],
+    ['Длина · мм', '600', '4'],
+    ['Толщина · мм', '0.5', '5'],
+    ['Дата выпуска', '2026-01-01', '6'],
+    ['Дата выпуска', '2026-12-31', '6'],
+    ['Рисунок', 'камень', '7'],
+    ['Описание', 'матовая', '8'],
+  ]) {
+    await form
+      .getByRole('group', { name: group, exact: true })
+      .getByLabel(label, { exact: true })
+      .check()
+    await expect(
+      form
+        .getByRole('group', { name: group, exact: true })
+        .getByLabel(label, { exact: true }),
+    ).toBeChecked()
+    await expect
+      .poll(
+        () =>
+          JSON.parse(
+            new URL(page.url()).searchParams.get('attributes') || '{}',
+          )[id]?.values || [],
+      )
+      .toContain(label)
+  }
+  await expect(
+    form.locator('.attribute-filter input:not([type=checkbox])'),
+  ).toHaveCount(0)
+  await expect
+    .poll(() =>
+      JSON.parse(new URL(page.url()).searchParams.get('attributes') || '{}'),
+    )
+    .toEqual({
+      1: { values: ['gray'] },
+      2: { values: ['white'] },
+      3: { values: ['false'] },
+      4: { values: ['0', '600'] },
+      5: { values: ['0.5'] },
+      6: { values: ['2026-01-01', '2026-12-31'] },
+      7: { values: ['камень'] },
+      8: { values: ['матовая'] },
+    })
 })
 
-test('an old collection lookup cannot replace metadata after category navigation', async ({
+test('a cancelled mobile collection lookup cannot replace metadata after category navigation', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 640, height: 900 })
   await page.goto('/catalog?category=tile')
+  await page.getByRole('button', { name: 'Фильтры', exact: true }).click()
   let release: () => void = () => {}
   const gate = new Promise<void>((resolve) => (release = resolve))
   let started: () => void = () => {}
@@ -473,16 +521,22 @@ test('an old collection lookup cannot replace metadata after category navigation
       } catch {}
     } else await route.continue()
   })
-  const form = page.getByRole('complementary')
   await selectChoice(
-    form.getByRole('combobox', { name: 'Бренд', exact: true }),
+    page
+      .getByRole('dialog')
+      .getByRole('combobox', { name: 'Бренд', exact: true }),
     'Другой бренд',
   )
   await seen
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.setViewportSize({ width: 1280, height: 900 })
+  const form = page.getByRole('complementary')
   await page
     .getByRole('navigation', { name: 'Категории каталога' })
     .getByRole('link', { name: 'Мозаика', exact: true })
     .click()
+  await expect(page).toHaveURL(/\/catalog\?category=mosaic/)
   await expect(
     form.getByRole('combobox', { name: 'Бренд', exact: true }),
   ).toHaveText('Все бренды')

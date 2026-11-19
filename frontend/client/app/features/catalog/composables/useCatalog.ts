@@ -104,10 +104,30 @@ export function useCatalog() {
     },
   )
   let syncingDraft = false
+  const metadataScope = () =>
+    JSON.stringify([query.value.category || '', query.value.brand || ''])
+  const previousMetadata = shallowRef<{
+    scope: string
+    catalog: NonNullable<typeof result.data.value>
+  }>()
+  watch(
+    result.data,
+    (catalog) => {
+      if (catalog) previousMetadata.value = { scope: metadataScope(), catalog }
+    },
+    { immediate: true },
+  )
+  const metadata = computed(
+    () =>
+      result.data.value ||
+      (previousMetadata.value?.scope === metadataScope()
+        ? previousMetadata.value.catalog
+        : undefined),
+  )
   const draftChoices = useCatalogDraftFilters(
     draft,
     query,
-    result.data,
+    metadata,
     () => syncingDraft,
   )
   watch(query, (value) => {
@@ -116,16 +136,21 @@ export function useCatalog() {
     draft.value = draftFrom(value)
     syncingDraft = false
   })
-  function navigate(value: CatalogQuery, hash = '#catalog-products') {
+  function navigate(
+    value: CatalogQuery,
+    hash = '#catalog-products',
+    automatic = false,
+  ) {
     const changingBrand =
       value.brand &&
       value.brand !== routeBrand.value &&
       !route.path.startsWith('/preview/')
-    return navigateTo(
-      catalogLocation(route.path, value, changingBrand ? '' : hash),
-    )
+    return navigateTo({
+      ...catalogLocation(route.path, value, changingBrand ? '' : hash),
+      state: { catalogAutomaticFilter: automatic },
+    })
   }
-  function apply() {
+  function apply(automatic = false) {
     const value: CatalogQuery = {}
     if (query.value.sort) value.sort = query.value.sort
     if (draft.value.category) value.category = draft.value.category
@@ -154,7 +179,7 @@ export function useCatalog() {
     )
     if (Object.keys(attributes).length)
       value.attributes = JSON.stringify(attributes)
-    return navigate(value)
+    return navigate(value, '#catalog-products', automatic)
   }
   function remove(key: string, attributeId?: string) {
     const value = { ...query.value }
@@ -217,7 +242,12 @@ export function useCatalog() {
     collections: draftChoices.collections,
     draftFilters: draftChoices.filters,
     draftNavigation: draftChoices.navigation,
-    draftFiltersPending: draftChoices.pending,
+    draftFiltersPending: computed(
+      () =>
+        draftChoices.pending.value ||
+        (result.status.value === 'pending' &&
+          previousMetadata.value?.scope !== metadataScope()),
+    ),
     draftFiltersError: draftChoices.error,
     refreshDraftFilters: () => draftChoices.refresh(true),
     selectCategory: (category: string) => {

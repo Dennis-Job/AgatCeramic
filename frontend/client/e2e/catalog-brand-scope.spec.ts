@@ -31,7 +31,7 @@ test('brand category and refinements remain independent on its clean URL', async
   await expect(page.locator('.product-card')).toHaveCount(2)
   await expect(form.getByText('Цвет', { exact: true })).toBeVisible()
   await form.getByLabel('Цена от').fill('150')
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
+  await expect(page).toHaveURL(/price_from=150/)
   await expect(page.locator('.product-card')).toHaveCount(1)
   await expect(page.locator('.product-card')).toContainText('Плитка 02')
   await page
@@ -54,7 +54,6 @@ test('category entry refines by brand and history restores the previous page', a
     form.getByRole('combobox', { name: 'Бренд', exact: true }),
     'Atlas',
   )
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
   await expect(page).toHaveURL(/\/brand\/atlas\?category=tile/)
   await expect(page).not.toHaveURL(/brand=/)
   await expect(
@@ -178,7 +177,7 @@ test('mobile category selection and reset remain draft-only until Apply on the b
   await expect(page.locator('.product-card')).toHaveCount(2)
 })
 
-test('cancelled mobile edits cannot leak into desktop Apply on a brand page', async ({
+test('cancelled mobile edits cannot leak into desktop automatic filters on a brand page', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 640, height: 900 })
@@ -193,10 +192,16 @@ test('cancelled mobile edits cannot leak into desktop Apply on a brand page', as
   const sidebar = page.getByRole('complementary', { name: 'Фильтры каталога' })
   await expect(sidebar.getByText('Цвет', { exact: true })).toBeVisible()
   await expect(sidebar.getByLabel('Цена от')).toHaveValue('')
-  await sidebar.getByRole('button', { name: 'Применить', exact: true }).click()
+  await expect(
+    sidebar.getByRole('button', { name: 'Применить', exact: true }),
+  ).toBeHidden()
   await expect(page).toHaveURL(/\/brand\/atlas\?category=tile/)
   await expect(page).not.toHaveURL(/price_from=|brand=/)
   await expect(page.locator('.product-card')).toHaveCount(2)
+  await sidebar.getByLabel('В наличии', { exact: true }).check()
+  await expect(page).toHaveURL(/in_stock=1/)
+  await expect(page).not.toHaveURL(/price_from=|brand=/)
+  await expect(page).toHaveURL(/category=tile/)
 })
 
 test('brand page is SSR-visible, responsive and free of hydration errors', async ({

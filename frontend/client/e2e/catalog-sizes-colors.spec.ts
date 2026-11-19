@@ -14,11 +14,10 @@ test('actual sizes include values beyond the first page and combine exactly with
   const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
   await expect(form.getByLabel('900×900', { exact: true })).toBeVisible()
   await form.getByLabel('900×900', { exact: true }).check()
+  await expect(page.locator('.product-card')).toHaveCount(1)
+  await expect(page.locator('.product-card')).toContainText('Плитка 27')
   await form.getByLabel('300×3000', { exact: true }).check()
-  await expect(page.locator('.product-card')).toHaveCount(24)
-  expect(page.url()).not.toContain('attributes=')
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
-  await expect(page).toHaveURL(/attributes=/)
+  await expect(page.locator('.product-card')).toHaveCount(2)
   const applied = JSON.parse(
     new URL(page.url()).searchParams.get('attributes')!,
   )
@@ -31,7 +30,6 @@ test('actual sizes include values beyond the first page and combine exactly with
     page.locator('.product-card').filter({ hasText: 'Плитка 27' }),
   ).toHaveCount(1)
   await form.getByLabel('Белый', { exact: true }).check()
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
   await expect(page.locator('.product-card')).toHaveCount(0)
   await expect(
     page.getByRole('button', {
@@ -68,6 +66,7 @@ test('size and color controls stay usable across five widths and mobile Apply ca
     await expect(
       white.locator('..').locator('.ui-color-swatch__color'),
     ).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+    if (!mobile) await expect(page.locator('.product-card')).toHaveCount(9)
     await scope.getByLabel('600×300', { exact: true }).check()
     await scope
       .locator('.catalog-filter-form')
@@ -77,8 +76,8 @@ test('size and color controls stay usable across five widths and mobile Apply ca
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true)
-    expect(page.url()).not.toContain('attributes=')
     if (mobile) {
+      expect(page.url()).not.toContain('attributes=')
       await page.keyboard.press('Escape')
       await expect(scope).toHaveCount(0)
       await page.getByRole('button', { name: 'Фильтры', exact: true }).click()
@@ -101,8 +100,13 @@ test('size and color controls stay usable across five widths and mobile Apply ca
         })
         .click()
     } else {
+      await expect(page).toHaveURL(/attributes=/)
+      await expect(page.locator('.product-card')).toHaveCount(0)
       await white.uncheck()
+      await expect(page.locator('.product-card')).toHaveCount(1)
       await scope.getByLabel('600×300', { exact: true }).uncheck()
+      await expect(page).not.toHaveURL(/attributes=/)
+      await expect(page.locator('.product-card')).toHaveCount(24)
     }
   }
   const violations = (await new AxeBuilder({ page }).analyze()).violations
@@ -148,7 +152,6 @@ test('legacy text size links and unknown color values remain removable without f
     .click()
   await expect(page.locator('.product-card')).toHaveCount(24)
   await form.getByLabel('900×900', { exact: true }).check()
-  await form.getByRole('button', { name: 'Применить', exact: true }).click()
   await expect(page.locator('.product-card')).toHaveCount(1)
   const applied = JSON.parse(
     new URL(page.url()).searchParams.get('attributes')!,

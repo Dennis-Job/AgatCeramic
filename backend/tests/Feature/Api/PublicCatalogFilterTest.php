@@ -181,7 +181,7 @@ class PublicCatalogFilterTest extends TestCase
     public function test_rejects_type_inappropriate_attribute_shapes_bounds_and_excess_values(): void
     {
         $category = Category::factory()->create();
-        foreach ([['boolean', ['values' => ['0']]], ['select', ['values' => [false]]], ['select', ['values' => []]], ['select', ['values' => array_fill(0, 51, 'x')]], ['integer', ['min' => '0.5']], ['decimal', ['min' => '2', 'max' => '1']], ['date', ['min' => '2026-02-30']], ['date', ['min' => '2026-02-01', 'max' => '2026-01-01']], ['text', ['text' => '']], ['string', ['values' => ['x']]], ['select', ['values' => ['x'], 'text' => 'x']]] as [$type, $filter]) {
+        foreach ([['boolean', ['values' => ['0']]], ['select', ['values' => [false]]], ['select', ['values' => []]], ['select', ['values' => array_fill(0, 51, 'x')]], ['integer', ['min' => '0.5']], ['decimal', ['min' => '2', 'max' => '1']], ['date', ['min' => '2026-02-30']], ['date', ['min' => '2026-02-01', 'max' => '2026-01-01']], ['text', ['text' => '']], ['string', ['values' => [false]]], ['select', ['values' => ['x'], 'text' => 'x']]] as [$type, $filter]) {
             $attribute = $this->attribute($category, $type);
             $this->catalog(['category' => $category->slug, 'attributes' => json_encode([$attribute->id => $filter])])->assertUnprocessable();
         }

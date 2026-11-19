@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Queries\PublicCatalogQuery;
+use App\Support\CatalogAttributeOptionValue;
 use Brick\Math\BigDecimal;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Validator;
@@ -31,7 +32,7 @@ class PublicCatalogRequest extends FormRequest
             'price_from' => ['sometimes', 'string', 'max:20', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'price_to' => ['sometimes', 'string', 'max:20', 'regex:/^\d+(?:\.\d{1,2})?$/'],
             'sort' => ['sometimes', Rule::in(['name_asc', 'name_desc', 'price_asc', 'price_desc', 'newest'])],
-            'attributes' => ['sometimes', 'string', 'max:16384', 'json'],
+            'attributes' => ['sometimes', 'string', 'max:65536', 'json'],
         ];
     }
 
@@ -67,21 +68,15 @@ class PublicCatalogRequest extends FormRequest
                     continue;
                 }
                 $data = get_object_vars($filter);
-                $rules = match ($attribute->type) {
-                    'select', 'multiselect', 'boolean' => [
-                        'values' => ['required', 'array', 'list', 'min:1', 'max:50'],
-                        'values.*' => $attribute->type === 'boolean' ? ['required', 'string', Rule::in(['true', 'false'])] : ['required', 'string', 'max:255'],
-                    ],
-                    'integer', 'decimal', 'date' => [
-                        'min' => ['required_without:max', 'filled', 'string', 'max:32', $attribute->type === 'date' ? 'date_format:Y-m-d' : ($attribute->type === 'integer' ? 'regex:/^-?\d{1,16}$/' : 'regex:/^-?\d{1,16}(?:\.\d{1,8})?$/')],
-                        'max' => ['required_without:min', 'filled', 'string', 'max:32', $attribute->type === 'date' ? 'date_format:Y-m-d' : ($attribute->type === 'integer' ? 'regex:/^-?\d{1,16}$/' : 'regex:/^-?\d{1,16}(?:\.\d{1,8})?$/')],
-                    ],
-                    'string', 'text' => $attribute->slug === 'razmer' && array_key_exists('values', $data) ? [
-                        'values' => ['bail', 'required', 'array', 'list', 'min:1', 'max:50'],
-                        'values.*' => ['bail', 'required', 'string', 'max:255'],
-                    ] : ['text' => ['required', 'string', 'max:200']],
-                    default => ['text' => ['required', 'string', 'max:200']],
-                };
+                $rules = array_key_exists('values', $data) || in_array($attribute->type, ['select', 'multiselect', 'boolean'], true)
+                    ? $this->selectionRules($attribute->type)
+                    : match ($attribute->type) {
+                        'integer', 'decimal', 'date' => [
+                            'min' => ['required_without:max', 'filled', 'string', 'max:32', $attribute->type === 'date' ? 'date_format:Y-m-d' : ($attribute->type === 'integer' ? 'regex:/^-?\d{1,16}$/' : 'regex:/^-?\d{1,16}(?:\.\d{1,8})?$/')],
+                            'max' => ['required_without:min', 'filled', 'string', 'max:32', $attribute->type === 'date' ? 'date_format:Y-m-d' : ($attribute->type === 'integer' ? 'regex:/^-?\d{1,16}$/' : 'regex:/^-?\d{1,16}(?:\.\d{1,8})?$/')],
+                        ],
+                        default => ['text' => ['required', 'string', 'max:200']],
+                    };
                 $check = Validator::make($data, $rules);
                 $keys = array_filter(array_keys($rules), fn ($key) => ! str_contains($key, '.'));
                 if ($check->fails() || array_diff(array_keys($data), $keys) !== []) {
@@ -94,5 +89,18 @@ class PublicCatalogRequest extends FormRequest
                 }
             }
         }];
+    }
+
+    /** @return array<string, list<mixed>> */
+    private function selectionRules(string $type): array
+    {
+        return [
+            'values' => ['bail', 'required', 'array', 'list', 'min:1', 'max:50'],
+            'values.*' => ['bail', 'required', 'string', 'max:'.CatalogAttributeOptionValue::maximumLength($type), function (string $attribute, mixed $value, \Closure $fail) use ($type): void {
+                if (! is_string($value) || CatalogAttributeOptionValue::normalize($type, $value) === null) {
+                    $fail('Некорректное значение характеристики.');
+                }
+            }],
+        ];
     }
 }
