@@ -16,6 +16,11 @@ test('all characteristics offer actual choices including seam width beyond page 
     form.locator('.attribute-filter input:not([type=checkbox])'),
   ).toHaveCount(0)
   const seam = form.getByRole('group', { name: 'Ширина шва · мм', exact: true })
+  await expect(
+    form
+      .getByRole('group', { name: 'Морозостойкость', exact: true })
+      .getByRole('switch', { name: 'Да', exact: true }),
+  ).toBeVisible()
   await expect(seam.getByLabel('2–20', { exact: true })).toBeVisible()
   await expect(
     form
@@ -113,6 +118,10 @@ test('choice-only forms fit five widths while mobile edits remain drafts', async
       ),
     ).toBe(true)
     if (mobile) {
+      await scope
+        .getByRole('group', { name: 'Морозостойкость', exact: true })
+        .getByRole('switch', { name: 'Да', exact: true })
+        .check()
       await scope.getByLabel('2–20', { exact: true }).check()
       expect(page.url()).not.toContain('attributes=')
       await page.keyboard.press('Escape')

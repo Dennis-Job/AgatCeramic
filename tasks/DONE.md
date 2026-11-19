@@ -1,5 +1,12 @@
 # DONE
 
+2026-11-19 — По замечанию владельца булевы значения характеристик каталога
+отображаются общими переключателями UiCheckbox variant="switch".
+Фактические options, OR/AND, legacy URL, desktop auto/mobile Apply сохранены.
+Изменены CatalogAttributeFilter.vue, catalog-attribute-values.spec.ts,
+catalog.spec.ts, CLIENT_UI_KIT.md и DONE.md. Typecheck/build/format/diff-check
+и 19 E2E PASS. Проверены пять ширин, клавиатура, axe и реальный localhost.
+
 2026-11-19 — По замечанию владельца убрано двойное кольцо выбора цвета.
 UiColorSwatch выделяет выбор только внешним ink-кольцом 2 px. Внутренняя
 тонкая граница кружка сохраняется; при keyboard focus внешнее кольцо

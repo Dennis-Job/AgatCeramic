@@ -434,7 +434,7 @@ test('all characteristic input types serialize exact selected values including z
     .toEqual({ 1: { values: ['gray'] }, 2: { values: ['white'] } })
   await form
     .getByRole('group', { name: 'Морозостойкость', exact: true })
-    .getByLabel('Нет', { exact: true })
+    .getByRole('switch', { name: 'Нет', exact: true })
     .check()
   await expect
     .poll(() =>

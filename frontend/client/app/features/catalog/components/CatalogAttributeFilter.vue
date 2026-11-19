@@ -60,6 +60,7 @@ function toggle(option: string, checked: boolean) {
         />
         <UiCheckbox
           v-else
+          :variant="attribute.type === 'boolean' ? 'switch' : undefined"
           :label="option.label"
           :title="option.label"
           size="compact"
