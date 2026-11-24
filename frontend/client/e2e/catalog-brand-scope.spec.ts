@@ -57,9 +57,14 @@ test('category entry refines by brand and history restores the previous page', a
     .click()
   await categories.getByRole('link', { name: 'Плитка', exact: true }).click()
   const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
+  // Wait for the tile filter options before driving the brand picker by keyboard.
+  await expect(form.getByText('Цвет', { exact: true })).toBeVisible()
   const brand = form.getByRole('combobox', { name: 'Бренд', exact: true })
   await brand.focus()
   await brand.press('Enter')
+  await expect(
+    form.getByRole('option', { name: 'Atlas', exact: true }),
+  ).toBeVisible()
   await brand.press('ArrowDown')
   await brand.press('Enter')
   await expect(page).toHaveURL(/\/catalog\?category=tile&brand=atlas/)

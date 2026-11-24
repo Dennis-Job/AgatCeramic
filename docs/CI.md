@@ -59,6 +59,11 @@ npm exec nuxi typecheck
 npm run build
 ```
 
+Для ветки `archiver@8.0.0` действует согласованное исключение: npm закрепляет
+`readdir-glob` 4.0.0 до выпуска совместимого диапазона upstream. Обоснование,
+проверки и условия снятия приведены в
+[отчёте о зависимостях Client](CLIENT_DEPENDENCIES_2026-11-24.md).
+
 2026-09-30 (`TASK-A056`) устранено падение `Client checks` на шаге `Audit production dependencies`
 в [запуске для f97a4c0](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36686153839).
 В lock-файле обновлены `brace-expansion` до `2.1.7`/`5.0.12`, `undici` до `8.11.2` и `devalue`

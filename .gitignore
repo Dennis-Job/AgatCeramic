@@ -31,6 +31,7 @@ frontend/client/.nuxt/
 frontend/client/.output/
 
 # Tooling and editor files
+__pycache__/
 coverage/
 .tmp/
 .idea/

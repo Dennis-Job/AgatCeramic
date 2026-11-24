@@ -119,7 +119,7 @@ def github_slug(title: str) -> str:
         or character.isalnum()
         or unicodedata.category(character).startswith("M")
     )
-    return re.sub(r"\s+", "-", "".join(characters).strip())
+    return re.sub(r"\s", "-", "".join(characters).strip())
 
 
 def markdown_anchors(markdown: str) -> set[str]:
