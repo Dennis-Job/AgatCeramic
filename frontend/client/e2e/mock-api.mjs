@@ -3,6 +3,7 @@ import { handleCart } from './fixtures/cart-api.mjs'
 import { handleProducts } from './fixtures/product-api.mjs'
 import { handleCatalog } from './fixtures/catalog-api.mjs'
 import { handleBrands } from './fixtures/brand-api.mjs'
+import { handleCollections } from './fixtures/collection-api.mjs'
 
 // Synthetic data, confined to the test server. No development database is used.
 const intro = {
@@ -354,6 +355,7 @@ createServer(async (request, response) => {
   const url = new URL(request.url, 'http://127.0.0.1:8015')
   if (await handleCart(request, response, url)) return
   if (handleBrands(request, response, url, scenario)) return
+  if (handleCollections(response, url, scenario)) return
   if (handleCatalog(request, response, url, scenario)) return
   if (handleProducts(request, response, url, scenario)) return
   if (url.pathname === '/__editor') {

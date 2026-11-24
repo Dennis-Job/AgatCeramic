@@ -22,8 +22,9 @@ class PublicCatalogRequest extends FormRequest
     {
         return [
             'category' => ['sometimes', 'nullable', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
-            'brand' => ['required_with:collection', 'nullable', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
+            'brand' => ['required_with:collection,collection_slug', 'nullable', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'collection' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'collection_slug' => ['sometimes', 'nullable', 'prohibits:collection', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
             'page' => ['sometimes', 'integer', 'min:1'],
             'include_filters' => ['sometimes', 'boolean'],
             'category_descendants' => ['sometimes', 'boolean'],

@@ -76,6 +76,13 @@ class PublicCatalogQuery
     public function scope(array $filters): Builder
     {
         $query = Product::query()->where('is_active', true)->whereHas('category', fn ($category) => $category->where('is_active', true));
+        $collectionSlug = $filters['collection_slug'] ?? null;
+        if (is_string($collectionSlug) && $collectionSlug !== '') {
+            $brand = $filters['brand'] ?? null;
+            $collectionIds = ProductCollection::query()->published(is_string($brand) ? $brand : '')
+                ->where('slug', $collectionSlug)->select('id');
+            $query->whereIn('collection_id', $collectionIds);
+        }
         if (is_string($filters['category'] ?? null) && $filters['category'] !== '') {
             if ($filters['category_descendants'] ?? false) {
                 // Traverse every ancestor; publication still depends only on the product's own category.

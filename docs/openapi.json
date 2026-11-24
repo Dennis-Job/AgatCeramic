@@ -2,7 +2,7 @@
     "openapi": "3.1.1",
     "info": {
         "title": "AgatCeramic API",
-        "version": "v23.1",
+        "version": "v24.0",
         "description": "Р С™Р С•Р Р…РЎвЂљРЎР‚Р В°Р С”РЎвЂљ Р С—РЎС“Р В±Р В»Р С‘РЎвЂЎР Р…Р С•Р С–Р С• Р С‘ Р В°Р Т‘Р СР С‘Р Р…Р С‘РЎРѓРЎвЂљРЎР‚Р В°РЎвЂљР С‘Р Р†Р Р…Р С•Р С–Р С• API AgatCeramic. Р вЂ™ РЎРѓР С—Р ВµРЎвЂ Р С‘РЎвЂћР С‘Р С”Р В°РЎвЂ Р С‘РЎР‹ Р Р†Р С”Р В»РЎР‹РЎвЂЎР В°РЎР‹РЎвЂљРЎРѓРЎРЏ РЎвЂљР С•Р В»РЎРЉР С”Р С• РЎР‚Р ВµР В°Р В»Р С‘Р В·Р С•Р Р†Р В°Р Р…Р Р…РЎвЂ№Р Вµ Р СР В°РЎР‚РЎв‚¬РЎР‚РЎС“РЎвЂљРЎвЂ№."
     },
     "servers": [
@@ -296,6 +296,63 @@
                         "content": {
                             "application/json": {
                                 "schema": {"$ref": "#/components/schemas/PublicBrandResponse"}
+                            }
+                        }
+                    },
+                    "404": {"$ref": "#/components/responses/NotFound"}
+                }
+            }
+        },
+        "/collections": {
+            "get": {
+                "operationId": "listPublicCollections",
+                "summary": "List active public product collections",
+                "description": "All active collections of active brands, including collections without public products. Stable name and ID order, 25 collections per page. Private media and administrative metadata are excluded.",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {"type": "integer", "minimum": 1}
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated active collections",
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/PublicCollectionPageListing"}
+                            }
+                        }
+                    },
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            }
+        },
+        "/brands/{brand}/collections/{slug}": {
+            "parameters": [
+                {
+                    "name": "brand",
+                    "in": "path",
+                    "required": true,
+                    "schema": {"type": "string", "maxLength": 255, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+                },
+                {
+                    "name": "slug",
+                    "in": "path",
+                    "required": true,
+                    "schema": {"type": "string", "maxLength": 255, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+                }
+            ],
+            "get": {
+                "operationId": "getPublicCollection",
+                "summary": "Get an active collection by brand and collection slugs",
+                "description": "Uses the same collection headline, description and public image as the product detail. A missing or inactive collection or brand returns 404.",
+                "responses": {
+                    "200": {
+                        "description": "Public collection page profile",
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/PublicCollectionPageResponse"}
                             }
                         }
                     },
@@ -5731,7 +5788,7 @@
             "get": {
                 "operationId": "getPublicCatalog",
                 "summary": "Read the active public catalog",
-                "description": "24 public active products in their own active categories per page. Exact category/brand and brand-scoped active collection filters remain compatible. category_descendants=1 opts into subtree products, including active descendants of inactive ancestors. SQL applies all filters before pagination. Stable ID tie-breaker; null prices last for either price sort. include_filters=1 opts into metadata from the selected category scope before other filters; only collection choices additionally use the selected brand. Characteristics require is_filterable and explicit assignment to the selected category, with no inheritance and none without a category. Foreign/unknown characteristics and malformed or oversized filters return 422; unknown values return no matches. No inventory quantities or private media are exposed.",
+                "description": "24 public active products in their own active categories per page. Exact category, brand and legacy collection-name filters remain compatible. collection_slug restricts products, category navigation and filter metadata to the public collection of the specified brand. category_descendants=1 opts into subtree products, including active descendants of inactive ancestors. SQL applies all filters before pagination. Stable ID tie-breaker; null prices last for either price sort. include_filters=1 opts into metadata from the selected scope before additional filters. Characteristics require is_filterable and explicit assignment to the selected category, with no inheritance and none without a category. Foreign/unknown characteristics and malformed or oversized filters return 422; unknown values return no matches. No inventory quantities or private media are exposed.",
                 "parameters": [
                     {
                         "name": "page",
@@ -5764,10 +5821,20 @@
                     {
                         "name": "collection",
                         "in": "query",
-                        "description": "Exact active product collection name scoped to the required brand filter; canonical collection_id relation is used.",
+                        "description": "Exact active product collection name scoped to the required brand filter. Uses the canonical collection_id relation and is mutually exclusive with collection_slug.",
                         "schema": {
                             "type": "string",
                             "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "collection_slug",
+                        "in": "query",
+                        "description": "Exact active collection slug on an active brand. Requires brand and is mutually exclusive with collection. Restricts product results, category navigation and filter metadata. Unknown or inactive pairs produce no matches.",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
                         }
                     },
                     {
@@ -14682,6 +14749,10 @@
                                             "string",
                                             "null"
                                         ]
+                                    },
+                                    "page_available": {
+                                        "type": "boolean",
+                                        "description": "Whether the brand and its active collections have public pages. False does not hide the product."
                                     }
                                 },
                                 "required": [
@@ -14907,7 +14978,7 @@
                 ],
                 "properties": {
                     "price_range": {
-                        "description": "Minimum and maximum sales-unit price across the public category/descendant and selected brand scope before collection, price, stock, sale, attribute filters and pagination. Null when no priced products exist. Zero and equal bounds are valid.",
+                        "description": "Minimum and maximum sales-unit price across the public category/descendant and selected brand scope, further restricted by collection_slug when provided. Legacy collection name, price, stock, sale, attribute filters and pagination do not affect these bounds. Null when no priced products exist. Zero and equal bounds are valid.",
                         "type": ["object", "null"],
                         "required": ["min", "max"],
                         "properties": {
@@ -15211,6 +15282,43 @@
                 "required": ["data", "links", "meta"],
                 "additionalProperties": false
             },
+            "PublicCollectionPage": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "integer"},
+                    "name": {"type": "string"},
+                    "slug": {"type": "string"},
+                    "brand_slug": {"type": "string"},
+                    "brand_name": {"type": "string"},
+                    "headline": {"type": ["string", "null"]},
+                    "description": {"type": ["string", "null"]},
+                    "country_code": {"type": ["string", "null"]},
+                    "image_url": {
+                        "type": ["string", "null"],
+                        "format": "uri-reference",
+                        "description": "Existing collection image on public storage with kind=image and an image MIME type."
+                    },
+                    "image_alt": {"type": ["string", "null"], "description": "Public image alt or collection name, null without a public image."}
+                },
+                "required": ["id", "name", "slug", "brand_slug", "brand_name", "headline", "description", "country_code", "image_url", "image_alt"],
+                "additionalProperties": false
+            },
+            "PublicCollectionPageResponse": {
+                "type": "object",
+                "properties": {"data": {"$ref": "#/components/schemas/PublicCollectionPage"}},
+                "required": ["data"],
+                "additionalProperties": false
+            },
+            "PublicCollectionPageListing": {
+                "type": "object",
+                "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/PublicCollectionPage"}},
+                    "links": {"type": "object"},
+                    "meta": {"type": "object"}
+                },
+                "required": ["data", "links", "meta"],
+                "additionalProperties": false
+            },
             "PublicCatalogNavigationCategory": {
                 "type": "object",
                 "properties": {
@@ -15229,7 +15337,7 @@
                     "product_count": {
                         "type": "integer",
                         "minimum": 0,
-                        "description": "Public products in this category and all its descendants, within the selected brand scope."
+                        "description": "Public products in this category and all its descendants within the selected brand or collection slug scope."
                     }
                 },
                 "required": ["id", "name", "slug", "parent_id", "product_count"],
@@ -15237,7 +15345,7 @@
             },
             "PublicCatalogNavigation": {
                 "type": "object",
-                "description": "Navigation depends only on brand, never on category, collection, additional filters, sorting or pagination. Counts include active products in active own categories, including public descendants of inactive ancestors. With a selected brand, categories contain only nonempty branches and their active ancestors; without a brand, all active categories remain, including zero counts. Brand metadata is independent of menu publication and remains present for a known empty brand. An unknown brand returns null brand, zero total and no categories. Existing public product visibility is preserved, including products of inactive brands.",
+                "description": "Navigation depends on brand and, when present, collection_slug. Category, legacy collection name, additional filters, sorting and pagination do not change it. Counts include active products in active own categories, including public descendants of inactive ancestors. With a selected brand, categories contain only nonempty branches and their active ancestors; without a brand, all active categories remain, including zero counts. Brand metadata is independent of menu publication and remains present for a known empty brand. An unknown brand returns null brand, zero total and no categories. Existing public product visibility is preserved, including products of inactive brands.",
                 "properties": {
                     "brand": {
                         "anyOf": [
@@ -15248,7 +15356,7 @@
                     "total": {
                         "type": "integer",
                         "minimum": 0,
-                        "description": "Distinct public products in the brand scope before category and additional filters."
+                        "description": "Distinct public products in the brand or collection slug scope before category and additional filters."
                     },
                     "categories": {
                         "type": "array",

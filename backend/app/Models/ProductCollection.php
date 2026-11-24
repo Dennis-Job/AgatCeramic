@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\ProductCollectionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +32,17 @@ class ProductCollection extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class, 'collection_id');
+    }
+
+    /** @param Builder<ProductCollection> $query */
+    public function scopePublished(Builder $query, ?string $brand = null): void
+    {
+        $query->where('is_active', true)->whereHas('brand', function (Builder $query) use ($brand): void {
+            $query->where('is_active', true);
+            if ($brand !== null) {
+                $query->where('slug', $brand);
+            }
+        });
     }
 
     /** @return array<string, string> */

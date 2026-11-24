@@ -5,6 +5,8 @@ import PageState from '~/components/shared/PageState.vue'
 import UiButton from '~/components/ui/UiButton.vue'
 import UiDialog from '~/components/ui/UiDialog.vue'
 import UiSelect from '~/components/ui/UiSelect.vue'
+import CollectionBanner from '~/features/collections/components/CollectionBanner.vue'
+import type { PublicCollection } from '~/features/collections/types/collection'
 import ProductCardList from '~/features/product/components/ProductCardList.vue'
 import CatalogCategories from './CatalogCategories.vue'
 import CatalogBrandNavigation from './CatalogBrandNavigation.vue'
@@ -13,7 +15,7 @@ import { useCatalog } from '../composables/useCatalog'
 import { useCatalogLoadMore } from '../composables/useCatalogLoadMore'
 import { useStickyCatalogNavigation } from '../composables/useStickyCatalogNavigation'
 import type { ContentPage } from '~/types/contentPage'
-import { siteOrigin } from '#shared/utils/pageUrls'
+import { collectionPath, siteOrigin } from '#shared/utils/pageUrls'
 import { useCatalogAppliedFilters } from '../composables/useCatalogAppliedFilters'
 import type { PublicBrand } from '~/features/brands/types/brand'
 import { brandPath } from '~/features/brands/services/brands'
@@ -22,6 +24,7 @@ const props = defineProps<{
   content?: ContentPage | null
   preview?: boolean
   brand?: PublicBrand
+  collection?: PublicCollection
 }>()
 const route = useRoute()
 const router = useRouter()
@@ -50,7 +53,10 @@ const {
   sort,
   pageLink,
   ready,
-} = useCatalog()
+} = useCatalog({
+  brand: props.collection?.brand_slug ?? props.brand?.slug,
+  collectionSlug: props.collection?.slug,
+})
 await ready
 const previousCatalog = shallowRef(responseCatalog.value)
 watch(responseCatalog, (value) => {
@@ -109,26 +115,27 @@ function loadNext(event: MouseEvent) {
 const event = useRequestEvent()
 if (event && error.value && !props.preview) setResponseStatus(event, 503)
 const drawer = ref(false)
-const usesBrandCategories = computed(() => !!(props.brand || props.preview))
-const hasBrandScope = computed(
-  () => !!props.brand || (!!props.preview && !!query.value.brand),
+const usesScopedCategories = computed(
+  () => !!(props.brand || props.collection || props.preview),
 )
-const scopeBrand = computed(() =>
-  hasBrandScope.value
-    ? props.brand?.name ||
-      catalog.value?.category_navigation?.brand?.name ||
-      catalog.value?.brand_navigation.find(
-        (brand) => brand.slug === query.value.brand,
-      )?.name ||
-      catalog.value?.filters.brands.find(
-        (brand) => brand.slug === query.value.brand,
-      )?.name ||
-      query.value.brand
-    : '',
+const hasBrandScope = computed(
+  () =>
+    !!(props.brand || props.collection) ||
+    (!!props.preview && !!query.value.brand),
+)
+const categoryScope = computed(() =>
+  props.collection ? 'collection' : hasBrandScope.value ? 'brand' : undefined,
+)
+const draftCategoryScope = computed(() =>
+  props.collection
+    ? 'collection'
+    : usesScopedCategories.value && draft.value.brand
+      ? 'brand'
+      : undefined,
 )
 const scopeCategories = computed(
   () =>
-    (usesBrandCategories.value &&
+    (usesScopedCategories.value &&
       catalog.value?.category_navigation?.categories) ||
     catalog.value?.categories ||
     [],
@@ -138,10 +145,10 @@ const listingTitle = computed(
   () =>
     scopeCategories.value.find(
       (category) => category.slug === query.value.category,
-    )?.name || 'Все товары',
+    )?.name || (props.collection ? 'Все товары коллекции' : 'Все товары'),
 )
 const draftCategories = computed(() =>
-  usesBrandCategories.value
+  usesScopedCategories.value
     ? draftNavigation.value?.categories ||
       (draft.value.brand === (query.value.brand || '')
         ? scopeCategories.value
@@ -176,7 +183,9 @@ const sortOptions = [
 ]
 const appliedChips = useCatalogAppliedFilters(catalog, query)
 const chips = computed(() =>
-  appliedChips.value.filter((chip) => !props.brand || chip.key !== 'brand'),
+  appliedChips.value.filter(
+    (chip) => !(props.brand || props.collection) || chip.key !== 'brand',
+  ),
 )
 async function commit(close?: () => void, automatic = false) {
   await apply(automatic)
@@ -195,45 +204,58 @@ if (!props.preview) {
   )
   const canonical = computed(() =>
     new URL(
-      props.brand ? brandPath(props.brand.slug) : '/catalog',
+      props.collection
+        ? collectionPath(props.collection.brand_slug, props.collection.slug)
+        : props.brand
+          ? brandPath(props.brand.slug)
+          : '/catalog',
       origin,
     ).toString(),
   )
   const seo = computed(() => props.content?.seo)
   const pageTitle = computed(() =>
-    props.brand
-      ? `${props.brand.name} — AgatCeramic`
-      : seo.value?.title || 'Каталог — AgatCeramic',
+    props.collection
+      ? `${props.collection.headline?.trim() || props.collection.name} — ${props.collection.brand_name} — AgatCeramic`
+      : props.brand
+        ? `${props.brand.name} — AgatCeramic`
+        : seo.value?.title || 'Каталог — AgatCeramic',
   )
   const description = computed(() =>
-    props.brand
-      ? props.brand.description?.slice(0, 300) ||
-        `Товары ${props.brand.name} в каталоге AgatCeramic.`
-      : seo.value?.description ||
-        'Каталог плитки, керамогранита, мозаики и материалов для ремонта.',
+    props.collection
+      ? props.collection.description?.trim().slice(0, 300) ||
+        `Товары коллекции «${props.collection.name}» в каталоге AgatCeramic.`
+      : props.brand
+        ? props.brand.description?.slice(0, 300) ||
+          `Товары ${props.brand.name} в каталоге AgatCeramic.`
+        : seo.value?.description ||
+          'Каталог плитки, керамогранита, мозаики и материалов для ремонта.',
   )
   useSeoMeta({
     title: pageTitle,
     description,
     ogTitle: () =>
-      props.brand ? pageTitle.value : seo.value?.ogTitle || pageTitle.value,
+      props.brand || props.collection
+        ? pageTitle.value
+        : seo.value?.ogTitle || pageTitle.value,
     ogDescription: () =>
-      props.brand
+      props.brand || props.collection
         ? description.value
         : seo.value?.ogDescription || description.value,
-    ogImage: () =>
-      props.brand?.logoUrl
-        ? new URL(props.brand.logoUrl, canonical.value).toString()
-        : seo.value?.ogImage
-          ? new URL(seo.value.ogImage, canonical.value).toString()
-          : undefined,
+    ogImage: () => {
+      const image =
+        props.collection?.image_url ||
+        props.brand?.logoUrl ||
+        seo.value?.ogImage
+      return image ? new URL(image, canonical.value).toString() : undefined
+    },
     ogUrl: canonical,
     ogType: 'website',
     robots: () =>
       error.value ||
       props.content?.isIndexable === false ||
       Object.entries(query.value).some(([key, value]) =>
-        key === 'brand' && props.brand
+        (key === 'brand' && (props.brand || props.collection)) ||
+        key === 'collection_slug'
           ? false
           : key === 'page'
             ? value !== '1'
@@ -252,7 +274,11 @@ if (!props.preview) {
         innerHTML: JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
-          name: props.brand?.name || props.content?.title || 'Каталог',
+          name:
+            props.collection?.name ||
+            props.brand?.name ||
+            props.content?.title ||
+            'Каталог',
           url: canonical.value,
           inLanguage: 'ru-RU',
           description: description.value,
@@ -279,7 +305,14 @@ if (!props.preview) {
 </script>
 
 <template>
+  <CollectionBanner
+    v-if="collection"
+    :collection="collection"
+    :brand-name="collection.brand_name"
+    standalone
+  />
   <PageIntro
+    v-else
     :title="brand?.name || content?.title || 'Каталог'"
     :slug="brand ? 'brand' : 'catalog'"
     :variant="brand ? 'brand' : undefined"
@@ -313,7 +346,7 @@ if (!props.preview) {
           :categories="scopeCategories"
           :query="query"
           :path="route.path"
-          :brand="scopeBrand"
+          :scope="categoryScope"
           :total="scopeTotal"
         />
       </div>
@@ -327,6 +360,7 @@ if (!props.preview) {
             :pending="draftFiltersPending"
             :error="draftFiltersError"
             :hide-brand="hasBrandScope"
+            :hide-collection="!!collection"
             :scoped="scoped"
             @retry="refreshDraftFilters()"
             :busy="status === 'pending'"
@@ -410,9 +444,19 @@ if (!props.preview) {
             <template v-else>
               <PageState
                 title="По вашему запросу ничего не найдено"
-                message="Измените дополнительные фильтры или вернитесь ко всему каталогу."
+                :message="
+                  collection && scopeTotal === 0
+                    ? 'В этой коллекции пока нет доступных товаров.'
+                    : 'Измените дополнительные фильтры или вернитесь ко всему каталогу.'
+                "
               />
-              <UiButton variant="outline" @click="clearFilters()"
+              <UiButton
+                v-if="collection && scopeTotal === 0"
+                :to="catalogLink"
+                variant="outline"
+                >Весь каталог</UiButton
+              >
+              <UiButton v-else variant="outline" @click="clearFilters()"
                 >Сбросить фильтры</UiButton
               >
             </template>
@@ -455,15 +499,11 @@ if (!props.preview) {
     >
       <div class="catalog-drawer-body">
         <CatalogCategories
-          v-if="draftCategories.length || (usesBrandCategories && draft.brand)"
+          v-if="draftCategories.length || draftCategoryScope"
           :categories="draftCategories"
           :query="{ ...query, category: draft.category, brand: draft.brand }"
           :path="route.path"
-          :brand="
-            usesBrandCategories && draft.brand
-              ? draftNavigation?.brand?.name || draft.brand
-              : ''
-          "
+          :scope="draftCategoryScope"
           :total="draftNavigation?.total"
           vertical
           @select="selectCategory"
@@ -475,6 +515,7 @@ if (!props.preview) {
           :pending="draftFiltersPending"
           :error="draftFiltersError"
           :hide-brand="hasBrandScope"
+          :hide-collection="!!collection"
           :scoped="!!(draft.category || draft.brand)"
           @retry="refreshDraftFilters()"
           :busy="status === 'pending'"

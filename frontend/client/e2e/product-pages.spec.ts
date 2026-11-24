@@ -371,16 +371,21 @@ test('gallery, centered tabs and independent color variants use actual API data'
   expect(issues).toEqual([])
 })
 
-test('brand, collection and category links filter the actual catalog without duplicate products', async ({
+test('the brand logo and text links open the brand page and the collection link opens its dedicated page', async ({
   page,
+  request,
 }) => {
+  await request.get('http://127.0.0.1:8015/__scenario?name=product-collection')
   await page.goto(productPath)
+  await expect(
+    page.getByRole('link', { name: 'Все товары Тестовый бренд', exact: true }),
+  ).toHaveAttribute('href', '/brand/test-brand')
   await page
     .getByRole('link', { name: 'Все товары бренда', exact: true })
     .click()
-  await expect(page).toHaveURL(/\/catalog\?brand=test-brand$/)
+  await expect(page).toHaveURL(/\/brand\/test-brand$/)
   await expect(
-    page.getByRole('heading', { name: 'Каталог', level: 1 }),
+    page.getByRole('heading', { name: 'Тестовый бренд', level: 1 }),
   ).toBeVisible()
   await expect(
     page.locator('#catalog-products a[href="/products/product-1"]'),
@@ -389,9 +394,27 @@ test('brand, collection and category links filter the actual catalog without dup
   await page
     .getByRole('link', { name: 'Коллекция «Тестовая коллекция»', exact: true })
     .click()
-  await expect(page).toHaveURL(/\/catalog\?brand=test-brand&collection=/)
-  await expect(page.locator('#catalog-products')).toContainText(
-    'Тестовая коллекция',
+  await expect(page).toHaveURL(/\/collection\/test-brand\/test-collection$/)
+  await expect(
+    page.getByRole('heading', {
+      name: 'Спокойный камень для светлых пространств',
+      level: 1,
+    }),
+  ).toBeVisible()
+})
+
+test('a legacy product collection without a slug still links to the filtered catalog', async ({
+  page,
+}) => {
+  await page.goto(productPath)
+  await page
+    .getByRole('link', { name: 'Коллекция «Тестовая коллекция»', exact: true })
+    .click()
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === '/catalog' &&
+      url.searchParams.get('brand') === 'test-brand' &&
+      url.searchParams.get('collection') === 'Тестовая коллекция',
   )
 })
 

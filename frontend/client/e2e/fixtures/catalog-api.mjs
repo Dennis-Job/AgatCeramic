@@ -26,6 +26,11 @@ export function handleCatalog(request, response, url, scenario) {
   }
   if (url.pathname !== '/api/v1/catalog') return false
   if (scenario === 'standalone-error') return send({}, 503)
+  const collectionPagination = scenario === 'standalone-collection-pagination'
+  const collectionScenario =
+    scenario === 'standalone-collection-scope' || collectionPagination
+  const scopedCategoryScenario =
+    collectionScenario || scenario === 'standalone-brand-scope'
   let attributes = {}
   try {
     attributes = JSON.parse(url.searchParams.get('attributes') || '{}')
@@ -174,26 +179,43 @@ export function handleCatalog(request, response, url, scenario) {
     { id: 2, slug: 'empty', name: 'Другой бренд' },
     { id: 3, slug: 'beta', name: 'Beta' },
   ]
-  if (scenario === 'standalone-brand-scope') {
-    products = products.slice(0, 5).map((product, index) => ({
-      ...product,
-      price: String((index + 1) * 100),
-      name:
-        index < 2
-          ? `Плитка ${String(index + 1).padStart(2, '0')}`
-          : index === 2
-            ? 'Мозаика 01'
-            : `Ванна ${String(index - 2).padStart(2, '0')}`,
-      category:
-        index < 2 ? categories[1] : index === 2 ? categories[2] : categories[4],
-      brand: index < 3 ? brands[0] : brands[2],
-    }))
+  if (scopedCategoryScenario && !collectionPagination) {
+    products = products
+      .slice(0, collectionScenario ? 6 : 5)
+      .map((product, index) => ({
+        ...product,
+        price: String((index + 1) * 100),
+        name:
+          index < 2
+            ? `Плитка ${String(index + 1).padStart(2, '0')}`
+            : index === 2
+              ? 'Мозаика 01'
+              : `Ванна ${String(index - 2).padStart(2, '0')}`,
+        category:
+          index < 2
+            ? categories[1]
+            : index === 2
+              ? categories[2]
+              : categories[4],
+        brand: index < 3 || index === 5 ? brands[0] : brands[2],
+      }))
   }
   const brandSlug = url.searchParams.get('brand') || ''
+  const collectionSlug = url.searchParams.get('collection_slug')
+  if (collectionSlug && (!brandSlug || url.searchParams.has('collection')))
+    return send({}, 422)
   const selectedBrand = brands.find((brand) => brand.slug === brandSlug) || null
   const brandProducts = brandSlug
     ? products.filter((product) => product.brand.slug === brandSlug)
     : products
+  const navigationProducts =
+    collectionScenario && collectionSlug
+      ? brandProducts.filter(
+          (p) =>
+            (p.id === (collectionPagination ? 27 : 6) ? 'other' : 'stone') ===
+            collectionSlug,
+        )
+      : brandProducts
   const descendants = (id) => {
     const ids = new Set([id])
     for (const child of categories) {
@@ -203,19 +225,19 @@ export function handleCatalog(request, response, url, scenario) {
   }
   const navigationCategories = categories.map((item) => ({
     ...item,
-    product_count: brandProducts.filter((product) =>
+    product_count: navigationProducts.filter((product) =>
       descendants(item.id).has(product.category.id),
     ).length,
   }))
   const categoryNavigation = {
     brand: selectedBrand,
-    total: brandProducts.length,
+    total: navigationProducts.length,
     categories: brandSlug
       ? navigationCategories.filter((item) => item.product_count > 0)
       : navigationCategories,
   }
-  if (scenario === 'standalone-brand-scope') {
-    products = brandProducts
+  if (scopedCategoryScenario) {
+    products = navigationProducts
     if (category) {
       const selected = categories.find((item) => item.slug === category)
       const categoryIds = selected ? descendants(selected.id) : new Set()
@@ -225,7 +247,7 @@ export function handleCatalog(request, response, url, scenario) {
     }
   }
   if (
-    (category === 'mosaic' && scenario !== 'standalone-brand-scope') ||
+    (category === 'mosaic' && !scopedCategoryScenario) ||
     url.searchParams.get('brand') === 'empty' ||
     scenario === 'standalone-empty'
   )
@@ -311,30 +333,29 @@ export function handleCatalog(request, response, url, scenario) {
     data: products.slice((page - 1) * 24, page * 24),
     categories,
     category_navigation: categoryNavigation,
-    brand_navigation:
-      scenario === 'standalone-brand-scope'
-        ? brands
-        : scenario === 'standalone-brand-menu'
-          ? [
-              { id: 101, name: '41zero42', slug: '41zero42' },
-              { id: 102, name: '9Cento', slug: '9cento' },
-              { id: 103, name: 'Атлас', slug: 'atlas-ru' },
-              { id: 104, name: 'Ёлка', slug: 'elka' },
-              { id: 105, name: 'Ясень', slug: 'yasen' },
-              { id: 106, name: 'Équipe', slug: 'equipe' },
-              { id: 107, name: '  «Atlas»', slug: 'atlas' },
-              ...Array.from({ length: 32 }, (_, index) => ({
-                id: 200 + index,
-                name:
-                  index === 0
-                    ? 'Atelier с очень длинным названием производителя керамической плитки'
-                    : `Atelier ${String(index).padStart(2, '0')}`,
-                slug: `atelier-${index}`,
-              })),
-            ]
-          : scenario === 'standalone-brand-menu-latin'
-            ? [{ id: 107, name: 'Beta', slug: 'beta' }]
-            : [],
+    brand_navigation: scopedCategoryScenario
+      ? brands
+      : scenario === 'standalone-brand-menu'
+        ? [
+            { id: 101, name: '41zero42', slug: '41zero42' },
+            { id: 102, name: '9Cento', slug: '9cento' },
+            { id: 103, name: 'Атлас', slug: 'atlas-ru' },
+            { id: 104, name: 'Ёлка', slug: 'elka' },
+            { id: 105, name: 'Ясень', slug: 'yasen' },
+            { id: 106, name: 'Équipe', slug: 'equipe' },
+            { id: 107, name: '  «Atlas»', slug: 'atlas' },
+            ...Array.from({ length: 32 }, (_, index) => ({
+              id: 200 + index,
+              name:
+                index === 0
+                  ? 'Atelier с очень длинным названием производителя керамической плитки'
+                  : `Atelier ${String(index).padStart(2, '0')}`,
+              slug: `atelier-${index}`,
+            })),
+          ]
+        : scenario === 'standalone-brand-menu-latin'
+          ? [{ id: 107, name: 'Beta', slug: 'beta' }]
+          : [],
     meta: {
       current_page: page,
       last_page: Math.max(1, Math.ceil(products.length / 24)),

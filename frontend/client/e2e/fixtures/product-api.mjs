@@ -1,4 +1,5 @@
 import { configureCartProducts } from './cart-api.mjs'
+import { testProductCollection } from './collection-api.mjs'
 
 // Synthetic storefront data. No connection to the development database.
 const category = { id: 1, name: 'Керамогранит', slug: 'porcelain' }
@@ -84,18 +85,7 @@ export function handleProducts(request, response, url, scenario) {
     collection =
       product.id === 2 || scenario === 'product-collection-null'
         ? null
-        : {
-            id: 1,
-            slug: 'test-collection',
-            name: 'Тестовая коллекция',
-            brand_slug: brand.slug,
-            headline: 'Спокойный камень для светлых пространств',
-            description:
-              'Настоящее описание коллекции из API.\nМатериал для спокойных и светлых интерьеров.',
-            country_code: 'RU',
-            image_url: '/images/home/materials.webp',
-            image_alt: 'Коллекция в интерьере светлой ванной',
-          }
+        : { ...testProductCollection }
     if (collection && scenario === 'product-collection-no-description')
       collection.description = '  \n '
     if (collection && scenario === 'product-collection-no-image')
@@ -189,6 +179,9 @@ export function handleProducts(request, response, url, scenario) {
   return send({
     data: {
       ...product,
+      ...(scenario === 'product-collection-inactive-brand'
+        ? { brand: { ...brand, page_available: false } }
+        : {}),
       ...(scenario === 'product-not-sale'
         ? { is_on_sale: false, old_price: '2345.00' }
         : {}),

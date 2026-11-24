@@ -12,7 +12,8 @@ export function useCatalogAppliedFilters(
   )
   const chips = computed(() =>
     Object.entries(query.value).flatMap(([key, value]) => {
-      if (key === 'page' || key === 'sort') return []
+      if (key === 'page' || key === 'sort' || key === 'collection_slug')
+        return []
       if (key === 'is_on_sale' && value !== '1') return []
       if (key === 'attributes') {
         try {

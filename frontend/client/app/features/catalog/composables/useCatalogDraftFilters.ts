@@ -69,6 +69,9 @@ export function useCatalogDraftFilters(
         {
           ...(draft.value.category ? { category: draft.value.category } : {}),
           ...(draft.value.brand ? { brand: draft.value.brand } : {}),
+          ...(query.value.collection_slug
+            ? { collection_slug: query.value.collection_slug }
+            : {}),
         },
         lookup.signal,
       )

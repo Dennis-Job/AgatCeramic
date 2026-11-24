@@ -15,3 +15,7 @@ export function siteOrigin(value: string): string {
     throw new Error('Invalid site URL')
   return url.origin
 }
+
+export function collectionPath(brandSlug: string, slug: string): string {
+  return `/collection/${encodeURIComponent(brandSlug)}/${encodeURIComponent(slug)}`
+}

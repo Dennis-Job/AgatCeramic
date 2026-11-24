@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CallbackRequestController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CartItemController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CollectionController;
 use App\Http\Controllers\Api\V1\EmailRequestController;
 use App\Http\Controllers\Api\V1\HomePageController;
 use App\Http\Controllers\Api\V1\LegalDocumentController;
@@ -44,6 +45,9 @@ Route::get('site-appearance', [SiteAppearanceController::class, 'show'])->name('
 Route::get('catalog', [CatalogController::class, 'index'])->name('catalog.index');
 Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('brands/{slug}', [BrandController::class, 'show'])->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')->name('brands.show');
+Route::get('collections', [CollectionController::class, 'index'])->name('collections.index');
+Route::get('brands/{brand}/collections/{slug}', [CollectionController::class, 'show'])
+    ->where(['brand' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'slug' => '[a-z0-9]+(?:-[a-z0-9]+)*'])->name('collections.show');
 Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('pages', [PageController::class, 'index'])->name('pages.index');
 Route::get('banners', [BannerController::class, 'index'])->name('banners.index');

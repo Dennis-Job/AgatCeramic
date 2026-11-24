@@ -2,7 +2,9 @@
 import { ArrowRight, Check } from '@lucide/vue'
 import UiButton from '~/components/ui/UiButton.vue'
 import UiQuantityInput from '~/components/ui/UiQuantityInput.vue'
+import { brandPath } from '~/features/brands/services/brands'
 import { useCart } from '~/features/cart/composables/useCart'
+import { productCollectionLink } from '~/features/collections/services/collections'
 import { formatMoney } from '~/utils/formatMoney'
 import { estimateProductTotal, productUnitLabel } from '~/utils/productUnits'
 import { productPath } from '../services/products'
@@ -47,22 +49,13 @@ const variantSections = computed(() => {
   }
   return sections
 })
-const brandLink = computed(() =>
-  props.product.brand
-    ? { path: '/catalog', query: { brand: props.product.brand.slug } }
-    : '/catalog',
-)
-const collectionLink = computed(() =>
-  props.product.collection
-    ? {
-        path: '/catalog',
-        query: {
-          brand: props.product.collection.brand_slug,
-          collection: props.product.collection.name,
-        },
-      }
-    : '/catalog',
-)
+const brandLink = computed(() => {
+  const brand = props.product.brand
+  if (!brand) return '/catalog'
+  return brand.page_available === false
+    ? { path: '/catalog', query: { brand: brand.slug } }
+    : brandPath(brand.slug)
+})
 const logoFailed = ref(false)
 watch(
   () => props.product.id,
@@ -124,7 +117,9 @@ async function add() {
     </div>
     <NuxtLink
       v-if="product.collection"
-      :to="collectionLink"
+      :to="
+        productCollectionLink(product.collection, product.brand?.page_available)
+      "
       class="product-text-link collection-link"
       >Коллекция «{{ product.collection.name }}»
       <ArrowRight :size="15" aria-hidden="true"

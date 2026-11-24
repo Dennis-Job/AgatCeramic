@@ -8,7 +8,7 @@ test.beforeEach(async ({ request }) => {
   await request.get(api + '/__scenario?name=product-collection')
 })
 
-test('complete collection renders in SSR between details and accessories with a brand-scoped catalog link', async ({
+test('complete story renders in SSR and links to a collection page with the same text and photo', async ({
   page,
   request,
 }) => {
@@ -31,6 +31,9 @@ test('complete collection renders in SSR between details and accessories with a 
     'Коллекция в интерьере светлой ванной',
   )
   await expect(story.getByRole('img')).toHaveAttribute('loading', 'lazy')
+  const image = await story.getByRole('img').getAttribute('src')
+  const description =
+    'Настоящее описание коллекции из API.\nМатериал для спокойных и светлых интерьеров.'
   expect(
     await story.evaluate(
       (el) =>
@@ -48,11 +51,54 @@ test('complete collection renders in SSR between details and accessories with a 
     await link.evaluate((el) => getComputedStyle(el).outlineStyle),
   ).not.toBe('none')
   await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/\/catalog\?brand=test-brand/)
-  const url = new URL(page.url())
-  expect(url.searchParams.get('brand')).toBe('test-brand')
-  expect(url.searchParams.get('collection')).toBe('Тестовая коллекция')
+  const collectionPath = '/collection/test-brand/test-collection'
+  await expect(page).toHaveURL(
+    (url) => url.pathname === collectionPath && !url.search,
+  )
+  const banner = page.locator('.collection-banner')
+  await expect(
+    banner.getByRole('heading', { name: headline, level: 1 }),
+  ).toBeVisible()
+  await expect(banner).toContainText('Тестовая коллекция')
+  await expect(banner).toContainText('Тестовый бренд · Россия')
+  await expect(banner).toContainText(description)
+  await expect(
+    banner.getByRole('img', { name: 'Коллекция в интерьере светлой ванной' }),
+  ).toHaveAttribute('src', image!)
+  const collectionResponse = await request.get(collectionPath)
+  expect(collectionResponse.status()).toBe(200)
+  const collectionHtml = await collectionResponse.text()
+  expect(collectionHtml).toContain(headline)
+  expect(collectionHtml).toContain('Настоящее описание коллекции из API.')
+  expect(collectionHtml).toContain('Коллекция в интерьере светлой ванной')
   expect(issues).toEqual([])
+})
+
+test('a product with a non-public brand keeps usable catalog links', async ({
+  page,
+  request,
+}) => {
+  await request.get(api + '/__scenario?name=product-collection-inactive-brand')
+  await page.goto(path)
+  const brandLink = page.getByRole('link', {
+    name: 'Все товары бренда',
+    exact: true,
+  })
+  const collectionLinks = [
+    page.getByRole('link', {
+      name: 'Коллекция «Тестовая коллекция»',
+      exact: true,
+    }),
+    page.getByRole('link', { name: 'Товары коллекции', exact: true }),
+  ]
+  await expect(brandLink).toHaveAttribute('href', '/catalog?brand=test-brand')
+  for (const link of collectionLinks) {
+    const href = await link.getAttribute('href')
+    const url = new URL(href!, page.url())
+    expect(url.pathname).toBe('/catalog')
+    expect(url.searchParams.get('brand')).toBe('test-brand')
+    expect(url.searchParams.get('collection')).toBe('Тестовая коллекция')
+  }
 })
 
 for (const scenario of [

@@ -14,11 +14,18 @@ const props = defineProps<{
   query: CatalogQuery
   path: string
   vertical?: boolean
-  brand?: string
+  scope?: 'brand' | 'collection'
   total?: number
 }>()
 const emit = defineEmits<{ navigate: []; select: [category: string] }>()
 const tree = computed(() => buildCategoryTree(props.categories))
+const scopeLabel = computed(() =>
+  props.scope === 'collection'
+    ? ' коллекции'
+    : props.scope === 'brand'
+      ? ' бренда'
+      : '',
+)
 function link(category?: string) {
   return catalogCategoryLocation(props.path, props.query, category)
 }
@@ -37,7 +44,7 @@ function navigate(close: () => void) {
     }"
     aria-label="Категории каталога"
   >
-    <h2 v-if="vertical">{{ brand ? 'Категории бренда' : 'Категории' }}</h2>
+    <h2 v-if="vertical">Категории{{ scopeLabel }}</h2>
     <ul v-if="vertical" class="catalog-categories__tree">
       <li class="ui-drawer-navigation__item">
         <button
@@ -45,12 +52,12 @@ function navigate(close: () => void) {
           class="ui-drawer-navigation__link"
           :class="{ 'ui-drawer-navigation__link--current': !query.category }"
           :aria-current="!query.category ? 'true' : undefined"
-          :aria-label="brand ? 'Все товары бренда' : 'Все товары'"
+          :aria-label="'Все товары' + scopeLabel"
           @click="$emit('select', '')"
         >
-          <span>{{ brand ? 'Все товары бренда' : 'Все товары' }}</span>
+          <span>Все товары{{ scopeLabel }}</span>
           <span class="ui-drawer-navigation__number" aria-hidden="true">{{
-            brand ? total : '01'
+            scope ? total : '01'
           }}</span>
         </button>
       </li>
@@ -60,7 +67,7 @@ function navigate(close: () => void) {
         :node="node"
         :number="index + 2"
         :selected="query.category"
-        :show-counts="!!brand"
+        :show-counts="!!scope"
         @select="$emit('select', $event)"
       />
     </ul>
@@ -69,11 +76,11 @@ function navigate(close: () => void) {
         <NuxtLink
           :to="link()"
           :aria-current="!query.category ? 'page' : undefined"
-          :aria-label="brand ? 'Все товары бренда' : 'Все товары'"
+          :aria-label="'Все товары' + scopeLabel"
           @click="$emit('navigate')"
-          ><span>{{ brand ? 'Все товары бренда' : 'Все товары' }}</span
+          ><span>Все товары{{ scopeLabel }}</span
           ><span
-            v-if="brand && total !== undefined"
+            v-if="scope && total !== undefined"
             class="catalog-categories__count"
             aria-hidden="true"
             >{{ total }}</span
@@ -86,7 +93,7 @@ function navigate(close: () => void) {
           :label="node.category.name"
           :current="categoryBranchContains(node, query.category)"
         >
-          <template v-if="brand" #suffix>
+          <template v-if="scope" #suffix>
             <span class="catalog-categories__count" aria-hidden="true">{{
               node.category.product_count
             }}</span>
@@ -104,7 +111,7 @@ function navigate(close: () => void) {
               :nodes="node.children"
               :query="query"
               :path="path"
-              :show-counts="!!brand"
+              :show-counts="!!scope"
               @navigate="navigate(close)"
             />
           </template>
@@ -117,14 +124,14 @@ function navigate(close: () => void) {
           "
           :aria-label="node.category.name"
           :aria-description="
-            brand && node.category.product_count !== undefined
+            scope && node.category.product_count !== undefined
               ? `Товаров в категории: ${node.category.product_count}`
               : undefined
           "
           @click="$emit('navigate')"
           ><span>{{ node.category.name }}</span
           ><span
-            v-if="brand && node.category.product_count !== undefined"
+            v-if="scope && node.category.product_count !== undefined"
             class="catalog-categories__count"
             aria-hidden="true"
             >{{ node.category.product_count }}</span

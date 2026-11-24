@@ -63,28 +63,27 @@ function draftFrom(query: CatalogQuery): CatalogDraft {
   }
 }
 
-export function useCatalog() {
+export function useCatalog(scope: { brand?: string; collectionSlug?: string }) {
   const route = useRoute()
-  const routeBrand = computed(() =>
-    route.path.startsWith('/brand/') && typeof route.params.slug === 'string'
-      ? route.params.slug
-      : '',
+  const editableKeys = keys.filter(
+    (key) =>
+      !(key === 'brand' && scope.brand) &&
+      !(key === 'collection' && scope.collectionSlug),
   )
   const { requestBase, publicBase } = usePublicApiConfig()
-  const query = computed<CatalogQuery>(() =>
-    Object.fromEntries(
-      keys.flatMap((key) => {
-        const value =
-          key === 'brand' && routeBrand.value
-            ? routeBrand.value
-            : route.query[key]
+  const query = computed<CatalogQuery>(() => ({
+    ...Object.fromEntries(
+      editableKeys.flatMap((key) => {
+        const value = route.query[key]
         return typeof value === 'string' && value !== '' ? [[key, value]] : []
       }),
     ),
-  )
+    ...(scope.brand ? { brand: scope.brand } : {}),
+    ...(scope.collectionSlug ? { collection_slug: scope.collectionSlug } : {}),
+  }))
   const draft = ref(draftFrom(query.value))
   const invalidQuery = computed(() =>
-    keys.some(
+    editableKeys.some(
       (key) =>
         route.query[key] !== undefined && typeof route.query[key] !== 'string',
     ),

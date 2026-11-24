@@ -15,6 +15,7 @@ const props = defineProps<{
   pending?: boolean
   error?: string
   hideBrand?: boolean
+  hideCollection?: boolean
   scoped?: boolean
   autoApply?: boolean
 }>()
@@ -187,6 +188,7 @@ onBeforeUnmount(() => {
       :disabled="(!autoApply && busy) || pending || !!error"
     >
       <UiSelect
+        v-if="!hideCollection"
         v-model="model.collection"
         @update:model-value="queueApply()"
         label="Коллекция"

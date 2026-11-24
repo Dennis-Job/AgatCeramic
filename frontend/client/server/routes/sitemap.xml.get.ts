@@ -1,7 +1,12 @@
-import { contentPagePath, siteOrigin } from '../../shared/utils/pageUrls'
+import {
+  collectionPath,
+  contentPagePath,
+  siteOrigin,
+} from '../../shared/utils/pageUrls'
 
 interface PageSummary {
   slug: string
+  brand_slug?: string
   is_indexable?: boolean
   published_at?: string | null
 }
@@ -25,11 +30,22 @@ function escapeXml(value: string): string {
   )
 }
 
+function validSlug(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length <= 255 &&
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
+  )
+}
+
 function catalogEntryPath(
-  resource: 'catalog' | 'brands',
-  slug: string,
+  resource: 'catalog' | 'brands' | 'collections',
+  entry: PageSummary,
 ): string | null {
-  if (slug.length > 255 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null
+  const { slug, brand_slug: brand } = entry
+  if (!validSlug(slug)) return null
+  if (resource === 'collections')
+    return validSlug(brand) ? collectionPath(brand, slug) : null
   return `${resource === 'brands' ? '/brand/' : '/products/'}${slug}`
 }
 
@@ -43,7 +59,12 @@ export default defineEventHandler(async (event) => {
     )
     const base = config.apiBaseInternal || config.public.apiBase
     const entries = new Map<string, string>()
-    for (const resource of ['pages', 'catalog', 'brands'] as const) {
+    for (const resource of [
+      'pages',
+      'catalog',
+      'brands',
+      'collections',
+    ] as const) {
       const endpoint = new URL(
         resource,
         base.endsWith('/') ? base : `${base}/`,
@@ -71,7 +92,7 @@ export default defineEventHandler(async (event) => {
           const path =
             resource === 'pages'
               ? contentPagePath(entry.slug)
-              : catalogEntryPath(resource, entry.slug)
+              : catalogEntryPath(resource, entry)
           if (!path || (resource === 'pages' && entry.is_indexable === false))
             continue
           const url = new URL(path, origin).toString()

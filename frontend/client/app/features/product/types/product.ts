@@ -1,4 +1,5 @@
 import type { CatalogProduct } from '~/types/contentPage'
+import type { ProductCollection } from '~/features/collections/types/collection'
 export interface ProductImage {
   id: number
   url: string
@@ -21,18 +22,6 @@ export interface GroupProduct extends ProductCard {
   sku?: string
   axis_values: Pick<ProductAttribute, 'slug' | 'value' | 'display_value'>[]
 }
-export interface ProductCollection {
-  name: string
-  brand_slug: string
-  // Optional metadata keeps older, minimal public projections compatible.
-  id?: number
-  slug?: string
-  headline?: string | null
-  description?: string | null
-  country_code?: string | null
-  image_url?: string | null
-  image_alt?: string | null
-}
 export interface ProductDetail extends ProductCard {
   sku: string
   article_number: string | null
@@ -41,6 +30,7 @@ export interface ProductDetail extends ProductCard {
     | (NonNullable<CatalogProduct['brand']> & {
         logo_url: string | null
         logo_alt: string | null
+        page_available?: boolean
       })
     | null
   images: ProductImage[]

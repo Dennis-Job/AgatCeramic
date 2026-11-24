@@ -13,7 +13,7 @@ class PublicCatalogNavigationQuery
     /**
      * @return array{brand: Brand|null, total: int, categories: list<array{category: Category, product_count: int}>}
      */
-    public function forBrand(?string $slug): array
+    public function forBrand(?string $slug, ?string $collectionSlug = null): array
     {
         $hasBrand = $slug !== null && $slug !== '';
         $brand = $hasBrand ? Brand::query()->where('slug', $slug)->first() : null;
@@ -24,7 +24,7 @@ class PublicCatalogNavigationQuery
         // Inactive ancestors still connect public descendants to their active ancestors.
         $categories = Category::query()->orderBy('sort_order')->orderBy('name')->orderBy('id')
             ->get(['id', 'parent_id', 'name', 'slug', 'is_active'])->keyBy('id');
-        $counts = $this->countsByCategory($categories, $brand);
+        $counts = $this->countsByCategory($categories, $brand, $collectionSlug);
         $navigation = [];
         foreach ($categories as $category) {
             $count = $counts['categories'][$category->id] ?? 0;
@@ -40,9 +40,9 @@ class PublicCatalogNavigationQuery
      * @param  Collection<int|string, Category>  $categories
      * @return array{total: int, categories: array<int, int>}
      */
-    private function countsByCategory(Collection $categories, ?Brand $brand): array
+    private function countsByCategory(Collection $categories, ?Brand $brand, ?string $collectionSlug): array
     {
-        $products = $this->catalog->scope([]);
+        $products = $this->catalog->scope(['brand' => $brand?->slug, 'collection_slug' => $collectionSlug]);
         if ($brand !== null) {
             $products->where('brand_id', $brand->id);
         }

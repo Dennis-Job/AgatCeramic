@@ -21,13 +21,12 @@ class PublicProductDetailResource extends PublicProductCardResource
             $data['brand'] = [...$data['brand'],
                 'logo_url' => $logo?->disk === 'public' ? Storage::disk('public')->url($logo->path) : null,
                 'logo_alt' => $logo?->alt ?: $this->brand?->name,
+                'page_available' => $this->brand?->is_active === true,
             ];
         }
         $attributes = $this->attributeValues->sortBy(fn (ProductAttributeValue $value): array => [$value->attribute->sort_order ?? 0, $value->attribute_id])->values();
         $attributes = $attributes->reject(fn (ProductAttributeValue $value): bool => $value->attribute?->slug === 'kollektsiya')->values();
         $collection = $this->collection;
-        $collectionImage = $collection?->image;
-        $publicCollectionImage = $collectionImage?->disk === 'public' && $collectionImage->kind === 'image';
 
         return [...$data,
             'sku' => $this->sku, 'article_number' => $this->article_number, 'description' => $this->description,
@@ -36,13 +35,8 @@ class PublicProductDetailResource extends PublicProductCardResource
                 'alt' => $image->alt ?: $this->name, 'is_primary' => $image->is_primary, 'sort_order' => $image->sort_order,
             ]),
             'attributes' => PublicProductAttributeResource::collection($attributes),
-            'collection' => $collection?->is_active === true && $this->brand !== null ? [
-                'id' => $collection->id, 'name' => $collection->name, 'slug' => $collection->slug,
-                'brand_slug' => $this->brand->slug, 'headline' => $collection->headline, 'description' => $collection->description,
-                'country_code' => $this->brand->country_code,
-                'image_url' => $publicCollectionImage ? Storage::disk('public')->url($collectionImage->path) : null,
-                'image_alt' => $publicCollectionImage ? ($collectionImage->alt ?: $collection->name) : null,
-            ] : null,
+            'collection' => $collection?->is_active === true && $this->brand !== null
+                ? PublicCollectionResource::details($collection, $this->brand) : null,
             'group' => $this->groupData($this->groupMembership?->group, $request),
             'related' => $this->relatedCards('related'), 'recommended' => $this->relatedCards('recommended'),
         ];

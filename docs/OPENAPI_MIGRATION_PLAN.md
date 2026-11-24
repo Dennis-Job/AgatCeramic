@@ -1,5 +1,24 @@
 # OpenAPI migration plan — version history
 
+## v24.0 — public collection pages
+
+Date: 2026-11-24. Adds `GET /brands/{brand}/collections/{slug}` and the
+paginated `GET /collections` for active collections of active brands. The
+profile uses the product detail's stored collection and public image. Adds an
+optional `collection_slug` catalog filter, paired with `brand` and mutually
+exclusive with the legacy collection-name filter. This scopes results,
+category navigation, price bounds and filter options to the collection. The
+existing database and product publication rules are retained.
+
+### Breaking change
+
+Strict readers of `GET /products/{slug}` must accept `brand.page_available`
+before backend rollout. The boolean reports whether the brand and its active
+collections have public pages. Clients accepting older backend responses can
+treat it as optional. The base path stays `/api/v1`. No database migration is
+required. Deploy the API before enabling the collection page links and sitemap
+entries. Roll back the Client routing and sitemap before removing the API.
+
 ## v23.1 — public brand pages
 
 Date: 2026-11-17. Adds `GET /brands` (25 active brands per page, stable name/id

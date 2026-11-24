@@ -18,10 +18,14 @@ class CatalogController extends Controller
     {
         $filters = $request->validated();
         $brand = $filters['brand'] ?? null;
+        $collectionSlug = $filters['collection_slug'] ?? null;
         $additional = [
             'categories' => PublicCatalogCategoryResource::collection($query->categories())->resolve($request),
             'brand_navigation' => PublicCatalogBrandResource::collection($query->brandNavigation())->resolve($request),
-            'category_navigation' => (new PublicCatalogNavigationResource($navigation->forBrand(is_string($brand) ? $brand : null)))->resolve($request),
+            'category_navigation' => (new PublicCatalogNavigationResource($navigation->forBrand(
+                is_string($brand) ? $brand : null,
+                is_string($collectionSlug) ? $collectionSlug : null,
+            )))->resolve($request),
         ];
         if ($request->boolean('include_filters')) {
             $additional['filters'] = $query->filters($filters);
