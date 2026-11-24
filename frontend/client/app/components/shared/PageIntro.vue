@@ -161,6 +161,11 @@ p {
   object-position: 70% 50%;
 }
 .page-intro__veil {
+  --intro-veil-color: color-mix(
+    in srgb,
+    var(--color-white) 80%,
+    var(--color-bg)
+  );
   --intro-veil-fade-start: calc(
     max(0px, (100% - var(--content-width)) / 2) + clamp(310px, 26vw, 460px)
   );
@@ -170,12 +175,12 @@ p {
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--color-white) 94%, transparent) 0%,
-    color-mix(in srgb, var(--color-white) 89%, transparent)
+    color-mix(in srgb, var(--intro-veil-color) 94%, transparent) 0%,
+    color-mix(in srgb, var(--intro-veil-color) 89%, transparent)
       calc(var(--intro-veil-fade-start) - 170px),
-    color-mix(in srgb, var(--color-white) 79%, transparent)
+    color-mix(in srgb, var(--intro-veil-color) 79%, transparent)
       var(--intro-veil-fade-start),
-    color-mix(in srgb, var(--color-white) 25%, transparent)
+    color-mix(in srgb, var(--intro-veil-color) 25%, transparent)
       calc(var(--intro-veil-fade-start) + 166px),
     transparent calc(var(--intro-veil-fade-start) + 360px)
   );
@@ -219,9 +224,9 @@ p {
   .page-intro__veil {
     background: linear-gradient(
       90deg,
-      color-mix(in srgb, var(--color-white) 96%, transparent) 0%,
-      color-mix(in srgb, var(--color-white) 94%, transparent) 52%,
-      color-mix(in srgb, var(--color-white) 83%, transparent) 72%,
+      color-mix(in srgb, var(--intro-veil-color) 96%, transparent) 0%,
+      color-mix(in srgb, var(--intro-veil-color) 94%, transparent) 52%,
+      color-mix(in srgb, var(--intro-veil-color) 83%, transparent) 72%,
       transparent 100%
     );
   }
