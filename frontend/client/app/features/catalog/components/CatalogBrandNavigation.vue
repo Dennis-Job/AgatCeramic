@@ -16,7 +16,9 @@ const route = useRoute()
 const selectedSlug = computed(() =>
   typeof route.params.slug === 'string' && route.path.startsWith('/brand/')
     ? route.params.slug
-    : route.query.brand,
+    : props.path.startsWith('/preview/')
+      ? route.query.brand
+      : undefined,
 )
 function brandLink(slug: string) {
   return props.path.startsWith('/preview/')

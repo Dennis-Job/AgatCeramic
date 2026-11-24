@@ -1,4 +1,3 @@
-import { brandPath } from '~/features/brands/services/brands'
 import type { CatalogQuery } from '../types/catalog'
 
 /** Switching categories clears constraints specific to the previous category. */
@@ -16,18 +15,17 @@ export function catalogCategoryLocation(
   return catalogLocation(path, query)
 }
 
-/** The brand belongs to the public path; protected previews keep their own route. */
+/** Only a brand page takes its brand from the path. */
 export function catalogLocation(
   path: string,
   query: CatalogQuery,
   hash = '#catalog-products',
 ) {
-  if (path.startsWith('/preview/')) return { path, query, hash }
-  const next = { ...query }
-  delete next.brand
+  if (!path.startsWith('/brand/')) return { path, query, hash }
+  const { brand, ...filters } = query
   return {
-    path: query.brand ? brandPath(query.brand) : '/catalog',
-    query: next,
+    path: brand ? path : '/catalog',
+    query: filters,
     hash,
   }
 }

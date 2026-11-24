@@ -109,8 +109,12 @@ function loadNext(event: MouseEvent) {
 const event = useRequestEvent()
 if (event && error.value && !props.preview) setResponseStatus(event, 503)
 const drawer = ref(false)
+const usesBrandCategories = computed(() => !!(props.brand || props.preview))
+const hasBrandScope = computed(
+  () => !!props.brand || (!!props.preview && !!query.value.brand),
+)
 const scopeBrand = computed(() =>
-  query.value.brand
+  hasBrandScope.value
     ? props.brand?.name ||
       catalog.value?.category_navigation?.brand?.name ||
       catalog.value?.brand_navigation.find(
@@ -124,7 +128,8 @@ const scopeBrand = computed(() =>
 )
 const scopeCategories = computed(
   () =>
-    catalog.value?.category_navigation?.categories ||
+    (usesBrandCategories.value &&
+      catalog.value?.category_navigation?.categories) ||
     catalog.value?.categories ||
     [],
 )
@@ -135,12 +140,13 @@ const listingTitle = computed(
       (category) => category.slug === query.value.category,
     )?.name || 'Все товары',
 )
-const draftCategories = computed(
-  () =>
-    draftNavigation.value?.categories ||
-    (draft.value.brand === (query.value.brand || '')
-      ? scopeCategories.value
-      : []),
+const draftCategories = computed(() =>
+  usesBrandCategories.value
+    ? draftNavigation.value?.categories ||
+      (draft.value.brand === (query.value.brand || '')
+        ? scopeCategories.value
+        : [])
+    : scopeCategories.value,
 )
 const scoped = computed(() => !!(query.value.brand || query.value.category))
 const catalogLink = computed(
@@ -298,7 +304,7 @@ if (!props.preview) {
         :path="route.path"
       />
       <div
-        v-if="scopeCategories.length || query.brand"
+        v-if="scopeCategories.length || hasBrandScope"
         ref="navigation"
         class="catalog-category-navigation"
         :class="{ 'catalog-category-navigation--pinned': pinned }"
@@ -320,7 +326,7 @@ if (!props.preview) {
             :collections="collections"
             :pending="draftFiltersPending"
             :error="draftFiltersError"
-            :hide-brand="!!query.brand"
+            :hide-brand="hasBrandScope"
             :scoped="scoped"
             @retry="refreshDraftFilters()"
             :busy="status === 'pending'"
@@ -449,12 +455,14 @@ if (!props.preview) {
     >
       <div class="catalog-drawer-body">
         <CatalogCategories
-          v-if="draftCategories.length || draft.brand"
+          v-if="draftCategories.length || (usesBrandCategories && draft.brand)"
           :categories="draftCategories"
           :query="{ ...query, category: draft.category, brand: draft.brand }"
           :path="route.path"
           :brand="
-            draft.brand ? draftNavigation?.brand?.name || draft.brand : ''
+            usesBrandCategories && draft.brand
+              ? draftNavigation?.brand?.name || draft.brand
+              : ''
           "
           :total="draftNavigation?.total"
           vertical
@@ -466,7 +474,7 @@ if (!props.preview) {
           :collections="collections"
           :pending="draftFiltersPending"
           :error="draftFiltersError"
-          :hide-brand="!!query.brand"
+          :hide-brand="hasBrandScope"
           :scoped="!!(draft.category || draft.brand)"
           @retry="refreshDraftFilters()"
           :busy="status === 'pending'"

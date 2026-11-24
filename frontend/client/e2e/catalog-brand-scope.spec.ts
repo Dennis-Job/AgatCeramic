@@ -48,31 +48,76 @@ test('brand category and refinements remain independent on its clean URL', async
 test('category entry refines by brand and history restores the previous page', async ({
   page,
 }) => {
-  await page.goto('/catalog?category=tile')
-  const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
-  await selectChoice(
-    form.getByRole('combobox', { name: 'Бренд', exact: true }),
-    'Atlas',
-  )
-  await expect(page).toHaveURL(/\/brand\/atlas\?category=tile/)
-  await expect(page).not.toHaveURL(/brand=/)
-  await expect(
-    page.getByRole('heading', { name: 'Atlas', level: 1, exact: true }),
-  ).toBeVisible()
-  await page
-    .getByRole('navigation', { name: 'Категории каталога' })
-    .getByRole('link', { name: 'Мозаика', exact: true })
+  await page.goto('/catalog')
+  const categories = page.getByRole('navigation', {
+    name: 'Категории каталога',
+  })
+  await categories
+    .getByRole('button', { name: 'Материалы', exact: true })
     .click()
+  await categories.getByRole('link', { name: 'Плитка', exact: true }).click()
+  const form = page.getByRole('complementary', { name: 'Фильтры каталога' })
+  const brand = form.getByRole('combobox', { name: 'Бренд', exact: true })
+  await brand.focus()
+  await brand.press('Enter')
+  await brand.press('ArrowDown')
+  await brand.press('Enter')
+  await expect(page).toHaveURL(/\/catalog\?category=tile&brand=atlas/)
+  await expect(brand).toHaveText('Atlas')
+  await expect(page.locator('.catalog-results')).toHaveAttribute(
+    'aria-busy',
+    'false',
+  )
+  await expect(brand).toBeFocused()
+  await expect(
+    page.getByRole('heading', { name: 'Каталог', level: 1 }),
+  ).toBeAttached()
+  await expect(
+    categories.getByRole('button', { name: 'Сантехника', exact: true }),
+  ).toBeVisible()
+  await categories
+    .getByRole('button', { name: 'Материалы', exact: true })
+    .click()
+  await categories.getByRole('link', { name: 'Мозаика', exact: true }).click()
+  await expect(page).toHaveURL(/\/catalog\?category=mosaic&brand=atlas/)
   await expect(page.locator('.product-card')).toHaveCount(1)
   await expect(page.locator('.product-card')).toContainText('Мозаика 01')
   await page.goBack()
-  await expect(page).toHaveURL(/\/brand\/atlas\?category=tile/)
+  await expect(page).toHaveURL(/\/catalog\?category=tile&brand=atlas/)
   await expect(page.locator('.product-card')).toHaveCount(2)
   await page.goBack()
   await expect(page).toHaveURL(/\/catalog\?category=tile/)
+  await expect(brand).toHaveText('Все бренды')
+  await selectChoice(brand, 'Atlas')
+  await expect(page).toHaveURL(/\/catalog\?category=tile&brand=atlas/)
+  await selectChoice(brand, 'Все бренды')
+  await expect(page).toHaveURL(/\/catalog\?category=tile#catalog-products$/)
+})
+
+test('mobile Apply filters the catalog by brand and reopening keeps the selection', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 640, height: 900 })
+  await page.goto('/catalog')
+  const opener = page.getByRole('button', { name: 'Фильтры', exact: true })
+  const drawer = page.getByRole('dialog', { name: 'Фильтры каталога' })
+  const brand = drawer.getByRole('combobox', { name: 'Бренд', exact: true })
+  await expect(page.locator('.product-card')).toHaveCount(5)
+  await opener.click()
+  await drawer.getByRole('button', { name: 'Материалы', exact: true }).click()
+  await drawer.getByRole('button', { name: 'Плитка', exact: true }).click()
+  await selectChoice(brand, 'Atlas')
+  await expect(page).toHaveURL(/\/catalog$/)
+  await expect(page.locator('.product-card')).toHaveCount(5)
+  await drawer.getByRole('button', { name: 'Применить', exact: true }).click()
+  await expect(drawer).toHaveCount(0)
+  await expect(page).toHaveURL(/\/catalog\?category=tile&brand=atlas/)
+  await expect(page.locator('.product-card')).toHaveCount(2)
+  await opener.click()
+  await expect(brand).toHaveText('Atlas')
   await expect(
-    form.getByRole('combobox', { name: 'Бренд', exact: true }),
-  ).toHaveText('Все бренды')
+    drawer.getByRole('button', { name: 'Плитка', exact: true }),
+  ).toHaveAttribute('aria-current', 'true')
 })
 
 test('category changes clear dependent values while brand counts ignore refinements', async ({

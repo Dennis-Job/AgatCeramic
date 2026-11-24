@@ -162,28 +162,30 @@ onBeforeUnmount(() => {
       @retry="$emit('retry')"
     />
     <p v-else-if="pending" role="status">Загружаем фильтры…</p>
+    <UiSelect
+      v-if="!hideBrand"
+      v-model="model.brand"
+      class="catalog-filter-form__brand"
+      label="Бренд"
+      size="compact"
+      :disabled="!autoApply && (busy || pending || !!error)"
+      :options="[
+        { value: '', label: 'Все бренды' },
+        ...filters.brands.map((item) => ({
+          value: item.slug,
+          label: item.name,
+        })),
+        ...(model.brand &&
+        !filters.brands.some((item) => item.slug === model.brand)
+          ? [{ value: model.brand, label: model.brand }]
+          : []),
+      ]"
+      @update:model-value="queueApply()"
+    />
     <fieldset
       class="catalog-filter-form__fields"
       :disabled="(!autoApply && busy) || pending || !!error"
     >
-      <UiSelect
-        v-if="!hideBrand"
-        v-model="model.brand"
-        @update:model-value="queueApply()"
-        label="Бренд"
-        size="compact"
-        :options="[
-          { value: '', label: 'Все бренды' },
-          ...filters.brands.map((item) => ({
-            value: item.slug,
-            label: item.name,
-          })),
-          ...(model.brand &&
-          !filters.brands.some((item) => item.slug === model.brand)
-            ? [{ value: model.brand, label: model.brand }]
-            : []),
-        ]"
-      />
       <UiSelect
         v-model="model.collection"
         @update:model-value="queueApply()"
@@ -353,6 +355,7 @@ legend {
     border-bottom: 1px solid var(--color-line-strong);
     padding-bottom: 12px;
   }
+  .catalog-filter-form--automatic .catalog-filter-form__brand,
   .catalog-filter-form--automatic
     .catalog-filter-form__fields
     > :deep(.ui-select),

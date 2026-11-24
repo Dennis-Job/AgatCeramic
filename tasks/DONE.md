@@ -1,5 +1,15 @@
 # DONE
 
+2026-11-24 — TASK-120. Боковой фильтр «Бренд» сохраняет `/catalog`,
+текущую категорию и совместимые ограничения. Алфавит открывает профиль
+`/brand/<slug>`. Клавиатурный фокус на поле «Бренд» сохраняется при загрузке.
+Проверено на локальном каталоге с Kerama Marazzi и независимым UI Design Guard.
+Сборка, typecheck, Prettier и 110 сценариев E2E прошли.
+Код: `catalog.vue`, `catalogLocation.ts`, `useCatalog.ts`, `CatalogPageBody.vue`,
+`CatalogFilterForm.vue`, `CatalogBrandNavigation.vue`. Регрессии:
+`brand-pages.spec.ts`, `catalog-brand-scope.spec.ts`, `product-pages.spec.ts`,
+`product-collections.spec.ts`. Правило обновлено в [UI-033](../docs/CLIENT_UI_KIT.md#страницы-брендов-и-категории--ui-033--уточнено-2026-11-24).
+
 2026-11-24 — По замечанию владельца общий градиент баннеров получил
 тёплый светлый оттенок из 80% белого и 20% фона сайта. Изменены
 `PageIntro.vue` и UI-030. Build, typecheck, Prettier и 13 E2E прошли.

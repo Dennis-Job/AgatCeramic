@@ -136,17 +136,9 @@ export function useCatalog() {
     draft.value = draftFrom(value)
     syncingDraft = false
   })
-  function navigate(
-    value: CatalogQuery,
-    hash = '#catalog-products',
-    automatic = false,
-  ) {
-    const changingBrand =
-      value.brand &&
-      value.brand !== routeBrand.value &&
-      !route.path.startsWith('/preview/')
+  function navigate(value: CatalogQuery, automatic = false) {
     return navigateTo({
-      ...catalogLocation(route.path, value, changingBrand ? '' : hash),
+      ...catalogLocation(route.path, value),
       state: { catalogAutomaticFilter: automatic },
     })
   }
@@ -179,7 +171,7 @@ export function useCatalog() {
     )
     if (Object.keys(attributes).length)
       value.attributes = JSON.stringify(attributes)
-    return navigate(value, '#catalog-products', automatic)
+    return navigate(value, automatic)
   }
   function remove(key: string, attributeId?: string) {
     const value = { ...query.value }

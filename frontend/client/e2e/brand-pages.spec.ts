@@ -161,23 +161,33 @@ test('switching brands changes the intro and full range without retaining old ca
   ).toHaveCount(0)
 })
 
-test('legacy brand query redirects permanently and route brand cannot be overridden by query', async ({
+test('a catalog brand filter renders on the catalog route and stays after reload', async ({
   request,
   page,
 }) => {
-  const redirect = await request.get(
-    '/catalog?brand=atlas&category=tile&price_from=150',
-    { maxRedirects: 0 },
+  const path = '/catalog?brand=atlas&category=tile&price_from=150'
+  const response = await request.get(path, { maxRedirects: 0 })
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain('Бренд: Atlas')
+  expect(html).toContain('Плитка 02')
+  await page.goto(path)
+  await page.reload()
+  await expect(page).toHaveURL(
+    /\/catalog\?brand=atlas&category=tile&price_from=150$/,
   )
-  expect(redirect.status()).toBe(301)
-  const location = new URL(
-    redirect.headers().location!,
-    'http://127.0.0.1:3015',
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://agatceramic.example/catalog',
   )
-  expect(location.pathname).toBe('/brand/atlas')
-  expect(location.searchParams.get('category')).toBe('tile')
-  expect(location.searchParams.get('price_from')).toBe('150')
-  expect(location.searchParams.has('brand')).toBe(false)
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    'content',
+    'noindex,follow',
+  )
+  await expect(page.locator('.product-card')).toHaveCount(1)
+})
+
+test('route brand cannot be overridden by query', async ({ page }) => {
   await page.goto('/brand/atlas?brand=beta')
   await expect(
     page.getByRole('heading', { name: 'Atlas', exact: true, level: 1 }),

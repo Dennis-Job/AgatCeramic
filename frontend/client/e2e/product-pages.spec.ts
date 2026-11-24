@@ -378,9 +378,9 @@ test('brand, collection and category links filter the actual catalog without dup
   await page
     .getByRole('link', { name: 'Все товары бренда', exact: true })
     .click()
-  await expect(page).toHaveURL(/\/brand\/test-brand$/)
+  await expect(page).toHaveURL(/\/catalog\?brand=test-brand$/)
   await expect(
-    page.getByRole('heading', { name: 'Тестовый бренд', level: 1 }),
+    page.getByRole('heading', { name: 'Каталог', level: 1 }),
   ).toBeVisible()
   await expect(
     page.locator('#catalog-products a[href="/products/product-1"]'),
@@ -389,7 +389,7 @@ test('brand, collection and category links filter the actual catalog without dup
   await page
     .getByRole('link', { name: 'Коллекция «Тестовая коллекция»', exact: true })
     .click()
-  await expect(page).toHaveURL(/\/brand\/test-brand\?collection=/)
+  await expect(page).toHaveURL(/\/catalog\?brand=test-brand&collection=/)
   await expect(page.locator('#catalog-products')).toContainText(
     'Тестовая коллекция',
   )
