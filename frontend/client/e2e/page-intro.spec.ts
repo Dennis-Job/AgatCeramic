@@ -4,6 +4,33 @@ test.beforeEach(async ({ request }) => {
   await request.get('http://127.0.0.1:8015/__scenario?name=default')
 })
 
+test('catalog, informational pages and saved previews share the background gradient', async ({
+  page,
+  context,
+}) => {
+  const veil = page.locator('.page-intro__veil')
+  await page.goto('/catalog')
+  const catalog = await veil.evaluate(
+    (node) => getComputedStyle(node).backgroundImage,
+  )
+  expect(catalog).toContain('linear-gradient(')
+
+  await page.goto('/about')
+  await expect(veil).toHaveCSS('background-image', catalog)
+
+  await context.addCookies([
+    {
+      name: 'preview_test_session',
+      value: 'employee',
+      url: 'http://127.0.0.1:3015',
+    },
+  ])
+  await page.goto('/preview/catalog')
+  await expect(veil).toHaveCSS('background-image', catalog)
+  await page.goto('/preview/about')
+  await expect(veil).toHaveCSS('background-image', catalog)
+})
+
 test('content introductions have distinct SSR illustrations and a responsive stable layout', async ({
   page,
   request,

@@ -161,37 +161,28 @@ p {
   object-position: 70% 50%;
 }
 .page-intro__veil {
+  --intro-veil-fade-start: calc(
+    max(0px, (100% - var(--content-width)) / 2) + clamp(310px, 26vw, 460px)
+  );
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--color-bg) 94%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg) 88%, transparent) 28%,
-    color-mix(in srgb, var(--color-bg) 53%, transparent) 49%,
-    color-mix(in srgb, var(--color-bg) 8%, transparent) 77%,
-    color-mix(in srgb, var(--color-bg) 2%, transparent) 100%
+    color-mix(in srgb, var(--color-white) 94%, transparent) 0%,
+    color-mix(in srgb, var(--color-white) 89%, transparent)
+      calc(var(--intro-veil-fade-start) - 170px),
+    color-mix(in srgb, var(--color-white) 79%, transparent)
+      var(--intro-veil-fade-start),
+    color-mix(in srgb, var(--color-white) 25%, transparent)
+      calc(var(--intro-veil-fade-start) + 166px),
+    transparent calc(var(--intro-veil-fade-start) + 360px)
   );
 }
 @media (min-width: 1900px) {
   .page-intro__inner {
     min-height: 460px;
-  }
-  .page-intro__veil {
-    --intro-copy-end: calc(
-      (100% - var(--content-width)) / 2 + var(--page-gutter) + 570px
-    );
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--color-bg) 98%, transparent) 0%,
-      color-mix(in srgb, var(--color-bg) 98%, transparent) var(--intro-copy-end),
-      color-mix(in srgb, var(--color-bg) 53%, transparent)
-        calc(var(--intro-copy-end) + 240px),
-      color-mix(in srgb, var(--color-bg) 8%, transparent)
-        calc(var(--intro-copy-end) + 590px),
-      color-mix(in srgb, var(--color-bg) 2%, transparent) 100%
-    );
   }
 }
 @media (max-width: 760px) {
@@ -228,9 +219,10 @@ p {
   .page-intro__veil {
     background: linear-gradient(
       90deg,
-      color-mix(in srgb, var(--color-bg) 96%, transparent) 0%,
-      color-mix(in srgb, var(--color-bg) 85%, transparent) 47%,
-      color-mix(in srgb, var(--color-bg) 43%, transparent) 100%
+      color-mix(in srgb, var(--color-white) 96%, transparent) 0%,
+      color-mix(in srgb, var(--color-white) 94%, transparent) 52%,
+      color-mix(in srgb, var(--color-white) 83%, transparent) 72%,
+      transparent 100%
     );
   }
 }

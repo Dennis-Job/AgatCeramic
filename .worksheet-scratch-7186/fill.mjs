@@ -1,0 +1,28 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import {createRequire} from "node:module";
+import {pathToFileURL} from "node:url";
+const dependencies = path.join(process.env.USERPROFILE,".cache","codex-runtimes","codex-primary-runtime","dependencies","node");
+const resolveRuntime = createRequire(path.join(dependencies,"runtime.cjs"));
+const {FileBlob,SpreadsheetFile} = await import(pathToFileURL(resolveRuntime.resolve("@oai/artifact-tool")).href);
+const input = path.join(process.env.USERPROFILE,"Downloads","REPLAPTOPS-2-template(30.06.2026) (1).xlsx");
+const book = await SpreadsheetFile.importXlsx(await FileBlob.load(input));
+const img = await book.render({sheetName:"Данные",range:"C3:G9",scale:0.7,format:"png"});
+await fs.writeFile("before.png",new Uint8Array(await img.arrayBuffer()));
+console.log("rendered");
+
+const rows = JSON.parse(await fs.readFile("rows.json","utf8"));
+const dateSerial = (Date.UTC(2026,10,19) - Date.UTC(1899,11,30)) / 86400000;
+for (const row of rows) row[2] = dateSerial;
+const sheet = book.worksheets.getItem("Данные");
+sheet.getRangeByIndexes(6,2,rows.length,rows[0].length).values = rows;
+sheet.getRange(`E7:E${6 + rows.length}`).setNumberFormat("dd.mm.yyyy");
+book.recalculate();
+const sample = await book.inspect({kind:"table",range:"Данные!C7:G10",include:"values,formulas",tableMaxRows:4,tableMaxCols:5});
+console.log(sample.ndjson);
+const errors = await book.inspect({kind:"match",searchTerm:"#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!",options:{useRegex:true,maxResults:20}});
+console.log(errors.ndjson);
+const output = await SpreadsheetFile.exportXlsx(book);
+await output.save("staged.xlsx");
+const after = await book.render({sheetName:"Данные",range:"C6:G15",scale:0.8,format:"png"});
+await fs.writeFile("after.png",new Uint8Array(await after.arrayBuffer()));
