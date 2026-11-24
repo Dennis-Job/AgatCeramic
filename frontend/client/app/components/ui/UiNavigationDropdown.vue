@@ -103,14 +103,17 @@ onBeforeUnmount(() => {
       :id="`${id}-trigger`"
       ref="trigger"
       type="button"
-      class="ui-navigation-dropdown__trigger"
-      :class="{ 'ui-navigation-dropdown__trigger--current': current }"
+      class="ui-navigation-dropdown__trigger ui-hover-underline ui-hover-underline--text"
+      :class="{
+        'ui-navigation-dropdown__trigger--current': current,
+        'ui-hover-underline--current': current,
+      }"
       :aria-label="label"
       :aria-expanded="open"
       :aria-controls="`${id}-panel`"
       @click="toggle"
     >
-      <span>{{ label }}</span>
+      <span class="ui-hover-underline__text">{{ label }}</span>
       <slot name="suffix" />
       <ChevronDown :size="14" :stroke-width="1.6" aria-hidden="true" />
     </button>
@@ -158,9 +161,6 @@ onBeforeUnmount(() => {
 .ui-navigation-dropdown__trigger[aria-expanded='true'],
 .ui-navigation-dropdown__trigger--current {
   color: var(--color-ink);
-}
-.ui-navigation-dropdown__trigger--current {
-  border-bottom-color: var(--color-ink);
 }
 .ui-navigation-dropdown__trigger svg {
   flex-shrink: 0;

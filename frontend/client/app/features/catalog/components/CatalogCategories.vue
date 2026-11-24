@@ -75,10 +75,12 @@ function navigate(close: () => void) {
       <li>
         <NuxtLink
           :to="link()"
+          class="ui-hover-underline ui-hover-underline--text"
           :aria-current="!query.category ? 'page' : undefined"
           :aria-label="'Все товары' + scopeLabel"
           @click="$emit('navigate')"
-          ><span>Все товары{{ scopeLabel }}</span
+          ><span class="ui-hover-underline__text"
+            >Все товары{{ scopeLabel }}</span
           ><span
             v-if="scope && total !== undefined"
             class="catalog-categories__count"
@@ -118,6 +120,7 @@ function navigate(close: () => void) {
         </UiNavigationDropdown>
         <NuxtLink
           v-else
+          class="ui-hover-underline ui-hover-underline--text"
           :to="link(node.category.slug)"
           :aria-current="
             query.category === node.category.slug ? 'page' : undefined
@@ -129,7 +132,7 @@ function navigate(close: () => void) {
               : undefined
           "
           @click="$emit('navigate')"
-          ><span>{{ node.category.name }}</span
+          ><span class="ui-hover-underline__text">{{ node.category.name }}</span
           ><span
             v-if="scope && node.category.product_count !== undefined"
             class="catalog-categories__count"
@@ -178,9 +181,6 @@ li {
 .catalog-categories__roots > li > a[aria-current],
 .catalog-categories__roots > li > a:hover {
   color: var(--color-ink);
-}
-.catalog-categories__roots > li > a[aria-current] {
-  border-bottom-color: var(--color-ink);
 }
 .catalog-categories--vertical {
   --drawer-navigation-font-size: 13px;

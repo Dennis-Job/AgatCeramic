@@ -1,5 +1,27 @@
 # DONE
 
+2026-11-24 — UI-031: hover категорий использует ту же анимацию подчёркивания,
+что основная навигация: scaleX слева направо, уход к правому краю,
+0.35 s / --ease-out. Общий `base.css` расширен вариантом
+`ui-hover-underline--text`; подключён в `UiNavigationDropdown.vue` и
+`CatalogCategories.vue`. Линия только под названием, выбранная остаётся
+после ухода указателя. Стрелка, gap и счётчик исключены. Актуализирован
+`docs/CLIENT_UI_KIT.md`; прежние потребители utility сохранены.
+Build/typecheck/scoped Prettier/diff-check и 19 E2E PASS. В production-preview
+с реальными данными проверены hover/leave/current и совпадение CSS duration,
+easing и transform-origin с шапкой. Независимый UI Design Guard PASS.
+Миграций, изменения API и коммита нет.
+
+2026-11-24 — UI-031: по уточнению владельца выбранная категория подчёркнута
+только по тексту названия, без стрелки, промежутка перед ней и счётчика.
+Изменены `UiNavigationDropdown.vue`, `CatalogCategories.vue` и правило
+в `docs/CLIENT_UI_KIT.md`; геометрия целей и keyboard focus сохранены.
+Build/typecheck/scoped Prettier, 9 профильных E2E и независимый UI Design
+Guard (код и свежий снимок выбранной «Сантехники») PASS. Dev client
+перезапущен для обновления CSS; HTTP каталога 200. Встроенная вкладка при
+перезагрузке получила таймаут, визуальная приёмка выполнена по production
+E2E-снимку. Миграций, изменения API и коммита нет.
+
 2026-11-24 — TASK-120. Шапка бренда оформлена по образцу страницы коллекции.
 `SplitBanner.vue` задаёт общие фон, сетку, отступы и типографику для
 `BrandBanner.vue` и `CollectionBanner.vue`. Логотип вписывается целиком.
