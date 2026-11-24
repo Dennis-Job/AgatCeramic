@@ -13,7 +13,7 @@ test('complete story renders in SSR and links to a collection page with the same
   request,
 }) => {
   const html = await (await request.get(path)).text()
-  expect(html).toContain('class="product-collection-story"')
+  expect(html).toMatch(/<section class="[^"]*\bproduct-collection-story\b/)
   expect(html).toContain(headline)
   const issues: string[] = []
   page.on('pageerror', (error) => issues.push(error.message))
@@ -114,7 +114,9 @@ for (const scenario of [
   }) => {
     await request.get(api + '/__scenario?name=' + scenario)
     const html = await (await request.get(path)).text()
-    expect(html).not.toContain('class="product-collection-story"')
+    expect(html).not.toMatch(
+      /<section class="[^"]*\bproduct-collection-story\b/,
+    )
     await page.goto(path)
     await expect(page.locator('.product-collection-story')).toHaveCount(0)
     await expect(
@@ -183,9 +185,7 @@ test('collection reference layout handles long copy, five widths and accessibili
           () => document.documentElement.scrollWidth <= innerWidth,
         ),
       ).toBe(true)
-      const text = await story
-        .locator('.product-collection-story__text')
-        .boundingBox()
+      const text = await story.getByRole('heading').locator('..').boundingBox()
       const image = await story.getByRole('img').boundingBox()
       expect(text).not.toBeNull()
       expect(image).not.toBeNull()

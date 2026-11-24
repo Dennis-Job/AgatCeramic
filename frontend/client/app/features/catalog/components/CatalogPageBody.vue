@@ -5,6 +5,7 @@ import PageState from '~/components/shared/PageState.vue'
 import UiButton from '~/components/ui/UiButton.vue'
 import UiDialog from '~/components/ui/UiDialog.vue'
 import UiSelect from '~/components/ui/UiSelect.vue'
+import BrandBanner from '~/features/brands/components/BrandBanner.vue'
 import CollectionBanner from '~/features/collections/components/CollectionBanner.vue'
 import type { PublicCollection } from '~/features/collections/types/collection'
 import ProductCardList from '~/features/product/components/ProductCardList.vue'
@@ -311,19 +312,13 @@ if (!props.preview) {
     :brand-name="collection.brand_name"
     standalone
   />
+  <BrandBanner v-else-if="brand" :brand="brand" />
   <PageIntro
     v-else
-    :title="brand?.name || content?.title || 'Каталог'"
-    :slug="brand ? 'brand' : 'catalog'"
-    :variant="brand ? 'brand' : undefined"
-    :description="brand ? brand.description || '' : content?.seo.description"
-    :image="
-      brand
-        ? brand.logoUrl
-          ? { imageUrl: brand.logoUrl, imageAlt: brand.logoAlt }
-          : null
-        : content?.intro
-    "
+    :title="content?.title || 'Каталог'"
+    slug="catalog"
+    :description="content?.seo.description"
+    :image="content?.intro"
   />
   <section
     id="catalog-products"

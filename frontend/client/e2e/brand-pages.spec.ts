@@ -9,6 +9,50 @@ test.beforeEach(async ({ request, page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
 })
 
+test('the brand intro uses the collection layout and keeps the entire logo visible', async ({
+  page,
+  request,
+}) => {
+  await request.get(
+    'http://127.0.0.1:8015/__scenario?name=standalone-collection-scope',
+  )
+  const intro = page.locator('main > section').first()
+  const heading = intro.getByRole('heading', { level: 1 })
+
+  for (const width of [320, 640, 768, 900, 901, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/collection/atlas/stone')
+    await expect(heading).toHaveText('Камень Atlas')
+    const collectionStyles = await bannerStyles()
+
+    await page.goto('/brand/atlas')
+    await expect(heading).toHaveText('Atlas')
+    const logo = intro.getByRole('img', { name: 'Изображение бренда Atlas' })
+    await expect(logo).toHaveCSS('object-fit', 'contain')
+    expect(await bannerStyles()).toEqual(collectionStyles)
+
+    const textBox = (await heading.locator('..').boundingBox())!
+    const logoBox = (await logo.boundingBox())!
+    if (width <= 900) {
+      expect(logoBox.y).toBeGreaterThanOrEqual(textBox.y + textBox.height - 1)
+    } else {
+      expect(logoBox.x).toBeGreaterThanOrEqual(textBox.x + textBox.width - 1)
+    }
+  }
+
+  async function bannerStyles() {
+    return intro.evaluate((section) => {
+      const title = section.querySelector('h1')!
+      return {
+        background: getComputedStyle(section).backgroundColor,
+        columns: getComputedStyle(section).gridTemplateColumns,
+        padding: getComputedStyle(title.parentElement!).padding,
+        titleFont: getComputedStyle(title).font,
+      }
+    })
+  }
+})
+
 test('brand menu opens a clean brand page with its own intro and scoped categories', async ({
   page,
 }) => {
@@ -17,7 +61,7 @@ test('brand menu opens a clean brand page with its own intro and scoped categori
   await menu.getByRole('button', { name: 'A', exact: true }).click()
   await menu.getByRole('link', { name: 'Atlas', exact: true }).click()
   await expect(page).toHaveURL(/\/brand\/atlas$/)
-  const intro = page.getByRole('region', { name: 'Вступление страницы' })
+  const intro = page.getByRole('region', { name: 'Atlas', exact: true })
   await expect(
     intro.getByRole('heading', { level: 1, name: 'Atlas', exact: true }),
   ).toBeVisible()
@@ -117,12 +161,12 @@ test('unknown and inactive brands return 404 while an empty brand keeps its real
   }
   const response = await page.goto('/brand/empty')
   expect(response?.status()).toBe(200)
-  const intro = page.getByRole('region', { name: 'Вступление страницы' })
+  const intro = page.getByRole('region', { name: 'Другой бренд', exact: true })
   await expect(
     intro.getByRole('heading', { name: 'Другой бренд', exact: true, level: 1 }),
   ).toBeVisible()
   await expect(intro.getByRole('img')).toHaveCount(0)
-  await expect(intro.locator('p')).toHaveCount(0)
+  await expect(intro.locator('.split-banner__description')).toHaveCount(0)
   await expect(page.locator('.product-card')).toHaveCount(0)
   await expect(
     page.getByText('По вашему запросу ничего не найдено', { exact: true }),
@@ -240,7 +284,7 @@ test('brand profile errors return 503, stay noindex and retry into the real bran
   )
   await expect(page.locator('#catalog-products')).toHaveCount(0)
   await expect(
-    page.getByRole('region', { name: 'Вступление страницы' }).getByRole('img'),
+    page.getByRole('region', { name: 'Бренд', exact: true }).getByRole('img'),
   ).toHaveCount(0)
   await request.get(
     'http://127.0.0.1:8015/__scenario?name=standalone-brand-scope',
@@ -273,18 +317,15 @@ test('broken brand images keep a literal long description readable without catal
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/brand/atlas')
-    const intro = page.getByRole('region', { name: 'Вступление страницы' })
+    const intro = page.getByRole('region', { name: 'Atlas', exact: true })
     await expect(
       intro.getByRole('heading', { name: 'Atlas', exact: true, level: 1 }),
     ).toBeVisible()
     await expect(intro.getByRole('img')).toHaveCount(0)
-    await expect(intro.locator('.page-intro__copy p')).toContainText(
-      'Описание Atlas.',
-    )
-    await expect(intro.locator('.page-intro__copy p')).toContainText(
-      'Отдельная строка описания.',
-    )
-    await expect(intro.locator('.page-intro__copy p')).toContainText(
+    const description = intro.locator('.split-banner__description')
+    await expect(description).toContainText('Описание Atlas.')
+    await expect(description).toContainText('Отдельная строка описания.')
+    await expect(description).toContainText(
       '<script>window.brandLeak = true</script>',
     )
     await expect(intro.locator('script')).toHaveCount(0)
@@ -313,7 +354,7 @@ test('catalog and brand navigation retain 55px top spacing and centered groups',
     await page.setViewportSize({ width, height: 900 })
     for (const path of ['/catalog', '/brand/atlas']) {
       await page.goto(path)
-      const intro = await page.locator('.page-intro').boundingBox()
+      const intro = await page.locator('main > section').first().boundingBox()
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
@@ -390,7 +431,7 @@ test('catalog and brand navigation retain 55px top spacing and centered groups',
   expect(
     (
       await new AxeBuilder({ page })
-        .include('.page-intro')
+        .include('.split-banner')
         .include('.catalog-brand-navigation')
         .analyze()
     ).violations,

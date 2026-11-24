@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { setResponseStatus } from 'h3'
 import CatalogPageBody from '~/features/catalog/components/CatalogPageBody.vue'
-import PageIntro from '~/components/shared/PageIntro.vue'
+import BrandBanner from '~/features/brands/components/BrandBanner.vue'
 import PageState from '~/components/shared/PageState.vue'
 import { fetchPublicBrand } from '~/features/brands/services/brands'
 
@@ -39,7 +39,7 @@ useSeoMeta({
     :brand="brand"
   />
   <template v-else>
-    <PageIntro title="Бренд" slug="brand" variant="brand" />
+    <BrandBanner />
     <section class="section">
       <div class="container">
         <PageState

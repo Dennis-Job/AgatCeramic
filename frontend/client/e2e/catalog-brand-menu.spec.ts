@@ -36,6 +36,7 @@ test('SSR includes selected brand links and only populated alphabet groups', asy
 test('hover reaches panel, click after hover keeps it open and brand links reset prior filters', async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto(
     '/catalog?category=tile&collection=Stone&price_from=120&page=2',
   )
@@ -55,10 +56,27 @@ test('hover reaches panel, click after hover keeps it open and brand links reset
     'text-decoration-line',
     'none',
   )
-  await menu.getByRole('button', { name: 'A', exact: true }).click()
-  await expect(
-    menu.getByRole('link', { name: '«Atlas»', exact: true }),
-  ).toHaveAttribute('aria-current', 'true')
+  await letter.click()
+  await expect(atlas).toHaveAttribute('aria-current', 'true')
+  const panel = page.locator(`#${await letter.getAttribute('aria-controls')}`)
+  const bounds = (await menu.boundingBox())!
+  const popup = (await panel.boundingBox())!
+  expect(popup.y + popup.height).toBeLessThanOrEqual(bounds.y + 1)
+  await atlas.hover()
+  await expect(atlas).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await page.mouse.move(0, 0)
+  const trigger = (await letter.boundingBox())!
+  await page.setViewportSize({
+    width: 1280,
+    height: Math.floor(trigger.y + trigger.height - 2),
+  })
+  await page.mouse.move(
+    trigger.x + trigger.width / 2,
+    trigger.y + trigger.height / 2,
+  )
+  await expect(atlas).toBeVisible()
 })
 
 test('keyboard opens groups, Escape restores focus and outside interaction closes', async ({

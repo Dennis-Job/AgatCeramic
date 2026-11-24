@@ -28,19 +28,31 @@ export function useBrandAlphabetMenu(
   function updatePosition() {
     if (!openKey.value || !root.value) return
     const bounds = root.value.getBoundingClientRect()
-    // The navigation scrolls normally; dismiss rather than covering the sticky header.
     const headerBottom =
       document.querySelector('.site-header')?.getBoundingClientRect().bottom ||
       0
-    if (bounds.top < headerBottom || bounds.bottom >= window.innerHeight - 44) {
+    const viewportHeight = window.innerHeight
+    const viewportGap = 12
+    // Keep room for one 44px link, the 24px panel padding and its border.
+    const minimumPanelHeight = 94
+    const below = viewportHeight - bounds.bottom - viewportGap
+    const above = bounds.top - headerBottom - viewportGap
+    const opensAbove = below < minimumPanelHeight && above > below
+    const maxHeight = opensAbove ? above : below
+    if (
+      bounds.top < headerBottom ||
+      bounds.top >= viewportHeight ||
+      maxHeight < minimumPanelHeight
+    ) {
       close()
       return
     }
     positions.value[openKey.value] = {
       left: `${bounds.left}px`,
-      top: `${bounds.bottom}px`,
+      top: opensAbove ? 'auto' : `${bounds.bottom}px`,
+      bottom: opensAbove ? `${viewportHeight - bounds.top}px` : 'auto',
       width: `${bounds.width}px`,
-      maxHeight: `${Math.max(0, window.innerHeight - bounds.bottom - 12)}px`,
+      maxHeight: `${maxHeight}px`,
     }
   }
 
