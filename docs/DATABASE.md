@@ -148,6 +148,15 @@ enforce the standalone-product contract.
 XLSX product imports accept whole quantities from 0 to 2147483647 inclusive
 for every sale unit. Historical product records can still contain `NULL`.
 
+Поиск в Admin использует PostgreSQL GIN-индекс `products_admin_search_trgm_index`
+для подстрок в названии, slug, SKU, артикуле и штрихкоде. Для поиска по имени
+коллекции PostgreSQL может использовать существующий индекс по `collection_id`.
+Миграции нужен доступ к `pg_trgm` в `public`. Если расширение ещё не установлено,
+его создаёт роль миграции с правом `CREATE` на базу или заранее устанавливает
+владелец базы. Транзакционное построение индекса блокирует запись в `products`
+до завершения, поэтому его выполняют в окно обслуживания. Откат удаляет индекс
+и сохраняет расширение. [Замеры и проверка планов](ADMIN_PRODUCT_QUERY_PERFORMANCE_2026-11-25.md).
+
 ### product_variants
 Legacy-only storage during Phase 3.1 migration. Existing rows are expanded into standalone products
 by an idempotent command with explicit dry-run and apply modes. The command reports identifier,

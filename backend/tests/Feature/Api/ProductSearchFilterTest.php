@@ -5,11 +5,13 @@ namespace Tests\Feature\Api;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductCollection;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ProductSearchFilterTest extends TestCase
@@ -85,6 +87,85 @@ class ProductSearchFilterTest extends TestCase
 
         $this->actingAs($actor)->getJson('/api/v1/admin/products?sort=price&direction=sideways')
             ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['sort', 'direction']]]);
+    }
+
+    public function test_filter_counts_query_products_once_with_both_facet_filters_and_shared_constraints(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $category = Category::factory()->create();
+        $brand = Brand::factory()->create();
+        $attributes = [
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+            'name' => 'Matching tile',
+            'price' => 120,
+            'stock_quantity' => null,
+            'is_active' => false,
+            'is_on_sale' => true,
+        ];
+
+        Product::factory()->count(3)->create($attributes);
+        Product::factory()->count(2)->create([...$attributes, 'is_active' => true, 'stock_quantity' => 0]);
+        Product::factory()->count(4)->create([...$attributes, 'is_on_sale' => false]);
+        Product::factory()->create([...$attributes, 'is_active' => true, 'is_on_sale' => false]);
+
+        foreach ([
+            ['category_id' => Category::factory()->create()->id],
+            ['brand_id' => Brand::factory()->create()->id],
+            ['name' => 'Ceramic'],
+            ['stock_quantity' => 1],
+            ['price' => 119],
+            ['price' => 121],
+        ] as $exclusion) {
+            Product::factory()->create([...$attributes, ...$exclusion]);
+        }
+
+        $url = "/api/v1/admin/products/filter-counts?category_id={$category->id}&brand_id={$brand->id}"
+            .'&has_stock=0&price_from=120&price_to=120&sort=name&direction=asc&per_page=1&page=3';
+
+        DB::enableQueryLog();
+        try {
+            $this->actingAs($actor)->getJson($url.'&is_active=0&is_on_sale=1&search=matching')->assertOk()->assertExactJson([
+                'data' => ['active' => 2, 'hidden' => 3, 'sale' => 3, 'regular' => 4],
+            ]);
+            $productQueries = array_filter(DB::getQueryLog(), fn (array $entry): bool => str_contains($entry['query'], 'from "products"'));
+            $this->assertCount(1, $productQueries);
+        } finally {
+            DB::disableQueryLog();
+            DB::flushQueryLog();
+        }
+
+        $this->actingAs($actor)->getJson($url.'&search=missing')->assertOk()->assertExactJson([
+            'data' => ['active' => 0, 'hidden' => 0, 'sale' => 0, 'regular' => 0],
+        ]);
+
+        $this->actingAs($actor)->getJson($url.'&is_active=1&is_on_sale=0&search=matching')
+            ->assertOk()->assertExactJson(['data' => ['active' => 1, 'hidden' => 4, 'sale' => 2, 'regular' => 1]]);
+    }
+
+    public function test_product_search_combines_collection_and_item_matches_before_pagination(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $collection = ProductCollection::factory()->create(['name' => 'Marble Silex', 'is_active' => false]);
+        $attributes = ['collection_id' => $collection->id, 'brand_id' => $collection->brand_id];
+        $collectionOnly = Product::factory()->create([...$attributes, 'name' => 'Ivory tile', 'slug' => 'ivory-tile']);
+        $both = Product::factory()->create([...$attributes, 'name' => 'Silex tile', 'slug' => 'silex-tile-1']);
+        $nameOnly = Product::factory()->create(['name' => 'Silex tile', 'slug' => 'silex-tile-2']);
+        Product::factory()->create(['name' => 'Silexx tile', 'slug' => 'silexx-tile']);
+
+        $url = '/api/v1/admin/products?search='.rawurlencode('Si_ex tile').'&sort=name&direction=asc';
+        $this->actingAs($actor)->getJson($url)->assertOk()
+            ->assertJsonPath('meta.total', 2)->assertJsonPath('data.*.id', [$nameOnly->id, $both->id]);
+
+        $url = '/api/v1/admin/products?search=SiLeX&sort=name&direction=asc&per_page=2';
+        $this->actingAs($actor)->getJson($url)->assertOk()
+            ->assertJsonPath('meta.total', 4)->assertJsonPath('data.*.id', [$collectionOnly->id, $nameOnly->id]);
+        $this->actingAs($actor)->getJson($url.'&page=2')->assertOk()
+            ->assertJsonPath('data.0.id', $both->id)->assertJsonCount(2, 'data');
+        $this->actingAs($actor)->getJson('/api/v1/admin/products/filter-counts?search=SiLeX')
+            ->assertOk()->assertExactJson(['data' => ['active' => 4, 'hidden' => 0, 'sale' => 0, 'regular' => 4]]);
+        $this->actingAs($actor)->getJson('/api/v1/admin/products/filter-counts?search=Si&is_active=&is_on_sale=')
+            ->assertOk()->assertExactJson(['data' => ['active' => 4, 'hidden' => 0, 'sale' => 0, 'regular' => 4]]);
     }
 
     public function test_products_default_to_newest_first_and_support_table_sorting(): void
