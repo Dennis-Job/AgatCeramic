@@ -8,26 +8,52 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import ProductGroupAttributeRoles from './ProductGroupAttributeRoles.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductGroups } from '../composables/useProductGroups'
+import type { Attribute } from '../../attributes/types/attribute.types'
+import type { Product } from '../types/product.types'
 const groupHelpId = useId()
 const groupHelp =
   'Если группа для товара уже создана, выберите её. Чтобы создать новую, выберите в списке «Новая группа» и заполните название и уникальный код.'
 const {
-  saveGroup,
+  state,
+  editing,
+  saving,
   copiedFromProduct,
+  attributes,
+  displayAttributeValue,
+} = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductGroups>,
+    | 'saveGroup'
+    | 'groupForm'
+    | 'selectedGroupId'
+    | 'groupOptions'
+    | 'selectGroup'
+    | 'groupErrors'
+    | 'groupSearch'
+    | 'searchGroupProducts'
+    | 'groupProducts'
+  >
+  editing: Product | null
+  saving: boolean
+  copiedFromProduct: Product | null
+  attributes: Attribute[]
+  displayAttributeValue: (
+    attribute: Attribute | undefined,
+    value: unknown,
+  ) => string
+}>()
+const {
+  saveGroup,
   groupForm,
   selectedGroupId,
   groupOptions,
   selectGroup,
   groupErrors,
   groupSearch,
-  saving,
   searchGroupProducts,
-  editing,
-  displayAttributeValue,
-  attributes,
   groupProducts,
-} = useProductEditorContext()
+} = state
 </script>
 
 <template>

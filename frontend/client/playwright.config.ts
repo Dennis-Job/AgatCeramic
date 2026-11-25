@@ -10,6 +10,8 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:3015',
     browserName: 'chromium',
     contextOptions: { reducedMotion: 'reduce' },
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   webServer: [
     {

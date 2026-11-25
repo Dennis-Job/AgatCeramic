@@ -24,6 +24,7 @@ defineProps<{
   histories: OrderHistory[]
   comments: OrderComment[]
   detailLoading: boolean
+  detailError: string
   saving: boolean
   actionError: string
   canManage: boolean
@@ -38,6 +39,7 @@ defineProps<{
   paymentOptions: { label: string; value: string }[]
 }>()
 const paymentForm = defineModel<PaymentForm>('paymentForm', { required: true })
+const statusDraft = defineModel<string>('statusDraft', { required: true })
 const commentBody = defineModel<string>('commentBody', { required: true })
 defineEmits<{
   changeStatus: []
@@ -50,12 +52,12 @@ defineEmits<{
 
 <template>
   <div class="min-w-0" role="region" aria-label="Детали выбранной записи">
-    <UiNotification v-if="actionError && !selected">{{
-      actionError
+    <UiNotification v-if="detailError && !selected">{{
+      detailError
     }}</UiNotification>
     <UiLoadingState v-if="detailLoading" label="Загрузка деталей заказа…" />
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
-      <template v-if="actionError"
+      <template v-if="detailError"
         ><p>Не удалось открыть заказ.</p>
         <UiButton class="mt-3" variant="secondary" @click="$emit('retry')"
           >Повторить загрузку заказа</UiButton
@@ -65,6 +67,12 @@ defineEmits<{
     </div>
     <div v-else class="space-y-6">
       <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
+      <div v-if="detailError" class="space-y-3">
+        <UiNotification>{{ detailError }}</UiNotification>
+        <UiButton variant="secondary" :disabled="saving" @click="$emit('retry')"
+          >Повторить загрузку заказа</UiButton
+        >
+      </div>
       <div
         class="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500"
       >
@@ -160,13 +168,13 @@ defineEmits<{
         <h3 class="text-sm font-semibold text-gray-500">Статус заказа</h3>
         <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <UiSelect
-            v-model="selected.status"
+            v-model="statusDraft"
             :options="
               statuses
                 .filter((item) => item.is_selectable !== false)
                 .map((item) => ({ label: item.name, value: item.code }))
             "
-            :placeholder="statusName(selected.status)"
+            :placeholder="statusName(statusDraft)"
             accessible-name="Новый статус заказа"
             :disabled="saving"
           /><UiButton
@@ -175,8 +183,7 @@ defineEmits<{
               saving ||
               statuses.some(
                 (item) =>
-                  item.code === selected?.status &&
-                  item.is_selectable === false,
+                  item.code === statusDraft && item.is_selectable === false,
               )
             "
             @click="$emit('changeStatus')"

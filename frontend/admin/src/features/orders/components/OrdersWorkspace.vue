@@ -67,7 +67,6 @@ function openDetails(id: number) {
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null
-  workspace.clearSelection()
   orderId.value = id
   drawerOpen.value = true
   void workspace.selectOrder({ id })
@@ -300,12 +299,14 @@ onBeforeUnmount(() => {
   >
     <OrderDetails
       v-model:payment-form="workspace.paymentForm.value"
+      v-model:status-draft="workspace.statusDraft.value"
       v-model:comment-body="workspace.commentBody.value"
       :selected="workspace.selected.value"
       :statuses="workspace.statuses.value"
       :histories="workspace.histories.value"
       :comments="workspace.comments.value"
       :detail-loading="workspace.detailLoading.value"
+      :detail-error="workspace.detailError.value"
       :saving="workspace.saving.value"
       :action-error="workspace.actionError.value"
       :can-manage="workspace.canManage.value"

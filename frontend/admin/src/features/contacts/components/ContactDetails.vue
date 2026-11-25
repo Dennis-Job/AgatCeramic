@@ -27,6 +27,7 @@ defineProps<{
   history: ContactHistory[]
   comments: ContactComment[]
   detailLoading: boolean
+  detailError: string
   saving: boolean
   actionError: string
   canManage: boolean
@@ -53,12 +54,12 @@ defineEmits<{
     role="region"
     aria-label="Детали выбранной записи"
   >
-    <UiNotification v-if="actionError && !selected">{{
-      actionError
+    <UiNotification v-if="detailError && !selected">{{
+      detailError
     }}</UiNotification>
     <UiLoadingState v-if="detailLoading" label="Загрузка деталей обращения…" />
     <div v-else-if="!selected" class="p-8 text-sm text-gray-500" role="status">
-      <template v-if="actionError"
+      <template v-if="detailError"
         ><p>Не удалось открыть обращение.</p>
         <UiButton class="mt-3" variant="secondary" @click="$emit('retryDetail')"
           >Повторить загрузку обращения</UiButton
@@ -68,6 +69,15 @@ defineEmits<{
     </div>
     <div v-else class="space-y-6">
       <UiNotification v-if="actionError">{{ actionError }}</UiNotification>
+      <div v-if="detailError" class="space-y-3">
+        <UiNotification>{{ detailError }}</UiNotification>
+        <UiButton
+          variant="secondary"
+          :disabled="saving"
+          @click="$emit('retryDetail')"
+          >Повторить загрузку обращения</UiButton
+        >
+      </div>
       <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
         <UiBadge
           class="shrink-0 whitespace-nowrap"

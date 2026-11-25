@@ -1,7 +1,8 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
+import { mount } from '@vue/test-utils'
+import { defineComponent, ref } from 'vue'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import ProductGroupAttributeRoles from '../src/features/products/components/ProductGroupAttributeRoles.vue'
+import { useProductCatalogOptions } from '../src/features/products/composables/useProductCatalogOptions'
 import { useProductEditor } from '../src/features/products/composables/useProductEditor'
 import type { Attribute } from '../src/features/attributes/types/attribute.types'
 import type {
@@ -10,33 +11,28 @@ import type {
 } from '../src/features/products/types/product.types'
 
 const api = vi.hoisted(() => ({
-  getProducts: vi.fn(),
-  getProductFilterCounts: vi.fn(),
+  getCategoryAttributes: vi.fn(),
   saveProductAttributeValues: vi.fn(),
   getAllProductGroups: vi.fn(),
   saveProductGroup: vi.fn(),
 }))
-vi.mock('../src/stores/auth', () => ({
-  useAuthStore: () => ({ hasPermission: () => true }),
-}))
-vi.mock('../src/features/products/services/products', () => ({
-  getProducts: api.getProducts,
-  saveProduct: vi.fn(),
-  deleteProduct: vi.fn(),
-}))
-vi.mock('../src/features/products/services/productFilterCounts', () => ({
-  getProductFilterCounts: api.getProductFilterCounts,
-}))
 vi.mock('../src/features/products/services/productAttributes', () => ({
   saveProductAttributeValues: api.saveProductAttributeValues,
-  getCategoryAttributes: vi.fn(),
-  getProductAttributeValues: vi.fn(),
+  getCategoryAttributes: api.getCategoryAttributes,
+  getProductAttributeValues: vi.fn(async () => []),
+}))
+vi.mock('../src/features/categories/services/categories', () => ({
+  getCategoryAttributeGroups: vi.fn(async () => []),
+}))
+vi.mock('../src/features/products/services/productImages', () => ({
+  getAllProductImages: vi.fn(async () => []),
+}))
+vi.mock('../src/features/products/services/productRelations', () => ({
+  getProductRelations: vi.fn(async () => []),
 }))
 vi.mock('../src/features/products/services/productGroups', () => ({
   getAllProductGroups: api.getAllProductGroups,
   saveProductGroup: api.saveProductGroup,
-  deleteProductGroup: vi.fn(),
-  ProductGroupRequestError: class extends Error {},
 }))
 const wrappers: Array<ReturnType<typeof mount>> = []
 const attributes = [
@@ -44,30 +40,22 @@ const attributes = [
   { id: 2, name: 'м² в упаковке', slug: 'package-area', type: 'decimal' },
   { id: 3, name: 'Описание упаковки', slug: 'pack-note', type: 'text' },
 ] as Attribute[]
-const product = { id: 7 } as Product
-const savedGroup = (): ProductGroup => ({
+const product = { id: 7, category_id: 1 } as Product
+const savedGroup = (products = [product]): ProductGroup => ({
   id: 5,
   name: 'Аллея',
   code: 'alleya',
   axes: [attributes[0]!],
   individual_attributes: [attributes[1]!],
-  products: [product],
+  products,
   created_at: '',
   updated_at: '',
 })
 
 beforeEach(() => {
   vi.resetAllMocks()
-  api.getProducts.mockResolvedValue({
-    data: [],
-    meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 },
-  })
-  api.getProductFilterCounts.mockResolvedValue({
-    active: 0,
-    hidden: 0,
-    sale: 0,
-    regular: 0,
-  })
+  api.getCategoryAttributes.mockResolvedValue(attributes)
+  api.getAllProductGroups.mockResolvedValue([savedGroup()])
 })
 afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
 
@@ -107,50 +95,53 @@ test('assigns one exclusive role per characteristic and supports individual text
   ])
 })
 
-function editor() {
+async function editor() {
   let state!: ReturnType<typeof useProductEditor>
   wrappers.push(
     mount(
       defineComponent({
         setup() {
-          state = useProductEditor()
+          state = useProductEditor({
+            catalog: useProductCatalogOptions(),
+            canManage: ref(true),
+            error: ref(''),
+            saving: ref(false),
+            refreshList: async () => {},
+            updateThumbnail: vi.fn(),
+          })
           return () => null
         },
       }),
     ),
   )
-  state.editing.value = product
-  state.groups.value = [savedGroup()]
-  state.fillGroup(savedGroup(), product.id)
+  await state.open(product)
   return state
 }
 
 test('loads individual roles and describes the saved membership rather than a draft selection', async () => {
-  const state = editor()
-  await flushPromises()
-  expect(state.groupForm.value.individual_attribute_ids).toEqual([2])
-  expect(state.attributeScope(2)).toBe('индивидуальная')
-  state.fillGroup(null, product.id)
-  expect(state.attributeScope(2)).toBe('индивидуальная')
-  expect(state.attributeScope(3)).toBe('общая для группы')
+  const { groups } = await editor()
+  expect(groups.groupForm.value.individual_attribute_ids).toEqual([2])
+  expect(groups.attributeScope(2)).toBe('индивидуальная')
+  groups.selectGroup('')
+  expect(groups.attributeScope(2)).toBe('индивидуальная')
+  expect(groups.attributeScope(3)).toBe('общая для группы')
 })
 
 test('prevents attribute save under unsaved role changes that would overwrite other products', async () => {
-  const state = editor()
-  await flushPromises()
-  state.groupForm.value.individual_attribute_ids = [2, 3]
-  await state.saveAttributes()
+  const state = await editor()
+  state.groups.groupForm.value.individual_attribute_ids = [2, 3]
+  await state.attributes.saveAttributes()
   expect(api.saveProductAttributeValues).not.toHaveBeenCalled()
   expect(state.error.value).toContain('Сначала сохраните роли характеристик')
 })
 
 test('saves the group with individual roles and keeps them after reopening', async () => {
-  const state = editor()
-  await flushPromises()
-  state.groupForm.value.product_ids.push(8)
-  api.saveProductGroup.mockResolvedValue(savedGroup())
-  api.getAllProductGroups.mockResolvedValue([savedGroup()])
-  await state.saveGroup()
+  const state = await editor()
+  state.groups.groupForm.value.product_ids.push(8)
+  const updatedGroup = savedGroup([product, { ...product, id: 8 }])
+  api.saveProductGroup.mockResolvedValue(updatedGroup)
+  api.getAllProductGroups.mockResolvedValue([updatedGroup])
+  await state.groups.saveGroup()
   expect(api.saveProductGroup).toHaveBeenCalledWith(
     5,
     expect.objectContaining({
@@ -159,6 +150,7 @@ test('saves the group with individual roles and keeps them after reopening', asy
       product_ids: [7, 8],
     }),
   )
-  state.fillGroup(state.groups.value[0]!, product.id)
-  expect(state.groupForm.value.individual_attribute_ids).toEqual([2])
+  state.close()
+  await state.open(product)
+  expect(state.groups.groupForm.value.individual_attribute_ids).toEqual([2])
 })

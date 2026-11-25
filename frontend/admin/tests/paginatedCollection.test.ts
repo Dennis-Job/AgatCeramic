@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'vitest'
+import { effectScope } from 'vue'
 import { usePaginatedCollection } from '../src/composables/usePaginatedCollection.ts'
 import type { PaginatedResponse } from '../src/services/pagination.ts'
 
@@ -29,6 +30,25 @@ function page(
     },
   }
 }
+
+test('disposing a collection invalidates pending results and prevents refreshes', async () => {
+  const scope = effectScope()
+  const list = scope.run(() => usePaginatedCollection<Item>('Load failed'))!
+  const pending = deferred<PaginatedResponse<Item>>()
+  let requests = 0
+  const load = list.load(1, () => {
+    requests++
+    return pending.promise
+  })
+  scope.stop()
+  pending.resolve(page(1, [1]))
+
+  assert.equal(await load, null)
+  assert.equal(await list.reload(), null)
+  assert.deepEqual(list.items.value, [])
+  assert.equal(list.pagination.value, null)
+  assert.equal(requests, 1)
+})
 
 for (const collection of [
   'products',

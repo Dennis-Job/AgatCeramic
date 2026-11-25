@@ -2,17 +2,28 @@
 import { FileImage, ImagePlus } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiFileDropzone from '../../../components/ui/UiFileDropzone.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductImages } from '../composables/useProductImages'
 
+const { state, saving } = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductImages>,
+    | 'imageInput'
+    | 'selectedFile'
+    | 'selectFile'
+    | 'chooseFile'
+    | 'selectImageFiles'
+    | 'upload'
+  >
+  saving: boolean
+}>()
 const {
   imageInput,
   selectedFile,
-  saving,
   selectFile,
   chooseFile,
   selectImageFiles,
   upload,
-} = useProductEditorContext()
+} = state
 void imageInput
 </script>
 

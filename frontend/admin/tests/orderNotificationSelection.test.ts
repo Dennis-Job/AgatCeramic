@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { expect, test, vi } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 import { effectScope, nextTick } from 'vue'
 import { useOrdersWorkspace } from '../src/features/orders/composables/useOrdersWorkspace'
 import type { Order } from '../src/features/orders/types/order.types'
@@ -12,8 +12,148 @@ const api = vi.hoisted(() => ({
   getOrders: vi.fn(),
   updateOrderStatus: vi.fn(),
   updateOrderPayment: vi.fn(),
+  addOrderComment: vi.fn(),
 }))
 vi.mock('../src/features/orders/services/orders', () => api)
+afterEach(() => vi.clearAllMocks())
+
+function createManagerWorkspace() {
+  setActivePinia(createPinia())
+  useAuthStore().user = {
+    id: 1,
+    name: 'Менеджер',
+    email: 'manager@example.test',
+    status: 'active',
+    last_login_at: null,
+    permissions: ['orders.manage', 'payments.manage'],
+  }
+  api.getOrder.mockReset().mockImplementation(async (id: number) => ({
+    id,
+    status: 'new',
+    payment_status: 'not_paid',
+  }))
+  api.getOrderHistory.mockReset().mockResolvedValue([])
+  api.getOrderComments.mockReset().mockResolvedValue([])
+  api.getOrders.mockReset().mockImplementation(async (_filters, { page }) => ({
+    data: [],
+    meta: { current_page: page, last_page: 3, per_page: 25, total: 60 },
+  }))
+  const scope = effectScope()
+  const state = scope.run(useOrdersWorkspace)!
+  state.statusReady.value = true
+  return { state, scope }
+}
+
+test('publishes the order, history and comments together and can retry a failed bundle', async () => {
+  const { state, scope } = createManagerWorkspace()
+  const history = Promise.withResolvers<[]>()
+  api.getOrderHistory.mockReturnValueOnce(history.promise)
+  const pending = state.selectOrder({ id: 1 })
+  await nextTick()
+  expect(state.detailLoading.value).toBe(true)
+  expect(state.selected.value).toBeNull()
+  history.reject(new Error('История недоступна'))
+  await pending
+  expect(state.selected.value).toBeNull()
+  expect(state.detailLoading.value).toBe(false)
+  expect(state.detailError.value).toBe('История недоступна')
+  await state.selectOrder({ id: 1 })
+  expect(state.selected.value?.id).toBe(1)
+  expect(state.detailError.value).toBe('')
+  scope.stop()
+})
+
+test('a saved payment refreshes the requested list page without touching the newly selected order', async () => {
+  const { state, scope } = createManagerWorkspace()
+  await state.load(1)
+  await state.selectOrder({ id: 1 })
+  api.getOrder.mockClear()
+  const payment = Promise.withResolvers<void>()
+  api.updateOrderPayment.mockReturnValueOnce(payment.promise)
+  const saved = state.savePayment()
+  const page = Promise.withResolvers<{
+    data: []
+    meta: {
+      current_page: number
+      last_page: number
+      per_page: number
+      total: number
+    }
+  }>()
+  api.getOrders.mockReturnValueOnce(page.promise)
+  state.search.value = 'Применённый поиск'
+  const requested = state.load(2)
+  state.search.value = 'Ещё не отправленный поиск'
+  await state.selectOrder({ id: 2 })
+  state.paymentForm.value.payment_method = 'Новый черновик'
+  payment.resolve()
+  await saved
+  page.resolve({
+    data: [],
+    meta: { current_page: 2, last_page: 3, per_page: 25, total: 60 },
+  })
+  await requested
+  expect(api.getOrder).toHaveBeenCalledTimes(1)
+  expect(api.getOrder).toHaveBeenCalledWith(2)
+  expect(state.selected.value?.id).toBe(2)
+  expect(state.paymentForm.value.payment_method).toBe('Новый черновик')
+  expect(api.getOrders).toHaveBeenCalledTimes(3)
+  expect(api.getOrders).toHaveBeenLastCalledWith(
+    expect.objectContaining({ search: 'Применённый поиск' }),
+    { page: 2 },
+  )
+  expect(state.meta.value.current_page).toBe(2)
+  scope.stop()
+})
+
+test('a stale comment response keeps the new order draft and does not replace its comments', async () => {
+  const { state, scope } = createManagerWorkspace()
+  await state.selectOrder({ id: 1 })
+  state.commentBody.value = 'Первый комментарий'
+  const added = Promise.withResolvers<void>()
+  api.addOrderComment.mockReturnValueOnce(added.promise)
+  const submitted = state.submitComment()
+  await state.selectOrder({ id: 2 })
+  state.commentBody.value = 'Второй черновик'
+  added.resolve()
+  await submitted
+  expect(api.getOrderComments.mock.calls).toEqual([[1], [2]])
+  expect(state.commentBody.value).toBe('Второй черновик')
+  expect(state.saving.value).toBe(false)
+  scope.stop()
+})
+
+test.each([
+  { afterFailure: '100', afterRetry: '100.00', dirty: false },
+  { afterFailure: '125', afterRetry: '125', dirty: true },
+])(
+  'retry after a saved payment preserves only later edits (amount $afterFailure)',
+  async ({ afterFailure, afterRetry, dirty }) => {
+    const { state, scope } = createManagerWorkspace()
+    await state.selectOrder({ id: 1 })
+    api.updateOrderPayment.mockResolvedValueOnce(undefined)
+    api.getOrder.mockResolvedValue({
+      id: 1,
+      status: 'new',
+      payment_status: 'paid',
+      payment_amount: '100.00',
+    })
+    api.getOrderHistory.mockRejectedValueOnce(new Error('История недоступна'))
+    state.paymentForm.value.payment_status = 'paid'
+    state.paymentForm.value.payment_amount = '100'
+    await state.savePayment()
+    expect(state.detailError.value).toBe('История недоступна')
+    expect(state.selected.value?.payment_status).toBe('not_paid')
+
+    state.paymentForm.value.payment_amount = afterFailure
+    await state.selectOrder({ id: 1 })
+    expect(state.selected.value?.payment_amount).toBe('100.00')
+    expect(state.paymentForm.value.payment_amount).toBe(afterRetry)
+    expect(state.hasUnsavedChanges.value).toBe(dirty)
+    expect(state.detailError.value).toBe('')
+    scope.stop()
+  },
+)
 
 test('queue groups intermediate statuses while payment stays an independent filter', async () => {
   setActivePinia(createPinia())
@@ -132,9 +272,10 @@ test('unsaved order status, payment and comment are tracked independently', asyn
   state.paymentForm.value.payment_method = 'Наличные'
   expect(state.hasUnsavedChanges.value).toBe(true)
   state.paymentForm.value.payment_method = ''
-  state.selected.value!.status = 'processing'
+  state.statusDraft.value = 'processing'
   expect(state.hasUnsavedChanges.value).toBe(true)
-  state.selected.value!.status = 'new'
+  expect(state.selected.value?.status).toBe('new')
+  state.statusDraft.value = 'new'
   state.commentBody.value = 'Комментарий'
   expect(state.hasUnsavedChanges.value).toBe(true)
   state.clearSelection()
@@ -178,14 +319,15 @@ test('saving status and payment preserves drafts in the other form', async () =>
   state.statusReady.value = true
   await state.selectOrder({ id: 1 })
   state.paymentForm.value.payment_method = 'Наличные'
-  state.selected.value!.status = 'processing'
+  state.statusDraft.value = 'processing'
   await state.changeStatus()
   expect(state.paymentForm.value.payment_method).toBe('Наличные')
-  state.selected.value!.status = 'confirmed'
+  state.statusDraft.value = 'confirmed'
   state.paymentForm.value.payment_status = 'paid'
   state.paymentForm.value.payment_amount = '100.00'
   await state.savePayment()
-  expect(state.selected.value!.status).toBe('confirmed')
+  expect(state.selected.value?.status).toBe('processing')
+  expect(state.statusDraft.value).toBe('confirmed')
   expect(state.hasUnsavedChanges.value).toBe(true)
   scope.stop()
 })

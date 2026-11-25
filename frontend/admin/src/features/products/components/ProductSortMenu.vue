@@ -8,10 +8,16 @@ import {
 } from '@lucide/vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiPopover from '../../../components/ui/UiPopover.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductList } from '../composables/useProductList'
 import type { ProductSort } from '../types/product.types'
 
-const { sort, direction, loading, setSort } = useProductEditorContext()
+const { state } = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductList>,
+    'sort' | 'direction' | 'loading' | 'setSort'
+  >
+}>()
+const { sort, direction, loading, setSort } = state
 const open = ref(false)
 const id = useId()
 const fields: Array<{ value: ProductSort; label: string; short: string }> = [

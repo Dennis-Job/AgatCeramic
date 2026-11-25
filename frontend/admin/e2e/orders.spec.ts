@@ -1,5 +1,6 @@
 import { orderStatistics } from './orderStatisticsFixtures'
 import AxeBuilder from './approvedAccessibility'
+import { createDeferredApiRequests } from './deferredApi'
 import { expect, test, type Page } from './fixtures'
 
 const timestamp = '2026-09-11T10:00:00.000Z'
@@ -344,6 +345,7 @@ test('order drawer follows deep links, protects all drafts and returns focus', a
   await expect(comment).toHaveValue('')
   await drawer.getByRole('button', { name: 'Новый статус заказа' }).click()
   await page.getByRole('button', { name: 'В обработке', exact: true }).click()
+  await expect(drawer.getByText('Новый', { exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(confirmation).toBeVisible()
   await confirmation
@@ -403,6 +405,178 @@ test('a deep-linked drawer focuses immediately while details are pending and ign
   expect(await page.evaluate(() => document.body.style.overflow)).not.toBe(
     'hidden',
   )
+})
+
+test('late activity from the previous order leaves the next order and its draft intact', async ({
+  page,
+}) => {
+  await mockOrdersApi(page)
+  const nextOrder = { ...order, id: 2, order_number: 'AC-20260911-SECOND1234' }
+  const comment = (body: string) => ({
+    id: 1,
+    body,
+    author: null,
+    created_at: timestamp,
+  })
+  const deferred = createDeferredApiRequests()
+  const oldCommentsPath = '/api/v1/admin/orders/1/comments'
+  const oldComments = deferred.defer(oldCommentsPath)
+  await page.route(`**${oldCommentsPath}?*`, async (route) => {
+    await deferred.wait(oldCommentsPath)
+    await route.fulfill({ json: { data: [comment('Комментарий заказа А')] } })
+  })
+  await page.route(/\/api\/v1\/admin\/orders\?/, (route) =>
+    route.fulfill({
+      json: {
+        ...responsePage,
+        data: [order, nextOrder],
+        meta: { ...responsePage.meta, total: 2, to: 2 },
+      },
+    }),
+  )
+  await page.route('**/api/v1/admin/orders/2', (route) =>
+    route.fulfill({ json: { data: nextOrder } }),
+  )
+  await page.route('**/api/v1/admin/orders/2/status-history?*', (route) =>
+    route.fulfill({ json: { data: [] } }),
+  )
+  await page.route('**/api/v1/admin/orders/2/comments?*', (route) =>
+    route.fulfill({ json: { data: [comment('Комментарий заказа Б')] } }),
+  )
+
+  try {
+    await page.goto('/orders?order=1')
+    await oldComments.requested
+    const drawer = page.getByRole('dialog')
+    await expect(drawer.getByRole('status')).toContainText(
+      'Загрузка деталей заказа',
+    )
+    await expect(
+      drawer.getByRole('heading', { name: 'Заказ #1', exact: true }),
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(drawer).toHaveCount(0)
+    await page
+      .getByRole('button', { name: `Открыть заказ ${nextOrder.order_number}` })
+      .click()
+    const activeOrder = page.getByRole('dialog', {
+      name: nextOrder.order_number,
+      exact: true,
+    })
+    await expect(
+      activeOrder.getByText('Комментарий заказа Б', { exact: true }),
+    ).toBeVisible()
+    const draft = activeOrder.getByLabel('Новый внутренний комментарий')
+    await draft.fill('Черновик заказа Б')
+
+    const delayedResponse = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === oldCommentsPath,
+    )
+    oldComments.release()
+    await (await delayedResponse).finished()
+    await expect(
+      activeOrder.getByText('Комментарий заказа Б', { exact: true }),
+    ).toBeVisible()
+    await expect(
+      activeOrder.getByText('Комментарий заказа А', { exact: true }),
+    ).toHaveCount(0)
+    await expect(
+      activeOrder.getByText('Изменений статуса пока нет.'),
+    ).toBeVisible()
+    await expect(draft).toHaveValue('Черновик заказа Б')
+  } finally {
+    oldComments.release()
+  }
+})
+
+test('an order with failed activity stays unopened and can reload all details', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  await mockOrdersApi(page)
+  const commentsPath = '/api/v1/admin/orders/1/comments'
+  browserIssueGuard.allowApiError(503, commentsPath)
+  await page.route(
+    `**${commentsPath}?*`,
+    (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: { message: 'Комментарии временно недоступны.' } },
+      }),
+    { times: 1 },
+  )
+
+  await page.goto('/orders?order=1')
+  const drawer = page.getByRole('dialog')
+  await expect(drawer.getByRole('alert')).toHaveText(
+    'Комментарии временно недоступны.',
+  )
+  await expect(
+    drawer.getByRole('heading', { name: 'Заказ #1', exact: true }),
+  ).toBeVisible()
+  await expect(drawer.getByText(order.delivery_address)).toHaveCount(0)
+  await expect(drawer.getByLabel('Новый внутренний комментарий')).toHaveCount(0)
+  await expect(
+    drawer.getByRole('status').filter({ hasText: 'Загрузка деталей заказа' }),
+  ).toHaveCount(0)
+  await drawer
+    .getByRole('button', { name: 'Повторить загрузку заказа' })
+    .click()
+  await expect(
+    drawer.getByRole('heading', { name: order.order_number, exact: true }),
+  ).toBeVisible()
+  await expect(drawer.getByText(order.delivery_address)).toBeVisible()
+  await expect(drawer.getByText('Комментариев пока нет.')).toBeVisible()
+  await expect(drawer.getByRole('alert')).toHaveCount(0)
+})
+
+test('retry after a saved status keeps the last complete order and the comment draft', async ({
+  page,
+  browserIssueGuard,
+}, testInfo) => {
+  const { record } = await mockOrdersApi(page)
+  await page.goto('/orders?order=1')
+  const drawer = page.getByRole('dialog', {
+    name: order.order_number,
+    exact: true,
+  })
+  const draft = drawer.getByLabel('Новый внутренний комментарий')
+  await draft.fill('Отправить документы клиенту')
+  await drawer.getByRole('button', { name: 'Новый статус заказа' }).click()
+  await page.getByRole('button', { name: 'В обработке', exact: true }).click()
+
+  const historyPath = '/api/v1/admin/orders/1/status-history'
+  browserIssueGuard.allowApiError(503, historyPath)
+  await page.route(
+    `**${historyPath}?*`,
+    (route) =>
+      route.fulfill({
+        status: 503,
+        json: { error: { message: 'История временно недоступна.' } },
+      }),
+    { times: 1 },
+  )
+  await drawer.getByRole('button', { name: 'Сохранить', exact: true }).click()
+  await expect(drawer.getByRole('alert')).toContainText(
+    'История временно недоступна.',
+  )
+  expect(record.status).toBe('processing')
+  const previousBadge = drawer.getByText('Новый', { exact: true })
+  await expect(previousBadge).toBeVisible()
+  await expect(drawer.getByText(order.delivery_address)).toBeVisible()
+  await expect(draft).toHaveValue('Отправить документы клиенту')
+
+  const retry = drawer.getByRole('button', {
+    name: 'Повторить загрузку заказа',
+  })
+  await retry.scrollIntoViewIfNeeded()
+  await page.screenshot({
+    path: testInfo.outputPath('order-details-refresh-error.png'),
+  })
+  await retry.click()
+  await expect(draft).toHaveValue('Отправить документы клиенту')
+  await expect(previousBadge).toHaveCount(0)
+  await expect(drawer.getByRole('alert')).toHaveCount(0)
 })
 
 test('order filters use tabs and a compact select while month statistics stay independent', async ({

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import ProductEditor from '../features/products/components/ProductEditor.vue'
+import ProductsWorkspace from '../features/products/components/ProductsWorkspace.vue'
 </script>
 
 <template>
-  <ProductEditor />
+  <ProductsWorkspace />
 </template>

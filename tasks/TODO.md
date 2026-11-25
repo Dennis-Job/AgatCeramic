@@ -7,7 +7,7 @@ canonical documentation и audit reports.
 ## Исправления и рефакторинг по аудиту проекта — 2026-10-03
 
 TASK-A066–TASK-A081 внесены 2026-10-04 по проверке версии `39d5cb2`. При составлении списка на
-`7b0a020` повторно сверены места двух дефектов P1; они остаются открытыми. Результаты аудита
+`7b0a020` повторно сверены места двух дефектов P1. Результаты аудита
 описывают проверенную версию, а время запросов, нагрузка и реальные конкурентные PostgreSQL-сценарии
 требуют отдельного измерения. Все открытые задачи ниже ожидают реализации. TASK-A082–TASK-A086
 добавлены 2026-10-04 после дополнительного просмотра кода на `9140b92`; для TASK-A086 воспроизведено
@@ -24,48 +24,6 @@ DB-зависимые изменения проверяются на изоли�
 OpenAPI и канонической документации. Изменения интерфейса проходят независимый UI Design Guard по
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
-
-- [ ] TASK-A066 **P1** Проверять инварианты группы по актуальному заблокированному товару
-  - Цель: исключить изменение категории/бренда товара, включённого в группу параллельным запросом.
-    [ProductManagementService](../backend/app/Services/ProductManagementService.php) читает
-    membership до блокировки Product; управляемое чередование операций воспроизводит группу с
-    товарами разных категорий на SQLite. Реальная PostgreSQL-гонка пока не проверена.
-  - План: согласовать порядок блокировок с ProductGroupManagementService; перечитать membership и
-    проверить инвариант по актуальной модели внутри транзакции. API-контракт сохранить.
-  - Готовность: regression tests конкурирующего создания/изменения группы и смены category/brand на
-    PostgreSQL; проверены отсутствие нарушения состава и обработка конфликтов/блокировок.
-
-- [ ] TASK-A067 **P1** Исключить устаревшие ответы в списках и деталях заказов/обращений
-  - Цель: после быстрого выбора B запоздавшие ответы A не заменяют список, запись, историю,
-    комментарии или draft формы. В
-    [useOrdersWorkspace](../frontend/admin/src/features/orders/composables/useOrdersWorkspace.ts)
-    воспроизведены откат страницы и история/комментарии другого заказа; аналогичный код найден в
-    [useContactsWorkspace](../frontend/admin/src/features/contacts/composables/useContactsWorkspace.ts).
-  - План: переиспользовать защиту usePaginatedCollection для списков; детали применять атомарно
-    только для актуального selection/request ID; отделить server value от редактируемого draft.
-  - Готовность: поведенческие unit/E2E проверяют ответы в обратном порядке, быструю смену выбора,
-    отказ одного запроса деталей, смену записи во время сохранения и корректные loading/error
-    states. API и permissions сохраняются.
-
-- [ ] TASK-A068 **P2** Включить Client E2E и форматирование в обязательный CI
-  - Цель: [Client job](../.github/workflows/ci.yml) проверяет поведение SSR, preview и
-    accessibility, а не только зависимости, TypeScript и build; существующие тесты не остаются
-    локальной проверкой.
-  - План: добавить format check и production Playwright после SSR build, установить необходимые
-    Chromium dependencies; использовать текущие изолированные mock API и конфигурацию runner.
-  - Готовность: чистый CI run проходит SSR/content/preview/axe suite и format check; failures
-    сохраняют диагностические артефакты. Не обращаться к рабочей БД и не отключать проверки доступа.
-
-- [ ] TASK-A069 **P2** Разделить состояние и композицию рабочей области товаров
-  - Цель:
-    [useProductEditor](../frontend/admin/src/features/products/composables/useProductEditor.ts) не
-    объединяет список, форму, характеристики, изображения, группы и связи в одном интерфейсе.
-  - План: выделить самостоятельные composables по этим сценариям, начать со списка; разделить список
-    и редактор в ProductEditor.vue, сузить контракты секций вместо полного ReturnType общего
-    composable. Локальные формы не переносить в глобальный Pinia store.
-  - Готовность: поведенческие тесты покрывают create/edit/clone/publish, изображения, группы, связи,
-    фильтры и экспорт; маршруты, API, permissions и видимое поведение сохранены. Изменение способа
-    загрузки групп вынесено в TASK-A081.
 
 - [ ] TASK-A070 **P2** Выделить общий HTTP transport и единый контракт API-ошибок Admin
   - Цель: [services/auth.ts](../frontend/admin/src/services/auth.ts) содержит auth-сценарии, feature
@@ -159,8 +117,10 @@ OpenAPI и канонической документации. Изменения
   - Цель: [loadDetails](../frontend/admin/src/features/products/composables/useProductEditor.ts) не
     загружает все группы с полными товарами/характеристиками при каждом открытии редактора.
   - План: измерить запросы и payload, ввести компактный permission-protected поиск/lookup групп и
-    lazy section loading; выбранная группа доступна независимо от результатов поиска. Выполнять
-    после выделения state boundaries в TASK-A069; API change обновляет OpenAPI.
+    ленивую загрузку секций. Выбранная группа доступна независимо от результатов поиска.
+    Текущая загрузка групп находится в
+    [useProductGroups](../frontend/admin/src/features/products/composables/useProductGroups.ts).
+    Изменения API отразить в OpenAPI.
   - Готовность: поведенческие/E2E tests открытия, смены шагов, повторного входа и load failure;
     права и выбор группы сохраняются, объём данных не растёт со всем каталогом при открытии товара.
 
@@ -195,7 +155,7 @@ OpenAPI и канонической документации. Изменения
 - [ ] TASK-A084 **P2** Убрать дублирование обхода дерева категорий в Admin
   - Цель: рекурсивный обход не повторяется в
     [useCategoriesWorkspace](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts),
-    [useProductEditor](../frontend/admin/src/features/products/composables/useProductEditor.ts) и
+    [useProductCatalogOptions](../frontend/admin/src/features/products/composables/useProductCatalogOptions.ts) и
     [useProductImport](../frontend/admin/src/features/products/composables/useProductImport.ts).
   - План: выделить чистые типизированные операции обхода и получения потомков в categories feature;
     правила сортировки, доступности и подписи options оставить явными у потребителей. Editor
@@ -203,7 +163,6 @@ OpenAPI и канонической документации. Изменения
     исключает саму категорию и её потомков. Не вводить универсальный tree framework.
   - Готовность: unit tests проверяют пустое/вложенное дерево, отсутствие мутаций, порядок siblings,
     разные правила hidden categories и исключение потомков; catalog/import E2E сохраняют выбор.
-    Согласовать изменение общего участка useProductEditor с TASK-A069.
 
 - [ ] TASK-A085 **P2** Отделить retention-выборки и унифицировать проверку legal hold
   - Цель: [OrderRetentionService](../backend/app/Services/Retention/OrderRetentionService.php)

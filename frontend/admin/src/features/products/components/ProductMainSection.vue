@@ -6,7 +6,27 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiTextarea from '../../../components/ui/UiTextarea.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductForm } from '../composables/useProductForm'
+import type { Product } from '../types/product.types'
+const { state, editing } = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductForm>,
+    | 'categories'
+    | 'copiedFromName'
+    | 'copiedFromProduct'
+    | 'copiedNameError'
+    | 'form'
+    | 'manuallyEditedSlug'
+    | 'slugify'
+    | 'selectedCategory'
+    | 'selectedBrand'
+    | 'categoryOptions'
+    | 'brandOptions'
+    | 'units'
+  >
+  editing: Product | null
+}>()
+const emit = defineEmits<{ save: [] }>()
 const {
   categories,
   copiedFromName,
@@ -19,10 +39,8 @@ const {
   selectedBrand,
   categoryOptions,
   brandOptions,
-  editing,
   units,
-  saveMain,
-} = useProductEditorContext()
+} = state
 function categoryAllowsCollections(nodes: typeof categories.value): boolean {
   for (const category of nodes) {
     if (category.id === form.value.category_id)
@@ -41,7 +59,7 @@ const allowsCollections = computed(() =>
   <form
     id="product-main-form"
     class="grid gap-4 sm:grid-cols-2"
-    @submit.prevent="saveMain"
+    @submit.prevent="emit('save')"
   >
     <UiField
       label="Название"

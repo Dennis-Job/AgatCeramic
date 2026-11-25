@@ -4,17 +4,20 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Page;
 use App\Models\Product;
+use App\Models\ProductGroup;
 use App\Models\ProductImage;
 use App\Models\User;
 use App\Services\BannerManagementService;
 use App\Services\CategoryManagementService;
 use App\Services\PageManagementService;
+use App\Services\ProductGroupManagementService;
 use App\Services\ProductImageManagementService;
 use App\Services\ProductManagementService;
 use App\Services\ProductRelationManagementService;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 require dirname(__DIR__, 2).'/vendor/autoload.php';
 
@@ -30,6 +33,21 @@ DB::selectOne("select set_config('application_name', ?, false)", [$applicationNa
 DB::selectOne("select set_config('statement_timeout', '10000', false)");
 
 $work = match ($operation) {
+    'product-update' => (function () use ($payload): Closure {
+        $actor = User::query()->findOrFail($payload['actor_id']);
+        $product = Product::query()->findOrFail($payload['product_id']);
+
+        return fn () => app(ProductManagementService::class)->update($actor, $product, $payload['attributes']);
+    })(),
+    'group-write' => (function () use ($payload): Closure {
+        $actor = User::query()->findOrFail($payload['actor_id']);
+        $group = $payload['group_id'] === null ? null : ProductGroup::query()->findOrFail($payload['group_id']);
+        $groups = app(ProductGroupManagementService::class);
+
+        return fn () => $group === null
+            ? $groups->create($actor, $payload['group'])
+            : $groups->update($actor, $group, $payload['group']);
+    })(),
     'collection-assignment' => (function () use ($payload): Closure {
         $actor = User::query()->findOrFail($payload['actor_id']);
         $product = Product::query()->findOrFail($payload['product_id']);
@@ -112,6 +130,9 @@ try {
         'class' => $exception::class,
         'message' => $exception->getMessage(),
     ];
+    if ($exception instanceof ValidationException) {
+        $outcome['fields'] = array_keys($exception->errors());
+    }
 }
 
 fwrite(STDOUT, json_encode($outcome, JSON_THROW_ON_ERROR)."\n");

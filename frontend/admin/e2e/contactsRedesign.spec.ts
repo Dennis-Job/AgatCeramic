@@ -2,6 +2,7 @@ import AxeBuilder from './approvedAccessibility'
 import { expect, test, type Page } from './fixtures'
 import { mockAdminBaseline } from './adminBaselineApi'
 import { contactStatuses } from './contactStatusFixtures'
+import { createDeferredApiRequests } from './deferredApi'
 
 async function mockContacts(page: Page, manage = true) {
   await mockAdminBaseline(page)
@@ -161,6 +162,75 @@ async function mockContacts(page: Page, manage = true) {
   })
   return state
 }
+
+test('a late unfiltered contacts page leaves newer filtered rows and pagination intact', async ({
+  page,
+}) => {
+  const { records } = await mockContacts(page)
+  const deferred = createDeferredApiRequests()
+  const secondPage = deferred.defer('page 2')
+  const listPath = '/api/v1/admin/contact-requests'
+  await page.route(
+    (url) => url.pathname === listPath,
+    async (route) => {
+      const query = new URL(route.request().url()).searchParams
+      if (query.has('status')) return route.fallback()
+      const pageNumber = Number(query.get('page') ?? 1)
+      if (pageNumber === 2) await deferred.wait('page 2')
+      await route.fulfill({
+        json: {
+          data: pageNumber === 2 ? records.slice(2) : records.slice(0, 2),
+          meta: {
+            current_page: pageNumber,
+            last_page: 2,
+            per_page: 2,
+            total: records.length,
+          },
+        },
+      })
+    },
+  )
+
+  try {
+    await page.goto('/contacts')
+    const queue = page.getByRole('region', { name: 'Очередь обращений' })
+    const openNewerContact = queue.getByRole('button', {
+      name: 'Открыть обращение 183',
+    })
+    const openStaleContact = queue.getByRole('button', {
+      name: 'Открыть обращение 182',
+    })
+    const nextPage = queue.getByRole('button', { name: 'Следующая страница' })
+    await expect(openNewerContact).toBeVisible()
+    await nextPage.click()
+    await secondPage.requested
+    await expect(
+      queue.getByRole('status').filter({ hasText: 'Загрузка обращений' }),
+    ).toBeVisible()
+    await expect(nextPage).toBeDisabled()
+
+    const processing = queue.getByRole('tab', { name: /^В обработке/ })
+    await processing.click()
+    const filteredPage = queue.getByRole('navigation', {
+      name: 'Пагинация: страница 1 из 1',
+    })
+    await expect(filteredPage).toBeVisible()
+    await expect(openNewerContact).toBeVisible()
+
+    const delayedResponse = page.waitForResponse((response) => {
+      const url = new URL(response.url())
+      return url.pathname === listPath && url.searchParams.get('page') === '2'
+    })
+    secondPage.release()
+    await (await delayedResponse).finished()
+    await expect(processing).toHaveAttribute('aria-selected', 'true')
+    await expect(filteredPage).toBeVisible()
+    await expect(openNewerContact).toBeVisible()
+    await expect(openStaleContact).toHaveCount(0)
+  } finally {
+    secondPage.release()
+  }
+})
 
 test('guided actions respect the server graph, confirm terminal changes and update counters immediately', async ({
   page,

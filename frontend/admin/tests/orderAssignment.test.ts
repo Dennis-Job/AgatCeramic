@@ -60,7 +60,7 @@ test('assignment refreshes only assignee fields and preserves all existing draft
   const state = create()
   await state.initialize()
   await state.selectOrder({ id: 1 })
-  state.selected.value!.status = 'processing'
+  state.statusDraft.value = 'processing'
   state.paymentForm.value.payment_method = 'Наличные'
   state.commentBody.value = 'Перезвонить'
   api.getOrder.mockResolvedValue({
@@ -71,7 +71,8 @@ test('assignment refreshes only assignee fields and preserves all existing draft
   await state.changeAssignee('2')
   expect(api.assignOrder).toHaveBeenCalledWith(1, 2)
   expect(state.selected.value!.assignee?.id).toBe(2)
-  expect(state.selected.value!.status).toBe('processing')
+  expect(state.selected.value?.status).toBe('new')
+  expect(state.statusDraft.value).toBe('processing')
   expect(state.paymentForm.value.payment_method).toBe('Наличные')
   expect(state.commentBody.value).toBe('Перезвонить')
   expect(state.hasUnsavedChanges.value).toBe(true)

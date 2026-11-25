@@ -36,8 +36,15 @@ describe('products feature boundaries', () => {
     const editorComposable = readSource(
       '../src/features/products/composables/useProductEditor.ts',
     )
-    const contextComposable = readSource(
-      '../src/features/products/composables/useProductEditorContext.ts',
+    const productComposables = [
+      'useProductList',
+      'useProductForm',
+      'useProductAttributes',
+      'useProductImages',
+      'useProductGroups',
+      'useProductRelations',
+    ].map((name) =>
+      readSource(`../src/features/products/composables/${name}.ts`),
     )
     const productService = readSource(
       '../src/features/products/services/products.ts',
@@ -46,8 +53,9 @@ describe('products feature boundaries', () => {
       '../src/features/products/types/product.types.ts',
     )
 
-    expect(editorComposable).not.toMatch(/from\s+['"][^'"]+\.vue['"]/) // composables must not import components
-    expect(contextComposable).not.toMatch(/from\s+['"][^'"]+\.vue['"]/) // context stays feature-layer only
+    for (const source of [editorComposable, ...productComposables]) {
+      expect(source).not.toMatch(/from\s+['"][^'"]+\.vue['"]/)
+    }
     expect(productService).not.toMatch(/export\s+(?:interface|type)\s+Product/)
     expect(productTypes).toMatch(/export\s+type\s+AttributeDraftValue/)
     expect(productTypes).toMatch(/export\s+type\s+Product\s*=/)
@@ -55,11 +63,16 @@ describe('products feature boundaries', () => {
 
   test('uses UI-kit controls throughout product components', () => {
     const componentNames = [
+      'ProductsWorkspace.vue',
+      'ProductList.vue',
+      'ProductListControls.vue',
+      'ProductSortMenu.vue',
       'ProductEditor.vue',
       'ProductEditorSteps.vue',
       'ProductMainSection.vue',
       'ProductAttributesSection.vue',
       'ProductImagesSection.vue',
+      'ProductPhotoUpload.vue',
       'ProductVariantsSection.vue',
       'ProductRelationsSection.vue',
       'ProductReviewSection.vue',

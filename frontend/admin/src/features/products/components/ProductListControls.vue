@@ -6,9 +6,29 @@ import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
 import UiSegmentedControl from '../../../components/ui/UiSegmentedControl.vue'
 import ProductSortMenu from './ProductSortMenu.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductList } from '../composables/useProductList'
 import type { ProductListFilters } from '../types/product.types'
 
+const { state } = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductList>,
+    | 'filters'
+    | 'filterCategoryOptions'
+    | 'filterBrandOptions'
+    | 'activityOptions'
+    | 'saleOptions'
+    | 'filterCountsLoading'
+    | 'filterCountsError'
+    | 'productCountUnavailable'
+    | 'productCountLabel'
+    | 'hasActiveFilters'
+    | 'resetFilters'
+    | 'sort'
+    | 'direction'
+    | 'loading'
+    | 'setSort'
+  >
+}>()
 const {
   filters,
   filterCategoryOptions,
@@ -21,7 +41,7 @@ const {
   productCountLabel,
   hasActiveFilters,
   resetFilters,
-} = useProductEditorContext()
+} = state
 const expanded = ref(false)
 const id = useId()
 const root = ref<HTMLFormElement | null>(null)
@@ -181,7 +201,7 @@ async function clearAll() {
       >
         {{ productCountLabel }}
       </p>
-      <ProductSortMenu />
+      <ProductSortMenu :state="state" />
     </div>
     <p v-if="filterCountsError" class="mt-2 text-xs text-gray-500" role="alert">
       {{ filterCountsError }}

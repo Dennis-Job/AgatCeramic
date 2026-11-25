@@ -1,30 +1,20 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { useProductCatalogOptions } from '../src/features/products/composables/useProductCatalogOptions'
 import { useProductEditor } from '../src/features/products/composables/useProductEditor'
 import type { Product } from '../src/features/products/types/product.types'
 
 const api = vi.hoisted(() => ({
-  getProducts: vi.fn(),
-  getProductFilterCounts: vi.fn(),
   getRelationCandidates: vi.fn(),
   saveProductRelations: vi.fn(),
   getCategoryAttributes: vi.fn(),
   getProductRelations: vi.fn(),
 }))
-vi.mock('../src/stores/auth', () => ({
-  useAuthStore: () => ({ hasPermission: () => true }),
-}))
-vi.mock('../src/features/products/services/products', () => ({
-  getProducts: api.getProducts,
-  saveProduct: vi.fn(),
-  deleteProduct: vi.fn(),
-}))
-vi.mock('../src/features/products/services/productFilterCounts', () => ({
-  getProductFilterCounts: api.getProductFilterCounts,
-}))
 vi.mock('../src/features/products/services/productRelations', () => ({
-  ...api,
+  getRelationCandidates: api.getRelationCandidates,
+  getProductRelations: api.getProductRelations,
+  saveProductRelations: api.saveProductRelations,
   ProductRelationRequestError: class extends Error {},
 }))
 vi.mock('../src/features/products/services/productAttributes', () => ({
@@ -33,10 +23,6 @@ vi.mock('../src/features/products/services/productAttributes', () => ({
 }))
 vi.mock('../src/features/categories/services/categories', () => ({
   getCategoryAttributeGroups: vi.fn(async () => []),
-  getCategories: vi.fn(async () => []),
-}))
-vi.mock('../src/features/brands/services/brands', () => ({
-  getAllBrands: vi.fn(async () => []),
 }))
 vi.mock('../src/features/products/services/productImages', () => ({
   getAllProductImages: vi.fn(async () => []),
@@ -47,13 +33,14 @@ vi.mock('../src/features/products/services/productGroups', () => ({
 
 const first = { id: 2, sku: '6000034', name: 'Смеситель' } as Product
 const second = { id: 3, sku: '5000033', name: 'Клей' } as Product
+const product = { id: 1, sku: 'SELF', category_id: 1 } as Product
 const wrappers: ReturnType<typeof mount>[] = []
 
 beforeEach(() => {
   vi.resetAllMocks()
   vi.useFakeTimers()
-  api.getProducts.mockResolvedValue({ data: [], meta: {} })
-  api.getProductFilterCounts.mockResolvedValue({})
+  api.getCategoryAttributes.mockResolvedValue([])
+  api.getProductRelations.mockResolvedValue([])
   api.getRelationCandidates.mockResolvedValue([first, second])
 })
 afterEach(() => {
@@ -61,25 +48,36 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-function editor() {
+function mountEditor() {
   let state!: ReturnType<typeof useProductEditor>
   wrappers.push(
     mount(
       defineComponent({
         setup() {
-          state = useProductEditor()
+          state = useProductEditor({
+            catalog: useProductCatalogOptions(),
+            canManage: ref(true),
+            error: ref(''),
+            saving: ref(false),
+            refreshList: async () => {},
+            updateThumbnail: vi.fn(),
+          })
           return () => null
         },
       }),
     ),
   )
-  state.editing.value = { id: 1 } as Product
-  state.opened.value = true
+  return state
+}
+
+async function openEditor() {
+  const state = mountEditor()
+  await state.open(product)
   return state
 }
 
 test('searches the latest trimmed SKU automatically without treating search as a save', async () => {
-  const state = editor()
+  const { relations: state, saving } = await openEditor()
   state.relationSearch.value = '60000'
   await vi.advanceTimersByTimeAsync(100)
   state.relationSearch.value = ' 6000034 '
@@ -87,11 +85,11 @@ test('searches the latest trimmed SKU automatically without treating search as a
   await flushPromises()
   expect(api.getRelationCandidates).toHaveBeenCalledTimes(1)
   expect(api.getRelationCandidates).toHaveBeenCalledWith(1, '6000034', 20)
-  expect(state.saving.value).toBe(false)
+  expect(saving.value).toBe(false)
 })
 
 test('starts with an empty lookup and never searches or adds a random product', async () => {
-  const state = editor()
+  const { relations: state } = await openEditor()
   await state.searchRelations()
   state.addRelation('related')
   expect(api.getRelationCandidates).not.toHaveBeenCalled()
@@ -100,7 +98,7 @@ test('starts with an empty lookup and never searches or adds a random product', 
 })
 
 test('adds the exact SKU with an explicit type, clears lookup and preserves several drafts', async () => {
-  const state = editor()
+  const { relations: state } = await openEditor()
   state.relationSearch.value = first.sku
   await state.searchRelations()
   expect(state.relationSearchResult.value?.id).toBe(2)
@@ -126,7 +124,7 @@ test('adds the exact SKU with an explicit type, clears lookup and preserves seve
 })
 
 test('ignores an older response and disables stale additions while a new query is pending', async () => {
-  const state = editor()
+  const { relations: state } = await openEditor()
   state.relationSearch.value = first.sku
   let resolveOld!: (products: Product[]) => void
   api.getRelationCandidates.mockReturnValueOnce(
@@ -148,7 +146,7 @@ test('ignores an older response and disables stale additions while a new query i
 })
 
 test('search errors stay local, disable adding stale results and allow retry', async () => {
-  const state = editor()
+  const { relations: state, error } = await openEditor()
   state.relationSearch.value = first.sku
   await state.searchRelations()
   api.getRelationCandidates.mockRejectedValueOnce(new Error('Поиск недоступен'))
@@ -156,14 +154,14 @@ test('search errors stay local, disable adding stale results and allow retry', a
   state.addRelation('related')
   expect(state.relations.value).toEqual([])
   expect(state.relationSearchError.value).toBe('Поиск недоступен')
-  expect(state.error.value).toBe('')
+  expect(error.value).toBe('')
   await state.searchRelations()
   expect(state.relationSearchError.value).toBe('')
   expect(state.relationSearchResult.value?.id).toBe(2)
 })
 
 test('closing the editor invalidates pending requests and debounce timers', async () => {
-  const state = editor()
+  const { relations: state, close } = await openEditor()
   state.relationSearch.value = first.sku
   let resolve!: (products: Product[]) => void
   api.getRelationCandidates.mockReturnValueOnce(
@@ -172,7 +170,7 @@ test('closing the editor invalidates pending requests and debounce timers', asyn
     }),
   )
   const request = state.searchRelations()
-  state.opened.value = false
+  close()
   resolve([first])
   await request
   expect(state.relationSearchResult.value).toBeNull()
@@ -182,7 +180,7 @@ test('closing the editor invalidates pending requests and debounce timers', asyn
 })
 
 test('initial details cannot overwrite newly added recommendations during slow hydration', async () => {
-  const state = editor()
+  const { relations: state, open } = mountEditor()
   let finishDetails!: (attributes: []) => void
   api.getCategoryAttributes.mockReturnValueOnce(
     new Promise<[]>((resolve) => {
@@ -197,7 +195,7 @@ test('initial details cannot overwrite newly added recommendations during slow h
       sort_order: 0,
     },
   ])
-  const opening = state.open({ id: 1, category_id: 1 } as Product)
+  const opening = open(product)
   await flushPromises()
   state.relationSearch.value = '5000033'
   await state.searchRelations()
@@ -215,13 +213,8 @@ test('initial details cannot overwrite newly added recommendations during slow h
 })
 
 test('rejects partial SKU, self and duplicate products but allows readding a removed draft', async () => {
-  const state = editor()
-  state.editing.value = { id: 1, sku: 'SELF' } as Product
-  api.getRelationCandidates.mockResolvedValue([
-    { id: 1, sku: 'SELF' },
-    first,
-    second,
-  ])
+  const { relations: state } = await openEditor()
+  api.getRelationCandidates.mockResolvedValue([product, first, second])
   state.relationSearch.value = '60000'
   await state.searchRelations()
   expect(state.relationSearchResult.value).toBeNull()

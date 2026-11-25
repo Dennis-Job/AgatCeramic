@@ -293,6 +293,7 @@ watch([initialized, () => route.query.contact], ([ready, value]) => {
       :history="workspace.history.value"
       :comments="workspace.comments.value"
       :detail-loading="workspace.detailLoading.value"
+      :detail-error="workspace.detailError.value"
       :saving="workspace.saving.value"
       :action-error="workspace.actionError.value"
       :can-manage="workspace.canManage.value"

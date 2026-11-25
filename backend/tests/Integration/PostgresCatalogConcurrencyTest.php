@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use App\Models\Attribute;
 use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
@@ -10,12 +11,14 @@ use App\Models\Media;
 use App\Models\Page;
 use App\Models\Product;
 use App\Models\ProductCollection;
+use App\Models\ProductGroup;
 use App\Models\ProductImage;
 use App\Models\ProductRelation;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CategoryManagementService;
 use App\Services\ProductCollectionManagementService;
+use App\Services\ProductGroupManagementService;
 use App\Services\ProductImageManagementService;
 use App\Services\ProductManagementService;
 use App\Services\ProductRelationManagementService;
@@ -48,6 +51,86 @@ class PostgresCatalogConcurrencyTest extends TestCase
             $this->markTestSkipped('This integration test requires PostgreSQL.');
         }
 
+    }
+
+    #[DataProvider('competingGroupChanges')]
+    public function test_product_group_composition_stays_consistent_during_product_edit(
+        string $field,
+        bool $existingGroup,
+        bool $groupWins,
+    ): void {
+        $actor = User::factory()->create();
+        $category = Category::factory()->create();
+        $targetCategory = Category::factory()->create();
+        $brand = Brand::factory()->create();
+        $axis = Attribute::factory()->create(['type' => 'string']);
+        $category->attributes()->attach($axis->id);
+        $targetCategory->attributes()->attach($axis->id);
+
+        $products = Product::factory()->count(3)->create(['category_id' => $category->id, 'brand_id' => $brand->id]);
+        foreach ($products as $product) {
+            $product->attributeValues()->create(['attribute_id' => $axis->id, 'value' => (string) $product->id]);
+        }
+        [$product, $firstMember, $secondMember] = $products->all();
+        $initialMembers = [$firstMember->id, $secondMember->id];
+        $originalGroup = [
+            'code' => "A066-{$product->id}",
+            'name' => 'Original group',
+            'axis_attribute_ids' => [$axis->id],
+            'product_ids' => $initialMembers,
+        ];
+        $groups = app(ProductGroupManagementService::class);
+        $group = $existingGroup ? $groups->create($actor, $originalGroup) : null;
+        $desiredGroup = [...$originalGroup, 'name' => 'Expanded group', 'product_ids' => [$product->id, ...$initialMembers]];
+        $productChanges = [$field => $field === 'category_id' ? $targetCategory->id : null];
+
+        if ($groupWins) {
+            $outcome = $this->runCompetingTransactions(
+                'group-first',
+                fn () => $group === null ? $groups->create($actor, $desiredGroup) : $groups->update($actor, $group, $desiredGroup),
+                'product-update',
+                ['actor_id' => $actor->id, 'product_id' => $product->id, 'attributes' => $productChanges],
+            );
+        } else {
+            $outcome = $this->runCompetingTransactions(
+                'product-first',
+                fn () => app(ProductManagementService::class)->update($actor, $product, $productChanges),
+                'group-write',
+                ['actor_id' => $actor->id, 'group_id' => $group?->id, 'group' => $desiredGroup],
+            );
+        }
+
+        $this->assertThrowableIs($outcome, ValidationException::class);
+        $this->assertSame([$groupWins ? $field : 'product_ids'], $outcome['fields'] ?? []);
+        $product->refresh();
+        $expectedCategory = ! $groupWins && $field === 'category_id' ? $targetCategory->id : $category->id;
+        $expectedBrand = ! $groupWins && $field === 'brand_id' ? null : $brand->id;
+        $this->assertSame($expectedCategory, $product->category_id);
+        $this->assertSame($expectedBrand, $product->brand_id);
+
+        if (! $groupWins && ! $existingGroup) {
+            $this->assertDatabaseMissing('product_groups', ['code' => $desiredGroup['code']]);
+        } else {
+            $savedGroup = ProductGroup::query()->where('code', $desiredGroup['code'])->firstOrFail();
+            $this->assertSame($groupWins ? $desiredGroup['name'] : $originalGroup['name'], $savedGroup->name);
+            $this->assertEqualsCanonicalizing(
+                $groupWins ? $desiredGroup['product_ids'] : $initialMembers,
+                $savedGroup->products()->pluck('products.id')->all(),
+            );
+        }
+        if (! $groupWins) {
+            $this->assertDatabaseMissing('product_group_members', ['product_id' => $product->id]);
+        }
+    }
+
+    public static function competingGroupChanges(): iterable
+    {
+        foreach (['category_id', 'brand_id'] as $field) {
+            foreach (['create' => false, 'update' => true] as $operation => $existingGroup) {
+                yield "$field vs group $operation, group first" => [$field, $existingGroup, true];
+                yield "$field vs group $operation, product first" => [$field, $existingGroup, false];
+            }
+        }
     }
 
     public function test_collection_assignment_waiting_for_category_disable_is_rejected(): void
@@ -286,7 +369,7 @@ class PostgresCatalogConcurrencyTest extends TestCase
      * @param  Closure(): mixed  $firstOperation
      * @param  array<string, mixed>  $competingPayload
      * @param  (Closure(): mixed)|null  $afterCompetitorBlocks
-     * @return array{status: string, class?: string, message?: string}
+     * @return array{status: string, class?: string, message?: string, fields?: list<string>}
      */
     private function runCompetingTransactions(
         string $label,
@@ -357,11 +440,11 @@ class PostgresCatalogConcurrencyTest extends TestCase
 
         do {
             $activity = DB::selectOne(
-                'select state, wait_event_type, wait_event from pg_stat_activity where application_name = ?',
+                'select pg_backend_pid() = any(pg_blocking_pids(pid)) as blocked_by_parent from pg_stat_activity where application_name = ?',
                 [$applicationName],
             );
 
-            if ($activity?->wait_event_type === 'Lock') {
+            if ($activity?->blocked_by_parent === true) {
                 return;
             }
 
@@ -386,7 +469,7 @@ class PostgresCatalogConcurrencyTest extends TestCase
             throw new RuntimeException('The competing process did not return a test outcome.');
         }
 
-        /** @var array{status: string, class?: string, message?: string} $outcome */
+        /** @var array{status: string, class?: string, message?: string, fields?: list<string>} $outcome */
         $outcome = json_decode($encodedOutcome, true, flags: JSON_THROW_ON_ERROR);
 
         return $outcome;

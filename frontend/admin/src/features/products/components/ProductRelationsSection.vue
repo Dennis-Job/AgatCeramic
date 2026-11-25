@@ -9,11 +9,32 @@ import UiField from '../../../components/ui/UiField.vue'
 import UiLoadingState from '../../../components/ui/UiLoadingState.vue'
 import UiInput from '../../../components/ui/UiInput.vue'
 import UiSelect from '../../../components/ui/UiSelect.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductRelations } from '../composables/useProductRelations'
 import type { ProductRelationType } from '../types/product.types'
 
 const searchContainer = ref<HTMLElement | null>(null)
 const helpId = useId()
+const { state, saving } = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductRelations>,
+    | 'relations'
+    | 'relationSearch'
+    | 'relationSearchLoading'
+    | 'relationDetailsLoading'
+    | 'relationSearchError'
+    | 'relationSearchResult'
+    | 'relationSearchMessage'
+    | 'relationActionStatus'
+    | 'searchRelations'
+    | 'addRelation'
+    | 'removeRelation'
+    | 'relationProduct'
+    | 'relationTypes'
+    | 'relationErrors'
+    | 'saveRelations'
+  >
+  saving: boolean
+}>()
 const {
   relations,
   relationSearch,
@@ -23,7 +44,6 @@ const {
   relationSearchResult,
   relationSearchMessage,
   relationActionStatus,
-  saving,
   searchRelations,
   addRelation,
   removeRelation,
@@ -31,7 +51,7 @@ const {
   relationTypes,
   relationErrors,
   saveRelations,
-} = useProductEditorContext()
+} = state
 
 async function add(type: ProductRelationType) {
   if (!addRelation(type)) return

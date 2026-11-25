@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
 import type { PaginatedResponse, PaginationMeta } from '../services/pagination'
 
 type PageLoader<T, TResult extends PaginatedResponse<T>> = (
@@ -14,6 +14,7 @@ export type PaginatedCollection<T> = {
     page: number,
     loader: PageLoader<T, TResult>,
   ) => Promise<TResult | null>
+  reload: () => Promise<PaginatedResponse<T> | null>
   reloadAfterDeletion: <TResult extends PaginatedResponse<T>>(
     loader: PageLoader<T, TResult>,
   ) => Promise<TResult | null>
@@ -27,11 +28,21 @@ export function usePaginatedCollection<T>(
   const error = ref('')
   const loading = ref(false)
   let latestRequest = 0
+  let disposed = false
+  let reloadPage: (() => Promise<PaginatedResponse<T> | null>) | undefined
+  if (getCurrentScope())
+    onScopeDispose(() => {
+      disposed = true
+      latestRequest++
+      reloadPage = undefined
+    })
 
   async function load<TResult extends PaginatedResponse<T>>(
     page: number,
     loader: PageLoader<T, TResult>,
   ): Promise<TResult | null> {
+    if (disposed) return null
+    reloadPage = () => load(page, loader)
     const request = ++latestRequest
     loading.value = true
     error.value = ''
@@ -53,6 +64,10 @@ export function usePaginatedCollection<T>(
     }
   }
 
+  async function reload(): Promise<PaginatedResponse<T> | null> {
+    return reloadPage?.() ?? null
+  }
+
   async function reloadAfterDeletion<TResult extends PaginatedResponse<T>>(
     loader: PageLoader<T, TResult>,
   ): Promise<TResult | null> {
@@ -70,5 +85,13 @@ export function usePaginatedCollection<T>(
     return pageIsInvalid ? load(lastPage, loader) : response
   }
 
-  return { items, pagination, error, loading, load, reloadAfterDeletion }
+  return {
+    items,
+    pagination,
+    error,
+    loading,
+    load,
+    reload,
+    reloadAfterDeletion,
+  }
 }

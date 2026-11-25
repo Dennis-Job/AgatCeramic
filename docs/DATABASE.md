@@ -199,6 +199,12 @@ affected products atomically. Updating one member changes axis and individual va
 member, while shared rows (including clear operations) synchronize across all members. Product groups are
 independent of `product_relations`.
 
+Product updates and group composition changes serialize on the product rows. Creating or updating a
+group locks the proposed members by ascending product ID before validating their categories and brands.
+Updating an existing group locks the group before its proposed members. A product update locks its
+category rows first, then reloads and locks the product. Under PostgreSQL's `READ COMMITTED` isolation,
+the subsequent plain membership `SELECT` sees any group that committed while the product update waited.
+
 ## Orders
 
 ### carts

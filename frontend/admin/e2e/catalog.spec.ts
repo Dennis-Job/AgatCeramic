@@ -1155,16 +1155,23 @@ test('sale flag can be set while creating a product and is shown in the product 
   ).toBeVisible()
 })
 
-test('published product can be hidden without changing its stock', async ({
+test('editing, hiding and republishing a product keeps the list and stock in sync', async ({
   page,
 }) => {
   await mockCatalogApi(page)
   await page.goto('/products')
 
+  const updatedName = 'Монте Тиберио Матовый'
   const productRow = page
     .locator('tbody tr')
     .filter({ hasText: 'Монте Тиберио' })
     .first()
+  const waitForUpdate = () =>
+    page.waitForRequest(
+      (request) =>
+        request.method() === 'PATCH' &&
+        request.url().endsWith('/admin/products/1'),
+    )
   await expect(productRow.getByText('Активен', { exact: true })).toBeVisible()
   await expect(
     productRow.getByRole('cell', { name: '12 м²', exact: true }),
@@ -1173,7 +1180,31 @@ test('published product can be hidden without changing its stock', async ({
     .getByRole('button', { name: 'Редактировать товар Монте Тиберио' })
     .click()
 
-  const dialog = page.getByRole('dialog', { name: 'Монте Тиберио' })
+  const editDialog = page.getByRole('dialog', {
+    name: 'Монте Тиберио',
+    exact: true,
+  })
+  await editDialog.getByLabel('Название').fill(updatedName)
+  const edited = waitForUpdate()
+  await editDialog
+    .getByRole('button', { name: 'Сохранить и продолжить' })
+    .click()
+  expect((await edited).postDataJSON()).toMatchObject({
+    name: updatedName,
+    slug: 'monte-tiberio',
+    is_active: true,
+    stock_quantity: 12,
+  })
+  await expect(productRow.getByTestId('product-name-preview')).toHaveText(
+    updatedName,
+  )
+
+  const dialog = page.getByRole('dialog', { name: updatedName })
+  await expect(
+    dialog.getByRole('status').filter({
+      hasText: 'Основные и коммерческие данные сохранены.',
+    }),
+  ).toBeVisible()
   await dialog.getByRole('button', { name: 'Проверка', exact: false }).click()
   await dialog.getByRole('button', { name: 'Скрыть товар' }).click()
 
@@ -1187,6 +1218,24 @@ test('published product can be hidden without changing its stock', async ({
     dialog.getByRole('button', { name: 'Опубликовать товар' }),
   ).toBeVisible()
   await expect(productRow.getByText('Скрыт', { exact: true })).toBeVisible()
+  await expect(
+    productRow.getByRole('cell', { name: '12 м²', exact: true }),
+  ).toBeVisible()
+
+  const published = waitForUpdate()
+  await dialog.getByRole('button', { name: 'Опубликовать товар' }).click()
+  expect((await published).postDataJSON()).toMatchObject({
+    name: updatedName,
+    is_active: true,
+    stock_quantity: 12,
+  })
+  await expect(
+    dialog.getByRole('status').filter({ hasText: 'Товар опубликован.' }),
+  ).toBeVisible()
+  await expect(
+    dialog.getByRole('button', { name: 'Скрыть товар' }),
+  ).toBeVisible()
+  await expect(productRow.getByText('Активен', { exact: true })).toBeVisible()
   await expect(
     productRow.getByRole('cell', { name: '12 м²', exact: true }),
   ).toBeVisible()

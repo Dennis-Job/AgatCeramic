@@ -4,17 +4,18 @@ import { Package } from '@lucide/vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiBadge from '../../../components/ui/UiBadge.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
-const {
-  form,
-  editing,
-  images,
-  currentGroup,
-  hasValue,
-  attributeValues,
-  requiredIds,
-  attributes,
-} = useProductEditorContext()
+import type { ProductPayload } from '../types/product.types'
+
+defineProps<{
+  form: Pick<
+    ProductPayload,
+    'is_active' | 'is_on_sale' | 'price' | 'stock_quantity'
+  >
+  sku?: string
+  imageCount: number
+  groupName?: string
+  missingRequiredNames: string[]
+}>()
 </script>
 
 <template>
@@ -46,7 +47,7 @@ const {
         <dd
           class="mt-1 break-words text-sm font-semibold text-gray-500 [overflow-wrap:anywhere]"
         >
-          {{ editing?.sku }}
+          {{ sku }}
         </dd>
       </div>
       <div class="rounded-xl bg-gray-25 px-4 py-3">
@@ -58,7 +59,7 @@ const {
       <div class="rounded-xl bg-gray-25 px-4 py-3">
         <dt class="text-xs font-medium text-gray-500">Фотографии</dt>
         <dd class="mt-1 text-sm font-semibold text-gray-500">
-          {{ images.length }}
+          {{ imageCount }}
         </dd>
       </div>
       <div class="rounded-xl bg-gray-25 px-4 py-3">
@@ -66,25 +67,17 @@ const {
         <dd
           class="mt-1 break-words text-sm font-semibold text-gray-500 [overflow-wrap:anywhere]"
         >
-          {{ currentGroup?.name ?? 'Не назначена' }}
+          {{ groupName ?? 'Не назначена' }}
         </dd>
       </div>
     </dl>
     <UiAlert
-      v-if="requiredIds.some((id) => !hasValue(attributeValues[id]))"
+      v-if="missingRequiredNames.length"
       class="mt-4"
       tone="warning"
       live="polite"
       >До публикации заполните обязательные характеристики:
-      {{
-        attributes
-          .filter(
-            (a) =>
-              requiredIds.includes(a.id) && !hasValue(attributeValues[a.id]),
-          )
-          .map((a) => a.name)
-          .join(', ')
-      }}.</UiAlert
+      {{ missingRequiredNames.join(', ') }}.</UiAlert
     >
   </UiCard>
 </template>

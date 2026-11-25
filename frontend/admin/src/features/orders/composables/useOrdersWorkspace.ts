@@ -1,4 +1,5 @@
 import { computed, onScopeDispose, ref, watch } from 'vue'
+import { usePaginatedCollection } from '../../../composables/usePaginatedCollection'
 import { formatMoney } from '../../../utils/formatMoney'
 import { useAuthStore } from '../../../stores/auth'
 import { notifyAdminNotificationsChanged } from '../../notifications/services/notificationChanges'
@@ -32,42 +33,61 @@ export const orderPaymentOptions = [
   { label: 'Возврат', value: 'refunded' },
 ]
 
+function paymentValues(order?: Order): PaymentForm {
+  return {
+    payment_status: order?.payment_status ?? 'not_paid',
+    payment_amount: order?.payment_amount ?? '',
+    payment_method: order?.payment_method ?? '',
+    payment_reference: order?.payment_reference ?? '',
+  }
+}
+
+function samePayment(first: PaymentForm, second: PaymentForm): boolean {
+  return (
+    first.payment_status === second.payment_status &&
+    first.payment_amount === second.payment_amount &&
+    first.payment_method === second.payment_method &&
+    first.payment_reference === second.payment_reference
+  )
+}
+
 export function useOrdersWorkspace() {
   const queueCounts = useOrderStatusCounts()
   const auth = useAuthStore()
-  const orders = ref<Order[]>([])
-  const selected = ref<Order | null>(null)
+  const list = usePaginatedCollection<Order>('Не удалось загрузить заказы.')
+  const details = ref<{
+    order: Order
+    histories: OrderHistory[]
+    comments: OrderComment[]
+  } | null>(null)
+  const selected = computed(() => details.value?.order ?? null)
+  const histories = computed(() => details.value?.histories ?? [])
+  const comments = computed(() => details.value?.comments ?? [])
   const statuses = ref<OrderStatus[]>([])
-  const histories = ref<OrderHistory[]>([])
-  const comments = ref<OrderComment[]>([])
   const search = ref('')
   const status = ref('')
   const paymentStatus = ref('')
   const assigneeFilter = ref('')
-  const page = ref(1)
-  const meta = ref({ current_page: 1, last_page: 1, per_page: 25, total: 0 })
-  const loading = ref(true)
+  const initialMeta = { current_page: 1, last_page: 1, per_page: 25, total: 0 }
+  const meta = computed(() => list.pagination.value ?? initialMeta)
+  list.loading.value = true
+  let listRequested = false
   const detailLoading = ref(false)
+  const detailError = ref('')
   let detailRequest = 0
-  let listRequest = 0
+  let selectedId: number | null = null
+  let savedDraft: { status?: string; payment?: PaymentForm } = {}
   onScopeDispose(() => {
     detailRequest++
-    listRequest++
   })
-  const error = ref('')
   const statusLoading = ref(false)
   const statusReady = ref(false)
   const statusError = ref('')
   const actionError = ref('')
   const saving = ref(false)
   const commentBody = ref('')
-  const persistedStatus = ref('')
-  const paymentForm = ref<PaymentForm>({
-    payment_status: 'not_paid',
-    payment_amount: '',
-    payment_method: '',
-    payment_reference: '',
-  })
+  const statusDraft = ref('')
+  const paymentForm = ref(paymentValues())
   const canManage = computed(() => auth.hasPermission('orders.manage'))
   const assignment = useOrderAssignees(canManage, selected)
   const canManageStatus = computed(
@@ -107,14 +127,8 @@ export function useOrdersWorkspace() {
       Boolean(commentBody.value.trim()) ||
       Boolean(
         selected.value &&
-        (selected.value.status !== persistedStatus.value ||
-          paymentForm.value.payment_status !== selected.value.payment_status ||
-          paymentForm.value.payment_amount !==
-            (selected.value.payment_amount ?? '') ||
-          paymentForm.value.payment_method !==
-            (selected.value.payment_method ?? '') ||
-          paymentForm.value.payment_reference !==
-            (selected.value.payment_reference ?? '')),
+        (statusDraft.value !== selected.value.status ||
+          !samePayment(paymentForm.value, paymentValues(selected.value))),
       ),
   )
 
@@ -127,89 +141,75 @@ export function useOrdersWorkspace() {
     orderPaymentOptions.find((item) => item.value === code)?.label ?? code
 
   async function load(nextPage = 1): Promise<void> {
-    const request = ++listRequest
-    loading.value = true
-    error.value = ''
-    try {
-      const response = await getOrders(
-        {
-          search: search.value,
-          status: status.value === 'working' ? '' : status.value,
-          ...(status.value === 'working'
-            ? { statuses: workingStatuses.value }
-            : {}),
-          payment_status: paymentStatus.value,
-          ...(assigneeFilter.value
-            ? {
-                assignee_id:
-                  assigneeFilter.value === 'unassigned'
-                    ? ''
-                    : assigneeFilter.value,
-                unassigned: assigneeFilter.value === 'unassigned',
-              }
-            : {}),
-        },
-        { page: nextPage },
-      )
-      if (request !== listRequest) return
-      orders.value = response.data
-      meta.value = response.meta
-      page.value = response.meta.current_page
-    } catch (reason) {
-      if (request !== listRequest) return
-      error.value =
-        reason instanceof Error
-          ? reason.message
-          : 'Не удалось загрузить заказы.'
-    } finally {
-      if (request === listRequest) loading.value = false
+    listRequested = true
+    const filters = {
+      search: search.value,
+      status: status.value === 'working' ? '' : status.value,
+      ...(status.value === 'working'
+        ? { statuses: workingStatuses.value }
+        : {}),
+      payment_status: paymentStatus.value,
+      ...(assigneeFilter.value
+        ? {
+            assignee_id:
+              assigneeFilter.value === 'unassigned' ? '' : assigneeFilter.value,
+            unassigned: assigneeFilter.value === 'unassigned',
+          }
+        : {}),
     }
+    await list.load(nextPage, (page) => getOrders(filters, { page }))
   }
 
   function clearSelection(): void {
     detailRequest++
-    selected.value = null
-    histories.value = []
-    comments.value = []
+    selectedId = null
+    savedDraft = {}
+    details.value = null
     commentBody.value = ''
-    persistedStatus.value = ''
+    statusDraft.value = ''
+    paymentForm.value = paymentValues()
     actionError.value = ''
+    detailError.value = ''
     detailLoading.value = false
+    saving.value = false
   }
 
-  function syncPaymentForm(): void {
-    if (!selected.value) return
-    paymentForm.value = {
-      payment_status: selected.value.payment_status,
-      payment_amount: selected.value.payment_amount ?? '',
-      payment_method: selected.value.payment_method ?? '',
-      payment_reference: selected.value.payment_reference ?? '',
-    }
-  }
-
-  async function selectOrder(order: Pick<Order, 'id'>): Promise<void> {
-    const request = ++detailRequest
+  async function loadDetails(id: number, request: number): Promise<void> {
     detailLoading.value = true
+    detailError.value = ''
     actionError.value = ''
-    selected.value = null
-    histories.value = []
-    comments.value = []
     try {
-      const item = await getOrder(order.id)
+      const order = await getOrder(id)
       if (request !== detailRequest) return
-      selected.value = item
-      persistedStatus.value = item.status
-      syncPaymentForm()
-      const [history, activity] = await Promise.all([
-        getOrderHistory(order.id),
-        getOrderComments(order.id),
+      const [nextHistories, nextComments] = await Promise.all([
+        getOrderHistory(id),
+        getOrderComments(id),
       ])
       if (request !== detailRequest) return
-      histories.value = history
-      comments.value = activity
+
+      const current = selected.value
+      if (
+        !current ||
+        statusDraft.value === (savedDraft.status ?? current.status)
+      )
+        statusDraft.value = order.status
+      if (
+        !current ||
+        samePayment(
+          paymentForm.value,
+          savedDraft.payment ?? paymentValues(current),
+        )
+      )
+        paymentForm.value = paymentValues(order)
+      savedDraft = {}
+      details.value = {
+        order,
+        histories: nextHistories,
+        comments: nextComments,
+      }
     } catch (reason) {
       if (request !== detailRequest) return
-      actionError.value =
+      detailError.value =
         reason instanceof Error
           ? reason.message
           : 'Не удалось загрузить детали заказа.'
@@ -218,47 +218,72 @@ export function useOrdersWorkspace() {
     }
   }
 
+  async function selectOrder(order: Pick<Order, 'id'>): Promise<void> {
+    if (selectedId !== order.id) clearSelection()
+    selectedId = order.id
+    saving.value = false
+    await loadDetails(order.id, ++detailRequest)
+  }
+
   async function changeStatus(): Promise<void> {
-    if (!selected.value || !canManageStatus.value || saving.value) return
-    const paymentDraft = { ...paymentForm.value }
+    if (
+      !selected.value ||
+      !canManageStatus.value ||
+      saving.value ||
+      detailLoading.value
+    )
+      return
+    const { id } = selected.value
+    const request = detailRequest
+    const status = statusDraft.value
     saving.value = true
     actionError.value = ''
     try {
-      await updateOrderStatus(selected.value.id, selected.value.status)
+      await updateOrderStatus(id, status)
       notifyAdminNotificationsChanged()
-      await selectOrder(selected.value)
-      paymentForm.value = paymentDraft
-      await load(page.value)
+      const current = request === detailRequest
+      if (current) savedDraft.status = status
+      await Promise.all([current && loadDetails(id, request), list.reload()])
     } catch (reason) {
-      actionError.value =
-        reason instanceof Error ? reason.message : 'Не удалось изменить статус.'
+      if (request === detailRequest)
+        actionError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось изменить статус.'
     } finally {
-      saving.value = false
+      if (request === detailRequest) saving.value = false
     }
   }
 
   async function savePayment(): Promise<void> {
-    if (!selected.value || !canManagePayment.value || saving.value) return
-    const statusDraft = selected.value.status
+    if (
+      !selected.value ||
+      !canManagePayment.value ||
+      saving.value ||
+      detailLoading.value
+    )
+      return
+    const { id } = selected.value
+    const request = detailRequest
+    const payment = { ...paymentForm.value }
     saving.value = true
     actionError.value = ''
     try {
-      const payload = ['not_paid', 'pending'].includes(
-        paymentForm.value.payment_status,
-      )
-        ? { payment_status: paymentForm.value.payment_status }
-        : { ...paymentForm.value, paid_at: new Date().toISOString() }
-      await updateOrderPayment(selected.value.id, payload)
-      await selectOrder(selected.value)
-      if (selected.value) selected.value.status = statusDraft
-      await load(page.value)
+      const payload = ['not_paid', 'pending'].includes(payment.payment_status)
+        ? { payment_status: payment.payment_status }
+        : { ...payment, paid_at: new Date().toISOString() }
+      await updateOrderPayment(id, payload)
+      const current = request === detailRequest
+      if (current) savedDraft.payment = payment
+      await Promise.all([current && loadDetails(id, request), list.reload()])
     } catch (reason) {
-      actionError.value =
-        reason instanceof Error
-          ? reason.message
-          : 'Не удалось сохранить оплату.'
+      if (request === detailRequest)
+        actionError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось сохранить оплату.'
     } finally {
-      saving.value = false
+      if (request === detailRequest) saving.value = false
     }
   }
 
@@ -267,27 +292,41 @@ export function useOrdersWorkspace() {
       !selected.value ||
       !canManage.value ||
       saving.value ||
+      detailLoading.value ||
       !commentBody.value.trim()
     )
       return
+    const { id } = selected.value
+    const request = detailRequest
+    const body = commentBody.value
     saving.value = true
     actionError.value = ''
     try {
-      await addOrderComment(selected.value.id, commentBody.value)
-      commentBody.value = ''
-      comments.value = await getOrderComments(selected.value.id)
+      await addOrderComment(id, body)
+      if (request !== detailRequest) return
+      if (commentBody.value === body) commentBody.value = ''
+      const nextComments = await getOrderComments(id)
+      if (request === detailRequest && details.value)
+        details.value.comments = nextComments
     } catch (reason) {
-      actionError.value =
-        reason instanceof Error
-          ? reason.message
-          : 'Не удалось добавить комментарий.'
+      if (request === detailRequest)
+        actionError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось добавить комментарий.'
     } finally {
-      saving.value = false
+      if (request === detailRequest) saving.value = false
     }
   }
 
   async function changeAssignee(value: string): Promise<void> {
-    if (saving.value || !selected.value || !assignment.canAssign.value) return
+    if (
+      saving.value ||
+      detailLoading.value ||
+      !selected.value ||
+      !assignment.canAssign.value
+    )
+      return
     const assigneeId = value ? Number(value) : null
     if (
       assigneeId !== null &&
@@ -301,12 +340,10 @@ export function useOrdersWorkspace() {
     actionError.value = ''
     try {
       await assignOrder(id, assigneeId)
-      if (request !== detailRequest || selected.value?.id !== id) return
-      const current = await getOrder(id)
-      if (request !== detailRequest || selected.value?.id !== id) return
-      selected.value.assignee = current.assignee
-      selected.value.assigned_at = current.assigned_at
-      await load(page.value)
+      await Promise.all([
+        request === detailRequest && refreshAssignee(id, request),
+        list.reload(),
+      ])
     } catch (reason) {
       if (request === detailRequest)
         actionError.value =
@@ -314,14 +351,31 @@ export function useOrdersWorkspace() {
             ? reason.message
             : 'Не удалось обновить ответственного.'
     } finally {
-      saving.value = false
+      if (request === detailRequest) saving.value = false
+    }
+  }
+
+  async function refreshAssignee(id: number, request: number): Promise<void> {
+    try {
+      const order = await getOrder(id)
+      if (request !== detailRequest || !details.value) return
+      details.value.order = {
+        ...details.value.order,
+        assignee: order.assignee,
+        assigned_at: order.assigned_at,
+      }
+    } catch (reason) {
+      if (request === detailRequest)
+        detailError.value =
+          reason instanceof Error
+            ? reason.message
+            : 'Не удалось загрузить детали заказа.'
     }
   }
 
   async function initialize(): Promise<void> {
     const counts = queueCounts.refreshStatusCounts()
     const candidates = assignment.load()
-    loading.value = true
     statusError.value = ''
     statusReady.value = false
     statusLoading.value = true
@@ -336,13 +390,13 @@ export function useOrdersWorkspace() {
     } finally {
       statusLoading.value = false
     }
-    await Promise.all([load(), candidates, counts])
+    await Promise.all([!listRequested && load(), candidates, counts])
   }
 
   watch([status, paymentStatus, assigneeFilter], () => void load())
   return {
     ...queueCounts,
-    orders,
+    orders: list.items,
     selected,
     statuses,
     histories,
@@ -358,9 +412,10 @@ export function useOrdersWorkspace() {
     loadAssignees: assignment.load,
     canAssign: assignment.canAssign,
     meta,
-    loading,
+    loading: list.loading,
     detailLoading,
-    error,
+    detailError,
+    error: list.error,
     statusLoading,
     statusReady,
     statusError,
@@ -368,6 +423,7 @@ export function useOrdersWorkspace() {
     saving,
     commentBody,
     hasUnsavedChanges,
+    statusDraft,
     paymentForm,
     canManage,
     canManageStatus,

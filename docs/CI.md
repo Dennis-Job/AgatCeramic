@@ -14,7 +14,7 @@ Workflow получает только право `contents: read` и не ис�
 | Admin full-stack smoke | Production build Admin, реальный Sanctum session/CSRF flow, Laravel, PostgreSQL 17 и Redis 7.4 без browser API mocks |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
 | Admin Windows approved UI | Отдельный native Windows workflow: unit/build, 99 утверждённых цветовых tokens, computed CSS состояний компонентов и строгие Windows visual baselines |
-| Client checks | `npm ci`, audit production-зависимостей, Nuxt typecheck и SSR build |
+| Client checks | `npm ci`, audit production-зависимостей, Prettier format check, Nuxt typecheck, SSR build и production Playwright E2E в Chromium, включая content, preview и axe |
 | Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
 
 CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
@@ -25,6 +25,26 @@ CI не выполняет deploy и не подключается к production
 и новые CI findings main — в [отчёте 2026-11-09](CI_FOLLOWUP_2026-11-09.md).
 Admin jobs сохраняют browser `test-results/` при failure на семь дней для
 разбора remote-only расхождений без ослабления screenshot/palette gates.
+
+`Client checks` после сборки запускает production SSR (`127.0.0.1:3015`) и
+изолированный mock API (`127.0.0.1:8015`) через существующую конфигурацию Playwright.
+Для запуска достаточно сборки и тестовых фикстур. Один worker последовательно
+меняет сценарии mock API. При падении браузерного сценария Playwright сохраняет
+trace и скриншот. CI публикует `.tmp/client-e2e/` из корня репозитория как
+`client-linux-browser-evidence` на семь дней.
+
+Для воспроизведения шагов Client на чистом Linux checkout:
+
+```bash
+cd frontend/client
+npm ci
+npm audit --omit=dev --audit-level=high
+npm run format:check
+npm exec nuxi typecheck
+npm run build
+npx playwright install --with-deps chromium
+CI=true npm run test:e2e
+```
 
 Frontend text checkout использует LF через `.gitattributes`; default Prettier
 проверяется без EOL override. Admin `.prettierignore` исключает локальные `.tmp`

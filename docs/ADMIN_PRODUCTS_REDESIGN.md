@@ -208,3 +208,47 @@ Build/lint/format, 159 unit и 20 целевых production E2E — PASS, вкл
 на 320/1035/1440 px; пересечений нет, центрирование и действия 98 px сохранены.
 Длинное неразрывное слово расширяет свою колонку, соседние колонки могут
 переносить больше строк в пределах локальной таблицы.
+
+## Разделение списка и карточки товара — 2026-11-25
+
+TASK-A069 разделяет рабочую область `/products` на список и диалог карточки.
+`ProductsWorkspace` соединяет их действия и отвечает за общую блокировку
+изменений и уведомление об ошибке. При сохранении карточка запрашивает
+обновление списка и счётчиков. При изменении обложки она передаёт списку
+идентификатор товара и миниатюру.
+
+`useProductList` владеет пагинацией, фильтрами, сортировкой, счётчиками
+и удалением товара. `useProductCatalogOptions` предоставляет списку и форме
+справочники категорий и брендов. `useProductEditor` управляет открытием,
+шагами карточки и согласованным применением ответов по её секциям. Черновики
+формы, характеристик, фотографий, групп и связей принадлежат отдельным
+локальным composables. Секции получают нужные данные и операции через props.
+Сохранены маршруты, права доступа и API-контракт. Оптимизация загрузки групп
+и деталей секций описана в TASK-A081. [Дорожная карта](../tasks/TODO.md)
+
+Изменённые файлы Admin по областям
+
+- Вход и композиция списка и карточки — `ProductsView.vue`,
+  `ProductsWorkspace.vue`, `ProductList.vue`, `ProductEditor.vue`,
+  `ProductListControls.vue` и `ProductSortMenu.vue`.
+- Секции карточки — `ProductMainSection.vue`, `ProductAttributesSection.vue`,
+  `ProductImagesSection.vue`, `ProductPhotoUpload.vue`,
+  `ProductVariantsSection.vue`, `ProductRelationsSection.vue`
+  и `ProductReviewSection.vue`.
+- Состояние — `useProductEditor.ts`, `useProductList.ts`,
+  `useProductCatalogOptions.ts`, `useProductForm.ts`, `useProductAttributes.ts`,
+  `useProductImages.ts`, `useProductGroups.ts`, `useProductRelations.ts` и
+  `productEditor.types.ts`. Общий `useProductEditorContext.ts` удалён.
+- Тесты — `catalogComponents.test.ts`, `productGroupRoles.test.ts`,
+  `productRelationSearch.test.ts` и `catalog.spec.ts`.
+
+ESLint, Prettier, TypeScript/Vite build и 337 unit-тестов прошли. В Chromium
+прошли 132 профильных E2E, включая создание, редактирование, клонирование,
+публикацию, фото, группы, связи, фильтры, экспорт и axe. Тест редактирования
+и повторной публикации прошёл также на исходной сборке.
+
+Независимый UI Design Guard принял изменения. Прошли 12 проверок
+`/products` из Admin Baseline, включая четыре состояния и восемь ширин
+экрана. Снимки заполненного списка, снятые на текущей и исходной сборках
+в одном окружении, совпали побайтно. Обе сборки показали одинаковое
+отличие от сохранённого Windows-эталона в 244 пикселя в моноширинном SKU.

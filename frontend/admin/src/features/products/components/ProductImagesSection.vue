@@ -6,35 +6,51 @@ import UiButton from '../../../components/ui/UiButton.vue'
 import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiImagePreview from '../../../components/ui/UiImagePreview.vue'
 import ProductPhotoUpload from './ProductPhotoUpload.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductImages } from '../composables/useProductImages'
+const { state, saving, canManage, productName } = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductImages>,
+    | 'images'
+    | 'imageStatus'
+    | 'draggedImageId'
+    | 'draggedOverImageId'
+    | 'startImageDrag'
+    | 'endImageDrag'
+    | 'markImageDropTarget'
+    | 'dropImage'
+    | 'reorderImage'
+    | 'imageDeleting'
+    | 'imageInput'
+    | 'selectedFile'
+    | 'selectFile'
+    | 'chooseFile'
+    | 'selectImageFiles'
+    | 'upload'
+    | 'requestImageDeletion'
+  >
+  saving: boolean
+  canManage: boolean
+  productName: string
+}>()
 const {
   images,
-  saving,
   imageStatus,
   draggedImageId,
   draggedOverImageId,
-  canManage,
   startImageDrag,
   endImageDrag,
   markImageDropTarget,
   dropImage,
-  form,
   reorderImage,
-  confirmError,
   imageDeleting,
-} = useProductEditorContext()
+} = state
 
 function requestImageDeletion(image: (typeof images.value)[number]): void {
-  confirmError.value = ''
-  imageDeleting.value = image
+  state.requestImageDeletion(image)
 }
 
 function handleImageKeydown(event: KeyboardEvent, index: number): void {
-  if (
-    event.target !== event.currentTarget ||
-    saving.value ||
-    !canManage.value
-  ) {
+  if (event.target !== event.currentTarget || saving || !canManage) {
     return
   }
 
@@ -62,7 +78,7 @@ function startTouchDrag(
   image: (typeof images.value)[number],
   event: TouchEvent,
 ) {
-  if (!canManage.value || saving.value || imageDeleting.value) return
+  if (!canManage || saving || imageDeleting.value) return
   if (event.target instanceof Element && event.target.closest('button')) return
   const touch = event.changedTouches[0]
   if (!touch) return
@@ -128,7 +144,7 @@ onBeforeUnmount(clearTouchDrag)
 <template>
   <div>
     <h3 class="font-bold text-gray-500">Фото этой позиции</h3>
-    <ProductPhotoUpload />
+    <ProductPhotoUpload :state="state" :saving="saving" />
     <p class="sr-only" role="status" aria-live="polite">{{ imageStatus }}</p>
     <UiEmptyState
       v-if="!images.length"
@@ -167,7 +183,7 @@ onBeforeUnmount(clearTouchDrag)
         >
           <UiImagePreview
             :url="image.url"
-            :alt="image.alt || form.name"
+            :alt="image.alt || productName"
             class="product-image-preview"
           /><UiBadge
             v-if="index === 0"

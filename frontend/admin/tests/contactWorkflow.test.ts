@@ -95,6 +95,98 @@ async function ready() {
   return workspace
 }
 
+test('only the latest filtered or paginated contacts request can change rows, errors or loading', async () => {
+  const workspace = useContactsWorkspace()
+  const older = Promise.withResolvers<never>()
+  api.getContacts.mockReturnValueOnce(older.promise)
+  const first = workspace.load(3)
+  const latest = Promise.withResolvers<{
+    data: Contact[]
+    meta: {
+      current_page: number
+      last_page: number
+      per_page: number
+      total: number
+    }
+  }>()
+  api.getContacts.mockReturnValueOnce(latest.promise)
+  workspace.search.value = 'Новый запрос'
+  const second = workspace.load(2)
+  expect(api.getContacts).toHaveBeenLastCalledWith(
+    expect.objectContaining({ search: 'Новый запрос' }),
+    { page: 2 },
+  )
+  older.reject(new Error('Старая ошибка'))
+  await first
+  expect(workspace.loading.value).toBe(true)
+  expect(workspace.error.value).toBe('')
+  latest.resolve({
+    data: [contact(43)],
+    meta: { current_page: 2, last_page: 3, per_page: 25, total: 60 },
+  })
+  await second
+  expect(workspace.contacts.value.map(({ id }) => id)).toEqual([43])
+  expect(workspace.meta.value.current_page).toBe(2)
+  expect(workspace.loading.value).toBe(false)
+})
+
+test('finishing catalog initialization cannot replace a more recent list request', async () => {
+  const workspace = useContactsWorkspace()
+  const statuses = Promise.withResolvers<ContactStatus[]>()
+  api.getContactStatuses.mockReturnValueOnce(statuses.promise)
+  const initializing = workspace.initialize()
+
+  expect(workspace.loading.value).toBe(true)
+  expect(api.getContacts).not.toHaveBeenCalled()
+  await workspace.load(2)
+  statuses.resolve(catalog)
+  await initializing
+
+  expect(api.getContacts).toHaveBeenCalledTimes(1)
+  expect(api.getContacts).toHaveBeenLastCalledWith(expect.any(Object), {
+    page: 2,
+  })
+  expect(workspace.loading.value).toBe(false)
+})
+
+test('a failed post-save detail refresh keeps the last complete contact and draft until retry', async () => {
+  const workspace = await ready()
+  workspace.commentBody.value = 'Черновик текущего обращения'
+  api.getContact.mockResolvedValue(contact(42, 'processing'))
+  api.getContactHistory.mockRejectedValueOnce(new Error('История недоступна'))
+
+  await workspace.changeStatus('processing')
+  expect(workspace.selected.value?.status).toBe('new')
+  expect(workspace.detailError.value).toBe('История недоступна')
+  expect(workspace.actionError.value).toBe('')
+  expect(workspace.commentBody.value).toBe('Черновик текущего обращения')
+
+  await workspace.select(contact())
+  expect(workspace.selected.value?.status).toBe('processing')
+  expect(workspace.detailError.value).toBe('')
+  expect(workspace.commentBody.value).toBe('Черновик текущего обращения')
+})
+
+test('a failed status save cannot set the error or clear the busy flag after reselecting the same id', async () => {
+  const workspace = await ready()
+  const oldMutation = Promise.withResolvers<void>()
+  api.updateContactStatus.mockReturnValueOnce(oldMutation.promise)
+  const first = workspace.changeStatus('processing')
+  workspace.clearSelection()
+  await workspace.select(contact())
+  const newMutation = Promise.withResolvers<void>()
+  api.updateContactStatus.mockReturnValueOnce(newMutation.promise)
+  const second = workspace.changeStatus('processing')
+  oldMutation.reject(new Error('Устаревшая ошибка'))
+  await first
+  expect(workspace.actionError.value).toBe('')
+  expect(workspace.saving.value).toBe(true)
+  newMutation.resolve()
+  await second
+  expect(api.updateContactStatus).toHaveBeenCalledTimes(2)
+  expect(workspace.saving.value).toBe(false)
+})
+
 test('only server catalog transitions can be submitted and missing metadata fails closed', async () => {
   const workspace = await ready()
   expect(workspace.currentStatus.value?.code).toBe('new')
@@ -150,11 +242,12 @@ test('failed status requests keep the saved status and expose the error without 
 
 test('terminal, unavailable catalogs and view-only access cannot submit transitions', async () => {
   const workspace = await ready()
-  workspace.selected.value = contact(42, 'completed')
+  api.getContact.mockResolvedValueOnce(contact(42, 'completed'))
+  await workspace.select(contact())
   expect(workspace.currentStatus.value?.is_terminal).toBe(true)
   expect(workspace.allowedStatuses.value).toEqual([])
   await workspace.changeStatus('processing')
-  workspace.selected.value = contact()
+  await workspace.select(contact())
   workspace.statusError.value = 'Ошибка каталога'
   expect(workspace.transitionReady.value).toBe(false)
   await workspace.changeStatus('processing')

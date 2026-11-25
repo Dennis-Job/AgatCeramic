@@ -4,18 +4,29 @@ import UiEmptyState from '../../../components/ui/UiEmptyState.vue'
 import UiCard from '../../../components/ui/UiCard.vue'
 import UiField from '../../../components/ui/UiField.vue'
 import UiAlert from '../../../components/ui/UiAlert.vue'
-import { useProductEditorContext } from '../composables/useProductEditorContext'
+import type { useProductAttributes } from '../composables/useProductAttributes'
+const { state, groupRolesPending, attributeScope, isActive } = defineProps<{
+  state: Pick<
+    ReturnType<typeof useProductAttributes>,
+    | 'attributeSections'
+    | 'requiredIds'
+    | 'attributeValues'
+    | 'attributeLabel'
+    | 'attributes'
+    | 'saveAttributes'
+  >
+  groupRolesPending: boolean
+  attributeScope: (id: number) => string
+  isActive: boolean
+}>()
 const {
-  groupRolesPending,
-  attributeScope,
   attributeSections,
   requiredIds,
   attributeValues,
   attributeLabel,
-  form,
   attributes,
   saveAttributes,
-} = useProductEditorContext()
+} = state
 </script>
 
 <template>
@@ -55,7 +66,7 @@ const {
                   ? `${attributeLabel(attribute)}, ${attributeScope(attribute.id)}`
                   : attributeLabel(attribute)
               "
-              :required="form.is_active && requiredIds.includes(attribute.id)"
+              :required="isActive && requiredIds.includes(attribute.id)"
               :clearable="!requiredIds.includes(attribute.id)"
             />
           </UiField>
