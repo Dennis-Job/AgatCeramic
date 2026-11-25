@@ -76,7 +76,14 @@ class ImportLifecycleService
 
     public function continueProductImageImport(ProductImageImport $import): void
     {
-        DB::transaction(fn () => $this->dispatchService->continueProductImageImport($import));
+        DB::transaction(function () use ($import): void {
+            $locked = ProductImageImport::query()->whereKey($import->id)->lockForUpdate()->firstOrFail();
+            if (in_array($locked->status, ['completed', 'failed'], true)) {
+                return;
+            }
+
+            $this->dispatchService->continueProductImageImport($locked);
+        });
     }
 
     public function completeProductImport(ProductImport $import): void

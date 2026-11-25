@@ -25,16 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A071 **P2** Разделить ZIP image import и сократить файловый I/O под DB-блокировкой
-  - Цель: [ProductImageImportService](../backend/app/Services/ProductImageImportService.php)
-    разделяет archive inspection, validation/staging и применение галереи; большой SKU не требует
-    хранения всех старых изображений в памяти. Timeout/OOM пока не воспроизводились.
-  - План: подготовить новые файлы до транзакции, под блокировкой перечитать данные и применить
-    ссылки/checkpoint; сохранить durable cleanup, audit и retry semantics. Проверить необходимость
-    backup содержимого старых файлов при использовании уникальных новых путей.
-  - Готовность: fault tests file write/commit/cleanup, retry/resume и PostgreSQL checks проходят;
-    измерены память и время обработки большой галереи, существующие файлы не теряются.
-
 - [ ] TASK-A072 **P2** Ввести lazy loading route views Admin
   - Цель: [router/index.ts](../frontend/admin/src/router/index.ts) не включает все экраны в
     начальный JS asset; при аудите один chunk составлял около 600 kB, gzip 158 kB.

@@ -168,16 +168,43 @@ the export and retry that row. Temporary source XLSX files are removed only afte
 ## Bulk product-image imports
 
 `POST /api/v1/admin/product-image-imports` persists a manager-uploaded ZIP privately and dispatches
-its own queue job after commit. The job validates archive structure and MIME types before applying
-each SKU gallery under that product's existing image lock. SKU galleries are isolated: one invalid
-folder records an error while valid folders continue. Product image mutations, counters and audit
-records commit per gallery; replaced public files and completed/failed source ZIPs are scheduled
-through the existing durable cleanup outbox. The status record and owner-only CSV error report remain
-available after the source ZIP is removed.
+its own queue job after commit. The worker inspects the archive, validates each SKU folder, and
+writes the validated images to new public paths before acquiring any gallery locks. Each attempt
+uses its own directory and retains the filenames used for ordinal matching and audit. Files are
+read individually with a size limit. The import then locks its status row and the product in that order,
+rereads the checkpoint and current gallery, and commits the image references, counters, audit,
+and cleanup records for replaced files together. A retry resumes at the first unfinished SKU and
+cannot publish a second generation for a committed checkpoint. An invalid folder records an error
+while valid folders continue.
+
+Every new path has a durable cleanup reservation before the write. Publication cancels these
+reservations in the gallery transaction. A failed attempt releases its unpublished files to the
+cleanup queue. A terminated worker leaves reservations that become eligible for scheduled cleanup
+ten minutes after staging begins. Job timeout is 80 seconds. The previous gallery stays readable
+through a failed write or rollback. Replaced files and terminal source ZIPs use the same cleanup
+queue. The cleanup job removes files individually, so a local public disk can retain empty
+generation directories.
+The status record and owner-only CSV error report remain available after cleanup of the source ZIP.
 
 ZIP inspection skips Finder metadata (`__MACOSX/`, `.DS_Store`, `._*`) after checking
 entry sizes, total limits, paths and symbolic links. Metadata does not create SKU groups
 or affect gallery counters; an archive with only metadata is rejected as empty.
+
+### TASK-A071 PostgreSQL measurements
+
+The benchmark replaced one gallery of 96 PNGs, 1,229,693 bytes per image and 112.58 MiB per
+generation. Values are medians of three local runs per version on PostgreSQL 17.9 and PHP 8.3.35
+using the local filesystem. Processing time excludes fixture creation and execution of cleanup
+jobs. The lock interval was measured from the return of the product's `SELECT … FOR UPDATE` to
+the first post-commit callback. Each run verified the gallery and compared SHA-256 hashes before
+cleanup. After cleanup, all new files remained readable and the replaced files were gone.
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Gallery processing | 1,101 ms | 726 ms |
+| Product lock interval | 554 ms | 151 ms |
+| Peak PHP memory | 149.02 MiB | 35.19 MiB |
+| Storage calls during the product lock | 384 | 0 |
 
 ## Локальный запуск
 

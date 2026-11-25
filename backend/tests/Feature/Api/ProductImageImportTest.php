@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Jobs\DeleteStoredFile;
 use App\Jobs\ProcessProductImageImport;
+use App\Models\AuditLog;
 use App\Models\ImportDispatchTask;
 use App\Models\Permission;
 use App\Models\Product;
@@ -12,11 +13,16 @@ use App\Models\ProductImageImport;
 use App\Models\Role;
 use App\Models\StorageCleanupTask;
 use App\Models\User;
+use App\Services\ImportLifecycleService;
 use App\Services\ProductImageImportService;
+use App\Services\StorageCleanupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\TestCase;
@@ -30,10 +36,13 @@ class ProductImageImportTest extends TestCase
     {
         Storage::fake('local');
         Storage::fake('public');
+        $oldDisk = Storage::fake('archive');
         Queue::fake();
         $actor = $this->actor();
         $product = Product::factory()->create(['sku' => '6000011']);
-        ProductImage::query()->create(['product_id' => $product->id, 'disk' => 'public', 'path' => "product-images/{$product->id}/6000011_1.jpg", 'mime_type' => 'image/jpeg', 'size' => 1, 'is_primary' => true, 'sort_order' => 1]);
+        $oldPath = "product-images/{$product->id}/6000011_1.jpg";
+        $oldDisk->put($oldPath, 'original');
+        ProductImage::query()->create(['product_id' => $product->id, 'disk' => 'archive', 'path' => $oldPath, 'mime_type' => 'image/jpeg', 'size' => 8, 'is_primary' => true, 'sort_order' => 1]);
         $zip = $this->zip(['6000011/6000011_1.png' => $this->png(), '6000011/6000011_2.png' => $this->png()]);
         $response = $this->actingAs($actor)->post('/api/v1/admin/product-image-imports', ['file' => new UploadedFile($zip, 'images.zip', 'application/zip', null, true)]);
         $response->assertAccepted();
@@ -45,9 +54,16 @@ class ProductImageImportTest extends TestCase
             'status' => 'dispatched',
         ]);
         app(ProductImageImportService::class)->process($import->load('user'));
-        $this->assertDatabaseHas('product_images', ['product_id' => $product->id, 'path' => "product-images/{$product->id}/6000011_1-i{$import->id}.png", 'is_primary' => true]);
-        $this->assertDatabaseHas('product_images', ['product_id' => $product->id, 'path' => "product-images/{$product->id}/6000011_2-i{$import->id}.png"]);
-        $this->assertSame(2, ProductImage::query()->where('product_id', $product->id)->count());
+        $images = $product->images()->orderBy('sort_order')->get();
+        $this->assertCount(2, $images);
+        foreach ($images as $index => $image) {
+            $ordinal = $index + 1;
+            $this->assertSame("6000011_{$ordinal}-i{$import->id}.png", basename($image->path));
+            $this->assertSame($ordinal === 1, $image->is_primary);
+            $this->assertSame('public', $image->disk);
+            Storage::disk('public')->assertExists($image->path);
+        }
+        $this->assertDatabaseHas('storage_cleanup_tasks', ['disk' => 'archive', 'path' => $oldPath]);
     }
 
     public function test_invalid_sku_folder_is_isolated_from_valid_folder(): void
@@ -175,6 +191,228 @@ class ProductImageImportTest extends TestCase
         StorageCleanupTask::query()->where('disk', 'public')->get()->each(fn (StorageCleanupTask $task) => (new DeleteStoredFile($task->id))->handle());
         Storage::disk('public')->assertExists($current->path);
         $this->assertMatchesRegularExpression('#6000011_1-i\\d+\\.jpg$#', $current->path);
+    }
+
+    public function test_failed_public_write_keeps_the_gallery_and_reclaims_even_a_partial_write(): void
+    {
+        $disk = Storage::fake('public');
+        Queue::fake();
+        $product = Product::factory()->create(['sku' => '6000011']);
+        $old = $this->existingImage($product);
+        $import = $this->storedImport(['6000011/6000011_1.png' => $this->png(), '6000011/6000011_2.png' => $this->png()]);
+        $level = DB::transactionLevel();
+        $written = [];
+        $faulty = Mockery::mock($disk)->makePartial();
+        $faulty->shouldReceive('put')->twice()->andReturnUsing(function (string $path, string $contents) use ($disk, $level, &$written): bool {
+            $this->assertSame($level, DB::transactionLevel());
+            $this->assertDatabaseHas('storage_cleanup_tasks', ['disk' => 'public', 'path' => $path, 'status' => 'pending']);
+            $this->assertTrue($disk->put($path, $contents));
+            $written[] = $path;
+
+            return count($written) === 1;
+        });
+        Storage::set('public', $faulty);
+
+        $this->assertTrue(app(ProductImageImportService::class)->process($import));
+        Storage::set('public', $disk);
+        $this->assertSame(1, $import->refresh()->failed_folders);
+        $this->assertSame($old->path, $old->fresh()->path);
+        $this->assertSame(0, $import->created_images + $import->replaced_images);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'product.image-imported']);
+        $this->assertCount(2, $written);
+        foreach ($written as $path) {
+            $task = StorageCleanupTask::query()->where('path', $path)->sole();
+            (new DeleteStoredFile($task->id))->handle();
+            $disk->assertMissing($path);
+        }
+        $this->assertSame('original', $disk->get($old->path));
+    }
+
+    public function test_rollback_preserves_old_bytes_and_cleanup_retries_a_delete_failure(): void
+    {
+        $disk = Storage::fake('public');
+        Queue::fake();
+        $product = Product::factory()->create(['sku' => '6000011']);
+        $old = $this->existingImage($product);
+        $import = $this->storedImport(['6000011/6000011_1.png' => $this->png()]);
+        $newPath = null;
+        Event::listen('eloquent.creating: '.AuditLog::class, function () use ($product, &$newPath): never {
+            $newPath = $product->images()->sole()->path;
+            throw new RuntimeException('Injected failure before commit.');
+        });
+
+        $this->assertTrue(app(ProductImageImportService::class)->process($import));
+        $this->assertSame(1, $import->refresh()->failed_folders);
+        $this->assertSame(0, $import->replaced_images);
+        $this->assertSame($old->path, $old->fresh()->path);
+        $this->assertDatabaseMissing('storage_cleanup_tasks', ['path' => $old->path]);
+        $this->assertIsString($newPath);
+        $task = StorageCleanupTask::query()->where('path', $newPath)->sole();
+        $job = new DeleteStoredFile($task->id);
+        $faulty = Mockery::mock($disk)->makePartial();
+        $faulty->shouldReceive('delete')->with($newPath)->once()->andReturnFalse();
+        Storage::set('public', $faulty);
+        try {
+            $job->handle();
+            $this->fail('Expected cleanup to report the storage failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('did not delete', $exception->getMessage());
+        } finally {
+            Storage::set('public', $disk);
+        }
+
+        $this->assertSame('pending', $task->fresh()->status);
+        $disk->assertExists($newPath);
+        $this->travel(11)->minutes();
+        $this->artisan('storage-cleanup:retry')->assertSuccessful();
+        Queue::assertPushed(DeleteStoredFile::class, fn (DeleteStoredFile $queued): bool => $queued->cleanupTaskId === $task->id);
+        $job->handle();
+        $disk->assertMissing($newPath);
+        $this->assertSame('original', $disk->get($old->path));
+        $this->assertSame('completed', $task->fresh()->status);
+    }
+
+    public function test_error_after_commit_and_retry_keep_the_published_file_and_checkpoint(): void
+    {
+        $disk = Storage::fake('public');
+        Queue::fake();
+        $product = Product::factory()->create(['sku' => '6000011']);
+        $old = $this->existingImage($product);
+        $import = $this->storedImport(['6000011/6000011_1.png' => $this->png()]);
+        $stale = $import->fresh();
+        Event::listen('eloquent.creating: '.AuditLog::class, static function (): void {
+            DB::afterCommit(static function (): never {
+                throw new RuntimeException('Injected failure after commit.');
+            });
+        });
+
+        $service = app(ProductImageImportService::class);
+        $this->assertTrue($service->process($import));
+        $published = $old->fresh()->path;
+        $this->assertNotSame($old->path, $published);
+        $this->assertTrue($service->process($stale));
+        $this->assertSame($published, $old->fresh()->path);
+        $this->assertSame([1, 1, 0, ['6000011']], [$import->refresh()->processed_folders, $import->replaced_images, $import->failed_folders, $import->processed_skus]);
+        $this->assertDatabaseCount('audit_logs', 1);
+        $this->assertDatabaseMissing('storage_cleanup_tasks', ['path' => $published]);
+        (new DeleteStoredFile(StorageCleanupTask::query()->where('path', $old->path)->sole()->id))->handle();
+        $disk->assertMissing($old->path);
+        $this->assertSame($this->png(), $disk->get($published));
+    }
+
+    public function test_import_resumes_a_full_chunk_using_persisted_checkpoints(): void
+    {
+        Storage::fake('public');
+        Queue::fake();
+        $files = [];
+        foreach (range(6000001, 6000021) as $sku) {
+            Product::factory()->create(['sku' => (string) $sku]);
+            $files["{$sku}/{$sku}_1.png"] = $this->png();
+        }
+        $import = $this->storedImport($files);
+        $stale = $import->fresh();
+        $service = app(ProductImageImportService::class);
+
+        $this->assertFalse($service->process($import));
+        $this->assertSame(20, $import->refresh()->processed_folders);
+        $this->assertTrue($service->process($stale));
+        $this->assertTrue($service->process($import));
+        $this->assertSame(21, $import->refresh()->created_images);
+        $this->assertSame(0, $import->replaced_images);
+        $this->assertSame(array_map('strval', range(6000001, 6000021)), $import->processed_skus);
+        $this->assertDatabaseCount('audit_logs', 21);
+    }
+
+    public function test_late_worker_cannot_reopen_a_completed_import_dispatch(): void
+    {
+        Queue::fake();
+        $import = $this->storedImport(['6000011/6000011_1.png' => $this->png()]);
+        $stale = $import->fresh();
+        $dispatch = ImportDispatchTask::query()->create([
+            'import_type' => ImportDispatchTask::TYPE_PRODUCT_IMAGE,
+            'import_id' => $import->id,
+            'status' => 'dispatched',
+        ]);
+        $lifecycle = app(ImportLifecycleService::class);
+        $lifecycle->completeProductImageImport($import);
+        $lifecycle->continueProductImageImport($stale);
+
+        $this->assertSame('completed', $dispatch->refresh()->status);
+        Queue::assertNotPushed(ProcessProductImageImport::class);
+    }
+
+    public function test_overlapping_attempts_publish_only_the_first_committed_generation(): void
+    {
+        $disk = Storage::fake('public');
+        Queue::fake();
+        $product = Product::factory()->create(['sku' => '6000011']);
+        $import = $this->storedImport(['6000011/6000011_1.png' => $this->png()]);
+        $service = app(ProductImageImportService::class);
+        $other = $import->fresh();
+        $firstPath = null;
+        $interleaved = Mockery::mock($disk)->makePartial();
+        $interleaved->shouldReceive('put')->twice()->andReturnUsing(function (string $path, string $data) use ($disk, $service, $other, &$firstPath): bool {
+            if ($firstPath === null) {
+                $firstPath = $path;
+                $this->assertTrue($service->process($other));
+            }
+
+            return $disk->put($path, $data);
+        });
+        Storage::set('public', $interleaved);
+        $this->assertTrue($service->process($import));
+        Storage::set('public', $disk);
+
+        $published = $product->images()->sole();
+        $this->assertNotSame($firstPath, $published->path);
+        $this->assertSame([1, 1, 0], [$import->refresh()->processed_folders, $import->created_images, $import->replaced_images]);
+        $this->assertDatabaseCount('audit_logs', 1);
+        $task = StorageCleanupTask::query()->sole();
+        $this->assertSame($firstPath, $task->path);
+        (new DeleteStoredFile($task->id))->handle();
+        $this->assertSame([$published->path], $disk->allFiles());
+    }
+
+    public function test_scheduler_reclaims_abandoned_files_only_after_the_reservation_expires(): void
+    {
+        $disk = Storage::fake('public');
+        Queue::fake();
+        $path = 'product-images/1/unfinished.png';
+        $id = app(StorageCleanupService::class)->reserve('public', $path, now()->addMinutes(10));
+        $disk->put($path, $this->png());
+
+        $this->artisan('storage-cleanup:retry')->assertSuccessful();
+        Queue::assertNotPushed(DeleteStoredFile::class);
+        $disk->assertExists($path);
+
+        $this->travel(10)->minutes();
+        $this->artisan('storage-cleanup:retry')->assertSuccessful();
+        Queue::assertPushed(DeleteStoredFile::class, fn (DeleteStoredFile $job): bool => $job->cleanupTaskId === $id);
+        (new DeleteStoredFile($id))->handle();
+        $disk->assertMissing($path);
+    }
+
+    private function existingImage(Product $product): ProductImage
+    {
+        $path = "product-images/{$product->id}/{$product->sku}_1.jpg";
+        Storage::disk('public')->put($path, 'original');
+
+        return $product->images()->create(['disk' => 'public', 'path' => $path, 'mime_type' => 'image/jpeg', 'size' => 8, 'is_primary' => true, 'sort_order' => 1]);
+    }
+
+    /** @param array<string, string> $files */
+    private function storedImport(array $files): ProductImageImport
+    {
+        $disk = Storage::fake('local');
+        $archive = $this->zip($files);
+        $path = 'product-image-imports/test.zip';
+        try {
+            $disk->put($path, file_get_contents($archive));
+        } finally {
+            unlink($archive);
+        }
+
+        return ProductImageImport::query()->create(['user_id' => $this->actor()->id, 'original_filename' => 'test.zip', 'disk' => 'local', 'path' => $path, 'status' => 'pending']);
     }
 
     private function actor(): User

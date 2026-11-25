@@ -3,6 +3,7 @@
 namespace Tests\Integration;
 
 use App\Models\Attribute;
+use App\Models\AuditLog;
 use App\Models\Banner;
 use App\Models\Brand;
 use App\Models\Category;
@@ -13,12 +14,15 @@ use App\Models\Product;
 use App\Models\ProductCollection;
 use App\Models\ProductGroup;
 use App\Models\ProductImage;
+use App\Models\ProductImageImport;
 use App\Models\ProductRelation;
 use App\Models\Role;
+use App\Models\StorageCleanupTask;
 use App\Models\User;
 use App\Services\CategoryManagementService;
 use App\Services\ProductCollectionManagementService;
 use App\Services\ProductGroupManagementService;
+use App\Services\ProductImageImportService;
 use App\Services\ProductImageManagementService;
 use App\Services\ProductManagementService;
 use App\Services\ProductRelationManagementService;
@@ -28,6 +32,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -36,6 +41,7 @@ use RuntimeException;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 use Throwable;
+use ZipArchive;
 
 class PostgresCatalogConcurrencyTest extends TestCase
 {
@@ -241,6 +247,45 @@ class PostgresCatalogConcurrencyTest extends TestCase
         $this->assertDatabaseMissing('products', ['id' => $product->id]);
         $this->assertDatabaseMissing('product_images', ['product_id' => $product->id]);
         $this->assertSame([], Storage::disk('public')->allFiles("product-images/{$product->id}"));
+    }
+
+    public function test_image_import_preserves_the_gallery_when_postgres_rejects_commit(): void
+    {
+        $local = Storage::fake('local');
+        $public = Storage::fake('public');
+        $product = Product::factory()->create();
+        $originalPath = "product-images/{$product->id}/{$product->sku}_1.jpg";
+        $public->put($originalPath, 'original');
+        $image = $product->images()->create(['disk' => 'public', 'path' => $originalPath, 'mime_type' => 'image/jpeg', 'size' => 8, 'sort_order' => 1, 'is_primary' => true]);
+        $import = ProductImageImport::query()->create([
+            'user_id' => User::factory()->create()->id,
+            'disk' => 'local',
+            'path' => 'images.zip',
+            'original_filename' => 'images.zip',
+            'status' => 'pending',
+        ]);
+        $zip = new ZipArchive;
+        $this->assertTrue($zip->open($local->path($import->path), ZipArchive::CREATE));
+        $zip->addFromString("{$product->sku}/{$product->sku}_1.png", base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4WQAAAAASUVORK5CYII='));
+        $zip->close();
+
+        DB::statement('CREATE TEMP TABLE a071_parent (id int PRIMARY KEY)');
+        DB::statement('CREATE TEMP TABLE a071_child (parent_id int REFERENCES a071_parent(id) DEFERRABLE INITIALLY DEFERRED)');
+        $newPath = null;
+        Event::listen('eloquent.creating: '.AuditLog::class, function () use ($product, &$newPath): void {
+            $newPath = $product->images()->sole()->path;
+            DB::statement('INSERT INTO a071_child VALUES (1)');
+        });
+
+        $this->assertTrue(app(ProductImageImportService::class)->process($import));
+        $this->assertSame($originalPath, $image->refresh()->path);
+        $this->assertSame('original', $public->get($originalPath));
+        $this->assertSame([1, 0, 1], [$import->refresh()->processed_folders, $import->replaced_images, $import->failed_folders]);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'product.image-imported', 'entity_id' => $product->id]);
+        $this->assertDatabaseMissing('storage_cleanup_tasks', ['path' => $originalPath]);
+        $this->assertIsString($newPath);
+        $this->assertSame('completed', StorageCleanupTask::query()->where('path', $newPath)->sole()->status);
+        $public->assertMissing($newPath);
     }
 
     public function test_product_deletion_waiting_on_an_upload_removes_the_committed_image_file(): void

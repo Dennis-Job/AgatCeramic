@@ -22,6 +22,14 @@ class ProductImageImport extends Model
         return $this->hasMany(ProductImageImportError::class)->orderBy('id');
     }
 
+    /** @return list<string> */
+    public function processedSkus(): array
+    {
+        $skus = $this->getAttribute('processed_skus');
+
+        return is_array($skus) ? array_values(array_filter($skus, 'is_string')) : [];
+    }
+
     #[\Override]
     protected function casts(): array
     {

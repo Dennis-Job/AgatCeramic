@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\DeleteStoredFile;
 use App\Models\StorageCleanupTask;
+use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -20,6 +21,42 @@ class StorageCleanupService
         DB::afterCommit(fn () => $this->dispatchSafely($task));
 
         return $task;
+    }
+
+    public function reserve(string $disk, string $path, DateTimeInterface $expiresAt): int
+    {
+        return StorageCleanupTask::query()->create([
+            'disk' => $disk,
+            'path' => $path,
+            'next_attempt_at' => $expiresAt,
+        ])->id;
+    }
+
+    /**
+     * Cancel in the same transaction that publishes the file references.
+     *
+     * @param  list<int>  $ids
+     */
+    public function cancelReservations(array $ids): bool
+    {
+        $canceled = StorageCleanupTask::query()->whereIntegerInRaw('id', $ids)
+            ->where('status', 'pending')
+            ->whereNull('dispatched_at')
+            ->where('next_attempt_at', '>', now())
+            ->delete();
+
+        return $canceled === count($ids);
+    }
+
+    /** @param list<int> $ids */
+    public function releaseReservations(array $ids): void
+    {
+        // A commit may have succeeded even if it raised an exception locally. Its
+        // canceled reservations are absent, so recovery can only remove unpublished files.
+        $pending = StorageCleanupTask::query()->whereIntegerInRaw('id', $ids)
+            ->where('status', 'pending')->whereNull('dispatched_at');
+        $pending->update(['next_attempt_at' => now()]);
+        $pending->eachById(fn (StorageCleanupTask $task) => $this->dispatchSafely($task));
     }
 
     public function dispatchSafely(StorageCleanupTask $task): void
