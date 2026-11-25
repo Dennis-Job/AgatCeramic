@@ -1,9 +1,9 @@
 import { computed, ref, type Ref } from 'vue'
+import { ApiError } from '../../../services/apiError'
 import { sortByLabel } from '../../../utils/alphabetical'
 import {
   deleteProductGroup,
   getAllProductGroups,
-  ProductGroupRequestError,
   saveProductGroup,
 } from '../services/productGroups'
 import { getProducts } from '../services/products'
@@ -211,8 +211,7 @@ export function useProductGroups(
       success.value = 'Группа вариантов сохранена.'
       onSaved()
     } catch (reason) {
-      if (reason instanceof ProductGroupRequestError)
-        groupErrors.value = reason.details
+      if (reason instanceof ApiError) groupErrors.value = reason.details
       error.value =
         reason instanceof Error
           ? reason.message

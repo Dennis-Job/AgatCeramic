@@ -1,20 +1,16 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import type {
   AppearanceSection,
   SiteAppearance,
 } from '../types/appearance.types'
 
+const errorMessage = 'Не удалось загрузить общее оформление.'
+
 async function decode(response: Response): Promise<SiteAppearance> {
-  const body = (await response.json().catch(() => ({}))) as {
+  const body = (await response.json().catch(() => null)) as {
     data?: SiteAppearance
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  if (!response.ok || !body.data)
-    throw new Error(
-      Object.values(body.error?.details ?? {}).flat()[0] ??
-        body.error?.message ??
-        'Не удалось загрузить общее оформление.',
-    )
+  } | null
+  if (!body?.data) throw new Error(errorMessage)
   const result = body.data
   result.header.menu_note =
     result.header.menu_note === undefined
@@ -34,14 +30,13 @@ async function decode(response: Response): Promise<SiteAppearance> {
 }
 
 export async function getAppearance(): Promise<SiteAppearance> {
-  return decode(await apiFetch('/admin/site-appearance'))
+  return decode(await apiFetch('/admin/site-appearance', { errorMessage }))
 }
 
 export async function saveAppearanceSection<K extends AppearanceSection>(
   section: K,
   value: SiteAppearance[K],
 ): Promise<SiteAppearance> {
-  await requestCsrfCookie()
   const readOnlyKey = section === 'header' ? 'logo_url' : 'bottom_left'
   const sectionValue = Object.fromEntries(
     Object.entries(value).filter(([key]) => key !== readOnlyKey),
@@ -51,13 +46,16 @@ export async function saveAppearanceSection<K extends AppearanceSection>(
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [section]: sectionValue }),
+      errorMessage,
     }),
   )
 }
 
 export async function publishAppearance(): Promise<SiteAppearance> {
-  await requestCsrfCookie()
   return decode(
-    await apiFetch('/admin/site-appearance/publish', { method: 'POST' }),
+    await apiFetch('/admin/site-appearance/publish', {
+      method: 'POST',
+      errorMessage,
+    }),
   )
 }

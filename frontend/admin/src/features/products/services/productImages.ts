@@ -1,4 +1,4 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import {
   loadAllPages,
   withPage,
@@ -9,16 +9,6 @@ import type {
   ProductImage,
   ProductImageUpdatePayload,
 } from '../types/product.types'
-async function fail(response: Response): Promise<never> {
-  const body = (await response.json().catch(() => ({}))) as {
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  throw new Error(
-    Object.values(body.error?.details ?? {}).flat()[0] ??
-      body.error?.message ??
-      'Не удалось выполнить запрос.',
-  )
-}
 export async function getProductImages(
   productId: number,
   request: PageRequest = {},
@@ -28,7 +18,6 @@ export async function getProductImages(
   const response = await apiFetch(
     `/admin/products/${productId}/images${query.size ? `?${query}` : ''}`,
   )
-  if (!response.ok) return fail(response)
   return (await response.json()) as PaginatedResponse<ProductImage>
 }
 export async function getAllProductImages(
@@ -41,7 +30,6 @@ export async function uploadProductImage(
   file: File,
   payload: Omit<ProductImageUpdatePayload, 'alt'>,
 ): Promise<ProductImage> {
-  await requestCsrfCookie()
   const form = new FormData()
   form.append('image', file)
   form.append('is_primary', payload.is_primary ? '1' : '0')
@@ -50,7 +38,6 @@ export async function uploadProductImage(
     method: 'POST',
     body: form,
   })
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: ProductImage }).data
 }
 export async function updateProductImage(
@@ -58,22 +45,18 @@ export async function updateProductImage(
   id: number,
   payload: ProductImageUpdatePayload,
 ): Promise<ProductImage> {
-  await requestCsrfCookie()
   const response = await apiFetch(`/admin/products/${productId}/images/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: ProductImage }).data
 }
 export async function deleteProductImage(
   productId: number,
   id: number,
 ): Promise<void> {
-  await requestCsrfCookie()
-  const response = await apiFetch(`/admin/products/${productId}/images/${id}`, {
+  await apiFetch(`/admin/products/${productId}/images/${id}`, {
     method: 'DELETE',
   })
-  if (!response.ok) return fail(response)
 }

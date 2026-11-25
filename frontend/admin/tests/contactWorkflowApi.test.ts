@@ -1,14 +1,20 @@
-import { expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import {
   getContactStatuses,
   getContactStatusCounts,
 } from '../src/features/contacts/services/contacts'
 
-const apiFetch = vi.hoisted(() => vi.fn())
-vi.mock('../src/services/auth', () => ({
-  apiFetch,
-  requestCsrfCookie: vi.fn(),
-}))
+const fetch = vi.fn<typeof globalThis.fetch>()
+beforeEach(() => {
+  fetch.mockReset()
+  vi.stubGlobal('fetch', fetch)
+})
+afterEach(() => vi.unstubAllGlobals())
+
+function requestedPath() {
+  return new URL(String(fetch.mock.calls[0]?.[0]), window.location.origin)
+    .pathname
+}
 
 test('the contacts workspace loads allowed transitions through the additive workflow endpoint', async () => {
   const statuses = [
@@ -19,16 +25,16 @@ test('the contacts workspace loads allowed transitions through the additive work
       allowed_transitions: ['processing', 'rejected'],
     },
   ]
-  apiFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify({ data: statuses })),
-  )
+  fetch.mockResolvedValueOnce(new Response(JSON.stringify({ data: statuses })))
   await expect(getContactStatuses()).resolves.toEqual(statuses)
-  expect(apiFetch).toHaveBeenCalledWith('/admin/contact-workflow')
+  expect(fetch).toHaveBeenCalledOnce()
+  expect(requestedPath()).toBe('/api/v1/admin/contact-workflow')
 })
 
 test('loads global status counts through a separate unfiltered endpoint', async () => {
   const counts = { new: 9, processing: 4, awaiting_client: 2 }
-  apiFetch.mockResolvedValueOnce(new Response(JSON.stringify({ data: counts })))
+  fetch.mockResolvedValueOnce(new Response(JSON.stringify({ data: counts })))
   await expect(getContactStatusCounts()).resolves.toEqual(counts)
-  expect(apiFetch).toHaveBeenLastCalledWith('/admin/contact-request-counts')
+  expect(fetch).toHaveBeenCalledOnce()
+  expect(requestedPath()).toBe('/api/v1/admin/contact-request-counts')
 })

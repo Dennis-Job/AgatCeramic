@@ -15,7 +15,6 @@ vi.mock('../src/features/products/services/productRelations', () => ({
   getRelationCandidates: api.getRelationCandidates,
   getProductRelations: api.getProductRelations,
   saveProductRelations: api.saveProductRelations,
-  ProductRelationRequestError: class extends Error {},
 }))
 vi.mock('../src/features/products/services/productAttributes', () => ({
   getCategoryAttributes: api.getCategoryAttributes,

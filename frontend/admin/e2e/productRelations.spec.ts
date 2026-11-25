@@ -233,6 +233,52 @@ for (const width of [320, 640, 768, 1024, 1280]) {
   })
 }
 
+test('relation validation stays on the affected draft row until a successful retry', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  const { dialog, section, writes } = await setup(page)
+  const path = '/api/v1/admin/products/1/relations'
+  const message = 'Проверьте порядок связи.'
+  browserIssueGuard.allowApiError(422, path)
+  let rejected = false
+  await page.route(`**${path}`, async (route) => {
+    if (rejected || route.request().method() !== 'PUT') {
+      await route.fallback()
+      return
+    }
+    rejected = true
+    await route.fulfill({
+      status: 422,
+      json: {
+        error: {
+          code: 'validation_failed',
+          message: 'Переданные данные не прошли проверку.',
+          details: { 'relations.0.sort_order': [message] },
+        },
+      },
+    })
+  })
+
+  const row = section.getByTestId('product-relation-row').first()
+  const sortOrder = row.getByRole('spinbutton', { name: 'Порядок связи 1' })
+  const save = section.getByRole('button', { name: 'Сохранить связи' })
+  await sortOrder.fill('10')
+  await save.click()
+  await expect(row.getByRole('alert')).toHaveText(message)
+  await expect(sortOrder).toHaveValue('10')
+
+  await sortOrder.fill('2')
+  await save.click()
+  await expect(
+    dialog.getByText('Связи товаров сохранены.', { exact: true }),
+  ).toBeVisible()
+  await expect(row.getByRole('alert')).toHaveCount(0)
+  expect(writes).toEqual([
+    { relations: [{ related_product_id: 8, type: 'related', sort_order: 2 }] },
+  ])
+})
+
 test('exact SKU lookup handles self, saved/draft duplicates, removal and readdition', async ({
   page,
 }) => {

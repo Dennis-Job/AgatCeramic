@@ -1,4 +1,4 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import {
   loadAllPages,
   withPage,
@@ -7,16 +7,6 @@ import {
 } from '../../../services/pagination'
 import type { Brand, BrandPayload } from '../types/brand.types'
 
-async function fail(response: Response): Promise<never> {
-  const body = (await response.json().catch(() => ({}))) as {
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  throw new Error(
-    Object.values(body.error?.details ?? {}).flat()[0] ??
-      body.error?.message ??
-      'Не удалось выполнить запрос.',
-  )
-}
 export async function getBrands(
   request: PageRequest & { search?: string } = {},
 ): Promise<PaginatedResponse<Brand>> {
@@ -26,7 +16,6 @@ export async function getBrands(
   const response = await apiFetch(
     `/admin/brands${query.size ? `?${query}` : ''}`,
   )
-  if (!response.ok) return fail(response)
   return (await response.json()) as PaginatedResponse<Brand>
 }
 export async function getAllBrands(): Promise<Brand[]> {
@@ -36,7 +25,6 @@ async function persistBrand(
   id: number | null,
   payload: Partial<BrandPayload>,
 ): Promise<Brand> {
-  await requestCsrfCookie()
   const response = await apiFetch(
     id === null ? '/admin/brands' : `/admin/brands/${id}`,
     {
@@ -45,7 +33,6 @@ async function persistBrand(
       body: JSON.stringify(payload),
     },
   )
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Brand }).data
 }
 export function saveBrand(
@@ -61,7 +48,5 @@ export function updateBrandCatalogMenu(
   return persistBrand(id, { show_in_catalog_menu: visible })
 }
 export async function deleteBrand(id: number): Promise<void> {
-  await requestCsrfCookie()
-  const response = await apiFetch(`/admin/brands/${id}`, { method: 'DELETE' })
-  if (!response.ok) return fail(response)
+  await apiFetch(`/admin/brands/${id}`, { method: 'DELETE' })
 }

@@ -6,9 +6,8 @@ import type { SiteAppearance } from '../src/features/appearance/types/appearance
 
 const transport = vi.hoisted(() => ({
   apiFetch: vi.fn(),
-  requestCsrfCookie: vi.fn(),
 }))
-vi.mock('../src/services/auth', () => transport)
+vi.mock('../src/services/api', () => transport)
 
 let responseYear: number
 let server: SiteAppearance

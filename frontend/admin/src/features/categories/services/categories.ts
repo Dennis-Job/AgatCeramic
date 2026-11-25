@@ -1,4 +1,4 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import type { Attribute } from '../../attributes/types/attribute.types'
 import type { AttributeGroup } from '../../attribute-groups/types/attributeGroup.types'
 import type {
@@ -13,16 +13,6 @@ export type {
   CategoryAttributeGroupAssignment,
   CategoryPayload,
 } from '../types/category.types'
-async function fail(response: Response): Promise<never> {
-  const body = (await response.json().catch(() => ({}))) as {
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  throw new Error(
-    Object.values(body.error?.details ?? {}).flat()[0] ??
-      body.error?.message ??
-      'Не удалось выполнить запрос.',
-  )
-}
 export async function getCategories(
   includeAssignments = false,
 ): Promise<Category[]> {
@@ -31,14 +21,12 @@ export async function getCategories(
       ? '/admin/categories/overview'
       : '/admin/categories/tree',
   )
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Category[] }).data
 }
 export async function saveCategory(
   id: number | null,
   payload: CategoryPayload,
 ): Promise<Category> {
-  await requestCsrfCookie()
   const response = await apiFetch(
     id === null ? '/admin/categories' : `/admin/categories/${id}`,
     {
@@ -47,51 +35,42 @@ export async function saveCategory(
       body: JSON.stringify(payload),
     },
   )
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Category }).data
 }
 export async function deleteCategory(id: number): Promise<void> {
-  await requestCsrfCookie()
-  const response = await apiFetch(`/admin/categories/${id}`, {
+  await apiFetch(`/admin/categories/${id}`, {
     method: 'DELETE',
   })
-  if (!response.ok) return fail(response)
 }
 export async function getCategoryAttributes(id: number): Promise<Attribute[]> {
   const response = await apiFetch(`/admin/categories/${id}/attributes`)
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Attribute[] }).data
 }
 export async function replaceCategoryAttributes(
   id: number,
   attributes: CategoryAttributeAssignment[],
 ): Promise<Attribute[]> {
-  await requestCsrfCookie()
   const response = await apiFetch(`/admin/categories/${id}/attributes`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ attributes }),
   })
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Attribute[] }).data
 }
 export async function getCategoryAttributeGroups(
   id: number,
 ): Promise<AttributeGroup[]> {
   const response = await apiFetch(`/admin/categories/${id}/attribute-groups`)
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: AttributeGroup[] }).data
 }
 export async function replaceCategoryAttributeGroups(
   id: number,
   attributeGroups: CategoryAttributeGroupAssignment[],
 ): Promise<AttributeGroup[]> {
-  await requestCsrfCookie()
   const response = await apiFetch(`/admin/categories/${id}/attribute-groups`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ attribute_groups: attributeGroups }),
   })
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: AttributeGroup[] }).data
 }

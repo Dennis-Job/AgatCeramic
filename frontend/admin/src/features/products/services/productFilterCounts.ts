@@ -1,4 +1,4 @@
-import { apiFetch } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import type {
   ProductFilterCounts,
   ProductFilters,
@@ -29,16 +29,8 @@ export async function getProductFilterCounts(
   })
 
   const path = '/admin/products/filter-counts'
-  const response = await apiFetch(query.size ? path + '?' + query : path)
-  if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as {
-      error?: { message?: string; details?: Record<string, string[]> }
-    }
-    throw new Error(
-      Object.values(body.error?.details ?? {}).flat()[0] ??
-        body.error?.message ??
-        'Не удалось обновить счётчики товаров.',
-    )
-  }
+  const response = await apiFetch(query.size ? path + '?' + query : path, {
+    errorMessage: 'Не удалось обновить счётчики товаров.',
+  })
   return ((await response.json()) as ProductFilterCountResponse).data
 }

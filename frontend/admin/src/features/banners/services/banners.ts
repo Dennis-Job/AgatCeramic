@@ -1,21 +1,10 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import {
   withPage,
   type PageRequest,
   type PaginatedResponse,
 } from '../../../services/pagination'
 import type { Banner, BannerPayload } from '../types/banner.types'
-
-async function fail(response: Response): Promise<never> {
-  const body = (await response.json().catch(() => ({}))) as {
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  throw new Error(
-    Object.values(body.error?.details ?? {}).flat()[0] ??
-      body.error?.message ??
-      'Не удалось выполнить запрос.',
-  )
-}
 
 export async function getBanners(
   request: PageRequest = {},
@@ -25,7 +14,6 @@ export async function getBanners(
   const response = await apiFetch(
     `/admin/banners${query.size ? `?${query}` : ''}`,
   )
-  if (!response.ok) return fail(response)
   return (await response.json()) as PaginatedResponse<Banner>
 }
 
@@ -33,7 +21,6 @@ export async function saveBanner(
   id: number | null,
   payload: BannerPayload,
 ): Promise<Banner> {
-  await requestCsrfCookie()
   const response = await apiFetch(
     id === null ? '/admin/banners' : `/admin/banners/${id}`,
     {
@@ -42,12 +29,9 @@ export async function saveBanner(
       body: JSON.stringify(payload),
     },
   )
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: Banner }).data
 }
 
 export async function deleteBanner(id: number): Promise<void> {
-  await requestCsrfCookie()
-  const response = await apiFetch(`/admin/banners/${id}`, { method: 'DELETE' })
-  if (!response.ok) return fail(response)
+  await apiFetch(`/admin/banners/${id}`, { method: 'DELETE' })
 }

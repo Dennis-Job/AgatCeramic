@@ -1,9 +1,9 @@
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
+import { ApiError } from '../../../services/apiError'
 import { sortByLabel } from '../../../utils/alphabetical'
 import {
   getProductRelations,
   getRelationCandidates,
-  ProductRelationRequestError,
   saveProductRelations,
 } from '../services/productRelations'
 import type {
@@ -250,7 +250,7 @@ export function useProductRelations(
       relations.value = saved.map(toDraft)
       success.value = 'Связи товаров сохранены.'
     } catch (reason) {
-      if (reason instanceof ProductRelationRequestError)
+      if (reason instanceof ApiError)
         Object.entries(reason.details).forEach(([key, messages]) => {
           const m = key.match(/^relations\.(\d+)/)
           if (m) relationErrors.value[Number(m[1])] = messages[0]

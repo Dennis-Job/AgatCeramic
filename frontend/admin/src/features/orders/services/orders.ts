@@ -1,4 +1,4 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiData, apiFetch } from '../../../services/api'
 import {
   withPage,
   type PageRequest,
@@ -15,23 +15,6 @@ import type {
   OrderStatusCounts,
 } from '../types/order.types'
 
-async function responseOrThrow<T>(
-  response: Response,
-  fallback: string,
-): Promise<T> {
-  const body = (await response.json().catch(() => ({}))) as {
-    data?: T
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  if (!response.ok)
-    throw new Error(
-      Object.values(body.error?.details ?? {}).flat()[0] ??
-        body.error?.message ??
-        fallback,
-    )
-  return body.data as T
-}
-
 export async function getOrders(
   filters: OrderFilters = {},
   page: PageRequest = {},
@@ -43,73 +26,61 @@ export async function getOrders(
     else if (value) query.set(key, value === true ? '1' : value)
   })
   withPage(query, { ...page, perPage: page.perPage ?? 25 })
-  const response = await apiFetch(`/admin/orders?${query}`)
-  if (!response.ok)
-    await responseOrThrow(response, 'Не удалось загрузить заказы.')
+  const response = await apiFetch(`/admin/orders?${query}`, {
+    errorMessage: 'Не удалось загрузить заказы.',
+  })
   return (await response.json()) as PaginatedResponse<Order>
 }
 
 export const getOrder = async (id: number): Promise<Order> =>
-  responseOrThrow(
-    await apiFetch(`/admin/orders/${id}`),
-    'Не удалось загрузить заказ.',
-  )
+  apiData(`/admin/orders/${id}`, {
+    errorMessage: 'Не удалось загрузить заказ.',
+  })
 
 export const getOrderAssignees = async (): Promise<OrderAssignee[]> =>
-  responseOrThrow(
-    await apiFetch('/admin/order-assignees'),
-    'Не удалось загрузить список ответственных.',
-  )
+  apiData('/admin/order-assignees', {
+    errorMessage: 'Не удалось загрузить список ответственных.',
+  })
 
 export const getOrderStatusCounts = async (): Promise<OrderStatusCounts> =>
-  responseOrThrow(
-    await apiFetch('/admin/order-status-counts'),
-    'Не удалось загрузить счётчики заказов.',
-  )
+  apiData('/admin/order-status-counts', {
+    errorMessage: 'Не удалось загрузить счётчики заказов.',
+  })
 
 export async function assignOrder(
   id: number,
   assigneeId: number | null,
 ): Promise<void> {
-  await requestCsrfCookie()
-  await responseOrThrow<void>(
-    await apiFetch(`/admin/orders/${id}/assignee`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ assignee_id: assigneeId }),
-    }),
-    'Не удалось изменить ответственного.',
-  )
+  await apiFetch(`/admin/orders/${id}/assignee`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignee_id: assigneeId }),
+    errorMessage: 'Не удалось изменить ответственного.',
+  })
 }
 export const getOrderStatuses = async (): Promise<OrderStatus[]> =>
-  responseOrThrow(
-    await apiFetch('/admin/order-statuses'),
-    'Не удалось загрузить статусы.',
-  )
+  apiData('/admin/order-statuses', {
+    errorMessage: 'Не удалось загрузить статусы.',
+  })
 export const getOrderHistory = async (id: number): Promise<OrderHistory[]> =>
-  responseOrThrow(
-    await apiFetch(`/admin/orders/${id}/status-history?per_page=100`),
-    'Не удалось загрузить историю статусов.',
-  )
+  apiData(`/admin/orders/${id}/status-history?per_page=100`, {
+    errorMessage: 'Не удалось загрузить историю статусов.',
+  })
 export const getOrderComments = async (id: number): Promise<OrderComment[]> =>
-  responseOrThrow(
-    await apiFetch(`/admin/orders/${id}/comments?per_page=100`),
-    'Не удалось загрузить комментарии.',
-  )
+  apiData(`/admin/orders/${id}/comments?per_page=100`, {
+    errorMessage: 'Не удалось загрузить комментарии.',
+  })
 
 export async function updateOrderStatus(
   id: number,
   status: string,
 ): Promise<Order> {
-  await requestCsrfCookie()
-  return responseOrThrow(
-    await apiFetch(`/admin/orders/${id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    }),
-    'Не удалось изменить статус.',
-  )
+  return apiData(`/admin/orders/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+    errorMessage: 'Не удалось изменить статус.',
+  })
 }
 
 export async function updateOrderPayment(
@@ -122,36 +93,29 @@ export async function updateOrderPayment(
     paid_at?: string
   },
 ): Promise<void> {
-  await requestCsrfCookie()
-  await responseOrThrow(
-    await apiFetch(`/admin/orders/${id}/payment`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
-    'Не удалось сохранить оплату.',
-  )
+  await apiFetch(`/admin/orders/${id}/payment`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    errorMessage: 'Не удалось сохранить оплату.',
+  })
 }
 
 export async function addOrderComment(
   id: number,
   body: string,
 ): Promise<OrderComment> {
-  await requestCsrfCookie()
-  return responseOrThrow(
-    await apiFetch(`/admin/orders/${id}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body }),
-    }),
-    'Не удалось добавить комментарий.',
-  )
+  return apiData(`/admin/orders/${id}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ body }),
+    errorMessage: 'Не удалось добавить комментарий.',
+  })
 }
 
 export const getOrderStatistics = async (
   month: string,
 ): Promise<OrderStatistics> =>
-  responseOrThrow(
-    await apiFetch(`/admin/order-statistics?${new URLSearchParams({ month })}`),
-    'Не удалось загрузить статистику заказов.',
-  )
+  apiData(`/admin/order-statistics?${new URLSearchParams({ month })}`, {
+    errorMessage: 'Не удалось загрузить статистику заказов.',
+  })

@@ -1,4 +1,4 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import {
   loadAllPages,
   withPage,
@@ -13,16 +13,6 @@ export type {
   AttributeGroup,
   AttributeGroupPayload,
 } from '../types/attributeGroup.types'
-async function fail(response: Response): Promise<never> {
-  const body = (await response.json().catch(() => ({}))) as {
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  throw new Error(
-    Object.values(body.error?.details ?? {}).flat()[0] ??
-      body.error?.message ??
-      'Не удалось выполнить запрос.',
-  )
-}
 export async function getAttributeGroups(
   request: PageRequest = {},
 ): Promise<PaginatedResponse<AttributeGroup>> {
@@ -31,7 +21,6 @@ export async function getAttributeGroups(
   const response = await apiFetch(
     `/admin/attribute-groups${query.size ? `?${query}` : ''}`,
   )
-  if (!response.ok) return fail(response)
   return (await response.json()) as PaginatedResponse<AttributeGroup>
 }
 export async function getAllAttributeGroups(): Promise<AttributeGroup[]> {
@@ -41,7 +30,6 @@ export async function saveAttributeGroup(
   id: number | null,
   payload: AttributeGroupPayload,
 ): Promise<AttributeGroup> {
-  await requestCsrfCookie()
   const response = await apiFetch(
     id === null ? '/admin/attribute-groups' : `/admin/attribute-groups/${id}`,
     {
@@ -50,13 +38,10 @@ export async function saveAttributeGroup(
       body: JSON.stringify(payload),
     },
   )
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: AttributeGroup }).data
 }
 export async function deleteAttributeGroup(id: number): Promise<void> {
-  await requestCsrfCookie()
-  const response = await apiFetch(`/admin/attribute-groups/${id}`, {
+  await apiFetch(`/admin/attribute-groups/${id}`, {
     method: 'DELETE',
   })
-  if (!response.ok) return fail(response)
 }

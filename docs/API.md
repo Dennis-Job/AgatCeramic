@@ -811,6 +811,13 @@ Before any state-changing request, it must request `GET /sanctum/csrf-cookie` wi
 credentials included, then send the URL-decoded `XSRF-TOKEN` value in the `X-XSRF-TOKEN`
 header. Browser requests must include credentials.
 
+Admin uses the shared [HTTP transport](../frontend/admin/src/services/api.ts)
+for these requests. Concurrent writes can share the same pending CSRF request.
+When that request fails, the transport stops the waiting writes. Each subsequent
+write starts a new CSRF request after the previous initialization has settled.
+If a write returns `419`, the transport reports the error and the next submission
+initializes CSRF again. Each submission can send at most one mutation.
+
 - `POST /admin/auth/login` — accepts `email` and `password`; limited to five attempts per
   minute for an email/IP combination. Invalid credentials and blocked accounts both return
   the standard `401 unauthenticated` response.
@@ -1648,9 +1655,17 @@ checkout.
 | 404 | `not_found` |
 | 405 | `method_not_allowed` |
 | 409 | `conflict` |
+| 419 | `http_error` (несовпадение токена CSRF) |
 | 422 | `validation_failed` / `unprocessable_entity` |
 | 429 | `too_many_requests` |
 | 5xx | `internal_server_error` / `http_error` |
+
+В Admin ошибки HTTP представлены классом
+[`ApiError`](../frontend/admin/src/services/apiError.ts) с полями `status`,
+`code`, `details` и `message`. Формы могут читать все сообщения по ключу
+поля, включая вложенные ключи вроде `relations.0.sort_order`. Для сетевой
+ошибки `status` равен `null`, а `code` равен `network_error`. При отмене
+запроса транспорт передаёт причину отмены вызывающему коду.
 
 ## Соглашение о ресурсах API
 

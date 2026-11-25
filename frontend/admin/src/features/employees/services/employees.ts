@@ -1,24 +1,10 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import type {
   Employee,
   EmployeePage,
   EmployeePayload,
   EmployeeRole,
 } from '../types/employee.types'
-
-type ErrorResponse = {
-  error?: { message?: string; details?: Record<string, string[]> }
-}
-
-async function parseError(response: Response): Promise<never> {
-  const body = (await response.json().catch(() => ({}))) as ErrorResponse
-  const firstDetail = body.error?.details
-    ? Object.values(body.error.details).flat()[0]
-    : undefined
-  throw new Error(
-    firstDetail ?? body.error?.message ?? 'Не удалось выполнить запрос.',
-  )
-}
 
 export async function getEmployees(
   search = '',
@@ -28,13 +14,11 @@ export async function getEmployees(
   if (search) query.set('search', search)
   if (status) query.set('status', status)
   const response = await apiFetch(`/admin/users?${query.toString()}`)
-  if (!response.ok) return parseError(response)
   return response.json() as Promise<EmployeePage>
 }
 
 export async function getEmployeeRoles(): Promise<EmployeeRole[]> {
   const response = await apiFetch('/admin/users/roles')
-  if (!response.ok) return parseError(response)
   return ((await response.json()) as { data: EmployeeRole[] }).data
 }
 
@@ -42,7 +26,6 @@ export async function saveEmployee(
   id: number | null,
   payload: EmployeePayload,
 ): Promise<Employee> {
-  await requestCsrfCookie()
   const response = await apiFetch(
     id === null ? '/admin/users' : `/admin/users/${id}`,
     {
@@ -51,12 +34,9 @@ export async function saveEmployee(
       body: JSON.stringify(payload),
     },
   )
-  if (!response.ok) return parseError(response)
   return ((await response.json()) as { data: Employee }).data
 }
 
 export async function deleteEmployee(id: number): Promise<void> {
-  await requestCsrfCookie()
-  const response = await apiFetch(`/admin/users/${id}`, { method: 'DELETE' })
-  if (!response.ok) return parseError(response)
+  await apiFetch(`/admin/users/${id}`, { method: 'DELETE' })
 }

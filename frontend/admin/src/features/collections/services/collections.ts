@@ -1,4 +1,4 @@
-import { apiFetch, requestCsrfCookie } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import {
   withPage,
   type PageRequest,
@@ -9,16 +9,6 @@ import type {
   CollectionPayload,
 } from '../types/collection.types'
 
-async function fail(response: Response): Promise<never> {
-  const body = (await response.json().catch(() => ({}))) as {
-    error?: { message?: string; details?: Record<string, string[]> }
-  }
-  throw new Error(
-    Object.values(body.error?.details ?? {}).flat()[0] ??
-      body.error?.message ??
-      'Не удалось выполнить запрос.',
-  )
-}
 export async function getCollections(
   request: PageRequest & {
     search?: string
@@ -35,19 +25,16 @@ export async function getCollections(
   const response = await apiFetch(
     `/admin/collections${query.size ? `?${query}` : ''}`,
   )
-  if (!response.ok) return fail(response)
   return (await response.json()) as PaginatedResponse<ProductCollection>
 }
 export async function getCollection(id: number): Promise<ProductCollection> {
   const response = await apiFetch(`/admin/collections/${id}`)
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: ProductCollection }).data
 }
 export async function saveCollection(
   id: number | null,
   payload: CollectionPayload,
 ): Promise<ProductCollection> {
-  await requestCsrfCookie()
   const response = await apiFetch(
     id === null ? '/admin/collections' : `/admin/collections/${id}`,
     {
@@ -56,13 +43,10 @@ export async function saveCollection(
       body: JSON.stringify(payload),
     },
   )
-  if (!response.ok) return fail(response)
   return ((await response.json()) as { data: ProductCollection }).data
 }
 export async function deleteCollection(id: number): Promise<void> {
-  await requestCsrfCookie()
-  const response = await apiFetch(`/admin/collections/${id}`, {
+  await apiFetch(`/admin/collections/${id}`, {
     method: 'DELETE',
   })
-  if (!response.ok) return fail(response)
 }

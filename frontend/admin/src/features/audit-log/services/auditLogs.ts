@@ -1,4 +1,4 @@
-import { apiFetch } from '../../../services/auth'
+import { apiFetch } from '../../../services/api'
 import type { AuditLogFilters, AuditLogPage } from '../types/auditLog.types'
 
 export async function getAuditLogs(
@@ -8,7 +8,9 @@ export async function getAuditLogs(
   Object.entries(filters).forEach(([key, value]) => {
     if (value) query.set(key, String(value))
   })
-  const response = await apiFetch(`/admin/audit-logs?${query}`)
-  if (!response.ok) throw new Error('Не удалось загрузить журнал аудита.')
+  const response = await apiFetch(`/admin/audit-logs?${query}`, {
+    errorMessage: 'Не удалось загрузить журнал аудита.',
+    errorMessageSource: 'fallback',
+  })
   return (await response.json()) as AuditLogPage
 }

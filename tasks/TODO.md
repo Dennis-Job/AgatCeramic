@@ -25,15 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A070 **P2** Выделить общий HTTP transport и единый контракт API-ошибок Admin
-  - Цель: [services/auth.ts](../frontend/admin/src/services/auth.ts) содержит auth-сценарии, feature
-    services переиспользуют общий transport и error decoder без копий разбора envelope.
-  - План: выделить apiFetch/CSRF, ApiError со status/code/details и обработку отмены; проверить
-    response.ok при получении CSRF cookie. Endpoint и доменные payload оставить в features.
-    Дедупликация CSRF initialization сохраняет восстановление после истечения сессии.
-  - Готовность: тесты 401/403/419/422/429, network failure, abort и CSRF failure; field validation
-    details доступны формам, auth/permissions и существующие API-контракты сохраняются.
-
 - [ ] TASK-A071 **P2** Разделить ZIP image import и сократить файловый I/O под DB-блокировкой
   - Цель: [ProductImageImportService](../backend/app/Services/ProductImageImportService.php)
     разделяет archive inspection, validation/staging и применение галереи; большой SKU не требует
