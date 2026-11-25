@@ -46,9 +46,15 @@ npx playwright install --with-deps chromium
 CI=true npm run test:e2e
 ```
 
-Frontend text checkout использует LF через `.gitattributes`; default Prettier
-проверяется без EOL override. Admin `.prettierignore` исключает локальные `.tmp`
-browser artifacts, чтобы обычный `format:check` оставался воспроизводимым.
+Текстовые файлы Frontend используют LF по правилам `.gitattributes`. Prettier
+запускается со стандартной настройкой конца строки.
+
+В `frontend/admin` команда `npm run format:check` запускает `prettier . --check`.
+Она охватывает поддерживаемые Prettier файлы в каталоге Admin, включая `src/`,
+тесты и корневые конфигурации вроде `tsconfig.json`. Правило `.tmp/` в
+[`.prettierignore`](../frontend/admin/.prettierignore) исключает вложенные
+JSON- и Markdown-отчёты. Тот же каталог исключён из Git по корневому
+[`.gitignore`](../.gitignore).
 
 На 2026-10-14 совместимые npm lock updates очистили Admin audit; Client тогда
 сохранял 11 high findings braces/node-forge. Это историческое состояние:
