@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Admin;
 
 use App\Enums\ProductUnit;
+use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,7 +30,7 @@ class StoreProductRequest extends FormRequest
             'unit' => ['required', Rule::enum(ProductUnit::class)],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'old_price' => ['nullable', 'numeric', 'gte:price', 'max:9999999999.99'],
-            'stock_quantity' => ['required', 'integer', 'min:0', 'max:4294967295'],
+            'stock_quantity' => ['required', 'integer', 'min:0', 'max:'.Product::MAX_STOCK_QUANTITY],
             'is_active' => ['sometimes', 'boolean'],
             'is_on_sale' => ['sometimes', 'boolean'],
         ];

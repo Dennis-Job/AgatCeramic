@@ -165,7 +165,7 @@ class ProductImportTest extends TestCase
         $base = ['name' => 'Tile', 'slug' => 'tile-one', 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 10, 'stock_quantity' => 1, 'is_active' => false, 'is_on_sale' => false];
         foreach ([
             ['slug' => 'tile-two', 'category_slug' => 'missing'],
-            ['slug' => 'tile-two', 'stock_quantity' => 2147483648],
+            ['slug' => 'tile-two', 'stock_quantity' => 2_147_483_648],
             ['slug' => 'tile-two', 'old_price' => 5],
             ['slug' => 'tile-one'],
         ] as $invalid) {
@@ -264,11 +264,11 @@ class ProductImportTest extends TestCase
             $this->row($headers, [
                 'id' => $existing->id, 'sku' => '7000050', 'name' => 'Новое название', 'slug' => 'existing-tile',
                 'category_id' => $category->id, 'category_slug' => 'tile', 'unit' => 'piece', 'price' => 150.25,
-                'stock_quantity' => 8, 'is_active' => true, 'is_on_sale' => true, 'attribute.color' => 'gray',
+                'stock_quantity' => 0, 'is_active' => true, 'is_on_sale' => true, 'attribute.color' => 'gray',
             ]),
             $this->row($headers, [
                 'name' => 'Новый товар', 'slug' => 'new-tile', 'category_slug' => 'tile', 'unit' => 'square_meter',
-                'price' => 210, 'stock_quantity' => 3, 'is_active' => true, 'is_on_sale' => false,
+                'price' => 210, 'stock_quantity' => 2_147_483_647, 'is_active' => true, 'is_on_sale' => false,
                 'barcode' => '0012345678901', 'attribute.color' => 'white', 'attribute.features' => '["matte","frost"]',
             ]),
         ];
@@ -284,11 +284,13 @@ class ProductImportTest extends TestCase
         $this->assertDatabaseHas('storage_cleanup_tasks', ['disk' => 'local', 'path' => $import->path]);
         $existing->refresh();
         $this->assertSame('Новое название', $existing->name);
+        $this->assertSame(0, $existing->stock_quantity);
         $this->assertTrue($existing->is_on_sale);
         $this->assertSame('gray', $existing->attributeValues()->where('attribute_id', $color->id)->value('value'));
         $created = Product::query()->where('slug', 'new-tile')->sole();
         $this->assertMatchesRegularExpression('/^7\d{6}$/', $created->sku);
         $this->assertSame('0012345678901', $created->barcode);
+        $this->assertSame(2_147_483_647, $created->stock_quantity);
         $this->assertTrue($created->is_active);
         $this->assertSame(['matte', 'frost'], $created->attributeValues()->where('attribute_id', $features->id)->value('value'));
     }

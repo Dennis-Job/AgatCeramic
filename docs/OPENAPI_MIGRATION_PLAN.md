@@ -1,5 +1,18 @@
 # OpenAPI migration plan — version history
 
+## v25.0 — product stock quantity range
+
+Date: 2026-11-25.
+
+### Breaking change
+
+`POST /admin/products` and `PUT`/`PATCH /admin/products/{product}` now accept
+only integers from 0 to 2147483647 inclusive for `stock_quantity`. PostgreSQL
+stores the field as `integer`. Requests above the limit return `422` with
+`error.details.stock_quantity`. Validate the same range in API clients before
+rollout. The base URL stays `/api/v1`. Deployment and rollback require only
+the corresponding application release.
+
 ## v24.0 — public collection pages
 
 Date: 2026-11-24. Adds `GET /brands/{brand}/collections/{slug}` and the

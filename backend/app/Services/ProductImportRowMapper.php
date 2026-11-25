@@ -204,7 +204,7 @@ final class ProductImportRowMapper
             'unit' => ['required', Rule::enum(ProductUnit::class)],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'old_price' => ['nullable', 'numeric', 'gte:price', 'max:9999999999.99'],
-            'stock_quantity' => ['required', 'integer', 'min:0', 'max:2147483647'],
+            'stock_quantity' => ['required', 'integer', 'min:0', 'max:'.Product::MAX_STOCK_QUANTITY],
             'is_active' => ['required', 'boolean'],
             'is_on_sale' => ['required', 'boolean'],
         ], ['numeric' => 'Поле :attribute должно содержать число.', 'gte' => 'Значение поля :attribute должно быть не меньше :value.'], $labels);

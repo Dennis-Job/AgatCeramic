@@ -144,6 +144,10 @@ referenced by products; deleting a brand clears the optional reference. Commerci
 nullable at database level only for unconverted legacy rows; Admin create/update and activation
 enforce the standalone-product contract.
 
+`products.stock_quantity` uses PostgreSQL `integer`. Admin product writes and
+XLSX product imports accept whole quantities from 0 to 2147483647 inclusive
+for every sale unit. Historical product records can still contain `NULL`.
+
 ### product_variants
 Legacy-only storage during Phase 3.1 migration. Existing rows are expanded into standalone products
 by an idempotent command with explicit dry-run and apply modes. The command reports identifier,

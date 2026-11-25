@@ -534,20 +534,24 @@ class CategoryProductImportTest extends TestCase
         }
     }
 
-    public function test_stock_exceeding_postgresql_integer_range_fails_only_that_row(): void
+    public function test_stock_range_limits_are_saved_and_overflow_fails_only_that_row(): void
     {
         Storage::fake('local');
         $category = Category::factory()->create(['sku_prefix' => '8']);
         $import = $this->storedImport($this->actor(), $category, [
-            $this->values('Первый товар'),
-            $this->values('Слишком большой остаток') + ['stock_quantity' => 2147483648],
-            $this->values('Последний товар'),
+            $this->values('Нулевой остаток') + ['stock_quantity' => 0],
+            $this->values('Слишком большой остаток') + ['stock_quantity' => 2_147_483_648],
+            $this->values('Максимальный остаток') + ['stock_quantity' => 2_147_483_647],
         ]);
         app(CategoryProductImportService::class)->process($import, Storage::disk('local')->path($import->path));
         $this->assertSame(2, $import->refresh()->created_rows);
         $this->assertSame(1, $import->failed_rows);
-        $this->assertStringContainsString('2147483647', $import->rowErrors()->sole()->messages[0]);
-        $this->assertDatabaseHas('products', ['name' => 'Последний товар']);
+        $error = $import->rowErrors()->sole();
+        $this->assertSame(3, $error->row_number);
+        $this->assertStringContainsString('«Остаток»', $error->messages[0]);
+        $this->assertStringContainsString('2147483647', $error->messages[0]);
+        $this->assertDatabaseHas('products', ['name' => 'Нулевой остаток', 'stock_quantity' => 0]);
+        $this->assertDatabaseHas('products', ['name' => 'Максимальный остаток', 'stock_quantity' => 2_147_483_647]);
     }
 
     private function catalog(): array

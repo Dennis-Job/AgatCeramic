@@ -18,6 +18,10 @@ Breaking change допускается только с повышением majo
 не является разрешением несовместимости.
 `info.version` относится к редакции OpenAPI-контракта; базовый URL `/api/v1` версионируется отдельно.
 
+Редакция v25.0 ограничивает `stock_quantity` при создании и обновлении товара
+диапазоном целых чисел от 0 до 2147483647 включительно. Превышение возвращает
+`422` с ошибкой в `error.details.stock_quantity`.
+
 Редакция v24.0 добавляет `GET /brands/{brand}/collections/{slug}` и
 `GET /collections`. Первый маршрут возвращает профиль коллекции по паре slug,
 второй — те же профили в `data/links/meta`, по 25 с сортировкой по названию и ID.
@@ -914,7 +918,9 @@ one- or two-digit prefix of the root category inherited by its descendants, whil
 global product sequence. Type allocation uses `1`–`9`, `11`–`19`, ..., `91`–`99`, deliberately
 skipping multiples of ten so generated identifiers never need a leading zero. Clients must not send
 `sku` on create or update. Existing SKUs remain readable and are not rewritten.
-Create also requires non-negative `stock_quantity`. Optional commercial fields are globally unique
+Create requires `stock_quantity`. When supplied on create or update, it must be an integer from 0
+through 2147483647 inclusive for every sale unit. Values outside this range return `422` with
+`error.code=validation_failed` and `error.details.stock_quantity`. Optional commercial fields are globally unique
 `article_number`, digit-only `barcode`, and `old_price` (not below current price). `brand_id`, `description`, and
 `is_active` and `is_on_sale` are optional boolean flags. Product responses include these commercial fields, category, brand, and
 nullable `primary_image`. The same primary-image projection is present in product lists, relation
@@ -1111,7 +1117,8 @@ SKU allocation. It validates every row's product fields, category attribute assi
 options and required activation values, plus ordered group axis/shared-value constraints.
 Repeated product identities, temporary SKUs, slugs, articles and barcodes are rejected with the
 physical Excel row number. Unique values released by an earlier update may be reused by later rows.
-Stock is limited to PostgreSQL's signed integer maximum (2147483647). Prepared rows retain their
+Both generic and category-template imports validate stock as an integer from 0 through 2147483647
+inclusive. Category templates interpret blank stock as 0. Prepared rows retain their
 resolved product identity, so an earlier generated SKU cannot change a later creation into an update.
 The status response retains every validation error and makes the report available to the import
 owner. Transactional write-time guards remain authoritative for concurrent catalogue changes and

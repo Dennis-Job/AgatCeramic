@@ -31,7 +31,7 @@ class UpdateProductRequest extends FormRequest
             'unit' => ['sometimes', 'required', Rule::enum(ProductUnit::class)],
             'price' => ['sometimes', 'required', 'numeric', 'min:0', 'max:9999999999.99'],
             'old_price' => ['sometimes', 'nullable', 'numeric', 'max:9999999999.99'],
-            'stock_quantity' => ['sometimes', 'required', 'integer', 'min:0', 'max:4294967295'],
+            'stock_quantity' => ['sometimes', 'required', 'integer', 'min:0', 'max:'.Product::MAX_STOCK_QUANTITY],
             'is_active' => ['sometimes', 'boolean'],
             'is_on_sale' => ['sometimes', 'boolean'],
         ];

@@ -17,6 +17,8 @@ class Product extends Model
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
 
+    public const MAX_STOCK_QUANTITY = 2_147_483_647;
+
     /** @return BelongsTo<Category, $this> */
     public function category(): BelongsTo
     {

@@ -25,17 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A074 **P2** Согласовать stock_quantity validation с диапазоном PostgreSQL
-  - Цель: значения, принятые
-    [StoreProductRequest](../backend/app/Http/Requests/Api/V1/Admin/StoreProductRequest.php) и
-    UpdateProductRequest, сохраняются в целевой БД. Сейчас max 4294967295 не соответствует
-    PostgreSQL integer, в который установленная Laravel grammar преобразует unsignedInteger.
-  - План: определить допустимый бизнес-диапазон; согласовать request/import/OpenAPI и DB schema. При
-    необходимости bigint подготовить безопасную миграцию и проверку существующих данных.
-  - Готовность: PostgreSQL API/import tests проверяют границы и отклонение превышения через
-    validation; миграция/rollback при изменении schema проверены, DATABASE/API документация
-    актуальна.
-
 - [ ] TASK-A075 **P2** Измерить и оптимизировать поиск и счётчики товаров на PostgreSQL
   - Цель: [ProductQuery](../backend/app/Queries/ProductQuery.php) имеет измеримую стоимость
     поиска/фильтров; один endpoint счётчиков сейчас выполняет четыре COUNT.

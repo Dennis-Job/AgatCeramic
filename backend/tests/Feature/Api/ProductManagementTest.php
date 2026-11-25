@@ -80,6 +80,59 @@ class ProductManagementTest extends TestCase
         ])->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed');
     }
 
+    public function test_product_stock_accepts_and_persists_both_range_limits(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $category = Category::factory()->create();
+        $this->actingAs($actor);
+
+        $response = $this->postJson('/api/v1/admin/products', [
+            'category_id' => $category->id,
+            'name' => 'Tile with no stock',
+            'slug' => 'tile-with-no-stock',
+            'unit' => 'square_meter',
+            'price' => 100,
+            'stock_quantity' => 0,
+        ])->assertCreated()->assertJsonPath('data.stock_quantity', 0);
+        $id = $response->json('data.id');
+        $this->assertDatabaseHas('products', ['id' => $id, 'stock_quantity' => 0]);
+
+        $this->patchJson("/api/v1/admin/products/{$id}", ['stock_quantity' => 2_147_483_647])
+            ->assertOk()->assertJsonPath('data.stock_quantity', 2_147_483_647);
+        $this->assertDatabaseHas('products', ['id' => $id, 'stock_quantity' => 2_147_483_647]);
+    }
+
+    public function test_product_create_rejects_stock_above_postgresql_integer_range(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $category = Category::factory()->create();
+
+        $this->actingAs($actor)->postJson('/api/v1/admin/products', [
+            'category_id' => $category->id,
+            'name' => 'Tile with overflowing stock',
+            'slug' => 'tile-with-overflowing-stock',
+            'unit' => 'piece',
+            'price' => 100,
+            'stock_quantity' => 2_147_483_648,
+        ])->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed')
+            ->assertJsonStructure(['error' => ['details' => ['stock_quantity']]]);
+
+        $this->assertDatabaseCount('products', 0);
+    }
+
+    public function test_product_update_rejects_stock_above_postgresql_integer_range(): void
+    {
+        $actor = $this->userWithRole('catalog-manager');
+        $product = Product::factory()->create(['stock_quantity' => 10]);
+
+        $this->actingAs($actor)->putJson("/api/v1/admin/products/{$product->id}", [
+            'stock_quantity' => 2_147_483_648,
+        ])->assertUnprocessable()->assertJsonPath('error.code', 'validation_failed')
+            ->assertJsonStructure(['error' => ['details' => ['stock_quantity']]]);
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'stock_quantity' => 10]);
+    }
+
     public function test_product_cannot_move_when_its_product_or_variant_values_are_not_assigned_to_the_target_category(): void
     {
         $actor = $this->userWithRole('catalog-manager');
