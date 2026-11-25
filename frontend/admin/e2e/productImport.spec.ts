@@ -4,12 +4,11 @@ import { mockCatalogApi } from './catalogApi'
 import { createDeferredApiRequests } from './deferredApi'
 
 async function openProductMenu(page: Page) {
-  const desktop = page.getByRole('navigation', { name: 'Основная навигация' })
-  if (await desktop.isVisible()) {
-    await desktop.getByRole('button', { name: 'Товары', exact: true }).click()
-  } else {
-    await page.getByRole('button', { name: 'Открыть меню' }).click()
-  }
+  const desktop = page
+    .getByRole('navigation', { name: 'Основная навигация' })
+    .getByRole('button', { name: 'Товары', exact: true })
+  const compact = page.getByRole('button', { name: 'Открыть меню' })
+  await desktop.or(compact).click()
 }
 
 async function openImport(page: Page) {

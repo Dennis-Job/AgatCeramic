@@ -25,14 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A072 **P2** Ввести lazy loading route views Admin
-  - Цель: [router/index.ts](../frontend/admin/src/router/index.ts) не включает все экраны в
-    начальный JS asset; при аудите один chunk составлял около 600 kB, gzip 158 kB.
-  - План: заменить статические импорты route components динамическими, включая UiKitView; измерить
-    начальную сборку и загрузку маршрутов. Permissions и navigation guards сохранить.
-  - Готовность: build и navigation E2E проходят; cold/direct navigation работает; import workspaces
-    сохраняют состояние при SPA-переходах, ошибки загрузки chunk обработаны.
-
 - [ ] TASK-A074 **P2** Согласовать stock_quantity validation с диапазоном PostgreSQL
   - Цель: значения, принятые
     [StoreProductRequest](../backend/app/Http/Requests/Api/V1/Admin/StoreProductRequest.php) и

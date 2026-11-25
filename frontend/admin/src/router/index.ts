@@ -1,30 +1,23 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { ref } from 'vue'
+import {
+  createRouter,
+  createWebHistory,
+  type RouteComponent,
+  type RouteLocationNormalized,
+} from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import DashboardView from '../views/DashboardView.vue'
-import LoginView from '../views/LoginView.vue'
-import ForgotPasswordView from '../views/ForgotPasswordView.vue'
-import ResetPasswordView from '../views/ResetPasswordView.vue'
-import EmployeesView from '../views/EmployeesView.vue'
-import RolesView from '../views/RolesView.vue'
-import PermissionsView from '../views/PermissionsView.vue'
-import AuditLogView from '../views/AuditLogView.vue'
-import CategoriesView from '../views/CategoriesView.vue'
-import CollectionsView from '../views/CollectionsView.vue'
-import BrandsView from '../views/BrandsView.vue'
-import AttributeGroupsView from '../views/AttributeGroupsView.vue'
-import AttributesView from '../views/AttributesView.vue'
-import ProfileView from '../views/ProfileView.vue'
-import ProductsView from '../views/ProductsView.vue'
-import OrdersView from '../views/OrdersView.vue'
-import ContactsView from '../views/ContactsView.vue'
-import NotificationsView from '../views/NotificationsView.vue'
-import UiKitView from '../views/UiKitView.vue'
-import SettingsView from '../views/SettingsView.vue'
-import ContentView from '../views/ContentView.vue'
-import MediaView from '../views/MediaView.vue'
-import ProductImportView from '../views/ProductImportView.vue'
-import ProductPriceStatusImportView from '../views/ProductPriceStatusImportView.vue'
-import ProductGroupImportView from '../views/ProductGroupImportView.vue'
+
+class RouteViewLoadError extends Error {}
+
+function loadRouteView(load: () => Promise<{ default: RouteComponent }>) {
+  return () =>
+    load().catch((cause: unknown) => {
+      throw new RouteViewLoadError('Admin route view failed to load', { cause })
+    })
+}
+
+export const failedRouteHref = ref<string>()
+let latestNavigation: RouteLocationNormalized
 
 const router = createRouter({
   history: createWebHistory(),
@@ -32,7 +25,7 @@ const router = createRouter({
     {
       path: '/collections',
       name: 'collections',
-      component: CollectionsView,
+      component: loadRouteView(() => import('../views/CollectionsView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
@@ -42,13 +35,13 @@ const router = createRouter({
     {
       path: '/notifications',
       name: 'notifications',
-      component: NotificationsView,
+      component: loadRouteView(() => import('../views/NotificationsView.vue')),
       meta: { requiresAuth: true, title: 'Уведомления' },
     },
     {
       path: '/brands',
       name: 'brands',
-      component: BrandsView,
+      component: loadRouteView(() => import('../views/BrandsView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
@@ -58,7 +51,7 @@ const router = createRouter({
     {
       path: '/attributes',
       name: 'attributes',
-      component: AttributesView,
+      component: loadRouteView(() => import('../views/AttributesView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
@@ -68,7 +61,9 @@ const router = createRouter({
     {
       path: '/attribute-groups',
       name: 'attribute-groups',
-      component: AttributeGroupsView,
+      component: loadRouteView(
+        () => import('../views/AttributeGroupsView.vue'),
+      ),
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
@@ -78,7 +73,7 @@ const router = createRouter({
     {
       path: '/categories',
       name: 'categories',
-      component: CategoriesView,
+      component: loadRouteView(() => import('../views/CategoriesView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
@@ -88,7 +83,7 @@ const router = createRouter({
     {
       path: '/products',
       name: 'products',
-      component: ProductsView,
+      component: loadRouteView(() => import('../views/ProductsView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'catalog.manage',
@@ -97,7 +92,7 @@ const router = createRouter({
     },
     {
       path: '/products/import',
-      component: ProductImportView,
+      component: loadRouteView(() => import('../views/ProductImportView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'imports.manage',
@@ -107,7 +102,9 @@ const router = createRouter({
     },
     {
       path: '/products/price-status',
-      component: ProductPriceStatusImportView,
+      component: loadRouteView(
+        () => import('../views/ProductPriceStatusImportView.vue'),
+      ),
       meta: {
         requiresAuth: true,
         requiredPermission: 'imports.manage',
@@ -117,7 +114,9 @@ const router = createRouter({
     },
     {
       path: '/products/combine',
-      component: ProductGroupImportView,
+      component: loadRouteView(
+        () => import('../views/ProductGroupImportView.vue'),
+      ),
       meta: {
         requiresAuth: true,
         requiredPermission: 'imports.manage',
@@ -128,37 +127,37 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: loadRouteView(() => import('../views/LoginView.vue')),
       meta: { guestOnly: true, title: 'Вход' },
     },
     {
       path: '/forgot-password',
       name: 'forgot-password',
-      component: ForgotPasswordView,
+      component: loadRouteView(() => import('../views/ForgotPasswordView.vue')),
       meta: { guestOnly: true, title: 'Восстановление пароля' },
     },
     {
       path: '/reset-password',
       name: 'reset-password',
-      component: ResetPasswordView,
+      component: loadRouteView(() => import('../views/ResetPasswordView.vue')),
       meta: { guestOnly: true, title: 'Сброс пароля' },
     },
     {
       path: '/',
       name: 'dashboard',
-      component: DashboardView,
+      component: loadRouteView(() => import('../views/DashboardView.vue')),
       meta: { requiresAuth: true, title: 'Главная' },
     },
     {
       path: '/profile',
       name: 'profile',
-      component: ProfileView,
+      component: loadRouteView(() => import('../views/ProfileView.vue')),
       meta: { requiresAuth: true, title: 'Мой профиль' },
     },
     {
       path: '/employees',
       name: 'employees',
-      component: EmployeesView,
+      component: loadRouteView(() => import('../views/EmployeesView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'admin-users.view',
@@ -168,7 +167,7 @@ const router = createRouter({
     {
       path: '/roles',
       name: 'roles',
-      component: RolesView,
+      component: loadRouteView(() => import('../views/RolesView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'roles.view',
@@ -178,7 +177,7 @@ const router = createRouter({
     {
       path: '/permissions',
       name: 'permissions',
-      component: PermissionsView,
+      component: loadRouteView(() => import('../views/PermissionsView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'permissions.view',
@@ -188,7 +187,7 @@ const router = createRouter({
     {
       path: '/audit-log',
       name: 'audit-log',
-      component: AuditLogView,
+      component: loadRouteView(() => import('../views/AuditLogView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'audit-log.view',
@@ -198,7 +197,7 @@ const router = createRouter({
     {
       path: '/orders',
       name: 'orders',
-      component: OrdersView,
+      component: loadRouteView(() => import('../views/OrdersView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'orders.view',
@@ -208,7 +207,7 @@ const router = createRouter({
     {
       path: '/contacts',
       name: 'contacts',
-      component: ContactsView,
+      component: loadRouteView(() => import('../views/ContactsView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'contacts.view',
@@ -218,7 +217,7 @@ const router = createRouter({
     {
       path: '/ui-kit',
       name: 'ui-kit',
-      component: UiKitView,
+      component: loadRouteView(() => import('../views/UiKitView.vue')),
       meta: { requiresAuth: true, title: 'UI-kit' },
     },
     {
@@ -237,7 +236,7 @@ const router = createRouter({
     {
       path: '/content',
       name: 'content',
-      component: ContentView,
+      component: loadRouteView(() => import('../views/ContentView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'content.manage',
@@ -247,7 +246,7 @@ const router = createRouter({
     {
       path: '/media',
       name: 'media',
-      component: MediaView,
+      component: loadRouteView(() => import('../views/MediaView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'media.manage',
@@ -257,7 +256,7 @@ const router = createRouter({
     {
       path: '/settings',
       name: 'settings',
-      component: SettingsView,
+      component: loadRouteView(() => import('../views/SettingsView.vue')),
       meta: {
         requiresAuth: true,
         requiredPermission: 'settings.manage',
@@ -268,6 +267,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  latestNavigation = to
   const auth = useAuthStore()
 
   if (!auth.initialized) await auth.restoreSession()
@@ -283,7 +283,18 @@ router.beforeEach(async (to) => {
     return { name: 'dashboard' }
 })
 
-router.afterEach((to) => {
+router.onError((error, to) => {
+  if (!(error instanceof RouteViewLoadError)) {
+    console.error(error)
+    return
+  }
+  if (to === latestNavigation)
+    failedRouteHref.value = router.resolve(to.fullPath).href
+})
+
+router.afterEach((to, _from, failure) => {
+  if (failure) return
+  failedRouteHref.value = undefined
   const pageTitle = to.meta.title as string | undefined
   document.title = pageTitle ? `${pageTitle} | AgatCeramic` : 'AgatCeramic'
 })

@@ -71,19 +71,27 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
     const path = url.pathname.replace('/api/v1', '')
     if (route.request().method() !== 'GET') mutations.push(path)
     if (
-      (path === '/admin/contact-requests' || path === '/admin/orders') &&
-      url.searchParams.get('per_page') === '5'
+      path === '/admin/orders' ||
+      (path === '/admin/contact-requests' &&
+        url.searchParams.get('per_page') === '5')
     )
       return route.fulfill({
         json: {
           data: [],
-          meta: { current_page: 1, last_page: 1, per_page: 5, total: 0 },
+          meta: {
+            current_page: 1,
+            last_page: 1,
+            per_page: Number(url.searchParams.get('per_page')),
+            total: 0,
+          },
         },
       })
     if (path === '/admin/order-assignees')
       return route.fulfill({
         json: { data: [{ id: 2, name: 'Менеджер заказов' }] },
       })
+    if (path === '/admin/order-statuses')
+      return route.fulfill({ json: { data: [] } })
     if (path === '/admin/order-status-counts')
       return route.fulfill({
         json: { data: { new: 3, working: 0, shipped: 0 } },
@@ -138,6 +146,109 @@ async function mockNavigation(page: Page, permissions = allPermissions) {
   })
   return { mutations }
 }
+
+const ordersChunk = /\/assets\/OrdersView-[\w-]+\.js$/
+const uiKitChunk = /\/assets\/UiKitView-[\w-]+\.js$/
+
+test('production loads only the requested route views after permission checks', async ({
+  page,
+}) => {
+  const scripts: string[] = []
+  page.on('request', (request) => {
+    if (request.resourceType() === 'script') scripts.push(request.url())
+  })
+  await mockNavigation(page, [])
+
+  await page.goto('/orders')
+  await expect(page).toHaveURL('/')
+  await expect(page).toHaveTitle('Главная | AgatCeramic')
+  expect(scripts.some((url) => ordersChunk.test(url))).toBe(false)
+  expect(scripts.some((url) => uiKitChunk.test(url))).toBe(false)
+
+  await page.goto('/ui-kit')
+  await expect(
+    page.getByRole('heading', { name: 'UI-kit', level: 1 }),
+  ).toBeVisible()
+  expect(scripts.some((url) => uiKitChunk.test(url))).toBe(true)
+  expect(scripts.some((url) => ordersChunk.test(url))).toBe(false)
+})
+
+test('a cold route load can be recovered at the same deep link', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  await mockNavigation(page)
+  browserIssueGuard.allowApiError(503, ordersChunk)
+  await page.route(ordersChunk, (route) => route.fulfill({ status: 503 }), {
+    times: 1,
+  })
+  const destination = '/orders?status=new#orders'
+
+  await page.goto(destination)
+  const error = page.getByRole('dialog', {
+    name: 'Не удалось загрузить страницу',
+  })
+  await expect(error).toBeVisible({ timeout: 5_000 })
+  const reload = error.getByRole('button', { name: 'Обновить страницу' })
+  await expect(reload).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(error).toBeVisible()
+  await expect(page).toHaveURL(destination)
+
+  await reload.press('Enter')
+  await expect(page).toHaveTitle('Заказы | AgatCeramic')
+  await expect(
+    page.getByRole('heading', { name: 'Заказы', level: 1 }),
+  ).toBeVisible()
+  await expect(page).toHaveURL(destination)
+  await expect(error).toBeHidden()
+})
+
+test('a failed SPA route load keeps the active page and can be dismissed or recovered', async ({
+  page,
+  browserIssueGuard,
+}) => {
+  await mockNavigation(page)
+  browserIssueGuard.allowApiError(503, ordersChunk)
+  const failOrdersChunk = () =>
+    page.route(ordersChunk, (route) => route.fulfill({ status: 503 }), {
+      times: 1,
+    })
+
+  await page.goto('/products')
+  await expect(page).toHaveTitle('Товары | AgatCeramic')
+  const ordersLink = page
+    .getByRole('navigation', { name: 'Основная навигация' })
+    .getByRole('link', { name: 'Заказы', exact: true })
+  const error = page.getByRole('dialog', {
+    name: 'Не удалось загрузить страницу',
+  })
+
+  await failOrdersChunk()
+  await ordersLink.press('Enter')
+  await expect(error).toBeVisible({ timeout: 5_000 })
+  await expect(
+    error.getByRole('button', { name: 'Остаться на странице' }),
+  ).toBeFocused()
+  await expect(page).toHaveURL('/products')
+  await expect(page).toHaveTitle('Товары | AgatCeramic')
+
+  await page.keyboard.press('Escape')
+  await expect(error).toBeHidden()
+  await expect(ordersLink).toBeFocused()
+
+  await failOrdersChunk()
+  await ordersLink.press('Enter')
+  const reload = error.getByRole('button', { name: 'Обновить страницу' })
+  await expect(reload).toBeVisible()
+  await page.unroute(ordersChunk)
+  await reload.click()
+  await expect(page).toHaveURL('/orders')
+  await expect(
+    page.getByRole('heading', { name: 'Заказы', level: 1 }),
+  ).toBeVisible()
+  await expect(error).toBeHidden()
+})
 
 for (const width of [320, 640, 768, 1023, 1024, 1280, 1440, 1920, 2560]) {
   test(`navigation exposes every permitted destination without overflow at ${width}px`, async ({
