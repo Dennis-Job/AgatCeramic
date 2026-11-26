@@ -25,14 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A078 **P2** Выделить общие Client mapper и media/link utilities из homePage service
-  - Цель: content pages, site appearance и preview не зависят от модуля конкретной главной ради
-    [общих преобразований](../frontend/client/app/services/homePage.ts).
-  - План: выделить mapping блоков/chrome и безопасные URL-преобразования по ответственности;
-    сохранить типизированные DTO и reuse публичного/preview renderer без новых универсальных слоёв.
-  - Готовность: SSR/typecheck/build и content/preview E2E проходят; SEO, безопасные ссылки, media
-    URL, no-store/noindex и отсутствие draft в SSR payload сохраняются.
-
 - [ ] TASK-A079 **P2** Упростить применение строки category-template import
   - Цель: [CategoryProductRowImporter](../backend/app/Services/CategoryProductRowImporter.php) имеет
     ясные шаги нормализации, определения сущностей и применения данных вместо сложного apply.

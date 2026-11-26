@@ -1,4 +1,4 @@
-import { imageUrl } from '~/services/homePage'
+import { imageUrl } from '~/utils/siteUrls'
 import type { CatalogQuery, StandaloneCatalog } from '../types/catalog'
 
 export async function fetchStandaloneCatalog(

@@ -1,4 +1,4 @@
-import { imageUrl } from '~/services/homePage'
+import { imageUrl } from '~/utils/siteUrls'
 import type { CartData, CartItem } from '../types/cart'
 
 export class CartApiError extends Error {

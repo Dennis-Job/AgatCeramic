@@ -1,4 +1,4 @@
-import { imageUrl } from '~/services/homePage'
+import { imageUrl } from '~/utils/siteUrls'
 import type { PublicBrand } from '../types/brand'
 
 interface PublicBrandDto {

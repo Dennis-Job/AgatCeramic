@@ -133,6 +133,15 @@ page-level загрузку, SEO и доменные сценарии из
 открывает тот же Nuxt-рендер в защищённом маршруте. Сохранённый черновик
 загружается после подтверждения доступа и остаётся вне SSR payload.
 
+Главная, информационные страницы и предпросмотр преобразуют блоки через
+[contentBlocks.ts](../frontend/client/app/services/contentBlocks.ts).
+[siteAppearance.ts](../frontend/client/app/services/siteAppearance.ts) загружает
+публичное оформление и преобразует шапку и подвал для обоих режимов.
+[siteUrls.ts](../frontend/client/app/utils/siteUrls.ts) проверяет ссылки из CMS
+и разрешает адреса изображений относительно публичного API, сохраняя пути
+к встроенным изображениям витрины. Сервисы страниц и предпросмотра сохраняют
+свои правила загрузки и значения SEO по умолчанию.
+
 Точные границы Nuxt определяет [Client AGENTS.md](../frontend/client/AGENTS.md),
 визуальные паттерны — [CLIENT_UI_KIT.md](CLIENT_UI_KIT.md), а порядок
 приёмки — [UI_DESIGN_REVIEW.md](UI_DESIGN_REVIEW.md).

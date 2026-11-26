@@ -1,4 +1,4 @@
-import { imageUrl } from '~/services/homePage'
+import { imageUrl } from '~/utils/siteUrls'
 import type { ProductCard, ProductDetail } from '../types/product'
 function mapCard<T extends ProductCard>(product: T, publicBase: string): T {
   return {

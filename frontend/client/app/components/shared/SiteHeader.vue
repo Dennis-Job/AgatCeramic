@@ -5,13 +5,13 @@ import UiIconButton from '~/components/ui/UiIconButton.vue'
 import UiWordmark from '~/components/ui/UiWordmark.vue'
 import SiteNavigation from '~/components/shared/SiteNavigation.vue'
 import SiteMenuFooter from '~/components/shared/SiteMenuFooter.vue'
-import type { HomePageContent, SiteLink } from '~/types/homePage'
+import type { SiteAppearance, SiteLink } from '~/types/siteAppearance'
 import { searchNavigation } from '~/utils/navigation'
 
 type Panel = 'menu' | 'search' | null
 
 const props = defineProps<{
-  content?: HomePageContent['header']
+  content?: SiteAppearance['header']
   phone?: string
   phoneHref?: string
   email?: string | null

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NuxtLink } from '#components'
-import type { GridBanner } from '~/types/homePage'
+import type { GridBanner } from '~/types/contentPage'
 
 defineProps<{ category: GridBanner }>()
 </script>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChevronDown } from '@lucide/vue'
-import type { SiteNavigationItem } from '~/types/homePage'
+import type { SiteNavigationItem } from '~/types/siteAppearance'
 
 const props = defineProps<{
   items: SiteNavigationItem[]

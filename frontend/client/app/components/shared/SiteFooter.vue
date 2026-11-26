@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { HomePageContent } from '~/types/homePage'
+import type { SiteAppearance } from '~/types/siteAppearance'
 import UiWordmark from '~/components/ui/UiWordmark.vue'
 
 defineProps<{
-  content?: HomePageContent['footer']
+  content?: SiteAppearance['footer']
   logoUrl?: string
   logoAlt?: string
 }>()

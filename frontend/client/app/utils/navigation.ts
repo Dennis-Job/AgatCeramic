@@ -1,4 +1,4 @@
-import type { SiteLink, SiteNavigationItem } from '~/types/homePage'
+import type { SiteLink, SiteNavigationItem } from '~/types/siteAppearance'
 
 export function searchNavigation(
   items: SiteNavigationItem[],

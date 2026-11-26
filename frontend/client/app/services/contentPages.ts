@@ -1,14 +1,15 @@
-import { imageUrl, mapContentBlock } from './homePage'
-import type { HomePageDto } from './homePage'
-import { mapPageIntro } from '~/utils/pageIntro'
 import type {
   CatalogResult,
   ContentBlockDto,
   ContentPage,
+  ContentSeoDto,
   PageIntroDto,
   PublicStore,
   SellerContacts,
 } from '~/types/contentPage'
+import { mapPageIntro } from '~/utils/pageIntro'
+import { imageUrl } from '~/utils/siteUrls'
+import { mapContentBlock } from './contentBlocks'
 
 export async function fetchContentPage(
   slug: string,
@@ -24,7 +25,7 @@ export async function fetchContentPage(
       body: string
       intro?: PageIntroDto | null
       blocks: ContentBlockDto[]
-      seo: HomePageDto['seo']
+      seo: ContentSeoDto
     }
   }>(apiUrl(`pages/${encodeURIComponent(slug)}`, requestBase), options)
   return {

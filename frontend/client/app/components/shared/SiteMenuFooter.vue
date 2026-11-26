@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SiteLink } from '~/types/homePage'
+import type { SiteLink } from '~/types/siteAppearance'
 
 defineProps<{
   phone?: string

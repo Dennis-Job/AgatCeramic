@@ -1,37 +1,121 @@
-import type { HomePageContent } from './homePage'
-import type { HomePageDto } from '~/services/homePage'
-
-type Block<T extends string, D> = {
+export interface HomeSlide {
   id: string
-  type: T
-  enabled: boolean
-  data: D
+  eyebrow: string
+  title: string
+  description: string
+  image: string
+  imageAlt: string
+  linkLabel: string
+  linkUrl: string | null
 }
 
-export type ContentBlock =
-  | Block<'hero', { slides: HomePageContent['heroSlides'] }>
-  | Block<'marquee', { topics: string[] }>
-  | Block<'categories', HomePageContent['categories']>
-  | Block<'materials', HomePageContent['materials']>
-  | Block<'promo', HomePageContent['promo']>
-  | Block<'about', HomePageContent['about']>
-  | Block<'guide', HomePageContent['guide']>
-  | Block<'text', { title: string; body: string }>
-  | Block<'stores', { title: string }>
-  | Block<'catalog', { title: string; description: string }>
+export interface MaterialCategory {
+  id: string
+  name: string
+  shortDescription: string
+  description: string
+  image: string
+  imageAlt: string
+}
 
-export type ContentBlockDto =
-  | Block<
-      'hero',
-      { slider_id: number | null; slides?: HomePageDto['hero_slides'] }
-    >
-  | {
-      [
-        K in
-          'marquee' | 'categories' | 'materials' | 'promo' | 'about' | 'guide'
-      ]: Block<K, HomePageDto[K]>
-    }['marquee' | 'categories' | 'materials' | 'promo' | 'about' | 'guide']
-  | Extract<ContentBlock, { type: 'text' | 'stores' | 'catalog' }>
+export interface GridBanner extends MaterialCategory {
+  linkUrl: string | null
+}
+
+interface MenuBanner extends GridBanner {
+  note: string
+}
+
+interface SectionIntro {
+  eyebrow: string
+  title: string
+  description?: string
+}
+
+export interface ContentBlockData {
+  hero: { slides: HomeSlide[] }
+  marquee: { topics: string[] }
+  categories: SectionIntro & { items: GridBanner[] }
+  materials: SectionIntro & { items: MenuBanner[] }
+  promo: SectionIntro & { linkLabel: string; linkUrl: string | null }
+  about: ContentBlockData['promo'] & { image: string; imageAlt: string }
+  guide: Pick<SectionIntro, 'eyebrow' | 'title'> & {
+    items: { title: string; description: string }[]
+  }
+  text: { title: string; body: string }
+  stores: { title: string }
+  catalog: { title: string; description: string }
+}
+
+export interface SlideDto {
+  id: number
+  eyebrow: string | null
+  title: string
+  description: string | null
+  image_url: string | null
+  image_alt: string | null
+  link_label: string | null
+  link_url: string | null
+}
+
+export interface BannerItemDto {
+  id: string
+  name: string
+  short_description: string
+  description: string
+  image_url: string | null
+  image_alt: string
+}
+
+export interface ContentBlockDataDto extends Pick<
+  ContentBlockData,
+  'marquee' | 'guide' | 'text' | 'stores' | 'catalog'
+> {
+  hero: { slider_id: number | null; slides?: SlideDto[] }
+  categories: Required<SectionIntro> & {
+    items: (BannerItemDto & { link_url?: string | null })[]
+  }
+  materials: Required<SectionIntro> & {
+    note?: string | null
+    items: (BannerItemDto & {
+      link_url?: string | null
+      note?: string | null
+    })[]
+  }
+  promo: Required<SectionIntro> & { link_label: string; link_url: string }
+  about: ContentBlockDataDto['promo'] & {
+    image_url: string | null
+    image_alt: string
+  }
+}
+
+type Blocks<Data> = {
+  [Type in keyof Data]: {
+    id: string
+    type: Type
+    enabled: boolean
+    data: Data[Type]
+  }
+}[keyof Data]
+
+export type ContentBlock = Blocks<ContentBlockData>
+export type ContentBlockDto = Blocks<ContentBlockDataDto>
+
+export interface ContentSeoDto {
+  title: string
+  description: string
+  og_title: string
+  og_description: string
+  og_image_url: string | null
+}
+
+export interface ContentSeo {
+  title: string
+  description: string
+  ogTitle: string
+  ogDescription: string
+  ogImage: string
+}
 
 export interface PageIntroImage {
   imageUrl: string
@@ -51,7 +135,7 @@ export interface ContentPage {
   slug: string
   body: string
   blocks: ContentBlock[]
-  seo: HomePageContent['seo']
+  seo: ContentSeo
 }
 
 export interface PublicStore {

@@ -1,10 +1,10 @@
 import type {
   ContentBlockDto,
   ContentPage,
+  ContentSeoDto,
   PageIntroDto,
 } from '~/types/contentPage'
-import type { HomePageDto } from '~/services/homePage'
-import type { HomePageContent } from '~/types/homePage'
+import type { SiteAppearance, SiteAppearanceDto } from '~/types/siteAppearance'
 
 export interface DraftPreviewDto {
   page: {
@@ -13,12 +13,12 @@ export interface DraftPreviewDto {
     body: string
     intro?: PageIntroDto | null
     blocks: ContentBlockDto[]
-    seo: HomePageDto['seo']
+    seo: ContentSeoDto
   }
-  appearance: Pick<HomePageDto, 'header' | 'footer'>
+  appearance: SiteAppearanceDto
 }
 
 export interface DraftPreview {
   page: ContentPage
-  appearance: Pick<HomePageContent, 'header' | 'footer'>
+  appearance: SiteAppearance
 }

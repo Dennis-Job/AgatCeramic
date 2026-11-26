@@ -1,10 +1,8 @@
-import {
-  imageUrl,
-  mapContentBlock,
-  mapSiteAppearance,
-} from '~/services/homePage'
-import type { DraftPreview, DraftPreviewDto } from '../types/preview'
+import { mapContentBlock } from '~/services/contentBlocks'
+import { mapSiteAppearance } from '~/services/siteAppearance'
 import { mapPageIntro } from '~/utils/pageIntro'
+import { imageUrl } from '~/utils/siteUrls'
+import type { DraftPreview, DraftPreviewDto } from '../types/preview'
 
 export async function fetchDraftPreview(
   slug: string,

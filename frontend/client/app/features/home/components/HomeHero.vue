@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight } from '@lucide/vue'
 import UiButton from '~/components/ui/UiButton.vue'
-import type { HomeSlide } from '~/types/homePage'
+import type { HomeSlide } from '~/types/contentPage'
 
 const SLIDE_DURATION = 6500
 

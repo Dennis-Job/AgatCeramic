@@ -2,12 +2,12 @@
 import SiteHeader from '~/components/shared/SiteHeader.vue'
 import CallbackRequestDialog from './CallbackRequestDialog.vue'
 import { fetchSellerContacts } from '~/services/contentPages'
-import type { HomePageContent, SiteLink } from '~/types/homePage'
+import type { SiteAppearance, SiteLink } from '~/types/siteAppearance'
 import { formatPhone, normalizePhoneInput } from '~/utils/phone'
 import { useCart } from '~/features/cart/composables/useCart'
 
 defineProps<{
-  content?: HomePageContent['header']
+  content?: SiteAppearance['header']
   socialLinks?: SiteLink[]
   currentPath?: string
   navigationLabel?: string

@@ -1,5 +1,5 @@
 import { collectionPath } from '#shared/utils/pageUrls'
-import { imageUrl } from '~/services/homePage'
+import { imageUrl } from '~/utils/siteUrls'
 import type { ProductCollection, PublicCollection } from '../types/collection'
 
 export function productCollectionLink(

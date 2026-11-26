@@ -1,5 +1,5 @@
 import type { PageIntroImage } from '~/types/contentPage'
-import { imageUrl } from '~/services/homePage'
+import { imageUrl } from '~/utils/siteUrls'
 
 const illustrations: Record<string, { description: string; alt: string }> = {
   catalog: {
