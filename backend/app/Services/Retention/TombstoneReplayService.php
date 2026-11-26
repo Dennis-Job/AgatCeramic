@@ -4,7 +4,8 @@ namespace App\Services\Retention;
 
 use App\Models\ContactRequest;
 use App\Models\Order;
-use App\Models\OrderStatus;
+use App\Queries\ActiveLegalHoldQuery;
+use App\Queries\OrderRetentionQuery;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -17,6 +18,8 @@ final class TombstoneReplayService
         private readonly OrderRetentionAnchorService $anchors,
         private readonly OrderDataDestructionService $orders,
         private readonly ContactRequestDataDestructionService $contacts,
+        private readonly OrderRetentionQuery $orderSelection,
+        private readonly ActiveLegalHoldQuery $legalHolds,
     ) {}
 
     /** @param list<RetentionTombstoneRecord> $records */
@@ -35,7 +38,7 @@ final class TombstoneReplayService
         $eligible = 0;
 
         foreach ($records as $record) {
-            if ($this->hasActiveHold($record)) {
+            if ($this->legalHolds->exists($record->scope, $record->recordId)) {
                 $held++;
             } else {
                 $eligible++;
@@ -53,7 +56,7 @@ final class TombstoneReplayService
             $processed = 0;
 
             foreach ($records as $record) {
-                if ($this->hasActiveHold($record)) {
+                if ($this->legalHolds->exists($record->scope, $record->recordId)) {
                     continue;
                 }
 
@@ -87,13 +90,7 @@ final class TombstoneReplayService
         }
 
         $this->verifyOrderFingerprint($order, $record);
-        $terminalCodes = array_values(OrderStatus::query()
-            ->where('is_terminal', true)
-            ->pluck('code')
-            ->filter(static fn (mixed $code): bool => is_string($code))
-            ->values()
-            ->all());
-        $anchor = $this->anchors->latest($order, $terminalCodes);
+        $anchor = $this->anchors->latest($order, $this->orderSelection->terminalCodes());
         if ($anchor === null) {
             throw new RuntimeException('Restored order retention anchor is missing.');
         }
@@ -153,15 +150,5 @@ final class TombstoneReplayService
         if ($record->subjectHmac === null || ! hash_equals($record->subjectHmac, $actual)) {
             throw new RuntimeException('Restored order fingerprint mismatch.');
         }
-    }
-
-    private function hasActiveHold(RetentionTombstoneRecord $record): bool
-    {
-        return DB::table('retention_legal_holds')
-            ->where('scope', $record->scope)
-            ->where('record_id', $record->recordId)
-            ->where('started_at', '<=', now())
-            ->whereNull('released_at')
-            ->exists();
     }
 }

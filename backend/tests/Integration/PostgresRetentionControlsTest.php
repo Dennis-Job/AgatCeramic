@@ -9,6 +9,7 @@ use App\Models\RetentionTombstone;
 use App\Services\Retention\OrderRetentionService;
 use App\Services\Retention\RetentionPolicy;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -156,6 +157,36 @@ class PostgresRetentionControlsTest extends TestCase
         $this->assertSame('Synthetic Person', $locked->fresh()?->customer_name);
         $this->assertNull($available->fresh()?->customer_name);
         DB::rollBack();
+    }
+
+    public function test_order_acquiring_a_hold_after_locked_selection_is_not_destroyed(): void
+    {
+        $order = $this->expiredOrder();
+        DB::listen(function (QueryExecuted $event) use ($order): void {
+            if (! str_contains($event->sql, '"orders"') || ! str_contains(strtoupper($event->sql), 'FOR UPDATE SKIP LOCKED')) {
+                return;
+            }
+
+            $this->assertGreaterThan(0, $event->connection->transactionLevel());
+            RetentionLegalHold::query()->firstOrCreate([
+                'scope' => 'orders',
+                'record_id' => $order->id,
+            ], [
+                'case_reference' => 'CASE-AFTER-SELECTION',
+                'legal_basis' => 'Synthetic legal hold',
+                'owner_reference' => 'privacy-team',
+                'started_at' => now(),
+                'review_at' => now()->addDay(),
+            ]);
+        });
+
+        [, $result] = app(OrderRetentionService::class)->run(false);
+
+        $this->assertSame(1, $result->eligible);
+        $this->assertSame(0, $result->processed);
+        $this->assertSame(0, $result->held);
+        $this->assertNull($order->refresh()->anonymized_at);
+        $this->assertDatabaseMissing('retention_tombstones', ['scope' => 'orders', 'record_id' => $order->id]);
     }
 
     private function expiredOrder(): Order

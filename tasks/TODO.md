@@ -25,19 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A085 **P2** Отделить retention-выборки и унифицировать проверку legal hold
-  - Цель: [OrderRetentionService](../backend/app/Services/Retention/OrderRetentionService.php)
-    отделяет eligibility queries от batch orchestration; одинаковый predicate active legal hold не
-    дублируется в нём, ContactRequestRetentionService и TombstoneReplayService.
-  - План: перенести сложные eligibility queries в типизированные Query-компоненты; выделить общую
-    проверку hold для orders/contacts. Сохранить специализированные destruction services и
-    транзакцию у use case; не создавать универсальный retention engine или новые правила сроков.
-    Устранить дублирование unheld/heldCount/hasActiveHold без изменения смысла batch counters.
-  - Готовность: PostgreSQL retention/replay tests проверяют cutoff и terminal anchors, holds,
-    bounded batches/SKIP LOCKED, повторную проверку внутри транзакции, rollback и идемпотентность.
-    Dry-run counts, tombstones, evidence и запрет apply без утверждённой policy сохраняются;
-    действующая [retention matrix](../docs/PERSONAL_DATA_LIFECYCLE.md) не меняется.
-
 ## Phase 8 — SEO
 
 - [ ] TASK-100 SEO metadata

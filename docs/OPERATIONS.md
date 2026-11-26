@@ -44,6 +44,20 @@ Git/CI artifacts.
 stale active holds с наступившим `review_at`, oldest failed job/session и повторяющийся ненулевой
 eligible count.
 
+Для заказов и обращений выборки кандидатов выполняют `OrderRetentionQuery` и
+`ContactRequestRetentionQuery`. PostgreSQL выбирает свободные от hold строки
+в порядке ID с `FOR UPDATE SKIP LOCKED`. Сервисы открывают транзакцию,
+повторно проверяют hold выбранных строк и записывают tombstones и evidence
+вместе с изменениями данных. Replay также проверяет hold внутри транзакции.
+
+`ActiveLegalHoldQuery` применяет одно правило к очередным пакетам и replay.
+Hold действует с `started_at` включительно при пустом `released_at` в пределах
+своего scope и записи. `review_at` определяет срок проверки hold.
+В пакетах заказов и обращений `eligible` складывается из двух отдельно
+ограниченных выборок. `holds` отражает исходный подсчёт. Dry-run добавляет к нему
+кандидатов без hold, apply — строки, полученные с блокировкой. `processed`
+учитывает записи, обработанные после повторной проверки.
+
 Техническая реализация `TASK-A044` готова и выключена безопасными defaults. `TASK-A043` принята для
 реализации, но необратимая production-очистка остаётся заблокированной до pre-production approvals
 и operational evidence по внешним logs, email provider, backups/KMS и records schedule.

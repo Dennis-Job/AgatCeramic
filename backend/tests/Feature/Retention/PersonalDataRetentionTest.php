@@ -10,6 +10,8 @@ use App\Models\OrderComment;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\RetentionLegalHold;
+use App\Queries\ActiveLegalHoldQuery;
+use App\Services\Retention\OrderRetentionService;
 use App\Services\Retention\RetentionPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Scheduling\Schedule;
@@ -84,6 +86,50 @@ class PersonalDataRetentionTest extends TestCase
         $this->assertStringNotContainsString('expired@example.test', $output);
     }
 
+    public function test_hold_count_filter_and_record_check_share_the_same_active_holds(): void
+    {
+        $active = $this->expiredOrder();
+        $overdueReview = $this->expiredOrder();
+        $future = $this->expiredOrder();
+        $released = $this->expiredOrder();
+        $otherScope = $this->expiredOrder();
+
+        foreach ([
+            [$active, 'orders', now(), now()->addDay(), null],
+            [$overdueReview, 'orders', now()->subDays(2), now()->subDay(), null],
+            [$future, 'orders', now()->addDay(), now()->addDays(2), null],
+            [$released, 'orders', now()->subDay(), now()->addDay(), now()->addHour()],
+            [$otherScope, 'contacts', now(), now()->addDay(), null],
+        ] as [$order, $scope, $startedAt, $reviewAt, $releasedAt]) {
+            RetentionLegalHold::query()->create([
+                'scope' => $scope,
+                'record_id' => $order->id,
+                'case_reference' => 'SYNTHETIC-HOLD',
+                'legal_basis' => 'Synthetic hold',
+                'owner_reference' => 'legal-team',
+                'started_at' => $startedAt,
+                'review_at' => $reviewAt,
+                'released_at' => $releasedAt,
+            ]);
+        }
+
+        $holds = app(ActiveLegalHoldQuery::class);
+        $candidates = Order::query();
+        $this->assertSame(1, $holds->heldCount($candidates, 'orders', 1));
+        $this->assertSame(2, $holds->heldCount($candidates, 'orders', 10));
+        $this->assertSame(
+            [$future->id, $released->id, $otherScope->id],
+            $holds->unheldBatch($candidates, 'orders', 10)->pluck('id')->all(),
+        );
+        $this->assertSame([$future->id], $holds->unheldBatch($candidates, 'orders', 1)->pluck('id')->all());
+        $this->assertTrue($holds->exists('orders', (int) $active->id));
+        $this->assertTrue($holds->exists('orders', (int) $overdueReview->id));
+        $this->assertFalse($holds->exists('orders', (int) $future->id));
+        $this->assertFalse($holds->exists('orders', (int) $released->id));
+        $this->assertFalse($holds->exists('orders', (int) $otherScope->id));
+        $this->assertTrue($holds->exists('contacts', (int) $otherScope->id));
+    }
+
     public function test_order_apply_is_bounded_idempotent_honours_hold_and_reconciles_children(): void
     {
         config()->set('retention.batch_size', 1);
@@ -126,6 +172,58 @@ class PersonalDataRetentionTest extends TestCase
 
         $this->assertSame(0, Artisan::call('retention:orders', ['--apply' => true]));
         $this->assertSame(2, DB::table('retention_tombstones')->where('action', 'order-anonymized')->count());
+    }
+
+    public function test_direct_pii_expiry_uses_the_latest_terminal_anchor_with_a_strict_cutoff(): void
+    {
+        $cutoff = CarbonImmutable::now()->subYears(3)->subDays(30);
+        $paymentOnCutoff = $this->expiredOrder(['paid_at' => $cutoff]);
+        $historyOnCutoff = $this->expiredOrder();
+        $historyOnly = $this->expiredOrder(['completed_at' => null, 'paid_at' => null]);
+        OrderStatusHistory::factory()->for($historyOnCutoff)->create([
+            'to_status' => 'completed',
+            'occurred_at' => $cutoff,
+        ]);
+        OrderStatusHistory::factory()->for($historyOnly)->create([
+            'to_status' => 'cancelled',
+            'occurred_at' => $cutoff->subSecond(),
+        ]);
+        OrderStatusHistory::factory()->for($historyOnly)->create([
+            'to_status' => 'new',
+            'occurred_at' => $cutoff,
+        ]);
+
+        [, $dryRun] = app(OrderRetentionService::class)->run(true);
+        $this->assertSame(1, $dryRun->eligible);
+        $this->assertSame(0, $dryRun->exceptions);
+
+        [, $apply] = app(OrderRetentionService::class)->run(false);
+        $this->assertSame(1, $apply->processed);
+        $this->assertNull($paymentOnCutoff->refresh()->anonymized_at);
+        $this->assertNull($historyOnCutoff->refresh()->anonymized_at);
+        $this->assertNotNull($historyOnly->refresh()->anonymized_at);
+    }
+
+    public function test_commercial_rows_expire_on_the_cutoff_only_after_anonymization(): void
+    {
+        $atCutoff = $this->expiredOrder([
+            'anonymized_at' => now()->subDay(),
+            'commercial_retention_until' => now(),
+        ]);
+        $afterCutoff = $this->expiredOrder([
+            'anonymized_at' => now()->subDay(),
+            'commercial_retention_until' => now()->addSecond(),
+        ]);
+        $notAnonymized = Order::factory()->create(['commercial_retention_until' => now()]);
+
+        [, , $dryRun] = app(OrderRetentionService::class)->run(true);
+        $this->assertSame(1, $dryRun->eligible);
+
+        [, , $apply] = app(OrderRetentionService::class)->run(false);
+        $this->assertSame(1, $apply->processed);
+        $this->assertModelMissing($atCutoff);
+        $this->assertModelExists($afterCutoff);
+        $this->assertModelExists($notAnonymized);
     }
 
     public function test_missing_order_terminal_timestamp_is_flagged_without_deletion(): void
@@ -293,6 +391,25 @@ class PersonalDataRetentionTest extends TestCase
             ]));
             OrderComment::factory()->for($order)->create(['body' => 'Restored private comment']);
 
+            $hold = RetentionLegalHold::query()->create([
+                'scope' => 'orders',
+                'record_id' => $order->id,
+                'case_reference' => 'SYNTHETIC-RESTORE-HOLD',
+                'legal_basis' => 'Synthetic hold',
+                'owner_reference' => 'legal-team',
+                'started_at' => now(),
+                'review_at' => now()->addDay(),
+            ]);
+            $this->assertSame(0, Artisan::call('retention:tombstones-replay', ['path' => $path, '--apply' => true]));
+            $this->assertSame($original['customer_name'], $order->refresh()->customer_name);
+            $this->assertDatabaseHas('retention_executions', [
+                'scope' => 'restore',
+                'eligible_count' => 1,
+                'processed_count' => 0,
+                'hold_count' => 1,
+            ]);
+            $hold->update(['released_at' => now()]);
+
             $exitCode = Artisan::call('retention:tombstones-replay', ['path' => $path, '--apply' => true]);
             $this->assertSame(0, $exitCode, Artisan::output());
             $output = Artisan::output();
@@ -307,6 +424,10 @@ class PersonalDataRetentionTest extends TestCase
                 'status' => 'completed',
                 'processed_count' => 1,
             ]);
+
+            $this->assertSame(0, Artisan::call('retention:tombstones-replay', ['path' => $path, '--apply' => true]));
+            $this->assertStringContainsString('"processed":0', Artisan::output());
+            $this->assertDatabaseCount('retention_tombstones', 1);
         } finally {
             unlink($path);
         }

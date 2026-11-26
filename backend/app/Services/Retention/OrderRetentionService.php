@@ -3,11 +3,11 @@
 namespace App\Services\Retention;
 
 use App\Models\Order;
-use App\Models\OrderStatus;
+use App\Queries\ActiveLegalHoldQuery;
+use App\Queries\OrderRetentionQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -19,6 +19,8 @@ final class OrderRetentionService
         private readonly RetentionExceptionService $exceptions,
         private readonly OrderDataDestructionService $destruction,
         private readonly OrderRetentionAnchorService $anchors,
+        private readonly OrderRetentionQuery $selection,
+        private readonly ActiveLegalHoldQuery $legalHolds,
     ) {}
 
     /** @return list<RetentionBatchResult> */
@@ -41,14 +43,8 @@ final class OrderRetentionService
     {
         $batchId = (string) Str::uuid();
         $cutoff = $this->policy->orderReviewCutoff();
-        $terminalCodes = $this->terminalCodes();
-        $orders = Order::query()
-            ->whereNull('anonymized_at')
-            ->when($terminalCodes !== [], fn (Builder $query): Builder => $query->whereNotIn('status', $terminalCodes))
-            ->where('updated_at', '<', $cutoff)
-            ->orderBy('id')
-            ->limit($this->policy->batchSize())
-            ->get(['id']);
+        $terminalCodes = $this->selection->terminalCodes();
+        $orders = $this->selection->activeForReview($terminalCodes, $cutoff, $this->policy->batchSize());
 
         if (! $dryRun) {
             foreach ($orders as $order) {
@@ -76,30 +72,30 @@ final class OrderRetentionService
     {
         $batchId = (string) Str::uuid();
         $cutoff = $this->policy->orderPiiCutoff();
-        $terminalCodes = $this->terminalCodes();
+        $terminalCodes = $this->selection->terminalCodes();
 
         if ($terminalCodes === []) {
             return $this->recordEmpty($batchId, 'direct-pii-expiry', $dryRun, $cutoff);
         }
 
         $missing = $this->flagMissingTerminalAnchor($terminalCodes, $dryRun);
-        $baseQuery = $this->eligibleForDirectPiiExpiry($terminalCodes, $cutoff);
-        $held = $this->heldCount(clone $baseQuery);
+        $candidates = $this->selection->eligibleForDirectPiiExpiry($terminalCodes, $cutoff);
+        $held = $this->legalHolds->heldCount($candidates, 'orders', $this->policy->batchSize());
 
         if ($dryRun) {
-            $eligible = count($this->unheld(clone $baseQuery)->orderBy('id')->limit($this->policy->batchSize())->get(['id']));
+            $eligible = $this->countUnheldCandidates($candidates);
             $result = new RetentionBatchResult($batchId, 'orders', 'direct-pii-expiry', true, $cutoff, $eligible + $held, 0, $held, $missing);
             $this->evidence->recordResult($result);
 
             return $result;
         }
 
-        return DB::transaction(function () use ($batchId, $cutoff, $terminalCodes, $held, $missing): RetentionBatchResult {
-            $orders = $this->lockBatch($this->unheld($this->eligibleForDirectPiiExpiry($terminalCodes, $cutoff)));
+        return DB::transaction(function () use ($batchId, $cutoff, $terminalCodes, $candidates, $held, $missing): RetentionBatchResult {
+            $orders = $this->lockUnheldCandidates($candidates);
             $processed = 0;
 
             foreach ($orders as $order) {
-                if ($this->hasActiveHold((int) $order->id)) {
+                if ($this->legalHolds->exists('orders', (int) $order->id)) {
                     continue;
                 }
 
@@ -139,31 +135,23 @@ final class OrderRetentionService
     {
         $batchId = (string) Str::uuid();
         $cutoff = CarbonImmutable::now();
-        $baseQuery = Order::query()
-            ->whereNotNull('anonymized_at')
-            ->whereNotNull('commercial_retention_until')
-            ->where('commercial_retention_until', '<=', $cutoff);
-        $held = $this->heldCount(clone $baseQuery);
+        $candidates = $this->selection->eligibleForCommercialRowExpiry($cutoff);
+        $held = $this->legalHolds->heldCount($candidates, 'orders', $this->policy->batchSize());
 
         if ($dryRun) {
-            $eligible = count($this->unheld(clone $baseQuery)->orderBy('id')->limit($this->policy->batchSize())->get(['id']));
+            $eligible = $this->countUnheldCandidates($candidates);
             $result = new RetentionBatchResult($batchId, 'orders', 'commercial-row-expiry', true, $cutoff, $eligible + $held, 0, $held, 0);
             $this->evidence->recordResult($result);
 
             return $result;
         }
 
-        return DB::transaction(function () use ($batchId, $cutoff, $held): RetentionBatchResult {
-            $orders = $this->lockBatch($this->unheld(
-                Order::query()
-                    ->whereNotNull('anonymized_at')
-                    ->whereNotNull('commercial_retention_until')
-                    ->where('commercial_retention_until', '<=', $cutoff)
-            ));
+        return DB::transaction(function () use ($batchId, $cutoff, $candidates, $held): RetentionBatchResult {
+            $orders = $this->lockUnheldCandidates($candidates);
             $processed = 0;
 
             foreach ($orders as $order) {
-                if ($this->hasActiveHold((int) $order->id)) {
+                if ($this->legalHolds->exists('orders', (int) $order->id)) {
                     continue;
                 }
 
@@ -179,42 +167,10 @@ final class OrderRetentionService
         });
     }
 
-    /**
-     * @param  list<string>  $terminalCodes
-     * @return Builder<Order>
-     */
-    private function eligibleForDirectPiiExpiry(array $terminalCodes, CarbonImmutable $cutoff): Builder
-    {
-        return Order::query()
-            ->whereNull('anonymized_at')
-            ->whereIn('status', $terminalCodes)
-            ->where(fn (Builder $query): Builder => $query
-                ->whereNull('completed_at')
-                ->orWhere('completed_at', '<', $cutoff))
-            ->where(fn (Builder $query): Builder => $query
-                ->whereNull('paid_at')
-                ->orWhere('paid_at', '<', $cutoff))
-            ->whereDoesntHave('statusHistory', fn (Builder $query): Builder => $query
-                ->whereIn('to_status', $terminalCodes)
-                ->where('occurred_at', '>=', $cutoff))
-            ->where(fn (Builder $query): Builder => $query
-                ->whereNotNull('completed_at')
-                ->orWhereNotNull('paid_at')
-                ->orWhereHas('statusHistory', fn (Builder $history): Builder => $history->whereIn('to_status', $terminalCodes)));
-    }
-
     /** @param list<string> $terminalCodes */
     private function flagMissingTerminalAnchor(array $terminalCodes, bool $dryRun): int
     {
-        $orders = Order::query()
-            ->whereNull('anonymized_at')
-            ->whereIn('status', $terminalCodes)
-            ->whereNull('completed_at')
-            ->whereNull('paid_at')
-            ->whereDoesntHave('statusHistory', fn (Builder $query): Builder => $query->whereIn('to_status', $terminalCodes))
-            ->orderBy('id')
-            ->limit($this->policy->batchSize())
-            ->get(['id']);
+        $orders = $this->selection->missingTerminalAnchor($terminalCodes, $this->policy->batchSize());
 
         if (! $dryRun) {
             foreach ($orders as $order) {
@@ -225,63 +181,23 @@ final class OrderRetentionService
         return count($orders);
     }
 
-    /** @return list<string> */
-    private function terminalCodes(): array
+    /** @param Builder<Order> $candidates */
+    private function countUnheldCandidates(Builder $candidates): int
     {
-        $codes = OrderStatus::query()->where('is_terminal', true)->pluck('code')->all();
-
-        return array_values(array_filter($codes, is_string(...)));
+        return count($this->legalHolds->unheldBatch($candidates, 'orders', $this->policy->batchSize())->get(['id']));
     }
 
     /**
-     * @param  Builder<Order>  $query
-     * @return Builder<Order>
-     */
-    private function unheld(Builder $query): Builder
-    {
-        return $query->whereNotExists(fn (QueryBuilder $hold): QueryBuilder => $hold
-            ->selectRaw('1')
-            ->from('retention_legal_holds')
-            ->where('scope', 'orders')
-            ->whereColumn('record_id', 'orders.id')
-            ->where('started_at', '<=', now())
-            ->whereNull('released_at'));
-    }
-
-    /** @param Builder<Order> $query */
-    private function heldCount(Builder $query): int
-    {
-        return count($query->whereExists(fn (QueryBuilder $hold): QueryBuilder => $hold
-            ->selectRaw('1')
-            ->from('retention_legal_holds')
-            ->where('scope', 'orders')
-            ->whereColumn('record_id', 'orders.id')
-            ->where('started_at', '<=', now())
-            ->whereNull('released_at'))
-            ->orderBy('id')
-            ->limit($this->policy->batchSize())
-            ->get(['id']));
-    }
-
-    private function hasActiveHold(int $recordId): bool
-    {
-        return DB::table('retention_legal_holds')
-            ->where('scope', 'orders')
-            ->where('record_id', $recordId)
-            ->where('started_at', '<=', now())
-            ->whereNull('released_at')
-            ->exists();
-    }
-
-    /**
-     * @param  Builder<Order>  $query
+     * @param  Builder<Order>  $candidates
      * @return Collection<int, Order>
      */
-    private function lockBatch(Builder $query): Collection
+    private function lockUnheldCandidates(Builder $candidates): Collection
     {
         $lock = DB::getDriverName() === 'pgsql' ? 'FOR UPDATE SKIP LOCKED' : true;
 
-        return $query->orderBy('id')->limit($this->policy->batchSize())->lock($lock)->get();
+        return $this->legalHolds->unheldBatch($candidates, 'orders', $this->policy->batchSize())
+            ->lock($lock)
+            ->get();
     }
 
     private function recordEmpty(string $batchId, string $action, bool $dryRun, CarbonImmutable $cutoff): RetentionBatchResult

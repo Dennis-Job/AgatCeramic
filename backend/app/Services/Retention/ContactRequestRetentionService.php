@@ -3,11 +3,9 @@
 namespace App\Services\Retention;
 
 use App\Enums\ContactRequestStatus;
-use App\Models\ContactRequest;
+use App\Queries\ActiveLegalHoldQuery;
+use App\Queries\ContactRequestRetentionQuery;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -18,6 +16,8 @@ final class ContactRequestRetentionService
         private readonly RetentionEvidenceService $evidence,
         private readonly RetentionExceptionService $exceptions,
         private readonly ContactRequestDataDestructionService $destruction,
+        private readonly ContactRequestRetentionQuery $selection,
+        private readonly ActiveLegalHoldQuery $legalHolds,
     ) {}
 
     /** @return list<RetentionBatchResult> */
@@ -39,13 +39,7 @@ final class ContactRequestRetentionService
         $batchId = (string) Str::uuid();
         $reviewCutoff = $this->policy->contactReviewCutoff();
         $maximumCutoff = $this->policy->contactMaximumCutoff();
-        $terminalStatuses = [ContactRequestStatus::Completed->value, ContactRequestStatus::Rejected->value];
-        $requests = ContactRequest::query()
-            ->whereNotIn('status', $terminalStatuses)
-            ->where('updated_at', '<', $reviewCutoff)
-            ->orderBy('id')
-            ->limit($this->policy->batchSize())
-            ->get(['id', 'updated_at']);
+        $requests = $this->selection->activeForReview($reviewCutoff, $this->policy->batchSize());
 
         if (! $dryRun) {
             foreach ($requests as $request) {
@@ -76,12 +70,8 @@ final class ContactRequestRetentionService
     {
         $batchId = (string) Str::uuid();
         $action = $status->value.'-deletion';
-        $missing = ContactRequest::query()
-            ->where('status', $status->value)
-            ->whereNull('completed_at')
-            ->orderBy('id')
-            ->limit($this->policy->batchSize())
-            ->get(['id']);
+        $limit = $this->policy->batchSize();
+        $missing = $this->selection->missingTerminalTimestamp($status, $limit);
 
         if (! $dryRun) {
             foreach ($missing as $request) {
@@ -89,31 +79,24 @@ final class ContactRequestRetentionService
             }
         }
 
-        $baseQuery = ContactRequest::query()
-            ->where('status', $status->value)
-            ->whereNotNull('completed_at')
-            ->where('completed_at', '<', $cutoff);
-        $held = $this->heldCount(clone $baseQuery);
+        $candidates = $this->selection->eligibleForDeletion($status, $cutoff);
+        $held = $this->legalHolds->heldCount($candidates, 'contacts', $limit);
 
         if ($dryRun) {
-            $eligible = count($this->unheld(clone $baseQuery)->orderBy('id')->limit($this->policy->batchSize())->get(['id']));
+            $eligible = count($this->legalHolds->unheldBatch($candidates, 'contacts', $limit)->get(['id']));
             $result = new RetentionBatchResult($batchId, 'contacts', $action, true, $cutoff, $eligible + $held, 0, $held, count($missing));
             $this->evidence->recordResult($result);
 
             return $result;
         }
 
-        return DB::transaction(function () use ($batchId, $action, $cutoff, $status, $held, $missing): RetentionBatchResult {
-            $requests = $this->lockBatch($this->unheld(
-                ContactRequest::query()
-                    ->where('status', $status->value)
-                    ->whereNotNull('completed_at')
-                    ->where('completed_at', '<', $cutoff)
-            ));
+        return DB::transaction(function () use ($batchId, $action, $cutoff, $candidates, $limit, $held, $missing): RetentionBatchResult {
+            $lock = DB::getDriverName() === 'pgsql' ? 'FOR UPDATE SKIP LOCKED' : true;
+            $requests = $this->legalHolds->unheldBatch($candidates, 'contacts', $limit)->lock($lock)->get();
             $processed = 0;
 
             foreach ($requests as $request) {
-                if ($this->hasActiveHold((int) $request->id)) {
+                if ($this->legalHolds->exists('contacts', (int) $request->id)) {
                     continue;
                 }
 
@@ -132,56 +115,5 @@ final class ContactRequestRetentionService
 
             return $result;
         });
-    }
-
-    /**
-     * @param  Builder<ContactRequest>  $query
-     * @return Builder<ContactRequest>
-     */
-    private function unheld(Builder $query): Builder
-    {
-        return $query->whereNotExists(fn (QueryBuilder $hold): QueryBuilder => $hold
-            ->selectRaw('1')
-            ->from('retention_legal_holds')
-            ->where('scope', 'contacts')
-            ->whereColumn('record_id', 'contact_requests.id')
-            ->where('started_at', '<=', now())
-            ->whereNull('released_at'));
-    }
-
-    /** @param Builder<ContactRequest> $query */
-    private function heldCount(Builder $query): int
-    {
-        return count($query->whereExists(fn (QueryBuilder $hold): QueryBuilder => $hold
-            ->selectRaw('1')
-            ->from('retention_legal_holds')
-            ->where('scope', 'contacts')
-            ->whereColumn('record_id', 'contact_requests.id')
-            ->where('started_at', '<=', now())
-            ->whereNull('released_at'))
-            ->orderBy('id')
-            ->limit($this->policy->batchSize())
-            ->get(['id']));
-    }
-
-    private function hasActiveHold(int $recordId): bool
-    {
-        return DB::table('retention_legal_holds')
-            ->where('scope', 'contacts')
-            ->where('record_id', $recordId)
-            ->where('started_at', '<=', now())
-            ->whereNull('released_at')
-            ->exists();
-    }
-
-    /**
-     * @param  Builder<ContactRequest>  $query
-     * @return Collection<int, ContactRequest>
-     */
-    private function lockBatch(Builder $query): Collection
-    {
-        $lock = DB::getDriverName() === 'pgsql' ? 'FOR UPDATE SKIP LOCKED' : true;
-
-        return $query->orderBy('id')->limit($this->policy->batchSize())->lock($lock)->get();
     }
 }
