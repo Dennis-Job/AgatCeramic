@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Jobs\ProcessProductImport;
 use App\Models\Attribute;
+use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\Permission;
 use App\Models\Product;
@@ -434,12 +435,13 @@ class CategoryProductImportTest extends TestCase
         $this->assertSame('Да', $rows[0]['attribute.rectified']);
         $this->assertArrayHasKey('sku', $template->headers($category, true));
 
-        $updated = array_replace($rows[0], ['name' => 'Обновлённая плитка', 'price' => 99, 'attribute.color' => 'Серый', 'attribute.features.1' => 'Фактура; "камень"', 'attribute.features.2' => null]);
+        $updated = array_replace($rows[0], ['name' => 'Обновлённая плитка', 'slug' => null, 'price' => 99, 'attribute.color' => 'Серый', 'attribute.features.1' => 'Фактура; "камень"', 'attribute.features.2' => 'Фактура; "камень"']);
         $import = $this->storedImport($this->actor(), $category, [$updated], true);
         app(CategoryProductImportService::class)->process($import, Storage::disk('local')->path($import->path));
 
         $product->refresh();
         $this->assertSame($product->sku, $rows[0]['sku']);
+        $this->assertSame($rows[0]['slug'], $product->slug);
         $this->assertSame('Обновлённая плитка', $product->name);
         $this->assertSame('99.00', $product->price);
         $this->assertSame('gray', $product->attributeValues()->where('attribute_id', $color->id)->value('value'));
@@ -452,6 +454,44 @@ class CategoryProductImportTest extends TestCase
         app(CategoryProductImportService::class)->process($invalidImport, Storage::disk('local')->path($invalidImport->path));
         $this->assertSame(1, $invalidImport->refresh()->failed_rows);
         $this->assertStringContainsString('выбранной категории', $invalidImport->rowErrors()->sole()->messages[0]);
+    }
+
+    public function test_duplicate_name_found_after_create_rolls_back_the_row_and_keeps_its_checkpoint(): void
+    {
+        Storage::fake('local');
+        [$category, $color] = $this->catalog();
+        $existing = Product::factory()->create(['name' => 'Existing product']);
+        $import = $this->storedImport($this->actor(), $category, [
+            $this->values('Conflicting tile') + ['attribute.color' => 'Белый'],
+            $this->values('Valid tile') + ['attribute.color' => 'Серый'],
+        ]);
+        $allocatedSku = null;
+        // Make a case-insensitive name conflict visible only after the first row allocates its SKU.
+        Product::created(function (Product $product) use ($existing, &$allocatedSku): void {
+            if ($product->name === 'Conflicting tile') {
+                $allocatedSku = $product->sku;
+                Product::query()->whereKey($existing->id)->update(['name' => 'CONFLICTING TILE']);
+            }
+        });
+
+        $service = app(CategoryProductImportService::class);
+        $path = Storage::disk('local')->path($import->path);
+        $this->assertTrue($service->process($import, $path));
+        $this->assertTrue($service->process($import->fresh(), $path));
+
+        $import->refresh();
+        $this->assertSame(2, $import->processed_rows);
+        $this->assertSame(1, $import->created_rows);
+        $this->assertSame(1, $import->failed_rows);
+        $this->assertSame(3, $import->last_processed_row);
+        $this->assertSame(['Строка 2: товар с таким наименованием уже существует.'], $import->rowErrors()->sole()->messages);
+        $this->assertDatabaseMissing('products', ['name' => 'Conflicting tile']);
+        $this->assertSame('Existing product', $existing->fresh()->name);
+        $saved = Product::query()->where('name', 'Valid tile')->sole();
+        $this->assertSame($allocatedSku, $saved->sku);
+        $this->assertSame('gray', $saved->attributeValues()->where('attribute_id', $color->id)->sole()->value);
+        $this->assertDatabaseCount('product_attribute_values', 1);
+        $this->assertSame('Valid tile', AuditLog::query()->where('action', 'product.created')->sole()->entity_snapshot['name']);
     }
 
     public function test_checkpoint_resumes_after_interruption_and_chunks_large_workbooks_without_duplicates(): void

@@ -25,14 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A079 **P2** Упростить применение строки category-template import
-  - Цель: [CategoryProductRowImporter](../backend/app/Services/CategoryProductRowImporter.php) имеет
-    ясные шаги нормализации, определения сущностей и применения данных вместо сложного apply.
-  - План: использовать существующие mapper/parser/executor boundaries, выделить только
-    самостоятельные операции; сохранить транзакцию и checkpoint у вызывающего сценария.
-  - Готовность: category import regression tests покрывают create/update, validation errors,
-    повторный запуск, разрешённые характеристики и SKU; PostgreSQL suite подтверждает инварианты.
-
 - [ ] TASK-A080 **P2** Разделить операции SpreadsheetML в генераторе import template
   - Цель:
     [ProductImportTemplateValidationWriter](../backend/app/Services/ProductImportTemplateValidationWriter.php)

@@ -141,8 +141,13 @@ retrying. Completed rows are retained as cleanup history.
 `POST /api/v1/admin/products/import` stores the uploaded XLSX on the private `local` disk and
 dispatches `ProcessProductImport` after the import-status row commits. Legacy/export imports
 without `category_id` use one catalogue transaction; a failed attempt leaves no partial rows.
-Category templates use separate row transactions: each created product or recorded row error,
-its counters, and `last_processed_row` commit atomically under a lock on the import record.
+For each category-template row, the importer locks the category and resolves edit rows by SKU
+within that category. It normalizes workbook fields and option labels against the category's
+current attributes, then uses the shared row mapper and executor to validate and write the
+product. A create also rechecks the name after writing. A failed validation rolls back product,
+attribute, SKU allocation and audit changes before the import records the error.
+The import service commits each successful row or recorded error together with its counters
+and `last_processed_row` under a lock on the import record.
 Retries skip that checkpoint, so a worker interruption cannot create duplicates or turn an
 already successful row into a duplicate-name error. At most 100 rows or 35 seconds of processing
 are handled per job, then the next chunk is queued. The 80-second job timeout remains below
