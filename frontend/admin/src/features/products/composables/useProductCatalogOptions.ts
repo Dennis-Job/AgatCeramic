@@ -4,14 +4,9 @@ import { getAllBrands } from '../../brands/services/brands'
 import type { Brand } from '../../brands/types/brand.types'
 import { getCategories } from '../../categories/services/categories'
 import type { Category } from '../../categories/types/category.types'
+import { flattenCategoryTree } from '../../categories/utils/categoryTree'
 
 type CatalogOptions = { categoryList: Category[]; brandList: Brand[] }
-
-function flatten(nodes: Category[]): Category[] {
-  return [...nodes]
-    .sort((left, right) => compareAlphabetically(left.name, right.name))
-    .flatMap((item) => [item, ...flatten(item.children ?? [])])
-}
 
 export function useProductCatalogOptions() {
   const categories = ref<Category[]>([])
@@ -20,7 +15,9 @@ export function useProductCatalogOptions() {
   let brandsRequest: Promise<Brand[]> | null = null
 
   const categoryOptions = computed(() =>
-    flatten(categories.value)
+    flattenCategoryTree(categories.value, (left, right) =>
+      compareAlphabetically(left.name, right.name),
+    )
       .filter((item) => item.is_active)
       .map((item) => ({
         value: String(item.id),

@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { getCategories } from '../../categories/services/categories'
 import type { Category } from '../../categories/types/category.types'
+import { flattenCategoryTree } from '../../categories/utils/categoryTree'
 import { compareAlphabetically } from '../../../utils/alphabetical'
 import {
   getProductImageImport,
@@ -43,7 +44,14 @@ export function useProductImport(onCompleted: () => void) {
     onCompleted,
   })
 
-  const categoryOptions = computed(() => flattenCategories(categories.value))
+  const categoryOptions = computed(() =>
+    flattenCategoryTree(categories.value, (left, right) =>
+      compareAlphabetically(left.name, right.name),
+    ).map((item) => ({
+      value: String(item.id),
+      label: `${item.name}${item.is_active ? '' : ' (скрыта)'}`,
+    })),
+  )
   const successful = computed(
     () =>
       (productImport.result.value?.created_rows ?? 0) +
@@ -164,18 +172,4 @@ function calculateProgress(
     return Math.max(0, Math.min(100, Math.round((processed / total) * 100)))
   if (status === 'pending' || status === 'processing') return undefined
   return 0
-}
-
-function flattenCategories(
-  nodes: Category[],
-): { value: string; label: string }[] {
-  return [...nodes]
-    .sort((a, b) => compareAlphabetically(a.name, b.name))
-    .flatMap((item) => [
-      {
-        value: String(item.id),
-        label: `${item.name}${item.is_active ? '' : ' (скрыта)'}`,
-      },
-      ...flattenCategories(item.children ?? []),
-    ])
 }

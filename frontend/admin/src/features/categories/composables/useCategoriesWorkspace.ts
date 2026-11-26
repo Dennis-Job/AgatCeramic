@@ -2,12 +2,12 @@ import { getCurrentScope, onScopeDispose, ref } from 'vue'
 import type { Attribute } from '../../attributes/types/attribute.types'
 import type { AttributeGroup } from '../../attribute-groups/types/attributeGroup.types'
 import type { Category } from '../types/category.types'
+import {
+  flattenCategoryTree,
+  getCategoryDescendantIds,
+} from '../utils/categoryTree'
 import { useCategoryCatalog } from './useCategoryCatalog'
 import { useCategoryOverview } from './useCategoryOverview'
-
-function flattenTree(items: Category[]): Category[] {
-  return items.flatMap((item) => [item, ...flattenTree(item.children ?? [])])
-}
 
 export function useCategoriesWorkspace() {
   const catalog = useCategoryCatalog()
@@ -30,17 +30,11 @@ export function useCategoriesWorkspace() {
   const detailsLoading = ref(false)
   const detailsAttributes = ref<Attribute[]>([])
   const detailsGroups = ref<AttributeGroup[]>([])
-  function descendants(category: Category): number[] {
-    return (category.children ?? []).flatMap((child) => [
-      child.id,
-      ...descendants(child),
-    ])
-  }
   function parentOptionsFor(
     editing: Category | null,
   ): { label: string; value: string }[] {
     const excluded = new Set(
-      editing ? [editing.id, ...descendants(editing)] : [],
+      editing ? [editing.id, ...getCategoryDescendantIds(editing)] : [],
     )
     return [
       { label: 'Без родителя', value: '' },
@@ -65,7 +59,7 @@ export function useCategoriesWorkspace() {
     try {
       const tree = await catalog.getCategories(true)
       if (current !== loadVersion) return
-      categories.value = flattenTree(tree)
+      categories.value = flattenCategoryTree(tree)
       loading.value = false
       hydrateOverview(categories.value)
     } catch (reason) {

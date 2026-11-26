@@ -43,6 +43,32 @@
 В `e2e/headerPopovers.spec.ts` исправлено устаревшее ожидание трёх колонок
 меню «Товары»: после предыдущего согласованного переноса ссылки их две.
 
+## Обход дерева категорий в Admin (TASK-A084)
+
+Модуль [`categoryTree.ts`](../frontend/admin/src/features/categories/utils/categoryTree.ts)
+разворачивает дерево в порядке «родитель, затем потомки». По умолчанию он
+сохраняет порядок API. Переданная функция сравнения задаёт порядок категорий
+одного уровня в каждой ветке. Обход и сортировка не изменяют исходные массивы.
+Получение ID потомков использует тот же обход и начинается с дочерних узлов.
+
+- Справочник категорий в [`useCategoriesWorkspace.ts`](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts)
+  сохраняет порядок API. В поле выбора родителя доступны
+  категории с `is_parent`, в том числе скрытые. Редактируемая категория и все
+  её потомки исключаются.
+- Редактор товара в [`useProductCatalogOptions.ts`](../frontend/admin/src/features/products/composables/useProductCatalogOptions.ts)
+  сортирует категории одного уровня по алфавиту и показывает
+  только активные категории. Активный потомок скрытой категории доступен.
+- Импорт XLSX в [`useProductImport.ts`](../frontend/admin/src/features/products/composables/useProductImport.ts)
+  сортирует категории одного уровня по алфавиту и показывает
+  скрытые категории с подписью «(скрыта)».
+
+Unit-тесты в [`categoryTree.test.ts`](../frontend/admin/tests/categoryTree.test.ts)
+проверяют пустое и вложенное дерево, сортировку без мутации и правила всех трёх
+потребителей. Прошли все 360 Admin unit-тестов и 127 профильных Chromium E2E,
+включая выбор категории в редакторе, сохранение выбора при SPA-навигации в
+импорте и управление справочником с клавиатуры. ESLint, Prettier и production
+build прошли. Независимое ревью правил выбора завершилось без замечаний.
+
 ## Проверка
 
 ESLint, Prettier и production build проходят. Unit: 148/148. Целевые

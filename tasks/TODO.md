@@ -25,18 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A084 **P2** Убрать дублирование обхода дерева категорий в Admin
-  - Цель: рекурсивный обход не повторяется в
-    [useCategoriesWorkspace](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts),
-    [useProductCatalogOptions](../frontend/admin/src/features/products/composables/useProductCatalogOptions.ts) и
-    [useProductImport](../frontend/admin/src/features/products/composables/useProductImport.ts).
-  - План: выделить чистые типизированные операции обхода и получения потомков в categories feature;
-    правила сортировки, доступности и подписи options оставить явными у потребителей. Editor
-    по-прежнему скрывает неактивные категории, import показывает их с отметкой, parent selector
-    исключает саму категорию и её потомков. Не вводить универсальный tree framework.
-  - Готовность: unit tests проверяют пустое/вложенное дерево, отсутствие мутаций, порядок siblings,
-    разные правила hidden categories и исключение потомков; catalog/import E2E сохраняют выбор.
-
 - [ ] TASK-A085 **P2** Отделить retention-выборки и унифицировать проверку legal hold
   - Цель: [OrderRetentionService](../backend/app/Services/Retention/OrderRetentionService.php)
     отделяет eligibility queries от batch orchestration; одинаковый predicate active legal hold не
