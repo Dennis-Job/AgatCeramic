@@ -33,8 +33,8 @@ Backend не должен содержать Blade/HTML-визуализацию
 - доступ к данным;
 - интеграционную логику.
 
-Предпочтительный поток backend:
-HTTP Request -> Form Request -> Controller -> Service/Use Case -> Repository/Query -> Model/DB -> API Resource.
+Типовые потоки чтения и записи, правила слоёв и проектные границы описаны в
+[`backend/AGENTS.md`](backend/AGENTS.md) и [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 Контроллеры должны оставаться тонкими.
 
@@ -49,7 +49,7 @@ HTTP Request -> Form Request -> Controller -> Service/Use Case -> Repository/Que
 - Laravel Queue;
 - Laravel Scheduler;
 - API Resources;
-- Sanctum для админской SPA-аутентификации, если архитектура размещения требует cookie/session SPA auth;
+- Sanctum для админской SPA-аутентификации через cookie/session и CSRF;
 - OpenAPI для API-контракта.
 
 Laravel backend — только API.

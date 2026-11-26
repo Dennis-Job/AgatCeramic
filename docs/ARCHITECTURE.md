@@ -1,331 +1,138 @@
 # Архитектура AgatCeramic
 
-## 1. Общая схема
+## 1. Приложения и границы
 
 ```text
-                    Internet
-                       |
-                 Nuxt Client
-                       |
-                       | REST API
-                       v
-                Laravel API
-                       |
-        +--------------+--------------+
-        |              |              |
-    PostgreSQL       Redis         Storage
-        |              |
-        |           Queues
-        |
-     Business Data
-
-Admin Vue
-    |
-    | REST API
-    v
-Laravel API
+Vue Admin SPA ─┐
+Nuxt Client ───┴→ Laravel API ─┬→ PostgreSQL
+                               ├→ Redis (кэш и очередь)
+                               └→ Файловое хранилище
 ```
 
-## 2. Backend modules
+Laravel — API-only модульный монолит. Он владеет данными и бизнес-правилами
+доступа, каталога, корзины, заказов, обращений, контента, настроек и аудита.
+Nuxt отвечает за SSR витрины, Vue Admin — за интерфейс сотрудников. Worker и
+scheduler запускают вынесенные из HTTP фоновые сценарии того же приложения.
+Топология локального запуска описана в [OPERATIONS.md](OPERATIONS.md).
 
-Предварительные bounded modules:
-- Auth;
-- Admin Users;
-- Catalog;
-- Categories;
-- Attributes;
-- Brands;
-- Media;
-- Cart;
-- Orders;
-- Contacts;
-- Content;
-- SEO;
-- Analytics;
-- Settings;
-- Audit;
-- Notifications;
-- Import/Export.
+[DOCUMENTATION.md](DOCUMENTATION.md) определяет источники по темам. Общие
+требования к изменениям закреплены в [корневом AGENTS.md](../AGENTS.md),
+правила слоёв и каталогов — в AGENTS.md соответствующего приложения.
 
-Не превращать каждый модуль автоматически в отдельный микросервис.
+## 2. Backend
 
-На старте использовать модульный монолит Laravel.
+[Backend AGENTS.md](../backend/AGENTS.md) определяет правила разработки. Запись
+проходит через Route, Form Request для нетривиальной валидации, Controller и
+application service. Сервис владеет инвариантами и транзакцией. При чтении
+Controller использует Query object для сложной выборки или Model для простого
+чтения и возвращает API Resource. Ресурс формирует ответ из подготовленных
+данных. Eloquent Model отвечает за связи, casts, scopes и локальное поведение.
+Отдельный repository нужен, когда сценарий требует собственной границы доступа
+к данным.
 
-## 3. Backend layers
-
-```text
-HTTP
-  ↓
-Requests
-  ↓
-Controllers
-  ↓
-Application Services / Use Cases
-  ↓
-Domain logic
-  ↓
-Repositories / Query objects
-  ↓
-Eloquent / DB
-```
-
-Для простых CRUD операций допустимо не создавать искусственную сложность.
+- [app/Http](../backend/app/Http) — входная валидация, авторизация, вызов
+  сценария и представление ответа.
+- [app/Services](../backend/app/Services) — прикладные сценарии, транзакции и
+  координация интеграций.
+- [app/Queries](../backend/app/Queries) и [app/Models](../backend/app/Models) —
+  выборки, persistence и локальное поведение сущностей.
+- [app/Jobs](../backend/app/Jobs) и [app/Console](../backend/app/Console) —
+  входы для фоновых и эксплуатационных сценариев. В очередь, которой нужны
+  зафиксированные данные, задания передаются после commit.
 
 ### Автоматические границы
 
-`cd backend && composer architecture` разбирает `app/**/*.php` через PHP Parser и является
-блокирующим шагом CI. Guard закрепляет следующие направления:
+`composer architecture` из `backend/` разбирает `app/**/*.php` через PHP Parser.
+Блокирующий шаг [CI](CI.md) реализован в
+[ArchitectureGuard.php](../backend/scripts/architecture/ArchitectureGuard.php).
 
-| Исходный слой | Разрешённое направление | Запрещённое направление |
-| --- | --- | --- |
-| HTTP Controllers/Requests/Middleware | Application services, Queries, Models, API Resources | Controllers: DB facade, прямые Eloquent mutations, `app()`/`resolve()`, глобальные `request()`/`auth()` |
-| Application (`app/Services`) | Models, Queries и явные integration entry points | `App\Http\*`, HTTP Request/Response types |
-| Data models (`app/Models`) | Enums, local model/support primitives | HTTP, Services, Queries, Jobs, Console, Mail |
-| Read queries (`app/Queries`) | Models и query primitives | HTTP, Services, Jobs, Console, Mail |
-| API presentation (`Http/Resources`, `Http/Responses`) | Models, enums и другие presentation components | Services, Queries, Jobs, Console, Mail |
-| Integration entry points (`Jobs`, `Console`, `Mail`, `Logging`) | Application/Data | Controllers, Requests, Resources, Responses |
+| Код | Что блокирует guard |
+| --- | --- |
+| `Http/Controllers` | DB facade, распознаваемые прямые Eloquent mutations, `app()`, `resolve()`, глобальные `request()` и `auth()`. |
+| `Services` | Зависимости от `App\Http\*` и HTTP-типов Request, Resource и Response, перечисленных в guard. |
+| `Models` | Зависимости от HTTP, Services, Queries, Jobs, Console и Mail. |
+| `Queries` | Зависимости от HTTP, Services, Jobs, Console и Mail. |
+| `Http/Resources`, `Http/Responses` | Зависимости от Services, Queries, Jobs, Console и Mail. |
+| `Jobs`, `Console`, `Mail`, `Logging` | Зависимости от Controllers, Requests, Resources и Responses. |
 
-Guard отдельно печатает review-сигналы из [`backend/AGENTS.md`](../backend/AGENTS.md): класс
-длиннее 250 строк и метод длиннее 40 строк. Дополнительный проектный сигнал — cyclomatic
-complexity метода выше 10. Эти findings не блокируют CI автоматически: они требуют проверить
-разделение ответственности и зафиксировать решение в review.
+Класс длиннее 250 строк, метод длиннее 40 строк или с cyclomatic complexity
+выше 10 требует review разделения ответственности. Guard сообщает об этих
+порогах отдельно от блокирующих нарушений. Временное исключение в
+[architecture-allowlist.php](../backend/scripts/architecture-allowlist.php)
+указывает точные `path`, `rule`, `line`, причину и задачу удаления долга.
+Некорректная или устаревшая запись блокирует проверку.
 
-Исключение архитектурного нарушения допускается только временно в
-[`backend/scripts/architecture-allowlist.php`](../backend/scripts/architecture-allowlist.php).
-Запись должна точно указывать `path`, `rule`, `line`, причину и отдельную задачу удаления долга в
-формате `TASK-A000` или `TASK-000`. Некорректная или устаревшая запись сама ломает gate; общий
-baseline и wildcard-исключения не поддерживаются.
+### API
 
-## 4. API
+Laravel регистрирует публичные и административные маршруты в
+[реестре API v1](../backend/routes/api/v1.php). Admin использует cookie/session
+аутентификацию Sanctum с CSRF. Backend проверяет доступ независимо от
+маршрутизации Admin. Гостевая корзина использует отдельный токен.
+Форматы запросов, ответов и ошибок задаёт [OpenAPI](openapi.json).
+Сценарии интеграции описаны в [API.md](API.md).
 
-### Коллекции товаров
+### Границы предметных сценариев
 
-`ProductCollection` — отдельная сущность `product_collections`, принадлежащая
-одному бренду. `products.collection_id` необязателен; составной FK связывает
-коллекцию с тем же брендом товара, CHECK запрещает коллекцию без бренда.
-`categories.uses_collections` разрешает назначения явно, без наследования.
-Проверки категории/активности и изменения связей выполняются application-сервисами
-в транзакциях с блокировками; новый CRUD использует `catalog.manage` и аудит.
-Страна наследуется из бренда, фото использует существующую managed media.
+- Каталог хранит самостоятельные продаваемые позиции. Группы связывают
+  позиции для навигации по вариантам, а коллекции принадлежат брендам.
+  Инварианты и модель связей описаны в [DATABASE.md](DATABASE.md).
+- Checkout повторно проверяет актуальные цены и остатки. Транзакция создаёт
+  заказ, снимки позиций и записи почтовых доставок. После commit очередь
+  получает ID доставок. [Публичный checkout](API.md#заказы),
+  [учёт оплаты в Admin](API.md#заказы-1).
+- Сервисы импорта разделяют чтение файла, проверку, планирование, запись и
+  генерацию отчёта. Оркестрация владеет транзакциями и checkpoint, а фоновые
+  задания — обработкой пакетов и очисткой временных файлов. Подробности
+  импорта и очистки медиатеки находятся в [QUEUE.md](QUEUE.md).
+- Правила хранения аудита и исключения ПДн из обычных логов находятся в
+  [LOGGING.md](LOGGING.md), а политика хранения и удаления ПДн — в
+  [PERSONAL_DATA_LIFECYCLE.md](PERSONAL_DATA_LIFECYCLE.md).
 
-Историческая `kollektsiya` сохраняется для контроля/отката и исключается из
-рабочих характеристик, обязательности и общих значений групп. Единый источник
-новых данных — `collection_id`; Excel поддерживает старую колонку как входной
-alias. Read-only preflight и явная команда apply проверяются на PostgreSQL-копии
-до переключения. Публичная nullable-проекция управляет секцией Client: при
-отсутствии коллекции/описания/публичного фото нет секции и пустого отступа.
-Подробности: [спецификация и эксплуатация](PRODUCT_COLLECTIONS_2026-10-30.md).
+## 3. Admin
 
-API versioning:
-`/api/v1/...`
+Vue 3 SPA на TypeScript, Vite, Vue Router и Pinia использует декларативные
+маршруты и feature-структуру. Обязательные правила находятся в
+[Admin AGENTS.md](../frontend/admin/AGENTS.md).
 
-Примеры:
-- `GET /api/v1/products`
-- `POST /api/v1/products`
-- `GET /api/v1/products/{product}`
-- `PATCH /api/v1/products/{product}`
-- `DELETE /api/v1/products/{product}`
+| Каталог | Ответственность |
+| --- | --- |
+| [src/router](../frontend/admin/src/router), [src/views](../frontend/admin/src/views) | Маршруты, проверка доступа и тонкая композиция экрана. |
+| [src/features](../frontend/admin/src/features) | Доменные сценарии. Компоненты показывают данные и передают события, composables координируют состояние и действия, services инкапсулируют endpoints и mapping. |
+| [src/layouts](../frontend/admin/src/layouts), [src/stores](../frontend/admin/src/stores) | Оболочка приложения и глобальное состояние, включая сессию и права. |
+| [src/components/ui](../frontend/admin/src/components/ui), [src/components/shared](../frontend/admin/src/components/shared) | Общие UI primitives и недоменные составные компоненты. Features используют их без обратных зависимостей. |
+| [src/services](../frontend/admin/src/services) | Общий HTTP-транспорт, аутентификация и нормализация ошибок. Feature services используют [api.ts](../frontend/admin/src/services/api.ts). |
+| [src/styles](../frontend/admin/src/styles) | Глобальные стили и design tokens Seller UI-kit. |
 
-Для списков:
-- pagination;
-- sorting;
-- filtering;
-- search.
-
-JSON responses должны быть стабильными.
-
-Использовать API Resources.
-
-## 5. Frontend Admin
-
-Предлагаемая структура:
-
-```text
-frontend/admin/
-└── src/
-    ├── components/
-    ├── layouts/
-    ├── views/
-    │   ├── dashboard/
-    │   ├── products/
-    │   ├── categories/
-    │   ├── attributes/
-    │   ├── brands/
-    │   ├── orders/
-    │   ├── contacts/
-    │   ├── content/
-    │   ├── seo/
-    │   ├── analytics/
-    │   ├── settings/
-    │   └── users/
-    ├── stores/
-    ├── services/
-    ├── composables/
-    ├── router/
-    └── types/
-```
-
-UI — TailAdmin Vue style.
+Визуальные источники — Seller UI-kit и design tokens проекта. Утверждённое
+направление описывает [план Seller-редизайна](ADMIN_SELLER_REDESIGN_PLAN.md).
+Правила приёмки общие для Admin и Client. [UI_DESIGN_REVIEW.md](UI_DESIGN_REVIEW.md).
 
 ### Загрузка маршрутов Admin
 
 [Vue Router](../frontend/admin/src/router/index.ts) загружает экраны через
 динамические импорты, включая UI-kit. Восстановление сессии и проверка прав
-происходят до запроса кода экрана. Три рабочие области импорта сохраняют
-состояние между SPA-переходами через `KeepAlive` в пределах текущей сессии.
+происходят до запроса кода защищённого экрана. Три рабочие области импорта
+удерживаются в `KeepAlive` между SPA-переходами в рамках сессии и набора прав.
 
-Если чанк текущего перехода недоступен, [приложение](../frontend/admin/src/App.vue)
-показывает диалог на основе Seller UI-kit. При SPA-переходе можно остаться на
-открытой странице. Действие «Обновить страницу» заново загружает документ по
-целевому адресу с параметрами и фрагментом. При прямом входе пользователь
-может запустить перезагрузку до первого рендера маршрута.
+Если чанк текущего перехода недоступен, [App.vue](../frontend/admin/src/App.vue)
+показывает диалог Seller UI-kit. При SPA-переходе можно остаться на открытой
+странице. Действие «Обновить страницу» повторно открывает целевой адрес с
+query-параметрами и фрагментом, включая ошибку при прямом входе.
 
-Замер TASK-A072 выполнен на production-сборках Vite 8.2.1 на Windows с Node
-24.19.0. База — `63ba9e6`. Начальный JS включает модуль из `index.html` и его
-`modulepreload`. Для каждого прямого входа Chromium использовал новый контекст
-и mock API. В таблице суммируются уникальные JS-файлы, запрошенные к моменту
-подтверждения маршрута. Размеры в кБ десятичные, gzip рассчитан для каждого
-файла отдельно через Node `gzipSync`.
+## 4. Client
 
-| Сценарий | До, кБ / gzip | После, кБ / gzip |
-| --- | ---: | ---: |
-| Начальный JS из `index.html` | 1 217,46 / 345,09 | 171,09 / 62,81 |
-| Вход `/login` | 1 217,46 / 345,09 | 182,30 / 68,49 |
-| Главная `/` | 1 217,46 / 345,09 | 182,89 / 68,82 |
-| Товары `/products` | 1 217,46 / 345,09 | 317,53 / 115,72 |
-| Импорт `/products/import` | 1 217,46 / 345,09 | 222,40 / 83,00 |
-| Цены и статусы `/products/price-status` | 1 217,46 / 345,09 | 189,46 / 71,35 |
-| Объединение `/products/combine` | 1 217,46 / 345,09 | 190,52 / 71,83 |
-| UI-kit `/ui-kit` | 1 217,46 / 345,09 | 658,78 / 222,04 |
-| Начальный экран контента `/content` | 1 217,46 / 345,09 | 363,80 / 121,85 |
+Nuxt 4 на Vue 3 и TypeScript отвечает за SSR публичной витрины. Тонкие
+[app/pages](../frontend/client/app/pages) связывают параметры маршрута,
+page-level загрузку, SEO и доменные сценарии из
+[app/features](../frontend/client/app/features). Общие компоненты, composables
+и API services находятся в `app/` на одном уровне с features. Nitro
+[server/routes](../frontend/client/server/routes) обслуживает технические SEO
+маршруты. Каталог, цены, наличие и оформление заказов остаются в Laravel.
 
-Первый SPA-переход из списка товаров в массовый импорт запросил ещё 6 JS-файлов
-на 30,49 кБ, или 10,46 кБ gzip. Возврат назад и повторный вход вперёд в той же
-SPA-сессии потребовали 0 дополнительных JS-запросов.
+Публичные страницы получают опубликованный контент. Для предпросмотра Admin
+открывает тот же Nuxt-рендер в защищённом маршруте. Сохранённый черновик
+загружается после подтверждения доступа и остаётся вне SSR payload.
 
-## 6. Frontend Client
-
-Nuxt:
-- pages;
-- layouts;
-- components;
-- composables;
-- stores;
-- API services;
-- SEO composables;
-- schema.org structured data;
-- image optimization.
-
-Публичные страницы должны быть индексируемыми там, где это необходимо.
-
-## 7. Cart
-
-Так как регистрации нет:
-- корзина должна работать без аккаунта;
-- cart identifier хранится у клиента;
-- сервер должен валидировать цены и доступность товара при оформлении;
-- нельзя доверять итоговой сумме из браузера.
-
-## 8. Order creation
-
-Поток:
-
-```text
-Client
-  ↓
-POST /orders
-  ↓
-Validate contact data
-  ↓
-Validate cart
-  ↓
-Read actual product prices
-  ↓
-Create order
-  ↓
-Create order items with price snapshots
-  ↓
-Queue email notification
-  ↓
-Return order number
-```
-
-Цена в `order_items` должна сохраняться как snapshot.
-
-## 9. Payments
-
-На сайте оплаты нет.
-
-Но модель заказа должна позволять фиксировать:
-- payment status;
-- paid_at;
-- payment amount;
-- payment reference;
-- payment method.
-
-Это позволит менеджеру внести оплату, поступившую позже.
-
-## 10. Statistics
-
-Нельзя вычислять "реализованные продажи" только по месяцу создания заказа.
-
-Пример:
-
-```text
-created_at = 2026-01-31
-paid_at    = 2026-02-02
-```
-
-В отчетах:
-- created orders -> January;
-- paid sales -> February.
-
-## 11. Imports
-
-Excel import:
-- upload file;
-- create import job;
-- queue;
-- validate rows;
-- process chunks;
-- save row errors;
-- produce result;
-- show result in Admin.
-
-Внутри backend импорт разделён на явные роли: workbook reader, value/row parser,
-validator/planner, executor, template writer и error report writer. Orchestration-сервисы владеют
-границами транзакций, блокировками и durable checkpoints, а lifecycle-сервис — завершением,
-повторной диспетчеризацией и cleanup временного файла.
-
-Не обрабатывать 100k+ строк одним HTTP запросом.
-
-## 12. Media
-
-Файлы должны иметь:
-- MIME validation;
-- size limit;
-- generated storage name;
-- metadata;
-- relation to entity;
-- optional alt;
-- image variants/thumbnails.
-
-`TASK-096` хранит изображения и PDF в управляемой медиатеке с WebP thumbnail до 320×320.
-Категория, бренд и баннер ссылаются на media ID; документы привязаны к категории/бренду
-отдельными упорядоченными отношениями. Удаление используемого файла запрещено, свободный файл
-удаляется через durable storage cleanup. Старые внешние URL баннеров остаются fallback до замены.
-
-## 13. Audit
-
-Аудитировать важные действия:
-- login;
-- logout;
-- changes to users/roles;
-- product changes;
-- price changes;
-- order status changes;
-- payment status changes;
-- deletion;
-- content changes.
-
-Не сохранять секреты и лишние персональные данные в audit payload.
+Точные границы Nuxt определяет [Client AGENTS.md](../frontend/client/AGENTS.md),
+визуальные паттерны — [CLIENT_UI_KIT.md](CLIENT_UI_KIT.md), а порядок
+приёмки — [UI_DESIGN_REVIEW.md](UI_DESIGN_REVIEW.md).

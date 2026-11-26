@@ -8,21 +8,21 @@
 AgatCeramic
 ├── backend/             Laravel API-only
 ├── frontend/
-│   ├── admin/           Vue 3 + TypeScript + TailAdmin-style PIM/CRM
-│   └── client/          Nuxt.js SEO-first storefront
+│   ├── admin/           Vue 3 + TypeScript + Seller UI-kit для PIM/CRM
+│   └── client/          Nuxt 4, публичная SSR-витрина
 ├── docs/                Проектная документация
 ├── tasks/               Задачи разработки
-└── infrastructure/      Docker/CI/CD/deployment
+└── infrastructure/      Docker для разработки и тестовых профилей
 ```
+
+Границы приложений и устройство слоёв описаны в
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Текущее состояние
 
-Laravel — API и единое business core. Vue Admin реализует access control, Catalog, orders и
-contacts, а Nuxt Client пока является каркасом. Public cart/checkout, orders и contacts доступны
-через API; публичный storefront ещё не реализован. Online payment и customer registration не
-предусмотрены.
-
-Полная картина реализованного, ограничений и зависимостей Phases 7–11:
+Сотрудники работают с каталогом, заказами, обращениями и контентом в Admin.
+Покупатели просматривают витрину и оформляют гостевой заказ без онлайн-оплаты.
+Реализованные возможности и ограничения описаны в
 [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md).
 
 ## Документация

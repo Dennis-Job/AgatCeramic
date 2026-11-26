@@ -2,29 +2,31 @@
 
 GitHub Actions запускает workflow [`ci.yml`](../.github/workflows/ci.yml) для каждого pull request, push в `main` и ручного запуска.
 
-Workflow получает только право `contents: read` и не использует production secrets.
-Используемые GitHub Actions запускаются на Node 24.
+Workflow получает только право `contents: read`. Для OpenAPI tooling, Admin и
+Client в шагах `actions/setup-node` закреплён Node 24.19.0.
 
 | Job | Проверки |
 | --- | --- |
-| Repository security | Проверка внутренних Markdown-ссылок и tracked artifacts, запрет database dumps/backups во всех Git refs и fully-redacted Gitleaks scan полной истории |
-| Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, backend architecture guard, Larastan, два последовательных полных прогона PHPUnit/Laravel tests на SQLite, миграции и отдельные integration tests на PostgreSQL 17 |
+| Repository security | Внутренние Markdown-ссылки и tracked artifacts, проверка database dumps/backups в дереве и publication refs, Gitleaks scan полной истории с маскированием находок |
+| Backend checks | Composer manifest и audit, OpenAPI 3.1 semantic/compatibility gates, Laravel Pint, architecture guard, Larastan, два прогона тестов на SQLite, миграции и integration tests на PostgreSQL 17, проверка Redis cache |
 | Backend feature suite (PostgreSQL) | Все Laravel feature tests на отдельной PostgreSQL 17 database в фиксированном случайном порядке |
 | Redis queue delivery | Реальные import, storage cleanup и order confirmation jobs через отдельный Redis worker и PostgreSQL 17 |
 | Admin full-stack smoke | Production build Admin, реальный Sanctum session/CSRF flow, Laravel, PostgreSQL 17 и Redis 7.4 без browser API mocks |
 | Admin checks | `npm ci`, audit production-зависимостей, ESLint без warnings, Prettier format check, Vitest component/unit-тесты, TypeScript/Vite build, Playwright E2E в Chromium и axe accessibility scan |
-| Admin Windows approved UI | Отдельный native Windows workflow: unit/build, 99 утверждённых цветовых tokens, computed CSS состояний компонентов и строгие Windows visual baselines |
 | Client checks | `npm ci`, audit production-зависимостей, Prettier format check, Nuxt typecheck, SSR build и production Playwright E2E в Chromium, включая content, preview и axe |
-| Compose bootstrap | Валидация `compose.yaml`; clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
+| Compose bootstrap | Валидация `compose.yaml`, проверка зависимостей запуска Admin smoke, clean-volume и stale-volume smoke для общего Composer volume и отдельных Admin/Client npm volumes |
 
-CI не выполняет deploy и не подключается к production-инфраструктуре. Production CI/CD, secrets и deployment настраиваются отдельной задачей TASK-141.
+Отдельный workflow [Admin Windows approved UI](../.github/workflows/admin-windows-ui.yml)
+запускается при push в `main` и pull request с изменениями в `frontend/admin/`
+или в самом workflow, а также вручную. Его job `Approved palette and Windows
+baselines` выполняет unit-тесты, сборку и сценарии Chromium из
+`approvedPalette.spec.ts` и `adminBaseline.spec.ts`.
 
-Исправления падений PR #5 и независимая приёмка platform screenshots описаны
-в [отчёте 2026-10-19](CI_PR5_REPAIR_2026-10-19.md). Hosted Windows follow-up
-затем прошёл на head PR #5. Актуальная проверка Client audit, обновление Nuxt
-и новые CI findings main — в [отчёте 2026-11-09](CI_FOLLOWUP_2026-11-09.md).
-Admin jobs сохраняют browser `test-results/` при failure на семь дней для
-разбора remote-only расхождений без ослабления screenshot/palette gates.
+Production CI/CD и deployment относятся к
+[Phase 11](../tasks/TODO.md#phase-11--production).
+
+`Admin checks` на Linux и отдельный Windows workflow сохраняют browser
+`test-results/` при падении на семь дней. [История исправлений PR #5](CI_PR5_REPAIR_2026-10-19.md).
 
 `Client checks` после сборки запускает production SSR (`127.0.0.1:3015`) и
 изолированный mock API (`127.0.0.1:8015`) через существующую конфигурацию Playwright.
@@ -56,21 +58,11 @@ CI=true npm run test:e2e
 JSON- и Markdown-отчёты. Тот же каталог исключён из Git по корневому
 [`.gitignore`](../.gitignore).
 
-На 2026-10-14 совместимые npm lock updates очистили Admin audit; Client тогда
-сохранял 11 high findings braces/node-forge. Это историческое состояние:
-на 2026-11-09 high gate проходит, исходный lock уже содержит node-forge 1.4.2,
-а braces advisory отозван. После security update Nuxt 4.6.4 остаются 6 moderate
-и 6 low findings в транзитивных зависимостях, high/critical отсутствуют.
-Порог и классификация dependencies не менялись. [Октябрьские ограничения](WINDOWS_FIXES_2026-10-14.md)
-и [актуальные результаты](CI_FOLLOWUP_2026-11-09.md) относятся к разным датам.
-
 С 2026-10-13 текущая macOS-палитра утверждена владельцем также для Windows.
-Все Admin axe scans сначала сверяют замороженный цветовой контракт, затем
-проверяют доступность с точными документированными owner-approved contrast
-exceptions и сохранением raw findings. Новые пары цветов и остальные нарушения
-остаются blocking; blanket `disableRules(['color-contrast'])` удалены.
-Это не заявление полного WCAG AA compliance. Контракт, ограничения и порядок
-приёмки снимков описаны в [ADMIN_APPROVED_PALETTE_TESTS.md](ADMIN_APPROVED_PALETTE_TESTS.md).
+Проверка axe включает `color-contrast`. Helper сверяет цветовой контракт,
+фильтрует только подтверждённые владельцем совпадения и прикладывает исходные
+находки для таких случаев. Контракт, ограничения и порядок приёмки снимков
+описаны в [ADMIN_APPROVED_PALETTE_TESTS.md](ADMIN_APPROVED_PALETTE_TESTS.md).
 
 Client audit использует актуальную базу advisories, поэтому может перестать проходить даже без
 изменения зависимостей в последнем коммите. Исправление выполняется совместимым обновлением
@@ -90,38 +82,10 @@ npm run build
 проверки и условия снятия приведены в
 [отчёте о зависимостях Client](CLIENT_DEPENDENCIES_2026-11-24.md).
 
-2026-09-30 (`TASK-A056`) устранено падение `Client checks` на шаге `Audit production dependencies`
-в [запуске для f97a4c0](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36686153839).
-В lock-файле обновлены `brace-expansion` до `2.1.7`/`5.0.12`, `undici` до `8.11.2` и `devalue`
-до `5.9.4`; версия Nuxt и порог audit сохранены.
-Чистые `npm ci`, audit (0 vulnerabilities), Nuxt typecheck и SSR build проверены в отдельном
-Linux-контейнере на Node `24.19.0`, без использования локальных `node_modules`.
-
-2026-10-01 первый [CI run TASK-C004](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36827398873)
-остановил `Backend checks` на `composer audit --locked`: прежний `league/commonmark 2.10.1`
-попал под [GHSA-97jj-33gv-5xf9](https://github.com/thephpleague/commonmark/security/advisories/GHSA-97jj-33gv-5xf9)
-и [GHSA-3q6v-r5mr-hxv8](https://github.com/thephpleague/commonmark/security/advisories/GHSA-3q6v-r5mr-hxv8).
-Оба advisories указывают исправленную версию
-[2.10.2](https://github.com/thephpleague/commonmark/releases/tag/2.10.2), совместимую
-с текущим Laravel constraint. Остальные семь jobs прошли, в том числе Admin format gate,
-полный E2E, full-stack smoke и PostgreSQL feature suite. Audit gate не отключается;
-исправление выполняется частичным обновлением одной зависимости в lock-файле:
-
-```bash
-cd backend
-composer update league/commonmark:2.10.2 --minimal-changes --no-scripts --no-interaction
-composer validate --strict
-composer audit --locked
-composer test
-```
-
-В исправленном lock-файле меняется только `league/commonmark` на `2.10.2` (официальный
-commit `692e90b901877bdfd727e51270ce4394633c6e74`); `composer.json`, content hash,
-остальные packages и plugin API version сохранены. Composer partial update в Docker
-сообщил `No security vulnerability advisories found`. Установка, `composer validate --strict`
-и полный PHPUnit SQLite suite прошли: 349 tests / 4828 assertions на PHP 8.3.33.
-Отдельные локальные `composer audit --locked` (включая IPv4 retry) завершились Packagist
-security-advisories timeout curl 28; итоговый audit проверяется обязательным GitHub CI gate.
+Состояние audit для конкретной ревизии фиксируется в её CI run или датированном
+отчёте. [Запуск TASK-A056](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36686153839),
+[запуск TASK-C004](https://github.com/Dennis-Job/AgatCeramic/actions/runs/36827398873),
+[ноябрьский CI follow-up](CI_FOLLOWUP_2026-11-09.md).
 
 Backend architecture guard локально запускается после установки Composer dependencies:
 
@@ -130,12 +94,8 @@ cd backend
 composer architecture
 ```
 
-Команда анализирует PHP AST, блокирует обратные зависимости слоёв, прямой DB/Eloquent mutation,
-service locator и глобальные `request()`/`auth()` helpers в Controllers. В том же выводе находится
-неблокирующий review-отчёт для классов длиннее 250 строк, методов длиннее 40 строк и методов с
-cyclomatic complexity выше 10. Новые findings отчёта требуют осознанного review, но сами размеры
-не являются автоматическим требованием создавать новый слой. Точные правила и политика временного
-allowlist описаны в [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Блокирующие правила, review-сигналы и политика временного allowlist описаны в
+[`ARCHITECTURE.md`](ARCHITECTURE.md#автоматические-границы).
 
 Repository hygiene локально проверяется без установки зависимостей:
 
@@ -159,9 +119,10 @@ Composer, Admin и Client. Cleanup удаляет только volumes врем�
 OpenAPI tooling из `backend/openapi-tooling` устанавливается строго через `npm ci` по
 lock-файлу. `npm test` запускает mutation tests проектных правил форматов/media types,
 а `npm run lint` — закреплённый Redocly OpenAPI 3.1 ruleset и эти правила на
-`docs/openapi.json`. Compatibility gate сравнивает спецификацию с base Git revision;
-направленно-рекурсивные PHP mutation tests входят в обычный backend suite. Breaking
-изменение проходит только при major bump и совпадающем явном разделе migration plan.
+`docs/openapi.json`. Compatibility gate сравнивает спецификацию с PR base или
+предыдущей ревизией push, когда та содержит OpenAPI. При ручном запуске
+выполняется semantic gate. PHP mutation tests совместимости входят в обычный
+backend suite. Breaking изменение требует major bump и явного раздела migration plan.
 
 Локально проверки запускаются так:
 
@@ -201,13 +162,12 @@ PostgreSQL-прогон является блокирующим и не заме
 `lockForUpdate()`. Межпроцессные ожидания блокировок и `SKIP LOCKED` остаются в специализированных
 integration suites, поскольку feature suite намеренно однопроцессный.
 
-PostgreSQL integration suite отдельно проверяет неизменяемость audit log и retention evidence,
-rollback retention batch, ограничения legal hold, индексы guest carts, а также реальные конкурентные
-транзакции Catalog, retention и cart cleanup. Concurrency-тесты используют независимые PHP-процессы и соединения, подтверждают
-ожидание блокировки через `pg_stat_activity` и защищают инварианты единственного primary image,
-удаления товара против загрузки изображения, отсутствия reverse relations и ацикличности/допустимости
-родителей дерева категорий и пропуск cart row, занятой конкурентной write-транзакцией. Эти тесты
-намеренно не входят в быстрый SQLite suite.
+PostgreSQL integration-тесты отдельно проверяют неизменяемость журнала аудита,
+инварианты каталога, retention, конкурентную очистку гостевых корзин и
+выделение читаемых номеров заказов при параллельном checkout. Конкурентные
+сценарии используют независимые PHP-процессы и соединения. `Backend checks`
+также проверяет запись и чтение через Redis cache store и подключение очереди Redis.
+Перечень вызовов находится в [workflow](../.github/workflows/ci.yml).
 
 Отдельный blocking job `Redis queue delivery` запускает Compose profile `queue-integration` с
 эфемерными PostgreSQL 17 и Redis 7.4 без опубликованных портов и persistent data volumes. Тест
@@ -255,12 +215,14 @@ PostgreSQL integration-тесты запускаются с `--configuration=php
 или тесты против локальной базы
 `agatceramic`.
 
-Для локального прогона используется только
-[`backend/scripts/run-postgres-integration.ps1`](../backend/scripts/run-postgres-integration.ps1):
-он требует явный destructive-флаг, жёстко задаёт обе test-only базы, проверяет `pdo_pgsql` и
-запускает миграции, PostgreSQL-only integration suites и полный feature suite с `CI=true`. Обе базы
-должны быть заранее созданы на разрешённом localhost PostgreSQL. Пароль передаётся параметром
-процесса и не сохраняется в репозитории.
+Локальный runner
+[`run-postgres-integration.ps1`](../backend/scripts/run-postgres-integration.ps1)
+требует явный флаг сброса тестовых БД, задаёт обе test-only базы, проверяет
+`pdo_pgsql` и запускает миграции, сценарии аудита, каталога, retention и гостевой
+корзины, а также полный feature suite с `CI=true`. Обе базы должны быть заранее
+созданы на разрешённом localhost PostgreSQL. Пароль передаётся параметром
+процесса и не сохраняется в репозитории. Проверки Redis cache и конкурентной
+выдачи номеров заказов входят в шаги `Backend checks` в CI.
 
 Для Redis queue suite поддерживаемым локальным способом является Compose profile выше. Внутренний
 [`run-redis-queue-integration.sh`](../backend/scripts/run-redis-queue-integration.sh) запускается
@@ -277,8 +239,10 @@ Admin E2E в CI и локальном Compose запускает production-сб
 сначала проходят независимое UI Design Guard-ревью, затем копируются в эталоны
 и проверяются повторным строгим прогоном. `expect.soft` для набора UI-kit crops
 собирает все различия за один прогон, сохраняя failed-статус теста при любом diff.
-Полная responsive/axe матрица охватывает 20 маршрутов Admin/UI-kit × восемь
-ширин 320/640/768/1024/1280/1440/1920/2560 px; ошибки axe не исключаются.
+Responsive/axe матрица проверяет маршруты на ширинах
+320/640/768/1024/1280/1440/1920/2560 px и требует пустой список нарушений после
+применения утверждённых исключений контраста. Маршруты перечислены в
+[`adminBaseline.spec.ts`](../frontend/admin/e2e/adminBaseline.spec.ts).
 
 Playwright retries отключены во всех окружениях: каждый упавший тест немедленно делает suite
 неуспешным и не может быть скрыт успешной повторной попыткой.
@@ -287,9 +251,10 @@ Visual-тест открытого `UiDatePicker` фиксирует систе�
 Детерминированные browser-level mock-ответы API удерживают
 loading-состояния управляемыми deferred fixtures до явного release, а не таймерами. Проверяются
 маршрутизация, восстановление административной сессии, каталоговые представления и интерактивные
-компоненты без зависимости от общей тестовой базы данных. Full-page Axe scan без исключения
-`color-contrast` блокирует serious/critical accessibility-регрессии на маршрутах, списках и открытых
-диалогах. Backend API-контракт отдельно защищён Laravel-тестами и OpenAPI.
+компоненты без зависимости от общей тестовой базы данных. Профильные проверки
+axe блокируют serious/critical нарушения на маршрутах, списках и в открытых
+диалогах с учётом утверждённых исключений контраста. Backend API-контракт
+отдельно защищён Laravel-тестами и OpenAPI.
 
 Локальный Compose runner запускается отдельной командой `docker compose --profile test run --rm admin-e2e`.
 Он выполняет чистый `npm ci`, устанавливает Chromium в отдельный volume и запускает production E2E;
@@ -338,6 +303,7 @@ Harness отказывается переиспользовать уже сущ�
 выполняет отдельный audit и передаёт nonzero exit; network failure не считается
 успешной security-проверкой.
 
-Полный локальный Admin workflow после `npm ci` запускается командой `npm run test:ci`: ESLint,
-Prettier check, unit-тесты, production build и Playwright выполняются последовательно с единым
-ненулевым exit code при любой ошибке. Быстрая проверка без браузера доступна как `npm run check`.
+Локальная команда `npm run test:ci` после `npm ci` объединяет ESLint, Prettier
+check, unit-тесты, production build и Playwright в текущей ОС. CI отдельно
+выполняет dependency audit и запускает Linux E2E в описанном выше Compose
+профиле. Быстрая проверка без браузера доступна как `npm run check`.

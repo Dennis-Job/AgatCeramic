@@ -19,21 +19,23 @@ permissions, команд, технологий и устоявшиеся тер
 | Тема | Канонический источник | Что не должно его дублировать |
 | --- | --- | --- |
 | Обзор и границы проекта | [`../README.md`](../README.md) | бизнес-правила, data schema, endpoint schemas |
-| Фактическое состояние и переходы фаз | [`CURRENT_STATE.md`](CURRENT_STATE.md) | подробный audit evidence и task history |
+| Реализованные возможности и текущие ограничения | [`CURRENT_STATE.md`](CURRENT_STATE.md) | датированные результаты проверок и roadmap |
 | Требования | [`REQUIREMENTS.md`](REQUIREMENTS.md) | техническая реализация и текущий status |
-| Архитектура | [`ARCHITECTURE.md`](ARCHITECTURE.md) | подробные таблицы БД и HTTP schemas |
+| Границы приложений и архитектурные слои | [`ARCHITECTURE.md`](ARCHITECTURE.md) | подробные таблицы БД, HTTP schemas и результаты замеров |
+| Правила разработки Backend, Admin и Client | [`backend/AGENTS.md`](../backend/AGENTS.md), [`frontend/admin/AGENTS.md`](../frontend/admin/AGENTS.md), [`frontend/client/AGENTS.md`](../frontend/client/AGENTS.md) | общие требования проекта из корневого [`AGENTS.md`](../AGENTS.md) |
 | Данные и lifecycle schema | [`DATABASE.md`](DATABASE.md) | миграционный журнал и API examples |
 | Retention, ПДн и уничтожение | [`PERSONAL_DATA_LIFECYCLE.md`](PERSONAL_DATA_LIFECYCLE.md) | сроки в feature guides и task history |
 | Машинный API contract | [`openapi.json`](openapi.json) | human-readable explanation каждого поля |
 | API guide и нетривиальные правила | [`API.md`](API.md) | полные повторные schemas OpenAPI |
 | Environment и эксплуатационная навигация | [`OPERATIONS.md`](OPERATIONS.md) | секреты, runtime commands и CI details в README |
+| Обязательные CI-проверки и локальное воспроизведение | [`CI.md`](CI.md) и [workflow-файлы](../.github/workflows) | статусы запусков, датированные результаты проверок |
 | Архитектурные решения | [`DECISIONS.md`](DECISIONS.md) | повтор решений в task history |
 | Будущий roadmap | [`../tasks/TODO.md`](../tasks/TODO.md) | completed-task history |
 | Текущая работа | [`../tasks/IN_PROGRESS.md`](../tasks/IN_PROGRESS.md) | roadmap и завершённые результаты |
 | Завершённые работы | [`../tasks/DONE.md`](../tasks/DONE.md) | requirements и canonical design rules |
 | UI implementation/review standard | [`UI_DESIGN_REVIEW.md`](UI_DESIGN_REVIEW.md) | screen-specific business requirements |
+| Admin Seller UI-kit и токены | [`src/components/ui`](../frontend/admin/src/components/ui), [`src/styles/tokens.css`](../frontend/admin/src/styles/tokens.css), [`ADMIN_SELLER_REDESIGN_PLAN.md`](ADMIN_SELLER_REDESIGN_PLAN.md) | копии токенов и primitives в feature guides |
 | Client visual tokens and patterns | [`CLIENT_UI_KIT.md`](CLIENT_UI_KIT.md) | demo content from [`exampleSite.html`](../exampleSite.html) |
-| Client Nuxt architecture | [`../frontend/client/AGENTS.md`](../frontend/client/AGENTS.md) | API schemas and visual token values |
 
 `DATABASE_RECOVERY_2026-09-03.md` — recovery runbook инцидента; его актуальные постоянные
 правила должны ссылаться на канонические operations documents, а не копироваться в новые документы.

@@ -1,7 +1,7 @@
 # Backend
 
-Laravel является API-only business core для Admin и будущего Client. Канонические правила
-архитектуры находятся в [`ARCHITECTURE.md`](ARCHITECTURE.md), HTTP contract — в
+Laravel — общее API и бизнес-ядро для Admin и Client. Границы приложений и слоёв
+описаны в [`ARCHITECTURE.md`](ARCHITECTURE.md), HTTP contract — в
 [`openapi.json`](openapi.json) и [`API.md`](API.md), data model — в [`DATABASE.md`](DATABASE.md),
 а setup/operations — в [`OPERATIONS.md`](OPERATIONS.md).
 

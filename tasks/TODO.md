@@ -25,14 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A077 **P3** Синхронизировать каноническую архитектурную документацию
-  - Цель: [ARCHITECTURE.md](../docs/ARCHITECTURE.md) отражает текущую feature-структуру и Seller UI
-    вместо прежнего TailAdmin style; правила между AGENTS/docs не противоречат друг другу.
-  - План: актуализировать описание слоёв и источников истины; сверить CURRENT_STATE/CI с кодом,
-    оставить завершённые audit reports историческим evidence без копирования roadmap/метрик.
-  - Готовность: repository hygiene/Markdown links и diff check проходят; источники по темам
-    соответствуют [DOCUMENTATION.md](../docs/DOCUMENTATION.md).
-
 - [ ] TASK-A078 **P2** Выделить общие Client mapper и media/link utilities из homePage service
   - Цель: content pages, site appearance и preview не зависят от модуля конкретной главной ради
     [общих преобразований](../frontend/client/app/services/homePage.ts).
@@ -129,9 +121,8 @@ OpenAPI и канонической документации. Изменения
     в таблицах Catalog.
 - [ ] TASK-101 Canonical для индексируемых сущностей
 - [ ] TASK-102 Генерация sitemap
-  - Для управляемых контентных страниц реализовано 2026-10-20: опубликованные
-    snapshots, фильтр индексации, все страницы коллекции, canonical URL и lastmod.
-    Sitemap товаров/категорий/брендов остаётся в этой задаче.
+  - Sitemap для страниц отдельных категорий остаётся в этой задаче.
+    Реализованный охват перечислен в [CURRENT_STATE.md](../docs/CURRENT_STATE.md#реализовано).
 - [ ] TASK-103 Robots metadata/directives и robots.txt
   - Для контентных страниц реализованы опубликованный `is_indexable`, SSR
     `noindex,follow`, динамический robots.txt и исключение из sitemap. Остальные

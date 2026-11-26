@@ -1,224 +1,62 @@
 # Текущее состояние проекта
 
-Журнал аудита, этап 2 от 2026-10-16: выбранная владельцем «Лента по дням»
-заменила таблицу. Группировка по Москве, сотрудник/действие/объект и SKU,
-краткий итог, раскрываемые «Было / Стало»; фильтры и серверная пагинация
-сохранены. Shared UI/tokens и API не менялись. Независимый UI Design Guard
-принял результат. [Реализация и проверка](ADMIN_AUDIT_TIMELINE.md).
-
-Журнал аудита, этап 1 от 2026-10-16: содержательные изменения каталога и доступа
-с before/after, SKU, историческими названиями и контекстом массовых операций.
-Импорт/экспорт сохраняет инициатора и результаты; повторные сохранения и внутренние
-переключения активности XLSX не создают ложные изменения. Структура API сохранена,
-подробности доступны в прежнем `details`; отображение обновлено вторым этапом.
-Windows backend: 488 тестов / 1 PostgreSQL-only skip; PostgreSQL feature 407/407,
-immutability/concurrency 14/14; PHPStan, Pint, architecture и API compatibility PASS.
-Composer audit сообщил advisory для существующего symfony/http-foundation по кэшу
-при недоступном Packagist. [Покрытие, файлы и проверки](AUDIT_TRAIL_ENRICHMENT.md).
-
-Admin: категории используют утверждённую компоновку справочников — иерархия и
-поиск слева, подробности выбранной категории и назначенные характеристики
-справа; на мобильном выбор сверху. Формы и API сохранены. Unit 148/148,
-целевые E2E 58/58 и контрольные baseline/regression 65/65, независимый
-UI Design Guard принял результат. В полном прогоне остаются пять ранее
-известных product snapshot failures.
-[Отчёт от 2026-10-15](ADMIN_CATEGORIES_WORKSPACE_REPORT.md).
-
-Admin: характеристики и группы объединены в одну рабочую область с локальной
-навигацией по группам, подробными строками и быстрыми переключателями фильтров/
-карточки товара. Старый `/attribute-groups` сохранён; формы унифицированы с
-категориями. Unit 147/147, целевые E2E 99/99, baseline/responsive 24/24;
-независимое UI Design Guard-ревью принято. Полный прогон сохраняет пять
-устаревших snapshots кнопки скачивания товаров, не относящихся к этой задаче.
-[Отчёт от 2026-10-15](ADMIN_ATTRIBUTES_WORKSPACE_REPORT.md).
-
-Windows follow-up от 2026-10-14 закрывает XLSX file locks, preview matrix и
-test/infra nondeterminism: backend 403/403 дважды, Admin 523/523 E2E,
-real preview 24/24, Client production/dev 15/15 + 2/2. Cold full-stack readiness
-102.9s и browser smoke 1/1 прошли с изолированным dist; LF/format/hygiene PASS.
-Admin npm audit чистый; Client сохраняет 11 high unpatched findings,
-Composer audit недоступен из-за Packagist timeout. Общий security gate не зелёный.
-[Файлы, проверки и оставшийся пункт 5](WINDOWS_FIXES_2026-10-14.md).
-
-Утверждённая macOS-палитра закреплена для Windows 2026-10-13: 99 фиксированных
-цветов, computed CSS, точные contrast exceptions и native Windows CI.
-Windows unit 125/125; palette/baseline subset 230/230. Полный E2E дал 521/523,
-последние два сбоя синхронизации тестов закрыты повтором 10/10; остальные
-513 scenarios прошли в полном прогоне. UI Design Guard принял 70 Windows и
-66 Linux PNG; production palette/CSS и Darwin snapshots сохранены.
-[Отчёт, изменённые файлы и ограничения](ADMIN_WINDOWS_PALETTE_REPORT.md).
-
-Проверка Windows от 2026-10-13 выполнена на `5d7b58b`: Admin unit 114 PASS / 5 FAIL,
-полный E2E 224 PASS / 126 FAIL; Client production 15/15, dev 2/2 и повтор
-real Nuxt preview 3/3 PASS. Native backend имеет 6 Windows XLSX errors;
-Docker PostgreSQL/Redis/full-stack проверки прошли. Подробности и ограничения —
-в [отчёте Windows](WINDOWS_VERIFICATION_2026-10-13.md). Упоминания непроверенного
-Windows ниже относятся к историческим приёмкам; в первичной проверке эталоны
-не обновлялись, последующая приёмка описана выше.
-
-На 2026-10-02 Nuxt Client (`TASK-119`, `TASK-C002`–`TASK-C005`) подключён к управляемому
-контенту Phase 7: типизированным упорядоченным блокам страниц, опубликованному слайдеру,
-общим шапке/подвалу и SEO. Черновики отделены от опубликованных snapshots;
-публикация выполняется отдельным действием. Сайт сохраняет визуальный язык
-[`CLIENT_UI_KIT.md`](CLIENT_UI_KIT.md), адаптивные секции и локальные изображения
-как начальные значения. Редактор блоков доступен в Admin → «Контент» → «Страницы».
-Общие шапка, навигация и подвал редактируются и публикуются независимо во вкладке
-«Общее оформление»; Nuxt получает их отдельным SSR-запросом. Магазины находятся
-в той же рабочей области. Панель «Вид фильтров» отделена от данных каталога;
-её настройки появятся с клиентскими фильтрами в `TASK-120`.
-`/contacts`, `/about`, `/catalog` получают опубликованные блоки при SSR; контакты
-используют реквизиты/магазины, каталог — публичную проекцию реальных товаров с ценами
-и единицами продажи. Сохранённый черновик страницы и общего оформления отображается
-настоящим Nuxt-рендером в защищённом `/preview/<slug>` внутри Admin, с режимами экрана
-и отдельным полноразмерным просмотром. Доступ требует актуальной сессии и `content.manage`;
-черновик не попадает в SSR payload, storage, URL или публичный API. Полные товарные
-сценарии остаются последующими задачами.
-
-Базовый срез после закрытия `TASK-A042` обновлён состоянием `TASK-119` и `TASK-C002`–`TASK-C005`. Исторические результаты
-аудитов и их числовые срезы не обновляются задним числом; текущий набор обязательных проверок
-описан в [`CI.md`](CI.md), завершённые задачи — в [`tasks/DONE.md`](../tasks/DONE.md).
-
-Admin frontend refactoring принят. Follow-up проверки `TASK-A045`–`TASK-A050` закрыли cart-token,
-OpenAPI, dependency bootstrap, PostgreSQL feature-suite, Redis delivery и Admin full-stack gaps.
-Lifecycle policy `TASK-A043` принята для реализации, а repository-side controls `TASK-A044`
-завершены. `TASK-090` добавила site settings и журнал согласований. Production apply остаётся закрыт
-отдельным gate `TASK-145` до external
-provider evidence и pre-production approvals. Импортный application
-layer декомпозирован, production dependencies сделаны явными, сложные admin read queries
-вынесены из Controllers, а направления зависимостей и тонкие Controllers защищены blocking
-architecture gate.
-
-Seller-редизайн Admin `TASK-A057`–`TASK-A062` завершён с финальной приёмкой Linux/macOS.
-TASK-A058 реализует две строки верхней шапки с текстовыми группами
-«Товары», «Контент», «Управление» и компактным меню; глобальная боковая панель
-удалена. Конфигурация ссылок общая, доступ фильтруется по permissions,
-медиатека сохраняет собственное право. TASK-A059 вводит общий `AdminWorkspace`
-с режимами обзора, списка, редактора и простой формы; список товаров использует
-широкую таблицу с полными названиями, единицами измерения, локальной прокруткой
-и закреплёнными заголовками/крайними колонками на desktop.
-TASK-A060 подключает справочники каталога, сотрудников, роли, права, аудит и
-медиатеку к широкому общему табличному паттерну. Заказы и обращения используют
-общую list/detail компоновку: таблица использует доступную ширину,
-детали ниже ограничены общим контейнером; явный выбор переводит к ним
-фокус/прокрутку, кнопка возврата возвращает к выбранной строке.
-TASK-A061 раскрывает страницы и общее оформление через общий
-`AdminEditorLayout` с container queries: две зоны от 960/1120 px доступной
-ширины, три зоны от 1240 px. После уточнения от 2026-10-02 все нетабличные
-блоки ограничены единым контейнером 1280 px: dashboard, магазины, редакторы,
-профиль, настройки, фильтры, feedback и пагинация. Края совпадают с меню;
-рабочие таблицы списков сохраняют доступную ширину. Настоящий Nuxt-preview сохраняет 1280/375 px
-viewport с локальным scroll; dirty guards и публикация сохранены. Проверки — в
-[`TASK_A058_REPORT.md`](TASK_A058_REPORT.md),
-[`TASK_A059_REPORT.md`](TASK_A059_REPORT.md),
-[`TASK_A060_REPORT.md`](TASK_A060_REPORT.md) и
-[`TASK_A061_REPORT.md`](TASK_A061_REPORT.md).
-TASK-A062 закрепляет полную матрицу 20 маршрутов × восемь ширин с axe без
-исключений; 223 E2E прошли на каждой Linux/macOS. Darwin baseline приведён
-к текущему UI после независимого review, Linux baseline совпадает без замены.
-Эти результаты A062 относятся к приёмке 2026-10-01; последующая доработка
-контейнеров и её фактические проверки описаны в
-[`ADMIN_CONTAINER_REFINEMENT_REPORT.md`](ADMIN_CONTAINER_REFINEMENT_REPORT.md).
-Актуальная Windows-проверка не выполнялась; CI использует канонический Linux
-Docker. Итог и ограничения — [`TASK_A062_REPORT.md`](TASK_A062_REPORT.md).
-
-Доработка контейнеров от 2026-10-02 завершена: UI Design Guard принял
-macOS/Linux и настоящий Nuxt-preview; lint/format/build, 64 unit и
-242 строгих E2E на каждой OS пройдены. 28 платформенных эталонов обновлены
-после независимого просмотра; 3 реальных preview-сценария пройдены.
-Windows остаётся непроверенным.
-
-Доработка шапки от 2026-10-02 завершена: глобальный поиск удалён,
-разделитель находится внутри контейнера, серые иконки и подменю открываются
-наведением через общий UiPopover. Подменю ограничено 1/2/3 колонками
-по разрешённым группам; клавиатура и touch сохранены. UI Design Guard принят;
-64 unit, lint/format/build, 250 строгих E2E каждой macOS/Linux и 3 real Nuxt
-пройдены. 112 platform baseline приняты до обновления; Windows не проверен.
-[Изменения, evidence и ограничения](ADMIN_HEADER_REFINEMENT_REPORT.md).
-
-Доработка active/focus от 2026-10-02 завершена: общие controls используют
-тонкий край 1 px и прозрачный halo, selected radio/checkbox — спокойную рамку
-и фон. Клавиатурный фокус, ошибки и системный forced-colors outline сохранены;
-unselected glyph скрыт независимо от system colors. UI Design Guard принят,
-16 platform baseline согласованы до замены. Lint/format/build, 64 unit,
-255 строгих E2E каждой macOS/Linux и 3 real Nuxt пройдены.
-[Результат, файлы и ограничения](ADMIN_SOFT_FOCUS_REFINEMENT_REPORT.md).
-
-Доработка уведомлений от 2026-10-02 вывела операционные сообщения страниц и диалогов
-в общий стек справа сверху, без сдвига рабочего layout. Первоначальная реализация
-прошла UI Design Guard, 28 platform baseline, lint/format/build, 69 unit, 258
-строгих E2E каждой macOS/Linux и real Nuxt3.
-Изменение от 2026-10-04 задаёт всем tones авто-закрытие через 5 секунд; hover,
-focus и скрытая вкладка приостанавливают таймер. UI Design Guard принял code
-review; targeted notifications 10/10, lint/build/scoped format прошли. Более
-широкие текущие unit/E2E прогоны имеют несвязанные ошибки; детали и evidence —
-в [отчёте](ADMIN_NOTIFICATION_REFINEMENT_REPORT.md).
-
-Доработка ширины таблиц от 2026-10-02 завершена: 12 рабочих таблиц списков заполняют
-экран без боковых отступов; меню, кнопки, фильтры, пагинация и детали остаются
-в контейнере. Общий `UiTable fullBleed` использует активный gutter layout,
-вложенные таблицы сохраняют прежнюю ширину. UI Design Guard принял реализацию
-и 24 platform baseline до замены; lint/format/build, 69 unit и 258 строгих
-E2E каждой macOS/Linux, real Nuxt3 пройдены. Проверки выполнены в отдельных
-копиях из-за параллельной работы над инструментами товаров.
-[Результат и проверки](ADMIN_TABLE_FULL_BLEED_REPORT.md).
+AgatCeramic состоит из Laravel API, Vue Admin и публичной Nuxt-витрины.
+Документ описывает реализованные возможности в репозитории.
+Границы приложений и правила разработки находятся в
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Реализовано
 
 | Область | Фактическое состояние |
 | --- | --- |
-| Foundation | Laravel API-only, Vue Admin, Nuxt Client с первой главной страницей, Docker Compose, PostgreSQL, Redis, queue, scheduler, versioned `/api/v1`, stable error envelope и OpenAPI. |
-| Backend architecture | Нетривиальные admin filters/search/sort, eager loading и audit metadata enrichment изолированы в Query objects; основные equality-filter/sort paths подкреплены PostgreSQL indexes. AST guard блокирует обратные зависимости слоёв, DB/Eloquent mutations и service locator/global request/auth helpers в Controllers; размер и complexity публикуются как review-сигналы. |
-| Access control | Admin authentication, password reset, active-user guard, RBAC, granular permissions, audit log, snapshots, retention и PostgreSQL immutability. |
-| Catalog | Categories, brands, attribute groups/typed attributes, standalone sellable products, product groups, generated immutable SKU, images, related products, filters/search и durable storage cleanup. Legacy variants остаются read-only до отдельной verified migration. |
-| Import/export | Admin: отдельные страницы «Добавить массово товары», «Цены и статусы» и «Объединить товары» в меню «Товары» вместо модальных окон; состояние импорта сохраняется при SPA-переходах в текущей сессии. XLSX export/import, category templates, preflight/error reports, resumable queue work, ZIP image import, price/status и product-group workbooks. Workbook I/O, parsing/validation, planning, mutation и report/template generation разделены на небольшие сервисы; orchestration сохраняет прежние transaction, locking и checkpoint contracts. Queue entry points получают обязательные сервисы через container injection; только прямые Laravel `failed()` callbacks используют документированный узкий adapter. |
-| Cart and orders | Public guest cart with HMAC-only bearer lookup, configurable TTL and lock-safe cleanup; locked checkout, immutable order snapshots, readable customer ID/sequence numbers with phone-based identity and retention cleanup (legacy numbers preserved), status/payment management, history, internal comments и confirmation email. |
-| Contacts | Public callback/email/partner forms, assignment, protected list/detail API, statuses, history и internal comments. |
-| Content and Client | Типизированные блоки, изолированные snapshots публикаций и защита медиа обеих версий; явная публикация из Admin. Общее оформление имеет отдельный черновик и публикацию; магазины объединены с редактором в «Контенте». Nuxt `/`, `/contacts`, `/about`, `/catalog` используют API при SSR с SEO, адаптивностью и состояниями ошибок/пустых данных. C005 подключает точный защищённый предпросмотр сохранённых черновиков; legacy UI-входы закрыты. |
-| Admin frontend | Route views и feature-слои выделены, compatibility adapters удалены, source-of-truth UI-kit и обязательные lint, unit, production E2E, accessibility, responsive и visual gates действуют. Orders и contacts имеют рабочие list/detail/workflow экраны. |
-| Production-like проверки | Полный Laravel feature suite выполняется на PostgreSQL; отдельные CI profiles проверяют реальную Redis queue delivery, Admin SPA → Sanctum/Laravel API и lock-aware bootstrap dependency volumes. |
-| Repository security | Database exports удалены из current tree/public branches/tags; ignore, history artifact gate и полный Gitleaks scan обнаруживают повторное добавление. Остаточная доступность test-only объектов через четыре GitHub-managed PR refs принята владельцем без удаления PR. GitHub ruleset/branch protection пока не настроен, поэтому CI не является pre-receive запретом. |
+| Основа | Laravel API-only, PostgreSQL, Redis, queue и scheduler. Docker Compose описывает локальный запуск и изолированные тестовые профили. [Эксплуатация](OPERATIONS.md). |
+| Доступ и аудит | В Admin работают Sanctum, сброс пароля, блокировка сотрудника, роли и разрешения. Журнал показывает изменения каталога и доступа, историю значений и контекст массовых действий. [API доступа](API.md#admin-authentication), [лента аудита](ADMIN_AUDIT_TIMELINE.md). |
+| Каталог | Категории, бренды, коллекции, характеристики, отдельные продаваемые товары с постоянным SKU, группы вариантов, изображения и связи между товарами. В Admin работают поиск, фильтры, счётчики и редактор товара. [Схема данных](DATABASE.md), [Admin товары](ADMIN_PRODUCTS_REDESIGN.md). |
+| Импорт и экспорт | XLSX-экспорт, XLSX-импорт товаров, цен, статусов и групп, ZIP-импорт фотографий. Admin показывает прогресс, результаты и доступные отчёты. Пакетная обработка восстанавливается по контрольным точкам. [Фоновые сценарии](QUEUE.md#product-imports). |
+| Витрина | Главная, информационные страницы, каталог с фильтрами, карточки товаров, профили брендов и коллекций, публичные юридические документы. [Каталог](CATALOG_2026-11-12.md), [Client UI-kit](CLIENT_UI_KIT.md). |
+| Корзина и заказы | Гостевая корзина с целыми количествами, checkout с идемпотентным повтором, экран подтверждения, письма покупателю и магазину. В Admin есть назначение ответственного, статусы, отдельный учёт оплаты, история, комментарии и месячные счётчики заказов. [Публичный API заказов](API.md#заказы), [Admin заказы](ADMIN_ORDERS_REDESIGN_2026-11-05.md). |
+| Обращения | Публичные формы обратного звонка, письма и сотрудничества. В Admin работают список, карточка, назначение ответственного, статусы, история, комментарии и месячная статистика. [Публичный API обращений](API.md#обращения), [Admin обращения](ADMIN_CONTACTS_REDESIGN_2026-10-22.md). |
+| Контент | Редактор страниц и общего оформления с отдельными черновиками и публикацией, медиатека, магазины и управляемые настройки сайта. Защищённый Nuxt-предпросмотр показывает сохранённый черновик. [Контентная рабочая область](CONTENT_WORKSPACE_UX.md), [доступ к предпросмотру](API.md#точный-предпросмотр-сохранённого-черновика-task-c005). |
+| SEO | Публичный SSR, метаданные, canonical и структурированные данные в поддерживающих их шаблонах, динамические robots.txt и sitemap. Sitemap включает индексируемые опубликованные CMS-страницы, товары, бренды и коллекции. [Требования к SEO](REQUIREMENTS.md#13-seo), [код sitemap](../frontend/client/server/routes/sitemap.xml.get.ts). |
+| Admin UI | Feature-структура, Seller UI-kit и верхняя навигация по доступным разделам. Экраны загружаются по маршрутам, а рабочие области массовых операций сохраняют состояние между SPA-переходами. [Архитектура Admin](ARCHITECTURE.md#3-admin). |
 
 ## Принятые границы
 
-- Laravel — единственное бизнес-ядро для Admin и будущего Client; Blade и server-rendered
-  storefront не используются.
-- Товар — самостоятельная продаваемая позиция. Product group служит навигации между товарами и
-  не является nested variant.
-- Публичные формы, cart и checkout не принимают client-owned prices, totals, statuses или
-  workflow fields.
-- PII минимизируется и не попадает в обычные application logs или audit metadata.
-- OpenAPI — машинный контракт; [`API.md`](API.md) описывает только сценарии и нетривиальные правила.
+Laravel определяет бизнес-правила и проверяет права доступа. Покупатель
+оформляет заказ без аккаунта и оплачивает его вне сайта. Обычные логи и аудит
+используют технические идентификаторы и исключают лишние ПДн.
+[Требования](REQUIREMENTS.md), [правила логирования](LOGGING.md).
 
 ## Ограничения и обязательные follow-ups
 
-| Приоритет | Ограничение | Владелец |
-| --- | --- | --- |
-| High | Для business PII orders/contacts policy, gated repository-side controls и журнал согласований готовы, но отсутствуют фактические pre-production approvals и external provider evidence; production apply выключен. | `TASK-145` |
+- До запуска production checkout и обращений нужны утверждения по обработке
+  ПДн и подтверждения от внешних провайдеров. Необратимая очистка отключена
+  безопасными значениями конфигурации. [Политика и условия запуска](OPERATIONS.md#retention-operations).
+- Категории доступны как разделы и фильтры каталога. Отдельные страницы
+  категорий и полная настройка SEO каталога остаются открытыми.
+  [Открытые задачи](../tasks/TODO.md).
+- Месячная операционная статистика заказов и обращений доступна в рабочих
+  списках. Сводный Dashboard пока использует заглушки, аналитика оплаченных
+  продаж и отчёты остаются в roadmap.
+  [Код Dashboard](../frontend/admin/src/features/dashboard/components/DashboardWorkspace.vue).
+- Repository security проверяет tracked дерево и историю. GitHub Actions
+  запускает проверки после события push или pull request. Решения по
+  историческим PR refs зафиксированы в [отчёте об инциденте](SECURITY_INCIDENT_2026-09-14.md).
 
-Функциональная приёмка Phases 0–6 и Admin frontend refactoring сохраняется. `TASK-A042` закрыта с
-явным принятием остаточного риска test-only PR refs; публикация новых database exports остаётся
-запрещённой policy и проверяется обязательными CI checks. Подробный текущий статус активных работ находится в
-[`tasks/IN_PROGRESS.md`](../tasks/IN_PROGRESS.md).
-
-## Отложено по roadmap
-
-| Phase | Не реализовано | Зависимость |
-| --- | --- | --- |
-| 7 — Content | `TASK-090`–`TASK-096`, `TASK-C001`–`TASK-C005` реализованы. Страницы имеют редактор блоков, контекстные ресурсы и точный Nuxt-предпросмотр сохранённого черновика. Общее оформление и магазины объединены в «Контенте»; legacy UI закрыт. | Категории и бренды используют managed media FK, документы — отдельные ordered associations. Внешние URL старых баннеров остаются fallback до явной замены. |
-| 8 — SEO | Managed metadata, canonical, sitemap, robots, redirects, structured data и AI drafts. | SEO использует managed media для OG image; slug остаётся Catalog-owned. |
-| 9 — Analytics | Orders/paid sales dashboards и reports. | Использует order `paid_at`, не только `created_at`. |
-| 10 — Client | Страницы категорий/товаров, cart, checkout, confirmation и полный managed SEO. Главная, контакты, о нас и первая публичная страница каталога с реальными товарами уже готовы. | Использует существующие API contracts без дублирования business logic. |
-| 11 — Production | Production Compose, CI/CD delivery, backups, monitoring, security hardening и deployment. | Требует завершённых operational policies. |
+Обязательные условия эксплуатации ведутся в [OPERATIONS.md](OPERATIONS.md).
+Roadmap и статус задач ведутся в [TODO.md](../tasks/TODO.md),
+[IN_PROGRESS.md](../tasks/IN_PROGRESS.md) и [DONE.md](../tasks/DONE.md).
 
 ## Проверки и историческое evidence
 
-Актуальные обязательные jobs, локальные команды и safety guards перечислены только в
-[`CI.md`](CI.md). Количество маршрутов, файлов, тестов и assertions намеренно не копируется сюда:
-оно изменяется вместе с кодом и подтверждается самим CI run.
+Обязательные jobs, команды и изоляция тестовых окружений описаны в
+[CI.md](CI.md). Результат конкретной ревизии фиксируется в её CI run или
+датированном отчёте.
 
-Исторические снимки приёмки сохранены без ретроспективной подмены результатов:
-
-- [`INTERIM_AUDIT_FINAL.md`](INTERIM_AUDIT_FINAL.md) — приёмка Phases 0–6 и последующие findings;
-- [`ADMIN_REFACTORING_BASELINE.md`](ADMIN_REFACTORING_BASELINE.md) — baseline и повторная приёмка
-  Admin refactoring;
-- специализированные `*_AUDIT.md` — evidence конкретного слоя на указанную в них дату.
+- [Итоговый аудит Phases 0–6](INTERIM_AUDIT_FINAL.md) и
+  [baseline Admin](ADMIN_REFACTORING_BASELINE.md).
+- [Первичная приёмка Seller UI](TASK_A062_REPORT.md),
+  [Windows-проверка](WINDOWS_VERIFICATION_2026-10-13.md) и
+  [Windows follow-up](WINDOWS_FIXES_2026-10-14.md).
+- [История обогащения аудита](AUDIT_TRAIL_ENRICHMENT.md) и
+  [индекс завершённых работ](../tasks/DONE.md).
