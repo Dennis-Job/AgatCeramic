@@ -117,6 +117,12 @@ test('draft editing updates the saved version, preserves formatting and supports
     })
   })
   await page.goto('/settings')
+  await expect(
+    page.getByRole('heading', { name: 'Согласования ADR-014' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Записать решение' }),
+  ).toHaveCount(0)
   const editor = page.getByRole('textbox', {
     name: 'Текст документа',
     exact: true,
@@ -484,6 +490,7 @@ test('settings preserve edits after a failed save and require legal text review 
   let savedName = ''
   let savedPhones: string[] = []
   let savedEmails: Record<string, string> = {}
+  let savedPublicBankDetails = false
   await page.route('**/sanctum/csrf-cookie', (route) =>
     route.fulfill({ status: 204 }),
   )
@@ -513,6 +520,9 @@ test('settings preserve edits after a failed save and require legal text review 
         .request()
         .postDataJSON()
       savedEmails = { email, partner_email, notification_email }
+      savedPublicBankDetails = route
+        .request()
+        .postDataJSON().publish_bank_details
       return saveAttempts === 1
         ? route.fulfill({
             status: 422,
@@ -520,7 +530,12 @@ test('settings preserve edits after a failed save and require legal text review 
           })
         : route.fulfill({
             json: {
-              data: { ...settings, ...savedEmails, seller_name: savedName },
+              data: {
+                ...settings,
+                ...savedEmails,
+                seller_name: savedName,
+                publish_bank_details: savedPublicBankDetails,
+              },
             },
           })
     }
@@ -565,6 +580,12 @@ test('settings preserve edits after a failed save and require legal text review 
   const notificationEmail = page.getByRole('textbox', {
     name: /^Email для уведомлений/,
   })
+  const publicBankDetails = page.getByRole('checkbox', {
+    name: 'Публиковать банковские реквизиты',
+  })
+  await expect(publicBankDetails).not.toBeChecked()
+  await publicBankDetails.press('Space')
+  await expect(publicBankDetails).toBeChecked()
   await expect(customerEmail).toHaveValue('seller@example.test')
   await expect(partnerEmail).toHaveValue('partners@example.test')
   await expect(notificationEmail).toHaveValue('callbacks@example.test')
@@ -588,6 +609,7 @@ test('settings preserve edits after a failed save and require legal text review 
   await expect(customerEmail).toHaveValue('shop@example.test')
   await expect(partnerEmail).toHaveValue('business@example.test')
   await expect(notificationEmail).toHaveValue('staff@example.test')
+  await expect(publicBankDetails).toBeChecked()
   await page.getByRole('button', { name: 'Сохранить реквизиты' }).click()
   await expect(
     page.getByText('Реквизиты сохранены.', { exact: true }),
@@ -595,6 +617,8 @@ test('settings preserve edits after a failed save and require legal text review 
   expect(saveAttempts).toBe(2)
   expect(savedName).toBe('ИП Исправленный')
   expect(savedPhones).toEqual(['+74951204567'])
+  expect(savedPublicBankDetails).toBe(true)
+  await expect(publicBankDetails).toBeChecked()
   expect(savedEmails).toEqual({
     email: 'shop@example.test',
     partner_email: 'business@example.test',
@@ -612,6 +636,165 @@ test('settings preserve edits after a failed save and require legal text review 
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByText('Опубликован', { exact: true })).toBeVisible()
   expect(published).toBe(true)
+})
+
+test('approval uses the selected published policy and clears only its own form after retry', async ({
+  page,
+  browserIssueGuard,
+}, testInfo) => {
+  browserIssueGuard.allowApiError(422, '/api/v1/admin/compliance-approvals')
+  const publishedAt = '2026-11-26T09:00:00Z'
+  const publishedPolicy = { ...document, published_at: publishedAt }
+  const previousPolicy = {
+    ...publishedPolicy,
+    id: 3,
+    version: 'previous-policy',
+    body: 'Текст предыдущей политики.',
+  }
+  const offer = { ...publishedPolicy, id: 2, type: 'offer', version: 'offer' }
+  const draftPolicy = { ...document, id: 5, version: 'policy-draft' }
+  const submitted: unknown[] = []
+  await page.route('**/sanctum/csrf-cookie', (route) =>
+    route.fulfill({ status: 204 }),
+  )
+  await page.route('**/api/v1/**', (route) => {
+    const path = new URL(route.request().url()).pathname.replace('/api/v1', '')
+    if (path === '/admin/auth/me')
+      return route.fulfill({
+        json: {
+          data: {
+            id: 1,
+            name: 'Тестовый администратор',
+            email: 'admin@example.test',
+            status: 'active',
+            permissions: ['settings.manage', 'settings.approve'],
+          },
+        },
+      })
+    if (path === '/admin/site-settings')
+      return route.fulfill({ json: { data: settings } })
+    if (path === '/admin/legal-documents')
+      return route.fulfill({
+        json: { data: [document, previousPolicy, offer, draftPolicy] },
+      })
+    if (path === '/admin/legal-documents/4/publish')
+      return route.fulfill({ json: { data: publishedPolicy } })
+    if (path === '/admin/compliance-approvals') {
+      if (route.request().method() === 'GET')
+        return route.fulfill({ json: { data: [] } })
+      const payload = route.request().postDataJSON()
+      submitted.push(payload)
+      if (submitted.length === 1)
+        return route.fulfill({
+          status: 422,
+          json: { error: { message: 'Уточните данные согласования.' } },
+        })
+      return route.fulfill({
+        status: 201,
+        json: {
+          data: { ...payload, id: 45, recorded_by: 1, created_at: publishedAt },
+        },
+      })
+    }
+    return route.fulfill({
+      status: 404,
+      json: { error: { message: 'Unknown endpoint' } },
+    })
+  })
+
+  await page.goto('/settings')
+  const policySelect = page.getByRole('button', { name: 'Версия политики ПДн' })
+  const policyOptions = page.getByRole('group', {
+    name: 'Версия политики ПДн: варианты',
+  })
+  await policySelect.click()
+  await expect(policyOptions.getByRole('button')).toHaveText([
+    'Политика ПДн · previous-policy',
+  ])
+  await page.keyboard.press('Escape')
+
+  await page
+    .getByRole('button', { name: 'Просмотреть Политика ПДн версии v1' })
+    .click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toContainText(document.body)
+  await dialog.getByRole('button', { name: 'Опубликовать эту версию' }).click()
+  await expect(dialog).toHaveCount(0)
+
+  await policySelect.click()
+  await expect(policyOptions.getByRole('button')).toHaveText([
+    'Политика ПДн · v1',
+    'Политика ПДн · previous-policy',
+  ])
+  await policyOptions.getByRole('button', { name: 'Политика ПДн · v1' }).click()
+
+  const sellerName = page.getByLabel('Наименование продавца')
+  const version = page.getByRole('textbox', { name: /^Версия/ })
+  const reviewer = page.getByLabel('ФИО согласующего')
+  const decidedOn = page.getByLabel('Дата решения')
+  const role = page.getByRole('button', {
+    name: 'Роль согласующего',
+    exact: true,
+  })
+  const decision = page.getByRole('button', { name: 'Решение', exact: true })
+  const recordApproval = page.getByRole('button', { name: 'Записать решение' })
+  await sellerName.fill('Несохранённые реквизиты')
+  await version.fill('unsaved-draft')
+  await recordApproval.click()
+  expect(submitted).toHaveLength(0)
+
+  await reviewer.fill('Тестовый Юрист')
+  await decidedOn.fill('2026-11-26')
+  await role.click()
+  await page
+    .getByRole('button', { name: 'Юрист / внешний консультант' })
+    .click()
+  await decision.click()
+  await page.getByRole('button', { name: 'Отклонено', exact: true }).click()
+  await recordApproval.click()
+  await expect(page.getByRole('alert')).toContainText(
+    'Уточните данные согласования.',
+  )
+  await expect(reviewer).toHaveValue('Тестовый Юрист')
+  await expect(decidedOn).toHaveValue('2026-11-26')
+  await expect(role).toHaveText('Юрист / внешний консультант')
+  await expect(decision).toHaveText('Отклонено')
+  await expect(policySelect).toHaveText('Политика ПДн · v1')
+
+  await recordApproval.click()
+  await expect(page.getByText('Решение зафиксировано в журнале.')).toBeVisible()
+  const expectedApproval = {
+    role: 'legal_reviewer',
+    reviewer_name: 'Тестовый Юрист',
+    decision: 'rejected',
+    decided_on: '2026-11-26',
+    document_version_id: 4,
+  }
+  expect(submitted).toEqual([expectedApproval, expectedApproval])
+  await expect(reviewer).toBeEmpty()
+  await expect(decidedOn).toBeEmpty()
+  await expect(role).toHaveText('Владелец бизнес-процесса')
+  await expect(decision).toHaveText('Согласовано')
+  await expect(policySelect).toHaveText('Выберите опубликованную версию')
+  await expect(sellerName).toHaveValue('Несохранённые реквизиты')
+  await expect(version).toHaveValue('unsaved-draft')
+
+  const approvalSection = page.getByRole('region', {
+    name: 'Согласования ADR-014',
+  })
+  const policyLink = approvalSection.getByRole('button', {
+    name: 'Просмотреть политику ПДн, документ 4',
+  })
+  await expect(policyLink).toHaveText('Политика ПДн · v1')
+  await policyLink.click()
+  await expect(dialog).toContainText(document.body)
+  await expect(dialog).toContainText('Опубликованная версия')
+  await page.keyboard.press('Escape')
+  await expect(policyLink).toBeFocused()
+  await approvalSection.screenshot({
+    path: testInfo.outputPath('settings-approval.png'),
+    animations: 'disabled',
+  })
 })
 
 test('legacy phones require explicit selection and a single masked phone remains usable at every width', async ({

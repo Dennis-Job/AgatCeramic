@@ -43,23 +43,23 @@ beforeEach(() => {
 
 test('saves one canonical phone and allows an empty optional phone', async () => {
   const state = await workspace(['8 (495) 120-45-67'])
-  await state.save()
+  await state.seller.save()
   expect(settingsApi.saveSettings).toHaveBeenLastCalledWith({
     phones: ['+74951204567'],
   })
-  state.updatePhone('')
-  await state.save()
+  state.seller.updatePhone('')
+  await state.seller.save()
   expect(settingsApi.saveSettings).toHaveBeenLastCalledWith({ phones: [] })
 })
 
 test('blocks unrelated save with multiple legacy phones until an explicit choice', async () => {
   const state = await workspace(['+74951204567', '+79991112233'])
-  expect(state.phoneSelectionRequired.value).toBe(true)
-  await state.save()
+  expect(state.seller.phoneSelectionRequired.value).toBe(true)
+  await state.seller.save()
   expect(settingsApi.saveSettings).not.toHaveBeenCalled()
   expect(state.error.value).toContain('Выберите один')
-  state.updatePhone('+79991112233')
-  await state.save()
+  state.seller.updatePhone('+79991112233')
+  await state.seller.save()
   expect(settingsApi.saveSettings).toHaveBeenCalledWith({
     phones: ['+79991112233'],
   })
@@ -67,17 +67,17 @@ test('blocks unrelated save with multiple legacy phones until an explicit choice
 
 test('does not send an incomplete phone even through a direct save', async () => {
   const state = await workspace([])
-  state.updatePhone('+7495')
-  await state.save()
+  state.seller.updatePhone('+7495')
+  await state.seller.save()
   expect(settingsApi.saveSettings).not.toHaveBeenCalled()
   expect(state.error.value).toContain('10 цифр')
 })
 
 test('abandoning a partial replacement does not discard multiple legacy phones', async () => {
   const state = await workspace(['+74951204567', '+79991112233'])
-  state.updatePhone('+7495')
-  state.updatePhone('')
-  await state.save()
-  expect(state.phoneSelectionRequired.value).toBe(true)
+  state.seller.updatePhone('+7495')
+  state.seller.updatePhone('')
+  await state.seller.save()
+  expect(state.seller.phoneSelectionRequired.value).toBe(true)
   expect(settingsApi.saveSettings).not.toHaveBeenCalled()
 })

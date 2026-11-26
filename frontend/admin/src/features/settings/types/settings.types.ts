@@ -1,4 +1,20 @@
 import type { JSONContent } from '@tiptap/vue-3'
+import type { Ref } from 'vue'
+
+export type SettingsAction =
+  'settings' | 'document' | 'approval' | `publish:${number}`
+
+export type RunSettingsAction = (
+  action: () => Promise<void>,
+  notice: string,
+  actionId: SettingsAction,
+) => Promise<boolean>
+
+export type SettingsActions = {
+  busyAction: Readonly<Ref<SettingsAction | null>>
+  run: RunSettingsAction
+  clearFeedback: () => void
+}
 
 export type SiteSettings = {
   operator_type: 'individual_entrepreneur' | 'legal_entity' | null

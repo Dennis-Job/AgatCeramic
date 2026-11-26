@@ -25,21 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A083 **P2** Разделить формы реквизитов, документов и согласований в настройках
-  - Цель:
-    [SettingsWorkspace.vue](../frontend/admin/src/features/settings/components/SettingsWorkspace.vue)
-    и
-    [useSettingsWorkspace](../frontend/admin/src/features/settings/composables/useSettingsWorkspace.ts)
-    имеют явные границы трёх сценариев: реквизиты продавца, версии документов и внутренние
-    согласования.
-  - План: выделить соответствующие form/section components и локальное состояние каждого сценария;
-    workspace координирует загрузку, общую блокировку действий и связь согласования с опубликованной
-    политикой. Передавать узкие контракты; labels/options и подготовку payload хранить вне разметки.
-    Сохранить текущую последовательность операций и API без добавления новых функций.
-  - Готовность: поведенческие unit/E2E проверяют save, создание черновика, preview/publish,
-    согласование выбранной версии, validation и ошибки; settings.approve, публичность банковских
-    реквизитов и сброс только отправленной формы сохраняются; UI Design Guard accepted.
-
 - [ ] TASK-A084 **P2** Убрать дублирование обхода дерева категорий в Admin
   - Цель: рекурсивный обход не повторяется в
     [useCategoriesWorkspace](../frontend/admin/src/features/categories/composables/useCategoriesWorkspace.ts),
