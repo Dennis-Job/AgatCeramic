@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 
 defineProps<{
@@ -7,10 +8,18 @@ defineProps<{
   enabled: (id: string) => boolean
 }>()
 const emit = defineEmits<{ select: [id: string] }>()
+const navigation = useTemplateRef('navigation')
+defineExpose({
+  focusActiveStep: () =>
+    navigation.value
+      ?.querySelector<HTMLButtonElement>('[aria-current="step"]')
+      ?.focus(),
+})
 </script>
 
 <template>
   <nav
+    ref="navigation"
     class="border-b border-gray-200 px-4 sm:px-6"
     aria-label="Этапы карточки товара"
   >

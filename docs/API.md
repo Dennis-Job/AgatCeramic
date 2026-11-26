@@ -1142,12 +1142,19 @@ valid. The update is atomic and never silently removes values.
 ### Product groups
 
 - `GET /admin/product-groups`
+- `GET /admin/product-groups/lookup?search=...`
 - `POST /admin/product-groups`
 - `GET /admin/product-groups/{product_group}`
 - `PATCH|PUT /admin/product-groups/{product_group}`
 - `DELETE /admin/product-groups/{product_group}`
 
-Groups require `catalog.manage`. Create requires unique `code`, `name`, `axis_attribute_ids`, and
+Groups require `catalog.manage`. The lookup returns up to 25 entries with `id`, `name`, and `code`,
+ordered by name and then ID. The optional `search` matches a literal case-insensitive substring of
+the name or code. An empty search returns the first 25 groups. The editor uses the `group` summary
+in the product response to fetch existing group details by ID, independently of the lookup results.
+The paginated group list continues to return full group details.
+
+Create requires unique `code`, `name`, `axis_attribute_ids`, and
 `product_ids`; updates use the same fields as a full desired group definition. A group contains at
 least two standalone products. Members must share category and brand and fill all selected axes;
 different SKU may have the same axis tuple (for example, different packaging). Optional

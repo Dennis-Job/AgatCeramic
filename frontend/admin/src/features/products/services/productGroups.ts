@@ -1,24 +1,21 @@
 import { apiFetch } from '../../../services/api'
-import {
-  loadAllPages,
-  withPage,
-  type PageRequest,
-  type PaginatedResponse,
-} from '../../../services/pagination'
-import type { ProductGroup, ProductGroupPayload } from '../types/product.types'
+import type {
+  ProductGroup,
+  ProductGroupPayload,
+  ProductGroupSummary,
+} from '../types/product.types'
 
-export async function getProductGroups(
-  request: PageRequest = {},
-): Promise<PaginatedResponse<ProductGroup>> {
-  const query = new URLSearchParams()
-  withPage(query, request)
-  const response = await apiFetch(
-    `/admin/product-groups${query.size ? `?${query}` : ''}`,
-  )
-  return (await response.json()) as PaginatedResponse<ProductGroup>
+export async function lookupProductGroups(
+  search: string,
+): Promise<ProductGroupSummary[]> {
+  const query = new URLSearchParams({ search })
+  const response = await apiFetch(`/admin/product-groups/lookup?${query}`)
+  return ((await response.json()) as { data: ProductGroupSummary[] }).data
 }
-export async function getAllProductGroups(): Promise<ProductGroup[]> {
-  return loadAllPages(getProductGroups)
+
+export async function getProductGroup(id: number): Promise<ProductGroup> {
+  const response = await apiFetch(`/admin/product-groups/${id}`)
+  return ((await response.json()) as { data: ProductGroup }).data
 }
 export async function saveProductGroup(
   id: number | null,

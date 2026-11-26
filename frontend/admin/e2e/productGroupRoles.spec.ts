@@ -48,20 +48,14 @@ async function setup(page: Page) {
   await page.route('**/api/v1/admin/categories/1/attributes', (route) =>
     route.fulfill({ json: { data: attrs } }),
   )
-  await page.route('**/api/v1/admin/product-groups**', async (route) => {
+  await page.route('**/api/v1/admin/product-groups/1', async (route) => {
     if (route.request().method() === 'PATCH') {
       const payload = route.request().postDataJSON()
       group.individual_attributes = attrs.filter((a) =>
         payload.individual_attribute_ids.includes(a.id),
       )
       await route.fulfill({ json: { data: group } })
-    } else
-      await route.fulfill({
-        json: {
-          data: [group],
-          meta: { current_page: 1, last_page: 1, total: 1, per_page: 25 },
-        },
-      })
+    } else await route.fulfill({ json: { data: group } })
   })
   await page.route('**/api/v1/admin/products/1/attributes', async (route) => {
     const data = [

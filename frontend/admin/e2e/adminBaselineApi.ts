@@ -270,6 +270,8 @@ export async function mockAdminBaseline(
       })
     if (path === '/admin/product-groups')
       return route.fulfill({ json: collection([]) })
+    if (path === '/admin/product-groups/lookup')
+      return route.fulfill({ json: data([]) })
     if (path === '/admin/users')
       return route.fulfill({ json: collection([employee]) })
     if (path === '/admin/users/roles')

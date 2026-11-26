@@ -67,6 +67,7 @@ export type Product = {
   is_active: boolean
   is_on_sale: boolean
   attribute_values?: ProductAttributeValue[]
+  group?: ProductGroupSummary | null
   primary_image?: { id: number; url: string; alt: string | null } | null
   category: Category
   brand: Brand | null
@@ -82,6 +83,7 @@ export type ProductPayload = Omit<
   | 'brand'
   | 'collection'
   | 'attribute_values'
+  | 'group'
   | 'primary_image'
   | 'created_at'
   | 'updated_at'
@@ -155,10 +157,13 @@ export type ProductImageImport = {
   completed_at?: string | null
 }
 
-export type ProductGroup = {
+export type ProductGroupSummary = {
   id: number
   name: string
   code: string
+}
+
+export type ProductGroup = ProductGroupSummary & {
   axes: Attribute[]
   individual_attributes?: Attribute[]
   products: Array<

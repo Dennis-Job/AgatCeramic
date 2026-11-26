@@ -35,6 +35,8 @@ export function useProductImages(
 
   function reset() {
     resetPhotoRequest()
+    photosLoadFailed.value = false
+    closeImageDeletion()
     imageStatus.value = ''
     images.value = []
   }

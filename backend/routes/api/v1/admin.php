@@ -138,6 +138,7 @@ Route::post('product-image-imports', [ProductImageImportController::class, 'stor
 Route::get('product-image-imports/{productImageImport}', [ProductImageImportController::class, 'show'])->name('product-image-imports.show');
 Route::get('product-image-imports/{productImageImport}/errors', [ProductImageImportController::class, 'errors'])->name('product-image-imports.errors');
 Route::apiResource('products', ProductController::class);
+Route::get('product-groups/lookup', [ProductGroupController::class, 'lookup'])->name('product-groups.lookup');
 Route::apiResource('product-groups', ProductGroupController::class);
 Route::get('products/{product}/attributes', [ProductAttributeValueController::class, 'index'])->name('products.attributes.index');
 Route::put('products/{product}/attributes', [ProductAttributeValueController::class, 'replace'])->name('products.attributes.replace');

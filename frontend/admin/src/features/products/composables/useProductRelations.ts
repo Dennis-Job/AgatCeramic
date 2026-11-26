@@ -85,6 +85,8 @@ export function useProductRelations(
 
   function reset() {
     relations.value = []
+    relationErrors.value = {}
+    resetRelationSearch()
   }
 
   function apply(relationList: ProductRelation[]) {

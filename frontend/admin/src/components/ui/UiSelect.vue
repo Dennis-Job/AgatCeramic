@@ -14,6 +14,8 @@ const props = withDefaults(
     descriptionId?: string
     searchable?: boolean
     searchPlaceholder?: string
+    remoteSearch?: boolean
+    searchStatus?: string
     clearable?: boolean
     teleportMenu?: boolean
     disabled?: boolean
@@ -23,6 +25,7 @@ const props = withDefaults(
     descriptionId: '',
     searchable: false,
     searchPlaceholder: 'Начните вводить для поиска',
+    searchStatus: '',
     clearable: false,
     teleportMenu: false,
   },
@@ -31,6 +34,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   change: [value: string]
+  search: [query: string]
 }>()
 const isOpen = ref(false)
 const root = ref<HTMLElement | null>(null)
@@ -55,7 +59,7 @@ const selectedLabel = computed(
 const filteredOptions = computed(() => {
   const query = search.value.trim().toLocaleLowerCase('ru')
 
-  return query === ''
+  return props.remoteSearch || query === ''
     ? props.options
     : props.options.filter((option) =>
         option.label.toLocaleLowerCase('ru').includes(query),
@@ -74,6 +78,10 @@ function toggle(): void {
     })
   }
 }
+
+watch([isOpen, search], ([open, query]) => {
+  if (open && props.remoteSearch) emit('search', query)
+})
 
 function optionButtons(): HTMLButtonElement[] {
   return Array.from(
@@ -295,7 +303,14 @@ onBeforeUnmount(() => {
             <Check v-if="option.value === modelValue" :size="17" />
           </button>
           <p
-            v-if="searchable && filteredOptions.length === 0"
+            v-if="remoteSearch && searchStatus"
+            role="status"
+            class="px-3 py-3 text-sm text-gray-500"
+          >
+            {{ searchStatus }}
+          </p>
+          <p
+            v-else-if="searchable && filteredOptions.length === 0"
             class="px-3 py-3 text-sm text-gray-500"
           >
             Ничего не найдено

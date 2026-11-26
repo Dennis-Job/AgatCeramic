@@ -1,4 +1,4 @@
-import { onBeforeUnmount, ref, watch, type Ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import type { AttributeDraftValue, Product } from '../types/product.types'
 import type { ProductEditorSession } from '../types/productEditor.types'
 import { useProductAttributes } from './useProductAttributes'
@@ -8,6 +8,7 @@ import { useProductForm } from './useProductForm'
 import { useProductGroups } from './useProductGroups'
 import { useProductImages } from './useProductImages'
 import { useProductRelations } from './useProductRelations'
+import { useProductSectionLoad } from './useProductSectionLoad'
 
 type ProductEditorOptions = {
   catalog: ReturnType<typeof useProductCatalogOptions>
@@ -31,15 +32,30 @@ export function useProductEditor({
   const editing = ref<Product | null>(null)
   const success = ref('')
   const { activeStep, reset: resetStep, steps } = useProductEditorSteps()
-  const relationDetailsLoading = ref(false)
-  let detailsRequest = 0
+  const copyingAttributes = ref(false)
+  let editorSession = 0
+  let copiedAttributes: Record<number, AttributeDraftValue> | null = null
 
   const session: ProductEditorSession = { editing, saving, error, success }
   const main = useProductForm(editing, catalog)
-  const groups = useProductGroups(session, main.copiedFromProduct, () => {
-    main.clearCopySource()
-    activeStep.value = 'review'
-  })
+  const groups = useProductGroups(
+    session,
+    main.copiedFromProduct,
+    () => {
+      main.clearCopySource()
+      activeStep.value = 'review'
+    },
+    async (group) => {
+      if (editing.value)
+        editing.value = {
+          ...editing.value,
+          group: group
+            ? { id: group.id, name: group.name, code: group.code }
+            : null,
+        }
+      await refreshList()
+    },
+  )
   const attributes = useProductAttributes(
     session,
     () => groups.groupRolesPending.value,
@@ -52,18 +68,92 @@ export function useProductEditor({
     session,
     opened,
     photosOnly,
-    relationDetailsLoading,
+    computed<boolean>(() => !relationLoad.state.ready),
   )
 
-  function invalidateDetails() {
-    detailsRequest++
-    relationDetailsLoading.value = false
+  const attributeLoad = useProductSectionLoad(
+    attributes.load,
+    (data) => {
+      attributes.apply(data, copiedAttributes)
+      copiedAttributes = null
+    },
+    'Не удалось загрузить характеристики.',
+  )
+  const photoLoad = useProductSectionLoad(
+    (product) => images.load(product.id),
+    images.apply,
+    'Не удалось загрузить фотографии.',
+  )
+  const relationLoad = useProductSectionLoad(
+    (product) => relations.load(product.id),
+    relations.apply,
+    'Не удалось загрузить связи товаров.',
+  )
+  const membershipLoad = useProductSectionLoad(
+    groups.loadMembership,
+    groups.applyMembership,
+    'Не удалось загрузить текущую группу.',
+  )
+  const groupLoad = useProductSectionLoad(
+    groups.loadDraft,
+    groups.prepareDraft,
+    'Не удалось подготовить варианты модели.',
+  )
+  const loaders = [
+    attributeLoad,
+    photoLoad,
+    relationLoad,
+    membershipLoad,
+    groupLoad,
+  ]
+  const stepLoads = {
+    main: [],
+    attributes: [attributeLoad, membershipLoad],
+    images: [photoLoad],
+    group: [attributeLoad, membershipLoad, groupLoad],
+    review: [attributeLoad, photoLoad, relationLoad],
+  }
+  const sectionError = computed(
+    () =>
+      stepLoads[activeStep.value].find((loader) => loader.state.error)?.state
+        .error ?? '',
+  )
+  const sectionReady = computed(() =>
+    stepLoads[activeStep.value].every((loader) => loader.state.ready),
+  )
+
+  function resetSections() {
+    editorSession++
+    copyingAttributes.value = false
+    loaders.forEach((loader) => loader.reset())
+    attributes.reset()
+    images.reset()
+    relations.reset()
+    groups.reset()
   }
 
-  watch([opened, () => editing.value?.id, photosOnly], invalidateDetails, {
-    flush: 'sync',
+  async function loadStep(retry = false) {
+    const product = editing.value
+    if (!opened.value || !product || photosOnly.value) return
+    const step = activeStep.value
+    const session = editorSession
+    await Promise.all(
+      stepLoads[step]
+        .filter((loader) => loader !== groupLoad)
+        .map((loader) => loader.ensure(product, retry)),
+    )
+    if (
+      step === 'group' &&
+      session === editorSession &&
+      membershipLoad.state.ready
+    )
+      await groupLoad.ensure(product, retry)
+  }
+
+  watch([opened, activeStep, () => editing.value?.id], () => {
+    void loadStep()
   })
-  onBeforeUnmount(invalidateDetails)
+  onBeforeUnmount(resetSections)
 
   function syncThumbnail(
     productId: number,
@@ -78,37 +168,9 @@ export function useProductEditor({
     return step === 'main' || editing.value !== null
   }
 
-  async function loadDetails(
-    product: Product,
-    copiedAttributes: Record<number, AttributeDraftValue> | null = null,
-  ) {
-    const request = ++detailsRequest
-    relationDetailsLoading.value = true
-    try {
-      const [attributeDetails, photoList, relationList, groupList] =
-        await Promise.all([
-          attributes.load(product),
-          images.load(product.id),
-          relations.load(product.id),
-          groups.load(),
-        ])
-      if (
-        request !== detailsRequest ||
-        !opened.value ||
-        editing.value?.id !== product.id ||
-        photosOnly.value
-      )
-        return
-      attributes.apply(attributeDetails, copiedAttributes)
-      images.apply(photoList)
-      relations.apply(relationList)
-      groups.apply(product, groupList)
-    } finally {
-      if (request === detailsRequest) relationDetailsLoading.value = false
-    }
-  }
-
-  async function open(product: Product | null = null) {
+  function open(product: Product | null = null) {
+    resetSections()
+    copiedAttributes = null
     photosOnly.value = false
     error.value = ''
     success.value = ''
@@ -116,22 +178,6 @@ export function useProductEditor({
     resetStep()
     main.reset(product)
     opened.value = true
-    attributes.reset()
-    images.reset()
-    relations.reset()
-    groups.reset()
-    if (!product) return
-    const loading = loadDetails(product)
-    const request = detailsRequest
-    try {
-      await loading
-    } catch (reason) {
-      if (request === detailsRequest)
-        error.value =
-          reason instanceof Error
-            ? reason.message
-            : 'Не удалось загрузить карточку.'
-    }
   }
 
   async function openPhotos(product: Product) {
@@ -147,44 +193,50 @@ export function useProductEditor({
   }
 
   async function cloneProduct(product: Product) {
-    await open()
+    open()
     main.copyProduct(product)
-    const request = detailsRequest
+    const session = editorSession
+    copyingAttributes.value = true
     try {
       const details = await attributes.load(product)
-      if (request !== detailsRequest) return
+      if (session !== editorSession) return
       attributes.apply(details)
       success.value =
         'Данные и характеристики скопированы без фотографий. Укажите отличающееся название — URL сформируется из названия, а SKU будет назначен автоматически.'
     } catch {
-      if (request === detailsRequest)
+      if (session === editorSession)
         error.value =
           'Основные данные скопированы, но характеристики исходного товара загрузить не удалось.'
+    } finally {
+      if (session === editorSession) copyingAttributes.value = false
     }
   }
 
   function close() {
     if (saving.value) return
     opened.value = false
-    images.resetPhotoRequest()
     editing.value = null
+    resetSections()
+    copiedAttributes = null
   }
 
   async function saveMain() {
-    if (saving.value || !main.validateName()) return
-    const copiedAttributes = main.copiedFromProduct.value
-      ? attributes.copyAttributeDrafts()
+    if (saving.value || copyingAttributes.value || !main.validateName()) return
+    const copy = main.copiedFromProduct.value
+      ? (copiedAttributes ?? attributes.copyAttributeDrafts())
       : null
     saving.value = true
     error.value = ''
     try {
       const saved = await main.save()
+      resetSections()
+      copiedAttributes = copy
       editing.value = saved
       main.setProduct(saved)
-      await refreshList()
-      await loadDetails(saved, copiedAttributes)
       success.value = 'Основные и коммерческие данные сохранены.'
       activeStep.value = 'attributes'
+      void loadStep()
+      await refreshList()
     } catch (reason) {
       error.value =
         reason instanceof Error ? reason.message : 'Не удалось сохранить товар.'
@@ -225,7 +277,11 @@ export function useProductEditor({
     error,
     success,
     canManage,
+    copyingAttributes,
     activeStep,
+    sectionReady,
+    sectionError,
+    retrySection: () => loadStep(true),
     steps,
     enabled,
     main,

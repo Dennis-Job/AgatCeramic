@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\LookupProductGroupsRequest;
 use App\Http\Requests\Api\V1\Admin\StoreProductGroupRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateProductGroupRequest;
 use App\Http\Resources\Catalog\ProductGroupResource;
+use App\Http\Resources\Catalog\ProductGroupSummaryResource;
 use App\Models\ProductGroup;
+use App\Queries\ProductGroupLookupQuery;
 use App\Services\ProductGroupManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +26,11 @@ class ProductGroupController extends Controller
         Gate::authorize('viewAny', ProductGroup::class);
 
         return ProductGroupResource::collection(ProductGroup::query()->with(['axes', 'individualAttributes', 'products.category', 'products.brand', 'products.primaryImage', 'products.attributeValues.attribute.options'])->orderBy('name')->paginate(25));
+    }
+
+    public function lookup(LookupProductGroupsRequest $request, ProductGroupLookupQuery $query): AnonymousResourceCollection
+    {
+        return ProductGroupSummaryResource::collection($query->get($request->string('search')->trim()->toString()));
     }
 
     public function store(StoreProductGroupRequest $request): JsonResponse

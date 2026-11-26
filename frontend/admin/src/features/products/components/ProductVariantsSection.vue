@@ -28,6 +28,10 @@ const {
     | 'groupForm'
     | 'selectedGroupId'
     | 'groupOptions'
+    | 'searchGroups'
+    | 'lookupStatus'
+    | 'selectionError'
+    | 'selectionLoading'
     | 'selectGroup'
     | 'groupErrors'
     | 'groupSearch'
@@ -48,6 +52,10 @@ const {
   groupForm,
   selectedGroupId,
   groupOptions,
+  searchGroups,
+  lookupStatus,
+  selectionError,
+  selectionLoading,
   selectGroup,
   groupErrors,
   groupSearch,
@@ -88,9 +96,14 @@ const {
               :options="groupOptions"
               accessible-name="Группа товаров"
               :description-id="groupHelpId"
+              :disabled="saving"
+              search-placeholder="Название или код группы"
+              :search-status="lookupStatus"
               searchable
+              remote-search
               teleport-menu
               @update:model-value="selectGroup"
+              @search="searchGroups"
             />
           </UiField>
           <p
@@ -100,12 +113,24 @@ const {
             {{ groupHelp }}
           </p>
         </div>
+        <UiAlert v-if="selectionLoading" tone="info" live="polite"
+          >Загрузка выбранной группы…</UiAlert
+        >
+        <UiAlert v-else-if="selectionError">{{ selectionError }}</UiAlert>
         <div class="grid gap-4 sm:grid-cols-2">
           <UiField label="Название группы" required
-            ><UiInput v-model="groupForm.name" class="mt-1.5" required
+            ><UiInput
+              v-model="groupForm.name"
+              class="mt-1.5"
+              :disabled="selectionLoading"
+              required
           /></UiField>
           <UiField label="Уникальный код" required
-            ><UiInput v-model="groupForm.code" class="mt-1.5" required
+            ><UiInput
+              v-model="groupForm.code"
+              class="mt-1.5"
+              :disabled="selectionLoading"
+              required
           /></UiField>
         </div>
       </div>
@@ -119,7 +144,7 @@ const {
         v-model:individual-attribute-ids="groupForm.individual_attribute_ids"
         :attributes="attributes"
         :errors="groupErrors"
-        :disabled="saving"
+        :disabled="saving || selectionLoading"
       />
     </UiCard>
     <UiCard>
@@ -133,13 +158,14 @@ const {
             v-model="groupSearch"
             class="min-w-0 flex-1"
             searchable
+            :disabled="selectionLoading"
             placeholder="Название или SKU"
             aria-label="Поиск товаров для группы"
           /><UiButton
             type="button"
             variant="secondary"
             :loading="saving"
-            :disabled="saving"
+            :disabled="saving || selectionLoading"
             @click="searchGroupProducts"
             >{{ saving ? 'Поиск…' : 'Найти' }}</UiButton
           >
@@ -154,6 +180,7 @@ const {
             :key="p.id"
             v-model="groupForm.product_ids"
             :value="p.id"
+            :disabled="selectionLoading"
             ><span class="flex min-w-0 items-center gap-2"
               ><img
                 v-if="p.primary_image"

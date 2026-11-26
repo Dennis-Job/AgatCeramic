@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { EyeOff, Save, X } from '@lucide/vue'
 import ConfirmDialog from '../../../components/shared/ConfirmDialog.vue'
+import UiAlert from '../../../components/ui/UiAlert.vue'
 import UiNotification from '../../../components/ui/UiNotification.vue'
 import UiButton from '../../../components/ui/UiButton.vue'
 import UiDialogFooter from '../../../components/ui/UiDialogFooter.vue'
@@ -33,7 +34,11 @@ const {
   error,
   success,
   canManage,
+  copyingAttributes,
   enabled,
+  sectionReady,
+  sectionError,
+  retrySection,
   close,
   saveMain,
   saveVisibility,
@@ -43,6 +48,7 @@ const {
   currentGroup,
   groupRolesPending,
   selectedGroupId,
+  selectionLoading,
   groupDeleting,
   requestGroupDeletion,
   closeGroupDeletion,
@@ -57,6 +63,23 @@ const {
   removeImage,
 } = images
 const { missingRequiredNames } = attributes
+const stepNavigation = useTemplateRef('stepNavigation')
+function retryAndFocusStep() {
+  stepNavigation.value?.focusActiveStep()
+  void retrySection()
+}
+const sectionLabel = computed(() => {
+  switch (activeStep.value) {
+    case 'attributes':
+      return 'Загрузка характеристик…'
+    case 'images':
+      return 'Загрузка фотографий…'
+    case 'group':
+      return 'Загрузка вариантов модели…'
+    default:
+      return 'Загрузка данных для проверки…'
+  }
+})
 
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
   day: '2-digit',
@@ -80,11 +103,13 @@ const footerNotes = computed(() => {
           'Новый товар сохранится как черновик. Публикация доступна на шаге «Проверка».',
         ]
   if (activeStep.value === 'attributes')
-    return [
-      currentGroup.value
-        ? 'Параметры выбора и индивидуальные характеристики изменяются только у этой позиции. Общие характеристики автоматически применяются ко всем товарам группы, включая очистку значений.'
-        : 'Характеристики принадлежат только этой позиции. Черновик можно сохранить незаполненным.',
-    ]
+    return sectionReady.value
+      ? [
+          currentGroup.value
+            ? 'Параметры выбора и индивидуальные характеристики изменяются только у этой позиции. Общие характеристики автоматически применяются ко всем товарам группы, включая очистку значений.'
+            : 'Характеристики принадлежат только этой позиции. Черновик можно сохранить незаполненным.',
+        ]
+      : []
   if (activeStep.value === 'images')
     return ['Загрузка, удаление и порядок фото сохраняются сразу.']
   if (activeStep.value === 'group')
@@ -160,6 +185,7 @@ const footerNotes = computed(() => {
     </header>
     <EditorSteps
       v-if="!photosOnly"
+      ref="stepNavigation"
       :steps="steps"
       :active="activeStep"
       :enabled="enabled"
@@ -173,6 +199,9 @@ const footerNotes = computed(() => {
       <UiNotification v-if="success" tone="success" live="polite">{{
         success
       }}</UiNotification>
+      <UiAlert v-if="copyingAttributes" tone="info" live="polite"
+        >Копирование характеристик…</UiAlert
+      >
       <template v-if="photosOnly">
         <UiLoadingState v-if="photosLoading" label="Загрузка фотографий…" />
         <div v-else-if="photosLoadFailed" class="space-y-4">
@@ -197,6 +226,13 @@ const footerNotes = computed(() => {
         :editing="editing"
         @save="saveMain"
       />
+      <div v-else-if="sectionError" class="space-y-4">
+        <UiAlert>{{ sectionError }}</UiAlert>
+        <UiButton type="button" variant="secondary" @click="retryAndFocusStep"
+          >Повторить загрузку</UiButton
+        >
+      </div>
+      <UiLoadingState v-else-if="!sectionReady" :label="sectionLabel" />
       <ProductAttributesSection
         v-else-if="activeStep === 'attributes'"
         :state="attributes"
@@ -225,7 +261,7 @@ const footerNotes = computed(() => {
           :form="form"
           :sku="editing?.sku"
           :image-count="images.images.value.length"
-          :group-name="currentGroup?.name"
+          :group-name="editing?.group?.name"
           :missing-required-names="missingRequiredNames"
         /><ProductRelationsSection :state="relations" :saving="saving" />
       </div>
@@ -246,7 +282,7 @@ const footerNotes = computed(() => {
         type="submit"
         form="product-main-form"
         :loading="saving"
-        :disabled="saving"
+        :disabled="saving || copyingAttributes"
         ><Save :size="17" />{{
           saving ? 'Сохранение…' : 'Сохранить и продолжить'
         }}</UiButton
@@ -256,13 +292,13 @@ const footerNotes = computed(() => {
         type="submit"
         form="product-attributes-form"
         :loading="saving"
-        :disabled="saving || groupRolesPending"
+        :disabled="saving || !sectionReady || groupRolesPending"
         >{{ saving ? 'Сохранение…' : 'Сохранить и продолжить' }}</UiButton
       >
       <UiButton
         v-else-if="activeStep === 'images'"
         type="button"
-        :disabled="saving"
+        :disabled="saving || !sectionReady"
         @click="activeStep = 'group'"
         >Продолжить</UiButton
       >
@@ -273,10 +309,10 @@ const footerNotes = computed(() => {
           class="mr-auto self-center"
         />
         <UiButton
-          v-if="selectedGroupId"
+          v-if="sectionReady && selectedGroupId"
           type="button"
           variant="danger-ghost"
-          :disabled="saving"
+          :disabled="saving || selectionLoading"
           @click="requestGroupDeletion"
           >Удалить группу</UiButton
         ><UiButton
@@ -289,7 +325,7 @@ const footerNotes = computed(() => {
           type="submit"
           form="product-group-form"
           :loading="saving"
-          :disabled="saving"
+          :disabled="saving || !sectionReady || selectionLoading"
           >{{ saving ? 'Сохранение…' : 'Сохранить группу' }}</UiButton
         ></template
       >

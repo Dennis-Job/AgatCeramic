@@ -26,9 +26,6 @@ vi.mock('../src/features/categories/services/categories', () => ({
 vi.mock('../src/features/products/services/productImages', () => ({
   getAllProductImages: vi.fn(async () => []),
 }))
-vi.mock('../src/features/products/services/productGroups', () => ({
-  getAllProductGroups: vi.fn(async () => []),
-}))
 
 const first = { id: 2, sku: '6000034', name: 'Смеситель' } as Product
 const second = { id: 3, sku: '5000033', name: 'Клей' } as Product
@@ -71,7 +68,9 @@ function mountEditor() {
 
 async function openEditor() {
   const state = mountEditor()
-  await state.open(product)
+  state.open(product)
+  state.activeStep.value = 'review'
+  await flushPromises()
   return state
 }
 
@@ -178,31 +177,32 @@ test('closing the editor invalidates pending requests and debounce timers', asyn
   expect(api.getRelationCandidates).toHaveBeenCalledTimes(1)
 })
 
-test('initial details cannot overwrite newly added recommendations during slow hydration', async () => {
-  const { relations: state, open } = mountEditor()
-  let finishDetails!: (attributes: []) => void
-  api.getCategoryAttributes.mockReturnValueOnce(
-    new Promise<[]>((resolve) => {
-      finishDetails = resolve
-    }),
-  )
-  api.getProductRelations.mockResolvedValue([
+test('initial relations cannot overwrite recommendations added during hydration', async () => {
+  const { relations: state, open, activeStep } = mountEditor()
+  const initial = [
     {
       related_product_id: 2,
       related_product: first,
       type: 'related',
       sort_order: 0,
     },
-  ])
-  const opening = open(product)
+  ]
+  let finishRelations!: (relations: typeof initial) => void
+  api.getProductRelations.mockReturnValueOnce(
+    new Promise<typeof initial>((resolve) => {
+      finishRelations = resolve
+    }),
+  )
+  open(product)
+  activeStep.value = 'review'
   await flushPromises()
   state.relationSearch.value = '5000033'
   await state.searchRelations()
   state.addRelation('related')
   // Actions wait for initial hydration rather than creating drafts it can erase.
   expect(state.relations.value).toEqual([])
-  finishDetails([])
-  await opening
+  finishRelations(initial)
+  await flushPromises()
   await state.searchRelations()
   state.addRelation('related')
   expect(state.relations.value.map((row) => row.related_product_id)).toEqual([

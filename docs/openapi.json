@@ -5043,6 +5043,23 @@
                 }
             }
         },
+        "/admin/product-groups/lookup": {
+            "get": {
+                "operationId": "lookupProductGroups",
+                "summary": "Look up product variation group summaries",
+                "description": "Requires catalog.manage. Returns up to 25 summaries ordered by name, then by ID. Group details are available through getProductGroup.",
+                "security": [{"sanctumSession": []}],
+                "parameters": [
+                    {"name": "search", "in": "query", "required": false, "description": "Case-insensitive literal substring of a group name or code. An empty or omitted search returns the first 25 summaries.", "schema": {"type": "string", "maxLength": 255}}
+                ],
+                "responses": {
+                    "200": {"description": "Matching group summaries", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductGroupLookupResponse"}}}},
+                    "401": {"$ref": "#/components/responses/Unauthenticated"},
+                    "403": {"$ref": "#/components/responses/Forbidden"},
+                    "422": {"$ref": "#/components/responses/ValidationFailed"}
+                }
+            }
+        },
         "/admin/product-groups/{product_group}": {
             "parameters": [{"name": "product_group", "in": "path", "required": true, "schema": {"type": "integer"}}],
             "get": {
@@ -11731,6 +11748,14 @@
                 "type": "object",
                 "required": ["data"],
                 "properties": {"data": {"$ref": "#/components/schemas/ProductGroup"}},
+                "additionalProperties": false
+            },
+            "ProductGroupLookupResponse": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                    "data": {"type": "array", "maxItems": 25, "items": {"$ref": "#/components/schemas/ProductGroupSummary"}}
+                },
                 "additionalProperties": false
             },
             "ProductGroupCollection": {

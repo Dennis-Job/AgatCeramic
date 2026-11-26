@@ -63,6 +63,7 @@ class OpenApiCatalogContractTest extends TestCase
             '/admin/product-imports/{productImport}/errors' => ['get'],
             '/admin/products/{product}' => ['get', 'put', 'patch', 'delete'],
             '/admin/product-groups' => ['get', 'post'],
+            '/admin/product-groups/lookup' => ['get'],
             '/admin/product-groups/{product_group}' => ['get', 'put', 'patch', 'delete'],
             '/admin/products/{product}/attributes' => ['get', 'put'],
             '/admin/products/{product}/images' => ['get', 'post'],
@@ -86,6 +87,12 @@ class OpenApiCatalogContractTest extends TestCase
         }
 
         self::assertSame('multipart/form-data', array_key_first($spec['paths']['/admin/products/{product}/images']['post']['requestBody']['content']));
+        $lookup = $spec['paths']['/admin/product-groups/lookup']['get'];
+        self::assertSame([200, 401, 403, 422], array_keys($lookup['responses']));
+        self::assertSame('#/components/schemas/ProductGroupLookupResponse', $lookup['responses']['200']['content']['application/json']['schema']['$ref']);
+        $groupItems = $spec['components']['schemas']['ProductGroupLookupResponse']['properties']['data'];
+        self::assertSame(25, $groupItems['maxItems']);
+        self::assertSame('#/components/schemas/ProductGroupSummary', $groupItems['items']['$ref']);
         self::assertContains('meta', $spec['components']['schemas']['ProductImageCollection']['required']);
         self::assertSame(['options'], $spec['components']['schemas']['StoreAttributeRequest']['allOf'][0]['then']['required']);
         self::assertSame(['options'], $spec['components']['schemas']['UpdateAttributeRequest']['allOf'][0]['then']['required']);

@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import ProductGroupAttributeRoles from '../src/features/products/components/ProductGroupAttributeRoles.vue'
@@ -13,7 +13,7 @@ import type {
 const api = vi.hoisted(() => ({
   getCategoryAttributes: vi.fn(),
   saveProductAttributeValues: vi.fn(),
-  getAllProductGroups: vi.fn(),
+  getProductGroup: vi.fn(),
   saveProductGroup: vi.fn(),
 }))
 vi.mock('../src/features/products/services/productAttributes', () => ({
@@ -31,7 +31,7 @@ vi.mock('../src/features/products/services/productRelations', () => ({
   getProductRelations: vi.fn(async () => []),
 }))
 vi.mock('../src/features/products/services/productGroups', () => ({
-  getAllProductGroups: api.getAllProductGroups,
+  getProductGroup: api.getProductGroup,
   saveProductGroup: api.saveProductGroup,
 }))
 const wrappers: Array<ReturnType<typeof mount>> = []
@@ -40,7 +40,11 @@ const attributes = [
   { id: 2, name: 'м² в упаковке', slug: 'package-area', type: 'decimal' },
   { id: 3, name: 'Описание упаковки', slug: 'pack-note', type: 'text' },
 ] as Attribute[]
-const product = { id: 7, category_id: 1 } as Product
+const product = {
+  id: 7,
+  category_id: 1,
+  group: { id: 5, name: 'Аллея', code: 'alleya' },
+} as Product
 const savedGroup = (products = [product]): ProductGroup => ({
   id: 5,
   name: 'Аллея',
@@ -55,7 +59,7 @@ const savedGroup = (products = [product]): ProductGroup => ({
 beforeEach(() => {
   vi.resetAllMocks()
   api.getCategoryAttributes.mockResolvedValue(attributes)
-  api.getAllProductGroups.mockResolvedValue([savedGroup()])
+  api.getProductGroup.mockResolvedValue(savedGroup())
 })
 afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
 
@@ -114,7 +118,9 @@ async function editor() {
       }),
     ),
   )
-  await state.open(product)
+  state.open(product)
+  state.activeStep.value = 'group'
+  await flushPromises()
   return state
 }
 
@@ -122,7 +128,7 @@ test('loads individual roles and describes the saved membership rather than a dr
   const { groups } = await editor()
   expect(groups.groupForm.value.individual_attribute_ids).toEqual([2])
   expect(groups.attributeScope(2)).toBe('индивидуальная')
-  groups.selectGroup('')
+  await groups.selectGroup('')
   expect(groups.attributeScope(2)).toBe('индивидуальная')
   expect(groups.attributeScope(3)).toBe('общая для группы')
 })
@@ -140,7 +146,7 @@ test('saves the group with individual roles and keeps them after reopening', asy
   state.groups.groupForm.value.product_ids.push(8)
   const updatedGroup = savedGroup([product, { ...product, id: 8 }])
   api.saveProductGroup.mockResolvedValue(updatedGroup)
-  api.getAllProductGroups.mockResolvedValue([updatedGroup])
+  api.getProductGroup.mockResolvedValue(updatedGroup)
   await state.groups.saveGroup()
   expect(api.saveProductGroup).toHaveBeenCalledWith(
     5,
@@ -151,6 +157,8 @@ test('saves the group with individual roles and keeps them after reopening', asy
     }),
   )
   state.close()
-  await state.open(product)
+  state.open(product)
+  state.activeStep.value = 'group'
+  await flushPromises()
   expect(state.groups.groupForm.value.individual_attribute_ids).toEqual([2])
 })

@@ -25,17 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A081 **P2** Загружать группы и данные секций товара по необходимости
-  - Цель: [loadDetails](../frontend/admin/src/features/products/composables/useProductEditor.ts) не
-    загружает все группы с полными товарами/характеристиками при каждом открытии редактора.
-  - План: измерить запросы и payload, ввести компактный permission-protected поиск/lookup групп и
-    ленивую загрузку секций. Выбранная группа доступна независимо от результатов поиска.
-    Текущая загрузка групп находится в
-    [useProductGroups](../frontend/admin/src/features/products/composables/useProductGroups.ts).
-    Изменения API отразить в OpenAPI.
-  - Готовность: поведенческие/E2E tests открытия, смены шагов, повторного входа и load failure;
-    права и выбор группы сохраняются, объём данных не растёт со всем каталогом при открытии товара.
-
 - [ ] TASK-A082 **P2** Разделить панели и результаты массового импорта товаров
   - Цель:
     [ProductImportWorkspace.vue](../frontend/admin/src/features/products/components/ProductImportWorkspace.vue)

@@ -121,7 +121,7 @@ const groupedVariant = {
   article_number: 'KM-101',
   barcode: null,
 }
-const sourceProductGroup = {
+export const sourceProductGroup = {
   id: 1,
   name: 'Монте Тиберио',
   code: 'MONTE-TIBERIO-GROUP',
@@ -205,8 +205,14 @@ export async function mockCatalogApi(
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60"><path fill="#ddd" d="M0 0h120v60H0z"/></svg>',
     }),
   )
-  let catalogProduct = { ...product, ...options.sourceProduct }
-  const createdProducts: Array<typeof product> = []
+  const { id, name, code } = sourceProductGroup
+  const groupSummary = { id, name, code }
+  let catalogProduct = {
+    ...product,
+    ...options.sourceProduct,
+    group: options.sourceProductInGroup ? groupSummary : null,
+  }
+  const createdProducts: Array<typeof catalogProduct> = []
   const productImages = new Map<
     number,
     Array<{
@@ -653,6 +659,7 @@ export async function mockCatalogApi(
           sku: '1000001',
           category,
           brand,
+          group: null,
           is_active: false,
           created_at: now,
           updated_at: now,
@@ -824,7 +831,28 @@ export async function mockCatalogApi(
       return
     }
 
-    if (path === '/admin/product-groups') {
+    if (path === '/admin/product-groups/lookup') {
+      const search = (url.searchParams.get('search') ?? '').toLocaleLowerCase(
+        'ru',
+      )
+      const found =
+        catalogProduct.group &&
+        [name, code].some((value) =>
+          value.toLocaleLowerCase('ru').includes(search),
+        )
+      await route.fulfill({ json: { data: found ? [groupSummary] : [] } })
+      return
+    }
+
+    if (
+      path === '/admin/product-groups/1' ||
+      path === '/admin/product-groups'
+    ) {
+      if (route.request().method() === 'DELETE') {
+        catalogProduct = { ...catalogProduct, group: null }
+        await route.fulfill({ status: 204 })
+        return
+      }
       const groupFixture = {
         ...sourceProductGroup,
         products: [
@@ -838,7 +866,9 @@ export async function mockCatalogApi(
         ],
       }
       await route.fulfill({
-        json: page(options.sourceProductInGroup ? [groupFixture] : []),
+        json: path.endsWith('/1')
+          ? { data: groupFixture }
+          : page(catalogProduct.group ? [groupFixture] : []),
       })
       return
     }
