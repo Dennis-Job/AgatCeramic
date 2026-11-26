@@ -25,15 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A080 **P2** Разделить операции SpreadsheetML в генераторе import template
-  - Цель:
-    [ProductImportTemplateValidationWriter](../backend/app/Services/ProductImportTemplateValidationWriter.php)
-    разделяет нормализацию styles, текстовые идентификаторы и dropdown validation.
-  - План: выделить осмысленные операции из apply, сохранить структуру XLSX, скрытый lookup sheet,
-    порядок worksheet elements и формат article_number/barcode без потери ведущих нулей.
-  - Готовность: существующие template tests и проверки SpreadsheetML/XLSX проходят; generated
-    workbook открывается без восстановления файла, значения справочников работают.
-
 - [ ] TASK-A081 **P2** Загружать группы и данные секций товара по необходимости
   - Цель: [loadDetails](../frontend/admin/src/features/products/composables/useProductEditor.ts) не
     загружает все группы с полными товарами/характеристиками при каждом открытии редактора.

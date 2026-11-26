@@ -1004,9 +1004,11 @@ to the selected category on upload. Each valid row updates its matched product i
 unknown or cross-category SKU values are reported as row errors. Creating new products or adding
 rows is deliberately not supported in this mode.
 
+The `Артикул` and `Штрихкод` columns use Excel's text format to preserve leading zeros.
 List and boolean cells have Excel Stop validation through rows 2–5001. Named ranges reference
-labels and their IDs on the hidden `Справочники` sheet. Multiselect attributes use one dropdown
-slot per currently available option; empty slots are ignored and repeated selections deduplicated.
+labels on the hidden `Справочники` sheet, with IDs stored in adjacent columns. Multiselect
+attributes use one dropdown slot per currently available option; empty slots are ignored and
+repeated selections deduplicated.
 The `Инструкция` sheet explains the limit and filling rules. Current database options are always
 validated again on import; editing/pasting into Excel cannot create new catalogue options.
 
