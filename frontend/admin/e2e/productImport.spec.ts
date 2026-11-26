@@ -166,6 +166,7 @@ for (const kind of ['products', 'images'] as const) {
       exact: true,
     })
     const progress = status.getByRole('progressbar')
+    const liveStatus = await status.getByRole('status').elementHandle()
     await expect(progress).toHaveAttribute('value', '0')
     await expect(status.locator('[data-import-progress-label]')).toHaveText(
       '0%',
@@ -240,6 +241,7 @@ for (const kind of ['products', 'images'] as const) {
     }
     phase = 'failed'
     await expect(status).toContainText('Загрузка не завершена')
+    expect(await liveStatus.textContent()).toContain('Загрузка не завершена')
     await expect(progress).toHaveAttribute('value', '40')
     await expect(status.locator('[data-import-progress-label]')).toHaveText(
       '40%',
@@ -258,6 +260,7 @@ for (const kind of ['products', 'images'] as const) {
       '100%',
     )
     await expect(status).toContainText('Загрузка завершена')
+    expect(await liveStatus.textContent()).toContain('Загрузка завершена')
   })
 }
 
@@ -453,6 +456,27 @@ test('category edit template includes SKU and uses the category import flow', as
   await errorsDownload
 })
 
+test('the XLSX category menu closes during SPA navigation and keeps the selected category', async ({
+  page,
+}) => {
+  await mockCatalogApi(page)
+  await openImport(page)
+  const category = page.getByRole('button', {
+    name: 'Категория товаров для загрузки',
+  })
+  const options = page.getByRole('group', {
+    name: 'Категория товаров для загрузки: варианты',
+  })
+  await category.click()
+  await expect(options).toBeVisible()
+  await page.goBack()
+  await expect(page).toHaveURL('/products')
+  await expect(options).toBeHidden()
+  await page.goForward()
+  await expect(category).toContainText('Керамогранит')
+  await expect(category).toHaveAttribute('aria-expanded', 'false')
+})
+
 test('product Excel import shows upload failure and allows retry', async ({
   page,
   browserIssueGuard,
@@ -567,6 +591,86 @@ test('product image ZIP import uploads, polls and downloads its accessible respo
       ],
     },
   ])
+})
+
+test('ZIP polling errors stay in their panel and the job survives tab and route changes', async ({
+  page,
+  browserIssueGuard,
+}, testInfo) => {
+  const statusPath = '/admin/product-image-imports/1'
+  browserIssueGuard.allowApiError(503, `/api/v1${statusPath}`)
+  await mockCatalogApi(page, { importErrors: true })
+  const requests = createDeferredApiRequests()
+  const failedPoll = requests.defer(statusPath)
+  await page.route(`**${statusPath}`, async (route) => {
+    await requests.wait(statusPath)
+    await route.fulfill({ status: 503, json: {} })
+  })
+
+  await openImport(page)
+  const productsTab = page.getByRole('radio', { name: 'Загрузка товаров' })
+  const imagesTab = page.getByRole('radio', { name: 'Загрузка изображений' })
+  await productsTab.focus()
+  await page.keyboard.press('End')
+  await expect(imagesTab).toBeFocused()
+  await page.locator('#image-import-file').setInputFiles({
+    name: 'images.zip',
+    mimeType: 'application/zip',
+    buffer: Buffer.from('mock zip'),
+  })
+  const submit = page.getByRole('button', { name: 'Загрузить архив' })
+  await submit.focus()
+  await page.keyboard.press('Enter')
+  await failedPoll.requested
+  await expect(imagesTab).toBeFocused()
+
+  await page.keyboard.press('Home')
+  const failure = page.waitForResponse(`**${statusPath}`)
+  failedPoll.release()
+  await failure
+  const retry = page.getByRole('button', { name: 'Обновить статус' })
+  await expect(retry).toBeHidden()
+  await expect(productsTab).toBeFocused()
+  await page.keyboard.press('End')
+  await expect(retry).toBeVisible()
+  const imageStatus = page
+    .locator('#import-panel-images')
+    .getByRole('region', { name: 'Статус импорта', exact: true })
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 800 })
+    await imageStatus.screenshot({
+      path: testInfo.outputPath(`retry-${width}.png`),
+    })
+  }
+
+  await page.unroute(`**${statusPath}`)
+  // Delay recovery until the workspace has been deactivated by the SPA route.
+  const recoveredPoll = requests.defer(statusPath)
+  await page.route(`**${statusPath}`, async (route) => {
+    await requests.wait(statusPath)
+    await route.fallback()
+  })
+  await retry.focus()
+  await page.keyboard.press('Enter')
+  await recoveredPoll.requested
+  await expect(imagesTab).toBeFocused()
+  await expect(imagesTab.locator('..')).toBeInViewport()
+  await openProductMenu(page)
+  await page.getByRole('link', { name: 'Список товаров', exact: true }).click()
+  await expect(page).toHaveURL('/products')
+  const search = page.getByRole('textbox', { name: 'Поиск', exact: true })
+  await search.focus()
+  const completion = page.waitForResponse(`**${statusPath}`)
+  recoveredPoll.release()
+  await completion
+  await expect(search).toBeFocused()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+
+  await openProductMenu(page)
+  await page.getByRole('link', { name: 'Добавить массово товары' }).click()
+  await expect(imagesTab).toBeChecked()
+  await expect(page.getByText('images.zip', { exact: true })).toBeVisible()
+  await expect(page.getByText('Товар с таким SKU не найден.')).toBeVisible()
 })
 
 test('variation-group Excel import downloads, uploads and reports its accessible result', async ({

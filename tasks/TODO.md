@@ -25,19 +25,6 @@ OpenAPI и канонической документации. Изменения
 [UI_DESIGN_REVIEW.md](../docs/UI_DESIGN_REVIEW.md). После реализации обновляются статус задачи и
 индекс результатов; проверки аудита не заменяют приёмку исправления.
 
-- [ ] TASK-A082 **P2** Разделить панели и результаты массового импорта товаров
-  - Цель:
-    [ProductImportWorkspace.vue](../frontend/admin/src/features/products/components/ProductImportWorkspace.vue)
-    композирует самостоятельные XLSX- и ZIP-сценарии вместо объединения подготовки файла, загрузки,
-    прогресса и подробных результатов обоих сценариев в одном template.
-  - План: выделить панели импорта товаров и изображений с узкими props/events; разделить подготовку,
-    загрузку и результаты там, где есть самостоятельный контракт. Сохранить существующие
-    useProductImport/useFileImport; владелец polling и state остаётся в workspace, чтобы
-    переключение вкладки не сбрасывало job. Не дублировать транспорт или validation.
-  - Готовность: unit/import E2E покрывают XLSX create/edit, ZIP, частичный успех, ошибки, скачивание
-    отчётов и retry polling; состояние сохраняется при смене вкладок и SPA-маршрутов. Проверены
-    keyboard tabs, возврат фокуса, live announcements и responsive; UI Design Guard accepted.
-
 - [ ] TASK-A083 **P2** Разделить формы реквизитов, документов и согласований в настройках
   - Цель:
     [SettingsWorkspace.vue](../frontend/admin/src/features/settings/components/SettingsWorkspace.vue)
